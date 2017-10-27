@@ -1,0 +1,11 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Login | {{ block.super }}{% endblock %}
+
+{% block headline %}<h1>Login to the PyCon Survival Guide</h1>{% endblock %}
+
+{% block content %}
+	{% crispy form %}
+{% endblock %}

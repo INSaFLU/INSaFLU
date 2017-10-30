@@ -1,68 +1,208 @@
-<!DOCTYPE>
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-    <title>{% block title %}PyCon Survival Guide{% endblock title %}</title>
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <style>
-        body {
-            padding-bottom: 20px;
-            padding-top: 70px;
-        }
-        .messages {
-            list-style: none;
-        }
-    </style>
-    {% block css %}{% endblock css %}
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge"">
+  <meta name="author" content="">
+  <title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
+  <!-- Bootstrap core CSS-->
+  {% block css %} 
+	  {% load static from staticfiles %}
+	  	<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css">
+	  	<!-- Custom fonts for this template-->
+	  	<link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+	  	<!-- Custom styles for this template-->
+		<link href="{% static 'css/sb-admin.css' %}" rel="stylesheet" type="text/css">
+		<!-- pre-define in-house css -->
+		<link href="{% static 'css/flu-web-site.css' %}" rel="stylesheet" type="text/css">
+
+		<!-- favicons-->
+		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
+  		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-192x192.png' %}" sizes="192x192">		
+  {% endblock css %}
 </head>
 
-<!-- https://stackoverflow.com/questions/21544636/bootstrap-floating-navbar-button-right -->
-<body>
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-            <a class="navbar-brand" href="{% url 'home' %}">PyCon Survival Guide</a>
-	        {% if not user.is_authenticated %}
-				<a href="{% url 'signup' %}" class="btn btn-default navbar-btn">Register</a>
-				<a href="{% url 'login' %}" class="btn btn-default navbar-btn">Login</a>
-			{% else %}
-				<span class="text-success">  {{ user.username }}  </span>
-				<a href="{% url 'logout' %}" class="btn btn-default navbar-btn pull-right">Logout</a>
+<body class="fixed-nav sticky-footer bg-dark" id="page-top">
+  <!-- Navigation-->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+  	<a class="navbar-brand" href="home.html"><strong>INSa</strong>FLU</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav navbar-sidenav" id="mainAccordion">
+        <li class="nav-item {% if nav_dashboard %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Dashboard">
+          <a class="nav-link" href="index.html">
+            <i class="fa fa-fw fa-dashboard"></i>
+            <span class="nav-link-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples">
+          <a class="nav-link" href="{% url 'samples' %}">
+            <i class="fa fa-fw fa-area-chart"></i>
+            <span class="nav-link-text">Samples</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects">
+          <a class="nav-link" href="projects.html">
+            <i class="fa fa-fw fa-table "></i>
+            <span class="nav-link-text active">Projects</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References">
+          <a class="nav-link " href="{% url 'references' %}">
+            <i class="fa fa-fw fa-wrench "></i>
+            <span class="nav-link-text ">References</span>
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav sidenav-toggler">
+        <li class="nav-item">
+          <a class="nav-link text-center" id="sidenavToggler">
+            <i class="fa fa-fw fa-angle-left"></i>
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle mr-lg-2" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-fw fa-envelope"></i>
+            <span class="d-lg-none">Messages
+              <span class="badge badge-pill badge-primary">12 New</span>
+            </span>
+            <span class="indicator text-primary d-none d-lg-block">
+              <i class="fa fa-fw fa-circle"></i>
+            </span>
+          </a>
+          <!--  MESSAGES -->
+<!--      <div class="dropdown-menu" aria-labelledby="messagesDropdown">
+            <h6 class="dropdown-header">New Messages:</h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>David Miller</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">Hey there! This new version of SB Admin is pretty awesome! These messages clip off when they reach the end of the box so they don't overflow over to the sides!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>Jane Smith</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I was wondering if you could meet for an appointment at 3:00 instead of 4:00. Thanks!</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <strong>John Doe</strong>
+              <span class="small float-right text-muted">11:21 AM</span>
+              <div class="dropdown-message small">I've sent the final files over to you for review. When you're able to sign off of them let me know and we can discuss distribution.</div>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item small" href="#">View all messages</a>
+          </div> -->
+        </li>
+
+		<!-- SEARCH -->        
+<!--    <li class="nav-item">
+          <form class="form-inline my-2 my-lg-0 mr-lg-2">
+            <div class="input-group">
+              <input class="form-control" type="text" placeholder="Search for...">
+              <span class="input-group-btn">
+                <button class="btn btn-primary" type="button">
+                  <i class="fa fa-search"></i>
+                </button>
+              </span>
+            </div>
+          </form>
+        </li> -->
+
+		{% if user.is_authenticated %}
+			<a class="nav-link" data-toggle="modal" data-target="#logoutModal">
+            	<i class="fa fa-fw fa-sign-out"></i> {{ user.username }} - Logout</a>
+		{% else %}
+			<a class="nav-link" href="{% url 'login' %}">
+            	<i class="fa fa-fw fa-sign-in"></i>Login</a>
+		{% endif %}
+
+      </ul>
+    </div>
+  </nav>
+  <div class="content-wrapper">
+    
+    <div class="container-fluid">
+	    <!-- MESSAGES -->
+	    <div class="container">
+			{% if messages %}
+				{% for message in messages %}
+					<div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}"{% endif %}>
+						{{ message }}
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					</div>
+				{% endfor %}
 			{% endif %}
-        </div>
-        <div class="navbar-collapse collapse">
-	        <ul class="nav navbar-nav">
-	          <li class="active"><a href="#">Home</a></li>
-	          <li><a href="#about">About</a></li>
-	
-	        </ul>
-	        <ul class="nav navbar-nav navbar-right">
-	          <li><a href="#contact">Contact</a></li>
-	        </ul>
-        </div><!--/.navbar-collapse -->
-      </div>
+		</div>
+
+
+		<!-- Breadcrumbs-->
+		{% if bread_crumb %} 
+			<ol class="breadcrumb">
+				{% block breadcrumb %}{% endblock breadcrumb %}
+			</ol>
+		{% endif %}
+		
+		{% if nav_modal %} <div class="container"> {% endif %}
+			{% block header %}{% endblock header %}
+			{% block content %}{% endblock content %}
+		{% if nav_modal %} <div> {% endif %}
     </div>
     
-    {% if messages %}
-		<ul class="messages">
-    		{% for message in messages %}
-    			<li{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</li>
-    		{% endfor %}
-		</ul>
-	{% endif %}
+   <!-- /.container-fluid-->
+   <!-- /.content-wrapper-->
+   <footer class="sticky-footer">
+		<div class="container">
+			<div class="text-center">
+				<small>Copyright © INSA 2017 - <a href="http://www.insa.pt/" target="_blank">INSA</a> Instituto Nacional de Saúde Dr. Ricardo Jorge</small>
+			</div>
+		</div>
+   </footer>
 
-    <div class="jumbotron">
-        <div class="container">{% block headline %}{% endblock headline %}</div>
-    </div>
-    <div class="container">
-        {% block content %}{% endblock content %}
-    </div>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    {% block js %}{% endblock js %}
+	<!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+		<i class="fa fa-angle-up"></i>
+    </a>
+    
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+					<button class="close" type="button" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">×</span>
+					</button>
+				</div>
+				<div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+					<a class="btn btn-primary" href="{% url 'logout' %}">Logout</a>
+				</div>
+			</div>
+		</div>
+	</div>
+    
+    {% block js %}
+	    <!-- Bootstrap core JavaScript-->
+	    {% load static from staticfiles %}
+	        <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+	    	<script src="{% static 'vendor/popper/popper.min.js' %}"></script>
+	    	<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+	    	<!-- Core plugin JavaScript-->
+	    	<script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+	    	<!-- Custom scripts for all pages-->
+	    	<script src="{% static 'js/sb-admin.min.js' %}"></script>
+    {% endblock js %}
+  </div>
 </body>
+
 </html>

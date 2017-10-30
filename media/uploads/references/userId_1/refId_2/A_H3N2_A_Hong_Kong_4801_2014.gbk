@@ -1,0 +1,535 @@
+LOCUS       PB2                 2280 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2280
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            31..2280
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
+     CDS             31..2280
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P31345"
+                     /codon_start=1
+                     /product="Polymerase basic protein 2"
+                     /protein_id="Prokka:locus_00001"
+                     /translation="MSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPSLRMKWMMAMK
+                     YPITADKRVTEMVPERNEQGQTLWSKMSDAGSDRVMVSPLAVTWWNRNGPVTSTVHYP
+                     KVYKTYFDKVERLKHGTFGPVHFRNQVKIRRRVDINPGHADLSAKEAQDVIMEVVFPN
+                     EVGARILTSESQLTITKEKKEELRDCKISPLMVAYMLERELVRKTRFLPVAGGTSSIY
+                     IEVLHLTQGTCWEQMYTPGGGVRNDDVDQSLIIAARNIVRRAAVSADPLASLLEMCHS
+                     TQIGGTRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTSGSSVKKEEEV
+                     LTGNLQTLRIRVHEGYEEFTMVGKRATAILRKATRRLVQLIVSGRDEQSIAEAIIVAM
+                     VFSQEDCMIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVLFQNWGVEHIDSVMGM
+                     VGVLPDMTPSTEMSMRGIRVSKMGVDEYSSTERVVVSIDRFLRVRDQRGNVLLSPEEV
+                     SETQGTERLTITYSSSMMWEINGPESVLVNTYQWIIRNWEAVKIQWSQNPAMLYNKME
+                     FEPFQSLVPKAIRSQYSGFVRTLFQQMRDVLGTFDTAQIIKLLPFAAAPPKQSRMQFS
+                     SLTVNVRGSGMRILVRGNSPVFNYNKTTKRLTILGKDAGTLIEDPDESTSGVESAVLR
+                     GFLIIGKEDRRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRDSSILTDSQTA
+                     TKRIRMAIN"
+ORIGIN      
+        1 atggaaagaa taaaagaact acggaatctg atgtcgcagt ctcgcactcg cgagatactg
+       61 acaaaaacca cagtggacca tatggccata attaagaagt acacatcggg gagacaggaa
+      121 aagaacccgt cacttaggat gaaatggatg atggcaatga aatatccaat cactgctgac
+      181 aaaagggtaa cagaaatggt tccggagaga aatgaacaag gacaaactct atggagcaaa
+      241 atgagtgatg ctggatcaga tagagtgatg gtatcacctt tggctgtaac atggtggaat
+      301 aggaatggac ccgtgacaag tacggtccat tacccaaaag tgtacaaaac ttatttcgac
+      361 aaagtcgaaa ggttaaaaca tggaaccttt ggccctgtcc attttagaaa tcaagtcaag
+      421 atacgcagaa gagtagacat aaaccctggt catgcagacc tcagtgccaa agaggcacaa
+      481 gatgtaatta tggaagttgt ttttcccaat gaagtgggag ccagaatact aacatcagaa
+      541 tcacaactaa caataactaa agagaaaaaa gaagaactcc gagattgcaa aatttctccc
+      601 ttgatggtcg catacatgtt agagagagaa cttgtgcgga aaacaagatt tctcccagtt
+      661 gctggcggaa caagcagtat atacattgaa gttttacatt tgactcaagg aacgtgttgg
+      721 gaacaaatgt acactccagg tggaggagtg aggaatgacg atgttgacca aagcctaatt
+      781 attgcggcca ggaacatagt aagaagagcc gcagtatcag cagatccatt agcatcttta
+      841 ttggagatgt gccacagcac gcaaattggc ggaacaagga tggtggacat tcttagacag
+      901 aacccgactg aagaacaagc tgtggatata tgcaaggctg caatgggatt gagaatcagc
+      961 tcatccttca gctttggtgg ctttacattt aaaagaacaa gcgggtcgtc agtcaaaaaa
+     1021 gaagaagagg tgcttacagg caatctccaa acattgagaa taagagtaca tgaggggtat
+     1081 gaggagttca caatggtggg gaaaagagca acagctatac taagaaaagc aaccagaaga
+     1141 ttggttcaac tcatagtgag tggaagagac gaacagtcaa tagccgaagc aataatcgtg
+     1201 gccatggtgt tttcacaaga agattgcatg ataaaagcag ttagaggtga cctgaatttt
+     1261 gtcaacagag caaatcagcg gttgaacccc atgcatcagc ttttaaggca ttttcagaaa
+     1321 gatgcgaaag tactctttca aaattgggga gttgaacaca tcgacagtgt gatgggaatg
+     1381 gttggagtat taccagatat gactccaagc acagagatgt caatgagagg aataagagtc
+     1441 agcaaaatgg gtgtggatga atactccagt acagagaggg tggtggttag cattgatcgg
+     1501 tttttgagag ttcgagacca acgtgggaat gtattattat ctcctgagga ggttagtgaa
+     1561 acacagggaa ctgagagact gacaataact tattcatcgt cgatgatgtg ggagattaac
+     1621 ggtcctgagt cagtcttggt caatacctat caatggatca tcaggaattg ggaagctgtt
+     1681 aaaattcaat ggtctcagaa tcctgcaatg ttgtacaaca aaatggaatt tgaaccattt
+     1741 caatctttag tccccaaggc cattagaagc caatacagtg ggtttgtcag aactctattc
+     1801 caacaaatga gagacgtact tgggacattt gacactgccc agataataaa gcttctccct
+     1861 tttgcagctg ctccaccgaa gcaaagcaga atgcagttct cttcactgac tgtgaatgtg
+     1921 aggggatcag ggatgagaat acttgtaagg ggcaattctc ctgtattcaa ctacaacaag
+     1981 accactaaaa ggctaacaat tctcggaaaa gatgccggca ctttaattga agacccagat
+     2041 gaaagcacat ccggagtgga gtccgccgtc ttgagagggt tcctcattat aggtaaagaa
+     2101 gacagaagat acggacctgc attaagcatc aatgaactga gtaaccttgc aaaaggagaa
+     2161 aaggctaatg tgctaattgg gcaaggagac gtggtgttgg taatgaaacg aaaacgggac
+     2221 tctagtatac ttactgacag ccagacagcg accaaaagaa ttcggatggc catcaattaa
+//
+LOCUS       PB1                 2274 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2274
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..2274
+                     /gene="PB1"
+                     /locus_tag="locus_00002"
+     CDS             1..2274
+                     /gene="PB1"
+                     /locus_tag="locus_00002"
+                     /EC_number="2.7.7.48"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:Q3HM40"
+                     /codon_start=1
+                     /product="RNA-directed RNA polymerase catalytic subunit"
+                     /protein_id="Prokka:locus_00002"
+                     /translation="MDVNPTLLFLKVPAQNAISTTFPYTGDPPYSHGTGTGYTMDTVN
+                     RTHQYSERGKWTTNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGI
+                     FENSCLETMEAVQQTRVDKLTQGRQTYDWTLNRNQPAATALANTIEVFRTNGLTANES
+                     GRLIDYLKDVMESMDKEEMEITTHFQRKRRVRDNMTKKMVTQRTIGKKKQRVNKRGYL
+                     IRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVETLARSICEKLEQSGLPVGGN
+                     EKKAKLANVVRKMMTNSQDTELSFTITGDNTKWNENQNPRMFLAMITYITKNQPEWFR
+                     NILSIAPIMFSNKMARLGKGYMFESKRMKLRTQIPAEMLASIDLKYFNESTRKKIEKI
+                     RPLLIDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKKYTKTTYWWDGLQSSDDFALI
+                     VNAPNHEGIQAGVDRFYRTCKLVGINMSKKKSYINKTGTFEFTSFFYRYGFVANFSME
+                     LPSFGVSGINESADMSIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDT
+                     QIQTRRSFEIKKLWDQTQSRTGLLVSDGGPNLYNIRNLHIPEVCLKWELMDENYRGRL
+                     CNPLNPFVSHKEIESVNNAVVMPAHGPAKSMEYDAVATTHSWIPKRNRSILNTSQRGI
+                     LEDEQMYQKCCNLFEKFFPSSSYRRPIGISSMVEAMVSRARIDARIDFESGRIKKEEF
+                     SEIMKICSTIEELRRQK"
+ORIGIN      
+        1 atggatgtca atccgactct actgttctta aaagttccag cgcaaaatgc cataagcaca
+       61 acattccctt atactggaga tcctccatac agccatggaa cagggacagg gtacactatg
+      121 gacacagtca acagaacaca ccaatactca gagaggggga agtggacgac aaatacagaa
+      181 actggggcgc cccagctcaa cccaattgat ggaccactac ctgaggataa tgaaccaagt
+      241 ggatatgcac aaacagactg tgtcctggag gctatggcct tccttgaaga atcccaccca
+      301 ggtatctttg agaactcatg ccttgaaaca atggaagccg ttcaacaaac aagggtggac
+      361 aaactaaccc aaggtcgcca gacttatgat tggacattaa acaggaatca accggcagca
+      421 actgcattag ccaacaccat agaagtcttt agaacgaacg gattaacagc taatgaatca
+      481 ggaagactaa tagattacct caaggatgtg atggaatcaa tggataaaga ggaaatggag
+      541 ataacaacac actttcaaag aaaaaggaga gtaagggaca acatgaccaa gaaaatggtc
+      601 acacaaagaa caatagggaa gaaaaagcaa agagtgaaca agagaggcta cctaataaga
+      661 gctttgacat tgaacacgat gaccaaagat gcagagagag gcaaattaaa aagaagggct
+      721 attgcaacac ccgggatgca aattagaggg ttcgtgtact tcgttgaaac tttagctaga
+      781 agcatttgcg aaaagcttga acaatctgga cttccggttg ggggtaatga aaagaaggcc
+      841 aaactggcaa atgttgtgag aaaaatgatg actaactcac aagacacaga gctttccttc
+      901 acaatcactg gggacaacac taagtggaat gaaaatcaaa acccccgaat gtttttggcg
+      961 atgattacat acatcacaaa gaatcagcct gaatggttca gaaacatcct gagcatcgca
+     1021 ccaataatgt tctcaaacaa aatggcaaga ctgggaaaag gatacatgtt cgagagtaag
+     1081 agaatgaagc tccggacaca aatacctgca gaaatgctag caagcattga cctgaagtat
+     1141 tttaatgaat caacaaggaa gaaaattgag aaaataaggc ctcttctaat agatggcaca
+     1201 gcatcattga gccctggaat gatgatgggc atgttcaaca tgctaagtac agttttagga
+     1261 gtctcgatac tgaatcttgg acaaaagaaa tacaccaaga caacatactg gtgggatggg
+     1321 ctccaatcct cagacgattt tgccctcata gtgaatgcac caaatcatga gggaatacaa
+     1381 gcaggagtgg atagattcta taggacctgc aagttagtgg gaatcaacat gagcaaaaag
+     1441 aagtcctata taaataaaac agggacattt gaattcacta gcttttttta tcgatatgga
+     1501 tttgtggcta attttagcat ggagctgcca agttttggag tgtctggaat aaatgagtca
+     1561 gctgacatga gcattggagt aacagtgata aagaacaaca tgataaacaa tgaccttgga
+     1621 ccagcaacag cccaaatggc tctccaattg ttcatcaaag attacagata cacatatcgg
+     1681 tgccatagag gagacacaca aatccaaacg agaagatcat tcgagataaa gaagctgtgg
+     1741 gatcaaaccc aatcaaggac aggactattg gtatcagatg ggggaccaaa cttatacaat
+     1801 atccggaatc ttcacatccc tgaagtctgc ttaaagtggg agctgatgga tgagaattat
+     1861 cggggaagac tttgtaatcc cctgaatccc tttgtcagcc ataaagaaat tgaatctgta
+     1921 aacaatgctg tagtaatgcc agcccatggt ccggccaaaa gtatggaata tgatgccgtt
+     1981 gcaactacac actcctggat tcccaaaagg aaccgctcta ttctaaacac aagccaaagg
+     2041 ggaattcttg aggatgagca gatgtaccag aagtgctgca acttgttcga gaaatttttc
+     2101 cctagtagtt catataggag accgattgga atttctagca tggtggaggc catggtgtct
+     2161 agggcccgga ttgatgccag aattgacttc gagtctggaa ggattaagaa ggaagagttc
+     2221 tctgagatca tgaagatctg ttccaccatt gaagaactca gacggcaaaa ataa
+//
+LOCUS       PA                 2151 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2151
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..2151
+                     /gene="PA"
+                     /locus_tag="locus_00003"
+     CDS             1..2151
+                     /gene="PA"
+                     /locus_tag="locus_00003"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P31343"
+                     /codon_start=1
+                     /product="Polymerase acidic protein"
+                     /protein_id="Prokka:locus_00003"
+                     /translation="MEDFVRQCFNPMIVELAEKAMKEYGEDLKIETNKFAAICTHLEV
+                     CFMYSDFHFINEQGESIVVELDDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTGAGK
+                     PKFLPDLYDYKENRFIEIGVTRREVHIYYLEKANKIKSENTHIHIFSFTGEEMATKAD
+                     YTLDEESRARIKTRLFTIRQEMANRGLWDSFRQSERGEETIEEKFEITGTMRRLADQS
+                     LPPNFSCLENFRAYVDGFEPNGCIEGKLSQMSKEVNAQIEPFLKTTPRPIKLPNGPPC
+                     YQRSKFLLMDALKLSIEDPSHEGEGIPLYDAIKCIKTFFGWKEPYIVKPHEKGINSNY
+                     LLSWKQVLSELQDIENEEKIPRTKNMKKTSQLKWALGENMAPEKVDFENCRDISDLKQ
+                     YDSEEPELRSLSSWIQSEFNKACELTDSVWIELDEIGEDVAPIEHIASMRRNYFTAEV
+                     SHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIIKGR
+                     SHLRNDTDVVNFVSMEFSLTDPRLEPHKWEKYCVLEIGDMLLRSAIGQISRPMFLYVR
+                     TNGTSKVKMKWGMEMRRCLLQSLQQIESMIEAESSVKEKDMTKEFFENKSEAWPIGES
+                     PKGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSAESRKLLLIVQALRDKLEPGTFD
+                     LGGLYEAIEECLINDPWVLLNASWFNSFLTHALK"
+ORIGIN      
+        1 atggaagatt ttgtgcgaca atgcttcaac ccgatgattg tcgaacttgc agaaaaagca
+       61 atgaaagagt atggggagga tctgaaaatt gaaaccaaca aatttgcagc aatatgcact
+      121 cacttggagg tctgtttcat gtattcagat ttccatttca tcaatgaaca aggcgaatca
+      181 atagtagtag aacttgacga tccaaatgca ctgttaaagc acagatttga aataatcgag
+      241 gggagagaca gaacaatggc atggacagta gtaaacagta tctgcaacac tactggagct
+      301 ggaaaaccga agtttctacc ggatttgtat gattacaaag agaacagatt catcgaaatt
+      361 ggagtgacaa ggagagaagt ccacatatat taccttgaaa aggccaataa gattaaatct
+      421 gagaacacac acattcacat tttttcattc actggggagg aaatggccac aaaggcagat
+      481 tacactctcg acgaggaaag cagggctagg atcaaaacca ggctgtttac cataagacaa
+      541 gaaatggcca acagaggcct ctgggattcc tttcgtcagt ccgaaagagg cgaagaaaca
+      601 attgaagaaa aatttgaaat cacaggaact atgcgcaggc ttgccgacca aagtctccca
+      661 ccgaacttct cctgccttga gaattttaga gcctatgtgg atggattcga accgaacggc
+      721 tgcattgagg gcaagctttc tcaaatgtcc aaagaagtga atgcccaaat tgaacctttt
+      781 ctgaagacaa caccaagacc aatcaaactt cctaatggac ctccttgtta tcagcggtcc
+      841 aaattcctcc tgatggatgc tttgaaattg agcattgaag acccaagtca cgaaggagaa
+      901 gggatcccat tatatgatgc gatcaagtgc ataaaaacat tctttggatg gaaagaacct
+      961 tatatagtca aaccacacga aaagggaata aattcaaatt acctgctgtc atggaagcaa
+     1021 gtactgtcag aattgcagga cattgaaaat gaggagaaga ttccaagaac taaaaacatg
+     1081 aagaaaacga gtcaactgaa gtgggctctt ggtgagaaca tggcaccaga gaaggtagac
+     1141 tttgaaaact gcagagacat aagcgatttg aagcaatatg atagtgaaga acctgaatta
+     1201 aggtcacttt caagctggat acagagtgag ttcaacaagg cctgtgagct aactgattca
+     1261 gtctggatag agctcgatga aattggagag gacgtagccc caattgaaca cattgcaagc
+     1321 atgagaagga attatttcac agcagaggtg tcccattgta gagctactga atacataatg
+     1381 aagggggtat acattaacac tgccctgctc aatgcatcct gtgcagcaat ggacgatttt
+     1441 caactaattc ccatgataag caagtgcaga actaaagagg gaaggcgaaa aaccaattta
+     1501 tatggattca tcataaaggg aagatctcat ttgaggaatg acacagacgt ggtaaatttt
+     1561 gtgagcatgg agttttctct cacagacccg agacttgaac cacataaatg ggagaaatac
+     1621 tgtgtccttg agataggaga tatgttacta agaagtgcca taggccaaat ttcaaggccg
+     1681 atgttcttgt atgtgaggac aaacggaaca tcaaaggtca aaatgaaatg gggaatggag
+     1741 atgagacgtt gcctccttca gtcactccag cagatcgaga gcatgattga agccgagtcc
+     1801 tcagttaaag agaaagacat gaccaaagag ttttttgaga ataaatcaga agcatggccc
+     1861 attggggagt cccccaaagg agtggaagaa ggttccattg ggaaagtctg taggactcta
+     1921 ttggctaagt cagtattcaa tagcctgtat gcatcaccac aattggaagg attttcagcg
+     1981 gagtcaagaa aactgctcct tattgttcag gctcttaggg acaagctcga acctgggacc
+     2041 tttgatcttg gggggctata tgaagcaatt gaggagtgcc tgattaatga tccctgggtt
+     2101 ttgctcaatg cgtcttggtt caactccttc ctgacacatg cattaaaata g
+//
+LOCUS       HA                 1701 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1701
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..1701
+                     /gene="HA"
+                     /locus_tag="locus_00004"
+     CDS             1..1701
+                     /gene="HA"
+                     /locus_tag="locus_00004"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:O11283"
+                     /codon_start=1
+                     /product="Hemagglutinin"
+                     /protein_id="Prokka:locus_00004"
+                     /translation="MKTIIALSYILCLVFAQKIPGNDNSTATLCLGHHAVPNGTIVKT
+                     ITNDRIEVTNATELVQNSSIGEICDSPHQILDGENCTLIDALLGDPQCDGFQNKKWDL
+                     FVERSKAYSNCYPYDVPDYASLRSLVASSGTLEFNNESFNWTGVTQNGTSSACIRRSS
+                     SSFFSRLNWLTHLNYTYPALNVTMPNNEQFDKLYIWGVHHPGTDKDQIFLYAQSSGRI
+                     TVSTKRSQQAVIPNIGSRPRIRDIPSRISIYWTIVKPGDILLINSTGNLIAPRGYFKI
+                     RSGKSSIMRSDAPIGKCKSECITPNGSIPNDKPFQNVNRITYGACPRYVKHSTLKLAT
+                     GMRNVPEKQTRGIFGAIAGFIENGWEGMVDGWYGFRHQNSEGRGQAADLKSTQAAIDQ
+                     INGKLNRLIGKTNEKFHQIEKEFSEVEGRIQDLEKYVEDTKIDLWSYNAELLVALENQ
+                     HTIDLTDSEMNKLFEKTKKQLRENAEDMGNGCFKIYHKCDNACIGSIRNGTYDHNVYR
+                     DEALNNRFQIKGVELKSGYKDWILWISFAISCFLLCVALLGFIMWACQKGNIRCNICI
+                     "
+ORIGIN      
+        1 atgaagacta tcattgcttt gagctacatt ctatgtctgg ttttcgctca aaaaattcct
+       61 ggaaatgaca atagcacggc aacgctgtgc cttgggcacc atgcagtacc aaacggaacg
+      121 atagtgaaaa caatcacgaa tgaccgaatt gaagttacta atgctactga gctggttcag
+      181 aattcctcaa taggtgaaat atgcgacagt cctcatcaga tccttgatgg agaaaactgc
+      241 acactaatag atgctctatt gggagaccct cagtgtgatg gctttcaaaa taagaaatgg
+      301 gacctttttg ttgaacgaag caaagcctac agcaactgtt acccttatga tgtgccggat
+      361 tatgcctccc ttaggtcact agttgcctca tccggcacac tggagtttaa caatgaaagc
+      421 ttcaattgga ctggagtcac tcaaaacgga acaagttctg cttgcataag gagatctagt
+      481 agtagtttct ttagtagatt aaattggttg acccacttaa actacacata cccagcattg
+      541 aacgtgacta tgccaaacaa tgaacaattt gacaaattgt acatttgggg ggttcaccac
+      601 ccgggtacgg acaaggacca aatcttcctg tatgctcaat catcaggaag aatcacagta
+      661 tctaccaaaa gaagccaaca agctgtaatc ccaaatatcg gatctagacc cagaataagg
+      721 gatatcccta gcagaataag catctattgg acaatagtaa aaccgggaga catacttttg
+      781 attaacagca cagggaatct aattgctcct aggggttact tcaaaatacg aagtgggaaa
+      841 agctcaataa tgagatcaga tgcacccatt ggcaaatgca agtctgaatg catcactcca
+      901 aatggaagca ttcccaatga caaaccattc caaaatgtaa acaggatcac atacggggcc
+      961 tgtcccagat atgttaagca tagcactctg aaattggcaa caggaatgcg aaatgtacca
+     1021 gagaaacaaa ctagaggcat atttggcgca atagcgggtt tcatagaaaa tggttgggag
+     1081 ggaatggtgg atggttggta cggtttcagg catcaaaatt ctgagggaag aggacaagca
+     1141 gcagatctca aaagcactca agcagcaatc gatcaaatca atgggaagct gaatcgattg
+     1201 atcgggaaaa ccaacgagaa attccatcag attgaaaaag aattctcaga agtagaagga
+     1261 agaattcagg accttgagaa atatgttgag gacactaaaa tagatctctg gtcatacaac
+     1321 gcggagcttc ttgttgccct ggagaaccaa catacaattg atctaactga ctcagaaatg
+     1381 aacaaactgt ttgaaaaaac aaagaagcaa ctgagggaaa atgctgagga tatgggcaat
+     1441 ggttgtttca aaatatacca caaatgtgac aatgcctgca taggatcaat aagaaatgga
+     1501 acttatgacc acaatgtgta cagggatgaa gcattaaaca accggttcca gatcaaggga
+     1561 gttgagctga agtcagggta caaagattgg atcctatgga tttcctttgc catatcatgt
+     1621 tttttgcttt gtgttgcttt gttggggttc atcatgtggg cctgccaaaa gggcaacatt
+     1681 aggtgcaaca tttgcatttg a
+//
+LOCUS       NP                 1497 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1497
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..1497
+                     /gene="NP"
+                     /locus_tag="locus_00005"
+     CDS             1..1497
+                     /gene="NP"
+                     /locus_tag="locus_00005"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P03467"
+                     /codon_start=1
+                     /product="Nucleoprotein"
+                     /protein_id="Prokka:locus_00005"
+                     /translation="MASQGTKRSYEQMETDGDRQNATEIRASVGKMIDGIGRFYIQMC
+                     TELKLSDHEGRLIQNSLTIEKMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDG
+                     KWMRELVLYDKEEIRRIWRQANNGEDATSGLTHIMIWHSNLNDATYQRTRALVRTGMD
+                     PRMCSLMQGSTLPRRSGAAGAAVKGIGTMVMELIRMVKRGINDRNFWRGENGRKTRSA
+                     YERMCNILKGKFQTAAQRAMVDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCL
+                     PACAYGPAVSSGYDFEKEGYSLVGIDPFKLLQNSQIYSLIRPNENPAHKSQLVWMACH
+                     SAAFEDLRLLSFIRGTKVSPRGKLSTRGVQIASNENMDNMGSSTLELRSGYWAIRTRS
+                     GGNTNQQRASAGQTSVQPTFSVQRNLPFEKSTIMAAFTGNTEGRTSDMRAEIIRMMEG
+                     AKPEEVSFRGRGVFELSDEKATNPIVPSFDMSNEGSYFFGDNAEEYDN"
+ORIGIN      
+        1 atggcgtccc aaggcaccaa acggtcttat gaacagatgg aaactgatgg agatcgccag
+       61 aatgcaactg agattagggc atccgtcggg aagatgattg atggaattgg gagattctac
+      121 atccaaatgt gcactgaact taaactcagt gatcatgaag ggcggttgat ccagaacagc
+      181 ttgacaatag agaaaatggt actctctgct tttgatgaaa gaaggaataa atacctggaa
+      241 gaacacccca gcgcggggaa agatcccaag aaaactgggg ggcccatata caggagagtc
+      301 gatgggaaat ggatgaggga actcgtcctt tatgacaaag aagaaataag gcgaatctgg
+      361 cgccaagcca acaatggtga ggatgctaca tctggtctaa ctcacataat gatttggcat
+      421 tccaatttga atgatgcaac ataccagagg acaagagctc ttgttcgaac tggaatggat
+      481 cccagaatgt gctctctgat gcagggctcg actctcccta gaaggtccgg agctgcaggt
+      541 gctgcagtca aaggaatcgg gacaatggtg atggaactga tcagaatggt caaacggggg
+      601 atcaacgatc gaaatttttg gagaggtgag aatgggcgga aaacaagaag tgcttatgag
+      661 agaatgtgca acattcttaa aggaaaattt caaacagctg cacaaagagc aatggtggat
+      721 caagttagag aaagtcggaa cccaggaaac gctgagatcg aagatctcat atttttagca
+      781 agatctgcac tgatattgag aggatcagtt gctcacaaat cttgcctacc tgcctgtgcg
+      841 tatggacctg cagtatccag tgggtacgac ttcgaaaaag agggatattc cttggtggga
+      901 atagaccctt tcaaactact tcaaaatagc caaatataca gcttaatcag acctaacgag
+      961 aatccagcac acaagagtca gctggtgtgg atggcatgcc attctgctgc atttgaagat
+     1021 ttaagattgt taagcttcat cagagggaca aaagtatctc ctcgggggaa actgtcaact
+     1081 agaggagtac aaattgcttc aaatgagaac atggataata tgggatcgag cactcttgaa
+     1141 ttgagaagcg ggtactgggc cataaggacc aggagtgggg gaaacactaa tcaacagagg
+     1201 gcctccgcag gccaaaccag tgtgcaacct acgttttctg tacaaagaaa cctcccattt
+     1261 gaaaagtcaa ccatcatggc agcattcact ggaaatacgg agggaagaac ttcagacatg
+     1321 agggcagaaa tcataaggat gatggaaggt gcaaaaccag aagaagtgtc attccggggg
+     1381 aggggagttt tcgagctctc agacgagaag gcaacgaacc cgatcgtgcc ctcttttgat
+     1441 atgagtaacg aaggatctta tttcttcgga gacaatgcag aagagtacga caattaa
+//
+LOCUS       NA                 1410 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1410
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..1410
+                     /gene="NA"
+                     /locus_tag="locus_00006"
+     CDS             1..1410
+                     /gene="NA"
+                     /locus_tag="locus_00006"
+                     /EC_number="3.2.1.18"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P06820"
+                     /codon_start=1
+                     /product="Neuraminidase"
+                     /protein_id="Prokka:locus_00006"
+                     /translation="MNPNQKIITIGSVSLTISTICFFMQIAILITTVTLHFKQYEFNS
+                     PPNNQVMLCEPTIIERNITEIVYLTNTTIEKEICPKPAEYRNWSKPQCGITGFAPFSK
+                     DNSIRLSAGGDIWVTREPYVSCDPDKCYQFALGQGTTLNNVHSNNTVRDRTPYRTLLM
+                     NELGVPFHLGTKQVCIAWSSSSCHDGKAWLHVCITGDDKNATASFIYNGRLVDSVVSW
+                     SKDILRTQESECICINGTCTVVMTDGSASGKADTKILFIEEGKIVHTSTLSGSAQHVE
+                     ECSCYPRYPGVRCVCRDNWKGSNRPIVDINIKDHSIVSSYVCSGLVGDTPRKNDSSSS
+                     SHCLDPNNEEGGHGVKGWAFDDGNDVWMGRTINETSRLGYETFKVIEGWSNPKSKLQT
+                     NRQVIVDRGDRSGYSGIFSVEGKSCINRCFYVELIRGRKEETEVLWTSNSIVVFCGTS
+                     GTYGTGSWPDGADLNLMPI"
+ORIGIN      
+        1 atgaatccaa atcaaaagat aataacgatt ggctctgttt ctctcaccat ttccacaata
+       61 tgcttcttca tgcaaattgc cattttgata actactgtaa cattgcattt caagcaatat
+      121 gaattcaact cccccccaaa caaccaagtg atgctgtgtg aaccaacaat aatagaaaga
+      181 aacataacag aaatagtgta tttaactaac accaccatag agaaggaaat atgccccaaa
+      241 ccagcagaat acagaaattg gtcaaaaccg caatgtggca ttacaggatt tgcacctttc
+      301 tctaaggaca attcgattag gctttccgct ggtggggaca tctgggtgac aagagaacct
+      361 tatgtgtcat gcgatcctga caagtgttat caatttgccc ttggacaggg aacaacacta
+      421 aacaacgtgc attcaaataa cacagtacgt gataggaccc cttatcggac tctattgatg
+      481 aatgagttgg gtgttccttt ccatctgggg accaagcaag tgtgcatagc atggtccagc
+      541 tcaagttgtc acgatggaaa agcatggctg catgtttgta taacggggga tgataaaaat
+      601 gcaactgcta gcttcattta caatgggagg cttgtagata gtgttgtttc atggtccaaa
+      661 gatattctca ggacccagga gtcagaatgc atttgtatca atggaacttg tacagtagta
+      721 atgactgatg gaagtgcttc aggaaaagct gatactaaaa tactattcat tgaggagggg
+      781 aaaatcgttc atactagcac attgtcagga agtgctcagc atgtcgaaga gtgctcttgc
+      841 tatcctcgat atcctggtgt cagatgtgtc tgcagagaca actggaaggg ctccaatcgg
+      901 cccatcgtag atataaacat aaaggatcat agcattgttt ccagttatgt gtgttcagga
+      961 cttgttggag acacacccag aaaaaacgac agctccagca gtagccattg tttggatcct
+     1021 aacaatgaag aaggtggtca tggagtgaaa ggctgggcct ttgatgatgg aaatgacgtg
+     1081 tggatgggaa gaacaatcaa cgagacgtca cgcttagggt atgaaacctt caaagtcatt
+     1141 gaaggctggt ccaaccctaa gtccaaattg cagacaaata ggcaagtcat agttgacaga
+     1201 ggtgataggt ccggttattc tggtattttc tctgttgaag gcaaaagctg catcaatcgg
+     1261 tgcttttatg tggagttgat taggggaaga aaagaggaaa ctgaagtctt gtggacctca
+     1321 aacagtattg ttgtgttttg tggcacctca ggtacatatg gaacaggctc atggcctgat
+     1381 ggggcggacc tcaatctcat gcctatataa
+//
+LOCUS       MP                  982 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..982
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..759
+                     /gene="M"
+                     /locus_tag="locus_00007"
+     CDS             1..759
+                     /gene="M"
+                     /locus_tag="locus_00007"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P63233"
+                     /codon_start=1
+                     /product="Matrix protein 1"
+                     /protein_id="Prokka:locus_00007"
+                     /translation="MSLLTEVETYVLSIVPSGPLKAEIAQRLEDVFAGKNTDLEALME
+                     WLKTRPILSPLTKGILGFVFTLTVPSERGLQRRRFVQNALNGNGDPNNMDKAVKLYRK
+                     LKREITFHGAKEIALSYSAGALASCMGLIYNRMGAVTTEVAFGLVCATCEQIADSQHR
+                     SHRQMVATTNPLIKHENRMVLASTTAKAMEQMAGSSEQAAEAMEIASQARQMVQAMRA
+                     IGTHPSSSTGLRDDLLENLQTYQKRMGVQMQRFK"
+ORIGIN      
+        1 atgagccttc taaccgaggt cgaaacgtat gttctctcta tcgttccatc aggccccctc
+       61 aaagccgaga tcgcgcagag acttgaagat gtctttgctg ggaaaaacac agatcttgag
+      121 gctctcatgg aatggctaaa gacaagacca attctgtcac ctttgactaa ggggatttta
+      181 gggtttgttt tcacgctcac cgtgcccagt gagcgaggac tgcagcgtag acgctttgtc
+      241 caaaatgccc tcaatgggaa tggagaccca aataacatgg acaaagcagt taaactgtat
+      301 aggaaactta agagggagat aacattccac ggggccaaag aaatagctct cagttattct
+      361 gctggtgcac ttgccagttg catgggcctc atatacaata gaatgggggc tgtaaccact
+      421 gaagtggcat ttggcctggt gtgtgcaaca tgtgagcaga ttgctgattc ccagcacagg
+      481 tctcataggc agatggtggc aacaaccaat ccattaataa aacatgagaa cagaatggtt
+      541 ttggccagca ctacagctaa ggctatggag caaatggctg gatcaagtga gcaggcagcg
+      601 gaggccatgg agattgctag tcaggccagg cagatggtgc aggcaatgag agccattggg
+      661 actcatccta gttccagtac tggtctaaga gatgatcttc ttgaaaattt gcagacctat
+      721 cagaaacgaa tgggggtgca gatgcaacga ttcaagtgac ccgcttgttg ttgccgcgaa
+      781 tatcattggg atcttgcact tgatattgtg gattcttgat cgtctttttt tcaaatgcgt
+      841 ctatcgactc ttcaaacacg gccttaaaag aggcccttct acggaaggag tacctgagtc
+      901 tatgagggaa gaatatcgaa aggaacagca gaatgctgtg gatgctgacg acagtcattt
+      961 tgtcagcata gagttggagt aa
+//
+LOCUS       NS                  838 bp    DNA     linear       27-OCT-2017
+DEFINITION  Influenza_virus_a influenza_a_virus strain
+            A_H3N2_A_Hong_Kong_4801_2014.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenza_virus_a influenza_a_virus
+  ORGANISM  Influenza_virus_a influenza_a_virus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..838
+                     /organism="Influenza_virus_a influenza_a_virus"
+                     /mol_type="genomic DNA"
+                     /strain="A_H3N2_A_Hong_Kong_4801_2014"
+     gene            1..693
+                     /gene="NS"
+                     /locus_tag="locus_00008"
+     CDS             1..693
+                     /gene="NS"
+                     /locus_tag="locus_00008"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:Q38SQ2"
+                     /codon_start=1
+                     /product="Non-structural protein 1"
+                     /protein_id="Prokka:locus_00008"
+                     /translation="MDSNTVSSFQVDCFLWHIRKQVVDQKLSDAPFLDRLRRDQRSLR
+                     GRGNTLGLDIKAATHVGKQIVEKILKEESNEALKMTMVSTPASRYITDMTIEELSRNW
+                     FMLMPKQKVEGPLCIRMDQAIMEKNIMLKANFNVIFGRLETIVLLRAFTEEGAIVGEI
+                     SPLPSFPGHTIEDVKNAIGVLVGGLEWNDNTVRVSKNLQRFAWRSSNENGGPPLTPKQ
+                     KREMARTARSEV"
+ORIGIN      
+        1 atggattcca acactgtgtc aagtttccag gtagattgct ttctttggca tatccggaaa
+       61 caagttgtag accaaaaact gagtgatgcc ccattccttg atcggcttcg ccgagatcag
+      121 aggtccctaa ggggaagagg caatactctc ggtttagaca tcaaagcagc cacccatgtt
+      181 ggaaagcaaa ttgtagaaaa gattctgaaa gaagaatcta atgaggcact taaaatgacc
+      241 atggtctcaa cacctgcttc gcgatacata actgacatga ctattgagga attgtcaaga
+      301 aactggttca tgctaatgcc caagcagaaa gtggaaggac ctctttgcat cagaatggac
+      361 caggcaatca tggagaaaaa catcatgtta aaagcgaatt tcaatgtgat ttttggccga
+      421 ctagagacca tagtattact aagggctttc accgaagagg gagcaattgt tggcgaaatc
+      481 tcaccattgc cttcttttcc aggacatact attgaggatg tcaaaaatgc aattggggtc
+      541 ctcgtcggag gacttgaatg gaatgataac acagttcgag tctctaaaaa tctacagaga
+      601 ttcgcttgga gaagcagtaa tgagaatggg ggacctccac ttactccaaa acagaaacgg
+      661 gaaatggcga gaacagctag gtcagaagtt tgaagagata agatggctaa ttgaagaagt
+      721 gagacacaga ttaagaacaa ctgaaaatag ctttgaacaa ataacattca tgcaagcatt
+      781 acaactgctg tttgaagtgg aacaggagat aagaaccttc tcatttcagc ttatttaa
+//

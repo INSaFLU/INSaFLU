@@ -32,11 +32,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # Application definition
 INSTALLED_APPS = [
-    'crispy_forms',
-    'crispy_forms_foundation',
-    'django_tables2',
-    'bootstrap4',
-    'managing_files.apps.ManagingFilesConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,6 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
+    'crispy_forms',
+    'crispy_forms_foundation',
+    'django_tables2',
+    'bootstrap4',
+    'managing_files.apps.ManagingFilesConfig',
 ]
 
 MIDDLEWARE = [
@@ -61,7 +61,7 @@ ROOT_URLCONF = 'fluwebvirus.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates_html'),
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),
             ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -102,6 +102,17 @@ WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 ## $ sudo pip3 install crispy-forms-foundation
 ## $ sudo pip3 install NumPy
 ## $ sudo pip3 install biopython
+
+## $ mkdir /var/log/insaflu			and set the user of apache
+## $ mkdir /usr/local/insaflu		and set the user of apache
+
+## Create superUser
+## $ python3 amange.py migrate
+## $ python3 manage.py createsuperuser
+
+
+## to reuse DB 
+# os.environ['REUSE_DB'] = "1"
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -114,7 +125,7 @@ DATABASES = {
         'TEST': {
             'NAME': 'fluwebvirus_test',
         },
-    }
+    },
 }
 
 # Password validation
@@ -153,11 +164,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-STATIC_URL = '/static/'
-##STATIC_ROOT = '/var/www/lvb/static/'
+### Limit the siz files
+# Look at the LimitRequestBody directive.
+# https://stackoverflow.com/questions/2472422/django-file-upload-size-limit
+# https://stackoverflow.com/questions/5871730/need-a-minimal-django-file-upload-example
+
+## STATICFILES_DIRS replace STATIC_ROOT
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_all')	## is the absolute path to the directory where collectstatic will collect static files for deployment.
+STATIC_URL = '/static/' 						## is the URL to use when referring to static files located in STATIC_ROOT.
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 
 # A sample logging configuration. The only tangible logging
@@ -168,22 +188,58 @@ STATICFILES_DIRS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'django.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[%(server_time)s] %(message)s',
+        },
+		'verbose': {
+        	'format': '%(levelname)s %(asctime)s %(module)s: %(message)s'
+    	}
+    },
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
-            'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
+        },
+		'file_debug': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/insaFlu/debug.log',
+            'formatter': 'verbose',
+        },
+		'file_warning': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/insaFlu/warning.log',
+            'formatter': 'verbose',
         }
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
+            'filters': ['require_debug_false'],
             'level': 'ERROR',
+            'propagate': True,
+        },
+		'fluWebVirus.debug': {
+            'handlers': ['file_debug'],
+            'filters': ['require_debug_true'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+		'fluWebVirus.production': {
+            'handlers': ['file_warning'],
+            'filters': ['require_debug_false'],
+            'level': 'WARNING',		## third level of log
             'propagate': True,
         },
     }

@@ -1,11 +1,12 @@
 {% extends '_layouts/base.html' %}
 
-{% load crispy_forms_tags %}
-
-{% block title %}Login | {{ block.super }}{% endblock %}
-
-{% block headline %}<h1>Login to the PyCon Survival Guide</h1>{% endblock %}
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h2>Login, please.</h2>
+	</div>
+{% endblock  %}
 
 {% block content %}
-	{% crispy form %}
+{% include 'accounts/login_inner.html' %}
 {% endblock %}
+

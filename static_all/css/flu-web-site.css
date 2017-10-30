@@ -1,0 +1,13 @@
+
+/**
+* used in header forms
+*/
+.rounded-header {
+	border-radius: 10px;
+	background: #246bce;
+	border-color: #246bce;
+	border-width: 115px;
+	color: #ffffff;
+	padding: 15px;
+	margin-bottom: 30px;
+}

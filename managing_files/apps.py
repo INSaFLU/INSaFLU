@@ -1,14 +1,13 @@
 from django.apps import AppConfig
-# from django.contrib.auth.models import User
-from constants.Constants import Constants
+# 
+from utils.Constants import Constants
 
 class ManagingFilesConfig(AppConfig):
 	name = 'managing_files'
-#	verbose_name = "Managing Files"
+	verbose_name = "Managing Files"
 	
-# 	constants = Constants()
 # 	def ready(self):
-# 		pass
+# 		from django.contrib.auth.models import User
 		## create a default user
 	#	self.create_default_user()
 			
@@ -21,15 +20,15 @@ class ManagingFilesConfig(AppConfig):
 # 		create a default user to link the default references...
 # 		"""
 # 		try:
-# 			User.objects.get(name=self.constants.DEFAULT_USER)
+# 			User.objects.get(name=self.utils.DEFAULT_USER)
 # 			### great, the default user exist 
 # 		except User.DoesNotExist:
 # 			
 # 			### need to create it
 # 			user = User()
-# 			user.username = self.constants.DEFAULT_USER
-# 			user.password = self.constants.DEFAULT_USER_PASS
-# 			user.first_name = self.constants.DEFAULT_USER
+# 			user.username = self.utils.DEFAULT_USER
+# 			user.password = self.utils.DEFAULT_USER_PASS
+# 			user.first_name = self.utils.DEFAULT_USER
 # 			user.is_active = False
 # 			user.is_staff = False
 # 			user.is_superuser = False
@@ -39,3 +38,4 @@ class ManagingFilesConfig(AppConfig):
 # 		"""
 # 		Upload default files
 # 		"""
+# 		pass

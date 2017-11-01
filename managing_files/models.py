@@ -3,8 +3,9 @@ from django.db import models
 # Create your models here.
 from django.contrib.gis.db.models import PointField
 from django.contrib.auth.models import User
-from constants.Constants import Constants
+from utils.Constants import Constants
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
+from manage_virus.models import IdentifyVirus
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -61,20 +62,6 @@ class Files(models.Model):
 		return self.file_name_1 + " " + self.file_name_2
 
 
-class SampleTag(models.Model):
-	"""
-	Has a simple tag to put for the samples of one year
-	"""
-	name = models.CharField(max_length=200, blank=True, null=True)
-	owner = models.ForeignKey(User, related_name='sample_tag', blank=True, null=True, on_delete=models.CASCADE)
-	
-	def __str__(self):
-		return self.name
-	
-	class Meta:
-		ordering = ['name', ]
-	
-
 class MetaKey(models.Model):
 	"""
 	Has meta tags to put values, for example, quality in the files, or samples
@@ -89,7 +76,7 @@ class TagName(models.Model):
 	"""
 	Has the tags to ticked the samples
 	"""
-	name = models.CharField(max_length=200, blank=True, null=True)
+	name = models.CharField(max_length=100, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='tag_name', blank=True, null=True, on_delete=models.CASCADE)
 	def __str__(self):
 		return self.name
@@ -97,18 +84,32 @@ class TagName(models.Model):
 		ordering = ['name', ]
 
 
+class DataSet(models.Model):
+	"""
+	Each sample needs a dataset 
+	"""
+	name = models.CharField(max_length=100, blank=True, null=True)
+	owner = models.ForeignKey(User, related_name='data_set', blank=True, null=True, on_delete=models.CASCADE)
+	def __str__(self):
+		return self.name
+	class Meta:
+		ordering = ['name', ]
+		
+			
 class Sample(models.Model):
 	"""
 	Sample, each sample has one or two files...
 	"""
 	name = models.CharField(max_length=200, blank=True, null=True)
-	sample_date = models.DateField('sample date', default='New sample')
+	sample_date = models.DateField('sample date', auto_now_add=True, blank=True, null=True)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_rejected = models.BooleanField(default=False)
 	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	files = models.ForeignKey(Files, related_name='sample', on_delete=models.CASCADE)
 	tag_names = models.ManyToManyField(TagName)
 	geo_local = PointField(null=True, blank=True,);
+	identify_virus = models.ManyToManyField(IdentifyVirus)
+	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 
 	def __str__(self):
 		return self.name
@@ -173,7 +174,5 @@ class Software(models.Model):
 	
 	class Meta:
 		ordering = ['name', 'version__name']
-
-
 
 

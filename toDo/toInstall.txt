@@ -1,0 +1,31 @@
+
+# ALTER ROLE insaflu SET client_encoding TO 'utf8';
+# ALTER ROLE insaflu SET default_transaction_isolation TO 'read committed';
+# ALTER ROLE insaflu SET timezone TO 'utc';
+# GRANT ALL PRIVILEGES ON DATABASE insaflu TO fluwebvirususer;
+
+## $ sudo apt-get install binutils libproj-dev gdal-bin
+## $ sudo apt-get install postgis*
+## $ sudo pip3 install django-crispy-forms
+## $ sudo pip3 install django-braces
+## $ sudo pip3 install django-tables2
+## $ sudo pip3 install crispy-forms-foundation
+## $ sudo pip3 install NumPy
+## $ sudo pip3 install biopython
+## $ sudo pip3 install django-q
+
+## $ mkdir /var/log/insaflu			and set the user of apache
+## $ mkdir /usr/local/insaflu		and set the user of apache
+
+## Create superUser
+## $ python3 amange.py migrate
+## $ python3 manage.py createsuperuser
+
+1) Install Spades (http://bioinf.spbau.ru/en/node/362/done?sid=22181)
+2) Install Abricate (https://github.com/tseemann/abricate)
+	$ cd /usr/local/software/flu/abricate/db
+	$ mkdir influenza
+    $ cp ~/db_influenza_typing.fasta influenza/sequences
+    $ cd ../bin
+    $ ./abricate --setupdb
+    $ ./abricate --list

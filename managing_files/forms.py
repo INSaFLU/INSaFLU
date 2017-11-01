@@ -7,11 +7,14 @@ from django.urls import reverse
 from .models import Reference
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
-from constants.Constants import Constants
+from utils.Utils import Utils
+from utils.Constants import Constants
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
+	utils = Utils()
+	
 	class Meta:
 		model = Reference
 		# specify what fields should be used in this form.
@@ -81,9 +84,8 @@ class ReferenceForm(forms.ModelForm):
 		reference_fasta_temp_file_name.write(reference_fasta.file.read())
 		reference_fasta_temp_file_name.flush()
 		reference_fasta_temp_file_name.close()
-		constants = Constants()
 		try:
-			number_locus = constants.is_fasta(reference_fasta_temp_file_name.name)
+			number_locus = self.utils.is_fasta(reference_fasta_temp_file_name.name)
 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
 		except IOError as e:	## (e.errno, e.strerror)
 			os.unlink(reference_fasta_temp_file_name.name)
@@ -96,9 +98,8 @@ class ReferenceForm(forms.ModelForm):
 		reference_genbank_temp_file_name.write(reference_genbank.read())
 		reference_genbank_temp_file_name.flush()
 		reference_genbank_temp_file_name.close()
-		constants = Constants()
 		try:
-			constants.is_genbank(reference_genbank_temp_file_name.name)
+			self.utils.is_genbank(reference_genbank_temp_file_name.name)
 		except IOError as e:
 			some_error_in_files = True
 			os.unlink(reference_genbank_temp_file_name.name)
@@ -109,7 +110,7 @@ class ReferenceForm(forms.ModelForm):
 		
 		## test locus names and length of sequences
 		try:
-			constants.compare_locus_fasta_gb(reference_fasta_temp_file_name.name, reference_genbank_temp_file_name.name)
+			self.utils.compare_locus_fasta_gb(reference_fasta_temp_file_name.name, reference_genbank_temp_file_name.name)
 		except ValueError as e:
 			self.add_error('reference_fasta', e.args[0])
 			self.add_error('reference_genbank', e.args[0])
@@ -144,9 +145,9 @@ class ReferenceForm(forms.ModelForm):
 # 		reference_fasta_temp_file_name.write(reference_fasta.file.read())
 # 		reference_fasta_temp_file_name.flush()
 # 		reference_fasta_temp_file_name.close()
-# 		constants = Constants()
+# 		utils = Constants()
 # 		try:
-# 			number_locus = constants.is_fasta(reference_fasta_temp_file_name.name)
+# 			number_locus = utils.is_fasta(reference_fasta_temp_file_name.name)
 # 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
 # 			os.unlink(reference_fasta_temp_file_name.name)
 # 		except IOError as e:	## (e.errno, e.strerror)
@@ -163,9 +164,9 @@ class ReferenceForm(forms.ModelForm):
 # 		reference_genbank_temp_file_name.write(reference_genbank.read())
 # 		reference_genbank_temp_file_name.flush()
 # 		reference_genbank_temp_file_name.close()
-# 		constants = Constants()
+# 		utils = Constants()
 # 		try:
-# 			constants.is_genbank(reference_genbank_temp_file_name.name)
+# 			utils.is_genbank(reference_genbank_temp_file_name.name)
 # 			os.unlink(reference_genbank_temp_file_name.name)
 # 		except IOError as e:
 # 			os.unlink(reference_genbank_temp_file_name.name)

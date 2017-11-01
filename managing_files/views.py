@@ -8,11 +8,11 @@ from django_tables2 import RequestConfig
 from .models import Reference, Sample
 from .tables import ReferenceTable, SampleTable
 from .forms import ReferenceForm
-from constants.Constants import Constants
-from constants.Software import Software
+from utils.Constants import Constants
+from utils.Software import Software
 import hashlib, ntpath, os
 from django.contrib import messages
-from django.conf import settings 
+from django.conf import settings
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	

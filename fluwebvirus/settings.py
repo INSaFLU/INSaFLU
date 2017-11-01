@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+RUN_TEST_IN_COMMAND_LINE = False
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -43,7 +45,9 @@ INSTALLED_APPS = [
     'crispy_forms_foundation',
     'django_tables2',
     'bootstrap4',
+    'django_q',
     'managing_files.apps.ManagingFilesConfig',
+    'manage_virus.apps.ManageVirusConfig',
 ]
 
 MIDDLEWARE = [
@@ -75,6 +79,21 @@ TEMPLATES = [
     },
 ]
 
+## $ python3 manage.py qcluster
+## $ python3 manage.py qmonitor
+## $ python3 manage.py qinfo
+Q_CLUSTER = {
+    'name': 'insaFlu',
+    'workers': 2,	## number of queues
+    'recycle': 500,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 2,	## number of processors by queue
+    'label': 'Django Q',
+    'orm': 'default'
+}
+
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 
@@ -88,27 +107,6 @@ WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
 #     }
 # }
-
-# ALTER ROLE fluwebvirususer SET client_encoding TO 'utf8';
-# ALTER ROLE fluwebvirususer SET default_transaction_isolation TO 'read committed';
-# ALTER ROLE fluwebvirususer SET timezone TO 'utc';
-# GRANT ALL PRIVILEGES ON DATABASE fluwebvirus TO fluwebvirususer;
-
-## $ sudo apt-get install binutils libproj-dev gdal-bin
-## $ sudo apt-get install postgis*
-## $ sudo pip3 install django-crispy-forms
-## $ sudo pip3 install django-braces
-## $ sudo pip3 install django-tables2
-## $ sudo pip3 install crispy-forms-foundation
-## $ sudo pip3 install NumPy
-## $ sudo pip3 install biopython
-
-## $ mkdir /var/log/insaflu			and set the user of apache
-## $ mkdir /usr/local/insaflu		and set the user of apache
-
-## Create superUser
-## $ python3 amange.py migrate
-## $ python3 manage.py createsuperuser
 
 
 ## to reuse DB 

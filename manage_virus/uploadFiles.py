@@ -4,9 +4,9 @@ Created on Oct 31, 2017
 @author: mmp
 '''
 from django.db import transaction
-from utils.Constants import Constants
-from utils.ParseOutFiles import ParseOutFiles
-from utils.Utils import Utils
+from utils.constants import Constants
+from utils.parseOutFiles import ParseOutFiles
+from utils.utils import Utils
 from django.conf import settings
 from .models import UploadFile, Tags, SeqVirus, IdentifyVirus
 from django.utils.translation import ugettext_lazy as _

@@ -4,7 +4,7 @@ Created on Nov 1, 2017
 @author: mmp
 '''
 
-from utils.Utils import Utils
+from utils.utils import Utils
 from django.utils.translation import ugettext_lazy as _
 
 class ParseOutFiles(object):

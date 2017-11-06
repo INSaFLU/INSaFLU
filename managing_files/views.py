@@ -7,12 +7,14 @@ from django.views.generic import ListView
 from django_tables2 import RequestConfig
 from .models import Reference, Sample
 from .tables import ReferenceTable, SampleTable
-from .forms import ReferenceForm
-from utils.Constants import Constants
-from utils.Software import Software
+from .forms import ReferenceForm, SampleForm, SampleDatasetFormSet
+from utils.constants import Constants
+from utils.software import Software
+from utils.utils import Utils
 import hashlib, ntpath, os
 from django.contrib import messages
 from django.conf import settings
+from django.contrib.gis.geos import Point
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -62,6 +64,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 	def form_valid(self, form):
 		software = Software()
 		constants = Constants()
+		utils = Utils()
 		
 		name = form.cleaned_data['name']
 		scentific_name = form.cleaned_data['scientific_name']
@@ -85,18 +88,17 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.save()
 
 		## move the files to the right place
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
-		constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name), sz_file_to)
-		reference.reference_fasta.name = os.path.join(constants.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
+		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name), sz_file_to)
+		reference.reference_fasta.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
 		
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
-		constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
-		reference.reference_genbank.name = os.path.join(constants.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
+		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
+		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
 		
 		## create the index before commit in database, throw exception if something goes wrong
 		software.createFaiToFastaFile(reference.reference_fasta.name)
-		
 		
 		messages.success(self.request, "Reference '" + name + "'was created successfully", fail_silently=True)
 		return super(ReferenceAddView, self).form_valid(form)
@@ -126,12 +128,72 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 	"""
 	Create a new reference
 	"""
-	form_class = ReferenceForm
+	form_class = SampleForm
 	success_url = reverse_lazy('samples')
 	template_name = 'samples/sample_add.html'
 
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesAddView, self).get_form_kwargs()
+		kw['request'] = self.request 	# the trick!
+	#	kw['data_set'] = Constants.DATA_SET_GENERIC
+		return kw
+
+	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesAddView, self).get_context_data(**kwargs)
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
+# 		if self.request.POST:
+# 			context['sample_formset'] = SampleDatasetFormSet(self.request.POST)
+# 			context['sample_formset'].full_clean()
+# 		else: context['sample_formset'] = SampleDatasetFormSet()
 		return context
+
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+		software = Software()
+		constants = Constants()
+		utils = Utils()
+		
+		name = form.cleaned_data['name']
+		lat = form.cleaned_data['lat']
+		lng = form.cleaned_data['lng']
+		
+		sample = form.save(commit=False)
+		## set other data
+		sample.owner = self.request.user
+		sample.is_rejected = False
+		sample.is_obsolete = False
+		sample.file_name_1 = os.path.basename(sample.path_name_1.name)
+		sample.is_valid_1 = True
+		if (sample.exit_file_2()): sample.is_valid_2 = False
+		else:	
+			sample.file_name_2 = os.path.basename(sample.path_name_2.name)
+			sample.is_valid_2 = True
+		sample.geo_local = Point(lat, lng)
+		sample.save()
+
+		## move the files to the right place
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_1)
+		constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
+		sample.path_name_1.name = os.path.join(constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_1)
+		
+		if (sample.exit_file_2()):
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_2)
+			constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
+			sample.path_name_2.name = os.path.join(constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_2)
+		sample.save()
+
+
+		### queue the quality check and
+
+		messages.success(self.request, "Sample '" + name + "'was created successfully", fail_silently=True)
+		return super(ReferenceAddView, self).form_valid(form)
+

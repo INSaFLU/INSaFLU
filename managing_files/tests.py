@@ -1,7 +1,10 @@
 from django.test import TestCase
-from utils.ConstantsTestsCase import ConstantsTestsCase
+from utils.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
-from utils.Utils import Utils
+from utils.utils import Utils
+from django.contrib.auth.models import User
+from .manage_database import ManageDatabase
+from .models import Sample, MetaKey
 import os
 
 class testsReferenceFiles(TestCase):
@@ -96,4 +99,46 @@ class testsReferenceFiles(TestCase):
 			self.assertEqual("Different length. Fasta seq: PB2 length: 2280; Fasta seq: PB2 length: 2277.", e.args[0])
 
 
+
+	def test_meta_key(self):
+		"""
+		test the metakey system
+		"""
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+			
+			
+			
+		sample_name = "xpto"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_rejected = False
+			sample.path_name_1.name = "sdasa"
+			sample.owner = user
+			sample.save()
+		
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
+		
+		try:
+			metaKey = MetaKey.objects.get(name=ConstantsTestsCase.META_KEY_TEST)
+			self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey.name)
+		except MetaKey.DoesNotExist:
+			self.fail("must exist the meta_key")
+			
+		metaKey_sample = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
+		self.assertFalse(metaKey_sample == None)
+		self.assertEqual(sample_name, metaKey_sample.sample.name)
+		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample.value)
+		self.assertEqual("description", metaKey_sample.description)
 

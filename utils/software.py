@@ -7,12 +7,13 @@ import os
 import logging
 import cmd
 import subprocess
-from utils.Utils import Utils
-from utils.ParseOutFiles import ParseOutFiles
-from utils.Constants import Constants
+from utils.utils import Utils
+from utils.parseOutFiles import ParseOutFiles
+from utils.constants import Constants
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
+from utils.result import Result
 
 class Software(object):
 	'''
@@ -116,7 +117,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run samtools")
+			raise Exception("Fail to run make directory")
 		
 		## copy the file
 		self.utils.copy_file(file_name, os.path.join(self.SOFTWARE_ABRICATE_DB, database, "sequences"))
@@ -141,72 +142,99 @@ class Software(object):
 			raise Exception("Fail to run abricate")
 		return cmd
 
-
+	"""
+	Global processing
+	"""
 	def identify_type_and_sub_type(self, sample, owner):
 		"""
-		Identify the type and sub_type
+		Identify type and sub_type
 		"""
 		fastq1_1 = sample.files.path_name_1.name
 		fastq1_2 = None if sample.files.path_name_2 == None else sample.files.path_name_2.name
 		
 		manageDatabase = ManageDatabase()
 		### temp dir out spades		
-		out_dir = self.utils.get_temp_dir()
+		out_dir_spades = self.utils.get_temp_dir()
 		try:
-			cmd = self.software.run_spades(fastq1_1, fastq1_2, out_dir)
+			cmd = self.software.run_spades(fastq1_1, fastq1_2, out_dir_spades)
 		except Exception:
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "Spades (%s) fail to run" % (self.get_spades_version()))
-			cmd = "rm -r %s*" % (out_dir)
-			os.system(cmd)
+			result = Result()
+			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
+			result.add_software(Software(self.get_spades(), self.get_spades_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
 		
-		file_out = os.path.join(out_dir, "contigs.fasta")
+		file_out = os.path.join(out_dir_spades, "contigs.fasta")
 
 		if (not os.path.exists(file_out) or os.path.getsize(file_out) > 100):
 			## save error in MetaKeySample
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "Spades (%s) fail to run" % (self.get_spades_version()))
-			cmd = "rm -r %s*" % (out_dir)
-			os.system(cmd)
+			result = Result()
+			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
+			result.add_software(Software(self.get_spades(), self.get_spades_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
 		try:
 			uploadFile = UploadFile.objects.order_by('-version')[0]
 		except UploadFile.DoesNotExist:
 			## save error in MetaKeySample
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "There's no 'abricate' files to create the database")
-			cmd = "rm -r %s*" % (out_dir)
-			os.system(cmd)
+			result = Result()
+			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
+			result.add_software(Software(self.get_abricate(), self.get_abricate_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
 
 		if (not self.software.is_exist_database_abricate(uploadFile.abricate_name)):
-			self.software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+			try:
+				self.software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+			except Exception:
+				result = Result()
+				result.set_error("Abricate (%s) fail to run --setupdb" % (self.get_abricate_version()))
+				result.add_software(Software(self.get_abricate(), self.get_abricate_version()))
+				manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				return
 		
 		## run abricate
-		out_file = self.utils.get_temp_file("temp_abricate", ".txt")
+		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
-			cmd = self.software.run_abricate(uploadFile.abricate_name, file_out, out_file)
+			cmd = self.software.run_abricate(uploadFile.abricate_name, file_out, out_file_abricate)
 		except Exception:
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "Abricate (%s) fail to run" % (self.get_abricate_version()))
-			cmd = "rm -r %s*" % (out_dir)
-			os.system(cmd)
+			result = Result()
+			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
+			result.add_software(Software(self.get_abricate(), self.get_abricate_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
 		
-		if (not os.path.exists(out_file)):
+		if (not os.path.exists(out_file_abricate)):
 			## save error in MetaKeySample
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "Abricate (%s) fail to run" % (self.get_abricate_version()))
-			cmd = "rm -r %s*" % (out_dir); os.system(cmd)
+			result = Result()
+			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
+			result.add_software(Software(self.get_abricate(), self.get_abricate_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file)
+		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate)
+		## copy the abricate output 
+		self.utils.copy_file(out_file_abricate, self.constants.get_abricate_output(sample.files.path_name_1))
 		
 		uploadFiles = UploadFiles()
 		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
 		if (len(vect_data) == 0):
 			## save error in MetaKeySample
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, "Fail to upload the Abricate (%s) to database" % (self.get_abricate_version()))
-			cmd = "rm %s" % (out_file); os.system(cmd)
-			cmd = "rm -r %s*" % (out_dir); os.system(cmd)
+			result = Result()
+			result.set_error("Fail to identify type and sub type")
+			result.add_software(Software(self.get_abricate(), self.get_abricate_version()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return
+		
 		
 		for identify_virus in vect_data:
 			sample.identify_virus.add(identify_virus)
@@ -214,7 +242,15 @@ class Software(object):
 		
 		## save everything OK
 		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.get_spades_version(), self.get_abricate_version()))
-		cmd = "rm %s" % (out_file); os.system(cmd)
-		cmd = "rm -r %s*" % (out_dir); os.system(cmd)
+		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
+		cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 
-	
+	"""
+	Global processing
+	"""
+	def run_fastq_and_trimmomatic(self, sample, owner):
+		"""
+		run fastq and trimmomatic
+		Upload several tags about the quality
+		"""
+		pass

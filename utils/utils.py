@@ -3,7 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-from .Constants import Constants
+from .constants import Constants
 from Bio import SeqIO
 from django.utils.translation import ugettext_lazy as _
 import os, random, gzip
@@ -14,8 +14,6 @@ class Utils(object):
 	class docs
 	'''
 
-	constants = Constants()
-	
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
@@ -28,15 +26,27 @@ class Utils(object):
 	
 	def get_path_to_reference_file(self, user_id, ref_id):
 		"""
-		get the path and reference file
+		get the path to reference
 		"""
-		return os.path.join(self.constants.DIR_PROCESSED_FILES_REFERENCE, "userId_{0}".format(user_id), "refId_{0}".format(ref_id))
+		return os.path.join(Constants.DIR_PROCESSED_FILES_REFERENCE, "userId_{0}".format(user_id), "refId_{0}".format(ref_id))
+	
+	def get_path_to_fastq_file(self, user_id, sample_id):
+		"""
+		get the path to sample
+		"""
+		return os.path.join(Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id), "sampleId_{0}".format(sample_id))
 
+	def get_path_to_projec_file(self, user_id, project_id):
+		"""
+		get the path to project
+		"""
+		return os.path.join(Constants.DIR_PROCESSED_FILES_PROJECT, "userId_{0}".format(user_id), "projectId_{0}".format(project_id))
+	
 	def get_temp_file(self, file_name, sz_type):
 		"""
 		return a temp file name
 		"""
-		main_path = os.path.join(self.constants.TEMP_DIRECTORY, self.constants.COUNT_DNA_TEMP_DIRECTORY)
+		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
@@ -46,7 +56,7 @@ class Utils(object):
 		"""
 		return a temp directory
 		"""
-		main_path = os.path.join(self.constants.TEMP_DIRECTORY, self.constants.COUNT_DNA_TEMP_DIRECTORY)
+		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
 		while 1:
 			return_path = os.path.join(main_path, "insa_flu_" + str(random.randrange(10000000, 99999999, 10)))
@@ -65,7 +75,7 @@ class Utils(object):
 		"""
 		prevent to remove files outside of temp directory
 		"""
-		if os.path.exists(sz_file_name) and len(sz_file_name) > 0 and sz_file_name.find(self.constants.TEMP_DIRECTORY) == 0:
+		if os.path.exists(sz_file_name) and len(sz_file_name) > 0 and sz_file_name.find(Constants.TEMP_DIRECTORY) == 0:
 			cmd = "rm " + sz_file_name
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
@@ -124,24 +134,40 @@ class Utils(object):
 		""" 
 		return True if (file_name.rfind(".gz") == len(file_name) - 3) else False
 	
-	
+	def is_fastq_gz(self, file_name):
+		"""
+		test if the file name ends in gzip
+		""" 
+		if (not self.is_gzip(file_name)): raise Exception("File is not compressed in gzip format")
+		
+		try:
+			sz_type = self.get_type_file(file_name)
+			if (sz_type == Constants.FORMAT_FASTQ): return True
+		except OSError as e:
+			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
+			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
+		except Exception as e:
+			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
+			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
+		raise Exception("File is not in fastq.gz format")
+		
 	def get_type_file(self, file_name):
 		"""
 		return 'fasta' or 'fastq' 
 		raise exception if can't detected
 		"""
-		if (self.is_gzip(file_name)): handle = gzip.open(file_name)
+		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')	## need to be opened in text mode, default it's in binary mode
 		else: handle = open(file_name)
-		for record in SeqIO.parse(handle, self.constants.FORMAT_FASTQ):
+		for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
 			handle.close() 
-			return self.constants.FORMAT_FASTQ
+			return Constants.FORMAT_FASTQ
 		handle.close()
 		
-		if (self.is_gzip(file_name)): handle = gzip.open(file_name)
+		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')
 		else: handle = open(file_name)
-		for record in SeqIO.parse(handle, self.constants.FORMAT_FASTA):
+		for record in SeqIO.parse(handle, Constants.FORMAT_FASTA):
 			handle.close() 
-			return self.constants.FORMAT_FASTA
+			return Constants.FORMAT_FASTA
 		handle.close()
 		
 		raise Exception("Can't detect file format for the file '" + file_name + "'")

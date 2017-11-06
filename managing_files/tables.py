@@ -16,7 +16,7 @@ class ReferenceTable(tables.Table):
 		fields = ('name', 'scentific_name', 'reference_fasta_name', 'reference_genbank_name',
 				  'creation_date', 'is_obsolete', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There aren't no References to show..."
+		empty_text = "There are no References to show..."
 		
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
@@ -40,7 +40,7 @@ class SampleTable(tables.Table):
 		model = Reference
 		fields = ('name', 'sample_date', 'number_quality_sequences', 'tag_names', 'quality')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There aren't no Samples to show..."
+		empty_text = "There are no Samples to show..."
 		
 	def render_number_quality_sequences(self, **kwargs):
 		record = kwargs.pop("record")

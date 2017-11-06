@@ -18,7 +18,7 @@
             <thead>                 
                 <tr>
                     <th colspan="7">
-                    	<a href="{% url "reference-add" %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample</span></a>                                         
+                    	<a href="{% url "sample-add" %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample</span></a>                                         
                         <form method="post" class="form-inline form-search pull-right">
                           {% csrf_token %}
                             <div>
@@ -53,14 +53,14 @@
                 {% empty %}
                   {% if table.empty_text %}
                   {% block table.tbody.empty_text %}
-                  <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
                   {% endblock table.tbody.empty_text %}
                   {% endif %}
                 {% endfor %}
             </tbody>
             {% endblock table.tbody %}
             {% block table.tfoot %}
-            <tfoot></tfoot>
+            	<tfoot></tfoot>
             {% endblock table.tfoot %}
         </table>
     </div>

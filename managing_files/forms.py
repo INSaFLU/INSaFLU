@@ -2,17 +2,24 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, ButtonHolder, Submit
 from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button
+from django.contrib.gis.db.models import PointField
 from django import forms
 from django.urls import reverse
-from .models import Reference
+from .models import Reference, Sample, DataSet
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
-from utils.Utils import Utils
-from utils.Constants import Constants
+from django.contrib.gis.geos import Point
+from utils.utils import Utils
+from utils.constants import Constants
+from django.utils import timezone
+from django.forms.models import inlineformset_factory
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
+	"""
+	Reference form, name, scientific_name and others
+	"""
 	utils = Utils()
 	
 	class Meta:
@@ -63,19 +70,19 @@ class ReferenceForm(forms.ModelForm):
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
 		cleaned_data = super(ReferenceForm, self).clean()
-		name = self.cleaned_data['name']
+		name = cleaned_data['name']
 		try:
 			Reference.objects.get(name=name, owner__username=self.request.user.username)
 			self.add_error('name', _("This name '" + name +"' already exist in database, please choose other."))
 		except Reference.DoesNotExist:
 			pass
 		
-		### testing fasta
-		reference_fasta = self.cleaned_data['reference_fasta']
-		reference_genbank = self.cleaned_data['reference_genbank']
+		### testing file names
+		reference_fasta = cleaned_data['reference_fasta']
+		reference_genbank = cleaned_data['reference_genbank']
 		if (reference_fasta.name == reference_genbank.name):
-			self.add_error('reference_fasta', _("Error: both files has the same name. Please, two different files."))
-			self.add_error('reference_genbank', _("Error: both files has the same name. Please, two different files."))
+			self.add_error('reference_fasta', _("Error: both files has the same name. Please, different files."))
+			self.add_error('reference_genbank', _("Error: both files has the same name. Please, different files."))
 			return cleaned_data
 		
 		## testing fasta
@@ -94,7 +101,7 @@ class ReferenceForm(forms.ModelForm):
 		
 		### testing genbank
 		reference_genbank_temp_file_name = NamedTemporaryFile(prefix='flu_gb_', delete=False)
-		reference_genbank = self.cleaned_data['reference_genbank']
+		reference_genbank = cleaned_data['reference_genbank']
 		reference_genbank_temp_file_name.write(reference_genbank.read())
 		reference_genbank_temp_file_name.flush()
 		reference_genbank_temp_file_name.close()
@@ -120,7 +127,184 @@ class ReferenceForm(forms.ModelForm):
 		os.unlink(reference_fasta_temp_file_name.name)
 		return cleaned_data
 
+
+class DataSetForm(forms.ModelForm):
+
+	class Meta:
+		model = DataSet
+		fields = ('name',)
 		
+	def __init__(self, *args, **kwargs):
+		self.request = kwargs.pop('request')
+		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
+
+		field_text= [
+			# (field_name, Field title label, Detailed field description, requiered)
+			('data_set', 'Dataset', 'Define a specific dataset, can be used in the future to filter samples', True),
+		]
+		for x in field_text:
+			self.fields[x[0]].label = x[1]
+			self.fields[x[0]].help_text = x[2]
+			self.fields[x[0]].required = x[3]
+
+		self.helper = FormHelper()
+		self.helper.form_method = 'POST'
+		self.helper.layout = Layout(
+			Div(
+				Div('data_set', css_class="col-sm-3"),
+				css_class = 'row'
+			),
+			ButtonHolder(
+				Submit('save', 'Save', css_class='btn-primary'),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('sample-add')))
+			)
+		)
+
+class DateInput(forms.DateInput):
+	input_type = 'date'
+	initial=timezone.now()
+	
+	
+## https://stackoverflow.com/questions/4497684/django-class-based-views-with-inline-model-form-or-formset
+## https://gist.github.com/neara/6209563
+## https://stackoverflow.com/questions/11198638/django-inline-formset-error/11199031
+class SampleForm(forms.ModelForm):
+	"""
+	Sample form, name, generic dataset and files
+	"""
+	utils = Utils()
+	
+	## set the date format
+	# 38.7223° N, 9.1393° 
+	lat = forms.FloatField(required=True)
+	lng = forms.FloatField(required=True)
+##	geo_local = PointField(widget=CustomPointWidget(), required=False, srid=4326)
+	
+	class Meta:
+		model = Sample
+		# specify what fields should be used in this form.
+		
+		fields = ('name', 'sample_date', 'data_set', 'path_name_1', 'path_name_2')
+	#	sample_date = forms.DateField(widget=forms.DateInput(attrs={'class':'datepicker'}))
+		widgets = {
+			'sample_date': DateInput(),
+		}
+
+	def __init__(self, *args, **kwargs):
+		self.request = kwargs.pop('request')
+		super(SampleForm, self).__init__(*args, **kwargs)
+		geo_local = self.initial.get("geo_local", None)
+		if isinstance(geo_local, Point):
+			self.initial["lng"], self.initial["lat"] = geo_local.tuple
+		
+		## define a specific query set
+		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
+			
+		## can exclude explicitly
+		## exclude = ('md5',)
+		field_text= [
+			# (field_name, Field title label, Detailed field description, requiered)
+			('name', 'Name', 'Unique identify for this sample', True),
+			('sample_date', 'Sample date', 'Date for this sample', True),
+			('data_set', 'Dataset', 'Define a specific dataset, can be used in the future to filter samples', True),
+		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
+			('lat', 'Latitude', 'Geo position where the sample was collected', False),
+			('lng', 'Longitude', 'Geo position where the sample was collected', False),
+			('path_name_1', 'Raw fastq.gz (1)', 'Raw file 1 with fastq gzip file (< 30MB)', True),
+			('path_name_2', 'Raw fastq.gz (2)', 'Raw file 2 with fastq gzip file (< 30MB)', False),
+		]
+		for x in field_text:
+			self.fields[x[0]].label = x[1]
+			self.fields[x[0]].help_text = x[2]
+			self.fields[x[0]].required = x[3]
+
+		self.helper = FormHelper()
+		self.helper.form_method = 'POST'
+		self.helper.layout = Layout(
+			Div(
+				Div('name', css_class="col-sm-4"),
+				Div('sample_date', css_class="col-sm-3"),
+				Div('data_set', css_class="col-sm-3"),
+				css_class = 'row'
+			),
+			Div(
+				Div('lat', css_class="col-sm-4"),
+				Div('lng', css_class="col-sm-4"),
+				css_class = 'row'
+			),
+			Div('path_name_1', css_class = 'show-for-sr'),
+			Div('path_name_2', css_class = 'show-for-sr'),
+# 			Div(
+# 				
+# 				Div('geo_local', css_class="col-sm-8"),
+# 				css_class = 'row'
+# 			),
+			ButtonHolder(
+				Submit('save', 'Save', css_class='btn-primary'),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('samples')))
+			)
+		)
+
+	def clean(self):
+		"""
+		Clean all together because it's necessary to compare the genbank and fasta files
+		"""
+		cleaned_data = super(ReferenceForm, self).clean()
+		name = self.cleaned_data['name']
+		try:
+			Sample.objects.get(name=name, owner__username=self.request.user.username)
+			self.add_error('name', _("This name '" + name +"' already exist in database, please choose other."))
+		except Sample.DoesNotExist:
+			pass
+		
+		## latitude in degrees is -90 and +90 for the southern and northern hemisphere respectively. Longitude is in the range -180 and +180
+		lat = self.cleaned_data['lat']
+		if (lat > 90 or lat < -90): self.add_error('lat', _("Latitute must have values between +90 and -90."))
+		lng = self.cleaned_data['lng']
+		if (lng > 180 or lng < -180): self.add_error('lng', _("Longitude must have values between +180 and -180."))
+		
+		### testing file names
+		path_name_1 = cleaned_data['path_name_1']
+		path_name_2 = cleaned_data['path_name_2']
+		if (path_name_1.name == path_name_2.name):
+			self.add_error('path_name_1', _("Error: both files has the same name. Please, different files."))
+			self.add_error('path_name_2', _("Error: both files has the same name. Please, different files."))
+			return cleaned_data
+		
+		## testing fasta
+		fastaq_temp_file_name = NamedTemporaryFile(prefix='flu_fq_', delete=False)
+		fastaq_temp_file_name.write(path_name_1.file.read())
+		fastaq_temp_file_name.flush()
+		fastaq_temp_file_name.close()
+		
+		try:
+			self.utils.is_fastq_gz(fastaq_temp_file_name.name)
+		except IOError as e:	## (e.errno, e.strerror)
+			os.unlink(fastaq_temp_file_name.name)
+			self.add_error('path_name_1', e.args[0])
+			return cleaned_data
+		
+		## testing fasta
+		fastaq_temp_file_name_2 = NamedTemporaryFile(prefix='flu_fq_', delete=False)
+		fastaq_temp_file_name_2.write(path_name_1.file.read())
+		fastaq_temp_file_name_2.flush()
+		fastaq_temp_file_name_2.close()
+		
+		try:
+			self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+		except IOError as e:	## (e.errno, e.strerror)
+			os.unlink(fastaq_temp_file_name_2.name)
+			self.add_error('path_name_1', e.args[0])
+			return cleaned_data
+
+		## remove temp files
+		os.unlink(fastaq_temp_file_name.name)
+		os.unlink(fastaq_temp_file_name_2.name)
+		return cleaned_data
+		
+### Not used yet Inline FormSet
+SampleDatasetFormSet = inlineformset_factory(DataSet, Sample, form=SampleForm, extra=2)
+
 # 	def clean_name(self):
 # 		"""
 # 		Clean only the name

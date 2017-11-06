@@ -4,13 +4,13 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from utils.ConstantsTestsCase import ConstantsTestsCase
-from utils.Constants import Constants
-from utils.Software import Software
-from utils.Utils import Utils
-from utils.ParseOutFiles import ParseOutFiles
+from .constantsTestsCase import ConstantsTestsCase
+from .constants import Constants
+from .software import Software
+from .utils import Utils
+from .parseOutFiles import ParseOutFiles
 from django.conf import settings 
-import os, sys
+import os
 
 class Test(TestCase):
 
@@ -131,4 +131,9 @@ class Test(TestCase):
 		cmd = "rm -r %s/%s*" % (Software.SOFTWARE_ABRICATE_DB, database_name)
 		exist_status = os.system(cmd)
 		self.assertTrue(exist_status == 0)
+
+	def test_identify_type_and_sub_type(self):
+		"""
+		"""
+		pass
 		

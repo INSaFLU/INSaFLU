@@ -4,9 +4,9 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 import unittest
-from utils.ConstantsTestsCase import ConstantsTestsCase
-from utils.Utils import Utils
-from utils.Constants import Constants
+from .constantsTestsCase import ConstantsTestsCase
+from .utils import Utils
+from .constants import Constants
 from django.conf import settings 
 import os
 

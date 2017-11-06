@@ -2,8 +2,9 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.gis.db.models import PointField
+from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from utils.Constants import Constants
+from utils.constants import Constants
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 
@@ -46,21 +47,6 @@ class Reference(models.Model):
 		]
 
 
-class Files(models.Model):
-	"""
-	Files with raw data, only fastq.gz
-	"""
-	is_valid_1 = models.BooleanField(default=True)
-	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_1 = models.FileField(upload_to=user_directory_path, max_length=400)
-	is_valid_2 = models.BooleanField(default=True)
-	file_name_2 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_2 = models.FileField(upload_to=user_directory_path, max_length=400)
-	owner = models.ForeignKey(User, related_name='files', blank=True, null=True, on_delete=models.CASCADE)
-	
-	def __str__(self):
-		return self.file_name_1 + " " + self.file_name_2
-
 
 class MetaKey(models.Model):
 	"""
@@ -71,6 +57,7 @@ class MetaKey(models.Model):
 		return self.name
 	class Meta:
 		ordering = ['name', ]
+
 
 class TagName(models.Model):
 	"""
@@ -101,15 +88,24 @@ class Sample(models.Model):
 	Sample, each sample has one or two files...
 	"""
 	name = models.CharField(max_length=200, blank=True, null=True)
-	sample_date = models.DateField('sample date', auto_now_add=True, blank=True, null=True)
+	sample_date = models.DateField('sample date', blank=True, null=True)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_rejected = models.BooleanField(default=False)
+	is_obsolete = models.BooleanField(default=False)
 	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	files = models.ForeignKey(Files, related_name='sample', on_delete=models.CASCADE)
 	tag_names = models.ManyToManyField(TagName)
-	geo_local = PointField(null=True, blank=True,);
-	identify_virus = models.ManyToManyField(IdentifyVirus)
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
+	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
+	objects = GeoManager()
+	identify_virus = models.ManyToManyField(IdentifyVirus)
+
+	### files
+	is_valid_1 = models.BooleanField(default=True)
+	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
+	path_name_1 = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'], max_upload_size=30971520, blank=True, null=True)
+	is_valid_2 = models.BooleanField(default=True)
+	file_name_2 = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'], max_upload_size=30971520, blank=True, null=True)
+	path_name_2 = models.FileField(upload_to=user_directory_path, blank=True, null=True, max_length=400)
 
 	def __str__(self):
 		return self.name
@@ -117,6 +113,15 @@ class Sample(models.Model):
 	class Meta:
 		ordering = ['-creation_date', ]
 
+	def get_file_names(self):
+		sz_return = "" if self.file_name_1 == None else self.file_name_1
+		sz_return += "/" if len(sz_return) > 0 and self.file_name_2 is not None else ""
+		sz_return += "" if self.file_name_2 == None else self.file_name_2
+		return sz_return
+
+	def exit_file_2(self):
+		if (self.path_name_2 is None): return False
+		return True
 
 class MetaKeySample(models.Model):
 	"""

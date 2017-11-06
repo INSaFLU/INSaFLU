@@ -37,7 +37,7 @@ class ManageDatabase(object):
 		metaKeySample.save()
 		return metaKeySample
 	
-	def get_metakey(self, sample, meta_key_name, value, description):
+	def get_metakey(self, sample, meta_key_name, value):
 		"""
 		value = None, return a list
 		"""

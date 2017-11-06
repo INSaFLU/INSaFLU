@@ -3,6 +3,7 @@ Created on Oct 13, 2017
 
 @author: mmp
 '''
+import os
 
 class Constants(object):
 	'''
@@ -21,14 +22,13 @@ class Constants(object):
 	## main path for all paths
 	MAIN_PATH = "/usr/local/insaflu"
 	
-	## DIR_PROCESSED_FILES_PROCESSED/user/fasta/day/month/year/
-	## DIR_PROCESSED_FILES_PROCESSED/user/project_<id_db>/
-	DIR_PROCESSED_FILES_PROCESSED =  MAIN_PATH + "/processed"
-	## DIR_PROCESSED_FILES_FROM_WEB/user/fasta/day/month/year/
+
 	DIR_PROCESSED_FILES_UPLOADS = "uploads"
 	
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
+	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
+	DIR_PROCESSED_FILES_PROJECT = DIR_PROCESSED_FILES_UPLOADS + "/project"
 
 	DIR_ICONS = "icons"
 	TEMP_DIRECTORY = "/tmp"
@@ -55,5 +55,14 @@ class Constants(object):
 	META_VALUE_Error = "Error"
 	META_VALUE_Success = "Success"
 	
-
+	OUT_FILE_ABRICATE = "abricate.txt"
+	
+	def get_abricate_output(self, path):
+		"""
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		if (isinstance(path, str)): return os.path.join(os.path.dirname(path), Constants.OUT_FILE_ABRICATE)
+		return os.path.join(path.dirname(path.name), Constants.OUT_FILE_ABRICATE)
+		
 

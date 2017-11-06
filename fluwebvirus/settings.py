@@ -90,10 +90,18 @@ Q_CLUSTER = {
     'save_limit': 250,
     'queue_limit': 500,
     'cpu_affinity': 2,	## number of processors by queue
+    'catch_up': False,	# Ignore un-run scheduled tasks
     'label': 'Django Q',
     'orm': 'default'
 }
 
+CACHES = {
+    'default': {
+		'BACKEND': \
+			'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'djangoq-localmem',
+        }
+}
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 

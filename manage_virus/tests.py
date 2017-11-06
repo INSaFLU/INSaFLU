@@ -1,13 +1,13 @@
 from django.test import TestCase
 
 # Create your tests here.
-from utils.ConstantsTestsCase import ConstantsTestsCase
+from utils.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from .uploadFiles import UploadFiles
-from utils.Constants import Constants
-from utils.ParseOutFiles import ParseOutFiles
+from utils.constants import Constants
+from utils.parseOutFiles import ParseOutFiles
 from .models import UploadFile, Tags, SeqVirus
-from utils.Software import Software
+from utils.software import Software
 import os
 
 class Test(TestCase):
@@ -97,12 +97,6 @@ class Test(TestCase):
 		except SeqVirus.DoesNotExist:	## not exist
 			self.fail("Must have value")
 		
-		## remove abricate db
-		software = Software()
-		self.assertTrue(software.is_exist_database_abricate(uploadFile.abricate_name))
-		cmd = "rm -r %s/%s*" % (Software.SOFTWARE_ABRICATE_DB, uploadFile.abricate_name)
-		exist_status = os.system(cmd)
-		self.assertTrue(exist_status == 0)
 		
 	def test_upload_file_and_results(self):
 		
@@ -115,7 +109,7 @@ class Test(TestCase):
 		self.assertEquals('2', version)
 		
 		uploadFile = UploadFile.objects.order_by('-version')[0]
-		txt_file = os.path.join(self.baseDirectory, 'abricate', ConstantsTestsCase.MANAGING_TEST_ABRICATE)
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		self.assertTrue(os.path.exists(txt_file))
 		vect_data = parseOutFiles.parse_abricate_file(txt_file)
 		

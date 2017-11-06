@@ -4,8 +4,8 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from utils.ConstantsTestsCase import ConstantsTestsCase
-from utils.ParseOutFiles import ParseOutFiles
+from .constantsTestsCase import ConstantsTestsCase
+from .parseOutFiles import ParseOutFiles
 from django.conf import settings 
 import os
 

@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge"">
+  <meta name="description" content="INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge">
   <meta name="author" content="">
   <title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
   <!-- Bootstrap core CSS-->
@@ -27,7 +27,7 @@
 
 <body class="fixed-nav sticky-footer bg-dark" id="page-top">
   <!-- Navigation-->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-info fixed-top" id="mainNav">
   	<a class="navbar-brand" href="home.html"><strong>INSa</strong>FLU</a>
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -70,15 +70,27 @@
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle mr-lg-2" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fa fa-fw fa-envelope"></i>
-            <span class="d-lg-none">Messages
-              <span class="badge badge-pill badge-primary">12 New</span>
+            <span class="d-lg-none">Messages 
+            	{% if num_reference %}
+            		<span class="indicator text-primary d-none d-lg-block">
+              			<i class="fa fa-fw fa-circle"></i>
+            		</span>
+              		<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
+				{% else %}
+					<div class="dropdown-menu" aria-labelledby="messagesDropdown">
+			            <h6 class="dropdown-header"><strong>INSa</strong>Flu messages (0)</h6>
+			            <div class="dropdown-divider"></div>
+			            <a class="dropdown-item" href="#">
+			            	<span class="text-muted">No messages</span>
+			            </a>
+					</div>
+				{% endif %}
             </span>
-            <span class="indicator text-primary d-none d-lg-block">
-              <i class="fa fa-fw fa-circle"></i>
-            </span>
+            
           </a>
           <!--  MESSAGES -->
-<!--      <div class="dropdown-menu" aria-labelledby="messagesDropdown">
+	   {% if num_reference %}
+	   <div class="dropdown-menu" aria-labelledby="messagesDropdown">
             <h6 class="dropdown-header">New Messages:</h6>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="#">
@@ -100,7 +112,8 @@
             </a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item small" href="#">View all messages</a>
-          </div> -->
+          </div>
+	{% endif %}
         </li>
 
 		<!-- SEARCH -->        
@@ -201,6 +214,8 @@
 	    	<script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 	    	<!-- Custom scripts for all pages-->
 	    	<script src="{% static 'js/sb-admin.min.js' %}"></script>
+	    	<!-- Custom scripts for all pages-->
+	    	<script src="{% static 'js/flu-web-site.js' %}"></script>
     {% endblock js %}
   </div>
 </body>

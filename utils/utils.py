@@ -83,6 +83,9 @@ class Utils(object):
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to remove a file") 
 
+	def remove_dir(self, path_name):
+		cmd = "rm -r %s*" % (path_name); os.system(cmd)
+
 	def move_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):
 			self.make_path(os.path.dirname(sz_file_to))
@@ -221,6 +224,23 @@ class Utils(object):
 		raise IOError(_("Error: the file is not in GenBank format."))
 
 
+	def read_text_file(self, file_name):
+		"""
+		read text file and put the result in an vector
+		"""
+		if (not os.path.exists(file_name)):
+			self.logger_production.error("Fail to read '" + file_name)
+			self.logger_debug.error("Fail to test '" + file_name)
+			raise IOError(_("Error: file '" + file_name + "' doens't exist."))
+		
+		vect_out = []
+		handle = open(file_name)
+		for line in handle:
+			sz_temp = line.strip()
+			if (len(sz_temp) == 0): continue
+			vect_out.append(sz_temp)
+		handle.close()
+		return vect_out
 	
 	def compare_locus_fasta_gb(self, fasta_file, gb_file):
 		"""

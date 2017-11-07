@@ -13,6 +13,7 @@
 ## $ sudo pip3 install NumPy
 ## $ sudo pip3 install biopython
 ## $ sudo pip3 install django-q
+## $ sudo pip3 install django-nose
 
 ## $ mkdir /var/log/insaflu			and set the user of apache
 ## $ mkdir /usr/local/insaflu		and set the user of apache

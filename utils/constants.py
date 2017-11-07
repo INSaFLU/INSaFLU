@@ -44,6 +44,7 @@ class Constants(object):
 	####
 	SEQ_VIRUS_TYPE = "Type"
 	SEQ_VIRUS_SUB_TYPE = "Subtype"
+	SEQ_VIRUS_LINEAGE = "Lineage"
 	
 	### data_set 
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
@@ -54,7 +55,7 @@ class Constants(object):
 	## meta value
 	META_VALUE_Error = "Error"
 	META_VALUE_Success = "Success"
-	
+
 	OUT_FILE_ABRICATE = "abricate.txt"
 	
 	def get_abricate_output(self, path):
@@ -62,7 +63,29 @@ class Constants(object):
 		Return the file name of the abricate output base on fastq File input
 		path it's a FileField instance, or a string
 		"""
-		if (isinstance(path, str)): return os.path.join(os.path.dirname(path), Constants.OUT_FILE_ABRICATE)
-		return os.path.join(path.dirname(path.name), Constants.OUT_FILE_ABRICATE)
+		return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), Constants.OUT_FILE_ABRICATE)
+	
+	def get_fastq_output(self, path):
+		"""
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		return os.path.join(path.replace(".fastq.gz", "_fastqc.html") if isinstance(path, str) else path.name.replace(".fastq.gz", "_fastqc.html"))
+	
+	def get_fastq_trimmomatic_output(self, path, sample_name, b_first_file):
+		"""
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		if (b_first_file): return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_1P_fastqc.html")
+		else: return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_2P_fastqc.html")
 		
+	def get_trimmomatic_output(self, path, sample_name, b_first_file):
+		"""
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		if (b_first_file): return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_1P.fastq.gz")
+		else: return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_2P.fastq.gz")
+
 

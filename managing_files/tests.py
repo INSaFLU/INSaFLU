@@ -114,7 +114,6 @@ class testsReferenceFiles(TestCase):
 			user.save()
 			
 			
-			
 		sample_name = "xpto"
 		try:
 			sample = Sample.objects.get(name=sample_name)

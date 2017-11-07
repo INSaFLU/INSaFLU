@@ -56,15 +56,22 @@ class UploadFiles(object):
 		split_name = header_name.split(" ")
 		if (len(split_name) > 1): dt_return[self.DESCRIPTION] = split_name[1]
 		split_name_2 = re.split("~+", split_name[0])
-		if (len(split_name_2) != 3): raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype~~~<value>~~~<accession> description'")
+		if (len(split_name_2) != 3): raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype|lineage~~~<value>~~~<accession> description'")
 		split_type = split_name_2[0].split("_")
-		if (len(split_type) != 2 and (split_type[1].lower() != Constants.SEQ_VIRUS_TYPE.lower() or split_type[1].lower() != Constants.SEQ_VIRUS_SUB_TYPE.lower()) ):
-			raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype~~~<value>~~~<accession> description'")
-		if (split_type[1].lower() == Constants.SEQ_VIRUS_TYPE.lower()): dt_return[Constants.SEQ_VIRUS_TYPE] = split_name_2[1]
-		else: dt_return[Constants.SEQ_VIRUS_SUB_TYPE] = split_name_2[1]
+		if (len(split_type) != 2 and (split_type[1].lower() != Constants.SEQ_VIRUS_TYPE.lower() or split_type[1].lower() != Constants.SEQ_VIRUS_SUB_TYPE.lower()
+									 or split_type[1].lower() != Constants.SEQ_VIRUS_LINEAGE.lower()) ):
+			raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype|lineage~~~<value>~~~<accession> description'")
+		dt_return[self.__get_type__(split_name_2[0])] = split_name_2[1]
 		dt_return[self.ACCESSION] = split_name_2[2]
 		return dt_return
 
+	def __get_type__(self, split_type_name):
+		split_type = split_type_name.split("_")
+		if (len(split_type) < 2): return Constants.SEQ_VIRUS_SUB_TYPE
+		if (split_type[1].lower() == Constants.SEQ_VIRUS_TYPE.lower()): return Constants.SEQ_VIRUS_TYPE
+		elif (split_type[1].lower() == Constants.SEQ_VIRUS_LINEAGE.lower()): return Constants.SEQ_VIRUS_LINEAGE
+		return Constants.SEQ_VIRUS_SUB_TYPE
+		
 	@transaction.atomic
 	def upload_file(self, version, path):
 		"""
@@ -99,6 +106,14 @@ class UploadFiles(object):
 			tag_sub_type = Tags()
 			tag_sub_type.name = Constants.SEQ_VIRUS_SUB_TYPE
 			tag_sub_type.save()
+			
+		## sub_lineage
+		try:
+			tag_leneage = Tags.objects.get(name=Constants.SEQ_VIRUS_LINEAGE)
+		except Tags.DoesNotExist:	## not exist
+			tag_leneage = Tags()
+			tag_leneage.name = Constants.SEQ_VIRUS_LINEAGE
+			tag_leneage.save()
 		
 		## load the file
 		record_dict = SeqIO.index(path, "fasta")
@@ -111,6 +126,9 @@ class UploadFiles(object):
 			elif (Constants.SEQ_VIRUS_SUB_TYPE in dt_data):
 				seqVirus.kind_type = tag_sub_type
 				seqVirus.name = dt_data[Constants.SEQ_VIRUS_SUB_TYPE]
+			elif (Constants.SEQ_VIRUS_LINEAGE in dt_data):
+				seqVirus.kind_type = tag_leneage
+				seqVirus.name = dt_data[Constants.SEQ_VIRUS_LINEAGE]
 
 			seqVirus.accession = dt_data[self.ACCESSION]
 			seqVirus.file = uploadFile
@@ -124,9 +142,8 @@ class UploadFiles(object):
 	def uploadIdentifyVirus(self, vect_data, database_name):
 		
 		### first look for the type
-		dt_type = self.__get_type__(vect_data)
-		dt_first_sub_type = self.__get_sub_type__(vect_data, None)
-		dt_second_sub_type = self.__get_sub_type__(vect_data, dt_first_sub_type)
+		dt_type = self.__get_type_data__(vect_data)
+		vect_data_type_and_lineage = self.__get_sub_type_and_lineage__(vect_data)
 		
 		vect_return = []
 		rank = 0
@@ -146,41 +163,26 @@ class UploadFiles(object):
 			rank += 1
 			vect_return.append(identifyVirus)
 		
-		if (len(dt_first_sub_type) > 0):
-			seqVirus = None
-			try:
-				seqVirus = SeqVirus.objects.get(name=dt_first_sub_type[ParseOutFiles.GENE], kind_type__name=Constants.SEQ_VIRUS_SUB_TYPE, file__abricate_name=database_name)
-			except SeqVirus.DoesNotExist:
-				raise Exception(_("Gene '%s' not found in database '%s'" % (dt_first_sub_type[ParseOutFiles.GENE], database_name)))
-			
-			identifyVirus = IdentifyVirus()
-			identifyVirus.coverage = "%.2f" % (dt_first_sub_type[ParseOutFiles.COVERAGE])
-			identifyVirus.identity = "%.2f" % (dt_first_sub_type[ParseOutFiles.IDENTITY])
-			identifyVirus.rank = rank
-			identifyVirus.seq_virus = seqVirus
-			identifyVirus.save()
-			rank += 1
-			vect_return.append(identifyVirus)
-			
-		if (len(dt_second_sub_type) > 0):
-			seqVirus = None
-			try:
-				seqVirus = SeqVirus.objects.get(name=dt_second_sub_type[ParseOutFiles.GENE], kind_type__name=Constants.SEQ_VIRUS_SUB_TYPE, file__abricate_name=database_name)
-			except SeqVirus.DoesNotExist:
-				raise Exception(_("Gene '%s' not found in database '%s'" % (dt_second_sub_type[ParseOutFiles.GENE], database_name)))
-			
-			identifyVirus = IdentifyVirus()
-			identifyVirus.coverage = "%.2f" % (dt_second_sub_type[ParseOutFiles.COVERAGE])
-			identifyVirus.identity = "%.2f" % (dt_second_sub_type[ParseOutFiles.IDENTITY])
-			identifyVirus.rank = rank
-			identifyVirus.seq_virus = seqVirus
-			identifyVirus.save()
-			rank += 1
-			vect_return.append(identifyVirus)
+		if (len(vect_data_type_and_lineage) > 0):
+			for dt_data in vect_data_type_and_lineage:
+				seqVirus = None
+				try:
+					seqVirus = SeqVirus.objects.get(name=dt_data[ParseOutFiles.GENE], kind_type__name=self.__get_type__(dt_data[ParseOutFiles.TYPE]), file__abricate_name=database_name)
+				except SeqVirus.DoesNotExist:
+					raise Exception(_("Gene '%s' not found in database '%s'" % (dt_data[ParseOutFiles.GENE], database_name)))
+				
+				identifyVirus = IdentifyVirus()
+				identifyVirus.coverage = "%.2f" % (dt_data[ParseOutFiles.COVERAGE])
+				identifyVirus.identity = "%.2f" % (dt_data[ParseOutFiles.IDENTITY])
+				identifyVirus.rank = rank
+				identifyVirus.seq_virus = seqVirus
+				identifyVirus.save()
+				rank += 1
+				vect_return.append(identifyVirus)
 		return vect_return
 
 
-	def __get_type__(self, vect_data):
+	def __get_type_data__(self, vect_data):
 		"""
 		Get the best type
 		"""
@@ -191,15 +193,18 @@ class UploadFiles(object):
 					return dt_data
 		return {}
 	
-	def __get_sub_type__(self, vect_data, dt_already_returned):
+	def __get_sub_type_and_lineage__(self, vect_data):
 		"""
-		Get the best type
+		Get the all subtype and lineage
 		"""
+		vect_data_out = []
+		vect_out_gene = []
 		for dt_data in vect_data:
 			if (ParseOutFiles.TYPE in dt_data):
-				split_type = dt_data[ParseOutFiles.TYPE].split("_")
-				if (len(split_type) == 2 and split_type[1].lower() == Constants.SEQ_VIRUS_SUB_TYPE.lower()):
-					if (dt_already_returned == None): return dt_data
-					if (dt_already_returned[ParseOutFiles.GENE] != dt_data[ParseOutFiles.GENE]): return dt_data
-		return {}
+				type_result = self.__get_type__(dt_data[ParseOutFiles.TYPE])
+				if (type_result == Constants.SEQ_VIRUS_SUB_TYPE or type_result == Constants.SEQ_VIRUS_LINEAGE):
+					if (dt_data[ParseOutFiles.GENE] in vect_out_gene): continue
+					vect_data_out.append(dt_data)
+					vect_out_gene.append(dt_data[ParseOutFiles.GENE])
+		return vect_data_out
 		

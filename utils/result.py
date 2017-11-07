@@ -5,15 +5,18 @@ Created on Nov 2, 2017
 '''
 import json
 
-class Software(object):
+class SoftwareDesc(object):
 	
-	def __init__(self, name, version):
+	def __init__(self, name, version, parameters):
 		self.name = name
 		self.version = version
+		self.parameters = parameters
 		
 	def __eq__(self, other):
-		return other.name == self.name and other.version == self.version
+		return other.name == self.name and other.version == self.version and other.parameters == self.parameters
 
+	def __str__(self):
+		return self.name
 
 class Softwares(object):
 	
@@ -35,6 +38,8 @@ class Output(object):
 	def __eq__(self, other):
 		return other.file_name == self.file_name and other.path == self.path
 		
+	def __str__(self):
+		return self.file_name
 	
 class Outputs(object):
 	def __init__(self):
@@ -78,8 +83,8 @@ class Result(object):
 class CustomEncoder(json.JSONEncoder):
 
 	def default(self, o):
-		if isinstance(o, Software):
-			return {'__software__': o.__dict__}
+		if isinstance(o, SoftwareDesc):
+			return {'__software_desc__': o.__dict__}
 		elif isinstance(o, Output):
 			return {'__output__': o.__dict__}
 		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
@@ -106,9 +111,9 @@ class DecodeResult(object):
 			a = Result()
 			a.__dict__.update(o['__Result__'])
 			return a
-		elif '__software__' in o:
-			a = Software(o['__software__']['name'], o['__software__']['version'])
-			a.__dict__.update(o['__software__'])
+		elif '__software_desc__' in o:
+			a = SoftwareDesc(o['__software_desc__']['name'], o['__software_desc__']['version'], o['__software_desc__']['parameters'])
+			a.__dict__.update(o['__software_desc__'])
 			return a
 		elif '__output__' in o:
 			a = Output(o['__output__']['file_name'], o['__output__']['path'])

@@ -25,7 +25,7 @@ class ReferenceForm(forms.ModelForm):
 	class Meta:
 		model = Reference
 		# specify what fields should be used in this form.
-		fields = ('name', 'scientific_name', 'reference_fasta', 'reference_genbank')
+		fields = ('name', 'isolate_name', 'reference_fasta', 'reference_genbank')
 		
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -36,7 +36,7 @@ class ReferenceForm(forms.ModelForm):
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Regular name for this reference', True),
-			('scientific_name', 'Scientific name', 'Scientific name for this reference', False),
+			('isolate_name', 'Isolate name', 'Isolate name for this reference', False),
 			('reference_fasta', 'Reference (fasta)', 'Reference file in fasta format', True),
 			('reference_genbank', 'Reference (genBank)', 'Reference file in genBank format, all locus must have the same name of fasta locus file', True),
 		]
@@ -54,7 +54,7 @@ class ReferenceForm(forms.ModelForm):
 		self.helper.layout = Layout(
 			Div(
 				Div('name', css_class="col-sm-3"),
-				Div('scientific_name', css_class="col-sm-7"),
+				Div('isolate_name', css_class="col-sm-7"),
 				css_class = 'row'
 			),
 			Div('reference_fasta', css_class = 'show-for-sr'),
@@ -184,10 +184,10 @@ class SampleForm(forms.ModelForm):
 		model = Sample
 		# specify what fields should be used in this form.
 		
-		fields = ('name', 'sample_date', 'data_set', 'path_name_1', 'path_name_2')
+		fields = ('name', 'date_of_onset', 'data_set', 'path_name_1', 'path_name_2')
 	#	sample_date = forms.DateField(widget=forms.DateInput(attrs={'class':'datepicker'}))
 		widgets = {
-			'sample_date': DateInput(),
+			'date_of_onset': DateInput(),
 		}
 
 	def __init__(self, *args, **kwargs):
@@ -205,12 +205,12 @@ class SampleForm(forms.ModelForm):
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Unique identify for this sample', True),
-			('sample_date', 'Sample date', 'Date for this sample', True),
+			('date_of_onset', 'Date of onset', 'Date of onset', False),
 			('data_set', 'Dataset', 'Define a specific dataset, can be used in the future to filter samples', True),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
 			('lat', 'Latitude', 'Geo position where the sample was collected', False),
 			('lng', 'Longitude', 'Geo position where the sample was collected', False),
-			('path_name_1', 'Raw fastq.gz (1)', 'Raw file 1 with fastq gzip file (< 30MB)', True),
+			('path_name_1', 'Raw fastq.gz (1)', 'Raw file 1 with fastq gzip file (< 30MB)', False),
 			('path_name_2', 'Raw fastq.gz (2)', 'Raw file 2 with fastq gzip file (< 30MB)', False),
 		]
 		for x in field_text:
@@ -223,7 +223,7 @@ class SampleForm(forms.ModelForm):
 		self.helper.layout = Layout(
 			Div(
 				Div('name', css_class="col-sm-4"),
-				Div('sample_date', css_class="col-sm-3"),
+				Div('date_of_onset', css_class="col-sm-3"),
 				Div('data_set', css_class="col-sm-3"),
 				css_class = 'row'
 			),

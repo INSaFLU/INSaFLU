@@ -39,8 +39,8 @@ class Test(TestCase):
 		self.assertEqual('influenza_type', vect_data[0][ParseOutFiles.TYPE])
 		self.assertEqual('XXXX', vect_data[0][ParseOutFiles.ACCESSION])
 		
-		self.assertEqual('N2', vect_data[3][ParseOutFiles.GENE])
-		self.assertEqual(16.03, vect_data[3][ParseOutFiles.COVERAGE])
-		self.assertEqual(96.46, vect_data[3][ParseOutFiles.IDENTITY])
-		self.assertEqual('influenza_subtype', vect_data[3][ParseOutFiles.TYPE])
-		self.assertEqual('XXXXXX', vect_data[3][ParseOutFiles.ACCESSION])
+		self.assertEqual('Victoria', vect_data[3][ParseOutFiles.GENE])
+		self.assertEqual(80.00, vect_data[3][ParseOutFiles.COVERAGE])
+		self.assertEqual(78.65, vect_data[3][ParseOutFiles.IDENTITY])
+		self.assertEqual('influenza_lineage', vect_data[3][ParseOutFiles.TYPE])
+		self.assertEqual('M58428', vect_data[3][ParseOutFiles.ACCESSION])

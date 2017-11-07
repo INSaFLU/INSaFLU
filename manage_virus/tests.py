@@ -7,7 +7,6 @@ from .uploadFiles import UploadFiles
 from utils.constants import Constants
 from utils.parseOutFiles import ParseOutFiles
 from .models import UploadFile, Tags, SeqVirus
-from utils.software import Software
 import os
 
 class Test(TestCase):
@@ -124,10 +123,15 @@ class Test(TestCase):
 		self.assertEquals("100.00", vect_identify_virus[1].coverage)
 		self.assertEquals("99.18", vect_identify_virus[1].identity)
 		self.assertEquals("H3", vect_identify_virus[1].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[1].seq_virus.kind_type.name)
 		self.assertEquals("100.00", vect_identify_virus[2].coverage)
 		self.assertEquals("98.65", vect_identify_virus[2].identity)
 		self.assertEquals("N2", vect_identify_virus[2].seq_virus.name)
 		self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[2].seq_virus.kind_type.name)
+		self.assertEquals("80.00", vect_identify_virus[3].coverage)
+		self.assertEquals("78.65", vect_identify_virus[3].identity)
+		self.assertEquals("Victoria", vect_identify_virus[3].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_LINEAGE, vect_identify_virus[3].seq_virus.kind_type.name)
 		
 		
 		

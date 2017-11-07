@@ -10,19 +10,24 @@ from django_q.cluster import Cluster
 
 class Test(unittest.TestCase):
 
+	def setUp(self):
+		self.c = Cluster()
+		self.c.start()
+
+	def tearDown(self):
+		self.c.stop()
+	
 	def testDjangoQ(self):
-		c = Cluster()
-		c.start()
 		task_id = async(math.copysign, 2, -2)
 		## print(humanize(task_id))
 		while True:
 			task_result = result(task_id)
 			if (task_result is None):
-				time.sleep(10)
+				time.sleep(7)
 			else: 
 				self.assertTrue('-2.0', str(task_result))
 				break
-		c.stop()
+		
 			
 	def testDjangoSyncQ(self):
 		# create a synchronous task

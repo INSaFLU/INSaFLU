@@ -14,7 +14,12 @@
 ## $ sudo pip3 install biopython
 ## $ sudo pip3 install django-q
 ## $ sudo pip3 install django-nose
-
+## $ sudo pip3 install django-modalview
+## $ sudo pip3 install django-bootstrap-datepicker
+## CAHNGE file /usr/local/lib/python3.4/dist-packages/bootstrap_datepicker/widgets.py
+	## Add line extra_attrs['placeholder'] = "dd/mm/yyyy" in render method
+## $ sudo pip3 install humanfriendly	
+	
 ## $ mkdir /var/log/insaflu			and set the user of apache
 ## $ mkdir /usr/local/insaflu		and set the user of apache
 

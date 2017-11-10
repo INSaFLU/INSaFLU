@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'django_tables2',
     'bootstrap4',
     'django_q',
+    'django_modalview',
+    'bootstrap_datepicker',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
 ]
@@ -153,18 +155,21 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
+DATE_INPUT_FORMATS = ('%d-%m-%Y','%Y-%m-%d')
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
 USE_L10N = True
 
 USE_TZ = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

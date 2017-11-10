@@ -49,8 +49,12 @@ class Constants(object):
 	### data_set 
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	
+	## NUMBER OF SETs to paginate
+	PAGINATE_NUMBER = 15
+	
 	### MetaKeys
 	META_KEY_Identify_Sample = "IdentifySamples"
+	META_KEY_Number_And_Average_Reads = "NumberAndAverageReads"
 	
 	## meta value
 	META_VALUE_Error = "Error"

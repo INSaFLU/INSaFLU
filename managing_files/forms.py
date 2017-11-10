@@ -1,11 +1,11 @@
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, ButtonHolder, Submit
-from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button
+from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, HTML, Fieldset
 from django.contrib.gis.db.models import PointField
+from django.conf import settings 
 from django import forms
 from django.urls import reverse
-from .models import Reference, Sample, DataSet
+from .models import Reference, Sample, DataSet, VacineStatus
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.contrib.gis.geos import Point
@@ -13,6 +13,9 @@ from utils.utils import Utils
 from utils.constants import Constants
 from django.utils import timezone
 from django.forms.models import inlineformset_factory
+from django.forms import widgets
+from django.utils.safestring import mark_safe
+from bootstrap_datepicker.widgets import DatePicker
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -160,11 +163,28 @@ class DataSetForm(forms.ModelForm):
 			)
 		)
 
-class DateInput(forms.DateInput):
-	input_type = 'date'
-	initial=timezone.now()
+
+class RelatedFieldWidgetCanAdd(widgets.Select):
+
+	def __init__(self, related_model, related_url=None, *args, **kw):
 	
+		super(RelatedFieldWidgetCanAdd, self).__init__(*args, **kw)
 	
+		if not related_url:
+			rel_to = related_model
+			info = (rel_to._meta.app_label, rel_to._meta.object_name.lower())
+			related_url = 'admin:%s_%s_add' % info
+	
+		# Be careful that here "reverse" is not allowed
+		self.related_url = related_url
+	
+	def render(self, name, value, *args, **kwargs):
+		self.related_url = reverse(self.related_url)
+		output = [super(RelatedFieldWidgetCanAdd, self).render(name, value, *args, **kwargs)]
+		output.append('<a href="%s" class="add-another" id="add_id_%s" onclick="return showAddAnotherPopup(this);"> ' % (self.related_url, name))
+		output.append('<img src={% static \'admin/img/icon_addlink.gif\' %} width="10" height="10" alt="Add Another"/></a>')
+		return mark_safe(''.join(output))
+
 ## https://stackoverflow.com/questions/4497684/django-class-based-views-with-inline-model-form-or-formset
 ## https://gist.github.com/neara/6209563
 ## https://stackoverflow.com/questions/11198638/django-inline-formset-error/11199031
@@ -174,21 +194,26 @@ class SampleForm(forms.ModelForm):
 	"""
 	utils = Utils()
 	
+	DATE_CHOICES=[('date_of_onset','Onset date'),
+         ('date_of_collection','Collection date'),
+         ('date_of_receipt_lab','Lab reception date'),]
+	
 	## set the date format
 	# 38.7223° N, 9.1393° 
 	lat = forms.FloatField(required=True)
 	lng = forms.FloatField(required=True)
+	
+	date_of_onset = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
+	date_of_collection = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
+	date_of_receipt_lab = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
+	like_dates = forms.ChoiceField(choices=DATE_CHOICES, widget=forms.RadioSelect())
+	
 ##	geo_local = PointField(widget=CustomPointWidget(), required=False, srid=4326)
 	
 	class Meta:
 		model = Sample
 		# specify what fields should be used in this form.
-		
-		fields = ('name', 'date_of_onset', 'data_set', 'path_name_1', 'path_name_2')
-	#	sample_date = forms.DateField(widget=forms.DateInput(attrs={'class':'datepicker'}))
-		widgets = {
-			'date_of_onset': DateInput(),
-		}
+		fields = ('name', 'date_of_collection', 'date_of_onset', 'date_of_receipt_lab', 'vaccine_status', 'data_set', 'path_name_1', 'path_name_2')
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -199,33 +224,56 @@ class SampleForm(forms.ModelForm):
 		
 		## define a specific query set
 		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
-			
+		self.fields['data_set'].empty_label = None
+		self.fields['vaccine_status'].queryset = VacineStatus.objects.filter(owner__id = self.request.user.id)
+		
 		## can exclude explicitly
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Unique identify for this sample', True),
 			('date_of_onset', 'Date of onset', 'Date of onset', False),
-			('data_set', 'Dataset', 'Define a specific dataset, can be used in the future to filter samples', True),
+			('date_of_collection', 'Date of collection', 'Date of collection', False),
+			('date_of_receipt_lab', 'Date on Lab', 'Date receipt on the lab', False),
+			('vaccine_status', 'Vaccine status', 'Discrimination of vaccination status', False),
+			('data_set', 'Dataset', 'Specific dataset, can be used to organize samples', False),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
 			('lat', 'Latitude', 'Geo position where the sample was collected', False),
 			('lng', 'Longitude', 'Geo position where the sample was collected', False),
-			('path_name_1', 'Raw fastq.gz (1)', 'Raw file 1 with fastq gzip file (< 30MB)', False),
-			('path_name_2', 'Raw fastq.gz (2)', 'Raw file 2 with fastq gzip file (< 30MB)', False),
+			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 30MB)', True),
+			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 30MB)', False),
+			('like_dates', 'Choose a date', 'Choose a date to collect the Day, Week and Year', False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
 			self.fields[x[0]].help_text = x[2]
 			self.fields[x[0]].required = x[3]
 
+		self.fieldsets = []
+		self.fieldsets.append(('Dates', ['like_dates', 'date_of_collection', 'date_of_receipt_lab']),)
+		self.fieldsets.append(('Geo position', ['lat', 'lng']),)
+		
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
 			Div(
 				Div('name', css_class="col-sm-4"),
-				Div('date_of_onset', css_class="col-sm-3"),
-				Div('data_set', css_class="col-sm-3"),
+				Div( 
+					HTML('<a href="{% url "sample-file" %}" id="data_set_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
+					Div('data_set'), 
+					css_class = "row col-sm-4"),
+				Div( 
+					HTML('<a href="{% url "sample-file" %}" id="vaccine_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
+					Div('vaccine_status'), 
+					css_class = "row col-sm-4"),
 				css_class = 'row'
+			),
+			Div(
+				Div('like_dates', css_class="col-sm-3"),
+				Div('date_of_onset', css_class="col-sm-3"),
+				Div('date_of_collection', css_class="col-sm-3"),
+				Div('date_of_receipt_lab', css_class="col-sm-3"),
+				css_class = 'row '
 			),
 			Div(
 				Div('lat', css_class="col-sm-4"),
@@ -235,7 +283,6 @@ class SampleForm(forms.ModelForm):
 			Div('path_name_1', css_class = 'show-for-sr'),
 			Div('path_name_2', css_class = 'show-for-sr'),
 # 			Div(
-# 				
 # 				Div('geo_local', css_class="col-sm-8"),
 # 				css_class = 'row'
 # 			),
@@ -249,7 +296,7 @@ class SampleForm(forms.ModelForm):
 		"""
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
-		cleaned_data = super(ReferenceForm, self).clean()
+		cleaned_data = super(SampleForm, self).clean()
 		name = self.cleaned_data['name']
 		try:
 			Sample.objects.get(name=name, owner__username=self.request.user.username)
@@ -258,48 +305,64 @@ class SampleForm(forms.ModelForm):
 			pass
 		
 		## latitude in degrees is -90 and +90 for the southern and northern hemisphere respectively. Longitude is in the range -180 and +180
-		lat = self.cleaned_data['lat']
-		if (lat > 90 or lat < -90): self.add_error('lat', _("Latitute must have values between +90 and -90."))
-		lng = self.cleaned_data['lng']
-		if (lng > 180 or lng < -180): self.add_error('lng', _("Longitude must have values between +180 and -180."))
+		lat = self.cleaned_data.get('lat')
+		if (lat != None and (lat > 90 or lat < -90)): self.add_error('lat', _("Latitute must have values between +90 and -90."))
+		lng = self.cleaned_data.get('lng')
+		if (lng != None and (lng > 180 or lng < -180)): self.add_error('lng', _("Longitude must have values between +180 and -180."))
 		
 		### testing file names
-		path_name_1 = cleaned_data['path_name_1']
-		path_name_2 = cleaned_data['path_name_2']
-		if (path_name_1.name == path_name_2.name):
+		path_name_1 = self.cleaned_data.get('path_name_1')
+		path_name_2 = self.cleaned_data.get('path_name_2')
+		if (path_name_2 != None and path_name_1.name == path_name_2.name):
 			self.add_error('path_name_1', _("Error: both files has the same name. Please, different files."))
 			self.add_error('path_name_2', _("Error: both files has the same name. Please, different files."))
 			return cleaned_data
 		
-		## testing fasta
-		fastaq_temp_file_name = NamedTemporaryFile(prefix='flu_fq_', delete=False)
+		## testing fastq
+		fastaq_temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
 		fastaq_temp_file_name.write(path_name_1.file.read())
 		fastaq_temp_file_name.flush()
 		fastaq_temp_file_name.close()
 		
+		like_dates = self.cleaned_data.get('like_dates')
+		date_of_onset = self.cleaned_data.get('date_of_onset')
+		date_of_collection = self.cleaned_data.get('date_of_collection')
+		date_of_receipt_lab = self.cleaned_data.get('date_of_receipt_lab')
+		
+		#####
+		if (like_dates == None and date_of_onset != None and date_of_collection != None and date_of_receipt_lab != None):
+			self.add_error('like_dates', _("Please, choose a data to collect the day, week and year."))
+		elif (like_dates == 'date_of_onset' and date_of_onset == None):
+			self.add_error('like_dates', _("Error, the Onset date is null."))
+		elif (like_dates == 'date_of_collection' and date_of_collection == None):
+			self.add_error('date_of_collection', _("Error, the Collection date is null."))
+		elif (like_dates == 'date_of_receipt_lab' and date_of_receipt_lab == None):
+			self.add_error('date_of_receipt_lab', _("Error, the Lab Receipt date is null."))
+			
 		try:
 			self.utils.is_fastq_gz(fastaq_temp_file_name.name)
-		except IOError as e:	## (e.errno, e.strerror)
+		except Exception as e:	## (e.errno, e.strerror)
 			os.unlink(fastaq_temp_file_name.name)
 			self.add_error('path_name_1', e.args[0])
 			return cleaned_data
 		
-		## testing fasta
-		fastaq_temp_file_name_2 = NamedTemporaryFile(prefix='flu_fq_', delete=False)
-		fastaq_temp_file_name_2.write(path_name_1.file.read())
-		fastaq_temp_file_name_2.flush()
-		fastaq_temp_file_name_2.close()
-		
-		try:
-			self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
-		except IOError as e:	## (e.errno, e.strerror)
-			os.unlink(fastaq_temp_file_name_2.name)
-			self.add_error('path_name_1', e.args[0])
-			return cleaned_data
+		## testing fastq
+		if (path_name_2 != None):
+			fastaq_temp_file_name_2 = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
+			fastaq_temp_file_name_2.write(path_name_2.file.read())
+			fastaq_temp_file_name_2.flush()
+			fastaq_temp_file_name_2.close()
+			
+			try:
+				self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+			except Exception as e:	## (e.errno, e.strerror)
+				os.unlink(fastaq_temp_file_name_2.name)
+				self.add_error('path_name_1', e.args[0])
+				return cleaned_data
 
 		## remove temp files
 		os.unlink(fastaq_temp_file_name.name)
-		os.unlink(fastaq_temp_file_name_2.name)
+		if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
 		return cleaned_data
 		
 ### Not used yet Inline FormSet

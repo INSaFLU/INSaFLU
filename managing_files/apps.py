@@ -39,9 +39,8 @@ class ManagingFilesConfig(AppConfig):
 	
 		### create generic dataset
 		for user in User.objects.all():
-			try:
-				DataSet.objects.get(owner__id=user.id)
-			except DataSet.DoesNotExist:
+			result = DataSet.objects.filter(owner__id=user.id)
+			if (len(result) == 0):
 				### need to create it
 				dataSet = DataSet()
 				dataSet.name = Constants.DATA_SET_GENERIC

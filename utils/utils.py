@@ -140,8 +140,9 @@ class Utils(object):
 	def is_fastq_gz(self, file_name):
 		"""
 		test if the file name ends in gzip
+		raise Exception
 		""" 
-		if (not self.is_gzip(file_name)): raise Exception("File is not compressed in gzip format")
+		if (not self.is_gzip(file_name)): raise Exception("File need to have suffix '.fastq.gz'")
 		
 		try:
 			sz_type = self.get_type_file(file_name)

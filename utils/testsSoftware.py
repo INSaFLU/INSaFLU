@@ -193,7 +193,7 @@ class Test(TestCase):
 # 			sample.owner = user
 # 			sample.save()
 # 			
-# 		return_value = self.software.identify_type_and_sub_type(sample, user)
+# 		return_value = self.software.identify_type_and_sub_type(sample, sample.path_name_1.name, sample.path_name_2.name, user)
 # 		self.assertTrue(return_value)
 # 		
 # 		vect_identify_virus = sample.identify_virus.all()

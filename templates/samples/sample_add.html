@@ -2,6 +2,13 @@
 
 {% load crispy_forms_tags %}
 
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-grid.min.css' %}" type="text/css" />
+{% endblock css %}
+
 {% block header %}
 	<div class="page-header rounded-header">
     	<h1>Create new sample</h1>
@@ -11,4 +18,13 @@
 {% block content %}
 	{% crispy form %} 
 {% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
+ {% endblock %}
 

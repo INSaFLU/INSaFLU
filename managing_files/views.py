@@ -5,9 +5,9 @@ from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
-from .models import Reference, Sample
-from .tables import ReferenceTable, SampleTable
-from .forms import ReferenceForm, SampleForm, SampleDatasetFormSet
+from managing_files.models import Reference, Sample
+from managing_files.tables import ReferenceTable, SampleTable
+from managing_files.forms import ReferenceForm, SampleForm
 from utils.constants import Constants
 from utils.software import Software
 from utils.utils import Utils
@@ -15,6 +15,8 @@ import hashlib, ntpath, os
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
+from django_modalview.generic.base import ModalTemplateView
+from django_q.tasks import async
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -28,11 +30,12 @@ class ReferenceView(LoginRequiredMixin, ListView):
 	
 	def get_context_data(self, **kwargs):
 		context = super(ReferenceView, self).get_context_data(**kwargs)
-		table = ReferenceTable(Reference.objects.filter(owner__id=self.request.user.id).order_by('-name'))
-		RequestConfig(self.request, paginate={'per_page': 15}).configure(table)
+		query_set = Reference.objects.filter(owner__id=self.request.user.id).order_by('-name')
+		table = ReferenceTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		context['table'] = table
 		context['show_paginatior'] = True
-		context['nav_reference'] = True
+		context['nav_reference'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
 
 
@@ -63,7 +66,6 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 	
 	def form_valid(self, form):
 		software = Software()
-		constants = Constants()
 		utils = Utils()
 		
 		name = form.cleaned_data['name']
@@ -117,11 +119,12 @@ class SamplesView(LoginRequiredMixin, ListView):
 	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesView, self).get_context_data(**kwargs)
-		table = SampleTable(Sample.objects.filter(owner__id=self.request.user.id).order_by('id'))
-		RequestConfig(self.request, paginate={'per_page': 15}).configure(table)
+		query_set = Sample.objects.filter(owner__id=self.request.user.id).order_by('id')
+		table = SampleTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		context['table'] = table
 		context['nav_sample'] = True
-		context['show_paginatior'] = True
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
 
 class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
@@ -139,7 +142,6 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		"""
 		kw = super(SamplesAddView, self).get_form_kwargs()
 		kw['request'] = self.request 	# the trick!
-	#	kw['data_set'] = Constants.DATA_SET_GENERIC
 		return kw
 
 	
@@ -147,10 +149,6 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		context = super(SamplesAddView, self).get_context_data(**kwargs)
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
-# 		if self.request.POST:
-# 			context['sample_formset'] = SampleDatasetFormSet(self.request.POST)
-# 			context['sample_formset'].full_clean()
-# 		else: context['sample_formset'] = SampleDatasetFormSet()
 		return context
 
 
@@ -165,7 +163,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		name = form.cleaned_data['name']
 		lat = form.cleaned_data['lat']
 		lng = form.cleaned_data['lng']
-		
+		like_dates = form.cleaned_data['like_dates']
+			
 		sample = form.save(commit=False)
 		## set other data
 		sample.owner = self.request.user
@@ -173,27 +172,63 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample.is_obsolete = False
 		sample.file_name_1 = os.path.basename(sample.path_name_1.name)
 		sample.is_valid_1 = True
-		if (sample.exit_file_2()): sample.is_valid_2 = False
-		else:	
+		if (sample.exist_file_2()):
 			sample.file_name_2 = os.path.basename(sample.path_name_2.name)
-			sample.is_valid_2 = True
+			sample.is_valid_2 = True 
+		else: sample.is_valid_2 = False
+		sample.has_files = True
+		
+		if (like_dates == 'date_of_onset'):
+			sample.day = int(sample.date_of_onset.strftime("%d"))
+			sample.week = int(sample.date_of_onset.strftime("%m"))
+			sample.year = int(sample.date_of_onset.strftime("%Y"))
+		elif (like_dates == 'date_of_collection'):
+			sample.day = int(sample.date_of_collection.strftime("%d"))
+			sample.week = int(sample.date_of_collection.strftime("%m"))
+			sample.year = int(sample.date_of_collection.strftime("%Y"))
+		elif (like_dates == 'date_of_receipt_lab'):
+			sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
+			sample.week = int(sample.date_of_receipt_lab.strftime("%m"))
+			sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
+		
 		sample.geo_local = Point(lat, lng)
 		sample.save()
 
 		## move the files to the right place
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_1)
-		constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
-		sample.path_name_1.name = os.path.join(constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_1)
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
+		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
+		sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
 		
-		if (sample.exit_file_2()):
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_2)
-			constants.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
-			sample.path_name_2.name = os.path.join(constants.get_path_to_sample_file(self.request.user.id, sample.id), sample.file_name_2)
+		if (sample.exist_file_2()):
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
+			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
+			sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
 		sample.save()
 
-
+		### create a task to perform the anlysis of fastq and trimmomatic
+		async(software.run_fastq_and_trimmomatic, sample, self.request.user)
+		
 		### queue the quality check and
-
+		async(software.identify_type_and_sub_type, sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2(), sample, self.request.user)
+		
 		messages.success(self.request, "Sample '" + name + "'was created successfully", fail_silently=True)
-		return super(ReferenceAddView, self).form_valid(form)
+		return super(SamplesAddView, self).form_valid(form)
 
+
+
+class AddValueModal(ModalTemplateView):
+	'''
+		 This modal inherit of ModalTemplateView, so it just display a text without logic.
+	'''
+	def __init__(self, *args, **kwargs):
+		'''
+			You have to call the init method of the parent, before to overide the values:
+				- title: The title display in the modal-header
+				- icon: The css class that define the modal's icon
+				- description: The content of the modal.
+				- close_button: A button object that has several attributes.(explain below)
+		'''
+		super(AddValueModal, self).__init__(*args, **kwargs)
+		self.title = "Add value"
+		self.description = "This is my description"
+		self.icon = "icon-mymodal"

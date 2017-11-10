@@ -13,7 +13,7 @@ from utils.constants import Constants
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from utils.result import Result, SoftwareDesc
+from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 
 class Software(object):
 	'''
@@ -202,12 +202,11 @@ class Software(object):
 	"""
 	Global processing
 	"""
-	def identify_type_and_sub_type(self, sample, owner):
+	def identify_type_and_sub_type(self, fastq1_1, fastq1_2, sample, owner):
 		"""
 		Identify type and sub_type
+		Because of the tests need to pass the files also as parameters
 		"""
-		fastq1_1 = sample.path_name_1.name
-		if (sample.exist_file_2()): fastq1_2 = sample.path_name_2.name
 		
 		manageDatabase = ManageDatabase()
 		### temp dir out spades		
@@ -303,6 +302,7 @@ class Software(object):
 		self.utils.remove_dir(out_dir_spades)
 		return True
 
+
 	def run_fastq(self, file_name_1, file_name_2):
 		"""
 		run fastQ, return output direcory
@@ -359,6 +359,35 @@ class Software(object):
 	def run_fastq_and_trimmomatic(self, sample, owner):
 		"""
 		run fastq and trimmomatic
-		Upload several tags about the quality
+		Upload average and sequence numbers
 		"""
-		pass
+		result = Result()
+		manageDatabase = ManageDatabase()
+		### first run fastq
+		try:
+			temp_dir = self.run_fastq(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2 else None)
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to identify type and sub type")
+			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			return False
+		
+		### run trimmomatic
+		self.run_trimmomatic(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2 else None, sample.name)
+		
+		### run fastq again
+		self.run_fastq(sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2())
+		
+		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Number_And_Average_Reads, Constants.META_VALUE_Success, result_average.to_json())
+		
+		### collect numbers
+		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_1())
+		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_2())
+		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
+		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Number_And_Average_Reads, Constants.META_VALUE_Success, result_average.to_json())
+
+
+

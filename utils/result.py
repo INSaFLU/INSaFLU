@@ -4,6 +4,7 @@ Created on Nov 2, 2017
 @author: mmp
 '''
 import json
+import humanfriendly
 
 class SoftwareDesc(object):
 	
@@ -122,3 +123,29 @@ class DecodeResult(object):
 		
 		return o
 
+
+class ResultAverageAndNumberReads(object):
+	"""
+	Only have the number of reads and average
+	"""
+	def __init__(self, number_file_1, average_file_1, number_file_2, average_file_2):
+		self.number_file_1 = number_file_1
+		self.average_file_1 = average_file_1
+		self.number_file_2 = number_file_2
+		self.average_file_2 = average_file_2
+	
+	def to_json(self):
+		return json.dumps(self, indent=4)
+	
+	def get_result_number(self):
+		return ""		
+		
+class DecodeResultAverageAndNumberReads(object):
+	
+	def __init__(self):
+		pass
+	
+	def decode_result(self, sz_temp):
+		return json.loads(sz_temp)
+		
+	

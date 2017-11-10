@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from utils.constants import Constants
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
+import os
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -31,15 +32,15 @@ class SeasonReference(models.Model):
 class Reference(models.Model):
 	name = models.CharField(max_length=200, default='New reference')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
-	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Up.Date')
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'], max_upload_size=100000, blank=True, null=True)
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=100000, blank=True, null=True)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'], max_upload_size=200000, blank=True, null=True)
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=200000, blank=True, null=True)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
 
@@ -113,6 +114,9 @@ class Sample(models.Model):
 	"""
 	Sample, each sample has one or two files...
 	"""
+	## to remove in future
+	objects = models.Manager()
+	
 	name = models.CharField(max_length=200, blank=True, null=True)  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
 																	##    prefix_R2_001.fastq.gz),
 	date_of_onset = models.DateField('date of onset', blank=True, null=True)
@@ -123,23 +127,23 @@ class Sample(models.Model):
 	month = models.IntegerField(blank=True, null=True)
 	year = models.IntegerField(blank=True, null=True)
 	vaccine_status = models.ForeignKey(VacineStatus, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	is_rejected = models.BooleanField(default=False)
 	is_obsolete = models.BooleanField(default=False)
 	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	tag_names = models.ManyToManyField(TagName)
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
-	objects = GeoManager()
+	geo_manager = GeoManager()
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 
 	### files
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream'], max_upload_size=30971520)
+	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream'], max_upload_size=30971520)
+	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520)
 
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -160,6 +164,22 @@ class Sample(models.Model):
 		if (self.path_name_2 is None): return False
 		return True
 
+	def get_trimmomatic_file_1(self):
+		"""
+		get the trimmomatic files, it's going to be use for all processing
+		"""
+		constants = Constants()
+		b_first_file = True
+		return constants.get_trimmomatic_output(os.path.dirname(self.path_name_1), self.name, b_first_file)
+	
+	def get_trimmomatic_file_2(self):
+		"""
+		get the trimmomatic files, it's going to be use for all processing
+		"""
+		if (not self.exist_file_2()): return None
+		constants = Constants()
+		b_first_file = False
+		return constants.get_trimmomatic_output(os.path.dirname(self.path_name_2), self.name, b_first_file)
 
 class MetaKeySample(models.Model):
 	"""

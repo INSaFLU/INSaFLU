@@ -4,9 +4,10 @@ from django.db import models
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from utils.constants import Constants
+from utils.constants import Constants, TypePath
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
+from django.conf import settings
 import os
 
 def reference_directory_path(instance, filename):
@@ -114,6 +115,8 @@ class Sample(models.Model):
 	"""
 	Sample, each sample has one or two files...
 	"""
+	OUT_FILE_ABRICATE = "abricate.txt"
+	
 	## to remove in future
 	objects = models.Manager()
 	
@@ -164,52 +167,62 @@ class Sample(models.Model):
 		if (self.path_name_2 is None or self.path_name_2.name is None): return False
 		return True
 
-	def get_trimmomatic_file_1(self):
+	def get_abricate_output(self, type_path):
 		"""
-		get the trimmomatic files, it's going to be use for all processing
+		type_path = [MEDIA_ROOT, MEDIA_URL]
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
 		"""
-		constants = Constants()
-		b_first_file = True
-		return constants.get_trimmomatic_output(self.path_name_1.name, self.name, b_first_file)
+		return os.path.join(self.__get_path__(type_path, True), self.OUT_FILE_ABRICATE)
 	
-	def get_trimmomatic_file_2(self):
+	def get_trimmomatic_file(self, type_path, b_first_file):
 		"""
 		get the trimmomatic files, it's going to be use for all processing
+		type_path = [MEDIA_ROOT, MEDIA_URL]
 		"""
-		if (not self.exist_file_2()): return None
-		constants = Constants()
-		b_first_file = False
-		return constants.get_trimmomatic_output(self.path_name_2.name, self.name, b_first_file)
+		if (not b_first_file and not self.exist_file_2()): return None
+		return os.path.join(self.__get_path__(type_path, b_first_file), self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
+	
+	def get_fastq(self, type_path, b_first_file):
+		"""
+		return fastq output first step
+		"""
+		if (not b_first_file and not self.exist_file_2()): return None
+		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
 
-	def get_fastq_1(self):
+	def get_fastq_output(self, type_path, b_first_file):
 		"""
 		return fastq output first step
 		"""
-		constants = Constants()
-		return constants.get_fastq_output(self.path_name_1)
+		if (not b_first_file and not self.exist_file_2()): return None
+		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
+
 	
-	def get_fastq_2(self):
+	def get_fastq_trimmomatic(self, type_path, b_first_file):
 		"""
 		return fastq output first step
 		"""
-		if (not self.exist_file_2()): return None
-		constants = Constants()
-		return constants.get_fastq_output(self.path_name_2)
-	
-	def get_fastq_trimmomatic_1(self):
+		if (not b_first_file and not self.exist_file_2()): return None
+		return os.path.join(self.__get_path__(type_path, b_first_file), self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
+
+	def __get_path__(self, type_path, b_first_file):
 		"""
-		return fastq output first step
+		get a path, from MEDIA_URL or MEDIA_ROOT
 		"""
-		constants = Constants()
-		return constants.get_fastq_trimmomatic_output(self.path_name_1, self.name, True)
-	
-	def get_fastq_trimmomatic_2(self):
-		"""
-		return fastq output first step
-		"""
-		if (not self.exist_file_2()): return None
-		constants = Constants()
-		return constants.get_fastq_trimmomatic_output(self.path_name_2, self.name, False)
+		if (b_first_file):
+			path_to_find = os.path.dirname(self.path_name_1.name)
+			if (type_path == TypePath.MEDIA_ROOT): 
+				if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+			else:
+				path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		else:
+			path_to_find = os.path.dirname(self.path_name_2.name)
+			if (type_path == TypePath.MEDIA_ROOT): 
+				if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+			else:
+				path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+
 
 
 class MetaKeySample(models.Model):

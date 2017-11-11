@@ -13,7 +13,7 @@ from manage_virus.models import UploadFile
 from django.contrib.auth.models import User
 from utils.constantsTestsCase import ConstantsTestsCase
 from managing_files.models import Sample
-from utils.constants import Constants
+from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from managing_files.manage_database import ManageDatabase
@@ -121,7 +121,7 @@ class Test(unittest.TestCase):
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
-		file_abricate = self.constants.get_abricate_output(sample.path_name_1)
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_abricate))
 		
 		manageDatabase = ManageDatabase()

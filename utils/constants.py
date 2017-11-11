@@ -4,6 +4,7 @@ Created on Oct 13, 2017
 @author: mmp
 '''
 import os
+from enum import Enum
 
 class Constants(object):
 	'''
@@ -52,38 +53,11 @@ class Constants(object):
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 15
 	
-	OUT_FILE_ABRICATE = "abricate.txt"
-	
-	def get_abricate_output(self, path):
-		"""
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), Constants.OUT_FILE_ABRICATE)
-	
-	def get_fastq_output(self, path):
-		"""
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		return os.path.join(path.replace(".fastq.gz", "_fastqc.html") if isinstance(path, str) else path.name.replace(".fastq.gz", "_fastqc.html"))
-	
-	def get_fastq_trimmomatic_output(self, path, sample_name, b_first_file):
-		"""
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		path_temp = path if isinstance(path, str) else path.name
-		real_path = path_temp if os.path.isdir(path_temp) else os.path.dirname(path_temp)
-		return os.path.join(real_path, sample_name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
-		
-	def get_trimmomatic_output(self, path, sample_name, b_first_file):
-		"""
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		path_temp = path if isinstance(path, str) else path.name
-		real_path = path_temp if os.path.isdir(path_temp) else os.path.dirname(path_temp)
-		return os.path.join(real_path, sample_name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
 
 
+class TypePath(Enum):
+	"""
+	Has the type of paths you can get from file paths
+	"""
+	MEDIA_ROOT = 0
+	MEDIA_URL = 1

@@ -7,7 +7,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from django.conf import settings 
 from utils.constantsTestsCase import ConstantsTestsCase
-from utils.constants import Constants
+from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
@@ -158,11 +158,39 @@ class Test(TestCase):
 		"""
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
-		
-		out_put_path = self.software.run_fastq(file_1, file_2)
-		
-		out_file_1 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_output(file_1)))
-		out_file_2 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_output(file_2)))
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_fastq_and_trimmomatic1"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_rejected = False
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.owner = user
+			sample.save()
+
+		out_put_path = self.software.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertTrue(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
@@ -170,52 +198,96 @@ class Test(TestCase):
 		self.utils.remove_dir(out_put_path)
 
 		out_put_path = self.software.run_fastq(file_1, None)
-		out_file_1 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_output(file_1)))
-		out_file_2 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_output(file_2)))
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertFalse(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
 		self.utils.remove_dir(out_put_path)
-		
+
+
 	def test_run_trimmomatic(self):
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
 
-		sample_name = "sample_name"
-		out_put_path_trimmomatic = self.software.run_trimmomatic(file_1, file_2, sample_name)
-		b_first_file = True
-		out_file_1 = os.path.join(out_put_path_trimmomatic, os.path.basename(self.constants.get_trimmomatic_output(out_put_path_trimmomatic, sample_name, b_first_file)))
-		b_first_file = False
-		out_file_2 = os.path.join(out_put_path_trimmomatic, os.path.basename(self.constants.get_trimmomatic_output(out_put_path_trimmomatic, sample_name, b_first_file)))
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_fastq_and_trimmomatic"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_rejected = False
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.owner = user
+			sample.save()
+
+		out_put_path_trimmomatic = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		out_file_1 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertTrue(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
 		self.assertTrue(os.path.getsize(out_file_2) > 1000)
 		
 		out_put_path = self.software.run_fastq(out_file_1, out_file_2)
-		b_first_file = True
-		out_file_1 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_trimmomatic_output(out_put_path, sample_name, b_first_file)))
-		b_first_file = False
-		out_file_2 = os.path.join(out_put_path, os.path.basename(self.constants.get_fastq_trimmomatic_output(out_put_path, sample_name, b_first_file)))
-		print(out_file_1)
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertTrue(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
 		self.assertTrue(os.path.getsize(out_file_2) > 1000)
 		self.utils.remove_dir(out_put_path)
 		self.utils.remove_dir(out_put_path_trimmomatic)
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 
-		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		sample_name = "sample_name"
-		out_put_path = self.software.run_trimmomatic(file_1, None, sample_name)
-		b_first_file = True
-		out_file_1 = os.path.join(out_put_path, os.path.basename(self.constants.get_trimmomatic_output(out_put_path, sample_name, b_first_file)))
-		b_first_file = False
-		out_file_2 = os.path.join(out_put_path, os.path.basename(self.constants.get_trimmomatic_output(out_put_path, sample_name, b_first_file)))
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+			
+		sample_name = "run_fastq_and_trimmomatic_222"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_rejected = False
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = None
+			sample.path_name_2.name = None
+			sample.owner = user
+			sample.save()
+		
+		out_put_path = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		self.assertTrue(sample.get_fastq(TypePath.MEDIA_ROOT, False) == None)
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		self.assertTrue(os.path.exists(out_file_1))
-		self.assertFalse(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
 		self.utils.remove_dir(out_put_path)
+
+		## remove all files
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+
 
 	def test_run_fastq_and_trimmomatic(self):
 		"""
@@ -256,12 +328,15 @@ class Test(TestCase):
 		### run software
 		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
-		self.assertTrue(os.path.exists(self.constants.get_fastq_output(sample.path_name_1)))
-		self.assertTrue(os.path.exists(self.constants.get_fastq_output(sample.path_name_2)))
-		self.assertTrue(os.path.exists(self.constants.get_trimmomatic_output(temp_dir, sample.name, True)))
-		self.assertTrue(os.path.exists(self.constants.get_trimmomatic_output(temp_dir, sample.name, False)))
-		self.assertTrue(os.path.exists(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, True)))
-		self.assertTrue(os.path.exists(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, False)))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		print(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -291,8 +366,8 @@ class Test(TestCase):
 		
 		## remove all files
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
-	
-	
+
+
 	def test_run_fastq_and_trimmomatic_single_file(self):
 		"""
 		Test run fastq and trimmomatic all together
@@ -328,9 +403,10 @@ class Test(TestCase):
 		### run software
 		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
-		self.assertTrue(os.path.exists(self.constants.get_fastq_output(sample.path_name_1)))
-		self.assertTrue(os.path.exists(self.constants.get_trimmomatic_output(temp_dir, sample.name, True)))
-		self.assertTrue(os.path.exists(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, True)))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -425,8 +501,8 @@ class Test(TestCase):
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
-		file_abricate = self.constants.get_abricate_output(sample.path_name_1)
-		self.assertTrue(os.path.exists(file_abricate))
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
@@ -504,7 +580,7 @@ class Test(TestCase):
 # 				self.assertEquals("98.65", identify_virus.identity)
 # 				self.assertEquals("N2", identify_virus.seq_virus.name)
 # 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
-# 		file_abricate = self.constants.get_abricate_output(sample.path_name_1)
+# 		file_abricate = self.constants.get_abricate_output(TypePath.MEDIA_ROOT)
 # 		self.assertTrue(os.path.exists(file_abricate))
 # 		
 # 		manageDatabase = ManageDatabase()

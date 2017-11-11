@@ -11,11 +11,10 @@ from django.core.files.temp import NamedTemporaryFile
 from django.contrib.gis.geos import Point
 from utils.utils import Utils
 from utils.constants import Constants
-from django.utils import timezone
 from django.forms.models import inlineformset_factory
 from django.forms import widgets
 from django.utils.safestring import mark_safe
-from bootstrap_datepicker.widgets import DatePicker
+from django.core.exceptions import ValidationError
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -24,6 +23,7 @@ class ReferenceForm(forms.ModelForm):
 	Reference form, name, scientific_name and others
 	"""
 	utils = Utils()
+	error_css_class = 'error'
 	
 	class Meta:
 		model = Reference
@@ -185,6 +185,11 @@ class RelatedFieldWidgetCanAdd(widgets.Select):
 		output.append('<img src={% static \'admin/img/icon_addlink.gif\' %} width="10" height="10" alt="Add Another"/></a>')
 		return mark_safe(''.join(output))
 
+
+class DateInput(forms.DateInput):
+	input_type = 'date'
+
+
 ## https://stackoverflow.com/questions/4497684/django-class-based-views-with-inline-model-form-or-formset
 ## https://gist.github.com/neara/6209563
 ## https://stackoverflow.com/questions/11198638/django-inline-formset-error/11199031
@@ -202,18 +207,23 @@ class SampleForm(forms.ModelForm):
 	# 38.7223° N, 9.1393° 
 	lat = forms.FloatField(required=True)
 	lng = forms.FloatField(required=True)
-	
-	date_of_onset = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
-	date_of_collection = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
-	date_of_receipt_lab = forms.DateField(widget=DatePicker(options={"format": "dd/mm/yyyy", "autoclose": True}))
 	like_dates = forms.ChoiceField(choices=DATE_CHOICES, widget=forms.RadioSelect())
-	
+	error_css_class = 'error'
+
 ##	geo_local = PointField(widget=CustomPointWidget(), required=False, srid=4326)
 	
 	class Meta:
 		model = Sample
 		# specify what fields should be used in this form.
 		fields = ('name', 'date_of_collection', 'date_of_onset', 'date_of_receipt_lab', 'vaccine_status', 'data_set', 'path_name_1', 'path_name_2')
+		date_of_onset = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
+		date_of_collection = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
+		date_of_receipt_lab = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
+		widgets = {
+			'date_of_onset': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
+			'date_of_collection': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
+			'date_of_receipt_lab': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
+		}
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -249,10 +259,6 @@ class SampleForm(forms.ModelForm):
 			self.fields[x[0]].help_text = x[2]
 			self.fields[x[0]].required = x[3]
 
-		self.fieldsets = []
-		self.fieldsets.append(('Dates', ['like_dates', 'date_of_collection', 'date_of_receipt_lab']),)
-		self.fieldsets.append(('Geo position', ['lat', 'lng']),)
-		
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
@@ -306,7 +312,7 @@ class SampleForm(forms.ModelForm):
 		name = self.cleaned_data['name']
 		try:
 			Sample.objects.get(name=name, owner__username=self.request.user.username)
-			self.add_error('name', _("This name '" + name +"' already exist in database, please choose other."))
+			self.add_error('name', ValidationError(_("This name '" + name +"' already exist in database, please choose other."), code='invalid'))
 		except Sample.DoesNotExist:
 			pass
 		
@@ -371,8 +377,6 @@ class SampleForm(forms.ModelForm):
 		if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
 		return cleaned_data
 		
-### Not used yet Inline FormSet
-SampleDatasetFormSet = inlineformset_factory(DataSet, Sample, form=SampleForm, extra=2)
 
 # 	def clean_name(self):
 # 		"""

@@ -35,3 +35,9 @@
     $ cd ../bin
     $ ./abricate --setupdb
     $ ./abricate --list
+    
+    
+## run DjangoQ
+$ python3 manage.py qcluster
+$ python3 manage.py qmonitor
+$ python3 manage.py qinfo

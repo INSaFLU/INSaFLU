@@ -17,8 +17,21 @@
     border: 2px solid #246bce;
     padding-left: 15px;
     padding-right: 15px;
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.rounded-group-box-legend {
+    border-radius: 10px;
+    background: #eeeeee; 										/* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(#dddddd, #eeeeee); 		/* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(#dddddd, #eeeeee); 			/* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(#dddddd, #eeeeee); 		/* For Firefox 3.6 to 15 */
+    background: linear-gradient(#dddddd, #eeeeee); 				/* Standard syntax */
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 /**
@@ -28,7 +41,23 @@
     .container { width: 1500px; } 
 }
 
-.box_tooltip_flu
-{
+/**
+*	Color in expand of buttons in code
+*/
+.box_tooltip_flu{
 	color: #ffc107;
+}
+
+/**
+*	color in fields errors
+*/
+.fields_error {
+	color: #C70039
+}
+
+/**
+*	draw line around the input
+*/
+.error input, .error select {
+    border: 2px red solid;
 }

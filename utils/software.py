@@ -3,13 +3,13 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os
+import os, sys
 import logging
 import cmd
 import subprocess
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
-from utils.constants import Constants
+from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
@@ -279,7 +279,7 @@ class Software(object):
 		parseOutFiles = ParseOutFiles()
 		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate)
 		## copy the abricate output 
-		self.utils.copy_file(out_file_abricate, self.constants.get_abricate_output(sample.path_name_1))
+		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
 		
 		uploadFiles = UploadFiles()
 		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
@@ -340,11 +340,8 @@ class Software(object):
 		utils = Utils()
 		temp_dir = utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
-			b_first_file = True
-			cmd = "java -jar %s SE -threads %d %s %s %s" % (self.get_trimmomantic(), Software.CORES_TO_USE, file_name_1, 
-					os.path.join(temp_dir, os.path.basename(self.constants.get_trimmomatic_output(temp_dir, sample_name, b_first_file))), 
-					self.get_trimmomatic_parameters())
-			print(cmd)
+			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.get_trimmomantic(), Software.CORES_TO_USE, file_name_1, 
+					os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
 		else:
 			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.get_trimmomantic(), Software.CORES_TO_USE, 
 										file_name_1, os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
@@ -367,11 +364,11 @@ class Software(object):
 		manageDatabase = ManageDatabase()
 		### first run fastq
 		try:
-			temp_dir = self.run_fastq(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2() else None)
-			
+			temp_dir = self.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
+
 			### need to copy the files to samples/user path
-			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(self.constants.get_fastq_output(sample.path_name_1))), sample.get_fastq_1())
-			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(self.constants.get_fastq_output(sample.path_name_2))), sample.get_fastq_2())
+			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True))), sample.get_fastq_output(TypePath.MEDIA_ROOT, True))
+			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False))), sample.get_fastq_output(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
@@ -381,15 +378,13 @@ class Software(object):
 			return False
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 		
-		print("dcdsdsds")
 		### run trimmomatic
 		try:
-			temp_dir = self.run_trimmomatic(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2() else None, sample.name)
+			temp_dir = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name)
 											
 			### need to copy the files to samples/user path
-			self.utils.copy_file(self.constants.get_trimmomatic_output(temp_dir, sample.name, True), sample.get_trimmomatic_file_1())
-			if (sample.exist_file_2()): self.utils.copy_file(self.constants.get_trimmomatic_output(temp_dir, sample.name, False), sample.get_trimmomatic_file_2())
-			
+			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
@@ -399,13 +394,14 @@ class Software(object):
 			return False
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 		
+		
 		### run fastq again
 		try:
-			temp_dir = self.run_fastq(sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2() if sample.exist_file_2() else None)
+			temp_dir = self.run_fastq(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 											
 			### need to copy the files to samples/user path
-			self.utils.copy_file(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, True), sample.get_fastq_trimmomatic_1())
-			if (sample.exist_file_2()): self.utils.copy_file(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, False), sample.get_fastq_trimmomatic_2())
+			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))), sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))), sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
@@ -416,8 +412,8 @@ class Software(object):
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 
 		### collect numbers
-		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_1())
-		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_2())
+		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		else: (lines_2, average_2) = (None, None)
 		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())

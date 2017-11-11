@@ -8,7 +8,7 @@ from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample
 from managing_files.tables import ReferenceTable, SampleTable
 from managing_files.forms import ReferenceForm, SampleForm
-from utils.constants import Constants
+from utils.constants import Constants, TypePath
 from utils.software import Software
 from utils.utils import Utils
 import hashlib, ntpath, os
@@ -144,7 +144,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		kw['request'] = self.request 	# the trick!
 		return kw
 
-	
+
 	def get_context_data(self, **kwargs):
 		context = super(SamplesAddView, self).get_context_data(**kwargs)
 		context['nav_sample'] = True
@@ -205,12 +205,13 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
 		sample.save()
 
-		### create a task to perform the anlysis of fastq and trimmomatic
+		### create a task to perform the analysis of fastq and trimmomatic
 		async(software.run_fastq_and_trimmomatic, sample, self.request.user)
 		
 		### queue the quality check and
 		if (sample.exist_file_2()):		## don't run for single file because spades doesn't work for one single file
-			async(software.identify_type_and_sub_type, sample, sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2(), self.request.user)
+			async(software.identify_type_and_sub_type, sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
+				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), self.request.user)
 		
 		messages.success(self.request, "Sample '" + name + "'was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)

@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 from utils.constantsTestsCase import ConstantsTestsCase
 from managing_files.models import Sample
 from utils.constants import Constants
+from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from managing_files.manage_database import ManageDatabase
 
@@ -97,7 +98,7 @@ class Test(unittest.TestCase):
 			sample.owner = user
 			sample.save()
 		
-		task_id = async(self.software.identify_type_and_sub_type, sample.path_name_1.name, sample.path_name_2.name, sample, user, sync=True)
+		task_id = async(self.software.identify_type_and_sub_type, sample, sample.path_name_1.name, sample.path_name_2.name, user, sync=True)
 		# the task will then be available immediately
 		return_value = fetch(task_id)
 		self.assertTrue(return_value)
@@ -124,10 +125,10 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(file_abricate))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, Constants.META_KEY_Identify_Sample, None)
+		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
 		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(Constants.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(Constants.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 

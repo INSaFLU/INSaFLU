@@ -10,6 +10,7 @@ import subprocess
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
 from utils.constants import Constants
+from utils.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
@@ -101,8 +102,9 @@ class Software(object):
 		"""
 		Run spades
 		"""
-		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s --pe1-1 %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
+		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, fastq_2, self.CORES_TO_USE, out_dir)
+		print(cmd)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -202,7 +204,7 @@ class Software(object):
 	"""
 	Global processing
 	"""
-	def identify_type_and_sub_type(self, fastq1_1, fastq1_2, sample, owner):
+	def identify_type_and_sub_type(self, sample, fastq1_1, fastq1_2, owner):
 		"""
 		Identify type and sub_type
 		Because of the tests need to pass the files also as parameters
@@ -216,8 +218,8 @@ class Software(object):
 		except Exception:
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
-			result.add_software(Software(self.get_spades(), self.get_spades_version(), self.get_spades_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			result.add_software(SoftwareDesc(self.get_spades(), self.get_spades_version(), self.get_spades_parameters()))
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -227,7 +229,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
 			result.add_software(SoftwareDesc(self.get_spades(), self.get_spades_version(), self.get_spades_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -238,7 +240,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 
@@ -249,7 +251,7 @@ class Software(object):
 				result = Result()
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.get_abricate_version()))
 				result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-				manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+				manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 				return False
 		
@@ -261,7 +263,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -270,7 +272,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 
@@ -286,7 +288,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to identify type and sub type")
 			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -297,7 +299,7 @@ class Software(object):
 		sample.save()
 		
 		## save everything OK
-		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.get_spades_version(), self.get_abricate_version()))
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.get_spades_version(), self.get_abricate_version()))
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
 		return True
@@ -352,7 +354,8 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run trimmomatic")
 		return temp_dir
-		
+
+
 	"""
 	Global processing
 	"""
@@ -361,33 +364,67 @@ class Software(object):
 		run fastq and trimmomatic
 		Upload average and sequence numbers
 		"""
-		result = Result()
 		manageDatabase = ManageDatabase()
 		### first run fastq
 		try:
-			temp_dir = self.run_fastq(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2 else None)
+			temp_dir = self.run_fastq(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2() else None)
+			
+			### need to copy the files to samples/user path
+			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(self.constants.get_fastq_output(sample.path_name_1))), sample.get_fastq_1())
+			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(self.constants.get_fastq_output(sample.path_name_2))), sample.get_fastq_2())
 		except Exception as e:
 			result = Result()
-			result.set_error("Fail to identify type and sub type")
-			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Identify_Sample, Constants.META_VALUE_Error, result.to_json())
-			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			result.set_error("Fail to run fastq software: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_fastq(), self.get_fastq(), self.get_fastq_parameters()))
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 		
+		print("dcdsdsds")
 		### run trimmomatic
-		self.run_trimmomatic(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2 else None, sample.name)
+		try:
+			temp_dir = self.run_trimmomatic(sample.path_name_1.name, sample.path_name_2.name if sample.exist_file_2() else None, sample.name)
+											
+			### need to copy the files to samples/user path
+			self.utils.copy_file(self.constants.get_trimmomatic_output(temp_dir, sample.name, True), sample.get_trimmomatic_file_1())
+			if (sample.exist_file_2()): self.utils.copy_file(self.constants.get_trimmomatic_output(temp_dir, sample.name, False), sample.get_trimmomatic_file_2())
+			
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to run trimmomatic software: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_trimmomantic(), self.get_trimmomatic_version(), self.get_trimmomatic_version()))
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			return False
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 		
 		### run fastq again
-		self.run_fastq(sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2())
-		
-		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Number_And_Average_Reads, Constants.META_VALUE_Success, result_average.to_json())
-		
+		try:
+			temp_dir = self.run_fastq(sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2() if sample.exist_file_2() else None)
+											
+			### need to copy the files to samples/user path
+			self.utils.copy_file(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, True), sample.get_fastq_trimmomatic_1())
+			if (sample.exist_file_2()): self.utils.copy_file(self.constants.get_fastq_trimmomatic_output(temp_dir, sample.name, False), sample.get_fastq_trimmomatic_2())
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to run fastq software: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_fastq(), self.get_fastq(), self.get_fastq_parameters()))
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			return False
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+
 		### collect numbers
 		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_1())
 		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file_2())
+		else: (lines_2, average_2) = (None, None)
 		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
-		manageDatabase.set_metakey(sample, owner, Constants.META_KEY_Number_And_Average_Reads, Constants.META_VALUE_Success, result_average.to_json())
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 
+		## save everything OK
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
+							(self.get_fastq_version(), self.get_trimmomatic_version()))
+		return True
 
 

@@ -38,13 +38,13 @@ class Test(unittest.TestCase):
 		try:
 			self.assertTrue(utils.is_fastq_gz(path_file))
 		except Exception as e:
-			self.assertEqual("File is not compressed in gzip format", e.args[0])
+			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		try:
 			self.assertTrue(utils.is_fastq_gz(path_file))
 		except Exception as e:
-			self.assertEqual("File is not compressed in gzip format", e.args[0])
+			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_FAKE_GZ)
 		try:

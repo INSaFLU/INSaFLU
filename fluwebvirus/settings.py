@@ -10,6 +10,27 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
+# In settings.py set DATE_INPUT_FORMATS as below:
+# 
+# DATE_INPUT_FORMATS = ('%d-%m-%Y')
+# And in your form you could do something like below:
+# 
+# class ClientDetailsForm(ModelForm):
+#     date_of_birth = DateField(input_formats=settings.DATE_INPUT_FORMATS)
+#     class Meta:
+#        model = ModelA
+# This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
+# class DateInput(forms.DateInput):
+#   input_type = 'date'
+# 
+# fields = ('name', 'sample_date', 'data_set', 'path_name_1', 'path_name_2')
+#     sample_date = forms.DateField(widget=forms.DateInput(attrs={'class':'datepicker'}))
+#     widgets = {
+#       'sample_date': DateInput(),
+#     }
+
+
+
 import os
 
 RUN_TEST_IN_COMMAND_LINE = False
@@ -166,7 +187,9 @@ TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
-USE_L10N = True
+## set the format in forms.DateField
+## This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
+USE_L10N = False
 
 USE_TZ = True
 

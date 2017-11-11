@@ -161,7 +161,7 @@ class Sample(models.Model):
 		return sz_return
 
 	def exist_file_2(self):
-		if (self.path_name_2 is None): return False
+		if (self.path_name_2 is None or self.path_name_2.name is None): return False
 		return True
 
 	def get_trimmomatic_file_1(self):
@@ -170,7 +170,7 @@ class Sample(models.Model):
 		"""
 		constants = Constants()
 		b_first_file = True
-		return constants.get_trimmomatic_output(os.path.dirname(self.path_name_1), self.name, b_first_file)
+		return constants.get_trimmomatic_output(self.path_name_1.name, self.name, b_first_file)
 	
 	def get_trimmomatic_file_2(self):
 		"""
@@ -179,7 +179,38 @@ class Sample(models.Model):
 		if (not self.exist_file_2()): return None
 		constants = Constants()
 		b_first_file = False
-		return constants.get_trimmomatic_output(os.path.dirname(self.path_name_2), self.name, b_first_file)
+		return constants.get_trimmomatic_output(self.path_name_2.name, self.name, b_first_file)
+
+	def get_fastq_1(self):
+		"""
+		return fastq output first step
+		"""
+		constants = Constants()
+		return constants.get_fastq_output(self.path_name_1)
+	
+	def get_fastq_2(self):
+		"""
+		return fastq output first step
+		"""
+		if (not self.exist_file_2()): return None
+		constants = Constants()
+		return constants.get_fastq_output(self.path_name_2)
+	
+	def get_fastq_trimmomatic_1(self):
+		"""
+		return fastq output first step
+		"""
+		constants = Constants()
+		return constants.get_fastq_trimmomatic_output(self.path_name_1, self.name, True)
+	
+	def get_fastq_trimmomatic_2(self):
+		"""
+		return fastq output first step
+		"""
+		if (not self.exist_file_2()): return None
+		constants = Constants()
+		return constants.get_fastq_trimmomatic_output(self.path_name_2, self.name, False)
+
 
 class MetaKeySample(models.Model):
 	"""
@@ -193,7 +224,7 @@ class MetaKeySample(models.Model):
 	description = models.TextField(default="")
 	
 	class Meta:
-		ordering = ['sample__id', 'meta_tag__id', 'creation_date']
+		ordering = ['sample__id', '-creation_date']
 	
 	def __str__(self):
 		return self.value

@@ -268,17 +268,23 @@ class SampleForm(forms.ModelForm):
 					css_class = "row col-sm-4"),
 				css_class = 'row'
 			),
-			Div(
-				Div('like_dates', css_class="col-sm-3"),
-				Div('date_of_onset', css_class="col-sm-3"),
-				Div('date_of_collection', css_class="col-sm-3"),
-				Div('date_of_receipt_lab', css_class="col-sm-3"),
-				css_class = 'row '
+			Fieldset(
+				'Dates',
+				Div(
+					Div('like_dates', css_class="col-sm-3"),
+					Div('date_of_onset', css_class="col-sm-3"),
+					Div('date_of_collection', css_class="col-sm-3"),
+					Div('date_of_receipt_lab', css_class="col-sm-3"),
+					css_class = 'row '),
+				css_class = 'rounded-group-box'
 			),
-			Div(
-				Div('lat', css_class="col-sm-4"),
-				Div('lng', css_class="col-sm-4"),
-				css_class = 'row'
+			Fieldset(
+				'Global position',
+				Div(
+					Div('lat', css_class="col-sm-4"),
+					Div('lng', css_class="col-sm-4"),
+					css_class = 'row'
+				),
 			),
 			Div('path_name_1', css_class = 'show-for-sr'),
 			Div('path_name_2', css_class = 'show-for-sr'),

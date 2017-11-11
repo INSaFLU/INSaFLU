@@ -4,7 +4,7 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from .result import Output, SoftwareDesc, DecodeResult, Result
+from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, DecodeResultAverageAndNumberReads
 
 class Test(TestCase):
 
@@ -46,3 +46,22 @@ class Test(TestCase):
 		self.assertEqual(result_2.outputs.list_output[0].software.parameters, result.outputs.list_output[0].software.parameters)
 		self.assertEqual(len(result_2.softwares.list_software), len(result.softwares.list_software))
 		self.assertEqual(result_2.softwares.list_software[0].name, result.softwares.list_software[0].name)
+
+	def test_ResultAverageAndNumberReads(self):
+		resultAverageAndNumberReads = ResultAverageAndNumberReads(21, 43, 53, 12)
+		self.assertEqual(21, resultAverageAndNumberReads.number_file_1)
+		self.assertEqual(43, resultAverageAndNumberReads.average_file_1)
+		self.assertEqual(53, resultAverageAndNumberReads.number_file_2)
+		self.assertEqual(12, resultAverageAndNumberReads.average_file_2)
+		
+		sz_return = resultAverageAndNumberReads.to_json()
+		self.assertTrue(sz_return.find('"number_file_1": "21"') != 0)
+		self.assertTrue(sz_return.find('"average_file_1": "43"') != 0)
+		
+		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+		result_2 = decodeResultAverageAndNumberReads.decode_result(sz_return)
+		self.assertEqual(result_2, resultAverageAndNumberReads)
+		
+		
+		
+		

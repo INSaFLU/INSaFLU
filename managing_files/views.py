@@ -34,8 +34,8 @@ class ReferenceView(LoginRequiredMixin, ListView):
 		table = ReferenceTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		context['table'] = table
-		context['show_paginatior'] = True
-		context['nav_reference'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['nav_reference'] = True
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
 
 
@@ -209,7 +209,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		async(software.run_fastq_and_trimmomatic, sample, self.request.user)
 		
 		### queue the quality check and
-		async(software.identify_type_and_sub_type, sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2(), sample, self.request.user)
+		if (sample.exist_file_2()):		## don't run for single file because spades doesn't work for one single file
+			async(software.identify_type_and_sub_type, sample, sample.get_trimmomatic_file_1(), sample.get_trimmomatic_file_2(), self.request.user)
 		
 		messages.success(self.request, "Sample '" + name + "'was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)

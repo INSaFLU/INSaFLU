@@ -59,6 +59,7 @@ $().ready(function(){
         	$('#id_vaccine_status').append(
 	        	$('<option/>', { 										// creates a dynamic div element on the fly
 			        value: 'vdsddsvdstitle',
+			        text: 'vdsddsvdstitle',
 		    	}))
 		    
             

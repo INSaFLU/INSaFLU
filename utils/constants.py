@@ -52,14 +52,6 @@ class Constants(object):
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 15
 	
-	### MetaKeys
-	META_KEY_Identify_Sample = "IdentifySamples"
-	META_KEY_Number_And_Average_Reads = "NumberAndAverageReads"
-	
-	## meta value
-	META_VALUE_Error = "Error"
-	META_VALUE_Success = "Success"
-
 	OUT_FILE_ABRICATE = "abricate.txt"
 	
 	def get_abricate_output(self, path):
@@ -81,15 +73,17 @@ class Constants(object):
 		Return the file name of the abricate output base on fastq File input
 		path it's a FileField instance, or a string
 		"""
-		if (b_first_file): return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_1P_fastqc.html")
-		else: return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_2P_fastqc.html")
+		path_temp = path if isinstance(path, str) else path.name
+		real_path = path_temp if os.path.isdir(path_temp) else os.path.dirname(path_temp)
+		return os.path.join(real_path, sample_name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
 		
 	def get_trimmomatic_output(self, path, sample_name, b_first_file):
 		"""
 		Return the file name of the abricate output base on fastq File input
 		path it's a FileField instance, or a string
 		"""
-		if (b_first_file): return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_1P.fastq.gz")
-		else: return os.path.join(os.path.dirname(path if isinstance(path, str) else path.name), sample_name + "_2P.fastq.gz")
+		path_temp = path if isinstance(path, str) else path.name
+		real_path = path_temp if os.path.isdir(path_temp) else os.path.dirname(path_temp)
+		return os.path.join(real_path, sample_name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
 
 

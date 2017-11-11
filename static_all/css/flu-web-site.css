@@ -12,6 +12,15 @@
 	margin-bottom: 30px;
 }
 
+.rounded-group-box {
+    border-radius: 25px;
+    border: 2px solid #246bce;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
 /**
 *	Increase size of container-fluid
 */

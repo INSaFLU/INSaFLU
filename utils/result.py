@@ -135,17 +135,36 @@ class ResultAverageAndNumberReads(object):
 		self.average_file_2 = average_file_2
 	
 	def to_json(self):
-		return json.dumps(self, indent=4)
-	
+		return json.dumps(self, indent=4, cls=CustomEncoderResult)
+
 	def get_result_number(self):
 		return ""		
-		
+	
+	def __eq__(self, other):
+		return other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
+			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
+
+
+
+class CustomEncoderResult(json.JSONEncoder):
+
+	def default(self, o):
+		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
+
+
 class DecodeResultAverageAndNumberReads(object):
 	
 	def __init__(self):
 		pass
 	
 	def decode_result(self, sz_temp):
-		return json.loads(sz_temp)
+		return json.loads(sz_temp, object_hook=self.decode_object)
 		
-	
+	def decode_object(self, o):
+		if '__ResultAverageAndNumberReads__' in o:
+			a = ResultAverageAndNumberReads(o['__ResultAverageAndNumberReads__']['number_file_1'],\
+						o['__ResultAverageAndNumberReads__']['average_file_1'], o['__ResultAverageAndNumberReads__']['number_file_2'],\
+						o['__ResultAverageAndNumberReads__']['average_file_2'], )
+			a.__dict__.update(o['__ResultAverageAndNumberReads__'])
+			return a
+		return o

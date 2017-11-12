@@ -3,7 +3,7 @@ Created on Nov 1, 2017
 
 @author: mmp
 '''
-from .models import MetaKeySample, MetaKey
+from managing_files.models import MetaKeySample, MetaKey
 
 class ManageDatabase(object):
 	'''

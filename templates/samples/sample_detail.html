@@ -1,0 +1,115 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h1>Sample details</h1>
+	</div>
+{% endblock  %}
+
+<!-- https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Generic_views -->
+{% block content %}
+	{% if error_cant_see %}
+		<hr>
+		<p><strong>Sample not available</strong></p>
+	{% else %}
+		<div class="container-fluid">
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Name:</strong> {{ sample.name }}</div>
+			  	<div class="col-lg-3"><strong>Onset Date:</strong> {{ sample.date_of_onset|date }}</div>
+			  	<div class="col-lg-3"><strong>Collection Date:</strong> {{ sample.date_of_collection|date }}</div>
+			  	<div class="col-lg-3"><strong>Reception Date:</strong> {{ sample.date_of_receipt_lab|date }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Week:</strong> {{ sample.week }}</div> <!-- author detail link not yet defined -->
+			  	<div class="col-lg-3"><strong>Vaccine status:</strong> {{ sample.vaccine_status.name }}</div>
+			  	<div class="col-lg-3"><strong>Data set:</strong> {{ sample.data_set.name }}</div>
+			  	<div class="col-lg-3"><strong>Is obsolete:</strong> {{ sample.is_obsolete }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Upload date:</strong> {{ sample.creation_date|date }}</div>
+			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ sample.geo_local.coords }}</div>
+			  	<div class="col-lg-3"><strong>Virus identify:</strong> {{ virus_identify }}</div>
+			  	<div class="col-lg-3"><strong>Owner:</strong> {{ sample.owner.username }}</div>
+			</div>
+			<hr>
+			
+			<div class="container">
+				<ul class="nav nav-tabs">
+		  			<li class="active"><a data-toggle="tab" href="#original_fastq">Original fastq</a></li>
+		  			<li><a data-toggle="tab" href="#trimmomatic">Trimmomatic files</a></li>
+		  			<li><a data-toggle="tab" href="#virus_identification">Virus Identification</a></li>
+				</ul>
+	
+				<div class="tab-content">
+					<div id="original_fastq" class="tab-pane fade in active">
+						<h3>Original fastq files and quality result</h3>
+						<div class="row">
+							<div class="col-lg-6"><strong>Original fastq 1:</strong> {{ href_fastq_1 }}</div>
+				  			<div class="col-lg-6"><strong>Original fastq 2:</strong> {{ href_fastq_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<div class="row">
+							<div class="col-lg-6"><strong>Original fastq quality 1:</strong> {{ href_fastq_quality_1 }}</div> 
+				  			<div class="col-lg-6"><strong>Original fastq quality 2:</strong> {{ href_fastq_quality_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<p><strong>Software version: </strong>{{ fastq_software }}</p>
+					</div>
+					<div id="trimmomatic" class="tab-pane fade">
+			    		<h3>Trimmomatic result and quality resul</h3>
+			    		<div class="row">
+							<div class="col-lg-6"><strong>Trimmomatic fastq 1:</strong> {{ href_trimmonatic_1 }}</div>
+				  			<div class="col-lg-6"><strong>Trimmomatic fastq 2:</strong> {{ href_trimmonatic_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<div class="row">
+							<div class="col-lg-6"><strong>Trimmomatic fastq quality 1:</strong> {{ href_trimmonatic_quality_1 }}</div>
+							<hr>
+				  			<div class="col-lg-6"><strong>Trimmomatic fastq quality 2:</strong> {{ href_trimmonatic_quality_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<p><strong>Software version: </strong>{{ trimmomatic_software }}/{{ fastq_software }}</p>
+			  		</div>
+					<div id="virus_identification" class="tab-pane fade">
+						<h3>Identifying virus with Sapdes and Abricate</h3>
+						
+						{% for identify_virus in sample.identify_virus.all %}
+							<div class="row">
+								<div class="col-lg-3"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
+				  				<div class="col-lg-3"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
+				  				<div class="col-lg-3"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
+				  				<div class="col-lg-3"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+				  			</div>
+				  			<hr>
+						{% endfor %}
+						<p><strong>Software version: </strong>{{ spades_software }}/{{ abricate_software }}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		  
+		<a href="{% url "samples" %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+	{% endif %}
+	
+{% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
+ 			<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
+ {% endblock %}
+

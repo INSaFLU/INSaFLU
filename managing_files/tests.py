@@ -3,8 +3,8 @@ from utils.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from utils.utils import Utils
 from django.contrib.auth.models import User
-from .manage_database import ManageDatabase
-from .models import Sample, MetaKey
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import Sample, MetaKey
 import os, time
 
 class testsReferenceFiles(TestCase):
@@ -98,7 +98,15 @@ class testsReferenceFiles(TestCase):
 		except ValueError as e:
 			self.assertEqual("Different length. Fasta seq: PB2 length: 2280; Fasta seq: PB2 length: 2277.", e.args[0])
 
-
+		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), constantsTestsCase.MANAGING_TESTS, constantsTestsCase.MANAGING_DIR, constantsTestsCase.MANAGING_FILES_FASTA_2)
+		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), constantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_2)
+		try:
+			utils.compare_locus_fasta_gb(fasta_file, gb_file)
+			self.fail("Must throw exception")
+		except ValueError as e:
+			self.assertEqual("This locus 'locus_1' is not in fasta file.", e.args[0])
+		except:
+			self.fail("throw other exception")
 
 	def test_meta_key(self):
 		"""

@@ -20,7 +20,7 @@ import os
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
 	"""
-	Reference form, name, scientific_name and others
+	Reference form, name, isolate_name and others
 	"""
 	utils = Utils()
 	error_css_class = 'error'
@@ -265,11 +265,11 @@ class SampleForm(forms.ModelForm):
 			Div(
 				Div('name', css_class="col-sm-4"),
 				Div( 
-					HTML('<a href="{% url "sample-file" %}" id="data_set_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
+					HTML('<a href="{% url "sample-dataset" %}" id="data_set_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
 					Div('data_set'), 
 					css_class = "row col-sm-4"),
 				Div( 
-					HTML('<a href="{% url "sample-file" %}" id="vaccine_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
+					HTML('<a href="{% url "sample-vaccine" %}" id="vaccine_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
 					Div('vaccine_status'), 
 					css_class = "row col-sm-4"),
 				css_class = 'row'

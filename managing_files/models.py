@@ -223,8 +223,25 @@ class Sample(models.Model):
 				path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
 
-
-
+	def get_type_sub_type(self):
+		vect_identify_virus = self.identify_virus.all()
+		sz_return = ""
+		if (vect_identify_virus.count() > 0):
+			sz_return = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE)
+			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE)
+			if (len(sz_type) > 0): sz_return += "" if len(sz_return) == 0 else "-" + sz_type
+			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE)
+			if (len(sz_type) > 0): sz_return += "" if len(sz_return) == 0 else "-" + sz_type
+			return sz_return
+		else: return "-"
+		
+	def __get_type__(self, vect_identify_virus, type_to_test):
+		vect_return = []
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.seq_virus.kind_type.name == type_to_test):
+				vect_return.append(identify_virus.seq_virus.name)
+		return ''.join(sorted(vect_return))
+				
 class MetaKeySample(models.Model):
 	"""
 	Relation ManyToMany in 

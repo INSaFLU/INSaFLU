@@ -17,7 +17,10 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_GBK_DIFF_LENGTH = "A_H3N2_A_Hong_Kong_4801_2014_diff_length.gbk"
 	MANAGING_FILES_FASTA_FAKE_GZ = "test.fasta.gz"
 	MANAGING_TEST_INFLUENZA_FILE = "test_influenza_typing.fasta"
+	MANAGING_FILES_FASTA_2 = "temp_2.fasta"
+	MANAGING_FILES_GBK_2 = "temp_2.gbk"
 	MANAGING_TEST_ABRICATE = "abricate_out.txt"
+
 	
 	DIR_ABRICATE = "abricate"
 	

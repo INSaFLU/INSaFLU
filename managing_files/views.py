@@ -3,7 +3,7 @@
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.core.urlresolvers import reverse_lazy
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample
 from managing_files.tables import ReferenceTable, SampleTable
@@ -17,6 +17,7 @@ from django.conf import settings
 from django.contrib.gis.geos import Point
 from django_modalview.generic.base import ModalTemplateView
 from django_q.tasks import async
+from django.utils.safestring import mark_safe
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -69,7 +70,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		utils = Utils()
 		
 		name = form.cleaned_data['name']
-		scentific_name = form.cleaned_data['scientific_name']
+		scentific_name = form.cleaned_data['isolate_name']
 		reference_fasta = form.cleaned_data['reference_fasta']
 		reference_genbank = form.cleaned_data['reference_genbank']
 		if (scentific_name is None): scentific_name = ""
@@ -102,31 +103,29 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		## create the index before commit in database, throw exception if something goes wrong
 		software.createFaiToFastaFile(reference.reference_fasta.name)
 		
-		messages.success(self.request, "Reference '" + name + "'was created successfully", fail_silently=True)
+		messages.success(self.request, "Reference '" + name + "' was created successfully", fail_silently=True)
 		return super(ReferenceAddView, self).form_valid(form)
 
 	## static method, not need for now.
-	#form_valid_message = "You have created a new Reference."
-	form_valid_message = ""
+	form_valid_message = ""		## need to have this
 	
 
 class SamplesView(LoginRequiredMixin, ListView):
-	model = Reference
+	model = Sample
 	template_name = 'samples/samples.html'
 	context_object_name = 'samples'
-	ordering = ['id']
 ##	group_required = u'company-user' security related with GroupRequiredMixin
 	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesView, self).get_context_data(**kwargs)
-		query_set = Sample.objects.filter(owner__id=self.request.user.id).order_by('id')
+		query_set = Sample.objects.filter(owner__id=self.request.user.id).order_by('-creation_date')
 		table = SampleTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		context['table'] = table
 		context['nav_sample'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
-
+	
 class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""
 	Create a new reference
@@ -157,7 +156,6 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		Validate the form
 		"""
 		software = Software()
-		constants = Constants()
 		utils = Utils()
 		
 		name = form.cleaned_data['name']
@@ -180,16 +178,19 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		
 		if (like_dates == 'date_of_onset'):
 			sample.day = int(sample.date_of_onset.strftime("%d"))
-			sample.week = int(sample.date_of_onset.strftime("%m"))
+			sample.week = int(sample.date_of_onset.strftime("%W")+1)
 			sample.year = int(sample.date_of_onset.strftime("%Y"))
+			sample.month = int(sample.date_of_onset.strftime("%m"))
 		elif (like_dates == 'date_of_collection'):
 			sample.day = int(sample.date_of_collection.strftime("%d"))
-			sample.week = int(sample.date_of_collection.strftime("%m"))
+			sample.week = int(sample.date_of_collection.strftime("%W")+1)
 			sample.year = int(sample.date_of_collection.strftime("%Y"))
+			sample.month = int(sample.date_of_collection.strftime("%m"))
 		elif (like_dates == 'date_of_receipt_lab'):
 			sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
-			sample.week = int(sample.date_of_receipt_lab.strftime("%m"))
+			sample.week = int(sample.date_of_receipt_lab.strftime("%W")+1)
 			sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
+			sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
 		
 		sample.geo_local = Point(lat, lng)
 		sample.save()
@@ -206,17 +207,12 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample.save()
 
 		### create a task to perform the analysis of fastq and trimmomatic
-		async(software.run_fastq_and_trimmomatic, sample, self.request.user)
+		async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
 		
-		### queue the quality check and
-		if (sample.exist_file_2()):		## don't run for single file because spades doesn't work for one single file
-			async(software.identify_type_and_sub_type, sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
-				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), self.request.user)
-		
-		messages.success(self.request, "Sample '" + name + "'was created successfully", fail_silently=True)
+		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)
 
-
+	form_valid_message = ""		## need to have this, even empty
 
 class AddValueModal(ModalTemplateView):
 	'''
@@ -234,3 +230,30 @@ class AddValueModal(ModalTemplateView):
 		self.title = "Add value"
 		self.description = "This is my description"
 		self.icon = "icon-mymodal"
+
+
+
+class SamplesDetailView(LoginRequiredMixin, DetailView):
+	"""
+	Sample detail view
+	"""
+	model = Sample
+	template_name = "samples/sample_detail.html"
+
+	def get_context_data(self, **kwargs):
+		context = super(SamplesDetailView, self).get_context_data(**kwargs)
+		sample = kwargs['object']
+		if (sample.owner.id != self.request.user.id): context['error_cant_see'] = "1"
+		context['virus_identify'] = sample.get_type_sub_type()
+		context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '</a>')
+		context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '">' + sample.file_name_2 + '</a>')
+		context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
+		context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_2 + '.html</a>')
+		context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+		context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+		context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+		context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+		return context
+
+
+

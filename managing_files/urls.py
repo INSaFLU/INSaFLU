@@ -1,7 +1,7 @@
 
 from django.conf.urls import url
-from .views import ReferenceView, ReferenceAddView
-from .views import SamplesView, SamplesAddView, AddValueModal
+from managing_files.views import ReferenceView, ReferenceAddView
+from managing_files.views import SamplesView, SamplesAddView, AddValueModal, SamplesDetailView
 
 urlpatterns = [
 	url(r'references/references$', ReferenceView.as_view(), name='references'),
@@ -10,5 +10,7 @@ urlpatterns = [
 	url(r'samples/sample_add$', SamplesAddView.as_view(), name='sample-add'),
 	url(r'samples/sample_file$', AddValueModal.as_view(), name='sample-file'),
 	url(r'samples/sample_fastq$', SamplesAddView.as_view(), name='sample-fastq'),
-
+	url(r'samples/sample_dataset$', AddValueModal.as_view(), name='sample-dataset'),
+	url(r'samples/sample_vaccine$', SamplesAddView.as_view(), name='sample-vaccine'),
+	url(r'samples/(?P<pk>\d+)/sample_description$', SamplesDetailView.as_view(), name='sample-description'),
 ] 

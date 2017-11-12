@@ -252,16 +252,19 @@ class Utils(object):
 		if (locus_gb != locus_fasta): raise ValueError(_("Number of locus are different from fasta to genbank."))
 		
 		record_dict = SeqIO.index(fasta_file, "fasta")
-		for record in SeqIO.parse(gb_file, "genbank"):
-			b_found = False
-			for seq in record_dict:
-				if (seq == record.name):
-					if (len(record_dict[seq].seq) != len(record.seq)):
-						raise ValueError(_("Different length. Fasta seq: %s length: %d; Fasta seq: %s length: %d." 
-									% (seq, len(record_dict[seq].seq), record.name, len(record.seq))) )
-					b_found = True
-					break
-			if (not b_found): raise ValueError(_("This locus '" + record.locus + "' is not in fasta file."))
+		try:
+			for record in SeqIO.parse(gb_file, "genbank"):
+				b_found = False
+				for seq in record_dict:
+					if (seq == record.name):
+						if (len(record_dict[seq].seq) != len(record.seq)):
+							raise ValueError(_("Different length. Fasta seq: %s length: %d; Fasta seq: %s length: %d." 
+										% (seq, len(record_dict[seq].seq), record.name, len(record.seq))) )
+						b_found = True
+						break
+				if (not b_found): raise ValueError(_("This locus '" + record.name + "' is not in fasta file."))
+		except AttributeError as e:
+			raise ValueError(_(e.args[0]))
 		return locus_fasta
 
 

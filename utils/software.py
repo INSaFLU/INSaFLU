@@ -423,4 +423,17 @@ class Software(object):
 							(self.get_fastq_version(), self.get_trimmomatic_version()))
 		return True
 
+	"""
+	Global processing, fastQ, trimmomatic and GetSpecies
+	"""
+	def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
+
+		### run trimmomatics
+		b_return = self.run_fastq_and_trimmomatic(sample, user)
+		
+		### queue the quality check and
+		if (b_return and sample.exist_file_2()):	## don't run for single file because spades doesn't work for one single file
+			self.identify_type_and_sub_type(sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
+				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), user)
+
 

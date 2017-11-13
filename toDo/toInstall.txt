@@ -18,7 +18,6 @@
 ## $ sudo pip3 install django-bootstrap-datepicker
 ## CAHNGE file /usr/local/lib/python3.4/dist-packages/bootstrap_datepicker/widgets.py
 	## Add line extra_attrs['placeholder'] = "dd/mm/yyyy" in render method
-## $ sudo pip3 install humanfriendly	
 	
 ## $ mkdir /var/log/insaflu			and set the user of apache
 ## $ mkdir /usr/local/insaflu		and set the user of apache

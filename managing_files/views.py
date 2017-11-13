@@ -8,9 +8,12 @@ from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample
 from managing_files.tables import ReferenceTable, SampleTable
 from managing_files.forms import ReferenceForm, SampleForm
+from managing_files.manage_database import ManageDatabase
 from utils.constants import Constants, TypePath
+from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
+from utils.result import DecodeResult
 import hashlib, ntpath, os
 from django.contrib import messages
 from django.conf import settings
@@ -178,17 +181,17 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		
 		if (like_dates == 'date_of_onset'):
 			sample.day = int(sample.date_of_onset.strftime("%d"))
-			sample.week = int(sample.date_of_onset.strftime("%W")+1)
+			sample.week = int(sample.date_of_onset.strftime("%W")) + 1
 			sample.year = int(sample.date_of_onset.strftime("%Y"))
 			sample.month = int(sample.date_of_onset.strftime("%m"))
 		elif (like_dates == 'date_of_collection'):
 			sample.day = int(sample.date_of_collection.strftime("%d"))
-			sample.week = int(sample.date_of_collection.strftime("%W")+1)
+			sample.week = int(sample.date_of_collection.strftime("%W")) + 1
 			sample.year = int(sample.date_of_collection.strftime("%Y"))
 			sample.month = int(sample.date_of_collection.strftime("%m"))
 		elif (like_dates == 'date_of_receipt_lab'):
 			sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
-			sample.week = int(sample.date_of_receipt_lab.strftime("%W")+1)
+			sample.week = int(sample.date_of_receipt_lab.strftime("%W")) + 1
 			sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
 			sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
 		
@@ -207,7 +210,11 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample.save()
 
 		### create a task to perform the analysis of fastq and trimmomatic
-		async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
+		taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
+		
+		### 
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 		
 		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)
@@ -253,6 +260,37 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
 		context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
 		context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+	
+		### software
+		manageDatabase = ManageDatabase()
+		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_sample == None):
+			meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_sample != None):
+				lst_data = meta_sample.description.split(',')
+				context['fastq_software'] = lst_data[1].strip()
+				context['trimmomatic_software'] = lst_data[2].strip()
+		else:
+			decodeResult = DecodeResult()
+			result = decodeResult.decode_result(meta_sample.description)
+			context['fastq_software'] = result.get_software(Software.SOFTWARE_FASTQ_name)
+			context['trimmomatic_software'] = result.get_software(Software.SOFTWARE_TRIMMOMATIC_name)
+
+		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_sample == None):
+			meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_sample != None):
+				lst_data = meta_sample.description.split(',')
+				context['spades_software'] = lst_data[1].strip()
+				context['abricate_software'] = lst_data[2].strip()
+		else:
+			decodeResult = DecodeResult()
+			result = decodeResult.decode_result(meta_sample.description)
+			context['spades_software'] = result.get_software(Software.SOFTWARE_SPAdes_name)
+			context['abricate_software'] = result.get_software(Software.SOFTWARE_ABRICATE_name)
+		
+		### set the flag of the end of the task		
+			
 		return context
 
 

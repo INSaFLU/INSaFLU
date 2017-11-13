@@ -4,7 +4,6 @@ Created on Nov 2, 2017
 @author: mmp
 '''
 import json
-import humanfriendly
 
 class SoftwareDesc(object):
 	
@@ -19,6 +18,7 @@ class SoftwareDesc(object):
 	def __str__(self):
 		return self.name
 
+
 class Softwares(object):
 	
 	def __init__(self):
@@ -26,6 +26,15 @@ class Softwares(object):
 	
 	def add_software(self, software):
 		self.list_software.append(software)
+
+	def get_software(self, sz_name):
+		for software_desc in self.list_software:
+			if (software_desc.name == sz_name):
+				if (software_desc.parameters != None and len(software_desc.parameters) > 0):
+					return "{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters)
+				return "{}-{}".format(software_desc.name, software_desc.version)
+		return ""
+
 
 class Output(object):
 	def __init__(self, file_name, path):
@@ -80,6 +89,9 @@ class Result(object):
 		
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=CustomEncoder)
+
+	def get_software(self, sz_name):
+		return self.softwares.get_software(sz_name)
 
 class CustomEncoder(json.JSONEncoder):
 

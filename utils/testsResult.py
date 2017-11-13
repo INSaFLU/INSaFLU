@@ -5,6 +5,7 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, DecodeResultAverageAndNumberReads
+from utils.software import Software
 
 class Test(TestCase):
 
@@ -61,6 +62,18 @@ class Test(TestCase):
 		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
 		result_2 = decodeResultAverageAndNumberReads.decode_result(sz_return)
 		self.assertEqual(result_2, resultAverageAndNumberReads)
+		
+	def test_ResultSoftware(self):
+		result = Result()
+		result.set_error("xpto")
+		result.add_software(SoftwareDesc(Software.SOFTWARE_SPAdes_name, Software.SOFTWARE_SPAdes_VERSION, Software.SOFTWARE_SPAdes_PARAMETERS))
+		result.add_software(SoftwareDesc(Software.SOFTWARE_TRIMMOMATIC_name, Software.SOFTWARE_TRIMMOMATIC_VERSION, Software.SOFTWARE_TRIMMOMATIC_PARAMETERS))
+		
+		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33)", result.get_software(Software.SOFTWARE_TRIMMOMATIC_name))
+		self.assertEqual("SPAdes-3.11.1", result.get_software(Software.SOFTWARE_SPAdes_name))
+		
+		
+		
 		
 		
 		

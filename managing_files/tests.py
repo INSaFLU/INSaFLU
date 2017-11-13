@@ -149,7 +149,21 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample.value)
 		self.assertEqual("description", metaKey_sample.description)
 
-
+		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2, "description")
+		metaKey_sample = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2)
+		self.assertFalse(metaKey_sample == None)
+		self.assertEqual(sample_name, metaKey_sample.sample.name)
+		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample.value)
+		self.assertEqual("description", metaKey_sample.description)
+		
+		
+		metaKey_sample_lst = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertEquals(2, metaKey_sample_lst.count())
+		self.assertEqual(sample_name, metaKey_sample_lst[0].sample.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample_lst[0].value)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample_lst[1].value)
+		
 	def test_meta_key_order(self):
 		"""
 		test the metakey system

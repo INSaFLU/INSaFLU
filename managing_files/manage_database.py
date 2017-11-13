@@ -9,8 +9,6 @@ class ManageDatabase(object):
 	'''
 	classdocs
 	'''
-
-
 	def __init__(self):
 		'''
 		Constructor
@@ -42,7 +40,7 @@ class ManageDatabase(object):
 		value = None, return a list
 		"""
 		try:
-			if (value == None): return MetaKeySample.objects.filter(sample__id=sample.id, meta_tag__name=meta_key_name)
+			if (value == None): return MetaKeySample.objects.filter(sample__id=sample.id, meta_tag__name=meta_key_name).order_by('-creation_date')
 			return MetaKeySample.objects.get(sample__id=sample.id, meta_tag__name=meta_key_name, value=value)
 		except MetaKeySample.DoesNotExist:
 			return None

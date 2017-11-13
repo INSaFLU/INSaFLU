@@ -37,4 +37,5 @@ class ConstantsTestsCase(object):
 
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"
+	VALUE_TEST_2 = "value_test_2"
 	TEST_USER_NAME = "test_user"

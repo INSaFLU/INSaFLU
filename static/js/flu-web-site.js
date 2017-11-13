@@ -109,6 +109,10 @@ $(document).ready(function(){
     $('.help-block').removeClass('help-block').addClass('fields_error');
 });
 
+/// made a click in the nav tab, this is a caveat
+$(document).ready(function(){
+    $('.nav li.active').removeClass('active').find('a').trigger('click');
+});
 
 
 

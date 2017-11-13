@@ -26,20 +26,25 @@ class Software(object):
 	## dir with software
 	DIR_SOFTWARE = "/usr/local/software/insaflu"
 	SOFTWARE_SAMTOOLS = "/usr/bin/samtools"
+	SOFTWARE_SAMTOOLS_name = "Samtools"
 	SOFTWARE_SAMTOOLS_VERSION = ""
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py") 
+	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
 	SOFTWARE_SPAdes_PARAMETERS = ""
 	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
+	SOFTWARE_ABRICATE_name = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = ""
 	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
+	SOFTWARE_FASTQ_name = "FastQC"
 	SOFTWARE_FASTQ_VERSION = "0.11.5"
 	SOFTWARE_FASTQ_PARAMETERS = ""
-	SOFTWARE_TIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
-	SOFTWARE_TIMMOMATIC_VERSION = "0.27"
-	SOFTWARE_TIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33"
+	SOFTWARE_TRIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
+	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
+	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
+	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33"
 
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
@@ -62,6 +67,7 @@ class Software(object):
 	return spades software
 	"""
 	def get_spades(self): return self.SOFTWARE_SPAdes
+	def get_spades_name(self): return self.SOFTWARE_SPAdes_name
 	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
 	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
 	
@@ -69,6 +75,7 @@ class Software(object):
 	return abricate software
 	"""
 	def get_abricate(self): return self.SOFTWARE_ABRICATE
+	def get_abricate_name(self): return self.SOFTWARE_ABRICATE_name
 	def get_abricate_version(self): return self.SOFTWARE_ABRICATE_VERSION
 	def get_abricate_parameters(self): return self.SOFTWARE_ABRICATE_PARAMETERS
 	
@@ -76,15 +83,17 @@ class Software(object):
 	return FASTq software
 	"""
 	def get_fastq(self): return self.SOFTWARE_FASTQ
+	def get_fastq_name(self): return self.SOFTWARE_FASTQ_name
 	def get_fastq_version(self): return self.SOFTWARE_FASTQ_VERSION
 	def get_fastq_parameters(self): return self.SOFTWARE_FASTQ_PARAMETERS
 	
 	"""
 	return trimmomatic software
 	"""
-	def get_trimmomantic(self): return self.SOFTWARE_TIMMOMATIC
-	def get_trimmomatic_version(self): return self.SOFTWARE_TIMMOMATIC_VERSION
-	def get_trimmomatic_parameters(self): return self.SOFTWARE_TIMMOMATIC_PARAMETERS
+	def get_trimmomantic(self): return self.SOFTWARE_TRIMMOMATIC
+	def get_trimmomantic_name(self): return self.SOFTWARE_TRIMMOMATIC_name
+	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
+	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
 	
 	def createFaiToFastaFile(self, fileFastaName):
 		"""
@@ -213,12 +222,14 @@ class Software(object):
 		manageDatabase = ManageDatabase()
 		### temp dir out spades		
 		out_dir_spades = self.utils.get_temp_dir()
+		result_all = Result()
 		try:
 			cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
+			result_all.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
 		except Exception:
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
-			result.add_software(SoftwareDesc(self.get_spades(), self.get_spades_version(), self.get_spades_parameters()))
+			result.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -228,7 +239,7 @@ class Software(object):
 			## save error in MetaKeySample
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
-			result.add_software(SoftwareDesc(self.get_spades(), self.get_spades_version(), self.get_spades_parameters()))
+			result.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -239,7 +250,7 @@ class Software(object):
 			## save error in MetaKeySample
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -250,7 +261,7 @@ class Software(object):
 			except Exception:
 				result = Result()
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.get_abricate_version()))
-				result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+				result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
 				manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 				return False
@@ -259,10 +270,11 @@ class Software(object):
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
 			cmd = self.run_abricate(uploadFile.abricate_name, file_out, out_file_abricate)
+			result_all.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
 		except Exception:
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -300,6 +312,7 @@ class Software(object):
 		
 		## save everything OK
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.get_spades_version(), self.get_abricate_version()))
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
 		return True
@@ -362,17 +375,19 @@ class Software(object):
 		Upload average and sequence numbers
 		"""
 		manageDatabase = ManageDatabase()
+		result_all = Result()
 		### first run fastq
 		try:
 			temp_dir = self.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
-
+			result_all.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq_version(), self.get_fastq_parameters()))
+			
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True))), sample.get_fastq_output(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False))), sample.get_fastq_output(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_fastq(), self.get_fastq(), self.get_fastq_parameters()))
+			result.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq(), self.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -381,14 +396,14 @@ class Software(object):
 		### run trimmomatic
 		try:
 			temp_dir = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name)
-											
+			result_all.add_software(SoftwareDesc(self.get_trimmomantic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_trimmomantic(), self.get_trimmomatic_version(), self.get_trimmomatic_version()))
+			result.add_software(SoftwareDesc(self.get_trimmomantic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -405,7 +420,7 @@ class Software(object):
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_fastq(), self.get_fastq(), self.get_fastq_parameters()))
+			result.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq(), self.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -421,6 +436,12 @@ class Software(object):
 		## save everything OK
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
 							(self.get_fastq_version(), self.get_trimmomatic_version()))
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+
+		### set the flag of the end of the task		
+		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_sample != None):
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
 
 	"""

@@ -40,21 +40,21 @@
 			<div class="row">
 				<div class="col-lg-3"><strong>Upload date:</strong> {{ sample.creation_date|date }}</div>
 			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ sample.geo_local.coords }}</div>
-			  	<div class="col-lg-3"><strong>Virus identify:</strong> {{ virus_identify }}</div>
+			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ virus_identify }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ sample.owner.username }}</div>
 			</div>
 			<hr>
 			
 			<div class="container">
-				<ul class="nav nav-tabs">
-		  			<li class="active"><a data-toggle="tab" href="#original_fastq">Original fastq</a></li>
-		  			<li><a data-toggle="tab" href="#trimmomatic">Trimmomatic files</a></li>
-		  			<li><a data-toggle="tab" href="#virus_identification">Virus Identification</a></li>
+				<ul class="nav nav-tabs" role="tablist">
+					<li class="nav-item active"><a class="nav-link" href="#original_fastq" role="tab" data-toggle="tab">Original fastq</a></li>
+					<li class="nav-item"><a class="nav-link" href="#trimmomatic" role="tab" data-toggle="tab">Trimmomatic files</a></li>
+					<li class="nav-item"><a class="nav-link" href="#virus_identification" role="tab" data-toggle="tab">Virus Identification</a></li>
 				</ul>
 	
 				<div class="tab-content">
-					<div id="original_fastq" class="tab-pane fade in active">
-						<h3>Original fastq files and quality result</h3>
+					<div id="original_fastq" role="tabpanel" class="tab-pane fade active">
+						<h4>Original fastq files and quality result</h4>
 						<div class="row">
 							<div class="col-lg-6"><strong>Original fastq 1:</strong> {{ href_fastq_1 }}</div>
 				  			<div class="col-lg-6"><strong>Original fastq 2:</strong> {{ href_fastq_2 }}</div>
@@ -67,7 +67,7 @@
 				  		<hr>
 				  		<p><strong>Software version: </strong>{{ fastq_software }}</p>
 					</div>
-					<div id="trimmomatic" class="tab-pane fade">
+					<div id="trimmomatic" role="tabpanel" class="tab-pane fade">
 			    		<h3>Trimmomatic result and quality resul</h3>
 			    		<div class="row">
 							<div class="col-lg-6"><strong>Trimmomatic fastq 1:</strong> {{ href_trimmonatic_1 }}</div>
@@ -80,9 +80,9 @@
 				  			<div class="col-lg-6"><strong>Trimmomatic fastq quality 2:</strong> {{ href_trimmonatic_quality_2 }}</div>
 				  		</div>
 				  		<hr>
-				  		<p><strong>Software version: </strong>{{ trimmomatic_software }}/{{ fastq_software }}</p>
+				  		<p><strong>Software version: </strong>{{ trimmomatic_software }}</p>
 			  		</div>
-					<div id="virus_identification" class="tab-pane fade">
+					<div id="virus_identification" role="tabpanel" class="tab-pane fade">
 						<h3>Identifying virus with Sapdes and Abricate</h3>
 						
 						{% for identify_virus in sample.identify_virus.all %}

@@ -1,6 +1,6 @@
 import django_tables2 as tables
 from django_tables2.utils import A
-from managing_files.models import Reference, Sample, Project
+from managing_files.models import Reference, Sample, Project, ProjectSample
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from managing_files.manage_database import ManageDatabase
@@ -120,7 +120,7 @@ class ProjectTable(tables.Table):
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
 	reference = tables.Column('Reference', empty_values=())
 	samples = tables.Column('#Samples (P/W/E)', orderable=False, empty_values=())
-	creation_date = tables.Column('Creation date', orderable=False, empty_values=())
+	creation_date = tables.Column('Creation date', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 	
 	class Meta:
@@ -133,7 +133,11 @@ class ProjectTable(tables.Table):
 		"""
 		return a reference name
 		"""
-		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> Add samples</a>')
+		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
+			add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
+		add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><i class="fa fa-trash"></i> Remove</a>'
+		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) + '><i class="fa fa-plus-square"></i> Add</a>' +\
+						add_remove)
 	
 	def render_reference(self, record):
 		"""
@@ -146,6 +150,9 @@ class ProjectTable(tables.Table):
 		"""
 		icon with link to extra info
 		"""
+		## there's nothing to show
+		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() == 0): return "-"
+			
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):

@@ -316,9 +316,10 @@ class ProjectSample(models.Model):
 	
 	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
-	is_finished = models.BooleanField(default=False)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	
+	is_finished = models.BooleanField(default=False)
+	is_deleted = models.BooleanField(default=False)
+
 	class Meta:
 		ordering = ['project__id', '-creation_date']
 	

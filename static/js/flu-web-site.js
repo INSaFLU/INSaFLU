@@ -5,15 +5,17 @@ $().ready(function(){
 	$( "a" ).hover(
 	  function() {   
 		   var title = $(this).attr("data-title");  			// extracts the title using the data-title attr applied to the 'a' tag
-		    $('<div/>', { 										// creates a dynamic div element on the fly
-		        text: title,
-		        class: 'box_tooltip_flu'
-		    }).appendTo(this);  								// append to 'a' element
-		  }, 
-	  function() {
+		   if (title != null){
+			    $('<div/>', { 										// creates a dynamic div element on the fly
+			        text: title,
+			        class: 'box_tooltip_flu'
+			    }).appendTo(this);  								// append to 'a' element
+		     }
+		},
+		function() {
 		    $(document).find("div.box_tooltip_flu").remove(); 	// on hover out, finds the dynamic element and removes it.
-		  }
-		);
+		}
+	);
 });
 
 

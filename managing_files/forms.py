@@ -1,20 +1,19 @@
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, HTML, Fieldset
-from django.contrib.gis.db.models import PointField
 from django.conf import settings 
 from django import forms
 from django.urls import reverse
-from .models import Reference, Sample, DataSet, VacineStatus
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.contrib.gis.geos import Point
-from utils.utils import Utils
-from utils.constants import Constants
 from django.forms.models import inlineformset_factory
 from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
+from utils.utils import Utils
+from utils.constants import Constants
+from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -200,8 +199,8 @@ class SampleForm(forms.ModelForm):
 	utils = Utils()
 	
 	DATE_CHOICES=[('date_of_onset','Onset date'),
-         ('date_of_collection','Collection date'),
-         ('date_of_receipt_lab','Lab reception date'),]
+		 ('date_of_collection','Collection date'),
+		 ('date_of_receipt_lab','Lab reception date'),]
 	
 	## set the date format
 	# 38.7223° N, 9.1393° 
@@ -377,6 +376,40 @@ class SampleForm(forms.ModelForm):
 		if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
 		return cleaned_data
 		
+
+class ReferenceProjectForm(forms.ModelForm):
+	"""
+	Create a new project 
+	"""
+	error_css_class = 'error'
+	
+	class Meta:
+		model = Project
+		exclude = ()
+
+	def __init__(self, *args, **kwargs):
+		super(ReferenceProjectForm, self).__init__(*args, **kwargs)
+		
+		field_text= [
+			('name', 'Name', 'Unique identify for this project', True),
+		]
+		for x in field_text:
+			self.fields[x[0]].label = x[1]
+			self.fields[x[0]].help_text = x[2]
+			self.fields[x[0]].required = x[3]
+
+	def clean(self):
+		"""
+		Clean all together because it's necessary to compare the genbank and fasta files
+		"""
+		cleaned_data = super(ReferenceProjectForm, self).clean()
+		name = cleaned_data['name']
+		
+		return cleaned_data
+	
+
+ReferenceProjectFormSet = inlineformset_factory(Reference, Project, form=ReferenceProjectForm, extra=1)
+
 
 # 	def clean_name(self):
 # 		"""

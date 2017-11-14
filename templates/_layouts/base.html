@@ -43,22 +43,22 @@
             <span class="nav-link-text">Dashboard</span>
           </a>
         </li>
+        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References">
+          <a class="nav-link " href="{% url 'references' %}">
+            <i class="fa fa-fw fa-bug "></i>
+            <span class="nav-link-text ">References</span>
+          </a>
+        </li>
         <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples">
           <a class="nav-link" href="{% url 'samples' %}">
-            <i class="fa fa-fw fa-area-chart"></i>
+            <i class="fa fa-fw fa-wrench"></i>
             <span class="nav-link-text">Samples</span>
           </a>
         </li>
         <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects">
-          <a class="nav-link" href="projects.html">
+          <a class="nav-link" href="{% url 'projects' %}">
             <i class="fa fa-fw fa-table "></i>
             <span class="nav-link-text active">Projects</span>
-          </a>
-        </li>
-        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References">
-          <a class="nav-link " href="{% url 'references' %}">
-            <i class="fa fa-fw fa-wrench "></i>
-            <span class="nav-link-text ">References</span>
           </a>
         </li>
       </ul>
@@ -134,7 +134,7 @@
         </li> -->
 
 		{% if user.is_authenticated %}
-			<a class="nav-link" data-toggle="modal" data-target="#logoutModal">
+			<a class="nav-link" data-toggle="modal" id="id_user_name" data-target="#logoutModal">
             	<i class="fa fa-fw fa-sign-out"></i> {{ user.username }} - Logout</a>
 		{% else %}
 			<a class="nav-link" href="{% url 'login' %}">

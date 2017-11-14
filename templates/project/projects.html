@@ -26,9 +26,7 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="7">
-	                    	<a href="{% url "sample-add" %}" data-title="Add one sample at time" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample</span></a>
-	                    	<a href="{% url "sample-file" %}" id="my_modal_runner" data-title="Add multiple samples and fastq files later" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Samples from csv file</span></a>
-	                    	<a href="{% url "sample-fastq" %}" data-title="Upload fastq files to match the samples uploaded" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Fastq Files</span></a>
+	                    	<a href="{% url "project-add" %}" data-title="Create a new project to process samples" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Create project</span></a>
 	                        <form method="post" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>

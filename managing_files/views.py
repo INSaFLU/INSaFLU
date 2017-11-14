@@ -5,9 +5,9 @@ from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
-from managing_files.models import Reference, Sample
-from managing_files.tables import ReferenceTable, SampleTable
-from managing_files.forms import ReferenceForm, SampleForm
+from managing_files.models import Reference, Sample, Project
+from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable
+from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet
 from managing_files.manage_database import ManageDatabase
 from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
@@ -21,6 +21,9 @@ from django.contrib.gis.geos import Point
 from django_modalview.generic.base import ModalTemplateView
 from django_q.tasks import async
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
+from django.http import JsonResponse
+from django.db import transaction
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -239,7 +242,6 @@ class AddValueModal(ModalTemplateView):
 		self.icon = "icon-mymodal"
 
 
-
 class SamplesDetailView(LoginRequiredMixin, DetailView):
 	"""
 	Sample detail view
@@ -251,6 +253,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		context = super(SamplesDetailView, self).get_context_data(**kwargs)
 		sample = kwargs['object']
 		if (sample.owner.id != self.request.user.id): context['error_cant_see'] = "1"
+		context['nav_sample'] = True
 		context['virus_identify'] = sample.get_type_sub_type()
 		context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '</a>')
 		context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '">' + sample.file_name_2 + '</a>')
@@ -289,9 +292,129 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['spades_software'] = result.get_software(Software.SOFTWARE_SPAdes_name)
 			context['abricate_software'] = result.get_software(Software.SOFTWARE_ABRICATE_name)
 		
-		### set the flag of the end of the task		
-			
 		return context
+
+
+class ProjectsView(LoginRequiredMixin, ListView):
+	model = Project
+	template_name = 'project/projects.html'
+	context_object_name = 'projects'
+##	group_required = u'company-user' security related with GroupRequiredMixin
+	
+	def get_context_data(self, **kwargs):
+		context = super(ProjectsView, self).get_context_data(**kwargs)
+		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
+		table = ProjectTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		context['table'] = table
+		context['nav_project'] = True
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		return context
+
+
+class ReferenceProjectList(ListView, LoginRequiredMixin):
+	"""
+	
+	"""
+	model = Reference
+	context_object_name = 'reference'
+	ordering = ['id']
+##	group_required = u'company-user' security related with GroupRequiredMixin
+	
+	def get_context_data(self, **kwargs):
+		context = super(ReferenceProjectList, self).get_context_data(**kwargs)
+		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
+		table = ReferenceTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		context['table'] = table
+		context['nav_reference'] = True
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		return context
+
+class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Create a new reference
+	"""
+	model = Project
+	fields = ['name']
+	success_url = reverse_lazy('projects')
+	template_name = 'project/project_add.html'
+
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(ProjectCreateView, self).get_form_kwargs()
+##		kw['request'] = self.request 	# get error
+		return kw
+
+
+	def get_context_data(self, **kwargs):
+		context = super(ProjectCreateView, self).get_context_data(**kwargs)
+		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
+		table = ReferenceProjectTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER_SMALL
+			
+		context['nav_project'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		if self.request.POST: 
+			context['project_references'] = ReferenceProjectFormSet(self.request.POST)
+		else: 
+			context['project_references'] = ReferenceProjectFormSet()
+		return context
+
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+		context = self.get_context_data()
+		project_references = context['project_references']
+		name = form.cleaned_data['name']
+		try:
+			Project.objects.get(name=name, owner__username=self.request.user.username)
+			return super(ProjectCreateView, self).form_invalid(form)
+		except Project.DoesNotExist:
+			pass
+		if ('select_ref' in project_references.data ): select_ref = project_references.data['select_ref']
+		else: return super(ProjectCreateView, self).form_invalid(form)
+		if (name is None): name = ""
+		
+		try:
+			reference = Reference.objects.get(pk=select_ref)
+		except Sample.DoesNotExist:
+			return super(ProjectCreateView, self).form_invalid(form)
+		
+		with transaction.atomic():
+			project = Project()
+			project.name = name
+			project.reference = reference
+			project.owner = self.request.user
+			project.is_deleted = False
+			project.save()
+
+		messages.success(self.request, "Project '" + name + "' was created successfully", fail_silently=True)
+		return super(ProjectCreateView, self).form_valid(form)
+	form_valid_message = ""		## need to have this, even empty
+
+		
+#####
+#####
+#####		VALIDATION METHODS WITH AJAX
+#####
+#####
+def validate_project_reference_name(request):
+	project_name = request.GET.get('project_name')
+	user_name = request.GET.get('user_name').strip()
+	if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
+	data = {
+		'is_taken': Project.objects.filter(name=project_name, owner__username=user_name).exists()
+	}
+	if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
+	return JsonResponse(data)
 
 
 

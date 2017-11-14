@@ -1,0 +1,125 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h1>Create new project</h1>
+	</div>
+{% endblock  %}
+
+{% block content %}
+
+	{% if table.page and show_paginatior %}
+	  <div class="table-container">
+	{% endif %}
+	
+	<form id="form_table_project_reference" action="" data-validate-project-reference-url="{% url 'validate-project-reference' %}" method="post">{% csrf_token %}
+	    <div> 
+		    <div class="row"> 
+				<div class="col-sm-1"> 
+					<label for="id_name" class="form-control-label requiredField">Name<span class="asteriskField">*</span> </label> 
+				</div>
+				<div class="col-sm-4"> 
+					<div id="div_id_name" class="form-group"> 
+						<input type="text" name="name" class="textinput textInput form-control js-validate-project-reference-name" id="id_project_name" required="" maxlength="100" placeholder="Project name">
+						<div id='id_project_name_error'>
+						</duv>
+						<small id="hint_id_name" class="text-muted">Unique identify for this project</small> 
+					</div> 
+				</div>
+			</div>
+		</div>
+
+	       	{% block table %}
+			    <div class="table-responsive">
+			        <table class="table table-hover table-bordered table-striped"{% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+			            {% block table.thead %}
+			            <thead>                 
+			      			<tr>
+			                    <th colspan="5">
+			                        <form method="post" class="form-inline form-search pull-right">
+			                            {% csrf_token %}
+			                            <div class="row">
+			                            	<div class="col-sm-7"> 
+			                        			<p>Select a reference, please</p>    
+			                            	</div>
+			                            	<input id="search_form_id" name="search" type="text" class="form-control col-sm-3" placeholder="Name, Isolate name"{% if search %} value="{{ search }}"{% endif %}>
+			                              	<button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+			                            </div>              
+			                        </form>
+			                    </th>                  
+			                </tr>
+			             
+			              <tr>
+			                {% for column in table.columns %}
+			                   {% if column.orderable %}
+			                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+			                    {% else %}
+			                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+			                    {% endif %}
+			                {% endfor %}
+			              </tr>
+			            </thead>
+			            {% endblock table.thead %}
+			            {% block table.tbody %}
+			            <tbody>
+			                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+			                  {% block table.tbody.row %}
+			                  <tr class="{% cycle "odd" "even" %}">
+			                      {% for column, cell in row.items %}
+			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+			                      {% endfor %}
+			                  </tr>
+			                  {% endblock table.tbody.row %}
+			                {% empty %}
+			                  {% if table.empty_text %}
+			                  {% block table.tbody.empty_text %}
+			                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+			                  {% endblock table.tbody.empty_text %}
+			                  {% endif %}
+			                {% endfor %}
+			            </tbody>
+			            {% endblock table.tbody %}
+			            {% block table.tfoot %}
+			            	<tfoot></tfoot>
+			            {% endblock table.tfoot %}
+			        </table>
+			    </div>
+			{% endblock table %}
+			
+			{% if table.page and show_paginatior %}
+			    {% block pagination %}
+			        {% bootstrap_pagination table.page url=request.get_full_path %}
+			    {% endblock pagination %}
+			  </div>
+			{% endif %}
+			
+	        <input type="submit" name="save" value="Save" class="btn btn-primary btn-primary" id="submit-id-save"/> <a href="{% url 'projects' %}"></a>
+			<input type="button" name="cancel" value="Cancel" class="btn btn-secondary" id="button-id-cancel" onclick="window.location.href='/managing_files/project/projects'">
+	 </form>
+{% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/project-add.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
+     
+ {% endblock %}
+
+
+

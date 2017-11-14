@@ -3,7 +3,7 @@ Created on Nov 1, 2017
 
 @author: mmp
 '''
-from managing_files.models import MetaKeySample, MetaKey
+from managing_files.models import MetaKeySample, MetaKey, MetaKeyProject, MetaKeyProjectSample
 
 class ManageDatabase(object):
 	'''
@@ -44,3 +44,67 @@ class ManageDatabase(object):
 			return MetaKeySample.objects.get(sample__id=sample.id, meta_tag__name=meta_key_name, value=value)
 		except MetaKeySample.DoesNotExist:
 			return None
+	
+	def set_project_metakey(self, project, owner, meta_key_name, value, description):
+		"""
+		save a meta key
+		"""
+		try:
+			metaKey = MetaKey.objects.get(name=meta_key_name)
+		except MetaKey.DoesNotExist:
+			metaKey = MetaKey()
+			metaKey.name = meta_key_name
+			metaKey.save()
+		
+		metaKeyProject = MetaKeyProject()
+		metaKeyProject.sample = project
+		metaKeyProject.meta_tag = metaKey
+		metaKeyProject.owner = owner
+		metaKeyProject.value = value
+		metaKeyProject.description = description
+		metaKeyProject.save()
+		return MetaKeyProject
+	
+	def get_project_metakey(self, project, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): return MetaKeyProject.objects.filter(project__id=project.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			return MetaKeyProject.objects.get(project__id=project.id, meta_tag__name=meta_key_name, value=value)
+		except MetaKeyProject.DoesNotExist:
+			return None
+
+	def set_project_sample_metakey(self, project_sample, owner, meta_key_name, value, description):
+		"""
+		save a meta key
+		"""
+		try:
+			metaKey = MetaKey.objects.get(name=meta_key_name)
+		except MetaKey.DoesNotExist:
+			metaKey = MetaKey()
+			metaKey.name = meta_key_name
+			metaKey.save()
+		
+		metaKeyProjectSample = MetaKeyProjectSample()
+		metaKeyProjectSample.sample = project_sample
+		metaKeyProjectSample.meta_tag = metaKey
+		metaKeyProjectSample.owner = owner
+		metaKeyProjectSample.value = value
+		metaKeyProjectSample.description = description
+		metaKeyProjectSample.save()
+		return metaKeyProjectSample
+	
+	def get_project_sample_metakey(self, project_sample, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): return MetaKeyProjectSample.objects.filter(project_sample__id=project_sample.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			return MetaKeyProjectSample.objects.get(project_sample__id=project_sample.id, meta_tag__name=meta_key_name, value=value)
+		except MetaKeyProjectSample.DoesNotExist:
+			return None
+
+
+
+

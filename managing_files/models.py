@@ -285,15 +285,63 @@ class Project(models.Model):
 	"""
 	name = models.CharField(max_length=200, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
-	samples = models.ManyToManyField(Sample, related_name='project')
+	reference = models.ForeignKey(Reference, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	is_finished = models.BooleanField(default=False)
+	is_deleted = models.BooleanField(default=False)
 	
 	def __str__(self):
 		return self.name
 	
 	class Meta:
 		ordering = ['-creation_date', ]
+
+class MetaKeyProject(models.Model):
+	"""
+	Relation ManyToMany in 
+	"""
+	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_project', on_delete=models.CASCADE)
+	project = models.ForeignKey(Project, related_name='meta_key_project', on_delete=models.CASCADE)
+	owner = models.ForeignKey(User, related_name='meta_key_project', on_delete=models.CASCADE)
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
+	description = models.TextField(default="")
+	
+	class Meta:
+		ordering = ['project__id', '-creation_date']
+	
+	def __str__(self):
+		return self.value
+
+class ProjectSample(models.Model):
+	
+	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
+	sample = models.ForeignKey(Sample, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
+	is_finished = models.BooleanField(default=False)
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	
+	class Meta:
+		ordering = ['project__id', '-creation_date']
+	
+	def __str__(self):
+		return self.project.name
+
+
+class MetaKeyProjectSample(models.Model):
+	"""
+	Relation ManyToMany in 
+	"""
+	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_project_sample', on_delete=models.CASCADE)
+	project_sample = models.ForeignKey(ProjectSample, related_name='meta_key_project_sample', on_delete=models.CASCADE)
+	owner = models.ForeignKey(User, related_name='meta_key_project_sample', on_delete=models.CASCADE)
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
+	description = models.TextField(default="")
+	
+	class Meta:
+		ordering = ['project_sample__id', '-creation_date']
+	
+	def __str__(self):
+		return self.value
 
 
 class Version(models.Model):

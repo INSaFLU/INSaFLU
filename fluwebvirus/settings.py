@@ -158,7 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
-DATE_INPUT_FORMATS = ('%d-%m-%Y','%Y-%m-%d')
+#DATE_INPUT_FORMATS = ('%d-%m-%Y','%Y-%m-%d')
 
 LANGUAGE_CODE = 'en-us'
 
@@ -168,7 +168,7 @@ USE_I18N = True
 
 ## set the format in forms.DateField
 ## This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
-USE_L10N = False
+USE_L10N = True
 
 USE_TZ = True
 

@@ -3,13 +3,14 @@
 * used in header forms
 */
 .rounded-header {
-	border-radius: 10px;
-	background: #246bce;
-	border-color: #246bce;
-	border-width: 115px;
-	color: #ffffff;
-	padding: 15px;
+	border-radius: 5px;
+	background: #dddddd;
+	border-color: #05264c;
+	color: #05264c;
+	padding: 14px;
 	margin-bottom: 30px;
+	font-size: 25px;
+	font-weight: 700;
 }
 
 .rounded-group-box {
@@ -32,6 +33,37 @@
     padding-right: 15px;
     padding-top: 2px;
     padding-bottom: 2px;
+}
+
+/**
+*	Show text
+*/
+.box-blue {
+    padding: 8px 8px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    background: #eaf5ff;
+    border: 1px solid rgba(27,31,35,0.15);
+    border-radius: 3px;
+}
+
+/**
+*	regular header
+*/
+p.title-box {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #05264c;
+    background: #dddddd;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+p.software {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #05264c;
 }
 
 /**

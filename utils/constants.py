@@ -52,6 +52,7 @@ class Constants(object):
 	
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 15
+	PAGINATE_NUMBER_SMALL = 6
 	
 
 

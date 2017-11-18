@@ -188,6 +188,7 @@ STATICFILES_DIRS = (
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_all')	## is the absolute path to the directory where collectstatic will collect static files for deployment.
 STATIC_URL = '/static/' 						## is the URL to use when referring to static files located in STATIC_ROOT.
 
+MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 

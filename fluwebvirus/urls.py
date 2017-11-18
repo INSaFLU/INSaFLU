@@ -27,9 +27,11 @@ urlpatterns = [
 ##    url(r'^accounts/register/$', SignUpView.as_view(), name='signup'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', LogOutView.as_view(), name='logout'),
+    url(r'^dashboard/$', LoginView.as_view(), name='dashboard'),
 
     url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

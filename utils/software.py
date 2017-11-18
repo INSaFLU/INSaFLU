@@ -3,18 +3,21 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, sys
+import os
 import logging
 import cmd
 import subprocess
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
-from utils.constants import Constants, TypePath
+from utils.constants import Constants, TypePath, FileType
 from utils.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
+from managing_files.models import Sample, ProjectSample
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
+from utils.parse_coverage_file import GetCoverage
+from django.db import transaction
 
 class Software(object):
 	'''
@@ -25,9 +28,19 @@ class Software(object):
 	
 	## dir with software
 	DIR_SOFTWARE = "/usr/local/software/insaflu"
-	SOFTWARE_SAMTOOLS = "/usr/bin/samtools"
+	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE, "snippy/bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
-	SOFTWARE_SAMTOOLS_VERSION = ""
+	SOFTWARE_SAMTOOLS_VERSION = "1.3"
+	SOFTWARE_SAMTOOLS_PARAMETERS = ""
+	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE, "snippy/bin/bgzip")
+	SOFTWARE_BGZIP_name = "bgzip"
+	SOFTWARE_BGZIP_VERSION = "1.3"
+	SOFTWARE_BGZIP_PARAMETERS = ""
+	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, "snippy/bin/tabix")
+	SOFTWARE_TABIX_name = "tabix"
+	SOFTWARE_TABIX_VERSION = "1.3"
+	SOFTWARE_TABIX_PARAMETERS = ""
+
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py") 
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
@@ -45,24 +58,37 @@ class Software(object):
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33"
+	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy")
+	SOFTWARE_SNIPPY_name = "Snippy"
+	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
+	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
+	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes")
+	SOFTWARE_FREEBAYES_name = "Freebayes"
+	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
+	SOFTWARE_FREEBAYES_PARAMETERS = "-p 1 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
+	SOFTWARE_COVERAGE = "Coverage, inhouse script"
+	SOFTWARE_COVERAGE_name = "Coverage"
+	SOFTWARE_COVERAGE_VERSION = "v1.1"
+	SOFTWARE_COVERAGE_PARAMETERS = ""
+
 
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
 	utils = Utils()
 	constants = Constants()
-	
+
 	def __init__(self):
 		'''
 		Constructor
 		'''
 		pass
-	
+
 	"""
 	return samtools software
 	"""
 	def get_samtools(self): return self.SOFTWARE_SAMTOOLS
 	def get_samtools_version(self): return self.SOFTWARE_SAMTOOLS_VERSION
-	
+
 	"""
 	return spades software
 	"""
@@ -70,7 +96,7 @@ class Software(object):
 	def get_spades_name(self): return self.SOFTWARE_SPAdes_name
 	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
 	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
-	
+
 	"""
 	return abricate software
 	"""
@@ -78,7 +104,7 @@ class Software(object):
 	def get_abricate_name(self): return self.SOFTWARE_ABRICATE_name
 	def get_abricate_version(self): return self.SOFTWARE_ABRICATE_VERSION
 	def get_abricate_parameters(self): return self.SOFTWARE_ABRICATE_PARAMETERS
-	
+
 	"""
 	return FASTq software
 	"""
@@ -90,12 +116,89 @@ class Software(object):
 	"""
 	return trimmomatic software
 	"""
-	def get_trimmomantic(self): return self.SOFTWARE_TRIMMOMATIC
-	def get_trimmomantic_name(self): return self.SOFTWARE_TRIMMOMATIC_name
+	def get_trimmomatic(self): return self.SOFTWARE_TRIMMOMATIC
+	def get_trimmomatic_name(self): return self.SOFTWARE_TRIMMOMATIC_name
 	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
 	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
 	
-	def createFaiToFastaFile(self, fileFastaName):
+	"""
+	return snippy software
+	"""
+	def get_snippy(self): return self.SOFTWARE_SNIPPY
+	def get_snippy_name(self): return self.SOFTWARE_SNIPPY_name
+	def get_snippy_version(self): return self.SOFTWARE_SNIPPY_VERSION
+	def get_snippy_parameters(self): return self.SOFTWARE_SNIPPY_PARAMETERS
+
+	"""
+	return freebayes software
+	"""
+	def get_freebayes(self): return self.SOFTWARE_FREEBAYES
+	def get_freebayes_name(self): return self.SOFTWARE_FREEBAYES_name
+	def get_freebayes_version(self): return self.SOFTWARE_FREEBAYES_VERSION
+	def get_freebayes_parameters(self): return self.SOFTWARE_FREEBAYES_PARAMETERS
+
+	"""
+	return bgzip software
+	"""
+	def get_bgzip(self): return self.SOFTWARE_BGZIP
+	def get_bgzip_name(self): return self.SOFTWARE_BGZIP_name
+	def get_bgzip_version(self): return self.SOFTWARE_BGZIP_VERSION
+	def get_bgzip_parameters(self): return self.SOFTWARE_BGZIP_PARAMETERS
+
+	"""
+	return tabix software
+	"""
+	def get_tabix(self): return self.SOFTWARE_TABIX
+	def get_tabix_name(self): return self.SOFTWARE_TABIX_name
+	def get_tabix_version(self): return self.SOFTWARE_TABIX_VERSION
+	def get_tabix_parameters(self): return self.SOFTWARE_TABIX_PARAMETERS
+	
+	"""
+	return Coverage software
+	"""
+	def get_coverage(self): return self.SOFTWARE_COVERAGE
+	def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
+	def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
+	def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
+
+
+	def get_vect_type_files_to_copy(self, software):
+		"""
+		get type of files to copy
+		"""
+		if (software == Software.SOFTWARE_SNIPPY_name):
+			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
+		elif (software == Software.SOFTWARE_FREEBAYES_name):
+			return [FileType.FILE_VCF]
+
+
+	def copy_files_to_project(self, project_sample, software, path_from):
+		"""
+		copy files to the project
+		software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
+		"""
+		utils = Utils()
+		for type_file in self.get_vect_type_files_to_copy(software):
+			if (type_file == FileType.FILE_CONSENSUS_FA):	## if .fa file pass to .fasta
+				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, software))
+			elif (type_file == FileType.FILE_VCF):	## if .fa file pass to .fasta
+				### create the gzip file
+				utils.compress_files(self.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
+				### create the tabix
+				utils.create_index_files(self.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
+				
+				### copy both
+				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))
+				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))
+			else:
+				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
+
+	def create_fai_fasta(self, fileFastaName):
 		"""
 		Create fai for a fasta file
 		"""
@@ -106,7 +209,8 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run samtools")
 		return cmd
-	
+
+
 	def run_spades(self, fastq_1, fastq_2, out_dir):
 		"""
 		Run spades
@@ -213,6 +317,7 @@ class Software(object):
 	"""
 	Global processing
 	"""
+	@transaction.atomic
 	def identify_type_and_sub_type(self, sample, fastq1_1, fastq1_2, owner):
 		"""
 		Identify type and sub_type
@@ -320,7 +425,7 @@ class Software(object):
 
 	def run_fastq(self, file_name_1, file_name_2):
 		"""
-		run fastQ, return output direcory
+		run fastQ, return output directory
 		-o OUT_FOLDER --nogroup --format fastq --threads 10 --dir OUT_FOLDER FILE1 FILE2
 		"""
 		utils = Utils()
@@ -341,22 +446,22 @@ class Software(object):
 	def run_trimmomatic(self, file_name_1, file_name_2, sample_name):
 		"""
 		run trimmomatic
-		return output direcotry
+		return output directory
 		
 		#${bpipe_trimmomatic} PE -threads 3 -basein FILE1 -baseout OUT_FOLDER/PREFIX_FILES_OUT.fastq.gz SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33
 		
 		PE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] [-basein <inputBase> | <inputFile1> <inputFile2>] [-baseout <outputBase> | <outputFile1P> <outputFile1U> <outputFile2P> <outputFile2U>] <trimmer1>...
    			or: 
 		SE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] <inputFile> <outputFile> <trimmer1>
-	   
 		"""
+
 		utils = Utils()
 		temp_dir = utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
-			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.get_trimmomantic(), Software.CORES_TO_USE, file_name_1, 
+			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.get_trimmomatic(), Software.CORES_TO_USE, file_name_1, 
 					os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
 		else:
-			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.get_trimmomantic(), Software.CORES_TO_USE, 
+			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.get_trimmomatic(), Software.CORES_TO_USE, 
 										file_name_1, os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -365,10 +470,106 @@ class Software(object):
 			raise Exception("Fail to run trimmomatic")
 		return temp_dir
 
+	def run_snippy(self, file_name_1, file_name_2, path_reference, sample_name):
+		"""
+		run snippy
+		return output directory
+		
+		## ./snippy --cpus 3 --outdir /tmp/insafli/xpto --prefix xpto --ref ~/fluWeb/ref_H3.fasta --mapqual 20 --mincov 10 --minfrac 0.51 --R1 ~/fluWeb/EVA001_S66_L001_R1_001.fastq.gz --R2 ~/fluWeb/EVA001_S66_L001_R2_001.fastq.gz SNIPPY
+
+		Out file		
+		[06:29:16] * /tmp/insafli/xpto/xpto.aligned.fa
+		[06:29:16] * /tmp/insafli/xpto/xpto.bam
+		[06:29:16] * /tmp/insafli/xpto/xpto.bam.bai
+		[06:29:16] * /tmp/insafli/xpto/xpto.bed
+		[06:29:16] * /tmp/insafli/xpto/xpto.consensus.fa
+		[06:29:16] * /tmp/insafli/xpto/xpto.consensus.subs.fa
+		[06:29:16] * /tmp/insafli/xpto/xpto.csv
+		[06:29:16] * /tmp/insafli/xpto/xpto.depth.gz
+		[06:29:16] * /tmp/insafli/xpto/xpto.depth.gz.tbi
+		[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf
+		[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf.gz
+		[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf.gz.tbi
+		[06:29:16] * /tmp/insafli/xpto/xpto.filt.vcf
+		[06:29:16] * /tmp/insafli/xpto/xpto.gff
+		[06:29:16] * /tmp/insafli/xpto/xpto.html
+		[06:29:16] * /tmp/insafli/xpto/xpto.log
+		[06:29:16] * /tmp/insafli/xpto/xpto.raw.vcf
+		[06:29:16] * /tmp/insafli/xpto/xpto.tab
+		[06:29:16] * /tmp/insafli/xpto/xpto.txt
+		[06:29:16] * /tmp/insafli/xpto/xpto.vcf
+		[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
+		[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
+		"""
+		utils = Utils()
+		temp_dir = os.path.join(utils.get_temp_dir(), sample_name)
+		if (file_name_2 is None or len(file_name_2) == 0):
+			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
+				(self.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				path_reference, self.get_snippy_parameters(), file_name_1)
+		else:
+			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
+				(self.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				path_reference, self.get_snippy_parameters(), file_name_1, file_name_2)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run snippy")
+		return temp_dir
+
+
+	def run_freebayes(self, bam_file, reference_fasta, sample_name):
+		"""
+		run freebayes
+		return output directory
+		
+		## freebayes -p 1 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V -f ../$input2 -b {} > {.}.vcf'
+		"""
+		utils = Utils()
+		temp_dir = os.path.join(utils.get_temp_dir())
+		
+		file_to_process = os.path.join(temp_dir, sample_name + ".bam" )
+		cmd = "ln -s {} {}".format(bam_file, os.path.join(temp_dir, sample_name + ".bam" ))
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+
+		cmd = "ln -s {} {}.bai".format(bam_file + ".bai", file_to_process)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+
+		reference_fasta_temp = os.path.join(temp_dir, os.path.basename(reference_fasta))
+		cmd = "ln -s {} {}".format(reference_fasta, reference_fasta_temp)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+
+		### create the FAI index
+		self.create_fai_fasta(reference_fasta_temp)
+		
+		cmd = "%s %s -f %s -b %s > %s.vcf" %\
+				(self.get_freebayes(), self.get_freebayes_parameters(),
+				reference_fasta_temp, file_to_process, os.path.join(temp_dir, sample_name))
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+		return temp_dir
+
 
 	"""
 	Global processing
 	"""
+	@transaction.atomic
 	def run_fastq_and_trimmomatic(self, sample, owner):
 		"""
 		run fastq and trimmomatic
@@ -396,14 +597,14 @@ class Software(object):
 		### run trimmomatic
 		try:
 			temp_dir = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name)
-			result_all.add_software(SoftwareDesc(self.get_trimmomantic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
+			result_all.add_software(SoftwareDesc(self.get_trimmomatic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_trimmomantic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
+			result.add_software(SoftwareDesc(self.get_trimmomatic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -439,9 +640,9 @@ class Software(object):
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 
 		### set the flag of the end of the task		
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
 
 	"""
@@ -456,5 +657,103 @@ class Software(object):
 		if (b_return and sample.exist_file_2()):	## don't run for single file because spades doesn't work for one single file
 			self.identify_type_and_sub_type(sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), user)
+
+		## set the flag that is ready for process
+		if (b_return):
+			sample_to_update, created = Sample.objects.get_or_create(pk=sample.id)
+			sample_to_update.is_ready_for_projects = True
+			sample_to_update.save()
+		return b_return
+
+
+	"""
+	Global processing, fastQ, trimmomatic and GetSpecies
+	"""
+	@transaction.atomic
+	def process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
+		"""
+		Global processing, snippy, coverage, 
+		"""
+		
+		manageDatabase = ManageDatabase()
+		result_all = Result()
+		## process snippy
+		try:
+			out_put_path = self.run_snippy(project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),\
+					project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False), project_sample.project.reference.reference_genbank.name,\
+					project_sample.sample.name)
+			result_all.add_software(SoftwareDesc(self.get_snippy_name(), self.get_snippy_version(), self.get_snippy_parameters()))
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to run fastq software: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_snippy_name(), self.get_snippy_version(), self.get_snippy_parameters()))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			return False
+
+		## copy the files to the project sample directories
+		self.copy_files_to_project(project_sample, Software.SOFTWARE_SNIPPY_name, out_put_path)
+		self.utils.remove_dir(out_put_path)
+
+		## get coverage from deep file
+		get_coverage = GetCoverage()
+		try:
+			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
+						Software.SOFTWARE_SNIPPY_name), project_sample.project.reference.reference_fasta.name)
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to get coverage: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_coverage_name(), self.get_coverage_version(), self.get_coverage_parameters()))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			return False
+		
+		meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
+								MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
+
+		## run freebayes
+		try:
+			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, Software.SOFTWARE_SNIPPY_name),\
+						project_sample.project.reference.reference_fasta.name, project_sample.sample.name)
+			result_all.add_software(SoftwareDesc(self.get_freebayes_name(), self.get_freebayes_version(), self.get_freebayes_parameters()))
+		except Exception as e:
+			result = Result()
+			result.set_error("Fail to run freebayes software: " + e.args[0])
+			result.add_software(SoftwareDesc(self.get_freebayes_name(), self.get_freebayes_version(), self.get_freebayes_parameters()))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			return False
+		
+		self.copy_files_to_project(project_sample, Software.SOFTWARE_FREEBAYES_name, out_put_path)
+		self.utils.remove_dir(out_put_path)
+		
+		### set flag that is finished
+		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		
+		### get again
+		project_sample = ProjectSample.objects.get(pk=project_sample.id)
+		project_sample.is_finished = True
+		project_sample.save()
+		
+		### set the flag of the end of the task		
+		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_sample != None):
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+		return True
 
 

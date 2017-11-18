@@ -57,7 +57,7 @@ class ManageDatabase(object):
 			metaKey.save()
 		
 		metaKeyProject = MetaKeyProject()
-		metaKeyProject.sample = project
+		metaKeyProject.project = project
 		metaKeyProject.meta_tag = metaKey
 		metaKeyProject.owner = owner
 		metaKeyProject.value = value
@@ -87,7 +87,7 @@ class ManageDatabase(object):
 			metaKey.save()
 		
 		metaKeyProjectSample = MetaKeyProjectSample()
-		metaKeyProjectSample.sample = project_sample
+		metaKeyProjectSample.project_sample = project_sample
 		metaKeyProjectSample.meta_tag = metaKey
 		metaKeyProjectSample.owner = owner
 		metaKeyProjectSample.value = value

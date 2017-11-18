@@ -3,7 +3,6 @@ Created on Oct 13, 2017
 
 @author: mmp
 '''
-import os
 from enum import Enum
 
 class Constants(object):
@@ -54,11 +53,72 @@ class Constants(object):
 	PAGINATE_NUMBER = 15
 	PAGINATE_NUMBER_SMALL = 6
 	
-
-
+	def get_extensions_by_file_type(self, file_name, file_type):
+		"""
+		get extensions by file type
+		"""
+		if (file_type == FileType.FILE_BAM): return "{}.bam".format(file_name)
+		if (file_type == FileType.FILE_BAM_BAI): return "{}.bam.bai".format(file_name)
+		if (file_type == FileType.FILE_CONSENSUS_FA): return "{}.consensus.fa".format(file_name)
+		if (file_type == FileType.FILE_CONSENSUS_FASTA): return "{}.consensus.fasta".format(file_name)
+		if (file_type == FileType.FILE_CSV): return "{}.csv".format(file_name)
+		if (file_type == FileType.FILE_DEPTH): return "{}.depth".format(file_name)
+		if (file_type == FileType.FILE_DEPTH_GZ): return "{}.depth.gz".format(file_name)
+		if (file_type == FileType.FILE_DEPTH_GZ_TBI): return "{}.depth.gz.tbi".format(file_name)
+		if (file_type == FileType.FILE_TAB): return "{}.tab".format(file_name)
+		if (file_type == FileType.FILE_VCF): return "{}.vcf".format(file_name)
+		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
+		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
+		return ""
+		
+		
 class TypePath(Enum):
 	"""
 	Has the type of paths you can get from file paths
 	"""
 	MEDIA_ROOT = 0
 	MEDIA_URL = 1
+
+
+class FileType(Enum):
+	"""
+	Has the type of files
+	[06:29:16] * /tmp/insafli/xpto/xpto.bam
+	[06:29:16] * /tmp/insafli/xpto/xpto.bam.bai
+	[06:29:16] * /tmp/insafli/xpto/xpto.bed
+	[06:29:16] * /tmp/insafli/xpto/xpto.consensus.fa
+	[06:29:16] * /tmp/insafli/xpto/xpto.consensus.subs.fa
+	[06:29:16] * /tmp/insafli/xpto/xpto.csv
+	[06:29:16] * /tmp/insafli/xpto/xpto.depth.gz
+	[06:29:16] * /tmp/insafli/xpto/xpto.depth.gz.tbi
+	[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf
+	[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf.gz
+	[06:29:16] * /tmp/insafli/xpto/xpto.filt.subs.vcf.gz.tbi
+	[06:29:16] * /tmp/insafli/xpto/xpto.filt.vcf
+	[06:29:16] * /tmp/insafli/xpto/xpto.gff
+	[06:29:16] * /tmp/insafli/xpto/xpto.html
+	[06:29:16] * /tmp/insafli/xpto/xpto.log
+	[06:29:16] * /tmp/insafli/xpto/xpto.raw.vcf
+	[06:29:16] * /tmp/insafli/xpto/xpto.tab
+	[06:29:16] * /tmp/insafli/xpto/xpto.txt
+	[06:29:16] * /tmp/insafli/xpto/xpto.vcf
+	[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
+	[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
+	"""
+	FILE_BAM = 0
+	FILE_BAM_BAI = 1
+	FILE_CONSENSUS_FA = 2
+	FILE_CONSENSUS_FASTA = 3
+	FILE_DEPTH = 4
+	FILE_DEPTH_GZ = 5
+	FILE_DEPTH_GZ_TBI = 6
+	FILE_TAB = 7
+	FILE_VCF = 8
+	FILE_VCF_GZ = 9
+	FILE_VCF_GZ_TBI = 10
+	FILE_CSV = 11
+	
+
+
+
+

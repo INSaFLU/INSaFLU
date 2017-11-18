@@ -4,7 +4,8 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, DecodeResultAverageAndNumberReads
+from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads 
+from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage
 from utils.software import Software
 
 class Test(TestCase):
@@ -73,8 +74,36 @@ class Test(TestCase):
 		self.assertEqual("SPAdes-3.11.1", result.get_software(Software.SOFTWARE_SPAdes_name))
 		
 		
+	def test_Coverage(self):
 		
+		coverage = Coverage()	
+		coverage.add_coverage('3', Coverage.COVERAGE_ALL, '10')
+		coverage.add_coverage('3', Coverage.COVERAGE_MORE_0, '0')
+		coverage.add_coverage('3', Coverage.COVERAGE_MORE_9, '9')
+		coverage.add_coverage('2', Coverage.COVERAGE_ALL, '101')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_0, '10')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_9, '19')
 		
+		json = coverage.to_json()
+		decodeCoverage = DecodeCoverage()
+		coverage_2 = decodeCoverage.decode_result(json)
+		self.assertTrue("10", coverage_2.get_coverage('3', Coverage.COVERAGE_ALL))
+		self.assertTrue("0", coverage_2.get_coverage('3', Coverage.COVERAGE_MORE_0))
+		self.assertTrue("9", coverage_2.get_coverage('3', Coverage.COVERAGE_MORE_9))
+		self.assertTrue("101", coverage_2.get_coverage('2', Coverage.COVERAGE_ALL))
+		self.assertTrue("10", coverage_2.get_coverage('2', Coverage.COVERAGE_MORE_0))
+		self.assertTrue("19", coverage_2.get_coverage('2', Coverage.COVERAGE_MORE_9))
+		try:
+			self.assertTrue("19", coverage_2.get_coverage('4', Coverage.COVERAGE_MORE_9))
+			self.fail("must raise exception")
+		except Exception as e:
+			self.assertEquals("Error: there's no key like this: 4", e.args[0])
 		
-		
-		
+		try:
+			self.assertTrue("19", coverage_2.get_coverage('2', "xpto"))
+			self.fail("must raise exception")
+		except Exception as e:
+			self.assertEquals("Error: there's no key like this: xpto", e.args[0])
+
+
+

@@ -107,7 +107,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.save()
 		
 		## create the index before commit in database, throw exception if something goes wrong
-		software.createFaiToFastaFile(reference.reference_fasta.name)
+		software.create_fai_fasta(reference.reference_fasta.name)
 		
 		messages.success(self.request, "Reference '" + name + "' was created successfully", fail_silently=True)
 		return super(ReferenceAddView, self).form_valid(form)
@@ -217,7 +217,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		
 		### 
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Import_Sample_Import_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+		manageDatabase.set_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 		
 		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)

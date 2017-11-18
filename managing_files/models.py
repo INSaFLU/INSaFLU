@@ -4,10 +4,11 @@ from django.db import models
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from utils.constants import Constants, TypePath
+from utils.constants import Constants, TypePath, FileType
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 from django.conf import settings
+from utils.utils import Utils
 import os
 
 def reference_directory_path(instance, filename):
@@ -29,19 +30,20 @@ class SeasonReference(models.Model):
 		return self.name
 	class Meta:
 		ordering = ['name', ]
-		
+
+
 class Reference(models.Model):
 	name = models.CharField(max_length=200, default='New reference')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=100000, blank=True, null=True)
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=100000, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=200000, blank=True, null=True)
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=200000, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
 
@@ -62,7 +64,6 @@ class Reference(models.Model):
 		indexes = [
 			models.Index(fields=['name'], name='name_idx'),
 		]
-
 
 
 class MetaKey(models.Model):
@@ -143,13 +144,16 @@ class Sample(models.Model):
 	### files
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520)
+	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=300, blank=True, null=True)
-	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520)
+	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
 
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
+	
+	###	has the flag indicating that the sample can be processed by projects
+	is_ready_for_projects = models.BooleanField(default=False)
 	
 	def __str__(self):
 		return self.name
@@ -242,6 +246,13 @@ class Sample(models.Model):
 				vect_return.append(identify_virus.seq_virus.name)
 		return ''.join(sorted(vect_return))
 				
+	def get_is_ready_for_projects(self):
+		"""
+		need to be true to be ready for projects
+		"""
+		return self.is_ready_for_projects and not self.is_obsolete and not self.is_rejected
+
+
 class MetaKeySample(models.Model):
 	"""
 	Relation ManyToMany in 
@@ -268,7 +279,7 @@ class UploadFiles(models.Model):
 	file_name = models.CharField(max_length=300, blank=True, null=True)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
-	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream'], max_upload_size=30971520)
+	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream'], max_upload_size=30971520, max_length=500)
 	is_day_month_year_from_date_of_onset = models.BooleanField(default=False)
 	is_day_month_year_from_date_of_collection = models.BooleanField(default=False)
 	
@@ -319,12 +330,38 @@ class ProjectSample(models.Model):
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_finished = models.BooleanField(default=False)
 	is_deleted = models.BooleanField(default=False)
+	is_error = models.BooleanField(default=False)		## if some problem occurs
 
 	class Meta:
 		ordering = ['project__id', '-creation_date']
 	
 	def __str__(self):
 		return self.project.name
+
+	def get_file_output(self, type_path, file_type, software):
+		"""
+		return file path output
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
+	
+		"""
+		constants = Constants()
+		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
+
+	def __get_user_result_directory_path__(self, software):
+		# file will be uploaded to MEDIA_ROOT/<filename>
+		if (software is None or not software): return 'projects/result/user_{0}/project_{1}/sample_{2}'.format(self.sample.owner.id, self.project.id, self.sample.id)
+		return 'projects/result/user_{0}/project_{1}/sample_{2}/{3}'.format(self.sample.owner.id, self.project.id, self.sample.id, software)
+
+	def __get_path__(self, type_path, software):
+		"""
+		get a path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.__get_user_result_directory_path__(software)
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else: path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
 
 
 class MetaKeyProjectSample(models.Model):

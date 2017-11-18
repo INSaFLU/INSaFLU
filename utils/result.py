@@ -88,12 +88,12 @@ class Result(object):
 		self.softwares.add_software(software)
 		
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CustomEncoder)
+		return json.dumps(self, indent=4, cls=ResultEncoder)
 
 	def get_software(self, sz_name):
 		return self.softwares.get_software(sz_name)
 
-class CustomEncoder(json.JSONEncoder):
+class ResultEncoder(json.JSONEncoder):
 
 	def default(self, o):
 		if isinstance(o, SoftwareDesc):
@@ -147,7 +147,7 @@ class ResultAverageAndNumberReads(object):
 		self.average_file_2 = average_file_2
 	
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CustomEncoderResult)
+		return json.dumps(self, indent=4, cls=ResultAverageEncoder)
 
 	def get_result_number(self):
 		return ""		
@@ -157,8 +157,7 @@ class ResultAverageAndNumberReads(object):
 			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
 
 
-
-class CustomEncoderResult(json.JSONEncoder):
+class ResultAverageEncoder(json.JSONEncoder):
 
 	def default(self, o):
 		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
@@ -180,3 +179,83 @@ class DecodeResultAverageAndNumberReads(object):
 			a.__dict__.update(o['__ResultAverageAndNumberReads__'])
 			return a
 		return o
+
+
+class CoverageElement(object):
+	"""
+	Only have the number of reads and average
+	"""
+	
+	def __init__(self, element):
+		self.element = element
+		self.dt_data = {}
+		
+	def add_coverage(self, type_coverage, coverage):
+		self.dt_data[type_coverage] = coverage
+		
+	def get_coverage(self, type_coverage):
+		if (type_coverage in self.dt_data): return self.dt_data[type_coverage]
+		raise Exception("Error: there's no key like this: " + type_coverage)
+
+
+class Coverage(object):
+	"""
+	Only have the number of reads and average
+	"""
+	COVERAGE_ALL = "CoverageAll"
+	COVERAGE_MORE_0 = "CoverageMore0"
+	COVERAGE_MORE_9 = "CoverageMore9"
+
+	def __init__(self):
+		self.dt_data = {}
+
+	def add_coverage(self, element, type_coverage, coverage):
+		if (element in self.dt_data): self.dt_data[element].add_coverage(type_coverage, coverage)
+		else:
+			self.dt_data[element] = CoverageElement(element)
+			self.dt_data[element].add_coverage(type_coverage, coverage)
+
+	def get_coverage(self, element, type_coverage):
+		if (element in self.dt_data): return self.dt_data[element].get_coverage(type_coverage)
+		raise Exception("Error: there's no key like this: " + element)
+
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=CoverageEncoder)
+
+	def get_result_number(self):
+		return ""
+	
+	def __str__(self):
+		sz_return = ""
+		for key in self.dt_data:
+			sz_return += "{} - All {}; 0 {}; 9 {}\n".format(key, self.get_coverage(key, Coverage.COVERAGE_ALL),\
+				self.get_coverage(key, Coverage.COVERAGE_MORE_0), self.get_coverage(key, Coverage.COVERAGE_MORE_9))
+		return sz_return
+
+
+class CoverageEncoder(json.JSONEncoder):
+
+	def default(self, o):
+		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
+
+
+class DecodeCoverage(object):
+	
+	def __init__(self):
+		pass
+	
+	def decode_result(self, sz_temp):
+		return json.loads(sz_temp, object_hook=self.decode_object)
+		
+	def decode_object(self, o):
+		if '__Coverage__' in o:
+			a = Coverage()
+			a.__dict__.update(o['__Coverage__'])
+			return a
+		elif '__CoverageElement__' in o:
+			a = CoverageElement(o['__CoverageElement__']['element'])
+			a.__dict__.update(o['__CoverageElement__'])
+			return a
+		return o
+
+

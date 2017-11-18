@@ -275,3 +275,38 @@ class Utils(object):
 		return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
 
+	def compress_files(self, software, file_name):
+		"""
+		compress files
+		"""
+		## test if the file exists
+		if (os.path.exists(file_name + ".gz")): return
+		
+		cmd = "{} -c {} > {}.gz".format(software, file_name, file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to compress file") 
+
+	def create_index_files(self, software, file_name):
+		"""
+		create index, need to be .gz
+		"""
+		file_to_index = file_name
+		if (not file_to_index.endswith(".gz")): file_to_index += ".gz"
+		if (not os.path.exists(file_to_index)):
+			self.logger_production.error("File doesn't exist: " + file_to_index)
+			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
+			raise Exception("File doesn't exist")
+		
+		cmd = "{} {}".format(software, file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create index") 
+	
+	
+		
+		

@@ -140,7 +140,8 @@ class Sample(models.Model):
 	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
 	geo_manager = GeoManager()
 	identify_virus = models.ManyToManyField(IdentifyVirus)
-
+	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
+	
 	### files
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=300, blank=True, null=True)

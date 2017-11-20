@@ -630,6 +630,8 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
+		self.assertEquals("A-H3N2", sample.type_subtype)
+		self.assertEquals("A-H3N2", sample.get_type_sub_type())
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		
 		## remove all files
@@ -734,9 +736,9 @@ class Test(TestCase):
 		self.assertTrue(os.path.getsize(result_file) > 1000)
 		temp_file = self.utils.get_temp_file("file_name", ".txt")
 		temp_file_1 = self.utils.get_temp_file("file_name", ".txt")
-		cmd = "grep -E -v '##command|##reference' {} > {}".format(result_file, temp_file)
+		cmd = "grep -E -v '##command|##reference|##fileDate' {} > {}".format(result_file, temp_file)
 		os.system(cmd);
-		cmd = "grep -E -v '##command|##reference' {} > {}".format(vcf_expect_result, temp_file_1)
+		cmd = "grep -E -v '##command|##reference|##fileDate' {} > {}".format(vcf_expect_result, temp_file_1)
 		os.system(cmd);
 		self.assertTrue(filecmp.cmp(temp_file_1, temp_file))
 		self.utils.remove_temp_file(temp_file_1)

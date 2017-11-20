@@ -5,9 +5,9 @@ from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
-from managing_files.models import Reference, Sample, Project
-from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable
-from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet
+from managing_files.models import Reference, Sample, Project, ProjectSample
+from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable
+from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
@@ -24,6 +24,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.http import JsonResponse
 from django.db import transaction
+from itertools import chain
+from django.db.models import Q
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -306,6 +308,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
 		table = ProjectTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		### clean check boc in the session
+		clean_check_box_in_session(self.request)
+
 		context['table'] = table
 		context['nav_project'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -326,6 +331,7 @@ class ReferenceProjectList(ListView, LoginRequiredMixin):
 		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
 		table = ReferenceTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		
 		context['table'] = table
 		context['nav_reference'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -400,13 +406,98 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		return super(ProjectCreateView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
 
+
+class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Create a new reference
+	"""
+	model = Sample
+	fields = ['name']
+	success_url = reverse_lazy('projects')
+	template_name = 'project_sample/project_sample_add.html'
+	
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(AddSamplesProjectsView, self).get_form_kwargs()
+##		kw['request'] = self.request 	# get error
+		return kw
+
+	def get_context_data(self, **kwargs):
+		context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
 		
+		### test if the user is the same of the page
+		project = Project.objects.get(pk=self.kwargs['pk'])
+		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
+
+		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__isnull=True)
+		if (self.request.GET.get('search') != None and self.request.GET.get('search')): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get('search')) |\
+										Q(data_set__name__icontains=self.request.GET.get('search')) |\
+										Q(type_subtype__icontains=self.request.GET.get('search')) |\
+										Q(week__icontains=self.request.GET.get('search')))
+		query_set_2 = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__is_deleted=True)
+		if (self.request.GET.get('search') != None and self.request.GET.get('search')):
+			query_set_2 = query_set_2.filter(Q(name__icontains=self.request.GET.get('search')) |\
+										Q(data_set__name__icontains=self.request.GET.get('search')) |\
+										Q(type_subtype__icontains=self.request.GET.get('search')) |\
+										Q(week__icontains=self.request.GET.get('search')))
+		result_list = sorted(chain(query_set_2, query_set), key=lambda instance: instance.creation_date)
+		table = SampleToProjectsTable(result_list)
+
+		### set the check_box
+		if (Constants.CHECK_BOX_ALL not in self.request.session):
+			self.request.session[Constants.CHECK_BOX_ALL] = False 
+		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+		
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
+		if (self.request.GET.get('search') != None): context['search'] = self.request.GET.get('search')
+		context['table'] = table
+		context['show_paginatior'] = len(result_list) > Constants.PAGINATE_NUMBER_SMALL
+		context['project_name'] = project.name
+		context['nav_project'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		if self.request.POST: 
+			context['project_sample'] = AddSampleProjectForm(self.request.POST)
+		else: 
+			context['project_sample'] = AddSampleProjectForm()
+		return context
+
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+	
+		return super(AddSamplesProjectsView, self).form_valid(form)
+	form_valid_message = ""		## need to have this, even empty
+	
+
+	
+def clean_check_box_in_session(request):
+	"""
+	check all check boxes
+	"""
+	utils = Utils()
+	request.session[Constants.CHECK_BOX_ALL] = False
+	## clean all check unique
+	vect_keys_to_remove = []
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+			vect_keys_to_remove.append(key)
+	for key in vect_keys_to_remove:
+		del request.session[key] 
+	
 #####
 #####
 #####		VALIDATION METHODS WITH AJAX
 #####
 #####
 def validate_project_reference_name(request):
+	"""
+	test if a name is the same
+	"""
 	project_name = request.GET.get('project_name')
 	user_name = request.GET.get('user_name').strip()
 	if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
@@ -416,5 +507,51 @@ def validate_project_reference_name(request):
 	if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
 	return JsonResponse(data)
 
+
+
+def set_check_box_values(request):
+	"""
+	set a check box
+	"""
+	data = { 'is_ok' : False }
+	utils = Utils()
+	if (Constants.CHECK_BOX_ALL in request.GET):
+		request.session[Constants.CHECK_BOX_ALL] = request.GET.get(Constants.CHECK_BOX_ALL)
+		## clean all check unique
+		vect_keys_to_remove = []
+		for key in request.session.keys():
+			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+				vect_keys_to_remove.append(key)
+		for key in vect_keys_to_remove:
+			del request.session[key] 
+		data = {
+			'is_ok': True
+		}
+	elif (Constants.CHECK_BOX in request.GET):
+		key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
+		if (not request.GET.get(Constants.CHECK_BOX)):
+			if (key_name in request.session):
+				del request.session[key_name]
+		else:
+			request.session[key_name] = request.GET.get(Constants.CHECK_BOX)
+		data = {
+			'is_ok': True
+		}
+	elif (Constants.GET_CHECK_BOX_SINGLE in request.GET):
+		data['is_ok'] = True
+		for key in request.session.keys():
+			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+				data["{}_{}".format(Constants.CHECK_BOX, key.split('_')[2])] = utils.str2bool(request.session[key])
+	elif (Constants.COUNT_CHECK_BOX in request.GET):
+		count = 0
+		for key in request.session.keys():
+			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+				if (utils.str2bool(request.session[key])): count += 1
+			elif (key == Constants.CHECK_BOX_ALL and request.session[Constants.CHECK_BOX_ALL]): count += 1
+		data = {
+			'is_ok': True,
+			Constants.COUNT_CHECK_BOX : count,
+		}
+	return JsonResponse(data)
 
 

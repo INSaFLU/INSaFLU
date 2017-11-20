@@ -14,9 +14,11 @@ urlpatterns = [
 	url(r'samples/(?P<pk>\d+)/sample_description$', views.SamplesDetailView.as_view(), name='sample-description'),
 	url(r'project/projects$', views.ProjectsView.as_view(), name='projects'),
 	url(r'project/project_add', views.ProjectCreateView.as_view(), name='project-add'),
-	url(r'samples/(?P<pk>\d+)/add_sample_project$', views.SamplesDetailView.as_view(), name='add-sample-project'),
+	url(r'samples/(?P<pk>\d+)/add_sample_project$', views.AddSamplesProjectsView.as_view(), name='add-sample-project'),
 	url(r'samples/(?P<pk>\d+)/remove_sample_project$', views.SamplesDetailView.as_view(), name='remove-sample-project'),
 	url(r'samples/(?P<pk>\d+)/sample_project_result$', views.SamplesDetailView.as_view(), name='sample-project-results'),
 
+	### ajax functions
 	url(r'^ajax/validate_project_reference_name$', views.validate_project_reference_name, name='validate-project-reference'),
+	url(r'^ajax/set_check_box_values', views.set_check_box_values, name='set-check-box-values'),
 ] 

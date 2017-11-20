@@ -6,6 +6,7 @@ from django.conf import settings
 from managing_files.manage_database import ManageDatabase
 from utils.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeResultAverageAndNumberReads
+from utils.constants import Constants
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 import os
@@ -13,6 +14,7 @@ import os
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
 	def header(self):
+		default = {'type': 'checkbox'}
 		return self.verbose_name
 
 
@@ -44,7 +46,9 @@ class ReferenceTable(tables.Table):
 
 
 class ReferenceProjectTable(tables.Table):
-	
+	"""
+	create a new project with a reference
+	"""
 	select_ref = CheckBoxColumnWithName(verbose_name=('Select One'), accessor="pk")
 	is_obsolete = tables.Column(orderable=False)
 	number_of_locus = tables.Column(orderable=False)
@@ -54,7 +58,24 @@ class ReferenceProjectTable(tables.Table):
 		fields = ('select_ref', 'name', 'isolate_name', 'is_obsolete', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no References to show..."
-		
+
+
+class SampleToProjectsTable(tables.Table):
+	"""
+	To add samples to projects
+	"""
+	type_subtype = tables.Column("Type-Subtype", orderable=True, empty_values=())
+	select_ref = tables.CheckBoxColumn(accessor="pk", attrs = { "th__input": {"id": "checkBoxAll"}}, orderable=False)
+	
+	class Meta:
+		model = Sample
+		fields = ('select_ref', 'name', 'creation_date', 'type_subtype', 'week', 'data_set')
+		attrs = {"class": "table-striped table-bordered"}
+		empty_text = "There are no References to show..."
+	
+	def render_select_ref(self, value, record):
+		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
+
 
 class SampleTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -133,11 +154,11 @@ class ProjectTable(tables.Table):
 		"""
 		return a reference name
 		"""
+		add_remove = ""
 		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
 			add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-		add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><i class="fa fa-trash"></i> Remove</a>'
-		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) + '><i class="fa fa-plus-square"></i> Add</a>' +\
-						add_remove)
+		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
+						 '><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
 	def render_reference(self, record):
 		"""

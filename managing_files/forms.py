@@ -13,7 +13,7 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
 from utils.constants import Constants
-from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project
+from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project, ProjectSample
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -403,12 +403,32 @@ class ReferenceProjectForm(forms.ModelForm):
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
 		cleaned_data = super(ReferenceProjectForm, self).clean()
-		name = cleaned_data['name']
+		return cleaned_data
+ReferenceProjectFormSet = inlineformset_factory(Reference, Project, form=ReferenceProjectForm, extra=1)
+
+	
+class AddSampleProjectForm(forms.ModelForm):
+	"""
+	Add samples to project 
+	"""
+	error_css_class = 'error'
+	
+	class Meta:
+		model = Sample
+		exclude = ()
+
+	def __init__(self, *args, **kwargs):
+		super(AddSampleProjectForm, self).__init__(*args, **kwargs)
 		
+	def clean(self):
+		"""
+		Clean all together because it's necessary to compare the genbank and fasta files
+		"""
+		cleaned_data = super(AddSampleProjectForm, self).clean()
 		return cleaned_data
 	
 
-ReferenceProjectFormSet = inlineformset_factory(Reference, Project, form=ReferenceProjectForm, extra=1)
+
 
 
 # 	def clean_name(self):

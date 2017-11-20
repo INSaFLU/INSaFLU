@@ -51,8 +51,15 @@ class Constants(object):
 	
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 15
-	PAGINATE_NUMBER_SMALL = 6
-	
+	PAGINATE_NUMBER_SMALL = 2
+
+	## tag for check box all in the tables
+	CHECK_BOX_ALL = 'check_box_all'
+	CHECK_BOX = 'check_box'
+	GET_CHECK_BOX_SINGLE = 'get_check_box_single'
+	COUNT_CHECK_BOX = 'count_check_boxes'
+	CHECK_BOX_VALUE = 'value'
+		
 	def get_extensions_by_file_type(self, file_name, file_type):
 		"""
 		get extensions by file type

@@ -307,6 +307,10 @@ class Utils(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index") 
 	
-	
+	def str2bool(self, v):
+		"""
+		str to bool
+		"""
+		return v.lower() in ("yes", "true", "t", "1")
 		
 		

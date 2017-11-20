@@ -660,8 +660,9 @@ class Software(object):
 
 		## set the flag that is ready for process
 		if (b_return):
-			sample_to_update, created = Sample.objects.get_or_create(pk=sample.id)
+			sample_to_update = Sample.objects.get(pk=sample.id)
 			sample_to_update.is_ready_for_projects = True
+			sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
 			sample_to_update.save()
 		return b_return
 

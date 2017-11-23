@@ -88,10 +88,11 @@
 						
 						{% for identify_virus in sample.identify_virus.all %}
 							<div class="row">
-								<div class="col-lg-3"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
-				  				<div class="col-lg-3"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
-				  				<div class="col-lg-3"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
-				  				<div class="col-lg-3"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+								<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
+				  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
+				  				<div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
+				  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+				  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div>
 				  			</div>
 				  			<hr>
 						{% endfor %}

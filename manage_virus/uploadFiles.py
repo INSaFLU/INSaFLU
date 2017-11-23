@@ -150,7 +150,8 @@ class UploadFiles(object):
 		if (len(dt_type) > 0):
 			seqVirus = None
 			try:
-				seqVirus = SeqVirus.objects.get(name=dt_type[ParseOutFiles.GENE], kind_type__name=Constants.SEQ_VIRUS_TYPE, file__abricate_name=database_name)
+				seqVirus = SeqVirus.objects.get(name=dt_type[ParseOutFiles.GENE], accession=dt_type[ParseOutFiles.ACCESSION],\
+						kind_type__name=Constants.SEQ_VIRUS_TYPE, file__abricate_name=database_name)
 			except SeqVirus.DoesNotExist:
 				raise Exception(_("Gene '%s' not found in database '%s'" % (dt_type[ParseOutFiles.GENE], database_name)))
 			

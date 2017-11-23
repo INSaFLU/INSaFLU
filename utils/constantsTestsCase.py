@@ -26,6 +26,7 @@ class ConstantsTestsCase(object):
 	DIR_COVERAGE = "coverage"
 	DIR_BAM = "bam"
 	DIR_VCF = "vcf"
+	DIR_IMAGES = "images"
 	
 	## fastq files
 	DIR_FASTQ = "fastq"

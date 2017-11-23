@@ -14,7 +14,7 @@ from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
 from utils.result import DecodeResult
-import hashlib, ntpath, os
+import hashlib, ntpath, os, logging
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -416,6 +416,9 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	success_url = reverse_lazy('projects')
 	template_name = 'project_sample/project_sample_add.html'
 	
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def get_form_kwargs(self):
 		"""
 		Set the request to pass in the form
@@ -447,7 +450,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		table = SampleToProjectsTable(result_list)
 
 		### set the check_box
-		if (Constants.CHECK_BOX_ALL not in self.request.session):
+		if (Constants.CHECK_BOX_ALL not in self.request.session or not is_all_check_box_in_session(\
+					["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)):
 			self.request.session[Constants.CHECK_BOX_ALL] = False 
 		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
 		
@@ -469,11 +473,86 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		"""
 		Validate the form
 		"""
-	
+		manageDatabase = ManageDatabase()
+		software = Software()
+		utils = Utils()
+		project = Project.objects.get(pk=self.kwargs['pk'])
+		n_samples = 0
+		for key in self.request.session.keys():
+			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+				if (not self.request.session[key]): continue
+				n_samples += 1
+				
+				try:
+					sample = Sample.objects.get(pk=key.split('_')[2])
+				except Sample.DoesNotExist:
+					## log
+					self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+					self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+					continue
+
+# 				## get project sample
+# 				try:
+# 					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
+# 					
+# 					### if exist can be deleted, active
+# 					if (project_sample.is_deleted and not project_sample.is_error):
+# 						project_sample.is_deleted = False
+# 						project_sample.save()
+# 				except ProjectSample.DoesNotExist:
+# 					project_sample = ProjectSample()
+# 					project_sample.project = project
+# 					project_sample.sample = sample
+# 					project_sample.save()
+# 					
+# 					### create a task to perform the analysis of fastq and trimmomatic
+# 					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+# 		
+# 					### 
+# 					manageDatabase.set_project_sample_metakey(project_sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID,\
+# 										MetaKeyAndValue.META_VALUE_Queue, taskID)
+		
+		messages.success(self.request, _("'{}' {} added to your project {}".format(\
+			n_samples, "samples were" if n_samples > 1 else "sample is", project.name)), fail_silently=True)
 		return super(AddSamplesProjectsView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
-	
 
+
+def is_all_check_box_in_session(vect_check_to_test, request):
+	"""
+	test if all check boxes are in session 
+	If not remove the ones that are in and create the new ones all False
+	"""
+	utils = Utils()
+	dt_data = {}
+	
+	## get the dictonary
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+			dt_data[key] = True
+	
+	b_different = False
+	if (len(vect_check_to_test) != len(dt_data)): 
+		b_different = True
+	
+	## test the vector
+	if (not b_different):
+		for key in vect_check_to_test:
+			if (key not in dt_data):
+				b_different = True
+				break
+		
+	if (b_different):
+		## remove all
+		for key in dt_data:
+			del request.session[key] 
+	
+		## create new
+		for key in vect_check_to_test:
+			request.session[key] = False
+		return False
+	return True
+	
 	
 def clean_check_box_in_session(request):
 	"""
@@ -508,45 +587,40 @@ def validate_project_reference_name(request):
 	return JsonResponse(data)
 
 
-
 def set_check_box_values(request):
 	"""
-	set a check box
+	manage check boxes through ajax
 	"""
 	data = { 'is_ok' : False }
 	utils = Utils()
 	if (Constants.CHECK_BOX_ALL in request.GET):
 		request.session[Constants.CHECK_BOX_ALL] = request.GET.get(Constants.CHECK_BOX_ALL)
-		## clean all check unique
-		vect_keys_to_remove = []
+		## check all unique
 		for key in request.session.keys():
 			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				vect_keys_to_remove.append(key)
-		for key in vect_keys_to_remove:
-			del request.session[key] 
+				request.session[key] = request.GET.get(Constants.CHECK_BOX_ALL)
 		data = {
 			'is_ok': True
 		}
+	### one check box is pressed
 	elif (Constants.CHECK_BOX in request.GET):
+		request.session[Constants.CHECK_BOX_ALL] = False	### set the All false
 		key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
-		if (not request.GET.get(Constants.CHECK_BOX)):
-			if (key_name in request.session):
-				del request.session[key_name]
-		else:
-			request.session[key_name] = request.GET.get(Constants.CHECK_BOX)
+		request.session[key_name] = request.GET.get(Constants.CHECK_BOX)
 		data = {
 			'is_ok': True
 		}
+	## get the status of a check_box_single
 	elif (Constants.GET_CHECK_BOX_SINGLE in request.GET):
 		data['is_ok'] = True
 		for key in request.session.keys():
 			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				data["{}_{}".format(Constants.CHECK_BOX, key.split('_')[2])] = utils.str2bool(request.session[key])
+				data[key] = request.session[key]
 	elif (Constants.COUNT_CHECK_BOX in request.GET):
 		count = 0
 		for key in request.session.keys():
 			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				if (utils.str2bool(request.session[key])): count += 1
+				if (request.session[key]): count += 1
 			elif (key == Constants.CHECK_BOX_ALL and request.session[Constants.CHECK_BOX_ALL]): count += 1
 		data = {
 			'is_ok': True,

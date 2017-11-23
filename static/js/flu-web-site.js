@@ -116,8 +116,18 @@ $(document).ready(function(){
     $('.nav li.active').removeClass('active').find('a').trigger('click');
 });
 
+
+////////////////////////////
+///
+///		Only the check box table
+///
 /// add function to toggle the checkbox in tables
-document.getElementById("checkBoxAll").addEventListener ("click", toggle_check_box_all, false);
+$(document).ready(function(){
+	var element = document.getElementById("checkBoxAll");
+	if (element != null){
+		element.addEventListener ("click", toggle_check_box_all, false);
+	}
+});
 function toggle_check_box_all(source) {
 	var remember = document.getElementById('checkBoxAll');
     checkboxes = document.getElementsByName('select_ref');
@@ -132,12 +142,13 @@ function toggle_check_box_all(source) {
 	});
 };
 
+/// set the Listener and get the checked in the server, and set the box check in the client
 $(document).ready(function(){
 	var elements = document.getElementsByName("select_ref");
 	for(var i = 0, n = elements.length; i < n; i++){
 		elements[i].addEventListener('click', toggle_check_box, false);
 	}
-	// set all checked in the server
+	// get all checked in the server
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),
 		data : { get_check_box_single : '1' }, // data sent with the post request
@@ -153,6 +164,7 @@ $(document).ready(function(){
 	});
 });
 
+/// set the master checked box in the server
 function toggle_check_box(source) {
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),
@@ -163,9 +175,10 @@ function toggle_check_box(source) {
 };
 
 
-//// everything about checkBox
+/// everything about checkBox
 $(document).ready(function(){
 	var remember = document.getElementById('checkBoxAll');
+	if (remember === null) return;
     var check_box_all_session = $('#table_with_check_id').attr("check_box_all");
     if (check_box_all_session == "true" ){
     	remember.checked = true;
@@ -180,27 +193,27 @@ $(document).ready(function(){
 });
 
 // if the user pressed the 
-$(function() { //shorthand document.ready function
 	$('#id_add_all_checked').on('submit', function (e) {
-		e.preventDefault();  //prevent form from submitting
 	    $.ajax({
 			url: $('#table_with_check_id').attr("set-check-box-values-url"),
 	        data : { count_check_boxes : '1' }, // data sent with the post request
 			success: function (data) {
 				if (data['count_check_boxes'] < 1){
 					alert('There is no samples selected.\nPlease, for this option select some samples.');
-					return false;
+					e.preventDefault();
 				}
 			},
 			// handle a non-successful response
 	        error : function(xhr,errmsg,err) {
 	            alert(errmsg);
-	            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
 	        },
 		});
-		return true;
+		return false;
 	});
-});  	
 
 
+///
+///		END Only the check box table
+///
+////////////////////////////
 

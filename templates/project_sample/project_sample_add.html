@@ -32,7 +32,7 @@
 			      			<tr>
 			                    <th colspan="6">
 		                            <div class="pull-left">
-			                            <form method="post" id="id_add_all_checked" class="form-inline pull-left">
+			                            <form method="post" action="" id="id_add_all_checked" class="form-inline pull-left">
 			                            	{% csrf_token %}
 			                              	<button type="submit" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected samples</button>
 			                            </form>
@@ -42,7 +42,7 @@
 			                            </form> 
 			                        </div> 
 			                        
-			                        <form method="get" class="form-inline form-search pull-right">
+			                        <form method="get" action="" class="form-inline form-search pull-right">
 			                        	{% csrf_token %}
 			                            <div class="pull-right form-search">
 			                            	<input id="search_form_id" name="search" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search %} value="{{ search }}"{% endif %}>

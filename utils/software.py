@@ -749,6 +749,8 @@ class Software(object):
 		### get again
 		project_sample = ProjectSample.objects.get(pk=project_sample.id)
 		project_sample.is_finished = True
+		project_sample.is_deleted = False
+		project_sample.is_error = False
 		project_sample.save()
 		
 		### set the flag of the end of the task		

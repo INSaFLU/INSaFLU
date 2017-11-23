@@ -16,6 +16,7 @@ from managing_files.models import Sample
 from utils.constants import Constants, TypePath
 from utils.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
+from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 
 class Test(unittest.TestCase):
@@ -48,13 +49,42 @@ class Test(unittest.TestCase):
 		task_id = async(math.copysign, 2, -2, sync=True)
 		# the task will then be available immediately
 		task = fetch(task_id)
+		self.assertTrue(task.success)	### if the task is finished
+		
 		# and can be examined
 		if not task.success: self.fail('An error occurred: {}'.format(task.result))
 		
 		task_result = result(task_id)
 		self.assertTrue('-2.0', str(task_result))
 		
-		
+		utils = Utils()
+		self.assertTrue(utils.is_all_tasks_finished([task_id]))
+		task_id = async(math.copysign, 2, -2)
+		task = fetch(task_id)
+		self.assertTrue(task == None)
+		n_count = 0
+		while True:
+			time.sleep(.10)
+			task = fetch(task_id)
+			if (task != None): break
+			if (n_count > 10): break
+			n_count += 1
+		self.assertTrue(utils.is_all_tasks_finished([task_id]))
+		self.assertTrue(utils.is_all_tasks_finished_success([task_id]))
+	
+		task_id = async(math.copysign, 2, '-2')
+		task = fetch(task_id)
+		self.assertTrue(task == None)
+		n_count = 0
+		while True:
+			time.sleep(.10)
+			task = fetch(task_id)
+			if (task != None): break
+			if (n_count > 10): break
+			n_count += 1
+		self.assertTrue(utils.is_all_tasks_finished([task_id]))
+		self.assertFalse(utils.is_all_tasks_finished_success([task_id]))
+
 	def test_identify_type_and_sub_type(self):
 		"""
 		get type and sub_type
@@ -110,16 +140,19 @@ class Test(unittest.TestCase):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.69", identify_virus.identity)
 				self.assertEquals("A", identify_virus.seq_virus.name)
+				self.assertEquals("XXXX", identify_virus.seq_virus.accession)
 				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 1):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.18", identify_virus.identity)
+				self.assertEquals("XXXXX", identify_virus.seq_virus.accession)
 				self.assertEquals("H3", identify_virus.seq_virus.name)
 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 2):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
+				self.assertEquals("XXXXXX", identify_virus.seq_virus.accession)
 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_abricate))

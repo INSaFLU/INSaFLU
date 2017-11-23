@@ -5,6 +5,7 @@ Created on Oct 31, 2017
 '''
 from .constants import Constants
 from Bio import SeqIO
+from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 import os, random, gzip
 import logging
@@ -313,4 +314,22 @@ class Utils(object):
 		"""
 		return v.lower() in ("yes", "true", "t", "1")
 		
+	def is_all_tasks_finished(self, vect_tasks_id):
+		"""
+		return true if all tasks finished
+		"""
+		for task_id in vect_tasks_id:
+			task = fetch(task_id)
+			if (task == None): return False
+		return True
+
+	def is_all_tasks_finished_success(self, vect_tasks_id):
+		"""
+		return true if all tasks finished
+		"""
+		for task_id in vect_tasks_id:
+			task = fetch(task_id)
+			if (task == None): continue
+			if (not task.success): return False
+		return True
 		

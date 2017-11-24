@@ -252,10 +252,48 @@ class DecodeCoverage(object):
 			a = Coverage()
 			a.__dict__.update(o['__Coverage__'])
 			return a
+		elif '__CountHits__' in o:
+			a = CountHits()
+			a.__dict__.update(o['__CountHits__'])
+			return a
 		elif '__CoverageElement__' in o:
 			a = CoverageElement(o['__CoverageElement__']['element'])
 			a.__dict__.update(o['__CoverageElement__'])
 			return a
 		return o
 
+class CountHits(object):
+	
+	def __init__(self):
+		self.hits_50_90 = 0
+		self.hits_less_50 = 0
+		
+	def set_hits_50_90(self, hits_50_90):
+		self.hits_50_90 = hits_50_90
+		
+	def set_hits_less_50(self, hits_less_50):
+		self.hits_less_50 = hits_less_50
+	
+	def add_one_hits_less_50(self):
+		self.hits_less_50 += 1
+	
+	def add_one_hits_50_90(self):
+		self.hits_50_90 += 1
+	
+	def get_hits_50_90(self):
+		return self.hits_50_90
+	
+	def get_hits_less_50(self):
+		return self.hits_less_50
+	
+	def get_total(self):
+		return self.hits_50_90 + self.hits_less_50
 
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=CoverageEncoder)
+
+	def __eq__(self, other):
+		return other.hits_50_90 == self.hits_50_90 and other.hits_less_50 == self.hits_less_50
+
+
+	

@@ -7,8 +7,10 @@ from .constants import Constants
 from Bio import SeqIO
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
+from utils.result import CountHits
 import os, random, gzip
 import logging
+from pysam import pysam
 
 class Utils(object):
 	'''
@@ -51,7 +53,11 @@ class Utils(object):
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
-			if (not os.path.exists(return_file)): return return_file
+			try:
+				os.open(return_file, os.O_CREAT | os.O_EXCL)
+				return return_file
+			except FileExistsError:
+				pass
 
 	def get_temp_dir(self):
 		"""
@@ -301,6 +307,9 @@ class Utils(object):
 			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
 			raise Exception("File doesn't exist")
 		
+		## test if tbi exists
+		if (os.path.exists(file_to_index + '.tbi')): return
+
 		cmd = "{} {}".format(software, file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -332,4 +341,65 @@ class Utils(object):
 			if (task == None): continue
 			if (not task.success): return False
 		return True
+
+
+	def add_freq_to_vcf(self, vcf_file, vcf_file_out):
+		"""
+		add FREQ to VCF, FREQ=AO/DP
+		vcffile must be gzip and tbi included
+		"""
+		FREQ = 'FREQ'
 		
+		#read the input file
+		vcf_hanlder = pysam.VariantFile(vcf_file, "r")
+		if (FREQ in vcf_hanlder.header.info): 
+			vcf_hanlder.close()
+			return
+		
+		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
+		vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/DP')
+
+		## write the header
+		for variant_header_records in vcf_hanlder.header.records:
+			vcf_hanlder_write.header.add_record(variant_header_records)
+		
+		for variant_sample in vcf_hanlder.header.samples:
+			vcf_hanlder_write.header.add_sample(variant_sample)
+			
+		for variant in vcf_hanlder:
+			if ("DP" in variant.info and "AO" in variant.info):
+				vect_ao_out = []
+				for value_ in variant.info['AO']:
+					vect_ao_out.append((value_/float(variant.info['DP']) * 100))
+				variant.info[FREQ] = tuple(vect_ao_out)
+			vcf_hanlder_write.write(variant)
+			
+		vcf_hanlder_write.close()
+		vcf_hanlder.close()
+		return vcf_file_out
+
+
+	def count_hits_from_tab(self, tab_file):
+		"""
+		NP	864	snp	G	T	99.6855	CDS	+	864/1497	288/498	synonymous_variant c.864G>T p.Gly288Gly	locus_00005		Nucleoprotein
+		count the hits by <50; 50-90
+		"""
+		count_hits = CountHits()
+		with open(tab_file) as handle:
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
+				lst_data = sz_temp.split('\t')
+				if (len(lst_data) > 5):
+					freq_data = lst_data[5]
+					for value_ in freq_data.split(','):
+						if (self.is_float(value_)):
+							if (float(value_) < 50): count_hits.add_one_hits_less_50()
+							elif (float(value_) < 91): count_hits.add_one_hits_50_90()
+		return count_hits
+
+
+
+				
+
+

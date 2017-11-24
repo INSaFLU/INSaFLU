@@ -18,6 +18,8 @@
 ## $ sudo pip3 install django-bootstrap-datepicker
 ## $ sudo pip3 install plotly
 ## $ sudo pip3 install Pillow
+## $ sudo apt install bioperl
+## $ sudo pip3 install pysam
 
 ## CAHNGE file /usr/local/lib/python3.4/dist-packages/bootstrap_datepicker/widgets.py
 	## Add line extra_attrs['placeholder'] = "dd/mm/yyyy" in render method

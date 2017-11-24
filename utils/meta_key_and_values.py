@@ -20,7 +20,8 @@ class MetaKeyAndValue(object):
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
-													
+	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
+
 	META_KEY_Snippy = "Snippy"
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"

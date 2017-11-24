@@ -41,6 +41,8 @@ class Constants(object):
 	## Has all the versions of type influenza typing
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 	
+	INSAFLU_NAME = 'insaflu'
+	
 	####
 	SEQ_VIRUS_TYPE = "Type"
 	SEQ_VIRUS_SUB_TYPE = "Subtype"
@@ -78,7 +80,8 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
 		return ""
 		
-		
+
+			
 class TypePath(Enum):
 	"""
 	Has the type of paths you can get from file paths

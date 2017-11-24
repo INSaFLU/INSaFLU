@@ -4,7 +4,7 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads 
+from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
 from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage
 from utils.software import Software
 
@@ -104,6 +104,27 @@ class Test(TestCase):
 			self.fail("must raise exception")
 		except Exception as e:
 			self.assertEquals("Error: there's no key like this: xpto", e.args[0])
+
+
+	def test_count_hits(self):
+		count_hits = CountHits()	
+		count_hits.set_hits_50_90(40)
+		count_hits.set_hits_less_50(140)
+		
+		json = count_hits.to_json()
+		decodeCoverage = DecodeCoverage()
+		count_hits_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(count_hits_2, count_hits)
+
+		count_hits_2.add_one_hits_less_50()
+		count_hits.add_one_hits_50_90()
+		self.assertNotEqual(count_hits_2, count_hits)
+		self.assertEquals(count_hits_2.get_hits_less_50(), 141)
+		self.assertEquals(count_hits.get_hits_50_90(), 41)
+
+		count_hits.add_one_hits_less_50()
+		count_hits_2.add_one_hits_50_90()
+		self.assertEquals(count_hits_2, count_hits)
 
 
 

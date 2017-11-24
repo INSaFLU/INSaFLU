@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os
+import os, gzip
 import logging
 import cmd
 import subprocess
@@ -18,6 +18,7 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 from utils.parse_coverage_file import GetCoverage
 from django.db import transaction
+from Bio import SeqIO
 
 class Software(object):
 	'''
@@ -40,7 +41,6 @@ class Software(object):
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
-
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py") 
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
@@ -62,14 +62,28 @@ class Software(object):
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
+	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy-vcf_to_tab_add_freq")
+	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
+	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
+	SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS = ""
+	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE, "snippy/bin/snpEff")
+	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE, "snippy/etc/snpeff.config")
+	SOFTWARE_SNP_EFF_name = "snpEff"
+	SOFTWARE_SNP_EFF_VERSION = "4.3p"
+	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
+	SOFTWARE_GENBANK2GFF3 = 'bp_genbank2gff3'
+	SOFTWARE_GENBANK2GFF3_name = 'Genbank2gff3'
+	SOFTWARE_GENBANK2GFF3_VERSION = 'Unknown'
+	SOFTWARE_GENBANK2GFF3_PARAMETERS = ''
 	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes")
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
-	SOFTWARE_FREEBAYES_PARAMETERS = "-p 1 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
-	SOFTWARE_COVERAGE = "Coverage, inhouse script"
+	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
+	SOFTWARE_COVERAGE = "Coverage, in-house script"
 	SOFTWARE_COVERAGE_name = "Coverage"
 	SOFTWARE_COVERAGE_VERSION = "v1.1"
 	SOFTWARE_COVERAGE_PARAMETERS = ""
+	
 
 
 	logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -130,6 +144,32 @@ class Software(object):
 	def get_snippy_parameters(self): return self.SOFTWARE_SNIPPY_PARAMETERS
 
 	"""
+	return snippy-vcf_to_tab software
+	"""
+	def get_snippy_vcf_to_tab(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB
+	def get_snippy_vcf_to_tab_name(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_name
+	def get_snippy_vcf_to_tab_version(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION
+	def get_snippy_vcf_to_tab_parameters(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS
+	
+	"""
+	return snpEff software
+	"""
+	def get_snp_eff(self): return self.SOFTWARE_SNP_EFF
+	def get_snp_eff_name(self): return self.SOFTWARE_SNP_EFF_name
+	def get_snp_eff_config(self): return self.SOFTWARE_SNP_EFF_config
+	def get_snp_eff_version(self): return self.SOFTWARE_SNP_EFF_VERSION
+	def get_snp_eff_parameters(self): return self.SOFTWARE_SNP_EFF_PARAMETERS
+	
+	"""
+	return genbank2gff3 software
+	"""
+	def get_genbank2gff3(self): return self.SOFTWARE_GENBANK2GFF3
+	def get_genbank2gff3_name(self): return self.SOFTWARE_GENBANK2GFF3_name
+	def get_genbank2gff3_version(self): return self.SOFTWARE_GENBANK2GFF3_VERSION
+	def get_genbank2gff3_parameters(self): return self.SOFTWARE_GENBANK2GFF3_PARAMETERS
+	
+	
+	"""
 	return freebayes software
 	"""
 	def get_freebayes(self): return self.SOFTWARE_FREEBAYES
@@ -162,6 +202,19 @@ class Software(object):
 	def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
 
 
+	def test_bgzip_and_tbi_in_vcf(self, vcf_file):
+		"""
+		test if a a vcf file has a gzip file, if not create it
+		"""
+		### create the gzip file
+		self.utils.compress_files(self.get_bgzip(), vcf_file)
+		### create the tabix
+		if (vcf_file.endswith('.gz')):
+			self.utils.create_index_files(self.get_tabix(), vcf_file)
+		else:
+			self.utils.create_index_files(self.get_tabix(), vcf_file + ".gz")
+
+
 	def get_vect_type_files_to_copy(self, software):
 		"""
 		get type of files to copy
@@ -170,7 +223,7 @@ class Software(object):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
 				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
 		elif (software == Software.SOFTWARE_FREEBAYES_name):
-			return [FileType.FILE_VCF]
+			return [FileType.FILE_VCF, FileType.FILE_TAB]
 
 
 	def copy_files_to_project(self, project_sample, software, path_from):
@@ -183,7 +236,7 @@ class Software(object):
 			if (type_file == FileType.FILE_CONSENSUS_FA):	## if .fa file pass to .fasta
 				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, software))
-			elif (type_file == FileType.FILE_VCF):	## if .fa file pass to .fasta
+			elif (type_file == FileType.FILE_VCF):	## vcf file
 				### create the gzip file
 				utils.compress_files(self.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
 				### create the tabix
@@ -217,7 +270,6 @@ class Software(object):
 		"""
 		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, fastq_2, self.CORES_TO_USE, out_dir)
-		print(cmd)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -518,8 +570,129 @@ class Software(object):
 			raise Exception("Fail to run snippy")
 		return temp_dir
 
+	def run_genbank2gff3(self, genbank, out_file):
+		"""
+		bp_genbank2gff3 --filter gene --filter region --outdir stdout --quiet static/tests/managing_files/A_H3N2_A_Hong_Kong_4801_2014.gbk
+		"""
+		vect_filter = ['gene', 'region']
+		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
+		cmd = "%s --filter %s --outdir stdout %s > %s" %\
+				(self.get_genbank2gff3(), " --filter ".join(vect_filter), genbank, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run snippy-vcf-to-tab")
+		
+		### filter file
+		handle = open(temp_file)
+		handle_write = open(out_file, 'w')
+		for line in handle:
+			sz_temp = line.strip()
+			if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
+			if (sz_temp.find('##FASTA') == 0): break
+			if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
+			elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_filter): continue
+			else: handle_write.write(sz_temp + "\n")
+		handle.close()
+		handle_write.close()
+		os.unlink(temp_file)
+		return out_file
 
-	def run_freebayes(self, bam_file, reference_fasta, sample_name):
+	def get_snpeff_config(self, fasta_file):
+		"""
+		return a file for snpEff config for the fasta
+		genome_name: this name is going to set in properties in the file
+		"""
+		temp_file = self.utils.get_temp_file("snpEff_config", ".config")
+		if (not os.path.exists(self.get_snp_eff_config())):
+			raise IOError("Error: file not found {}".format(self.get_snp_eff_config()))
+		
+		self.utils.copy_file(self.get_snp_eff_config(), temp_file)
+		handle = open(temp_file, 'a')
+		base_file_name = os.path.basename(fasta_file)
+		base_file_name = base_file_name[0: base_file_name.rfind('.')]
+		handle.write("{}.genome : {} reference".format(base_file_name, Constants.INSAFLU_NAME))
+		
+		### open fasta
+		if (self.utils.is_gzip(fasta_file)): handle_fasta = gzip.open(fasta_file, mode='rt')
+		else: handle_fasta = open(fasta_file)
+		vect_names = []
+		for record in SeqIO.parse(handle_fasta, Constants.FORMAT_FASTA):
+			vect_names.append(record.name)
+		handle_fasta.close()
+		
+		handle.write("\n{}.chromosome : {}".format(base_file_name, ", ".join(vect_names)))
+		for chromosome in vect_names:
+			handle.write("\n{}.{}.codonTable : Bacterial_and_Plant_Plastid".format(base_file_name, chromosome))
+		handle.close()
+		return (base_file_name, temp_file)
+
+
+	def run_snpEff(self, fasta_file, genbank, vcf_file, out_file):
+		"""
+		./snpEff ann -no-downstream -no-upstream -no-intergenic -no-utr -c ../path_to/reference/snpeff.config -dataDir . -noStats ref sample.vcf > sample_annot.vcf
+		"""
+		temp_dir = self.utils.get_temp_dir()
+		(fasta_file_name, snpeff_config) = self.get_snpeff_config(fasta_file)
+		
+		temp_vcf_file = os.path.join(temp_dir, os.path.basename(vcf_file))
+		self.utils.copy_file(vcf_file, temp_vcf_file)
+		
+		## create the database
+		out_gff_file = self.utils.get_temp_file('temp_gff', '.gff')
+		self.run_genbank2gff3(genbank, out_gff_file)
+		datase_dir = "{}".format(fasta_file_name)
+		cmd = "mkdir -p {}".format(os.path.join(temp_dir, datase_dir)); os.system(cmd)
+		cmd = "mkdir -p {}".format(os.path.join(temp_dir, 'genomes')); os.system(cmd)
+		self.utils.copy_file(out_gff_file, os.path.join(temp_dir, datase_dir, 'genes.gff'))
+		temp_file = os.path.join(temp_dir, 'genomes', fasta_file_name + '.fa')
+		self.utils.copy_file(fasta_file, temp_file)
+		os.unlink(out_gff_file)
+		
+		## indexing database
+		## snpEff build -c reference/snpeff.config -dataDir . -gff3 ref 2>> run_snippy2_1.log
+		cmd = "%s build -c %s -dataDir %s -gff3 %s" % (self.get_snp_eff(),\
+						snpeff_config, temp_dir, fasta_file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			#os.unlink(snpeff_config)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create snpEff database")
+		
+		### create the annotation
+		cmd = "%s ann %s -c %s -dataDir %s %s %s > %s" % (self.get_snp_eff(), self.get_snp_eff_parameters(),\
+						snpeff_config, temp_dir, fasta_file_name, temp_vcf_file, out_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			#os.unlink(snpeff_config)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run snpEff")
+		os.unlink(snpeff_config)
+		self.utils.remove_dir(temp_dir)
+		return out_file
+	
+	def run_snippy_vcf_to_tab(self, fasta, genbank, vcf_file, out_file):
+		"""
+		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
+		"""
+		
+		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".gff") 
+		self.run_genbank2gff3(genbank, temp_file)
+		
+		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(temp_file)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run snippy-vcf-to-tab")
+		os.unlink(temp_file)
+		return out_file
+
+	def run_freebayes(self, bam_file, reference_fasta, genbank_file, sample_name):
 		"""
 		run freebayes
 		return output directory
@@ -555,14 +728,30 @@ class Software(object):
 		### create the FAI index
 		self.create_fai_fasta(reference_fasta_temp)
 		
-		cmd = "%s %s -f %s -b %s > %s.vcf" %\
+		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
+		cmd = "%s %s -f %s -b %s > %s" %\
 				(self.get_freebayes(), self.get_freebayes_parameters(),
-				reference_fasta_temp, file_to_process, os.path.join(temp_dir, sample_name))
+				reference_fasta_temp, file_to_process, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run freebayes")
+		
+		### run snpEff
+		temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+		self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		
+		software = Software()
+		software.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		
+		### add FREQ to vcf file
+		vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
+		os.unlink(temp_file)
+		os.unlink(temp_file_2)
+		
+		### pass vcf to tab
+		self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
 		return temp_dir
 
 
@@ -725,7 +914,8 @@ class Software(object):
 		## run freebayes
 		try:
 			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, Software.SOFTWARE_SNIPPY_name),\
-						project_sample.project.reference.reference_fasta.name, project_sample.sample.name)
+						project_sample.project.reference.reference_fasta.name, project_sample.project.reference.reference_genbank.name,\
+						project_sample.sample.name)
 			result_all.add_software(SoftwareDesc(self.get_freebayes_name(), self.get_freebayes_version(), self.get_freebayes_parameters()))
 		except Exception as e:
 			result = Result()
@@ -739,6 +929,13 @@ class Software(object):
 			project_sample.is_error = True
 			project_sample.save()
 			return False
+		
+		## count hits from tab file
+		file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
+		if (os.path.exists(file_tab)):
+			count_hits = self.utils.count_hits_from_tab(file_tab)
+			### set flag that is finished
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
 		
 		self.copy_files_to_project(project_sample, Software.SOFTWARE_FREEBAYES_name, out_put_path)
 		self.utils.remove_dir(out_put_path)

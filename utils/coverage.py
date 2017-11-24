@@ -27,7 +27,7 @@ class Coverage(object):
 	SIZE_COVERAGE_Y = 200
 	SHRINK_GENE_BAR_UTR = 2
 	SIZE_TOTAL_COVERAGE_Y = SIZE_COVERAGE_Y + GAP_START_Y	## plus the ruler...
-	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y - 15	## position to draw the exons, green part
+	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y - 10	## position to draw the exons, green part
 	GAP_START_GENES_X = GAP_START_X + 20
 	DRAW_HEIGHT_GENE_SQUARE_Y = 20
 	DRAW_HEIGHT_GENE_STRAND_Y = 17
@@ -75,7 +75,7 @@ class Coverage(object):
 		draw = ImageDraw.Draw(im) 
 		
 		self.draw_genes_and_coverage(draw, vect_coverage, vect_genes)
-		self.draw_legend_coverage(draw, self.get_start_x(), self.get_start_x() + int(len(vect_coverage) / self.rateImage))
+		self.draw_legend_coverage(draw, self.get_start_x(), self.get_start_x() + int(len(vect_coverage) / self.rateImage), int(len(vect_coverage) / self.rateImage))
 		self.draw_variants(draw, var_more_50, var_less_50)
 		(max_coverage, min_coverage) = self.get_max_min(vect_coverage)
 		(position_first_header, position_second_header, position_third_header) = self.draw_header(draw, 0, 0, 0, average_coverage, ratio_more_zero, ratio_more_nine,\
@@ -202,8 +202,12 @@ class Coverage(object):
 		fontsize = 12
 		font_ = ImageFont.truetype(Coverage.PATH_FONT_BOLD, fontsize)
 		
+		## draw coverage text
+		if (not b_only_calculate_size):
+			self.draw_text_header(draw, font_, "Coverage".format(sample_name, sequence_name), 5, self.DRAW_COVERAGE_Y - 14, b_only_calculate_size)
+			
 		position_x = position_x_first_header
-		position_x += self.draw_text_header(draw, font_, "Sample: {}.{}".format(sample_name, sequence_name), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_, "Sample/Seq.: {}/{}".format(sample_name, sequence_name), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
 		position_x += self.draw_text_header(draw, font_, "Coverage: {}".format(average_coverage), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
 		position_x += self.draw_text_header(draw, font_, "Ratio >0: {}%".format(ratio_more_zero), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
 		position_x += self.draw_text_header(draw, font_, "Ratio >9: {}%".format(rati_more_nine), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
@@ -254,20 +258,31 @@ class Coverage(object):
 		return font_.getsize(text)[0] + gap_between_text
 	
 	
-	def draw_legend_coverage(self, draw, startDraw, endDraw):
+	def draw_legend_coverage(self, draw, startDraw, endDraw, length):
 		"""
 		draw lagend
 		start_x is to center the text
 		"""
-		smallOffset = 4
-		self.draw_legend_coverage_and_text(draw, startDraw, endDraw, self.DRAW_COVERAGE_Y + smallOffset, "{}".format(self.SIZE_COVERAGE_Y * self.rateDrawCoverage))
-		self.draw_legend_coverage_and_text(draw, startDraw, endDraw, self.DRAW_COVERAGE_Y + (self.SIZE_COVERAGE_Y >> 2) + smallOffset, "{}".format(int(((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) / 4) * 3)))
-		self.draw_legend_coverage_and_text(draw, startDraw, endDraw, self.DRAW_COVERAGE_Y + (self.SIZE_COVERAGE_Y >> 1) + smallOffset, "{}".format((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) >> 1))
-		self.draw_legend_coverage_and_text(draw, startDraw, endDraw, self.DRAW_COVERAGE_Y + ((self.SIZE_COVERAGE_Y >> 2) * 3) + smallOffset, "{}".format(int((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) / 4)))
-
-	def draw_legend_coverage_and_text(self, draw, startDraw, endDraw, pointY, value):
+		tick_length = 5
+		number_space = 100	## the rateImage division is implicit 
 		fontsize = 13
 		font_ = ImageFont.truetype(Coverage.PATH_FONT_BOLD, fontsize)
+		for i in range(0, int(length / number_space)):
+			draw.line((self.get_start_x() + i * number_space, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y,\
+					self.get_start_x() + i * number_space, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y + tick_length), fill=self.COLOR_RGBGrey_64_64_64, width=1)
+			middle_size = font_.getsize("{}".format(i * number_space * self.rateImage))[0] >> 1
+			draw.text((self.get_start_x() + i * number_space - middle_size, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y + tick_length),\
+					"{}".format(i * number_space * self.rateImage), fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+				
+		smallOffset = 4
+		self.draw_legend_coverage_and_text(draw, font_, startDraw, endDraw, self.DRAW_COVERAGE_Y + smallOffset, "{}".format(self.SIZE_COVERAGE_Y * self.rateDrawCoverage))
+		self.draw_legend_coverage_and_text(draw, font_, startDraw, endDraw, self.DRAW_COVERAGE_Y + (self.SIZE_COVERAGE_Y >> 2) + smallOffset, "{}".format(int(((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) / 4) * 3)))
+		self.draw_legend_coverage_and_text(draw, font_, startDraw, endDraw, self.DRAW_COVERAGE_Y + (self.SIZE_COVERAGE_Y >> 1) + smallOffset, "{}".format((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) >> 1))
+		self.draw_legend_coverage_and_text(draw, font_, startDraw, endDraw, self.DRAW_COVERAGE_Y + ((self.SIZE_COVERAGE_Y >> 2) * 3) + smallOffset, "{}".format(int((self.SIZE_COVERAGE_Y * self.rateDrawCoverage) / 4)))
+
+		
+	def draw_legend_coverage_and_text(self, draw, font_, startDraw, endDraw, pointY, value):
+		
 		smallOffset = 3
 		smallOffset_y = -1 * (font_.getsize("123")[1] >> 1)
 		nLength_X = endDraw - startDraw

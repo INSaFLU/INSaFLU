@@ -4,9 +4,78 @@ Created on Nov 21, 2017
 @author: mmp
 '''
 from PIL import Image, ImageDraw, ImageFont
-import numpy
+from utils.constants import FileType, TypePath, FileExtensions
+from utils.result import DecodeCoverage
+from utils.parse_coverage_file import GetCoverage
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProjectSample
+from utils.meta_key_and_values import MetaKeyAndValue
+from utils.utils import Utils
+from utils.result import Coverage
+import numpy, os, logging
+from utils.software_names import SoftwareNames
 
-class Coverage(object):
+class DrawAllCoverage(object):
+	
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
+	def __init__(self):
+		'''
+		Constructor
+		'''
+		pass
+
+
+	def draw_all_coverages(self, project_sample):
+		"""
+		draw all coverage images for a coverage sample
+		
+		.vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
+					average_coverage, ratio_more_zero, ratio_more_nine, sample_name, sequence_name):
+		"""
+		utils = Utils()
+		
+		### get coverage vectors from deep file
+		get_coverage = GetCoverage()
+		coverage_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+		if (not os.path.exists(coverage_file)):
+			self.logger_production.error("File doesn't exist: " + coverage_file)
+			self.logger_debug.error("File doesn't exist: " + coverage_file)
+			raise IOError("File doesn't exist: " + coverage_file)
+		dict_coverage = get_coverage.get_dict_with_coverage(coverage_file)
+		
+		### get all elements and gene names
+		dict_genes = utils.get_elements_and_genes(project_sample.project.reference.reference_genbank.name)
+		
+		### get positions of variations
+		vect_count_type = ['snp']
+		tab_file_from_freebayes = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+		if (not os.path.exists(tab_file_from_freebayes)):
+			self.logger_production.error("File doesn't exist: " + tab_file_from_freebayes)
+			self.logger_debug.error("File doesn't exist: " + tab_file_from_freebayes)
+			raise IOError("File doesn't exist: " + tab_file_from_freebayes)
+		(dict_less_50, dict_more_50) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
+		
+		### get coverage
+		manageDatabase = ManageDatabase()
+		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		decode_coverage = DecodeCoverage()
+		coverage = decode_coverage.decode_result(meta_value.description)
+		
+		draw_coverage = DrawCoverage()
+		for sequence_name in dict_genes.keys():
+			draw_coverage.create_coverage(dict_coverage[sequence_name], dict_genes[sequence_name],\
+					dict_more_50[sequence_name] if sequence_name in dict_more_50 else [],\
+					dict_less_50[sequence_name] if sequence_name in dict_less_50 else [],\
+					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, sequence_name, FileExtensions.FILE_PNG),\
+					coverage.get_coverage(sequence_name, Coverage.COVERAGE_ALL),\
+					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_0),\
+					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_9),\
+					project_sample.sample.name, sequence_name)
+
+
+class DrawCoverage(object):
 	'''
 	classdocs
 	'''
@@ -20,20 +89,20 @@ class Coverage(object):
 	
 	GAP_BETWEEN_GENES = 17
 	GAP_START_X = 20
-	GAP_START_Y = 40
+	GAP_START_Y = 25
 	START_DRAW_HEADER = 5
 	DRAW_HEADER_Y = GAP_START_Y
 	DRAW_COVERAGE_Y = DRAW_HEADER_Y + GAP_START_Y
 	SIZE_COVERAGE_Y = 200
 	SHRINK_GENE_BAR_UTR = 2
 	SIZE_TOTAL_COVERAGE_Y = SIZE_COVERAGE_Y + GAP_START_Y	## plus the ruler...
-	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y - 10	## position to draw the exons, green part
+	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y	+ 4 ## position to draw the exons, green part
 	GAP_START_GENES_X = GAP_START_X + 20
 	DRAW_HEIGHT_GENE_SQUARE_Y = 20
 	DRAW_HEIGHT_GENE_STRAND_Y = 17
-	DRAW_STRAND_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + 2
-	DRAW_LEGENDE_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + DRAW_HEIGHT_GENE_STRAND_Y + (GAP_START_Y >> 1)
-	DRAW_BOTTOM_Y = DRAW_LEGENDE_Y
+	DRAW_STRAND_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + 5
+	DRAW_BOTTOM_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + DRAW_HEIGHT_GENE_STRAND_Y + (GAP_START_Y >> 1) + (START_DRAW_HEADER << 2) + 40
+	DRAW_HEADER_BOTTOM = DRAW_STRAND_Y + (START_DRAW_HEADER << 2)
 	LIMIT_MINUNUM_COVERAGE = 30
 	DRAW_MINIMUN_LENGTH_X = 600
 	GAP_MARK_VARIATIONS = 3
@@ -59,7 +128,8 @@ class Coverage(object):
 		'''
 		Constructor
 		'''
-		
+		self.start_image_x = DrawCoverage.GAP_START_GENES_X
+	
 	def create_coverage(self, vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
 					average_coverage, ratio_more_zero, ratio_more_nine, sample_name, sequence_name):
 		"""
@@ -69,8 +139,11 @@ class Coverage(object):
 		"""
 		## size of the image
 		self.maxSizeImage = ((self.GAP_START_GENES_X << 1) + int((len(vect_coverage) / self.rateImage)), self.DRAW_BOTTOM_Y)
-		im = Image.new("RGB", (Coverage.DRAW_MINIMUN_LENGTH_X if self.maxSizeImage[0] < Coverage.DRAW_MINIMUN_LENGTH_X\
-					else self.maxSizeImage[0], self.maxSizeImage[1]), self.WITHE_COLOR)
+		
+		self.start_image_x = (DrawCoverage.GAP_START_GENES_X + ((DrawCoverage.DRAW_MINIMUN_LENGTH_X - self.maxSizeImage[0]) >> 1))\
+			if self.maxSizeImage[0] < DrawCoverage.DRAW_MINIMUN_LENGTH_X else DrawCoverage.GAP_START_GENES_X
+		size_image_x = DrawCoverage.DRAW_MINIMUN_LENGTH_X if self.maxSizeImage[0] < DrawCoverage.DRAW_MINIMUN_LENGTH_X else self.maxSizeImage[0]
+		im = Image.new("RGB", (size_image_x, self.maxSizeImage[1]), self.WITHE_COLOR)
 		
 		draw = ImageDraw.Draw(im) 
 		
@@ -78,14 +151,23 @@ class Coverage(object):
 		self.draw_legend_coverage(draw, self.get_start_x(), self.get_start_x() + int(len(vect_coverage) / self.rateImage), int(len(vect_coverage) / self.rateImage))
 		self.draw_variants(draw, var_more_50, var_less_50)
 		(max_coverage, min_coverage) = self.get_max_min(vect_coverage)
-		(position_first_header, position_second_header, position_third_header) = self.draw_header(draw, 0, 0, 0, average_coverage, ratio_more_zero, ratio_more_nine,\
-					sample_name, sequence_name, max_coverage, min_coverage, True)		### get only the size
-		self.draw_header(draw, (self.maxSizeImage[0] - position_first_header) >> 1, (self.maxSizeImage[0] - position_second_header) >> 1,\
-				(self.maxSizeImage[0] - position_third_header) >> 1, average_coverage, ratio_more_zero, ratio_more_nine, sample_name,\
+		(position_first_header, position_second_header, position_third_header, position_x_fourth_header) =\
+				self.draw_header(draw, 0, 0, 0, 0, average_coverage, ratio_more_zero, ratio_more_nine,\
+				sample_name, sequence_name, max_coverage, min_coverage, True)		### get only the size
+		self.draw_header(draw, 
+				(size_image_x >> 1) - (position_first_header >> 1),\
+				(size_image_x >> 1) - (position_second_header >> 1),\
+				(size_image_x >> 1) - (position_third_header >> 1),\
+				(size_image_x >> 1) - (position_x_fourth_header >> 1), 
+				average_coverage, ratio_more_zero, ratio_more_nine, sample_name,\
 				sequence_name, max_coverage, min_coverage, False)
+		
+		### test path 
+		utils = Utils()
+		utils.make_path(os.path.dirname(output_image))
 		im.save(output_image)
 		
-	def get_start_x(self): return Coverage.GAP_START_GENES_X;
+	def get_start_x(self): return self.start_image_x
 	
 	def get_max_min(self, vect_coverage):
 		(max_coverage, min_coverage) = (0, 99999999)
@@ -125,21 +207,22 @@ class Coverage(object):
 				
 	def draw_strand(self, draw, direction, start_x, nLength_X):
 		"""
+		direction 1|-1
 		"""
-		draw.line((start_x, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1), 
-				start_x + nLength_X, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1)), fill=self.COLOR_RGBGreen_0_102_0, width=1)
+		start_y = self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 4
+		draw.line((start_x, start_y, start_x + nLength_X, start_y), fill=self.COLOR_RGBGreen_0_102_0, width=1)
 		if ((nLength_X >> 4) > 1):
 			for i in range(0, nLength_X >> 4):
 				slice_pos = (i * (nLength_X / (nLength_X >> 4)))
-				draw.point((start_x + slice_pos, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) - 1), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos + direction, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) - 2), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 1), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos + direction, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 2), fill=self.COLOR_RGBGreen_0_102_0)
+				draw.point((start_x + slice_pos, start_y - 1), fill=self.COLOR_RGBGreen_0_102_0)
+				draw.point((start_x + slice_pos + direction, start_y - 2), fill=self.COLOR_RGBGreen_0_102_0)
+				draw.point((start_x + slice_pos, start_y + 1), fill=self.COLOR_RGBGreen_0_102_0)
+				draw.point((start_x + slice_pos + direction, start_y + 2), fill=self.COLOR_RGBGreen_0_102_0)
 		else: ## draw in the middle
-			draw.point((start_x + (nLength_X >> 1), self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) - 1), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1) + direction, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) - 2), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1), self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 1), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1) + direction, self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 2), fill=self.COLOR_RGBGreen_0_102_0)
+			draw.point((start_x + (nLength_X >> 1), start_y - 1), fill=self.COLOR_RGBGreen_0_102_0)
+			draw.point((start_x + (nLength_X >> 1) + direction, start_y - 2), fill=self.COLOR_RGBGreen_0_102_0)
+			draw.point((start_x + (nLength_X >> 1), start_y + 1), fill=self.COLOR_RGBGreen_0_102_0)
+			draw.point((start_x + (nLength_X >> 1) + direction, start_y + 2), fill=self.COLOR_RGBGreen_0_102_0)
 
 
 	def draw_coverage(self, draw, vect_coverage):
@@ -193,68 +276,75 @@ class Coverage(object):
 			draw.line((start_x - 1, draw_y_last, start_x - 1, draw_y_last - 2), fill=self.COLOR_RGBRed_153_0_0, width=1)
 		
 		
-	def draw_header(self, draw, position_x_first_header, position_x_second_header, position_x_third_header, average_coverage,\
+	def draw_header(self, draw, position_x_first_header, position_x_second_header, position_x_third_header, position_x_fourth_header, average_coverage,\
 				ratio_more_zero, rati_more_nine, sample_name, sequence_name, max_coverage, min_coverage, b_only_calculate_size):
 		"""
 		draw header
 		"""
-		lines_size = 14 
-		fontsize = 12
-		font_ = ImageFont.truetype(Coverage.PATH_FONT_BOLD, fontsize)
+		lines_size = 18
+		font_12 = ImageFont.truetype(DrawCoverage.PATH_FONT_BOLD, 12)
+		font_16 = ImageFont.truetype(DrawCoverage.PATH_FONT_BOLD, 16)
 		
 		## draw coverage text
 		if (not b_only_calculate_size):
-			self.draw_text_header(draw, font_, "Coverage".format(sample_name, sequence_name), 5, self.DRAW_COVERAGE_Y - 14, b_only_calculate_size)
+			start_coverage = (font_12.getsize("Coverage")[0] >> 1)
+			start_coverage = 5 if (self.get_start_x() - start_coverage) < 0 else (self.get_start_x() - start_coverage) 
+			self.draw_text_header(draw, font_12, "Coverage".format(sample_name, sequence_name), start_coverage, self.DRAW_COVERAGE_Y - 17, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 			
 		position_x = position_x_first_header
-		position_x += self.draw_text_header(draw, font_, "Sample/Seq.: {}/{}".format(sample_name, sequence_name), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_, "Coverage: {}".format(average_coverage), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_, "Ratio >0: {}%".format(ratio_more_zero), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_, "Ratio >9: {}%".format(rati_more_nine), position_x, self.START_DRAW_HEADER, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_16, "Sample: {}".format(sample_name), position_x, self.START_DRAW_HEADER + 5, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_16, "Sequence: {}".format(sequence_name), position_x, self.START_DRAW_HEADER + 5, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		position_x_first_header = position_x
+		
+		point_y = self.DRAW_HEADER_BOTTOM
+		position_x = position_x_fourth_header;
+		position_x += self.draw_text_header(draw, font_12, "Coverage: {}".format(average_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Ratio >0: {}%".format(ratio_more_zero), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Ratio >9: {}%".format(rati_more_nine), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x_fourth_header = position_x
 		
 		### second line
 		position_x = position_x_second_header;
-		point_y = (self.START_DRAW_HEADER << 1) + font_.getsize("text")[1]
-		position_x += self.draw_text_header(draw, font_, "Max. Coverage: {}".format(max_coverage), position_x, point_y, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_, "Min. Coverage: {}".format(min_coverage), position_x, point_y, b_only_calculate_size)
+		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+		position_x += self.draw_text_header(draw, font_12, "Max. Coverage: {}".format(max_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Min. Coverage: {}".format(min_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		if (not b_only_calculate_size):
-			draw.line((position_x, point_y + (font_.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
+			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
 		position_x += 7
-		position_x += self.draw_text_header(draw, font_, "Cov. <{}".format(self.LIMIT_MINUNUM_COVERAGE), position_x  + lines_size, point_y, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Cov. <{}".format(self.LIMIT_MINUNUM_COVERAGE), position_x  + lines_size, point_y, self.COLOR_RGBRed_153_0_0, b_only_calculate_size)
 		position_x += lines_size
 		if (not b_only_calculate_size):
-			draw.line((position_x, point_y + (font_.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_.getsize("text")[1] >> 1)), fill=self.COLOR_RGBGreen_0_153_0, width=3)
+			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBGreen_0_153_0, width=3)
 		position_x += 7
-		position_x += self.draw_text_header(draw, font_, "Cov. >{}".format((self.rateDrawCoverage * self.SIZE_COVERAGE_Y)), position_x  + lines_size, point_y, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Cov. >{}".format((self.rateDrawCoverage * self.SIZE_COVERAGE_Y)), position_x  + lines_size, point_y, self.COLOR_RGBGreen_0_153_0, b_only_calculate_size)
 		position_x_second_header = position_x
 		
 		### third line line
 		position_x = position_x_third_header;
-		point_y += (self.START_DRAW_HEADER << 1) + font_.getsize("text")[1]
+		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
 		if (not b_only_calculate_size):
-			draw.line((position_x, point_y + (font_.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=1)
-			draw.ellipse((position_x + lines_size - 2, point_y + (font_.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS,\
-							position_x + lines_size + 2, point_y + (font_.getsize("text")[1] >> 1) + self.GAP_MARK_VARIATIONS),
+			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
+			draw.ellipse((position_x + lines_size - 4, point_y + (font_12.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS - 1,\
+							position_x + lines_size + 4, point_y + (font_12.getsize("text")[1] >> 1) + self.GAP_MARK_VARIATIONS + 1),
 							fill = self.COLOR_RGBRed_153_0_0, outline = self.COLOR_RGBRed_153_0_0)
-		position_x += 10
-		position_x += self.draw_text_header(draw, font_, "Variants AF <50%", position_x  + 10, point_y, b_only_calculate_size)
+		position_x += lines_size
+		position_x += self.draw_text_header(draw, font_12, "Variants AF <50%", position_x  + 10, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		
 		position_x += 10
 		if (not b_only_calculate_size):
-			draw.line((position_x, point_y + (font_.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_.getsize("text")[1] >> 1)), fill=self.COLOR_RGBBlack, width=1)
-			draw.ellipse((position_x + lines_size - 2, point_y + (font_.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS,\
-							position_x + lines_size + 2, point_y + (font_.getsize("text")[1] >> 1) + self.GAP_MARK_VARIATIONS),
+			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBBlack, width=3)
+			draw.ellipse((position_x + lines_size - 4, point_y + (font_12.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS - 1 ,\
+							position_x + lines_size + 4, point_y + (font_12.getsize("text")[1] >> 1) + self.GAP_MARK_VARIATIONS + 1),
 							fill = self.COLOR_RGBBlack, outline = self.COLOR_RGBBlack)
-		position_x += 10
-		position_x += self.draw_text_header(draw, font_, "Variants AF >50%", position_x  + 10, point_y, b_only_calculate_size)
+		position_x += lines_size
+		position_x += self.draw_text_header(draw, font_12, "Variants AF >50%", position_x  + 10, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		position_x_third_header = position_x
-		return (position_x_first_header, position_x_second_header, position_x_third_header)
+		return (position_x_first_header, position_x_second_header, position_x_third_header, position_x_fourth_header)
 	
 	
-	def draw_text_header(self, draw, font_, text, pointX, pointY, bOnlyCalculatesize):
+	def draw_text_header(self, draw, font_, text, pointX, pointY, color, bOnlyCalculatesize):
 		gap_between_text = 20
-		if (not bOnlyCalculatesize): draw.text((pointX, pointY), text, fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+		if (not bOnlyCalculatesize): draw.text((pointX, pointY), text, fill=color, font = font_)
 		return font_.getsize(text)[0] + gap_between_text
 	
 	
@@ -266,13 +356,13 @@ class Coverage(object):
 		tick_length = 5
 		number_space = 100	## the rateImage division is implicit 
 		fontsize = 13
-		font_ = ImageFont.truetype(Coverage.PATH_FONT_BOLD, fontsize)
+		font_ = ImageFont.truetype(DrawCoverage.PATH_FONT_BOLD, fontsize)
 		for i in range(0, int(length / number_space)):
 			draw.line((self.get_start_x() + i * number_space, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y,\
 					self.get_start_x() + i * number_space, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y + tick_length), fill=self.COLOR_RGBGrey_64_64_64, width=1)
 			middle_size = font_.getsize("{}".format(i * number_space * self.rateImage))[0] >> 1
 			draw.text((self.get_start_x() + i * number_space - middle_size, self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y + tick_length),\
-					"{}".format(i * number_space * self.rateImage), fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+					"{}".format(i * number_space * self.rateImage), fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 				
 		smallOffset = 4
 		self.draw_legend_coverage_and_text(draw, font_, startDraw, endDraw, self.DRAW_COVERAGE_Y + smallOffset, "{}".format(self.SIZE_COVERAGE_Y * self.rateDrawCoverage))
@@ -284,39 +374,38 @@ class Coverage(object):
 	def draw_legend_coverage_and_text(self, draw, font_, startDraw, endDraw, pointY, value):
 		
 		smallOffset = 3
-		smallOffset_y = -1 * (font_.getsize("123")[1] >> 1)
+		smallOffset_y = (-1 * (font_.getsize("123")[1] >> 1)) - smallOffset
 		nLength_X = endDraw - startDraw
 		draw.line((startDraw - smallOffset, pointY, endDraw + smallOffset, pointY), fill=self.COLOR_RGBGrey_64_64_64, width=1)
-		step = (nLength_X >> 9)
-		if (step <= 0): step = int(nLength_X / 150)
+		step = int(nLength_X / 170)
 		slice_ = nLength_X / step;
 		if (step > 1):
 			for i in range(0, step - 1):
-				draw.text((self.get_start_x() + (i + 1) * slice_, pointY + smallOffset_y), value, fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+				draw.text((self.get_start_x() + (i + 1) * slice_, pointY + smallOffset_y), value, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 		else:
-			draw.text((self.get_start_x() + (nLength_X >> 1), pointY + smallOffset_y), value, fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+			draw.text((self.get_start_x() + (nLength_X >> 1), pointY + smallOffset_y), value, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 
 	def draw_variants(self, draw, var_more_50, var_less_50):
 		
 		for pos in var_more_50:
-			self.draw_variant(draw, int(pos / self.rateImage), True)
-		for pos in var_less_50:
 			self.draw_variant(draw, int(pos / self.rateImage), False)
+		for pos in var_less_50:
+			self.draw_variant(draw, int(pos / self.rateImage), True)
 		
 	def draw_variant(self, draw, position, b_up):
 		if (b_up):
 			draw.line((self.get_start_x() + position, self.GAP_START_GENES_Y - self.GAP_MARK_VARIATIONS, 
 					self.get_start_x() + position, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y - (self.GAP_MARK_VARIATIONS << 1)),\
 					fill=self.COLOR_RGBRed_153_0_0, width=1)
-			draw.ellipse((self.get_start_x() + position - 2, self.GAP_START_GENES_Y - self.GAP_MARK_VARIATIONS - self.GAP_MARK_VARIATIONS,\
-						self.get_start_x() + position + 2, self.GAP_START_GENES_Y - self.GAP_MARK_VARIATIONS),
+			draw.ellipse((self.get_start_x() + position - 3, self.GAP_START_GENES_Y - (self.GAP_MARK_VARIATIONS * 3),\
+						self.get_start_x() + position + 3, self.GAP_START_GENES_Y - self.GAP_MARK_VARIATIONS),
 						fill = self.COLOR_RGBRed_153_0_0, outline = self.COLOR_RGBRed_153_0_0)
 		else:
 			draw.line((self.get_start_x() + position, self.GAP_START_GENES_Y + (self.GAP_MARK_VARIATIONS << 1), 
 					self.get_start_x() + position, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y + self.GAP_MARK_VARIATIONS),\
 					fill=self.COLOR_RGBBlack, width=1)
-			draw.ellipse((self.get_start_x() + position - 2, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y + self.GAP_MARK_VARIATIONS,\
-						self.get_start_x() + position + 2, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y + self.GAP_MARK_VARIATIONS_BIG),
+			draw.ellipse((self.get_start_x() + position - 3, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y + self.GAP_MARK_VARIATIONS,\
+						self.get_start_x() + position + 3, self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y + (self.GAP_MARK_VARIATIONS * 3)),
 						fill = self.COLOR_RGBBlack, outline = self.COLOR_RGBBlack)
 		
 		
@@ -479,10 +568,10 @@ class ColorSquares(object):
 	
 		if (text is not None and len(text)):
 			fontsize = 14
-			font_ = ImageFont.truetype(Coverage.PATH_FONT_BOLD, fontsize)
+			font_ = ImageFont.truetype(DrawCoverage.PATH_FONT_BOLD, fontsize)
 			size_x = font_.getsize(text)[0]
-			if (bVertical): self.draw.text((rect_point_top[0] - 2, rect_point_top[1] + 5), text, fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+			if (bVertical): self.draw.text((rect_point_top[0] - 2, rect_point_top[1] + 5), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 			else: 
 				middle = nPos + ((rect_point_bottom[0] - nPos) >> 1) - (size_x >> 1) 
-				self.draw.text((middle, rect_point_top[1] + 2), text, fill=Coverage.COLOR_RGBGrey_32_32_32, font = font_)
+				self.draw.text((middle, rect_point_top[1] + 2), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 

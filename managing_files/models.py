@@ -295,6 +295,15 @@ class Project(models.Model):
 	Project for run a pipeline in the data,
 	It's possible to run several times and add data to the project
 	"""
+	### has the path for main result
+	PATH_MAIN_RESULT = 'main_result'
+	
+	PROJECT_FILE_NAME_MAFFT = "Alignment_whole_genome.fasta"
+	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
+	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
+	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
+	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
+	
 	name = models.CharField(max_length=200, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	reference = models.ForeignKey(Reference, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
@@ -307,6 +316,43 @@ class Project(models.Model):
 	class Meta:
 		ordering = ['-creation_date', ]
 
+	def get_global_file_by_element(self, type_path, element, file_name):
+		"""
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		element: element name or None
+		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
+		"""
+		if (self.PROJECT_FILE_NAME_MAFFT == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
+		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
+		return None
+
+	def get_global_file_by_project(self, type_path, file_name):
+		"""
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		file_name:	Project.PROJECT_FILE_NAME_MAFFT, ....  
+		"""
+		return os.path.join(self.__get_global_path__(type_path, None), file_name)
+	
+	def __get_user_result_global_directory_path__(self, element):
+		# file will be uploaded to MEDIA_ROOT/<filename>
+		if (element == None or len(element) == 0): return 'projects/result/user_{0}/project_{1}/{}/{}'.\
+				format(self.project.owner.id, self.project.id, self.PATH_MAIN_RESULT, element)
+		return 'projects/result/user_{0}/project_{1}/{}'.format(self.project.owner.id, self.project.id, self.PATH_MAIN_RESULT)
+	
+	def __get_global_path__(self, type_path, element):
+		"""
+		get a path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.__get_user_result_global_directory_path__(element)
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else: path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+	
 class MetaKeyProject(models.Model):
 	"""
 	Relation ManyToMany in 
@@ -326,6 +372,8 @@ class MetaKeyProject(models.Model):
 
 class ProjectSample(models.Model):
 	
+	PREFIX_FILE_COVERAGE = 'coverage'
+		
 	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
@@ -339,20 +387,22 @@ class ProjectSample(models.Model):
 	def __str__(self):
 		return self.project.name
 
+
 	def get_file_output(self, type_path, file_type, software):
 		"""
-		return file path output
+		return file path output by software
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
 		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
-	
+		software: Software.SOFTWARE_FREEBAYES_name, Software.SOFTWARE_SNIPPY_name
 		"""
 		constants = Constants()
 		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
 
 	def __get_user_result_directory_path__(self, software):
 		# file will be uploaded to MEDIA_ROOT/<filename>
-		if (software is None or not software): return 'projects/result/user_{0}/project_{1}/sample_{2}'.format(self.sample.owner.id, self.project.id, self.sample.id)
-		return 'projects/result/user_{0}/project_{1}/sample_{2}/{3}'.format(self.sample.owner.id, self.project.id, self.sample.id, software)
+		if (software is None or not software): return 'projects/result/user_{0}/project_{1}/sample_{2}'.format(self.project.owner.id, self.project.id, self.sample.id)
+		return 'projects/result/user_{0}/project_{1}/sample_{2}/{3}'.format(self.project.owner.id, self.project.id, self.sample.id, software)
+
 
 	def __get_path__(self, type_path, software):
 		"""
@@ -363,8 +413,14 @@ class ProjectSample(models.Model):
 			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
 		else: path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
+	
 
-
+	def get_is_ready_to_proccess(self):
+		"""
+		test if is ready to process
+		"""
+		return self.is_finished and not self.is_deleted and not self.is_error and self.sample.get_is_ready_for_projects()
+	
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 

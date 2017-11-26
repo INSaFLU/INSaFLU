@@ -20,6 +20,16 @@
 ## $ sudo pip3 install Pillow
 ## $ sudo apt install bioperl
 ## $ sudo pip3 install pysam
+## $ sudo apt-get install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
+
+## CentOS
+## $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
+## $ sudo cpan -i Bio::Perl
+
+## $ cd /usr/local/software
+## $ git clone https://github.com/tseemann/prokka.git
+## $ prokka/bin/prokka --setupdb
+
 
 ## CAHNGE file /usr/local/lib/python3.4/dist-packages/bootstrap_datepicker/widgets.py
 	## Add line extra_attrs['placeholder'] = "dd/mm/yyyy" in render method

@@ -209,6 +209,8 @@ class Coverage(object):
 	def __init__(self):
 		self.dt_data = {}
 
+	def get_dict_data(self): return self.dt_data
+	
 	def add_coverage(self, element, type_coverage, coverage):
 		if (element in self.dt_data): self.dt_data[element].add_coverage(type_coverage, coverage)
 		else:
@@ -225,6 +227,22 @@ class Coverage(object):
 	def get_result_number(self):
 		return ""
 	
+	def is_100_more_9(self, element):
+		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
+		return self.__is_100__(value_coverage)
+	
+	def is_100_more_0(self, element):
+		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_0)
+		return self.__is_100__(value_coverage)
+		
+	def __is_100__(self, value_coverage):
+		try:
+			(i, d) = divmod(float(value_coverage), 1)
+			if (int(i) == 100): return True
+		except ValueError: 
+			pass
+		return False
+
 	def __str__(self):
 		sz_return = ""
 		for key in self.dt_data:

@@ -13,7 +13,7 @@ class ParseFile(object):
 	'''
 	classdocs
 	'''
-
+	utils = Utils()
 
 	def __init__(self):
 		'''
@@ -140,8 +140,25 @@ class GetCoverage(object):
 
 	def get_dict_reference(self): return self.reference_dict
 	def get_vect_reference(self): return self.vect_reference
-	
+
+	def get_dict_with_coverage(self, deep_file):
+		"""
+		get a dictonary of elements with coverage 
+		"""
+		self.reference_dict = {}
+		self.vect_reference = []
+
+		parse_file = ParseFile()
+		data_file = parse_file.parse_file(deep_file)
+		dt_out = {}
+		for key in data_file.get_dict_data().keys():
+			dt_out[key] = [int(value_[1]) for value_ in data_file.get_dict_data()[key] ]
+		return dt_out
+
 	def get_coverage(self, deep_file, reference):
+		"""
+		get an instance of coverage 
+		"""
 		self.reference_dict = {}
 		self.vect_reference = []
 

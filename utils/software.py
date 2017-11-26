@@ -7,9 +7,10 @@ import os, gzip
 import logging
 import cmd
 import subprocess
+from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
-from utils.constants import Constants, TypePath, FileType
+from utils.constants import Constants, TypePath, FileType, FileExtensions
 from utils.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample
@@ -18,211 +19,42 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 from utils.parse_coverage_file import GetCoverage
 from django.db import transaction
+from utils.software_names import SoftwareNames
 from Bio import SeqIO
 
 class Software(object):
 	'''
 	classdocs
 	'''
-
+	utils = Utils()
+	software_names = SoftwareNames()
 	CORES_TO_USE = 3
 	
-	## dir with software
-	DIR_SOFTWARE = "/usr/local/software/insaflu"
-	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE, "snippy/bin/samtools")
-	SOFTWARE_SAMTOOLS_name = "Samtools"
-	SOFTWARE_SAMTOOLS_VERSION = "1.3"
-	SOFTWARE_SAMTOOLS_PARAMETERS = ""
-	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE, "snippy/bin/bgzip")
-	SOFTWARE_BGZIP_name = "bgzip"
-	SOFTWARE_BGZIP_VERSION = "1.3"
-	SOFTWARE_BGZIP_PARAMETERS = ""
-	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, "snippy/bin/tabix")
-	SOFTWARE_TABIX_name = "tabix"
-	SOFTWARE_TABIX_VERSION = "1.3"
-	SOFTWARE_TABIX_PARAMETERS = ""
-	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py") 
-	SOFTWARE_SPAdes_name = "SPAdes" 
-	SOFTWARE_SPAdes_VERSION = "3.11.1"
-	SOFTWARE_SPAdes_PARAMETERS = ""
-	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
-	SOFTWARE_ABRICATE_name = "Abricate"
-	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
-	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
-	SOFTWARE_ABRICATE_PARAMETERS = ""
-	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
-	SOFTWARE_FASTQ_name = "FastQC"
-	SOFTWARE_FASTQ_VERSION = "0.11.5"
-	SOFTWARE_FASTQ_PARAMETERS = ""
-	SOFTWARE_TRIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
-	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
-	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
-	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33"
-	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy")
-	SOFTWARE_SNIPPY_name = "Snippy"
-	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
-	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
-	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy-vcf_to_tab_add_freq")
-	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
-	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
-	SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS = ""
-	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE, "snippy/bin/snpEff")
-	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE, "snippy/etc/snpeff.config")
-	SOFTWARE_SNP_EFF_name = "snpEff"
-	SOFTWARE_SNP_EFF_VERSION = "4.3p"
-	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
-	SOFTWARE_GENBANK2GFF3 = 'bp_genbank2gff3'
-	SOFTWARE_GENBANK2GFF3_name = 'Genbank2gff3'
-	SOFTWARE_GENBANK2GFF3_VERSION = 'Unknown'
-	SOFTWARE_GENBANK2GFF3_PARAMETERS = ''
-	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes")
-	SOFTWARE_FREEBAYES_name = "Freebayes"
-	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
-	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
-	SOFTWARE_COVERAGE = "Coverage, in-house script"
-	SOFTWARE_COVERAGE_name = "Coverage"
-	SOFTWARE_COVERAGE_VERSION = "v1.1"
-	SOFTWARE_COVERAGE_PARAMETERS = ""
-	
-
-
+	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
-	utils = Utils()
-	constants = Constants()
-
-	def __init__(self):
-		'''
-		Constructor
-		'''
-		pass
-
-	"""
-	return samtools software
-	"""
-	def get_samtools(self): return self.SOFTWARE_SAMTOOLS
-	def get_samtools_version(self): return self.SOFTWARE_SAMTOOLS_VERSION
-
-	"""
-	return spades software
-	"""
-	def get_spades(self): return self.SOFTWARE_SPAdes
-	def get_spades_name(self): return self.SOFTWARE_SPAdes_name
-	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
-	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
-
-	"""
-	return abricate software
-	"""
-	def get_abricate(self): return self.SOFTWARE_ABRICATE
-	def get_abricate_name(self): return self.SOFTWARE_ABRICATE_name
-	def get_abricate_version(self): return self.SOFTWARE_ABRICATE_VERSION
-	def get_abricate_parameters(self): return self.SOFTWARE_ABRICATE_PARAMETERS
-
-	"""
-	return FASTq software
-	"""
-	def get_fastq(self): return self.SOFTWARE_FASTQ
-	def get_fastq_name(self): return self.SOFTWARE_FASTQ_name
-	def get_fastq_version(self): return self.SOFTWARE_FASTQ_VERSION
-	def get_fastq_parameters(self): return self.SOFTWARE_FASTQ_PARAMETERS
 	
-	"""
-	return trimmomatic software
-	"""
-	def get_trimmomatic(self): return self.SOFTWARE_TRIMMOMATIC
-	def get_trimmomatic_name(self): return self.SOFTWARE_TRIMMOMATIC_name
-	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
-	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
-	
-	"""
-	return snippy software
-	"""
-	def get_snippy(self): return self.SOFTWARE_SNIPPY
-	def get_snippy_name(self): return self.SOFTWARE_SNIPPY_name
-	def get_snippy_version(self): return self.SOFTWARE_SNIPPY_VERSION
-	def get_snippy_parameters(self): return self.SOFTWARE_SNIPPY_PARAMETERS
-
-	"""
-	return snippy-vcf_to_tab software
-	"""
-	def get_snippy_vcf_to_tab(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB
-	def get_snippy_vcf_to_tab_name(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_name
-	def get_snippy_vcf_to_tab_version(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION
-	def get_snippy_vcf_to_tab_parameters(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS
-	
-	"""
-	return snpEff software
-	"""
-	def get_snp_eff(self): return self.SOFTWARE_SNP_EFF
-	def get_snp_eff_name(self): return self.SOFTWARE_SNP_EFF_name
-	def get_snp_eff_config(self): return self.SOFTWARE_SNP_EFF_config
-	def get_snp_eff_version(self): return self.SOFTWARE_SNP_EFF_VERSION
-	def get_snp_eff_parameters(self): return self.SOFTWARE_SNP_EFF_PARAMETERS
-	
-	"""
-	return genbank2gff3 software
-	"""
-	def get_genbank2gff3(self): return self.SOFTWARE_GENBANK2GFF3
-	def get_genbank2gff3_name(self): return self.SOFTWARE_GENBANK2GFF3_name
-	def get_genbank2gff3_version(self): return self.SOFTWARE_GENBANK2GFF3_VERSION
-	def get_genbank2gff3_parameters(self): return self.SOFTWARE_GENBANK2GFF3_PARAMETERS
-	
-	
-	"""
-	return freebayes software
-	"""
-	def get_freebayes(self): return self.SOFTWARE_FREEBAYES
-	def get_freebayes_name(self): return self.SOFTWARE_FREEBAYES_name
-	def get_freebayes_version(self): return self.SOFTWARE_FREEBAYES_VERSION
-	def get_freebayes_parameters(self): return self.SOFTWARE_FREEBAYES_PARAMETERS
-
-	"""
-	return bgzip software
-	"""
-	def get_bgzip(self): return self.SOFTWARE_BGZIP
-	def get_bgzip_name(self): return self.SOFTWARE_BGZIP_name
-	def get_bgzip_version(self): return self.SOFTWARE_BGZIP_VERSION
-	def get_bgzip_parameters(self): return self.SOFTWARE_BGZIP_PARAMETERS
-
-	"""
-	return tabix software
-	"""
-	def get_tabix(self): return self.SOFTWARE_TABIX
-	def get_tabix_name(self): return self.SOFTWARE_TABIX_name
-	def get_tabix_version(self): return self.SOFTWARE_TABIX_VERSION
-	def get_tabix_parameters(self): return self.SOFTWARE_TABIX_PARAMETERS
-	
-	"""
-	return Coverage software
-	"""
-	def get_coverage(self): return self.SOFTWARE_COVERAGE
-	def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
-	def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
-	def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
-
-
 	def test_bgzip_and_tbi_in_vcf(self, vcf_file):
 		"""
 		test if a a vcf file has a gzip file, if not create it
 		"""
 		### create the gzip file
-		self.utils.compress_files(self.get_bgzip(), vcf_file)
+		self.utils.compress_files(self.software_names.get_bgzip(), vcf_file)
 		### create the tabix
 		if (vcf_file.endswith('.gz')):
-			self.utils.create_index_files(self.get_tabix(), vcf_file)
+			self.utils.create_index_files(self.software_names.get_tabix(), vcf_file)
 		else:
-			self.utils.create_index_files(self.get_tabix(), vcf_file + ".gz")
+			self.utils.create_index_files(self.software_names.get_tabix(), vcf_file + ".gz")
 
 
 	def get_vect_type_files_to_copy(self, software):
 		"""
 		get type of files to copy
 		"""
-		if (software == Software.SOFTWARE_SNIPPY_name):
+		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
 				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
-		elif (software == Software.SOFTWARE_FREEBAYES_name):
+		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
 
 
@@ -231,31 +63,30 @@ class Software(object):
 		copy files to the project
 		software : SOFTWARE_SNIPPY_name, SOFTWARE_FREEBAYES_name
 		"""
-		utils = Utils()
 		for type_file in self.get_vect_type_files_to_copy(software):
 			if (type_file == FileType.FILE_CONSENSUS_FA):	## if .fa file pass to .fasta
-				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, software))
 			elif (type_file == FileType.FILE_VCF):	## vcf file
 				### create the gzip file
-				utils.compress_files(self.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
+				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
 				### create the tabix
-				utils.create_index_files(self.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
+				self.utils.create_index_files(self.software_names.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
 				
 				### copy both
-				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))),\
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))
-				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))),\
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))
 			else:
-				utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
 
 	def create_fai_fasta(self, fileFastaName):
 		"""
 		Create fai for a fasta file
 		"""
-		cmd = "%s faidx %s" % (self.get_samtools(), fileFastaName)
+		cmd = "%s faidx %s" % (self.software_names.get_samtools(), fileFastaName)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -268,8 +99,8 @@ class Software(object):
 		"""
 		Run spades
 		"""
-		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
-		else: cmd = "%s --pe1-1 %s --pe1-2 %s --meta --only-assembler -t %d -o %s" % (self.get_spades(), fastq_1, fastq_2, self.CORES_TO_USE, out_dir)
+		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s --meta --only-assembler -t %d -o %s" % (self.software_names.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
+		else: cmd = "%s --pe1-1 %s --pe1-2 %s --meta --only-assembler -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2, self.CORES_TO_USE, out_dir)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -284,7 +115,7 @@ class Software(object):
 		argannot	1749	2017-Oct-30
 		card	2158	2017-Oct-30
 		"""
-		cmd = "%s --list" % (self.get_abricate())
+		cmd = "%s --list" % (self.software_names.get_abricate())
 		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 		(out, err) = proc.communicate()
 		if (err != None):
@@ -303,7 +134,7 @@ class Software(object):
 		create a database
 		"""
 		if (not os.path.isfile(file_name)): raise IOError("File not found: " + file_name) 
-		cmd = "mkdir -p %s/%s" % (self.SOFTWARE_ABRICATE_DB, database)
+		cmd = "mkdir -p %s/%s" % (self.software_names.SOFTWARE_ABRICATE_DB, database)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -311,9 +142,9 @@ class Software(object):
 			raise Exception("Fail to run make directory")
 		
 		## copy the file
-		self.utils.copy_file(file_name, os.path.join(self.SOFTWARE_ABRICATE_DB, database, "sequences"))
+		self.utils.copy_file(file_name, os.path.join(self.software_names.SOFTWARE_ABRICATE_DB, database, "sequences"))
 		
-		cmd = "%s --setupdb" % (self.get_abricate())
+		cmd = "%s --setupdb" % (self.software_names.get_abricate())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -325,7 +156,7 @@ class Software(object):
 		"""
 		Run abricator
 		"""
-		cmd = "%s --db %s --quiet %s > %s" % (self.get_abricate(), database, file_name, out_file)
+		cmd = "%s --db %s --quiet %s > %s" % (self.software_names.get_abricate(), database, file_name, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -340,8 +171,7 @@ class Software(object):
 		
 		raise Exception
 		"""
-		utils = Utils()
-		temp_file =  utils.get_temp_file("lines_and_average_", ".txt")
+		temp_file =  self.utils.get_temp_file("lines_and_average_", ".txt")
 		cmd = "gzip -cd " + file_name + " | awk '{ s++; if ((s % 4) == 0) { count ++; size += length($0); }  } END { print \"sequences: \", count,  \"average: \", size/count }' > " + temp_file
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -350,7 +180,7 @@ class Software(object):
 			raise Exception("Fail to run get_lines_and_average_reads")
 		
 		###
-		vect_out = utils.read_text_file(temp_file)
+		vect_out = self.utils.read_text_file(temp_file)
 		if (len(vect_out) == 0):
 			self.logger_production.error('can not read any data: ' + temp_file)
 			self.logger_debug.error('can not read any data: ' + temp_file)
@@ -360,10 +190,10 @@ class Software(object):
 			self.logger_production.error('can not parse this data: ' + vect_out[0])
 			self.logger_debug.error('can not parse this data: ' + vect_out[0])
 			raise Exception("Can't read any data")
-		if (utils.is_float(vect_data[3])): average_value = "%.1f" % (float(vect_data[3]))
+		if (self.utils.is_float(vect_data[3])): average_value = "%.1f" % (float(vect_data[3]))
 		else: average_value = vect_data[3]
 		
-		utils.remove_temp_file(temp_file)
+		self.utils.remove_temp_file(temp_file)
 		return (vect_data[1], average_value)
 	
 	"""
@@ -382,11 +212,11 @@ class Software(object):
 		result_all = Result()
 		try:
 			cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
-			result_all.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 		except Exception:
 			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
-			result.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
+			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -395,8 +225,8 @@ class Software(object):
 		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.get_spades_version()))
-			result.add_software(SoftwareDesc(self.get_spades_name(), self.get_spades_version(), self.get_spades_parameters()))
+			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -406,8 +236,8 @@ class Software(object):
 		except UploadFile.DoesNotExist:
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -417,8 +247,8 @@ class Software(object):
 				self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
 			except Exception:
 				result = Result()
-				result.set_error("Abricate (%s) fail to run --setupdb" % (self.get_abricate_version()))
-				result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
+				result.set_error("Abricate (%s) fail to run --setupdb" % (self.software_names.get_abricate_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 				manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 				return False
@@ -427,11 +257,11 @@ class Software(object):
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
 			cmd = self.run_abricate(uploadFile.abricate_name, file_out, out_file_abricate)
-			result_all.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 		except Exception:
 			result = Result()
-			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.get_abricate_name(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -439,8 +269,8 @@ class Software(object):
 		if (not os.path.exists(out_file_abricate)):
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Abricate (%s) fail to run" % (self.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -456,7 +286,7 @@ class Software(object):
 			## save error in MetaKeySample
 			result = Result()
 			result.set_error("Fail to identify type and sub type")
-			result.add_software(SoftwareDesc(self.get_abricate(), self.get_abricate_version(), self.get_abricate_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
@@ -468,7 +298,7 @@ class Software(object):
 		sample.save()
 		
 		## save everything OK
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.get_spades_version(), self.get_abricate_version()))
+		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(), self.software_names.get_abricate_version()))
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
@@ -480,13 +310,12 @@ class Software(object):
 		run fastQ, return output directory
 		-o OUT_FOLDER --nogroup --format fastq --threads 10 --dir OUT_FOLDER FILE1 FILE2
 		"""
-		utils = Utils()
-		temp_dir = utils.get_temp_dir()
+		temp_dir = self.utils.get_temp_dir()
 		if (not file_name_2 is None and len(file_name_2) > 0):
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.get_fastq(), temp_dir, Software.CORES_TO_USE, 
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, Software.CORES_TO_USE, 
 										temp_dir, file_name_1, file_name_2)
 		else: 
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.get_fastq(), temp_dir, Software.CORES_TO_USE, temp_dir, file_name_1)
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, Software.CORES_TO_USE, temp_dir, file_name_1)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -495,6 +324,92 @@ class Software(object):
 		return temp_dir
 
 
+	def run_prokka(self, fasta_file_name):
+		"""
+		run prokka, in fasta file
+		out: genbank
+		{bpipe_prokka} FILE1 --kingdom Viruses --locustag locus --kingdom Viruses --locustag locus --genus Influenzavirus 
+			--species Influenzavirus --strain ref_PREFIX_FILES_OUT --outdir OUT_FOLDER/PREFIX_FILES_OUT --prefix PREFIX_FILES_OUT
+		"""
+		if (not os.path.exists(fasta_file_name)): raise Exception("File doesn't exist")
+		temp_dir = self.utils.get_temp_dir()
+		name_strain = os.path.basename(fasta_file_name)
+		name_strain = name_strain[:name_strain.rfind('.')]
+		cmd = "{} {} {} --strain {} --force --outdir {} --prefix {}".format(\
+					self.software_names.get_prokka(), fasta_file_name, self.software_names.get_prokka_parameters(), name_strain, temp_dir, name_strain)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run prokka")
+		return temp_dir
+	
+	def run_mauve(self, dir_to_process, out_file):
+		"""
+		run mauve
+		out: out_file
+		--output=alignment_all_96_samples_H3.xmfa *fasta
+		"""
+		dir_present = os.getcwd()
+		os.chdir(dir_to_process)
+		cmd = "{} --output={} *fasta".format(self.software_names.get_mauve(), out_file)
+		exist_status = os.system(cmd)
+		os.chdir(dir_present)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run progressive mauve")
+		return out_file
+
+	def run_convert_mauve(self, input_file, out_file):
+		"""
+		run convert mauve
+		out: out_file
+		"""
+		temp_file = self.utils.get_temp_file('clean_fasta_names', FileExtensions.FILE_FASTA)
+		cmd = "perl {} -c -i {} -o {} -f fasta".format(self.software_names.get_convert_mauve(), input_file, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run convert mauve")
+		
+		#### clean names
+		### important, must have this order
+		vect_names_to_clean = [ FileExtensions.FILE_CONSENSUS_FASTA, FileExtensions.FILE_FASTA, FileExtensions.FILE_FA] 
+		self.utils.clean_fasta_names(vect_names_to_clean, temp_file, out_file)
+		os.unlink(temp_file)
+		return out_file
+
+	def run_mafft(self, input_file, out_file):
+		"""
+		run mafft
+		out: out_file
+		"""
+		cmd = "{}; {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
+							input_file, out_file)
+		print(cmd)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run mafft")
+		return out_file
+	
+	def run_fasttree(self, input_file, out_file):
+		"""
+		run fasttree
+		out: out_file
+		"""
+		cmd = "{} {} {} > {}".format(self.software_names.get_fasttree(), self.software_names.get_fasttree_parameters(), input_file, out_file)
+		print(cmd)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run progressive mauve")
+		return out_file
+	
 	def run_trimmomatic(self, file_name_1, file_name_2, sample_name):
 		"""
 		run trimmomatic
@@ -507,14 +422,13 @@ class Software(object):
 		SE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] <inputFile> <outputFile> <trimmer1>
 		"""
 
-		utils = Utils()
-		temp_dir = utils.get_temp_dir()
+		temp_dir = self.utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
-			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.get_trimmomatic(), Software.CORES_TO_USE, file_name_1, 
-					os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
+			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, file_name_1, 
+					os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		else:
-			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.get_trimmomatic(), Software.CORES_TO_USE, 
-										file_name_1, os.path.join(temp_dir, sample_name), self.get_trimmomatic_parameters())
+			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, 
+										file_name_1, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -553,16 +467,15 @@ class Software(object):
 		[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
 		[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
 		"""
-		utils = Utils()
-		temp_dir = os.path.join(utils.get_temp_dir(), sample_name)
+		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
-				(self.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
-				path_reference, self.get_snippy_parameters(), file_name_1)
+				(self.software_names.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				path_reference, self.software_names.get_snippy_parameters(), file_name_1)
 		else:
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
-				(self.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
-				path_reference, self.get_snippy_parameters(), file_name_1, file_name_2)
+				(self.software_names.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				path_reference, self.software_names.get_snippy_parameters(), file_name_1, file_name_2)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -577,7 +490,7 @@ class Software(object):
 		vect_filter = ['gene', 'region']
 		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
 		cmd = "%s --filter %s --outdir stdout %s > %s" %\
-				(self.get_genbank2gff3(), " --filter ".join(vect_filter), genbank, temp_file)
+				(self.software_names.get_genbank2gff3(), " --filter ".join(vect_filter), genbank, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -605,10 +518,10 @@ class Software(object):
 		genome_name: this name is going to set in properties in the file
 		"""
 		temp_file = self.utils.get_temp_file("snpEff_config", ".config")
-		if (not os.path.exists(self.get_snp_eff_config())):
-			raise IOError("Error: file not found {}".format(self.get_snp_eff_config()))
+		if (not os.path.exists(self.software_names.get_snp_eff_config())):
+			raise IOError("Error: file not found {}".format(self.software_names.get_snp_eff_config()))
 		
-		self.utils.copy_file(self.get_snp_eff_config(), temp_file)
+		self.utils.copy_file(self.software_names.get_snp_eff_config(), temp_file)
 		handle = open(temp_file, 'a')
 		base_file_name = os.path.basename(fasta_file)
 		base_file_name = base_file_name[0: base_file_name.rfind('.')]
@@ -652,7 +565,7 @@ class Software(object):
 		
 		## indexing database
 		## snpEff build -c reference/snpeff.config -dataDir . -gff3 ref 2>> run_snippy2_1.log
-		cmd = "%s build -c %s -dataDir %s -gff3 %s" % (self.get_snp_eff(),\
+		cmd = "%s build -c %s -dataDir %s -gff3 %s" % (self.software_names.get_snp_eff(),\
 						snpeff_config, temp_dir, fasta_file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -662,7 +575,7 @@ class Software(object):
 			raise Exception("Fail to create snpEff database")
 		
 		### create the annotation
-		cmd = "%s ann %s -c %s -dataDir %s %s %s > %s" % (self.get_snp_eff(), self.get_snp_eff_parameters(),\
+		cmd = "%s ann %s -c %s -dataDir %s %s %s > %s" % (self.software_names.get_snp_eff(), self.software_names.get_snp_eff_parameters(),\
 						snpeff_config, temp_dir, fasta_file_name, temp_vcf_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -682,7 +595,7 @@ class Software(object):
 		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".gff") 
 		self.run_genbank2gff3(genbank, temp_file)
 		
-		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
+		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.software_names.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			os.unlink(temp_file)
@@ -699,8 +612,7 @@ class Software(object):
 		
 		## freebayes -p 1 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V -f ../$input2 -b {} > {.}.vcf'
 		"""
-		utils = Utils()
-		temp_dir = os.path.join(utils.get_temp_dir())
+		temp_dir = os.path.join(self.utils.get_temp_dir())
 		
 		file_to_process = os.path.join(temp_dir, sample_name + ".bam" )
 		cmd = "ln -s {} {}".format(bam_file, os.path.join(temp_dir, sample_name + ".bam" ))
@@ -730,7 +642,7 @@ class Software(object):
 		
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s -f %s -b %s > %s" %\
-				(self.get_freebayes(), self.get_freebayes_parameters(),
+				(self.software_names.get_freebayes(), self.software_names.get_freebayes_parameters(),
 				reference_fasta_temp, file_to_process, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -742,8 +654,7 @@ class Software(object):
 		temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
 		self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
 		
-		software = Software()
-		software.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
 		
 		### add FREQ to vcf file
 		vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
@@ -769,7 +680,7 @@ class Software(object):
 		### first run fastq
 		try:
 			temp_dir = self.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
-			result_all.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq_version(), self.get_fastq_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq_version(), self.software_names.get_fastq_parameters()))
 			
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True))), sample.get_fastq_output(TypePath.MEDIA_ROOT, True))
@@ -777,7 +688,7 @@ class Software(object):
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq(), self.get_fastq_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -786,14 +697,14 @@ class Software(object):
 		### run trimmomatic
 		try:
 			temp_dir = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name)
-			result_all.add_software(SoftwareDesc(self.get_trimmomatic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_trimmomatic_name(), self.get_trimmomatic_version(), self.get_trimmomatic_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -810,7 +721,7 @@ class Software(object):
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_fastq_name(), self.get_fastq(), self.get_fastq_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			return False
@@ -825,7 +736,7 @@ class Software(object):
 
 		## save everything OK
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
-							(self.get_fastq_version(), self.get_trimmomatic_version()))
+							(self.software_names.get_fastq_version(), self.software_names.get_trimmomatic_version()))
 		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 
 		### set the flag of the end of the task		
@@ -872,11 +783,11 @@ class Software(object):
 			out_put_path = self.run_snippy(project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),\
 					project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False), project_sample.project.reference.reference_genbank.name,\
 					project_sample.sample.name)
-			result_all.add_software(SoftwareDesc(self.get_snippy_name(), self.get_snippy_version(), self.get_snippy_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_snippy_name(), self.get_snippy_version(), self.get_snippy_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
@@ -887,18 +798,20 @@ class Software(object):
 			return False
 
 		## copy the files to the project sample directories
-		self.copy_files_to_project(project_sample, Software.SOFTWARE_SNIPPY_name, out_put_path)
-		self.utils.remove_dir(out_put_path)
+		self.copy_files_to_project(project_sample, self.software_names.get_snippy_name(), out_put_path)
+		remove_path = os.path.dirname(out_put_path)
+		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
+		else: self.utils.remove_dir(out_put_path)
 
 		## get coverage from deep file
 		get_coverage = GetCoverage()
 		try:
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-						Software.SOFTWARE_SNIPPY_name), project_sample.project.reference.reference_fasta.name)
+						self.software_names.get_snippy_name()), project_sample.project.reference.reference_fasta.name)
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to get coverage: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_coverage_name(), self.get_coverage_version(), self.get_coverage_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_coverage_name(), self.software_names.get_coverage_version(), self.software_names.get_coverage_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
@@ -913,14 +826,14 @@ class Software(object):
 
 		## run freebayes
 		try:
-			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, Software.SOFTWARE_SNIPPY_name),\
+			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
 						project_sample.project.reference.reference_fasta.name, project_sample.project.reference.reference_genbank.name,\
 						project_sample.sample.name)
-			result_all.add_software(SoftwareDesc(self.get_freebayes_name(), self.get_freebayes_version(), self.get_freebayes_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run freebayes software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.get_freebayes_name(), self.get_freebayes_version(), self.get_freebayes_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
@@ -930,15 +843,21 @@ class Software(object):
 			project_sample.save()
 			return False
 		
+		## TODO make test
 		## count hits from tab file
 		file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
 		if (os.path.exists(file_tab)):
-			count_hits = self.utils.count_hits_from_tab(file_tab)
+			vect_count_type = ['snp']
+			count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
 			### set flag that is finished
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
 		
-		self.copy_files_to_project(project_sample, Software.SOFTWARE_FREEBAYES_name, out_put_path)
+		self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
 		self.utils.remove_dir(out_put_path)
+		
+		### make the coverage images
+		draw_all_coverage = DrawAllCoverage()
+		draw_all_coverage.draw_all_coverages(project_sample)
 		
 		### set flag that is finished
 		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())

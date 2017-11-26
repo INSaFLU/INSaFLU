@@ -6,7 +6,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
 from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage
-from utils.software import Software
+from utils.software_names import SoftwareNames
 
 class Test(TestCase):
 
@@ -67,11 +67,11 @@ class Test(TestCase):
 	def test_ResultSoftware(self):
 		result = Result()
 		result.set_error("xpto")
-		result.add_software(SoftwareDesc(Software.SOFTWARE_SPAdes_name, Software.SOFTWARE_SPAdes_VERSION, Software.SOFTWARE_SPAdes_PARAMETERS))
-		result.add_software(SoftwareDesc(Software.SOFTWARE_TRIMMOMATIC_name, Software.SOFTWARE_TRIMMOMATIC_VERSION, Software.SOFTWARE_TRIMMOMATIC_PARAMETERS))
+		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_SPAdes_name, SoftwareNames.SOFTWARE_SPAdes_VERSION, SoftwareNames.SOFTWARE_SPAdes_PARAMETERS))
+		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION, SoftwareNames.SOFTWARE_TRIMMOMATIC_PARAMETERS))
 		
-		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33)", result.get_software(Software.SOFTWARE_TRIMMOMATIC_name))
-		self.assertEqual("SPAdes-3.11.1", result.get_software(Software.SOFTWARE_SPAdes_name))
+		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertEqual("SPAdes-3.11.1", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
 		
 		
 	def test_Coverage(self):

@@ -69,7 +69,7 @@ class Constants(object):
 		if (file_type == FileType.FILE_BAM): return "{}.bam".format(file_name)
 		if (file_type == FileType.FILE_BAM_BAI): return "{}.bam.bai".format(file_name)
 		if (file_type == FileType.FILE_CONSENSUS_FA): return "{}.consensus.fa".format(file_name)
-		if (file_type == FileType.FILE_CONSENSUS_FASTA): return "{}.consensus.fasta".format(file_name)
+		if (file_type == FileType.FILE_CONSENSUS_FASTA): return "{}{}".format(file_name, FileExtensions.FILE_CONSENSUS_FASTA)
 		if (file_type == FileType.FILE_CSV): return "{}.csv".format(file_name)
 		if (file_type == FileType.FILE_DEPTH): return "{}.depth".format(file_name)
 		if (file_type == FileType.FILE_DEPTH_GZ): return "{}.depth.gz".format(file_name)
@@ -128,7 +128,22 @@ class FileType(Enum):
 	FILE_VCF_GZ_TBI = 10
 	FILE_CSV = 11
 	
-
-
+class FileExtensions(object):
+	"""
+	file extensions
+	"""
+	FILE_TSV = '.tsv'
+	FILE_TAB = '.tab'
+	FILE_VCF = '.vcf'
+	FILE_VCF_GZ = 'vcf.gz'
+	FILE_VCF_GZ_TBI = 'vcf.gz.tbi'
+	FILE_CSV = '.csv'
+	FILE_PNG = '.png'
+	FILE_GBK = '.gbk'
+	FILE_FASTA = '.fasta'
+	FILE_FA = '.fa'
+	FILE_CONSENSUS_FASTA = '.consensus.fasta'
+	FILE_TREE = '.tree'
+	FILE_NWK = '.nwk'
 
 

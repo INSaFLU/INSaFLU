@@ -21,7 +21,11 @@ class MetaKeyAndValue(object):
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
-
+	META_KEY_Tree_All_Sequences = "Tree_All_Sequences"					## has the number of samples processed to build the tree
+	META_KEY_Tree_By_Element = "Tree_By_Element"						## has the number of samples processed to build the tree by element
+	META_KEY_Run_Tree_All_Sequences = "Tree_All_Sequences"				## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_all 
+	META_KEY_Run_Tree_By_Element = "Tree_By_Element"					## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_by_sequence 
+	
 	META_KEY_Snippy = "Snippy"
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"
@@ -42,3 +46,11 @@ class MetaKeyAndValue(object):
 		Constructor
 		'''
 		pass
+	
+	def get_meta_key_by_element(self, meta_key_element, element):
+		"""
+		in: MetaKeyAndValue.META_KEY_Tree_All_Sequences, MetaKeyAndValue.META_KEY_Run_Tree_By_Element
+		return metakey by element
+		
+		"""
+		return '{}_{}'.format(meta_key_element, element)

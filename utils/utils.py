@@ -3,8 +3,10 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-from .constants import Constants
+from utils.constants import Constants, FileExtensions
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from utils.result import CountHits
@@ -232,6 +234,27 @@ class Utils(object):
 		raise IOError(_("Error: the file is not in GenBank format."))
 
 
+	def get_elements_and_genes(self, genbank_name):
+		"""
+		return a dictonary with elements and vect genes
+		vect_genes = [[pos_start, pos_end, name, strand 1|-1], [...], ...]
+		return: dt_data{ element_name : vect_genes, element_name_2 : vect_genes_2, ....} 
+		"""
+		dt_data = {}
+		for record in SeqIO.parse(genbank_name, "genbank"):
+			vect_genes = []
+			for features in record.features:
+				if (features.type == 'CDS'):
+					vect_gene = []
+					if ('gene' in features.qualifiers): vect_gene = [int(features.location.start), int(features.location.end),\
+								features.qualifiers['gene'][0], features.location.strand]
+					elif ('locus_tag' in features.qualifiers): vect_gene = [int(features.location.start), int(features.location.end),\
+										features.qualifiers['locus_tag'][0], features.location.strand]
+					vect_genes.append(vect_gene)
+			dt_data[record.name] = vect_genes
+		return dt_data
+			
+			
 	def read_text_file(self, file_name):
 		"""
 		read text file and put the result in an vector
@@ -379,10 +402,17 @@ class Utils(object):
 		return vcf_file_out
 
 
-	def count_hits_from_tab(self, tab_file):
+	def count_hits_from_tab(self, tab_file, vect_count_type):
 		"""
 		NP	864	snp	G	T	99.6855	CDS	+	864/1497	288/498	synonymous_variant c.864G>T p.Gly288Gly	locus_00005		Nucleoprotein
 		count the hits by <50; 50-90
+		possible in variation type
+				snp	Single Nucleotide Polymorphism	A => T
+				mnp	Multiple Nuclotide Polymorphism	GC => AT
+				ins	Insertion	ATT => AGTT
+				del	Deletion	ACGG => ACG
+				complex	Combination of snp/mnp
+		vect_count_type = ['snp', 'ins']
 		"""
 		count_hits = CountHits()
 		with open(tab_file) as handle:
@@ -392,14 +422,120 @@ class Utils(object):
 				lst_data = sz_temp.split('\t')
 				if (len(lst_data) > 5):
 					freq_data = lst_data[5]
+					if (lst_data[2] not in vect_count_type): continue
 					for value_ in freq_data.split(','):
 						if (self.is_float(value_)):
 							if (float(value_) < 50): count_hits.add_one_hits_less_50()
 							elif (float(value_) < 91): count_hits.add_one_hits_50_90()
 		return count_hits
 
+	def get_variations_by_freq_from_tab(self, tab_file, vect_count_type):
+		"""
+		NP	864	snp	G	T	99.6855	CDS	+	864/1497	288/498	synonymous_variant c.864G>T p.Gly288Gly	locus_00005		Nucleoprotein
+		count the hits by <50; 50-90
+		possible in variation type
+				snp	Single Nucleotide Polymorphism	A => T
+				mnp	Multiple Nuclotide Polymorphism	GC => AT
+				ins	Insertion	ATT => AGTT
+				del	Deletion	ACGG => ACG
+				complex	Combination of snp/mnp
+		vect_count_type = ['snp', 'ins']
+		out (dict_less_50, dict_more_50)
+		out: dict_less_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
+		out: dict_more_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
+		"""
+		dict_less_50 = {}
+		dict_more_50 = {}
+		with open(tab_file) as handle:
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
+				lst_data = sz_temp.split('\t')
+				if (len(lst_data) > 5):
+					freq_data = lst_data[5]
+					if (lst_data[2] not in vect_count_type): continue
+					for value_ in freq_data.split(','):
+						if (self.is_float(value_)):
+							if (float(value_) < 50):
+								if (lst_data[0] in dict_less_50 and self.is_integer(lst_data[1])): 
+									dict_less_50[lst_data[0]].append(int(lst_data[1]))
+								elif (self.is_integer(lst_data[1])):
+									dict_less_50[lst_data[0]] = [int(lst_data[1])]
+							else:
+								if (lst_data[0] in dict_more_50 and self.is_integer(lst_data[1])): 
+									dict_more_50[lst_data[0]].append(int(lst_data[1]))
+								elif (self.is_integer(lst_data[1])):
+									dict_more_50[lst_data[0]] = [int(lst_data[1])]
+		return (dict_less_50, dict_more_50)
 
 
-				
+	def filter_fasta_all_sequences(self, consensus_fasta, sample_name, coverage, out_dir):
+		"""
+		filter fasta file
+		file name out: None if not saved, else output file name
+		return True if has sequences, False doesn't have sequences
+		"""
+		if (not os.path.exists(consensus_fasta)): return None
+		locus_fasta = self.is_fasta(consensus_fasta)
+		### doesn't have the same size, sequences in consensus/coverage
+		if (locus_fasta != len(coverage.get_dict_data())): return None
+		
+		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
+		b_saved = False
+		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
+		with open(file_name, 'w') as handle:
+			for key in coverage.get_dict_data():
+				if (coverage.is_100_more_9(key)):
+					handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq)))
+					b_saved = True
+		if (not b_saved): os.unlink(file_name)
+		return file_name if b_saved else None
+	
+	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
+		"""
+		filter fasta file
+		file name out: None if not saved, else output file name
+		return True if has sequences, False doesn't have sequences
+		"""
+		if (not os.path.exists(consensus_fasta)): return None
+		locus_fasta = self.is_fasta(consensus_fasta)
+		### doesn't have the same size, sequences in consensus/coverage
+		if (locus_fasta != len(coverage.get_dict_data())): return None
+		
+		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name +  FileExtensions.FILE_FASTA)
+		b_saved = False
+		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
+		with open(file_name, 'w') as handle:
+			if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
+				handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
+				b_saved = True
+		if (not b_saved): os.unlink(file_name)
+		return file_name if b_saved else None
+
+	def clean_fasta_names(self, vect_names_to_clean, in_file, out_file):
+		"""
+		clean name in fasta files
+		Ex: vect_names_to_clean = [ FileExtensions.FILE_CONSENSUS_FASTA, FileExtensions.FILE_FASTA, FileExtensions.FILE_FA]
+		"""
+		if (not os.path.exists(in_file)): return None
+		
+		dict_out_name = {} 
+		with open(in_file) as handle:
+			with open(out_file, 'w') as handle_write:
+				records = []
+				for record in SeqIO.parse(handle, Constants.FORMAT_FASTA):
+					name_clean = ""
+					for names_to_clean in vect_names_to_clean:
+						if (record.name.rfind(names_to_clean) != -1):
+							name_clean = record.name[:record.name.rfind(names_to_clean)]
+					if (len(name_clean) == 0): name_clean = record.name
+					if (name_clean in dict_out_name): dict_out_name[name_clean] += 1
+					else: dict_out_name[name_clean] = 0
+					
+					name_to_write = name_clean if dict_out_name[name_clean] == 0 else '{}_{}'.format(name_clean, dict_out_name[name_clean])
+					records.append(SeqRecord( Seq(str(record.seq)), id = name_to_write, description=""))
+				SeqIO.write(records, handle_write, "fasta")
+		return out_file
+
 
 

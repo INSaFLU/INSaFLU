@@ -152,6 +152,7 @@ class Test(unittest.TestCase):
 		self.assertEqual(len(data_file.get_vect_chromosomes()), 2)
 		self.assertEqual(data_file.get_vect_chromosomes()[0], "1")
 		self.assertEqual(data_file.get_vect_chromosomes()[-1], "2")
+		self.assertEqual(len(get_coverage.get_vect_reference()), 2)
 		self.assertEqual(get_coverage.get_dict_reference()["1"], 20)
 		self.assertEqual(get_coverage.get_dict_reference()["2"], 20)
 		self.assertEqual("%.2f" % data_file.get_coverage("1", get_coverage.get_dict_reference()["1"]), "4.50")
@@ -226,6 +227,7 @@ class Test(unittest.TestCase):
 		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "0.0")
 		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_9), "0.0")
 		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertFalse(coverage.is_100_more_9('3'))
 		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
 		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_0), "100.0")
 		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_0), "0.0")
@@ -241,8 +243,15 @@ class Test(unittest.TestCase):
 		self.assertEqual(coverage.get_coverage('8', Coverage.COVERAGE_ALL), "1752.5")
 		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "100.0")
 		self.assertEqual(coverage.get_coverage('8', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertTrue(coverage.is_100_more_9('8'))
+		self.assertTrue(coverage.is_100_more_0('8'))
+		self.assertTrue(coverage.is_100_more_9('8'))
 		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
 		self.assertEqual(coverage.get_coverage('8', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertTrue(coverage.is_100_more_9('8'))
+		self.assertTrue(coverage.is_100_more_9('8'))
+		self.assertTrue(coverage.is_100_more_0('8'))
+		
 
 
 

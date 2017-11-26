@@ -3,7 +3,7 @@ from utils.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from utils.utils import Utils
 from django.contrib.auth.models import User
-from utils.constants import FileType, TypePath
+from utils.constants import FileType, TypePath, FileExtensions
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference
 import os, time
@@ -471,5 +471,14 @@ class testsReferenceFiles(TestCase):
 		software = "None"
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software).\
 						endswith("projects/result/user_1000/project_1000/sample_1000/none/" + sample_name.lower() + ".vcf.gz"))
+		
+		### output global out files by element and type
+		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, 'xpto', FileExtensions.FILE_PNG).\
+						endswith("projects/result/user_1000/project_1000/sample_1000/" + Project.PATH_MAIN_RESULT + "/" + ProjectSample.PREFIX_FILE_COVERAGE + "_xpto.png"))
 
+		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, None, FileExtensions.FILE_TAB).\
+						endswith("projects/result/user_1000/project_1000/sample_1000/" + Project.PATH_MAIN_RESULT + "/" + ProjectSample.PREFIX_FILE_COVERAGE + ".tab"))
+
+		self.assertTrue(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_MAFFT).\
+					endswith("projects/result/user_1000/project_1000/global_result/" + Project.PROJECT_FILE_NAME_MAFFT))
 

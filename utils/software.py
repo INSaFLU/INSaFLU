@@ -843,7 +843,6 @@ class Software(object):
 			project_sample.save()
 			return False
 		
-		## TODO make test
 		## count hits from tab file
 		file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
 		if (os.path.exists(file_tab)):

@@ -61,7 +61,11 @@ class Constants(object):
 	GET_CHECK_BOX_SINGLE = 'get_check_box_single'
 	COUNT_CHECK_BOX = 'count_check_boxes'
 	CHECK_BOX_VALUE = 'value'
-		
+	
+	### sleep time to test if all tasks are finished
+	WAIT_TIME_TASKS_FINISHED = 60		## one minute
+	
+	
 	def get_extensions_by_file_type(self, file_name, file_type):
 		"""
 		get extensions by file type

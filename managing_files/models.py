@@ -71,8 +71,10 @@ class MetaKey(models.Model):
 	Has meta tags to put values, for example, quality in the files, or samples
 	"""
 	name = models.CharField(max_length=200, blank=True, null=True)
+	
 	def __str__(self):
 		return self.name
+	
 	class Meta:
 		ordering = ['name', ]
 
@@ -269,7 +271,7 @@ class MetaKeySample(models.Model):
 		ordering = ['sample__id', '-creation_date']
 	
 	def __str__(self):
-		return self.value
+		return self.meta_tag.name + " " + self.value + " " + self.description
 	
 class UploadFiles(models.Model):
 	"""
@@ -299,10 +301,14 @@ class Project(models.Model):
 	PATH_MAIN_RESULT = 'main_result'
 	
 	PROJECT_FILE_NAME_MAFFT = "Alignment_whole_genome.fasta"
-	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
+	PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML = "graph_minor_var.html"
+	PROJECT_FILE_NAME_GRAPH_MINO_VAR_PNG = "graph_minor_var.png"
+	
+	### this is only to join with other names
 	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
+	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
 	
 	name = models.CharField(max_length=200, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
@@ -323,11 +329,11 @@ class Project(models.Model):
 		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
 		"""
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
 		return None
 
 	def get_global_file_by_project(self, type_path, file_name):
@@ -339,9 +345,9 @@ class Project(models.Model):
 	
 	def __get_user_result_global_directory_path__(self, element):
 		# file will be uploaded to MEDIA_ROOT/<filename>
-		if (element == None or len(element) == 0): return 'projects/result/user_{0}/project_{1}/{}/{}'.\
-				format(self.project.owner.id, self.project.id, self.PATH_MAIN_RESULT, element)
-		return 'projects/result/user_{0}/project_{1}/{}'.format(self.project.owner.id, self.project.id, self.PATH_MAIN_RESULT)
+		if (element != None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
+				format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
+		return 'projects/result/user_{0}/project_{1}/{2}'.format(self.owner.id, self.pk, self.PATH_MAIN_RESULT)
 	
 	def __get_global_path__(self, type_path, element):
 		"""
@@ -368,7 +374,7 @@ class MetaKeyProject(models.Model):
 		ordering = ['project__id', '-creation_date']
 	
 	def __str__(self):
-		return self.value
+		return self.meta_tag.name + " " + self.value + " " + self.description
 
 class ProjectSample(models.Model):
 	
@@ -380,7 +386,9 @@ class ProjectSample(models.Model):
 	is_finished = models.BooleanField(default=False)
 	is_deleted = models.BooleanField(default=False)
 	is_error = models.BooleanField(default=False)		## if some problem occurs
-
+	alert_first_level = models.IntegerField(default=0)	## has the number of alerts for high errors
+	alert_second_level = models.IntegerField(default=0)	## has the number of alerts for low errors
+	
 	class Meta:
 		ordering = ['project__id', '-creation_date']
 	
@@ -436,7 +444,7 @@ class MetaKeyProjectSample(models.Model):
 		ordering = ['project_sample__id', '-creation_date']
 	
 	def __str__(self):
-		return self.value
+		return self.meta_tag.name + " " + self.value + " " + self.description
 
 
 class Version(models.Model):

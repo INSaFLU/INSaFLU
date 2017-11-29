@@ -495,26 +495,33 @@ class Utils(object):
 		"""
 		filter fasta file
 		file name out: None if not saved, else output file name
+		coverage can be None
 		return True if has sequences, False doesn't have sequences
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
 		### doesn't have the same size, sequences in consensus/coverage
-		if (locus_fasta != len(coverage.get_dict_data())): return None
+		if (coverage != None and locus_fasta != len(coverage.get_dict_data())): return None
 		
-		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name +  FileExtensions.FILE_FASTA)
+		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
 		b_saved = False
 		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
 		with open(file_name, 'w') as handle:
-			if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
-				handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
-				b_saved = True
+			if (coverage == None):
+				if sequence_name in record_dict:
+					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
+					b_saved = True
+			else:
+				if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
+					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
+					b_saved = True
 		if (not b_saved): os.unlink(file_name)
 		return file_name if b_saved else None
 
 	def clean_fasta_names(self, vect_names_to_clean, in_file, out_file):
 		"""
 		clean name in fasta files
+		Ex: eva0033_se.consensus.fasta/1..23 -> eva0033_se 
 		Ex: vect_names_to_clean = [ FileExtensions.FILE_CONSENSUS_FASTA, FileExtensions.FILE_FASTA, FileExtensions.FILE_FA]
 		"""
 		if (not os.path.exists(in_file)): return None
@@ -537,5 +544,10 @@ class Utils(object):
 				SeqIO.write(records, handle_write, "fasta")
 		return out_file
 
-
+	def clean_extension(self, file_name):
+		"""
+		remove extension
+		"""
+		if (file_name.rfind('.') != -1): return file_name[:file_name.rfind('.')]
+		return file_name 
 

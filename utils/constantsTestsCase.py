@@ -39,12 +39,14 @@ class ConstantsTestsCase(object):
 	FILE_FASTTREE_RESULT_TREE = 'mafft_result.tree'
 	FILE_TO_CLEAN_NAME = "to_clean_name.fasta"
 	FILE_RESULT_TO_CLEAN_NAME = "result_to_clean_name.fasta"
+	MANAGING_FILE_GRAPH_VAR_HTML = 'file_graph_var.html'
 	
 	DIR_ABRICATE = "abricate"
 	DIR_COVERAGE = "coverage"
 	DIR_BAM = "bam"
 	DIR_VCF = "vcf"
 	DIR_IMAGES = "images"
+	DIR_PROJECTS = "projects"
 	DIR_GLOBAL_PROJECT = "global_project"
 	
 	## fastq files

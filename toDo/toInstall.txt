@@ -1,8 +1,8 @@
 
-# ALTER ROLE insaflu SET client_encoding TO 'utf8';
-# ALTER ROLE insaflu SET default_transaction_isolation TO 'read committed';
-# ALTER ROLE insaflu SET timezone TO 'utc';
-# GRANT ALL PRIVILEGES ON DATABASE insaflu TO fluwebvirususer;
+# ALTER ROLE fluwebvirus SET client_encoding TO 'utf8';
+# ALTER ROLE fluwebvirus SET default_transaction_isolation TO 'read committed';
+# ALTER ROLE fluwebvirus SET timezone TO 'utc';
+# GRANT ALL PRIVILEGES ON DATABASE fluwebvirus TO fluwebvirususer;
 
 ## $ sudo apt-get install binutils libproj-dev gdal-bin
 ## $ sudo apt-get install postgis*
@@ -38,7 +38,7 @@
 ## $ mkdir /usr/local/insaflu		and set the user of apache
 
 ## Create superUser
-## $ python3 amange.py migrate
+## $ python3 manage.py migrate
 ## $ python3 manage.py createsuperuser
 
 1) Install Spades (http://bioinf.spbau.ru/en/node/362/done?sid=22181)

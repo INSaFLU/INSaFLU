@@ -43,8 +43,6 @@ class Test(TestCase):
 
 		
 
-
-
 # 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 # 	def test_process_second_stage_analysis_to_produce_data(self):
 # 		"""
@@ -167,5 +165,5 @@ class Test(TestCase):
 # 		create_tree.create_tree_and_alignments_all(project, user)
 # 		
 # 		self.utils.remove_dir(temp_dir)
-# #		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+# # #		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 

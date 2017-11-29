@@ -34,7 +34,9 @@ class Softwares(object):
 					return "{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters)
 				return "{}-{}".format(software_desc.name, software_desc.version)
 		return ""
-
+	
+	def get_number_softwares(self):
+		return len(self.list_software)
 
 class Output(object):
 	def __init__(self, file_name, path):
@@ -92,7 +94,10 @@ class Result(object):
 
 	def get_software(self, sz_name):
 		return self.softwares.get_software(sz_name)
-
+	
+	def get_number_softwares(self):
+		return self.softwares.get_number_softwares()
+	
 class ResultEncoder(json.JSONEncoder):
 
 	def default(self, o):

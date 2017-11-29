@@ -21,11 +21,11 @@ class MetaKeyAndValue(object):
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
-	META_KEY_Tree_All_Sequences = "Tree_All_Sequences"					## has the number of samples processed to build the tree
-	META_KEY_Tree_By_Element = "Tree_By_Element"						## has the number of samples processed to build the tree by element
+	META_KEY_Tree_Count_All_Sequences = "Tree_Count_All_Sequences"		## has the number of samples processed to build the tree
+	META_KEY_Tree_Count_By_Element = "Tree_Count_By_Element"			## has the number of samples processed to build the tree by element
 	META_KEY_Run_Tree_All_Sequences = "Tree_All_Sequences"				## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_all 
 	META_KEY_Run_Tree_By_Element = "Tree_By_Element"					## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_by_sequence 
-	
+	META_KEY_Count_Samples_Var_Graph = "Count_samples_var_graph"		## has the number of samples in var graph
 	META_KEY_Snippy = "Snippy"
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"
@@ -34,7 +34,15 @@ class MetaKeyAndValue(object):
 	META_KEY_Coverage = "Coverage"
 																	
 	### Task ID by Job
-	META_KEY_Queue_TaskID = "QueueTaskID"
+	META_KEY_Queue_TaskID = "QueueTaskID"		### Global queueTaskID
+	
+	### Queue Task ID by Job plus project_sample_id
+	## to check if this project_sample_ID
+	META_KEY_Queue_TaskID = "TaskID"			### has the metaKey plus project_sample_id
+	
+	### MetaKey for the alerts
+	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert
+	META_KEY_Alert_Second_level = "AlertSecondLevel"		### has the alert description for lowest level alert
 	
 	## meta value
 	META_VALUE_Error = "Error"
@@ -51,6 +59,14 @@ class MetaKeyAndValue(object):
 		"""
 		in: MetaKeyAndValue.META_KEY_Tree_All_Sequences, MetaKeyAndValue.META_KEY_Run_Tree_By_Element
 		return metakey by element
-		
 		"""
 		return '{}_{}'.format(meta_key_element, element)
+	
+	def get_meta_key_queue_by_project_sample_id(self, project_sample_id):
+		"""
+		in: MetaKeyAndValue.META_KEY_Queue_TaskID
+		return metakey by taskID + project_sample_id
+		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
+		Each project_sample_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
+		"""
+		return '{}_{}'.format(self.META_KEY_Queue_TaskID, project_sample_id)

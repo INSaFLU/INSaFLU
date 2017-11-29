@@ -473,12 +473,17 @@ class testsReferenceFiles(TestCase):
 						endswith("projects/result/user_1000/project_1000/sample_1000/none/" + sample_name.lower() + ".vcf.gz"))
 		
 		### output global out files by element and type
-		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, 'xpto', FileExtensions.FILE_PNG).\
-						endswith("projects/result/user_1000/project_1000/sample_1000/" + Project.PATH_MAIN_RESULT + "/" + ProjectSample.PREFIX_FILE_COVERAGE + "_xpto.png"))
-
-		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, None, FileExtensions.FILE_TAB).\
-						endswith("projects/result/user_1000/project_1000/sample_1000/" + Project.PATH_MAIN_RESULT + "/" + ProjectSample.PREFIX_FILE_COVERAGE + ".tab"))
-
 		self.assertTrue(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_MAFFT).\
-					endswith("projects/result/user_1000/project_1000/global_result/" + Project.PROJECT_FILE_NAME_MAFFT))
+						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT + "/" +\
+						Project.PROJECT_FILE_NAME_MAFFT))
+		
+		self.assertEquals(None, project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', 'xpto'))
+
+		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_MAFFT).\
+						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
+						'/xpto/' + Project.PROJECT_FILE_NAME_MAFFT_element + '_xpto' + FileExtensions.FILE_FASTA))
+
+		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_FASTTREE_tree).\
+						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
+						'/xpto/' + Project.PROJECT_FILE_NAME_FASTTREE_element + '_xpto' + FileExtensions.FILE_TREE))
 

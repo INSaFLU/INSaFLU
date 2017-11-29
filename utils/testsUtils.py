@@ -401,6 +401,12 @@ class Test(unittest.TestCase):
 		locus_fasta = self.utils.is_fasta(result_fasta)
 		self.assertEquals(1, locus_fasta)
 
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', None, temp_dir)
+		self.assertTrue(result_fasta != None)
+		self.assertTrue(os.path.exists(result_fasta))
+		locus_fasta = self.utils.is_fasta(result_fasta)
+		self.assertEquals(1, locus_fasta)
+
 		## remove dir
 		self.utils.remove_dir(temp_dir)
 
@@ -417,10 +423,18 @@ class Test(unittest.TestCase):
 
 		temp_out_file = self.utils.get_temp_file('clean_name_test', FileExtensions.FILE_CONSENSUS_FASTA)
 		self.utils.clean_fasta_names(vect_names_to_clean, temp_in_file, temp_out_file)
-		print(temp_out_file)
-		print(expect_file)
 		self.assertTrue(filecmp.cmp(expect_file, temp_out_file))
 		os.unlink(temp_out_file)
+
+	def test_clean_extension(self):
+		"""
+		clean extension in file names
+		"""
+		self.assertEquals('sdfsdf', self.utils.clean_extension('sdfsdf.as'))
+		self.assertEquals('sdfsdf', self.utils.clean_extension('sdfsdf'))
+		self.assertEquals('sdfsdf.as', self.utils.clean_extension('sdfsdf.as.fasta'))
+		self.assertEquals('', self.utils.clean_extension(''))
+
 
 
 

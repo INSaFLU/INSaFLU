@@ -279,6 +279,10 @@ class DecodeCoverage(object):
 			a = CountHits()
 			a.__dict__.update(o['__CountHits__'])
 			return a
+		elif '__TasksToProcess__' in o:
+			a = TasksToProcess()
+			a.__dict__.update(o['__TasksToProcess__'])
+			return a
 		elif '__CoverageElement__' in o:
 			a = CoverageElement(o['__CoverageElement__']['element'])
 			a.__dict__.update(o['__CoverageElement__'])
@@ -286,7 +290,9 @@ class DecodeCoverage(object):
 		return o
 
 class CountHits(object):
-	
+	"""
+	Count the hits in the variations
+	"""
 	def __init__(self):
 		self.hits_50_90 = 0
 		self.hits_less_50 = 0
@@ -318,5 +324,25 @@ class CountHits(object):
 	def __eq__(self, other):
 		return other.hits_50_90 == self.hits_50_90 and other.hits_less_50 == self.hits_less_50
 
+class TasksToProcess(object):
+	"""
+	task to process for a project
+	"""
+	def __init__(self):
+		self.vect_tasks_id = []
 
+	def add_taskd_id(self, task_id):
+		if (task_id not in self.vect_tasks_id): self.vect_tasks_id.append(task_id)
+
+	def get_tasks_id(self):
+		return self.vect_tasks_id
+
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=CoverageEncoder)
 	
+	def __eq__(self, other):
+		if (len(other.get_tasks_id()) != len(self.vect_tasks_id)): return False
+		for value_ in self.vect_tasks_id:
+			if (value_ not in self.vect_tasks_id): return False
+		return True
+

@@ -85,6 +85,25 @@ class Test(unittest.TestCase):
 		self.assertTrue(utils.is_all_tasks_finished([task_id]))
 		self.assertFalse(utils.is_all_tasks_finished_success([task_id]))
 
+		task_id = async(time.sleep, 3)
+		task = fetch(task_id)
+		self.assertTrue(task == None)
+		n_count = 0
+		while True:
+			if (n_count == 0):
+				(count_finished, count_not_finished) = utils.count_tasks_finished_and_not([task_id])
+				self.assertEquals(1, count_not_finished)
+				self.assertEquals(0, count_finished)
+			time.sleep(.20)
+			task = fetch(task_id)
+			if (task != None): break
+			n_count += 1
+		
+		(count_finished, count_not_finished) = utils.count_tasks_finished_and_not([task_id])
+		self.assertEquals(0, count_not_finished)
+		self.assertEquals(1, count_finished)
+
+
 	def test_identify_type_and_sub_type(self):
 		"""
 		get type and sub_type

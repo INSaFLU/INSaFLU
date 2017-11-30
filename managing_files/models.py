@@ -70,7 +70,7 @@ class MetaKey(models.Model):
 	"""
 	Has meta tags to put values, for example, quality in the files, or samples
 	"""
-	name = models.CharField(max_length=200, blank=True, null=True)
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
 	
 	def __str__(self):
 		return self.name
@@ -263,7 +263,7 @@ class MetaKeySample(models.Model):
 	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_sample', on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='meta_key_sample', on_delete=models.CASCADE)
 	owner = models.ForeignKey(User, related_name='meta_key_sample', on_delete=models.CASCADE)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	creation_date = models.DateTimeField('uploaded date', db_index=True, auto_now_add=True)
 	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
 	description = models.TextField(default="")
 	
@@ -366,7 +366,7 @@ class MetaKeyProject(models.Model):
 	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_project', on_delete=models.CASCADE)
 	project = models.ForeignKey(Project, related_name='meta_key_project', on_delete=models.CASCADE)
 	owner = models.ForeignKey(User, related_name='meta_key_project', on_delete=models.CASCADE)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	creation_date = models.DateTimeField('uploaded date', db_index=True, auto_now_add=True)
 	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
 	description = models.TextField(default="")
 	
@@ -378,6 +378,7 @@ class MetaKeyProject(models.Model):
 
 class ProjectSample(models.Model):
 	
+	PATH_MAIN_RESULT = 'main_result'
 	PREFIX_FILE_COVERAGE = 'coverage'
 		
 	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
@@ -395,7 +396,15 @@ class ProjectSample(models.Model):
 	def __str__(self):
 		return self.project.name
 
-
+	def get_global_file_by_element(self, type_path, prefix_file_name, sequence_name, extension):
+		"""
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		prefix_file_name: ProjectSample.PREFIX_FILE_COVERAGE
+		sequence_name: sequence name  
+		extension: FileExtensions.FILE_PNG
+		"""
+		return os.path.join(self.__get_path__(type_path, ProjectSample.PATH_MAIN_RESULT), "{}_{}{}".format(prefix_file_name, sequence_name, extension))
+	
 	def get_file_output(self, type_path, file_type, software):
 		"""
 		return file path output by software
@@ -436,7 +445,7 @@ class MetaKeyProjectSample(models.Model):
 	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_project_sample', on_delete=models.CASCADE)
 	project_sample = models.ForeignKey(ProjectSample, related_name='meta_key_project_sample', on_delete=models.CASCADE)
 	owner = models.ForeignKey(User, related_name='meta_key_project_sample', on_delete=models.CASCADE)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	creation_date = models.DateTimeField('uploaded date', db_index=True, auto_now_add=True)
 	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
 	description = models.TextField(default="")
 	

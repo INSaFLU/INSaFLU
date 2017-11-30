@@ -38,7 +38,8 @@ class MetaKeyAndValue(object):
 	
 	### Queue Task ID by Job plus project_sample_id
 	## to check if this project_sample_ID
-	META_KEY_Queue_TaskID = "TaskID"			### has the metaKey plus project_sample_id
+	META_KEY_Queue_TaskID_ProjectSample = "TaskID_ProjectSample"			### has the metaKey plus project_sample_id
+	META_KEY_Queue_TaskID_Project = "TaskID_Project"			### has the metaKey plus project_sample_id
 	
 	### MetaKey for the alerts
 	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert
@@ -64,9 +65,18 @@ class MetaKeyAndValue(object):
 	
 	def get_meta_key_queue_by_project_sample_id(self, project_sample_id):
 		"""
-		in: MetaKeyAndValue.META_KEY_Queue_TaskID
-		return metakey by taskID + project_sample_id
+		in: project_sample_id
+		return META_KEY_Queue_TaskID_ProjectSample + project_sample_id
 		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
 		Each project_sample_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
 		"""
-		return '{}_{}'.format(self.META_KEY_Queue_TaskID, project_sample_id)
+		return '{}_{}'.format(self.META_KEY_Queue_TaskID_ProjectSample, project_sample_id)
+	
+	def get_meta_key_queue_by_project_id(self, project_id):
+		"""
+		in: project_id
+		return META_KEY_Queue_TaskID_Project + project_sample_id
+		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
+		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
+		"""
+		return '{}_{}'.format(self.META_KEY_Queue_TaskID_Project, project_id)

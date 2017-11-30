@@ -40,6 +40,7 @@ class ConstantsTestsCase(object):
 	FILE_TO_CLEAN_NAME = "to_clean_name.fasta"
 	FILE_RESULT_TO_CLEAN_NAME = "result_to_clean_name.fasta"
 	MANAGING_FILE_GRAPH_VAR_HTML = 'file_graph_var.html'
+	MANAGING_FILE_GRAPH_VAR_PNG = 'file_graph_var.png'
 	
 	DIR_ABRICATE = "abricate"
 	DIR_COVERAGE = "coverage"

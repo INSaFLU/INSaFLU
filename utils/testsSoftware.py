@@ -20,7 +20,6 @@ from manage_virus.uploadFiles import UploadFiles
 from manage_virus.models import UploadFile
 from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
-from utils.software_names import SoftwareNames
 import os, filecmp
 
 class Test(TestCase):
@@ -30,6 +29,7 @@ class Test(TestCase):
 	utils = Utils()
 	constants = Constants()
 	software_names = SoftwareNames()
+	constants_tests_case = ConstantsTestsCase()
 	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
@@ -634,7 +634,8 @@ class Test(TestCase):
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		
 		## remove all files
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	def test_run_snippy(self):
 		"""

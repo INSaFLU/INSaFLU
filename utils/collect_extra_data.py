@@ -30,7 +30,7 @@ class CollectExtraData(object):
 		'''
 		pass
 	
-	def collect_extra_data(self, project, user, vect_taskID):
+	def collect_extra_data_for_project(self, project, user, vect_taskID):
 		"""
 		Everything that is necessary to do in the project
 		Collect all extra data after all samples are finished
@@ -53,10 +53,13 @@ class CollectExtraData(object):
 		createTree.create_tree_and_alignments(project, user)
 		
 		### get the taskID and seal it
+		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
-		meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_sample != None):
-			manageDatabase.set_project_metakey(project, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+		
+		meta_project = manageDatabase.get_project_metakey(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project), MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_project != None):
+			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key_queue_by_project_id(project),\
+						MetaKeyAndValue.META_VALUE_Success, project.description)
 
 
 	def create_graph_minor_variants(self, project, user):
@@ -85,7 +88,7 @@ class CollectExtraData(object):
 		##	in: [[1, 2, 4], [2, 34, 5], [23, 54, 65]]
 		##  in: sorted(a, key=lambda tup: (tup[0]), reverse=True)
 		##  out: [[23, 54, 65], [2, 34, 5], [1, 2, 4]]
-		vect_data_sample = sorted(vect_data_sample, key=lambda tup: (tup[1]), reverse=True)
+		vect_data_sample = sorted(vect_data_sample, key=lambda tup: (tup[1]))
 		
 		### create the graph
 		(temp_file_html, temp_file_png) = self.create_graph_plotly(vect_data_sample)
@@ -101,8 +104,6 @@ class CollectExtraData(object):
 		create a file html with data from variation information
 		# https://plot.ly/python/horizontal-bar-charts/
 		"""
-		temp_file_html = self.utils.get_temp_file("minor_var_graph", '.html')
-		temp_file_png = self.utils.get_temp_file("minor_var_graph", '.png')
 		trace1 = go.Bar(
 		    y=[vect_[0] for vect_ in vect_data_sample],
 		    x=[vect_[2] for vect_ in vect_data_sample],
@@ -130,14 +131,17 @@ class CollectExtraData(object):
 		
 		data = [trace1, trace2]
 		layout = go.Layout(
-		    barmode='stack'
+		    barmode='stack',
 		)
 		
 		fig = go.Figure(data=data, layout=layout)
 		## save static image
-		py.image.save_as(fig, temp_file_png)
+		temp_file_png = None
+		#temp_file_png = self.utils.get_temp_file("minor_var_graph", '.png')
+		#py.image.save_as(fig, temp_file_png)	## online method, need to pay
 		
 		## save in a html file
-		plot(fig, filename=temp_file_html)
+		temp_file_html = self.utils.get_temp_file("minor_var_graph", '.html')
+		plot(fig, filename=temp_file_html, auto_open=False, image_width=400, image_height=300, show_link=False)
 		return (temp_file_html, temp_file_png)
 

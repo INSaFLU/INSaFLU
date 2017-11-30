@@ -74,6 +74,18 @@ class ManageDatabase(object):
 			return MetaKeyProject.objects.get(project__id=project.id, meta_tag__name=meta_key_name, value=value)
 		except MetaKeyProject.DoesNotExist:
 			return None
+		
+	def get_project_metakey_last(self, project, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): query_set = MetaKeyProject.objects.filter(project__id=project.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			else: query_set = MetaKeyProject.objects.filter(project__id=project.id, meta_tag__name=meta_key_name, value=value).order_by('-creation_date')
+			if (query_set.count() > 0 ): return query_set[0]
+			return None
+		except MetaKeyProject.DoesNotExist:
+			return None	
 
 	def set_project_sample_metakey(self, project_sample, owner, meta_key_name, value, description):
 		"""
@@ -105,6 +117,16 @@ class ManageDatabase(object):
 		except MetaKeyProjectSample.DoesNotExist:
 			return None
 
-
+	def get_project_sample_metakey_last(self, project_sample, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): query_set = MetaKeyProjectSample.objects.filter(project_sample__id=project_sample.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			else: query_set = MetaKeyProjectSample.objects.filter(project_sample__id=project_sample.id, meta_tag__name=meta_key_name, value=value).order_by('-creation_date')
+			if (query_set.count() > 0 ): return query_set[0]
+			return None
+		except MetaKeyProject.DoesNotExist:
+			return None	
 
 

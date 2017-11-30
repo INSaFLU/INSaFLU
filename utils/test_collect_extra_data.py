@@ -18,10 +18,11 @@ from django.test.utils import override_settings
 
 class Test(unittest.TestCase):
 
+	constants_tests_case = ConstantsTestsCase()
 
 	def setUp(self):
+		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
 		pass
-
 
 	def tearDown(self):
 		pass
@@ -33,6 +34,7 @@ class Test(unittest.TestCase):
 		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		expect_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_IMAGES, ConstantsTestsCase.MANAGING_FILE_GRAPH_VAR_HTML)
+		expect_file_png = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_IMAGES, ConstantsTestsCase.MANAGING_FILE_GRAPH_VAR_PNG)
 
 		try:
 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
@@ -97,40 +99,44 @@ class Test(unittest.TestCase):
 			project_sample.is_deleted = False
 			project_sample.is_error = False
 			project_sample.save()
-			count += 1
 			
 			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value == None):
 				count_hits = CountHits()
-				count_hits.set_hits_50_90(1*10)
-				count_hits.set_hits_50_90(1*8)
+				count_hits.set_hits_50_90(count*10)
+				count_hits.set_hits_less_50(count*8)
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
+			count += 1
 
 		### test the graph
 		collectExtraData = CollectExtraData()
-		file_out = collectExtraData.create_graph_minor_variants(project)
-		self.assertTrue(os.path.exists(file_out))
-		self.assertTrue(filecmp.cmp(file_out, expect_file))
-		
+		(file_out_html, file_out_png) = collectExtraData.create_graph_minor_variants(project, user)
+		self.assertTrue(os.path.exists(file_out_html))
+		self.assertTrue(file_out_png == None)
+		self.assertTrue(os.path.getsize(file_out_html), os.path.getsize(expect_file))
+		# self.assertTrue(filecmp.cmp(file_out_png, expect_file_png))
+
 		meta_project = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Count_Samples_Var_Graph, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_project != None)
 		self.assertEquals('4', meta_project.description)
-		os.unlink(file_out)
+		os.unlink(file_out_html)
+		if (file_out_png != None): os.unlink(file_out_png)
 
-	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_collect_extra_data(self):
 
-		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()	
-		
-		### set the taskID
-		manageDatabase.set_project_metakey(project, user, MetaKeyAndValue.META_KEY_Queue_TaskID,\
-								MetaKeyAndValue.META_VALUE_Queue, 'meta_sample.description')
-
-		
-		lst_meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Queue_TaskID, None)
-		self.assertEquals(2, len(lst_meta_sample))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
-		self.assertEquals('meta_sample.description', lst_meta_sample[0].description)
+# 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+# 	def test_collect_extra_data(self):
+# 
+# 		manageDatabase = ManageDatabase()
+# 		metaKeyAndValue = MetaKeyAndValue()	
+# 		
+# 		### set the taskID
+# 		manageDatabase.set_project_metakey(project, user, MetaKeyAndValue.META_KEY_Queue_TaskID,\
+# 								MetaKeyAndValue.META_VALUE_Queue, 'meta_sample.description')
+# 
+# 		
+# 		lst_meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Queue_TaskID, None)
+# 		self.assertEquals(2, len(lst_meta_sample))
+# 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
+# 		self.assertEquals('meta_sample.description', lst_meta_sample[0].description)
 
 

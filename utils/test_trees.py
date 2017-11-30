@@ -57,15 +57,16 @@ class Test(unittest.TestCase):
 		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 
 		try:
-			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5000')
 		except User.DoesNotExist:
 			user = User()
-			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.username = ConstantsTestsCase.TEST_USER_NAME + '5000'
+			user.id = 5000
 			user.is_active = False
 			user.password = ConstantsTestsCase.TEST_USER_NAME
 			user.save()
 
-		ref_name = "second_stage_2"
+		ref_name = "second_stage_2_ test_create_tree"
 		try:
 			reference = Reference.objects.get(name=ref_name)
 		except Reference.DoesNotExist:
@@ -78,7 +79,7 @@ class Test(unittest.TestCase):
 			reference.owner = user
 			reference.save()
 		
-		project_name = "several_names"
+		project_name = "several_names_test_create_tree"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:
@@ -93,36 +94,33 @@ class Test(unittest.TestCase):
 		vect_files = self.constants_tests_case.get_all_fastq_files(self.baseDirectory)
 		
 		temp_dir = self.utils.get_temp_dir()
-		count = 1
+		count = 0
 		b_at_least_one_less_than_100 = False
 		for vect_file in vect_files:
 			self.utils.copy_file(vect_file[0], os.path.join(temp_dir, os.path.basename(vect_file[0])))
 			self.utils.copy_file(vect_file[1], os.path.join(temp_dir, os.path.basename(vect_file[1])))
 				
 			sample_name = "_".join(os.path.basename(vect_file[0]).split('_')[0:2])
-			try:
-				sample = Sample.objects.get(name=sample_name)
-			except Sample.DoesNotExist:
-				sample = Sample()
-				sample.id = 5000 + count
-				sample.name = sample_name
-				sample.is_rejected = False
-				sample.is_valid_1 = True
-				sample.file_name_1 = vect_file[0]
-				sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
-				sample.is_valid_2 = False
-				sample.file_name_2 = vect_file[1]
-				sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
-				sample.owner = user
-				
-				sample.is_ready_for_projects = True
-				sample.is_obsolete = False
-				sample.is_rejected = False
-				sample.save()
+			sample = Sample()
+			sample.id = 5000 + count + 1
+			sample.name = sample_name
+			sample.is_rejected = False
+			sample.is_valid_1 = True
+			sample.file_name_1 = vect_file[0]
+			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
+			sample.is_valid_2 = False
+			sample.file_name_2 = vect_file[1]
+			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
+			sample.owner = user
+			
+			sample.is_ready_for_projects = True
+			sample.is_obsolete = False
+			sample.is_rejected = False
+			sample.save()
 
 			## create project_sample
 			project_sample = ProjectSample()
-			project_sample.id = 5000 + count
+			project_sample.id = 5000 + count + 1
 			project_sample.sample = sample
 			project_sample.project = project
 			project_sample.is_finished = True
@@ -166,6 +164,7 @@ class Test(unittest.TestCase):
 
 		### test if it has the less 100 in EVA003_S91 sample
 		self.assertTrue(b_at_least_one_less_than_100)
+		self.assertEquals(len(vect_files), count)
 		
 ## print all coverage values
 # 		try:

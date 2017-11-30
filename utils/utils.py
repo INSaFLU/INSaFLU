@@ -355,6 +355,17 @@ class Utils(object):
 			if (task == None): return False
 		return True
 
+	def count_tasks_finished_and_not(self, vect_tasks_id):
+		"""
+		return (count_finished, count_not_finished)
+		"""
+		(count_finished, count_not_finished) = (0, 0)
+		for task_id in vect_tasks_id:
+			task = fetch(task_id)
+			if (task == None): count_not_finished += 1
+			else: count_finished += 1
+		return (count_finished, count_not_finished)
+
 	def is_all_tasks_finished_success(self, vect_tasks_id):
 		"""
 		return true if all tasks finished

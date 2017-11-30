@@ -5,7 +5,7 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
-from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage
+from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage, TasksToProcess
 from utils.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -126,5 +126,15 @@ class Test(TestCase):
 		count_hits_2.add_one_hits_50_90()
 		self.assertEquals(count_hits_2, count_hits)
 
+	def test_tasks_to_process(self):
+		tasksToProcess = TasksToProcess()	
+		tasksToProcess.add_taskd_id('sdsdds')
+		tasksToProcess.add_taskd_id('sdsdds1')
+		tasksToProcess.add_taskd_id('sdsdds3')
+		
+		json = tasksToProcess.to_json()
+		decodeCoverage = DecodeCoverage()
+		tasksToProcess_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(tasksToProcess, tasksToProcess_2)
 
 

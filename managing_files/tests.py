@@ -4,6 +4,7 @@ from django.conf import settings
 from utils.utils import Utils
 from django.contrib.auth.models import User
 from utils.constants import FileType, TypePath, FileExtensions
+from django.core.exceptions import MultipleObjectsReturned
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference
 import os, time
@@ -324,6 +325,20 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals("description_2", list_data[0].description)
 		self.assertEquals("description", list_data[1].description)
 
+		metaKey_sample = manageDatabase.get_project_metakey(project, key_test, ConstantsTestsCase.VALUE_TEST)
+		self.assertFalse(metaKey_sample == None)
+		manageDatabase.set_project_metakey(project, user, key_test, ConstantsTestsCase.VALUE_TEST, "description")
+		try:
+			metaKey_sample = manageDatabase.get_project_metakey(project, key_test, ConstantsTestsCase.VALUE_TEST)
+			self.fail('must throw error...')
+		except MultipleObjectsReturned as e:
+			pass
+		get_last_meta = manageDatabase.get_project_metakey_last(project, key_test, ConstantsTestsCase.VALUE_TEST)
+		self.assertFalse(get_last_meta == None)
+		self.assertTrue(get_last_meta.creation_date > metaKey_sample.creation_date)
+		get_last_meta = manageDatabase.get_project_metakey_last(project, key_test, ConstantsTestsCase.VALUE_TEST + 'sddfsdfsdfs')
+		self.assertTrue(get_last_meta == None)
+
 
 	def test_meta_key_project_sample(self):
 		"""
@@ -405,6 +420,9 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals("description_2", list_data[0].description)
 		self.assertEquals("description", list_data[1].description)
 
+		metaKey_sample_2 = manageDatabase.get_project_sample_metakey_last(project_sample, ConstantsTestsCase.META_KEY_TEST + "xrpt", ConstantsTestsCase.VALUE_TEST)
+		self.assertFalse(metaKey_sample_2 == None)
+		self.assertTrue(metaKey_sample_2.creation_date > metaKey_sample.creation_date)
 
 	def test_project_sample(self):
 		"""
@@ -471,6 +489,10 @@ class testsReferenceFiles(TestCase):
 		software = "None"
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software).\
 						endswith("projects/result/user_1000/project_1000/sample_1000/none/" + sample_name.lower() + ".vcf.gz"))
+		
+		self.assertTrue(project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, 'sequence_name', FileExtensions.FILE_PNG).\
+						endswith(os.path.join("projects/result/user_1000/project_1000/sample_1000", ProjectSample.PATH_MAIN_RESULT,\
+						'{}_{}{}'.format(ProjectSample.PREFIX_FILE_COVERAGE, 'sequence_name', FileExtensions.FILE_PNG))))
 		
 		### output global out files by element and type
 		self.assertTrue(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_MAFFT).\

@@ -7,10 +7,9 @@ Created on Nov 27, 2017
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeCoverage
-from utils.constants import TypePath
-from utils.constants import Constants
+from constants.constants import TypePath, Constants
 from utils.tree import CreateTree
 import os, time
 import plotly.plotly as py

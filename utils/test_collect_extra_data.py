@@ -7,12 +7,12 @@ import unittest, os, filecmp
 from django.conf import settings 
 from utils.software import Software
 from utils.utils import Utils
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 from utils.result import CountHits 
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
 from django.test.utils import override_settings
 

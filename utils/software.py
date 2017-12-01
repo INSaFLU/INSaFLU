@@ -10,8 +10,8 @@ import subprocess
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
-from utils.constants import Constants, TypePath, FileType, FileExtensions
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.constants import Constants, TypePath, FileType, FileExtensions
+from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample
 from manage_virus.uploadFiles import UploadFiles
@@ -20,6 +20,7 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 from utils.parse_coverage_file import GetCoverage
 from django.db import transaction
 from utils.software_names import SoftwareNames
+from constants.tag_names_constants import TagNamesConstants
 from Bio import SeqIO
 
 class Software(object):
@@ -541,7 +542,6 @@ class Software(object):
 		handle.close()
 		return (base_file_name, temp_file)
 
-
 	def run_snpEff(self, fasta_file, genbank, vcf_file, out_file):
 		"""
 		./snpEff ann -no-downstream -no-upstream -no-intergenic -no-utr -c ../path_to/reference/snpeff.config -dataDir . -noStats ref sample.vcf > sample_annot.vcf
@@ -808,6 +808,23 @@ class Software(object):
 		try:
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 						self.software_names.get_snippy_name()), project_sample.project.reference.reference_fasta.name)
+			
+			################################
+			##################################
+			### set the alerts in the coverage
+			metaKeyAndValue = MetaKeyAndValue()
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			for element in coverage.get_dict_data():
+				if (not coverage.is_100_more_9(element)):
+					project_sample.alert_second_level += 1
+					meta_key = metaKeyAndValue.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_9(element))
+				elif (not coverage.is_100_more_0(element)):
+					project_sample.alert_first_level += 1
+					meta_key = metaKeyAndValue.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_0(element))
+			project_sample.save()
+			
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to get coverage: " + e.args[0])
@@ -867,6 +884,13 @@ class Software(object):
 		project_sample.is_deleted = False
 		project_sample.is_error = False
 		project_sample.save()
+		
+		#### set the alerts of count_hits based on percentiles
+		manage_database = ManageDatabase()
+		tagNamesConstants = TagNamesConstants()
+		manage_database.add_variation_count(project_sample, user, count_hits)
+		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_INSAFLU, TagNamesConstants.TAG_PERCENTIL_VAR_INSAFLU)
+		manage_database.set_percentis_alert(project_sample, user, count_hits, percentil_name)
 		
 		### set the flag of the end of the task		
 		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)

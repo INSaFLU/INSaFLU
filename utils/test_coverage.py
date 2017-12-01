@@ -7,13 +7,13 @@ import unittest
 from utils.coverage import DrawCoverage, DrawAllCoverage
 import os, filecmp
 from django.conf import settings 
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 from utils.utils import Utils
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
-from utils.constants import FileType, TypePath, FileExtensions
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.constants import FileType, TypePath, FileExtensions
+from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from utils.test_parse_coverage_file import GetCoverage
 from utils.software_names import SoftwareNames

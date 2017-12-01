@@ -1,10 +1,10 @@
 from django.test import TestCase
 
 # Create your tests here.
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from .uploadFiles import UploadFiles
-from utils.constants import Constants
+from constants.constants import Constants
 from utils.parseOutFiles import ParseOutFiles
 from .models import UploadFile, Tags, SeqVirus
 import os

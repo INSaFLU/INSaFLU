@@ -4,12 +4,12 @@ Created on Nov 21, 2017
 @author: mmp
 '''
 from PIL import Image, ImageDraw, ImageFont
-from utils.constants import FileType, TypePath, FileExtensions
+from constants.constants import FileType, TypePath, FileExtensions
 from utils.result import DecodeCoverage
 from utils.parse_coverage_file import GetCoverage
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.utils import Utils
 from utils.result import Coverage
 import numpy, os, logging

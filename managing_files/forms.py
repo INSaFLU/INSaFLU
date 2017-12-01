@@ -12,7 +12,7 @@ from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
-from utils.constants import Constants
+from constants.constants import Constants
 from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project, ProjectSample
 import os
 

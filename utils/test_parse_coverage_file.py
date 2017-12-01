@@ -8,7 +8,7 @@ import os
 from utils.parse_coverage_file import GetCoverage, ParseFile
 from django.conf import settings 
 from utils.result import Coverage
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 
 class Test(unittest.TestCase):
 

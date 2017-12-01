@@ -4,9 +4,9 @@ from managing_files.models import Reference, Sample, Project, ProjectSample
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from managing_files.manage_database import ManageDatabase
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeResultAverageAndNumberReads
-from utils.constants import Constants
+from constants.constants import Constants
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 import os

@@ -11,10 +11,10 @@ from django_q.cluster import Cluster
 from manage_virus.uploadFiles import UploadFiles
 from manage_virus.models import UploadFile
 from django.contrib.auth.models import User
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 from managing_files.models import Sample
-from utils.constants import Constants, TypePath
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.constants import Constants, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase

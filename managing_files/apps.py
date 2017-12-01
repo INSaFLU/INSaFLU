@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 # 
-from utils.constants import Constants
+from constants.constants import Constants
 
 class ManagingFilesConfig(AppConfig):
 	name = 'managing_files'

@@ -6,9 +6,9 @@ Created on Oct 28, 2017
 
 from django.test import TestCase
 from django.conf import settings 
-from utils.constantsTestsCase import ConstantsTestsCase
-from utils.constants import Constants, TypePath, FileType, FileExtensions
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.constantsTestsCase import ConstantsTestsCase
+from constants.constants import Constants, TypePath, FileType, FileExtensions
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.software_names import SoftwareNames
 from utils.utils import Utils

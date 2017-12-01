@@ -9,8 +9,8 @@ from managing_files.models import Reference, Sample, Project, ProjectSample
 from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
-from utils.constants import Constants, TypePath
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.constants import Constants, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
 from utils.result import DecodeResult

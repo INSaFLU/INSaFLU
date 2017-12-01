@@ -255,6 +255,12 @@ class Coverage(object):
 				self.get_coverage(key, Coverage.COVERAGE_MORE_0), self.get_coverage(key, Coverage.COVERAGE_MORE_9))
 		return sz_return
 
+	def get_fault_message_9(self, element_name):
+		return "Fail, element '{}' has a ratio under of 100 for a coverage of 10 or bigger".format(element_name)
+	def get_fault_message_0(self, element_name):
+		return "Fail, element '{}' has a ratio under of 100 for a coverage of 1 or bigger".format(element_name)
+
+
 
 class CoverageEncoder(json.JSONEncoder):
 
@@ -289,6 +295,7 @@ class DecodeCoverage(object):
 			return a
 		return o
 
+
 class CountHits(object):
 	"""
 	Count the hits in the variations
@@ -322,7 +329,11 @@ class CountHits(object):
 		return json.dumps(self, indent=4, cls=CoverageEncoder)
 
 	def __eq__(self, other):
-		return other.hits_50_90 == self.hits_50_90 and other.hits_less_50 == self.hits_less_50
+		return other != None and other.hits_50_90 == self.hits_50_90 and other.hits_less_50 == self.hits_less_50
+
+	def __str__(self):
+		return "hits_50_90: {}   hits_less_50: {}".format(self.hits_50_90, self.hits_less_50)
+
 
 class TasksToProcess(object):
 	"""

@@ -21,6 +21,8 @@
 ## $ sudo apt install bioperl
 ## $ sudo pip3 install pysam
 ## $ sudo apt-get install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
+## $ sudo pip3 install portalocker
+
 
 ## CentOS
 ## $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
@@ -29,6 +31,7 @@
 ## $ cd /usr/local/software
 ## $ git clone https://github.com/tseemann/prokka.git
 ## $ prokka/bin/prokka --setupdb
+
 
 
 ## CAHNGE file /usr/local/lib/python3.4/dist-packages/bootstrap_datepicker/widgets.py
@@ -55,3 +58,9 @@
 $ python3 manage.py qcluster
 $ python3 manage.py qmonitor
 $ python3 manage.py qinfo
+
+
+##########################
+##########################
+ To keep db: python3 manage.py test --keepdb
+ to stop tests after first error: python3 manage.py test --failfast

@@ -4,7 +4,7 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 import unittest
-from utils.constantsTestsCase import ConstantsTestsCase
+from constants.constantsTestsCase import ConstantsTestsCase
 from django.test.utils import override_settings
 from utils.utils import Utils
 from utils.software import Software
@@ -12,7 +12,7 @@ from django.conf import settings
 import os, filecmp
 from utils.software_names import SoftwareNames
 from utils.result import Coverage
-from utils.constants import FileExtensions
+from constants.constants import FileExtensions
 from Bio import SeqIO
 
 class Test(unittest.TestCase):

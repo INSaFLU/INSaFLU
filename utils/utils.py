@@ -3,7 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-from utils.constants import Constants, FileExtensions
+from constants.constants import Constants, FileExtensions
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord

@@ -5,8 +5,7 @@ Created on Nov 16, 2017
 '''
 import unittest
 
-from utils.constants import Constants
-from utils.constants import FileType
+from constants.constants import Constants, FileType
 
 class Test(unittest.TestCase):
 

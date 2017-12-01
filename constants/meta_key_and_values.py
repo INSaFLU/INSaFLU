@@ -30,6 +30,12 @@ class MetaKeyAndValue(object):
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"
 	
+	## metakey about the alerts
+	META_KEY_ALERT_COVERAGE = "Alert Coverage"
+	META_KEY_ALERT_COVERAGE_9 = META_KEY_ALERT_COVERAGE + " >9"
+	META_KEY_ALERT_COVERAGE_0 = META_KEY_ALERT_COVERAGE + " >0"
+	META_KEY_ALERT_COUNT_VAR = "AlertCountAverage"
+	
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
 																	
@@ -80,3 +86,15 @@ class MetaKeyAndValue(object):
 		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
 		"""
 		return '{}_{}'.format(self.META_KEY_Queue_TaskID_Project, project_id)
+	
+	def get_meta_key_alert_coverage(self, meta_key, sequence_name):
+		"""
+		in: meta_key -> META_KEY_ALERT_COVERAGE_9, META_KEY_ALERT_COVERAGE_0
+		in: sequence_name
+		return META_KEY_ALERT_COVERAGE_90 + sample_name
+		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
+		Each sequence_name has a meta_key with an alert
+		"""
+		return '{} {}'.format(meta_key, sequence_name)
+
+

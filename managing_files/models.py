@@ -4,11 +4,10 @@ from django.db import models
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from utils.constants import Constants, TypePath, FileType
+from constants.constants import Constants, TypePath
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 from django.conf import settings
-from utils.utils import Utils
 import os
 
 def reference_directory_path(instance, filename):
@@ -83,7 +82,7 @@ class TagName(models.Model):
 	"""
 	Has the tags to ticked the samples
 	"""
-	name = models.CharField(max_length=100, blank=True, null=True)
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='tag_name', blank=True, null=True, on_delete=models.CASCADE)
 	is_meta_data = models.BooleanField(default=False)	## if this tag belongs to meta data or not.
 	def __str__(self):
@@ -455,7 +454,25 @@ class MetaKeyProjectSample(models.Model):
 	def __str__(self):
 		return self.meta_tag.name + " " + self.value + " " + self.description
 
-
+class CountVariations(models.Model):
+	project_sample = models.ForeignKey(ProjectSample, related_name='count_variations', on_delete=models.CASCADE)
+	total = models.PositiveIntegerField(default=0)
+	var_less_50 = models.PositiveIntegerField(default=0)
+	var_bigger_50 = models.PositiveIntegerField(default=0)
+	
+	def __str__(self):
+		return 'Total: {} Less 50: {} Bigger 50:{}'.format(self.total, self.var_less_50, self.var_bigger_50)
+	
+class Statistics(models.Model):
+	"""
+	Has several percentils about the table CountVariations 
+	"""
+	tag = models.ForeignKey(TagName, related_name='statistics', on_delete=models.CASCADE)
+	value = models.FloatField(default=0.0)
+	
+	def __str__(self):
+		return 'Tag: {} Value: {}'.format(self.tag.name, self.value)
+	
 class Version(models.Model):
 	"""
 	"""

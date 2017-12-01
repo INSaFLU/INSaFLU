@@ -3,21 +3,20 @@ Created on Nov 25, 2017
 
 @author: mmp
 '''
-import unittest, os, filecmp
+import unittest, os
 from django.conf import settings 
 from utils.software import Software
 from utils.utils import Utils
-from utils.constantsTestsCase import ConstantsTestsCase
-from utils.constants import Constants
+from constants.constantsTestsCase import ConstantsTestsCase
+from constants.constants import Constants, TypePath
 from django.test.utils import override_settings
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from utils.result import DecodeResult
-from utils.meta_key_and_values import MetaKeyAndValue
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import Coverage
 from utils.tree import CreateTree
-from utils.constants import TypePath
 from utils.software_names import SoftwareNames
 
 class Test(unittest.TestCase):

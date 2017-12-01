@@ -4,7 +4,7 @@ Created on Oct 31, 2017
 @author: mmp
 '''
 from django.db import transaction
-from utils.constants import Constants
+from constants.constants import Constants
 from utils.parseOutFiles import ParseOutFiles
 from utils.utils import Utils
 from django.conf import settings

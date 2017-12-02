@@ -12,7 +12,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
-from utils.parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from utils.result import DecodeResultAverageAndNumberReads, DecodeResult, DecodeCoverage, Coverage
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
@@ -828,7 +828,9 @@ class Test(TestCase):
 		project_sample.save()
 		
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
 		self.assertTrue(self.software.process_second_stage_snippy_coverage_freebayes(project_sample, user))
 		try:
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
@@ -897,8 +899,8 @@ class Test(TestCase):
 		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
 		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
 		
-		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Queue_TaskID, None)
-		self.assertTrue(len(lst_meta_sample) == 2)
+		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
+		self.assertEquals(2, len(lst_meta_sample))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Queue, lst_meta_sample[1].value)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
 		

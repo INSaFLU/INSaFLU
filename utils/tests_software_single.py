@@ -13,7 +13,7 @@ from constants.tag_names_constants import TagNamesConstants
 from utils.software import Software
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
-from utils.parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from utils.result import DecodeResultAverageAndNumberReads, DecodeResult, DecodeCoverage, Coverage, CountHits
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference, Statistics

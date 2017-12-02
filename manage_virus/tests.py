@@ -5,7 +5,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from .uploadFiles import UploadFiles
 from constants.constants import Constants
-from utils.parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from .models import UploadFile, Tags, SeqVirus
 import os
 

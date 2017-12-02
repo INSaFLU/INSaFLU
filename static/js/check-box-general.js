@@ -89,27 +89,6 @@ function toggle_check_box(source) {
 	});
 };
 
-
-// if the user pressed the 
-//$('#id_add_all_checked').on('submit', function (e) {
-//    $.ajax({
-//		url: $('#table_with_check_id').attr("set-check-box-values-url"),
-//        data : { count_check_boxes : '1' }, // data sent with the post request
-//		success: function (data) {
-//			if (data['count_check_boxes'] < 1){
-//				alert('There is no samples selected.\nPlease, for this option select some samples.');
-//				e.preventDefault();
-//			}
-//		},
-//		// handle a non-successful response
-//        error : function(xhr,errmsg,err) {
-//            alert(errmsg);
-//        },
-//	});
-//	return false;
-//});
-
-
 ///
 ///		END Only the check box table
 ///

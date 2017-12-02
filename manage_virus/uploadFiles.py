@@ -5,7 +5,7 @@ Created on Oct 31, 2017
 '''
 from django.db import transaction
 from constants.constants import Constants
-from utils.parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from utils.utils import Utils
 from django.conf import settings
 from .models import UploadFile, Tags, SeqVirus, IdentifyVirus

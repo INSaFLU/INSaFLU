@@ -9,7 +9,7 @@ import cmd
 import subprocess
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
-from utils.parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile

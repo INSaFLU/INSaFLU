@@ -5,7 +5,7 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from constants.constantsTestsCase import ConstantsTestsCase
-from .parseOutFiles import ParseOutFiles
+from utils.parse_out_files import ParseOutFiles
 from django.conf import settings 
 import os
 

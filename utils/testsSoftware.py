@@ -10,7 +10,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
 from utils.result import DecodeResultAverageAndNumberReads, DecodeResult, DecodeCoverage, Coverage

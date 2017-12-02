@@ -34,19 +34,19 @@
 		                            <div class="pull-left">
 			                            <form method="post" action="" id="id_add_all_checked" class="form-inline pull-left">
 			                            	{% csrf_token %}
-			                              	<button type="submit" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected samples</button>
+			                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected samples</button>
 			                            </form>
 			                            <form method="post" id="id_add_all_samples" class="form-inline pull-left">
 			                            	{% csrf_token %}
-			                              	<button type="submit" class="btn btn-small btn-secondary dark" style="margin-left: 8px;"><i class="fa fa-plus-square"></i> Add all samples</button>
+			                              	<button type="submit" id="id_submit_all" name="submit_all" class="btn btn-small btn-secondary dark" style="margin-left: 8px;"><i class="fa fa-plus-square"></i> Add all samples</button>
 			                            </form> 
 			                        </div> 
 			                        
 			                        <form method="get" action="" class="form-inline form-search pull-right">
 			                        	{% csrf_token %}
 			                            <div class="pull-right form-search">
-			                            	<input id="search_form_id" name="search" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search %} value="{{ search }}"{% endif %}>
-			                              	<button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+			                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type, Week and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+			                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
 			                            </div>              
 			                        </form>
 			                    </th>                  
@@ -67,7 +67,7 @@
 			            <tbody>
 			                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
 			                  {% block table.tbody.row %}
-			                  <tr class="{% cycle "odd" "even" %}">
+			                  <tr class="{% cycle 'odd' 'even' %}">
 			                      {% for column, cell in row.items %}
 			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
 			                      {% endfor %}
@@ -96,7 +96,7 @@
 			  </div>
 			{% endif %}
 	
-			<a href="{% url "projects" %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+			<a href="{% url 'projects' %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 {% endblock %}
 
  {% block js %}
@@ -104,9 +104,9 @@
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/js.cookie.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'js/project-add.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
      		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}"></script>
      
  {% endblock %}
 

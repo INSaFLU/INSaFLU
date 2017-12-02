@@ -344,7 +344,7 @@ class Utils(object):
 		"""
 		str to bool
 		"""
-		return v.lower() in ("yes", "true", "t", "1")
+		return v.lower() in ("yes", "true", "t", "1", "y")
 		
 	def is_all_tasks_finished(self, vect_tasks_id):
 		"""

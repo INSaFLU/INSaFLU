@@ -10,7 +10,7 @@ from utils.utils import Utils
 from utils.software import Software
 from django.conf import settings 
 import os, filecmp
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 from utils.result import Coverage
 from constants.constants import FileExtensions
 from Bio import SeqIO
@@ -436,6 +436,15 @@ class Test(unittest.TestCase):
 		self.assertEquals('', self.utils.clean_extension(''))
 
 
-
+	def test_str2bool(self):
+		self.assertTrue(self.utils.str2bool('true'))
+		self.assertTrue(self.utils.str2bool('True'))
+		self.assertTrue(self.utils.str2bool('yes'))
+		self.assertTrue(self.utils.str2bool('t'))
+		self.assertTrue(self.utils.str2bool('y'))
+		self.assertTrue(self.utils.str2bool('1'))
+		self.assertFalse(self.utils.str2bool('false'))
+		self.assertFalse(self.utils.str2bool('0'))
+		
 
 

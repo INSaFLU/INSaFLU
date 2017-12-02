@@ -16,7 +16,7 @@ from constants.constants import FileType, TypePath, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from utils.test_parse_coverage_file import GetCoverage
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 
 class Test(unittest.TestCase):
 

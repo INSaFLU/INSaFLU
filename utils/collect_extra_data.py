@@ -12,7 +12,6 @@ from utils.result import DecodeCoverage
 from constants.constants import TypePath, Constants
 from utils.tree import CreateTree
 import os, time
-import plotly.plotly as py
 import plotly.graph_objs as go
 from plotly.offline import plot
 
@@ -55,10 +54,11 @@ class CollectExtraData(object):
 		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
 		
-		meta_project = manageDatabase.get_project_metakey(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project), MetaKeyAndValue.META_VALUE_Queue)
+		meta_project = manageDatabase.get_project_metakey(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
+								MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_project != None):
-			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key_queue_by_project_id(project),\
-						MetaKeyAndValue.META_VALUE_Success, project.description)
+			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
+						MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
 
 	def create_graph_minor_variants(self, project, user):

@@ -19,7 +19,7 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 from utils.parse_coverage_file import GetCoverage
 from django.db import transaction
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 from constants.tag_names_constants import TagNamesConstants
 from Bio import SeqIO
 
@@ -893,9 +893,10 @@ class Software(object):
 		manage_database.set_percentis_alert(project_sample, user, count_hits, percentil_name)
 		
 		### set the flag of the end of the task		
-		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+			manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
 
 

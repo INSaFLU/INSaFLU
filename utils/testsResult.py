@@ -6,7 +6,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
 from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage, TasksToProcess
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 
 class Test(TestCase):
 

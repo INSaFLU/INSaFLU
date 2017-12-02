@@ -13,7 +13,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.utils import Utils
 from utils.result import Coverage
 import numpy, os, logging
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 
 class DrawAllCoverage(object):
 	

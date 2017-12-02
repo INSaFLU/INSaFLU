@@ -10,8 +10,10 @@ from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, Ref
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath
+from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
+from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
 from utils.result import DecodeResult
 import hashlib, ntpath, os, logging
@@ -278,8 +280,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		else:
 			decodeResult = DecodeResult()
 			result = decodeResult.decode_result(meta_sample.description)
-			context['fastq_software'] = result.get_software(Software.SOFTWARE_FASTQ_name)
-			context['trimmomatic_software'] = result.get_software(Software.SOFTWARE_TRIMMOMATIC_name)
+			context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
+			context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 
 		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_sample == None):
@@ -291,8 +293,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		else:
 			decodeResult = DecodeResult()
 			result = decodeResult.decode_result(meta_sample.description)
-			context['spades_software'] = result.get_software(Software.SOFTWARE_SPAdes_name)
-			context['abricate_software'] = result.get_software(Software.SOFTWARE_ABRICATE_name)
+			context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
+			context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
 		
 		return context
 
@@ -308,7 +310,7 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
 		table = ProjectTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		### clean check boc in the session
+		### clean check box in the session
 		clean_check_box_in_session(self.request)
 
 		context['table'] = table
@@ -411,6 +413,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	"""
 	Create a new reference
 	"""
+	utils = Utils()
 	model = Sample
 	fields = ['name']
 	success_url = reverse_lazy('projects')
@@ -434,29 +437,44 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		project = Project.objects.get(pk=self.kwargs['pk'])
 		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
+		tag_search = 'search_add_project_sample'
 		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__isnull=True)
-		if (self.request.GET.get('search') != None and self.request.GET.get('search')): 
-			query_set = query_set.filter(Q(name__icontains=self.request.GET.get('search')) |\
-										Q(data_set__name__icontains=self.request.GET.get('search')) |\
-										Q(type_subtype__icontains=self.request.GET.get('search')) |\
-										Q(week__icontains=self.request.GET.get('search')))
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+										Q(data_set__name__icontains=self.request.GET.get(tag_search)) |\
+										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
+										Q(week__icontains=self.request.GET.get(tag_search)))
 		query_set_2 = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__is_deleted=True)
-		if (self.request.GET.get('search') != None and self.request.GET.get('search')):
-			query_set_2 = query_set_2.filter(Q(name__icontains=self.request.GET.get('search')) |\
-										Q(data_set__name__icontains=self.request.GET.get('search')) |\
-										Q(type_subtype__icontains=self.request.GET.get('search')) |\
-										Q(week__icontains=self.request.GET.get('search')))
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
+			query_set_2 = query_set_2.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+										Q(data_set__name__icontains=self.request.GET.get(tag_search)) |\
+										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
+										Q(week__icontains=self.request.GET.get(tag_search)))
 		result_list = sorted(chain(query_set_2, query_set), key=lambda instance: instance.creation_date)
 		table = SampleToProjectsTable(result_list)
 
 		### set the check_box
-		if (Constants.CHECK_BOX_ALL not in self.request.session or not is_all_check_box_in_session(\
-					["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)):
-			self.request.session[Constants.CHECK_BOX_ALL] = False 
+		if (Constants.CHECK_BOX_ALL not in self.request.session):
+			self.request.session[Constants.CHECK_BOX_ALL] = False
+			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)
+		elif ("search_in_table" not in self.request.GET and not is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)):
+			self.request.session[Constants.CHECK_BOX_ALL] = False
+
 		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
-		
+		## need to clean all the others if are reject in filter
+		dt_sample_id_add_temp = {}
+		if (context[Constants.CHECK_BOX_ALL]):
+			for sample in result_list: dt_sample_id_add_temp[sample.id] = 1	## add the ids that are in the tables
+			for key in self.request.session.keys():
+				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
+					### this is necessary because of the search. Can occur some checked box that are out of filter.
+					if (int(key.split('_')[2]) not in dt_sample_id_add_temp):
+						self.request.session[key] = False
+					else: self.request.session[key] = True
+		## END need to clean all the others if are reject in filter
+			
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
-		if (self.request.GET.get('search') != None): context['search'] = self.request.GET.get('search')
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')
 		context['table'] = table
 		context['show_paginatior'] = len(result_list) > Constants.PAGINATE_NUMBER_SMALL
 		context['project_name'] = project.name
@@ -473,51 +491,91 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		"""
 		Validate the form
 		"""
+		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
 		software = Software()
-		utils = Utils()
-		project = Project.objects.get(pk=self.kwargs['pk'])
-		n_samples = 0
-		for key in self.request.session.keys():
-			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				if (not self.request.session[key]): continue
-				n_samples += 1
-				
-				try:
-					sample = Sample.objects.get(pk=key.split('_')[2])
-				except Sample.DoesNotExist:
-					## log
-					self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-					self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-					continue
-
-# 				## get project sample
-# 				try:
-# 					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
-# 					
-# 					### if exist can be deleted, active
-# 					if (project_sample.is_deleted and not project_sample.is_error):
-# 						project_sample.is_deleted = False
-# 						project_sample.save()
-# 				except ProjectSample.DoesNotExist:
-# 					project_sample = ProjectSample()
-# 					project_sample.project = project
-# 					project_sample.sample = sample
-# 					project_sample.save()
-# 					
-# 					### create a task to perform the analysis of fastq and trimmomatic
-# 					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
-# 		
-# 					### 
-# 					manageDatabase.set_project_sample_metakey(project_sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID,\
-# 										MetaKeyAndValue.META_VALUE_Queue, taskID)
+		collect_extra_data = CollectExtraData()
 		
-		messages.success(self.request, _("'{}' {} added to your project {}".format(\
-			n_samples, "samples were" if n_samples > 1 else "sample is", project.name)), fail_silently=True)
+		### get project sample..
+		context = self.get_context_data()
+
+		### get project 		
+		project = Project.objects.get(pk=self.kwargs['pk'])
+		
+		vect_sample_id_add_temp = []
+		for sample in context['table'].data:
+			vect_sample_id_add_temp.append(sample.id)
+				
+		vect_sample_id_add = []
+		if ("submit_checked" in self.request.POST):
+			for key in self.request.session.keys():
+				if (self.request.session[key] and key.startswith(Constants.CHECK_BOX) and\
+					len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
+					### this is necessary because of the search. Can occur some checked box that are out of filter.
+					if (int(key.split('_')[2]) in vect_sample_id_add_temp):
+						vect_sample_id_add.append(int(key.split('_')[2]))
+		elif ("submit_all" in self.request.POST):
+			vect_sample_id_add = vect_sample_id_add_temp
+
+		vect_sample_id_add = []	## to not add anything, to remove
+		
+		### start adding...
+		project_sample_add = 0
+		vect_task_id_submited = []
+		for id_sample in vect_sample_id_add:
+			try:
+				sample = Sample.objects.get(pk=id_sample)
+			except Sample.DoesNotExist:
+				## log
+				self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+				self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+				continue
+			
+				## get project sample
+				try:
+					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
+					
+					### if exist can be deleted, active
+					if (project_sample.is_deleted and not project_sample.is_error):
+						project_sample.is_deleted = False
+						project_sample.save()
+						project_sample_add += 1
+				except ProjectSample.DoesNotExist:
+					project_sample = ProjectSample()
+					project_sample.project = project
+					project_sample.sample = sample
+					project_sample.save()
+					project_sample_add += 1
+					
+					### create a task to perform the analysis of fastq and trimmomatic
+					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+					vect_task_id_submited.append(taskID)
+
+					### set project sample queue ID
+					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
+										metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+										MetaKeyAndValue.META_VALUE_Queue, taskID)
+
+		### necessary to calculate the global results again 
+		if (project_sample_add > 0):
+			taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
+			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
+						MetaKeyAndValue.META_VALUE_Queue, taskID)
+		
+		if (len(vect_task_id_submited) == 0):
+			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
+		else:
+			messages.success(self.request, _("'{}' {} added to your project {}".format(\
+				len(vect_task_id_submited), "samples were" if len(vect_task_id_submited) > 1 else "sample is", project.name)), fail_silently=True)
+			
 		return super(AddSamplesProjectsView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
 
 
+######################################
+###
+###		AJAX methods for check box in session
+###
 def is_all_check_box_in_session(vect_check_to_test, request):
 	"""
 	test if all check boxes are in session 
@@ -561,31 +619,12 @@ def clean_check_box_in_session(request):
 	utils = Utils()
 	request.session[Constants.CHECK_BOX_ALL] = False
 	## clean all check unique
-	vect_keys_to_remove = []
+	vect_keys_to_remove = [Constants.CHECK_BOX_ALL]
 	for key in request.session.keys():
 		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
 			vect_keys_to_remove.append(key)
 	for key in vect_keys_to_remove:
 		del request.session[key] 
-	
-#####
-#####
-#####		VALIDATION METHODS WITH AJAX
-#####
-#####
-def validate_project_reference_name(request):
-	"""
-	test if a name is the same
-	"""
-	project_name = request.GET.get('project_name')
-	user_name = request.GET.get('user_name').strip()
-	if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
-	data = {
-		'is_taken': Project.objects.filter(name=project_name, owner__username=user_name).exists()
-	}
-	if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
-	return JsonResponse(data)
-
 
 def set_check_box_values(request):
 	"""
@@ -594,19 +633,19 @@ def set_check_box_values(request):
 	data = { 'is_ok' : False }
 	utils = Utils()
 	if (Constants.CHECK_BOX_ALL in request.GET):
-		request.session[Constants.CHECK_BOX_ALL] = request.GET.get(Constants.CHECK_BOX_ALL)
+		request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(request.GET.get(Constants.CHECK_BOX_ALL))
 		## check all unique
 		for key in request.session.keys():
 			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				request.session[key] = request.GET.get(Constants.CHECK_BOX_ALL)
+				request.session[key] = request.session[Constants.CHECK_BOX_ALL]
 		data = {
 			'is_ok': True
 		}
 	### one check box is pressed
 	elif (Constants.CHECK_BOX in request.GET):
-		request.session[Constants.CHECK_BOX_ALL] = False	### set the All false
+		request.session[Constants.CHECK_BOX_ALL] = False	### set All false
 		key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
-		request.session[key_name] = request.GET.get(Constants.CHECK_BOX)
+		request.session[key_name] = utils.str2bool(request.GET.get(Constants.CHECK_BOX))
 		data = {
 			'is_ok': True
 		}
@@ -627,5 +666,30 @@ def set_check_box_values(request):
 			Constants.COUNT_CHECK_BOX : count,
 		}
 	return JsonResponse(data)
+###
+###		END AJAX methods for check box in session
+###
+######################################
+
+	
+#####
+#####
+#####		VALIDATION METHODS WITH AJAX
+#####
+#####
+def validate_project_reference_name(request):
+	"""
+	test if a name is the same
+	"""
+	project_name = request.GET.get('project_name')
+	user_name = request.GET.get('user_name').strip()
+	if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
+	data = {
+		'is_taken': Project.objects.filter(name=project_name, owner__username=user_name).exists()
+	}
+	if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
+	return JsonResponse(data)
+
+
 
 

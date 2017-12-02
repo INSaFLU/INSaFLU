@@ -17,7 +17,7 @@ from utils.result import DecodeResult
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import Coverage
 from utils.tree import CreateTree
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 
 class Test(unittest.TestCase):
 

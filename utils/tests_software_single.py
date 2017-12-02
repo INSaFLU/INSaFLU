@@ -11,7 +11,7 @@ from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
 from utils.software import Software
-from utils.software_names import SoftwareNames
+from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parseOutFiles import ParseOutFiles
 from utils.result import DecodeResultAverageAndNumberReads, DecodeResult, DecodeCoverage, Coverage, CountHits
@@ -21,7 +21,6 @@ from manage_virus.uploadFiles import UploadFiles
 from manage_virus.models import UploadFile
 from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
-from utils.software_names import SoftwareNames
 from utils.tree import CreateTree
 import os, filecmp
 

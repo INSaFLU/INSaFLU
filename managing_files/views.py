@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample, Project, ProjectSample
-from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable
+from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable, ShowProjectSamplesResults
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath
@@ -517,8 +517,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		elif ("submit_all" in self.request.POST):
 			vect_sample_id_add = vect_sample_id_add_temp
 
-		vect_sample_id_add = []	## to not add anything, to remove
-		
 		### start adding...
 		project_sample_add = 0
 		vect_task_id_submited = []
@@ -531,30 +529,31 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
 				continue
 			
-				## get project sample
-				try:
-					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
-					
-					### if exist can be deleted, active
-					if (project_sample.is_deleted and not project_sample.is_error):
-						project_sample.is_deleted = False
-						project_sample.save()
-						project_sample_add += 1
-				except ProjectSample.DoesNotExist:
-					project_sample = ProjectSample()
-					project_sample.project = project
-					project_sample.sample = sample
+			## get project sample
+			try:
+				project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
+				
+				### if exist can be deleted, active
+				if (project_sample.is_deleted and not project_sample.is_error):
+					project_sample.is_deleted = False
 					project_sample.save()
 					project_sample_add += 1
-					
-					### create a task to perform the analysis of fastq and trimmomatic
-					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
-					vect_task_id_submited.append(taskID)
+				
+			except ProjectSample.DoesNotExist:
+				project_sample = ProjectSample()
+				project_sample.project = project
+				project_sample.sample = sample
+				project_sample.save()
+				project_sample_add += 1
+				
+				### create a task to perform the analysis of fastq and trimmomatic
+				taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+				vect_task_id_submited.append(taskID)
 
-					### set project sample queue ID
-					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
-										metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
-										MetaKeyAndValue.META_VALUE_Queue, taskID)
+				### set project sample queue ID
+				manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
+									metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+									MetaKeyAndValue.META_VALUE_Queue, taskID)
 
 		### necessary to calculate the global results again 
 		if (project_sample_add > 0):
@@ -565,13 +564,45 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (len(vect_task_id_submited) == 0):
 			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
 		else:
-			messages.success(self.request, _("'{}' {} added to your project {}".format(\
+			messages.success(self.request, _("'{}' {} added to your project '{}'".format(\
 				len(vect_task_id_submited), "samples were" if len(vect_task_id_submited) > 1 else "sample is", project.name)), fail_silently=True)
 			
 		return super(AddSamplesProjectsView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
 
 
+class ShowSampleProjectsView(LoginRequiredMixin, ListView):
+	model = Project
+	template_name = 'project_sample/project_sample_show.html'
+	context_object_name = 'project_sample'
+	
+	def get_context_data(self, **kwargs):
+		context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
+		project = Project.objects.get(pk=self.kwargs['pk'])
+		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False).order_by('-creation_date')
+		
+		tag_search = 'search_add_project_sample'
+		### filter the search
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(sample__name__icontains=self.request.GET.get(tag_search)) |\
+										Q(sample__data_set__name__icontains=self.request.GET.get(tag_search)) |\
+										Q(sample__type_subtype__icontains=self.request.GET.get(tag_search)))
+		table = ShowProjectSamplesResults(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+
+		### can't see this project
+		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
+
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')		
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['project_name'] = project.name
+		context['project_id'] = project.id
+		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
+		context['nav_project'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+	
 ######################################
 ###
 ###		AJAX methods for check box in session
@@ -646,8 +677,13 @@ def set_check_box_values(request):
 		request.session[Constants.CHECK_BOX_ALL] = False	### set All false
 		key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
 		request.session[key_name] = utils.str2bool(request.GET.get(Constants.CHECK_BOX))
+		total_checked = 0
+		for key in request.session.keys():
+			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+				if (request.session[key]): total_checked += 1
 		data = {
-			'is_ok': True
+			'is_ok': True,
+			'total_checked' : total_checked,
 		}
 	## get the status of a check_box_single
 	elif (Constants.GET_CHECK_BOX_SINGLE in request.GET):
@@ -672,6 +708,28 @@ def set_check_box_values(request):
 ######################################
 
 	
+def show_phylo_canvas(request):
+	"""
+	manage check boxes through ajax
+	"""
+	data = { 'is_ok' : False }
+	utils = Utils()
+	key_with_project_id = 'project_id'
+	if ('project_id' in request.GET):
+		project_id = int(request.GET.get(key_with_project_id))
+		try:
+			project = Project.objects.get(id=project_id)
+			file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+			if (os.path.exists(file_name)):
+				string_file_content = utils.read_file_to_string(file_name).strip()
+				if (string_file_content != None and len(string_file_content) > 0):
+					data['is_ok'] = True
+					data['tree'] = string_file_content
+		except Project.DoesNotExist:
+			pass
+	return JsonResponse(data)
+
+
 #####
 #####
 #####		VALIDATION METHODS WITH AJAX

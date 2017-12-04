@@ -3,7 +3,9 @@ Created on Nov 2, 2017
 
 @author: mmp
 '''
-import json
+import json, os
+from django.conf import settings
+from constants.constants import Constants
 
 class SoftwareDesc(object):
 	
@@ -216,6 +218,8 @@ class Coverage(object):
 
 	def get_dict_data(self): return self.dt_data
 	
+	def get_sorted_elements_name(self): return sorted(self.dt_data.keys())
+	
 	def add_coverage(self, element, type_coverage, coverage):
 		if (element in self.dt_data): self.dt_data[element].add_coverage(type_coverage, coverage)
 		else:
@@ -231,6 +235,10 @@ class Coverage(object):
 
 	def get_result_number(self):
 		return ""
+	
+	def is_100_total(self, element):
+		value_coverage = self.get_coverage(element, self.COVERAGE_ALL)
+		return self.__is_100__(value_coverage)
 	
 	def is_100_more_9(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
@@ -260,7 +268,21 @@ class Coverage(object):
 	def get_fault_message_0(self, element_name):
 		return "Fail, element '{}' has a ratio under of 100 for a coverage of 1 or bigger".format(element_name)
 
-
+	def get_message_to_show_in_web_site(self, element):
+		"""
+		get message for web site about coverage in More than 9
+		"""
+		return "Element: {}\n\nCoverage: {}\nRatio coverage >9: {}%\nRatio coverage >0: {}%".format(element,\
+				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_9),\
+				self.get_coverage(element, self.COVERAGE_MORE_9))
+	
+	def get_icon(self, element):
+		"""
+		get coverage for COVERAGE_MORE_9
+		"""
+		if (self.is_100_more_9(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
+		if (self.is_100_more_0(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
+		return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_RED_16_16)
 
 class CoverageEncoder(json.JSONEncoder):
 

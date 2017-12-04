@@ -211,7 +211,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
 		
 		### get all elements and gene names
-		dict_genes = self.utils.get_elements_and_genes(project.reference.reference_genbank.name)
+		dict_genes = self.utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		for sequence_name in dict_genes.keys():		
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_MAFFT)))
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)))

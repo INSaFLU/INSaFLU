@@ -2,14 +2,14 @@ import django_tables2 as tables
 from django_tables2.utils import A
 from managing_files.models import Reference, Sample, Project, ProjectSample
 from django.utils.safestring import mark_safe
-from django.conf import settings
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeResultAverageAndNumberReads
-from constants.constants import Constants
+from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
-import os
+from utils.result import DecodeCoverage
+from django.utils.html import format_html
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -23,25 +23,28 @@ class ReferenceTable(tables.Table):
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
 	reference_fasta_name = tables.LinkColumn('reference_fasta_name', args=[tables.A('pk')], verbose_name='Fasta file')
 	reference_genbank_name = tables.LinkColumn('reference_genbank_name', args=[tables.A('pk')], verbose_name='GenBank file')
-
-	is_obsolete = tables.Column(orderable=False)
+	owner = tables.Column("Owner", orderable=True, empty_values=())
 	number_of_locus = tables.Column(orderable=False)
 
 	class Meta:
 		model = Reference
 		fields = ('name', 'isolate_name', 'reference_fasta_name', 'reference_genbank_name',
-				  'creation_date', 'is_obsolete', 'number_of_locus')
+				  'creation_date', 'owner', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no References to show..."
 
+	def render_owner(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.owner.username
+	
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
-		href = os.path.join(getattr(settings, "MEDIA_URL", None), record.reference_fasta.name)		
+		href = record.get_reference_fasta(TypePath.MEDIA_URL)		
 		return mark_safe('<a href="' + href + '">' + record.reference_fasta_name + '</a>')
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
-		href = os.path.join(getattr(settings, "MEDIA_URL", None), record.reference_genbank.name)		
+		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
 		return mark_safe('<a href="' + href + '">' + record.reference_genbank_name + '</a>')
 
 
@@ -57,7 +60,7 @@ class ReferenceProjectTable(tables.Table):
 		model = Reference
 		fields = ('select_ref', 'name', 'isolate_name', 'is_obsolete', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There are no References to show..."
+		empty_text = "There are no References to add..."
 
 
 class SampleToProjectsTable(tables.Table):
@@ -71,7 +74,7 @@ class SampleToProjectsTable(tables.Table):
 		model = Sample
 		fields = ('select_ref', 'name', 'creation_date', 'type_subtype', 'week', 'data_set')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There are no References to show..."
+		empty_text = "There are no Samples to add..."
 	
 	def render_select_ref(self, value, record):
 		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
@@ -172,12 +175,72 @@ class ProjectTable(tables.Table):
 		icon with link to extra info
 		"""
 		## there's nothing to show
-		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() == 0): return "-"
-			
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
-		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-			return mark_safe('<a href=' + reverse('sample-project-results', args=[record.pk]) + '><span ><i class="fa fa-gavel"></i></span> Add samples</a>')
-		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")
-		return _("Not yet")
+		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
+		if (count > 0): return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i></span> More info</a>')
+		count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
+		if (count_not_finished > 0): return _("{} processing".format(count_not_finished))
+		return "-"
 	
+
+class ShowProjectSamplesResults(tables.Table):
+	"""
+	Has the results from the result samples processed against references
+	"""
+	sample_name = tables.Column('Sample name', empty_values=())
+	coverage = tables.Column('Coverage >9', orderable=False, empty_values=())
+	alerts = tables.Column('Alerts', empty_values=())
+	results = tables.LinkColumn('Results', orderable=False, empty_values=())
+	type_subtype = tables.LinkColumn('Type-Subtype', empty_values=())
+	dataset = tables.LinkColumn('Dataset', empty_values=())
+	results = tables.LinkColumn('Results', orderable=False, empty_values=())
+		
+	class Meta:
+		model = ProjectSample
+		fields = ('sample_name', 'coverage', 'alerts', 'type_subtype', 'dataset', 'results')
+		attrs = {"class": "table-striped table-bordered"}
+		empty_text = "There are no samples processed to show..."
+	
+	def render_sample_name(self, record):
+		"""
+		return sample name
+		"""
+		return record.sample.name
+	
+	def render_coverage(self, record):
+		"""
+		return icons about coverage
+		"""
+		manageDatabase = ManageDatabase()
+		meta_value = manageDatabase.get_project_sample_metakey(record, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		decode_coverage = DecodeCoverage()
+		coverage = decode_coverage.decode_result(meta_value.description)
+		return_html = ""
+		for key in coverage.get_sorted_elements_name():
+			return_html += '<a href=' + reverse('show-image-coverage', args=[record.pk]) + '><img title="{}" class="tip" src="{}"></a>'.format(\
+					coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key))
+		return mark_safe(return_html)
+		
+	def render_alerts(self, record):
+		"""
+		return number
+		"""
+		return "{}".format(record.alert_first_level + record.alert_second_level)
+	
+	def render_type_subtype(self, record):
+		"""
+		return number
+		"""
+		return record.sample.type_subtype
+	
+	def render_dataset(self, record):
+		"""
+		return number
+		"""
+		return record.sample.data_set.name
+	
+	def render_results(self, record):
+		"""
+		icon with link to extra info
+		"""
+		return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.sample.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
+

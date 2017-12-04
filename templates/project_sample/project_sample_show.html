@@ -1,0 +1,142 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h1>Show result samples to project: {{ project_name }}</h1>
+	</div>
+{% endblock  %}
+
+{% block content %}
+
+	
+	<div id="accordion" role="tablist" aria-multiselectable="true">
+		<div class="card">
+			<div class="card-header" role="tab" id="headingOne">
+				<h5 class="mb-0">
+					<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+						Several information about project: {{ project_name }}
+        			</a>
+      			</h5>
+    		</div>
+
+    		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
+      			<div class="card-block">
+        			trxpoto
+      			</div>
+    		</div>
+  		</div>
+		<div class="card">
+			<div class="card-header" role="tab" id="headingTwo">
+				<h5 class="mb-0">
+					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+						Show tree with PhyloCanvas
+        			</a>
+      			</h5>
+    		</div>
+
+    		<div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo">
+      			<div class="card-block">
+      				<div class="container">
+      					<!-- Show files to download, trees -->
+      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
+        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"/>
+        			</div>
+      			</div>
+    		</div>
+  		</div>
+	</div>
+
+					
+	{% if table.page and show_paginatior %}
+	  <div class="table-container">
+	{% endif %}
+	       	{% block table %}
+			    <div class="table-responsive">
+			        <table id="table_to_show_samples_from_project_id" class="table table-hover table-bordered table-striped" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+			            {% block table.thead %}
+			            <thead>                 
+			      			<tr>
+			                    <th colspan="7">
+			                        <form method="get" action="" class="form-inline form-search pull-right">
+			                        	{% csrf_token %}
+			                            <div class="pull-right form-search">
+			                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+			                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+			                            </div>              
+			                        </form>
+			                    </th>                  
+			                </tr>
+			             
+			              <tr>
+			                {% for column in table.columns %}
+			                   {% if column.orderable %}
+			                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+			                    {% else %}
+			                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+			                    {% endif %}
+			                {% endfor %}
+			              </tr>
+			            </thead>
+			            {% endblock table.thead %}
+			            {% block table.tbody %}
+			            <tbody>
+			                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+			                  {% block table.tbody.row %}
+			                  <tr class="{% cycle 'odd' 'even' %}">
+			                      {% for column, cell in row.items %}
+			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+			                      {% endfor %}
+			                  </tr>
+			                  {% endblock table.tbody.row %}
+			                {% empty %}
+			                  {% if table.empty_text %}
+			                  {% block table.tbody.empty_text %}
+			                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+			                  {% endblock table.tbody.empty_text %}
+			                  {% endif %}
+			                {% endfor %}
+			            </tbody>
+			            {% endblock table.tbody %}
+			            {% block table.tfoot %}
+			            	<tfoot></tfoot>
+			            {% endblock table.tfoot %}
+			        </table>
+			    </div>
+			{% endblock table %}
+			
+			{% if table.page and show_paginatior %}
+			    {% block pagination %}
+			        {% bootstrap_pagination table.page url=request.get_full_path %}
+			    {% endblock pagination %}
+			  </div>
+			{% endif %}
+	
+			<a href="{% url 'projects' %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+{% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/js.cookie.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/phylocanvas-quickstart-2.8.1.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/show-sample-project.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}"></script>
+     
+ {% endblock %}
+
+
+

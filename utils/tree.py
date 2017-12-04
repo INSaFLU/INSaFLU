@@ -37,7 +37,7 @@ class CreateTree(object):
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
 		
 		### get all elements and gene names
-		dict_genes = self.utils.get_elements_and_genes(project.reference.reference_genbank.name)
+		dict_genes = self.utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		
 		### create for single sequences
 		for sequence_name in dict_genes.keys():
@@ -94,14 +94,14 @@ class CreateTree(object):
 		### copy the reference
 		if (sequence_name != None):
 			## test if exist a sample that is equal
-			sample_name = self.utils.clean_extension(project.reference.reference_fasta_name) + '_' + sequence_name
+			sample_name = self.utils.clean_extension(project.reference.reference_fasta_name)
 			if (sample_name in dict_out_sample_name): sample_name = 'Ref_' + sample_name 
-			self.utils.filter_fasta_by_sequence_names(project.reference.reference_fasta.name,\
+			self.utils.filter_fasta_by_sequence_names(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						sample_name, sequence_name, None, temp_dir)
 		else:
-			sample_name = self.utils.clean_extension(os.path.basename(project.reference.reference_fasta.name))
+			sample_name = self.utils.clean_extension(os.path.basename(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)))
 			if (sample_name in dict_out_sample_name): sample_name = 'Ref_' + sample_name 
-			self.utils.copy_file(project.reference.reference_fasta.name, os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
+			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
 		n_files_with_sequences += 1
 		
 		### start processing the data

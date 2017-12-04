@@ -446,5 +446,13 @@ class Test(unittest.TestCase):
 		self.assertFalse(self.utils.str2bool('false'))
 		self.assertFalse(self.utils.str2bool('0'))
 		
+	def test_read_file_to_string(self):
+		
+		self.assertEquals(None, self.utils.read_file_to_string("/root/fiels.fasta"))
+		self.assertEquals("(EVA003_S91:0.0,EVA001_S66:0.0,EVA002_S52:0.0,EVA011_S54:0.0);\n",\
+				self.utils.read_file_to_string(os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT,\
+				ConstantsTestsCase.FILE_FASTTREE_RESULT_NWK)))
+
+
 
 

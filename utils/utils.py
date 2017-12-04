@@ -354,6 +354,14 @@ class Utils(object):
 			task = fetch(task_id)
 			if (task == None): return False
 		return True
+	
+	def is_all_tasks_finished_by_result(self, vect_tasks_id):
+		"""
+		return true if all tasks finished
+		"""
+		for task_id in vect_tasks_id:
+			task_id.result(wait=-1)
+		return True
 
 	def count_tasks_finished_and_not(self, vect_tasks_id):
 		"""
@@ -562,3 +570,21 @@ class Utils(object):
 		if (file_name.rfind('.') != -1): return file_name[:file_name.rfind('.')]
 		return file_name 
 
+
+	def read_file_to_string(self, file_name):
+		"""
+		read a file to a string content
+		"""
+		if (not os.path.exists(file_name)): return None
+		
+		sz_return = ""
+		with open(file_name) as handle:
+			for line in handle:
+				if (len(sz_return) > 0): sz_return += "\n"
+				sz_return += line
+		return sz_return	
+	
+	
+	
+	
+	

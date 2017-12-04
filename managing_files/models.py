@@ -56,6 +56,28 @@ class Reference(models.Model):
 	def __str__(self):
 		return self.file_name
 
+	def get_reference_gbk(self, type_path):
+		"""
+		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+	
+	def get_reference_fasta(self, type_path):
+		"""
+		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_fasta.name
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+
 	class Meta:
 		verbose_name = 'Reference'
 		verbose_name_plural = 'References'
@@ -436,7 +458,8 @@ class ProjectSample(models.Model):
 		test if is ready to process
 		"""
 		return self.is_finished and not self.is_deleted and not self.is_error and self.sample.get_is_ready_for_projects()
-	
+
+
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 

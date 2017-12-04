@@ -86,11 +86,11 @@ TEMPLATES = [
 ## $ python3 manage.py qinfo
 Q_CLUSTER = {
     'name': 'insaFlu',
-    'workers': 2,	## number of queues
+    'workers': 1,	## number of queues, some problems with database, need to bee always at one
     'recycle': 500,
     'compress': True,
     'save_limit': 250,
-    'queue_limit': 500,
+    'queue_limit': 10,
     'cpu_affinity': 2,	## number of processors by queue
     'catch_up': False,	# Ignore un-run scheduled tasks
     'label': 'Django Q',

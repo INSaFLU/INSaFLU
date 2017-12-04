@@ -93,3 +93,35 @@ p.software {
 .error input, .error select {
     border: 2px red solid;
 }
+
+/*
+*	START tooltip
+*/
+.tip{
+    display: inline;
+    position: relative;
+    background
+}
+
+.tip:hover:after{
+    background: #333;
+    background: rgba(0,0,0,.8);
+    border-radius: 5px;
+    bottom: 26px;
+    color: #fff;
+    content: attr(title);
+    left: 20%;
+    padding: 5px 15px;
+    position: absolute;
+    z-index: 98;
+    width: 320px;
+}
+/*
+*	END tooltip
+*/
+
+
+#phylocanvas {
+      width: 100%;
+      height: 30em;
+}

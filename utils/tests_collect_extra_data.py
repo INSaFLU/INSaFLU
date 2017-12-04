@@ -123,20 +123,4 @@ class Test(unittest.TestCase):
 		if (file_out_png != None): os.unlink(file_out_png)
 
 
-# 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-# 	def test_collect_extra_data(self):
-# 
-# 		manageDatabase = ManageDatabase()
-# 		metaKeyAndValue = MetaKeyAndValue()	
-# 		
-# 		### set the taskID
-# 		manageDatabase.set_project_metakey(project, user, MetaKeyAndValue.META_KEY_Queue_TaskID,\
-# 								MetaKeyAndValue.META_VALUE_Queue, 'meta_sample.description')
-# 
-# 		
-# 		lst_meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Queue_TaskID, None)
-# 		self.assertEquals(2, len(lst_meta_sample))
-# 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
-# 		self.assertEquals('meta_sample.description', lst_meta_sample[0].description)
-
 

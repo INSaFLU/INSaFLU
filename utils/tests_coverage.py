@@ -15,7 +15,7 @@ from managing_files.models import Sample, Project, ProjectSample, Reference
 from constants.constants import FileType, TypePath, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
-from utils.test_parse_coverage_file import GetCoverage
+from utils.parse_coverage_file import GetCoverage
 from constants.software_names import SoftwareNames
 
 class Test(unittest.TestCase):
@@ -180,13 +180,13 @@ class Test(unittest.TestCase):
 		manageDatabase = ManageDatabase()
 		get_coverage = GetCoverage()
 		coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-						SoftwareNames.SOFTWARE_SNIPPY_name), project_sample.project.reference.reference_fasta.name)
+						SoftwareNames.SOFTWARE_SNIPPY_name), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 		meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
 								MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 
 		draw_all_coverage = DrawAllCoverage()
 		draw_all_coverage.draw_all_coverages(project_sample)
-		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.reference_genbank.name)
+		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		for gene in dict_genes:
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))

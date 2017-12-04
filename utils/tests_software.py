@@ -875,7 +875,7 @@ class Test(TestCase):
 		self.assertEquals(3, count_hits.get_total())
 		
 		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
-		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(1, len(list_meta))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
 		
@@ -905,7 +905,7 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
 		
 		### check if the images exist
-		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.reference_genbank.name)
+		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		for gene in dict_genes:
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))

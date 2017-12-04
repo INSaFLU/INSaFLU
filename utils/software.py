@@ -389,7 +389,6 @@ class Software(object):
 		"""
 		cmd = "{}; {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
 							input_file, out_file)
-		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -403,7 +402,6 @@ class Software(object):
 		out: out_file
 		"""
 		cmd = "{} {} {} > {}".format(self.software_names.get_fasttree(), self.software_names.get_fasttree_parameters(), input_file, out_file)
-		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -481,6 +479,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
+			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
 			raise Exception("Fail to run snippy")
 		return temp_dir
 
@@ -592,7 +591,7 @@ class Software(object):
 		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
 		"""
 		
-		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".gff") 
+		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
 		self.run_genbank2gff3(genbank, temp_file)
 		
 		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.software_names.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
@@ -778,23 +777,35 @@ class Software(object):
 		
 		manageDatabase = ManageDatabase()
 		result_all = Result()
+		### metakey for this process
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+
+		### Test if this sample already run		
+		meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_sample != None and meta_sample.value == MetaKeyAndValue.META_VALUE_Success): return 
+
 		## process snippy
 		try:
 			out_put_path = self.run_snippy(project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),\
-					project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False), project_sample.project.reference.reference_genbank.name,\
+					project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),\
+					project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 					project_sample.sample.name)
 			result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
 		except Exception as e:
 			result = Result()
-			result.set_error("Fail to run fastq software: " + e.args[0])
+			result.set_error(e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
 			### get again and set error
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample.is_error = True
 			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 			return False
 
 		## copy the files to the project sample directories
@@ -807,12 +818,12 @@ class Software(object):
 		get_coverage = GetCoverage()
 		try:
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-						self.software_names.get_snippy_name()), project_sample.project.reference.reference_fasta.name)
+						self.software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 			
 			################################
 			##################################
 			### set the alerts in the coverage
-			metaKeyAndValue = MetaKeyAndValue()
+			
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			for element in coverage.get_dict_data():
 				if (not coverage.is_100_more_9(element)):
@@ -830,12 +841,15 @@ class Software(object):
 			result.set_error("Fail to get coverage: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_coverage_name(), self.software_names.get_coverage_version(), self.software_names.get_coverage_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
 			### get again and set error
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample.is_error = True
 			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 			return False
 		
 		meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
@@ -844,20 +858,23 @@ class Software(object):
 		## run freebayes
 		try:
 			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
-						project_sample.project.reference.reference_fasta.name, project_sample.project.reference.reference_genbank.name,\
+						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name)
 			result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
 		except Exception as e:
 			result = Result()
-			result.set_error("Fail to run freebayes software: " + e.args[0])
+			result.set_error(e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_put_path); os.system(cmd)
 			
 			### get again and set error
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample.is_error = True
 			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 			return False
 		
 		## count hits from tab file
@@ -875,9 +892,6 @@ class Software(object):
 		draw_all_coverage = DrawAllCoverage()
 		draw_all_coverage.draw_all_coverages(project_sample)
 		
-		### set flag that is finished
-		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		
 		### get again
 		project_sample = ProjectSample.objects.get(pk=project_sample.id)
 		project_sample.is_finished = True
@@ -893,7 +907,6 @@ class Software(object):
 		manage_database.set_percentis_alert(project_sample, user, count_hits, percentil_name)
 		
 		### set the flag of the end of the task		
-		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
 		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
 			manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)

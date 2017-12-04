@@ -14,6 +14,7 @@ from utils.tree import CreateTree
 import os, time
 import plotly.graph_objs as go
 from plotly.offline import plot
+from django.db import transaction
 
 class CollectExtraData(object):
 	'''
@@ -28,33 +29,38 @@ class CollectExtraData(object):
 		'''
 		pass
 	
+	@transaction.atomic
 	def collect_extra_data_for_project(self, project, user, vect_taskID):
 		"""
 		Everything that is necessary to do in the project
 		Collect all extra data after all samples are finished
 		only run after all the vect_taskID are finished
 		"""
-		while self.utils.is_all_tasks_finished(vect_taskID):
+		### get the taskID and seal it
+		metaKeyAndValue = MetaKeyAndValue()
+		manageDatabase = ManageDatabase()
+		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
+								MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_project != None and meta_project.value == MetaKeyAndValue.META_VALUE_Success): return 
+		
+		while not self.utils.is_all_tasks_finished(vect_taskID):
 			time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
 	
 		#### create variation graph, png and html
 		(out_file_html, out_file_png) = self.create_graph_minor_variants(project, user)
 		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML)
-		if (out_file_html != None): self.uitls.copy_file(out_file_html, file_destination)
+		if (out_file_html != None): self.utils.copy_file(out_file_html, file_destination)
 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_PNG)
-		if (out_file_png != None): self.uitls.copy_file(out_file_png, file_destination)
+		if (out_file_png != None): self.utils.copy_file(out_file_png, file_destination)
 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
-		
 		### create trees
 		createTree = CreateTree()
 		createTree.create_tree_and_alignments(project, user)
 		
-		### get the taskID and seal it
-		metaKeyAndValue = MetaKeyAndValue()
-		manageDatabase = ManageDatabase()
 		
-		meta_project = manageDatabase.get_project_metakey(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
+		
+		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
 								MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_project != None):
 			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\

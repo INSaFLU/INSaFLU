@@ -48,6 +48,16 @@ class Constants(object):
 	SEQ_VIRUS_SUB_TYPE = "Subtype"
 	SEQ_VIRUS_LINEAGE = "Lineage"
 	
+	#####
+	DIR_STATIC = "static"
+	DIR_ICONS = "icons"
+	ICON_GREEN_16_16 = "bullet_ball_glass_green.png"
+	ICON_YELLOW_16_16 = "bullet_ball_glass_yellow.png"
+	ICON_RED_16_16 = "bullet_ball_glass_red.png"
+	
+	AJAX_LOADING_GIF = "ajax-loading-gif.gif"
+	AJAX_LOADING_GIF_13 = "ajax-loading-gif-13.gif"
+	
 	### data_set 
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	

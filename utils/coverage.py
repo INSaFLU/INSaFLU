@@ -46,7 +46,7 @@ class DrawAllCoverage(object):
 		dict_coverage = get_coverage.get_dict_with_coverage(coverage_file)
 		
 		### get all elements and gene names
-		dict_genes = utils.get_elements_and_genes(project_sample.project.reference.reference_genbank.name)
+		dict_genes = utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		
 		### get positions of variations
 		vect_count_type = ['snp']

@@ -25,4 +25,5 @@ urlpatterns = [
 	url(r'^ajax/validate_project_reference_name$', views.validate_project_reference_name, name='validate-project-reference'),
 	url(r'^ajax/set_check_box_values', views.set_check_box_values, name='set-check-box-values'),
 	url(r'^ajax/show_phylo_canvas', views.show_phylo_canvas, name='show-phylo-canvas'),
+	url(r'^ajax/get_image_coverage', views.get_image_coverage, name='get_image_coverage'),
 ] 

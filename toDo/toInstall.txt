@@ -6,6 +6,11 @@
 
 ## $ sudo apt-get install binutils libproj-dev gdal-bin
 ## $ sudo apt-get install postgis*
+
+### centos:
+## $ sudo yum install gdal gdal-devel 
+## $ sudo yum install postgis
+
 ## $ sudo pip3 install django-crispy-forms
 ## $ sudo pip3 install django-braces
 ## $ sudo pip3 install django-tables2
@@ -18,6 +23,8 @@
 ## $ sudo pip3 install django-bootstrap-datepicker
 ## $ sudo pip3 install plotly
 ## $ sudo pip3 install Pillow
+## $ sudo pip3 install django-bootstrap4
+## $ sudo pip3 install psycopg2
 ## $ sudo apt install bioperl
 ## $ sudo pip3 install pysam
 ## $ sudo apt-get install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl

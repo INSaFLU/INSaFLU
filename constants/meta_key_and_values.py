@@ -44,8 +44,9 @@ class MetaKeyAndValue(object):
 	
 	### Queue Task ID by Job plus project_sample_id
 	## to check if this project_sample_ID
-	META_KEY_Queue_TaskID_ProjectSample = "TaskID_ProjectSample"			### has the metaKey plus project_sample_id
-	META_KEY_Queue_TaskID_Project = "TaskID_Project"			### has the metaKey plus project_sample_id
+	META_KEY_Queue_TaskID_ProjectSample = "TaskID_ProjectSample"	### has the metaKey plus project_sample_id
+	META_KEY_Queue_TaskID_Project = "TaskID_Project"				### has the metaKey plus project_sample_id
+	META_KEY_Elements_Project = "Elements"							### has the elements to a specific project, separated by comma and sorted
 	
 	### MetaKey for the alerts
 	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert
@@ -64,7 +65,8 @@ class MetaKeyAndValue(object):
 	
 	def get_meta_key_by_element(self, meta_key_element, element):
 		"""
-		in: MetaKeyAndValue.META_KEY_Tree_All_Sequences, MetaKeyAndValue.META_KEY_Run_Tree_By_Element
+		in: MetaKeyAndValue.META_KEY_Tree_All_Sequences, MetaKeyAndValue.META_KEY_Run_Tree_By_Element,
+				META_KEY_ALERT_COVERAGE_9, META_KEY_ALERT_COVERAGE_0
 		return metakey by element
 		"""
 		return '{}_{}'.format(meta_key_element, element)
@@ -86,6 +88,16 @@ class MetaKeyAndValue(object):
 		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
 		"""
 		return '{}_{}'.format(self.META_KEY_Queue_TaskID_Project, project_id)
+	
+	def get_meta_key_by_project_id(self, meta_key, project_id):
+		"""
+		in: meta_key -> META_KEY_Queue_TaskID_Project, META_KEY_Elements_Project
+		in: project_id
+		return : META_KEY_Queue_TaskID_Project + project_sample_id, META_KEY_Elements_Project + project_sample_id
+		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
+		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
+		"""
+		return '{}_{}'.format(meta_key, project_id)
 	
 	def get_meta_key_alert_coverage(self, meta_key, sequence_name):
 		"""

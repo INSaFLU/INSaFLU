@@ -196,7 +196,7 @@ class ShowProjectSamplesResults(tables.Table):
 		
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'coverage', 'alerts', 'type_subtype', 'dataset', 'results')
+		fields = ('sample_name', 'type_subtype', 'dataset', 'coverage', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -216,8 +216,8 @@ class ShowProjectSamplesResults(tables.Table):
 		coverage = decode_coverage.decode_result(meta_value.description)
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
-			return_html += '<a href=' + reverse('show-image-coverage', args=[record.pk]) + '><img title="{}" class="tip" src="{}"></a>'.format(\
-					coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key))
+			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
+					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key))
 		return mark_safe(return_html)
 		
 	def render_alerts(self, record):

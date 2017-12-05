@@ -14,7 +14,7 @@
 
 {% block header %}
 	<div class="page-header rounded-header">
-    	<h1>Show result samples to project: {{ project_name }}</h1>
+    	<h1>Show results to project: {{ project_name }}</h1>
 	</div>
 {% endblock  %}
 
@@ -26,7 +26,7 @@
 			<div class="card-header" role="tab" id="headingOne">
 				<h5 class="mb-0">
 					<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-						Several information about project: {{ project_name }}
+						Project: {{ project_name }}
         			</a>
       			</h5>
     		</div>
@@ -48,7 +48,19 @@
 
     		<div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo">
       			<div class="card-block">
-      				<div class="container">
+      				<div class="container-fluid">
+      					<br>
+						<form class="form-inline regular_info_box">
+							<div class="form-group">
+								<label for="selectElement">Select an element</label>
+						  		<select class="custom-select mx-sm-3">
+		      						<option selected value="all_together">All together</option>
+		      						{% for element in elements %}
+		      							<option value="{{ element }}">{{ element }}</option>
+		      						{% endfor %}
+		      					</select>
+							</div>
+      					</form>
       					<!-- Show files to download, trees -->
       					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
         				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"/>
@@ -56,9 +68,28 @@
       			</div>
     		</div>
   		</div>
+  		<div class="card">
+			<div class="card-header" role="tab" id="headingThree">
+				<h5 class="mb-0">
+					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+						Show variation results
+        			</a>
+      			</h5>
+    		</div>
+
+    		<div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
+      			<div class="card-block">
+      				<div class="container">
+      					<!-- Show files to download, varation -->
+      					<!-- <div id='loader_variation'><img src="{{ spinner_url }}"/></div> -->
+        				
+        			</div>
+      			</div>
+    		</div>
+  		</div>
 	</div>
 
-					
+	<hr>
 	{% if table.page and show_paginatior %}
 	  <div class="table-container">
 	{% endif %}
@@ -124,7 +155,35 @@
 			{% endif %}
 	
 			<a href="{% url 'projects' %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
-{% endblock %}
+			
+			
+			
+			<!-- The Modal -->
+			<div class="modal fade" id="coverageModal" >
+				<div class="modal-dialog modal-lg">
+					<div class="modal-content">
+     
+       					<!-- Modal Header -->
+       					<div class="modal-header">
+         					<h4 class="modal-title">Coverage</h4>
+         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+       					</div>
+       
+       					<!-- Modal body -->
+       					<div class="modal-body mx-auto mw-100">
+       						<!-- <div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div> -->
+       						<div id="modal-body-coverage" show-coverage-modal-url="{% url 'get_image_coverage' %}">
+       						</div>
+       					</div>
+       					<!-- Modal footer -->
+       					<div class="modal-footer">
+         					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+       					</div>
+					</div>
+   				</div>
+ 			</div>
+
+ {% endblock %}
 
  {% block js %}
  	 {% load static from staticfiles %}

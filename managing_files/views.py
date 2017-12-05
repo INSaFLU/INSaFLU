@@ -9,7 +9,7 @@ from managing_files.models import Reference, Sample, Project, ProjectSample
 from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable, ShowProjectSamplesResults
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
-from constants.constants import Constants, TypePath
+from constants.constants import Constants, TypePath, FileExtensions
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
@@ -26,7 +26,6 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.http import JsonResponse
 from django.db import transaction
-from itertools import chain
 from django.db.models import Q
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
@@ -438,33 +437,24 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
 		tag_search = 'search_add_project_sample'
-		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__isnull=True)
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(data_set__name__icontains=self.request.GET.get(tag_search)) |\
-										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
-										Q(week__icontains=self.request.GET.get(tag_search)))
-		query_set_2 = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_rejected=False, is_ready_for_projects=True, project_sample__is_deleted=True)
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
-			query_set_2 = query_set_2.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(data_set__name__icontains=self.request.GET.get(tag_search)) |\
-										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
-										Q(week__icontains=self.request.GET.get(tag_search)))
-		result_list = sorted(chain(query_set_2, query_set), key=lambda instance: instance.creation_date)
-		table = SampleToProjectsTable(result_list)
+		## catch everything that is not in connection with project 
+		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_rejected=False) & Q(is_ready_for_projects=True) &\
+									(Q(project_sample__isnull=True) | ~Q(project_sample__project__id=project.id) |\
+									(Q(project_sample__project__id=project.id) & Q(project_sample__is_deleted=True))) ).distinct()
+		table = SampleToProjectsTable(query_set)
 
 		### set the check_box
 		if (Constants.CHECK_BOX_ALL not in self.request.session):
 			self.request.session[Constants.CHECK_BOX_ALL] = False
-			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)
-		elif ("search_in_table" not in self.request.GET and not is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in result_list], self.request)):
+			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)
+		elif ("search_in_table" not in self.request.GET and not is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)):
 			self.request.session[Constants.CHECK_BOX_ALL] = False
 
 		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
 		## need to clean all the others if are reject in filter
 		dt_sample_id_add_temp = {}
 		if (context[Constants.CHECK_BOX_ALL]):
-			for sample in result_list: dt_sample_id_add_temp[sample.id] = 1	## add the ids that are in the tables
+			for sample in query_set: dt_sample_id_add_temp[sample.id] = 1	## add the ids that are in the tables
 			for key in self.request.session.keys():
 				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
 					### this is necessary because of the search. Can occur some checked box that are out of filter.
@@ -476,7 +466,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')
 		context['table'] = table
-		context['show_paginatior'] = len(result_list) > Constants.PAGINATE_NUMBER_SMALL
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER_SMALL
 		context['project_name'] = project.name
 		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window
@@ -558,8 +548,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		### necessary to calculate the global results again 
 		if (project_sample_add > 0):
 			taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
-			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key_queue_by_project_id(project.id),\
-						MetaKeyAndValue.META_VALUE_Queue, taskID)
+			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key_by_project_id(\
+					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 		
 		if (len(vect_task_id_submited) == 0):
 			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
@@ -601,6 +591,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		
+		## tODO , set this in database 
+		utils = Utils()
+		dict_genes = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+		if (dict_genes != None): context['elements'] = sorted(dict_genes.keys())
+		
 		return context
 	
 ######################################
@@ -715,17 +711,40 @@ def show_phylo_canvas(request):
 	data = { 'is_ok' : False }
 	utils = Utils()
 	key_with_project_id = 'project_id'
-	if ('project_id' in request.GET):
+	if (key_with_project_id in request.GET):
 		project_id = int(request.GET.get(key_with_project_id))
+		element_name = 'all_together'
+		key_element_name = 'key_element_name'
+		if (key_element_name in request.GET): element_name = int(request.GET.get(key_element_name))
 		try:
 			project = Project.objects.get(id=project_id)
-			file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+			if (element_name == 'all_together'): file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+			else: file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 			if (os.path.exists(file_name)):
 				string_file_content = utils.read_file_to_string(file_name).strip()
 				if (string_file_content != None and len(string_file_content) > 0):
 					data['is_ok'] = True
 					data['tree'] = string_file_content
 		except Project.DoesNotExist:
+			pass
+	return JsonResponse(data)
+
+
+def get_image_coverage(request):
+	"""
+	get image coverage
+	"""
+	data = { 'is_ok' : False }
+	key_with_project_sample_id = 'project_sample_id'
+	key_element = 'element'
+	if (key_with_project_sample_id in request.GET and key_element in request.GET):
+		try:
+			project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
+			path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
+			data['is_ok'] = True
+			data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
+			data['text'] = _("Coverage for element '{}'".format(request.GET.get(key_element)))
+		except ProjectSample.DoesNotExist as e:
 			pass
 	return JsonResponse(data)
 

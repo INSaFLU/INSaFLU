@@ -274,7 +274,7 @@ class Coverage(object):
 		"""
 		return "Element: {}\n\nCoverage: {}\nRatio coverage >9: {}%\nRatio coverage >0: {}%".format(element,\
 				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_9),\
-				self.get_coverage(element, self.COVERAGE_MORE_9))
+				self.get_coverage(element, self.COVERAGE_MORE_0))
 	
 	def get_icon(self, element):
 		"""

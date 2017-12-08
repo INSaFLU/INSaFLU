@@ -20,11 +20,10 @@ import hashlib, ntpath, os, logging
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
-from django_modalview.generic.base import ModalTemplateView
 from django_q.tasks import async
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
-from django.http import JsonResponse
+from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
 
@@ -36,13 +35,22 @@ class ReferenceView(LoginRequiredMixin, ListView):
 	template_name = 'references/references.html'
 	context_object_name = 'reference'
 	ordering = ['id']
-##	group_required = u'company-user' security related with GroupRequiredMixin
 	
 	def get_context_data(self, **kwargs):
 		context = super(ReferenceView, self).get_context_data(**kwargs)
+		
+		tag_search = 'search_references'
 		query_set = Reference.objects.filter(owner__id=self.request.user.id).order_by('-name')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+										Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
+										Q(reference_genbank_name__icontains=self.request.GET.get(tag_search)) |\
+										Q(reference_fasta_name__icontains=self.request.GET.get(tag_search)) |\
+										Q(isolate_name__icontains=self.request.GET.get(tag_search)))
+		
 		table = ReferenceTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['nav_reference'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -74,6 +82,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		context['nav_modal'] = True	## short the size of modal window
 		return context
 	
+	@transaction.atomic
 	def form_valid(self, form):
 		software = Software()
 		utils = Utils()
@@ -84,8 +93,32 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference_genbank = form.cleaned_data['reference_genbank']
 		if (scentific_name is None): scentific_name = ""
 		
+		## create a genbank file
+		if (reference_genbank == None):
+			reference_fasta_temp_file_name = NamedTemporaryFile(prefix='flu_fa_', delete=False)
+			reference_fasta.file.seek(0)
+			reference_fasta_temp_file_name.write(reference_fasta.read())
+			reference_fasta_temp_file_name.flush()
+			reference_fasta_temp_file_name.close()
+			
+			software = Software()
+			try:
+				temp_genbank_dir = software.run_prokka(reference_fasta_temp_file_name.name, ntpath.basename(reference_fasta.name))
+			except Exception as e:
+				os.unlink(reference_fasta_temp_file_name.name)
+				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
+				return super(ReferenceAddView, self).form_invalid(form)
+			os.unlink(reference_fasta_temp_file_name.name)
+		
+			temp_genbank_file = os.path.join(temp_genbank_dir, utils.clean_extension(ntpath.basename(reference_fasta.name)) + FileExtensions.FILE_GBK)
+			if (not os.path.exists(temp_genbank_file)):
+				utils.remove_dir(temp_genbank_dir)
+				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
+				return super(ReferenceAddView, self).form_invalid(form)
+			
 		hash_value_fasta = hashlib.md5(form.files.get('reference_fasta').read()).hexdigest()
-		hash_value_genbank = hashlib.md5(form.files.get('reference_genbank').read()).hexdigest()
+		if (reference_genbank == None): hash_value_genbank = utils.md5sum(temp_genbank_file)
+		else: hash_value_genbank = hashlib.md5(form.files.get('reference_genbank').read()).hexdigest()
 		
 		reference = form.save(commit=False)
 		## set other data
@@ -96,7 +129,8 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.reference_fasta_name = ntpath.basename(reference_fasta.name)
 		reference.scentific_name = scentific_name
 		reference.hash_reference_genbank = hash_value_genbank
-		reference.reference_genbank_name = ntpath.basename(reference_genbank.name)
+		if (reference_genbank == None): reference.reference_genbank_name = ntpath.basename(temp_genbank_file)
+		else: reference.reference_genbank_name = ntpath.basename(reference_genbank.name)
 		reference.save()
 
 		## move the files to the right place
@@ -105,9 +139,13 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.reference_fasta.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
 		
 		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
-		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
+		if (reference_genbank == None): utils.move_file(temp_genbank_file, sz_file_to)
+		else: utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
 		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
+		
+		## remove genbank temp dir if exist 
+		utils.remove_dir(temp_genbank_dir)
 		
 		## create the index before commit in database, throw exception if something goes wrong
 		software.create_fai_fasta(reference.reference_fasta.name)
@@ -123,13 +161,19 @@ class SamplesView(LoginRequiredMixin, ListView):
 	model = Sample
 	template_name = 'samples/samples.html'
 	context_object_name = 'samples'
-##	group_required = u'company-user' security related with GroupRequiredMixin
-	
+		
 	def get_context_data(self, **kwargs):
 		context = super(SamplesView, self).get_context_data(**kwargs)
+		tag_search = 'search_samples'
 		query_set = Sample.objects.filter(owner__id=self.request.user.id).order_by('-creation_date')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
+										Q(data_set__name__icontains=self.request.GET.get(tag_search)))
+			
 		table = SampleTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['nav_sample'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -226,23 +270,6 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		return super(SamplesAddView, self).form_valid(form)
 
 	form_valid_message = ""		## need to have this, even empty
-
-class AddValueModal(ModalTemplateView):
-	'''
-		 This modal inherit of ModalTemplateView, so it just display a text without logic.
-	'''
-	def __init__(self, *args, **kwargs):
-		'''
-			You have to call the init method of the parent, before to overide the values:
-				- title: The title display in the modal-header
-				- icon: The css class that define the modal's icon
-				- description: The content of the modal.
-				- close_button: A button object that has several attributes.(explain below)
-		'''
-		super(AddValueModal, self).__init__(*args, **kwargs)
-		self.title = "Add value"
-		self.description = "This is my description"
-		self.icon = "icon-mymodal"
 
 
 class SamplesDetailView(LoginRequiredMixin, DetailView):
@@ -464,7 +491,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		## END need to clean all the others if are reject in filter
 			
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER_SMALL
 		context['project_name'] = project.name
@@ -548,7 +575,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		### necessary to calculate the global results again 
 		if (project_sample_add > 0):
 			taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
-			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key_by_project_id(\
+			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 		
 		if (len(vect_task_id_submited) == 0):
@@ -593,16 +620,14 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['nav_modal'] = True	## short the size of modal window
 		
 		## tODO , set this in database 
-		utils = Utils()
-		dict_genes = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-		if (dict_genes != None): context['elements'] = sorted(dict_genes.keys())
+		manage_database = ManageDatabase()
+		vect_genes = manage_database.get_elements_and_genes_from_db(project, self.request.user)
+		if (vect_genes != None): context['elements'] = vect_genes
 		
 		return context
 	
-######################################
-###
-###		AJAX methods for check box in session
-###
+
+
 def is_all_check_box_in_session(vect_check_to_test, request):
 	"""
 	test if all check boxes are in session 
@@ -637,6 +662,7 @@ def is_all_check_box_in_session(vect_check_to_test, request):
 			request.session[key] = False
 		return False
 	return True
+
 	
 	
 def clean_check_box_in_session(request):
@@ -651,122 +677,6 @@ def clean_check_box_in_session(request):
 		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
 			vect_keys_to_remove.append(key)
 	for key in vect_keys_to_remove:
-		del request.session[key] 
-
-def set_check_box_values(request):
-	"""
-	manage check boxes through ajax
-	"""
-	data = { 'is_ok' : False }
-	utils = Utils()
-	if (Constants.CHECK_BOX_ALL in request.GET):
-		request.session[Constants.CHECK_BOX_ALL] = utils.str2bool(request.GET.get(Constants.CHECK_BOX_ALL))
-		## check all unique
-		for key in request.session.keys():
-			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				request.session[key] = request.session[Constants.CHECK_BOX_ALL]
-		data = {
-			'is_ok': True
-		}
-	### one check box is pressed
-	elif (Constants.CHECK_BOX in request.GET):
-		request.session[Constants.CHECK_BOX_ALL] = False	### set All false
-		key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
-		request.session[key_name] = utils.str2bool(request.GET.get(Constants.CHECK_BOX))
-		total_checked = 0
-		for key in request.session.keys():
-			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				if (request.session[key]): total_checked += 1
-		data = {
-			'is_ok': True,
-			'total_checked' : total_checked,
-		}
-	## get the status of a check_box_single
-	elif (Constants.GET_CHECK_BOX_SINGLE in request.GET):
-		data['is_ok'] = True
-		for key in request.session.keys():
-			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				data[key] = request.session[key]
-	elif (Constants.COUNT_CHECK_BOX in request.GET):
-		count = 0
-		for key in request.session.keys():
-			if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-				if (request.session[key]): count += 1
-			elif (key == Constants.CHECK_BOX_ALL and request.session[Constants.CHECK_BOX_ALL]): count += 1
-		data = {
-			'is_ok': True,
-			Constants.COUNT_CHECK_BOX : count,
-		}
-	return JsonResponse(data)
-###
-###		END AJAX methods for check box in session
-###
-######################################
-
-	
-def show_phylo_canvas(request):
-	"""
-	manage check boxes through ajax
-	"""
-	data = { 'is_ok' : False }
-	utils = Utils()
-	key_with_project_id = 'project_id'
-	if (key_with_project_id in request.GET):
-		project_id = int(request.GET.get(key_with_project_id))
-		element_name = 'all_together'
-		key_element_name = 'key_element_name'
-		if (key_element_name in request.GET): element_name = int(request.GET.get(key_element_name))
-		try:
-			project = Project.objects.get(id=project_id)
-			if (element_name == 'all_together'): file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
-			else: file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
-			if (os.path.exists(file_name)):
-				string_file_content = utils.read_file_to_string(file_name).strip()
-				if (string_file_content != None and len(string_file_content) > 0):
-					data['is_ok'] = True
-					data['tree'] = string_file_content
-		except Project.DoesNotExist:
-			pass
-	return JsonResponse(data)
-
-
-def get_image_coverage(request):
-	"""
-	get image coverage
-	"""
-	data = { 'is_ok' : False }
-	key_with_project_sample_id = 'project_sample_id'
-	key_element = 'element'
-	if (key_with_project_sample_id in request.GET and key_element in request.GET):
-		try:
-			project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
-			path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
-			data['is_ok'] = True
-			data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
-			data['text'] = _("Coverage for element '{}'".format(request.GET.get(key_element)))
-		except ProjectSample.DoesNotExist as e:
-			pass
-	return JsonResponse(data)
-
-
-#####
-#####
-#####		VALIDATION METHODS WITH AJAX
-#####
-#####
-def validate_project_reference_name(request):
-	"""
-	test if a name is the same
-	"""
-	project_name = request.GET.get('project_name')
-	user_name = request.GET.get('user_name').strip()
-	if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
-	data = {
-		'is_taken': Project.objects.filter(name=project_name, owner__username=user_name).exists()
-	}
-	if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
-	return JsonResponse(data)
-
-
+		del request.session[key]
 
 

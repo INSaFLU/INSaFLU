@@ -12,6 +12,9 @@ from django.conf import settings
 import os, filecmp
 from constants.software_names import SoftwareNames
 from utils.result import Coverage
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import MetaKeyProject, User, Project, Reference
+from constants.meta_key_and_values import MetaKeyAndValue
 from constants.constants import FileExtensions
 from Bio import SeqIO
 
@@ -455,4 +458,4 @@ class Test(unittest.TestCase):
 
 
 
-
+		

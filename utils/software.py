@@ -325,17 +325,16 @@ class Software(object):
 		return temp_dir
 
 
-	def run_prokka(self, fasta_file_name):
+	def run_prokka(self, fasta_file_name, original_file_name):
 		"""
 		run prokka, in fasta file
 		out: genbank
 		{bpipe_prokka} FILE1 --kingdom Viruses --locustag locus --kingdom Viruses --locustag locus --genus Influenzavirus 
 			--species Influenzavirus --strain ref_PREFIX_FILES_OUT --outdir OUT_FOLDER/PREFIX_FILES_OUT --prefix PREFIX_FILES_OUT
 		"""
-		if (not os.path.exists(fasta_file_name)): raise Exception("File doesn't exist")
+		if (not os.path.exists(fasta_file_name) or os.path.getsize(fasta_file_name) == 0): raise Exception("File doesn't exist")
 		temp_dir = self.utils.get_temp_dir()
-		name_strain = os.path.basename(fasta_file_name)
-		name_strain = name_strain[:name_strain.rfind('.')]
+		name_strain = self.utils.clean_extension(os.path.basename(original_file_name))
 		cmd = "{} {} {} --strain {} --force --outdir {} --prefix {}".format(\
 					self.software_names.get_prokka(), fasta_file_name, self.software_names.get_prokka_parameters(), name_strain, temp_dir, name_strain)
 		exist_status = os.system(cmd)
@@ -828,11 +827,11 @@ class Software(object):
 			for element in coverage.get_dict_data():
 				if (not coverage.is_100_more_9(element)):
 					project_sample.alert_second_level += 1
-					meta_key = metaKeyAndValue.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
+					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_9(element))
 				elif (not coverage.is_100_more_0(element)):
 					project_sample.alert_first_level += 1
-					meta_key = metaKeyAndValue.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
+					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_0(element))
 			project_sample.save()
 			
@@ -905,6 +904,9 @@ class Software(object):
 		manage_database.add_variation_count(project_sample, user, count_hits)
 		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_INSAFLU, TagNamesConstants.TAG_PERCENTIL_VAR_INSAFLU)
 		manage_database.set_percentis_alert(project_sample, user, count_hits, percentil_name)
+		
+		### set the tag of result OK 
+		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		
 		### set the flag of the end of the task		
 		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)

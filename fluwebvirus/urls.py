@@ -15,10 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
-from .views import HomePageView
-from .views import SignUpView
-from .views import LoginView
-from .views import LogOutView
+from fluwebvirus.views import LoginView, HomePageView, LogOutView, SignUpView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -27,7 +24,7 @@ urlpatterns = [
 ##    url(r'^accounts/register/$', SignUpView.as_view(), name='signup'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', LogOutView.as_view(), name='logout'),
-    url(r'^dashboard/$', LoginView.as_view(), name='dashboard'),
+    url(r'^dashboard/$', HomePageView.as_view(), name='dashboard'),
 
     url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),

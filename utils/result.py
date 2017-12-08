@@ -4,7 +4,6 @@ Created on Nov 2, 2017
 @author: mmp
 '''
 import json, os
-from django.conf import settings
 from constants.constants import Constants
 
 class SoftwareDesc(object):

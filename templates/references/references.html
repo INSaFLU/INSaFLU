@@ -24,10 +24,10 @@
                 <tr>
                     <th colspan="7">
                     	<a href="{% url 'reference-add' %}" data-title="Add a new reference" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Reference</span></a>                                         
-                        <form method="post" class="form-inline form-search pull-right">
+                        <form method="get" class="form-inline form-search pull-right">
                           {% csrf_token %}
                             <div>
-                              <input id="search_form_id" name="search" type="text" class="form-control col-md-8" placeholder="Name, Scientific name"{% if search %} value="{{ search }}"{% endif %}>
+                              <input id="search_form_id" name="search_references" type="text" class="form-control col-md-8" placeholder="Name, Owner, Isolate name"{% if search_references %} value="{{ search_references }}"{% endif %}>
                               <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
                             </div>              
                         </form>

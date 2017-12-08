@@ -54,7 +54,7 @@ class CreateTree(object):
 		
 		### get meta_key
 		meta_key = MetaKeyAndValue.META_KEY_Run_Tree_All_Sequences\
-				if sequence_name == None else metaKeyAndValue.get_meta_key_by_element(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
+				if sequence_name == None else metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
 				
 		n_files_with_sequences = 0
 		n_count_samples_processed = 0
@@ -175,7 +175,7 @@ class CreateTree(object):
 		## set meta info
 		manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		meta_key = MetaKeyAndValue.META_KEY_Tree_Count_All_Sequences if sequence_name == None else\
-			metaKeyAndValue.get_meta_key_by_element(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
+			metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
 		manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Success, str(n_files_with_sequences))
 		
 		### copy files for the project

@@ -52,8 +52,8 @@ class Test(unittest.TestCase):
 		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
 	
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 
 		try:
 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5000')
@@ -218,7 +218,7 @@ class Test(unittest.TestCase):
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE_tree)))
 			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
 
-			meta_key = metaKeyAndValue.get_meta_key_by_element(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
+			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
 			meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
 			self.assertTrue(meta_sample != None)
 			self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
@@ -227,7 +227,7 @@ class Test(unittest.TestCase):
 			self.assertEquals('Mafft-7.313', result.get_software(software_names.get_mafft_name()))
 			self.assertEquals(4, result.get_number_softwares())
 		
-			meta_key = metaKeyAndValue.get_meta_key_by_element(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
+			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
 			meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
 			self.assertTrue(meta_sample != None)
 			self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)

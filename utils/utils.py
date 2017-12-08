@@ -10,8 +10,7 @@ from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from utils.result import CountHits
-import os, random, gzip
-import logging
+import os, random, gzip, hashlib, logging
 from pysam import pysam
 
 class Utils(object):
@@ -84,6 +83,8 @@ class Utils(object):
 		"""
 		prevent to remove files outside of temp directory
 		"""
+		if (sz_file_name == None): return
+		
 		if os.path.exists(sz_file_name) and len(sz_file_name) > 0 and sz_file_name.find(Constants.TEMP_DIRECTORY) == 0:
 			cmd = "rm " + sz_file_name
 			exist_status = os.system(cmd)
@@ -253,7 +254,7 @@ class Utils(object):
 					vect_genes.append(vect_gene)
 			dt_data[record.name] = vect_genes
 		return dt_data
-			
+	
 			
 	def read_text_file(self, file_name):
 		"""
@@ -582,8 +583,18 @@ class Utils(object):
 			for line in handle:
 				if (len(sz_return) > 0): sz_return += "\n"
 				sz_return += line
-		return sz_return	
+		return sz_return
 	
+	
+	def md5sum(self, filename):
+		"""
+		read file and transform to md5sum
+		"""
+		f = open(filename, mode='r')
+		d = hashlib.md5()
+		for buf in f.read(128):
+			d.update(buf.encode())
+		return d.hexdigest()
 	
 	
 	

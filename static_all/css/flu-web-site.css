@@ -127,6 +127,13 @@ p.software {
 }
 
 .regular_info_box{
-    background-color: #70a070;
-    border-bottom: 1px solid #609060;
+	padding: 5px;
+    border-radius: 3px;
+    background-color: #b5d3f1;
+    border-bottom: 1px solid #83baf1
+}
+
+a.disabled {
+   pointer-events: none;
+   cursor: default;
 }

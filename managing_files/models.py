@@ -23,8 +23,9 @@ class SeasonReference(models.Model):
 	"""
 	Each sample needs a dataset 
 	"""
-	name = models.CharField(max_length=100, blank=True, null=True)
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='season_reference', blank=True, null=True, on_delete=models.CASCADE)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Date creation')
 	def __str__(self):
 		return self.name
 	class Meta:
@@ -32,7 +33,7 @@ class SeasonReference(models.Model):
 
 
 class Reference(models.Model):
-	name = models.CharField(max_length=200, default='New reference')
+	name = models.CharField(max_length=200, db_index=True, default='New reference')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
@@ -92,7 +93,6 @@ class MetaKey(models.Model):
 	Has meta tags to put values, for example, quality in the files, or samples
 	"""
 	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
-	
 	def __str__(self):
 		return self.name
 	
@@ -106,6 +106,7 @@ class TagName(models.Model):
 	"""
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='tag_name', blank=True, null=True, on_delete=models.CASCADE)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	is_meta_data = models.BooleanField(default=False)	## if this tag belongs to meta data or not.
 	def __str__(self):
 		return self.name
@@ -117,23 +118,25 @@ class DataSet(models.Model):
 	"""
 	Each sample needs a dataset 
 	"""
-	name = models.CharField(max_length=100, blank=True, null=True)
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='data_set', blank=True, null=True, on_delete=models.CASCADE)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Date creation')
 	def __str__(self):
 		return self.name
 	class Meta:
-		ordering = ['name', ]
+		ordering = ['creation_date', 'name', ]
 		
 class VacineStatus(models.Model):
 	"""
 	Each sample needs a dataset 
 	"""
-	name = models.CharField(max_length=100, blank=True, null=True)
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='vacine_status', blank=True, null=True, on_delete=models.CASCADE)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Date creation')
 	def __str__(self):
 		return self.name
 	class Meta:
-		ordering = ['name', ]
+		ordering = ['creation_date', 'name', ]
 	
 class Sample(models.Model):
 	"""
@@ -142,9 +145,9 @@ class Sample(models.Model):
 	OUT_FILE_ABRICATE = "abricate.txt"
 	
 	## to remove in future
-	objects = models.Manager()
+	objects = models.Manager()	## need to check this
 	
-	name = models.CharField(max_length=200, blank=True, null=True)  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
 																	##    prefix_R2_001.fastq.gz),
 	date_of_onset = models.DateField('date of onset', blank=True, null=True)
 	date_of_collection = models.DateField('date of collection', blank=True, null=True)
@@ -168,6 +171,7 @@ class Sample(models.Model):
 	### files
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
+	## 30M
 	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=300, blank=True, null=True)
@@ -331,7 +335,7 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
 	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
 	
-	name = models.CharField(max_length=200, blank=True, null=True)
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	reference = models.ForeignKey(Reference, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
@@ -484,7 +488,7 @@ class CountVariations(models.Model):
 	var_bigger_50 = models.PositiveIntegerField(default=0)
 	
 	def __str__(self):
-		return 'Total: {} Less 50: {} Bigger 50:{}'.format(self.total, self.var_less_50, self.var_bigger_50)
+		return 'Total: {} Less 50:{} Bigger 50:{}'.format(self.total, self.var_less_50, self.var_bigger_50)
 	
 class Statistics(models.Model):
 	"""
@@ -495,7 +499,13 @@ class Statistics(models.Model):
 	
 	def __str__(self):
 		return 'Tag: {} Value: {}'.format(self.tag.name, self.value)
-	
+
+# class CosineDistance(models.Model):
+# 	"""
+# 	Has the values of cosine distance 
+# 	"""
+# 	pass
+
 class Version(models.Model):
 	"""
 	"""

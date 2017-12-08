@@ -13,8 +13,8 @@ class Test(unittest.TestCase):
 	metaKeyAndValue = MetaKeyAndValue()
 
 	def test_meta_keys(self):
-		self.assertTrue("", self.metaKeyAndValue.get_meta_key_by_project_id(MetaKeyAndValue.META_KEY_Queue_TaskID_Project, 20))
-		self.assertTrue("", self.metaKeyAndValue.get_meta_key_by_project_id(MetaKeyAndValue.META_KEY_Elements_Project, 120))
-		self.assertTrue("", self.metaKeyAndValue.get_meta_key_by_element(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 230))
+		self.assertEqual("TaskID_Project 20", self.metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Queue_TaskID_Project, 20))
+		self.assertEqual("Elements 120", self.metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Project, 120))
+		self.assertEqual("Alert Coverage >9 230", self.metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 230))
 
 

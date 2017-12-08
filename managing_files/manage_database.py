@@ -8,6 +8,8 @@ from managing_files.models import CountVariations, Statistics, TagName, ProjectS
 from constants.tag_names_constants import TagNamesConstants
 from constants.meta_key_and_values import MetaKeyAndValue
 from django.db import connection
+from constants.constants import TypePath
+from utils.utils import Utils
 
 class ManageDatabase(object):
 	'''
@@ -298,3 +300,21 @@ class ManageDatabase(object):
 	###		END deal with percentils
 	###
 	#######################################
+	
+	
+	def get_elements_and_genes_from_db(self, project, user):
+		"""
+		return vector with name of elements sorted
+		"""
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Project, project.id)
+		meta_project = self.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_project == None):
+			utils = Utils()
+			dt_data = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+			if (dt_data != None):
+				self.set_project_metakey(project, user, meta_key,\
+					MetaKeyAndValue.META_VALUE_Success, ','.join(sorted(dt_data.keys())))
+			return sorted(dt_data.keys())
+		return meta_project.description.split(',')
+		

@@ -1007,7 +1007,7 @@ class Test(TestCase):
 		test prokka method
 		"""
 		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, 'TwoGenesJoined.fasta')
-		temp_out = self.software.run_prokka(fasta_file)
+		temp_out = self.software.run_prokka(fasta_file, 'TwoGenesJoined.fasta')
 
 		name_strain = os.path.basename(fasta_file)
 		name_strain = name_strain[:name_strain.rfind('.')]

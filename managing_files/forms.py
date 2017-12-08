@@ -13,7 +13,7 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
 from constants.constants import Constants
-from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project, ProjectSample
+from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -40,7 +40,10 @@ class ReferenceForm(forms.ModelForm):
 			('name', 'Name', 'Regular name for this reference', True),
 			('isolate_name', 'Isolate name', 'Isolate name for this reference', False),
 			('reference_fasta', 'Reference (fasta)', 'Reference file in fasta format', True),
-			('reference_genbank', 'Reference (genBank)', 'Reference file in genBank format, all locus must have the same name of fasta locus file', True),
+			('reference_genbank', 'Reference (genBank)', 
+					"""Reference file in genBank format.<br>
+					All locus must have the same name of fasta locus file.<br>
+					If you don't upload a Genbank file 'prokka' software will annotate fasta file for you.""", False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
@@ -82,7 +85,7 @@ class ReferenceForm(forms.ModelForm):
 		### testing file names
 		reference_fasta = cleaned_data['reference_fasta']
 		reference_genbank = cleaned_data['reference_genbank']
-		if (reference_fasta.name == reference_genbank.name):
+		if (reference_genbank != None and reference_fasta.name == reference_genbank.name):
 			self.add_error('reference_fasta', _("Error: both files has the same name. Please, different files."))
 			self.add_error('reference_genbank', _("Error: both files has the same name. Please, different files."))
 			return cleaned_data
@@ -90,7 +93,7 @@ class ReferenceForm(forms.ModelForm):
 		## testing fasta
 		some_error_in_files = False
 		reference_fasta_temp_file_name = NamedTemporaryFile(prefix='flu_fa_', delete=False)
-		reference_fasta_temp_file_name.write(reference_fasta.file.read())
+		reference_fasta_temp_file_name.write(reference_fasta.read())
 		reference_fasta_temp_file_name.flush()
 		reference_fasta_temp_file_name.close()
 		try:
@@ -104,25 +107,27 @@ class ReferenceForm(forms.ModelForm):
 		### testing genbank
 		reference_genbank_temp_file_name = NamedTemporaryFile(prefix='flu_gb_', delete=False)
 		reference_genbank = cleaned_data['reference_genbank']
-		reference_genbank_temp_file_name.write(reference_genbank.read())
-		reference_genbank_temp_file_name.flush()
-		reference_genbank_temp_file_name.close()
-		try:
-			self.utils.is_genbank(reference_genbank_temp_file_name.name)
-		except IOError as e:
-			some_error_in_files = True
-			os.unlink(reference_genbank_temp_file_name.name)
-			self.add_error('reference_genbank', e.args[0])
+		if (reference_genbank != None):
+			reference_genbank_temp_file_name.write(reference_genbank.read())
+			reference_genbank_temp_file_name.flush()
+			reference_genbank_temp_file_name.close()
+			try:
+				self.utils.is_genbank(reference_genbank_temp_file_name.name)
+			except IOError as e:
+				some_error_in_files = True
+				os.unlink(reference_genbank_temp_file_name.name)
+				self.add_error('reference_genbank', e.args[0])
 		
 		## if some errors in the files, fasta or genBank, return
 		if (some_error_in_files): return cleaned_data
 		
 		## test locus names and length of sequences
-		try:
-			self.utils.compare_locus_fasta_gb(reference_fasta_temp_file_name.name, reference_genbank_temp_file_name.name)
-		except ValueError as e:
-			self.add_error('reference_fasta', e.args[0])
-			self.add_error('reference_genbank', e.args[0])
+		if (reference_genbank != None):
+			try:
+				self.utils.compare_locus_fasta_gb(reference_fasta_temp_file_name.name, reference_genbank_temp_file_name.name)
+			except ValueError as e:
+				self.add_error('reference_fasta', e.args[0])
+				self.add_error('reference_genbank', e.args[0])
 		
 		## remove temp files
 		os.unlink(reference_genbank_temp_file_name.name)
@@ -214,15 +219,7 @@ class SampleForm(forms.ModelForm):
 	class Meta:
 		model = Sample
 		# specify what fields should be used in this form.
-		fields = ('name', 'date_of_collection', 'date_of_onset', 'date_of_receipt_lab', 'vaccine_status', 'data_set', 'path_name_1', 'path_name_2')
-		date_of_onset = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
-		date_of_collection = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
-		date_of_receipt_lab = forms.DateField(input_formats = settings.DATE_INPUT_FORMATS)
-		widgets = {
-			'date_of_onset': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
-			'date_of_collection': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
-			'date_of_receipt_lab': DateInput(attrs={'class':'datepicker', 'placeHolder' : 'dd/mm/yyyy'}),
-		}
+		fields = ('name', 'vaccine_status', 'data_set', 'path_name_1', 'path_name_2')
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -241,9 +238,6 @@ class SampleForm(forms.ModelForm):
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Unique identify for this sample', True),
-			('date_of_onset', 'Date of onset', 'Date of onset', False),
-			('date_of_collection', 'Date of collection', 'Date of collection', False),
-			('date_of_receipt_lab', 'Date on Lab', 'Date receipt on the lab', False),
 			('vaccine_status', 'Vaccine status', 'Discrimination of vaccination status', False),
 			('data_set', 'Dataset', 'Specific dataset, can be used to organize samples', False),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
@@ -261,27 +255,33 @@ class SampleForm(forms.ModelForm):
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
-			Div(
-				Div('name', css_class="col-sm-4"),
-				Div( 
-					HTML('<a href="{% url "sample-dataset" %}" id="data_set_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
-					Div('data_set'), 
-					css_class = "row col-sm-4"),
-				Div( 
-					HTML('<a href="{% url "sample-vaccine" %}" id="vaccine_add_modal" <span ><i class="fa fa-plus-square"></i></span></a>'),
-					Div('vaccine_status'), 
-					css_class = "row col-sm-4"),
-				css_class = 'row'
+			Fieldset(
+				'General data',
+				Div(
+					Div('name', css_class="col-sm-4"),
+					Div( 
+						HTML('<a href="#modal_add_data_database" id="id_data_set_add_modal" data-toggle="modal"> <span> <i class="fa fa-plus-square"></i></span> </a>'),
+						HTML('<a href="#modal_remove_data_database" id="id_data_set_remove_modal" data-toggle="modal"> <span> <i class="fa fa-minus-square"></i></span> </a>'),
+						Div('data_set'), 
+						css_class = "row col-sm-4"),
+					Div( 
+						HTML('<a href="#modal_add_data_database" id="id_vaccine_add_modal" data-toggle="modal"> <span> <i class="fa fa-plus-square"></i></span> </a>'),
+						HTML('<a href="#modal_remove_data_database" id="id_vaccine_remove_modal" data-toggle="modal"> <span> <i class="fa fa-minus-square"></i></span> </a>'),
+						Div('vaccine_status'), 
+						css_class = "row col-sm-4"),
+					css_class = 'row'
+				),
+				css_class = 'article-content'
 			),
 			Fieldset(
 				'Dates',
 				Div(
 					Div('like_dates', css_class="col-sm-3"),
-					Div('date_of_onset', css_class="col-sm-3"),
-					Div('date_of_collection', css_class="col-sm-3"),
-					Div('date_of_receipt_lab', css_class="col-sm-3"),
+					HTML('<div id="div_id_date_of_onset" class="form-group col-sm-3"> <label for="id_date_of_onset" class="form-control-label ">Date of onset</label>  <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/> <small id="hint_id_date_of_onset" class="text-muted">Date of onset</small> </div>'),
+					HTML('<div id="div_id_date_of_collection" class="form-group col-sm-3"> <label for="id_date_of_collection" class="form-control-label ">Date of collection</label> <input placeholder="dd/mm/yyyy" name="date_of_collection" id="id_date_of_collection"/> <small id="hint_id_date_of_collection" class="text-muted">Date of collection</small> </div>'),
+					HTML('<div id="div_id_date_on_lab" class="form-group col-sm-3"> <label for="id_date_on_lab" class="form-control-label ">Date on Lab</label> <input placeholder="dd/mm/yyyy" name="date_on_lab" id="id_date_on_lab"/> <small id="hint_id_date_on_lab" class="text-muted">Date on Lab</small> </div>'),
 					css_class = 'row '),
-				css_class = 'rounded-group-box'
+				css_class = 'article-content'
 			),
 			Fieldset(
 				'Global position',
@@ -290,17 +290,24 @@ class SampleForm(forms.ModelForm):
 					Div('lng', css_class="col-sm-4"),
 					css_class = 'row'
 				),
+				css_class = 'article-content'
 			),
-			Div('path_name_1', css_class = 'show-for-sr'),
-			Div('path_name_2', css_class = 'show-for-sr'),
+			Fieldset(
+				'Fastq files',
+				Div(
+					Div('path_name_1', css_class = 'show-for-sr'),
+					Div('path_name_2', css_class = 'show-for-sr')),
+				css_class = 'article-content'
+			),
 # 			Div(
 # 				Div('geo_local', css_class="col-sm-8"),
 # 				css_class = 'row'
 # 			),
 			ButtonHolder(
 				Submit('save', 'Save', css_class='btn-primary'),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('samples')))
-			)
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('samples'))),
+			),
+			HTML('<p></p>'),
 		)
 
 	def clean(self):

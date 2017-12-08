@@ -5,8 +5,8 @@
 {% block css %}
 
 	{% load static from staticfiles %}
-		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 {% endblock css %}
 
 {% block header %}
@@ -17,14 +17,72 @@
 
 {% block content %}
 	{% crispy form %} 
+	
+	<!-- The remove Modal -->
+	<div class="modal fade" id="modal_remove_data_database" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header">
+    					<h4 class="modal-title-remove">Remove</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="modal-body-remove-sample" remove-single-value-url="{% url 'remove_single_value_database' %}">
+  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-remove">
+    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+	
+	<!-- The add Modal -->
+	<div class="modal fade" id="modal_add_data_database" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header">
+    					<h4 class="modal-title">Coverage</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="modal-body-add-sample" add-single-value-url="{% url 'add_single_value_database' %}">
+  							<div class="form-group row">
+  								<label id="id-label-replace" class="col-6 col-form-label">Folder Name</label>
+ 								<div class="col-10">
+         							<input class="form-control" id="id_name_to_insert" type="text" autocomplete="off"/>
+       							</div>
+       						</div>
+  						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer">
+    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    					<button id="id-save-button" type="button" class="btn btn-primary" data-dismiss="modal">Save</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+	
 {% endblock %}
 
  {% block js %}
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
+	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
  {% endblock %}
 

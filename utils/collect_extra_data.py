@@ -39,7 +39,7 @@ class CollectExtraData(object):
 		### get the taskID and seal it
 		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
-		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key_by_project_id(\
+		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_project != None and meta_project.value == MetaKeyAndValue.META_VALUE_Success): return 
 		
@@ -60,10 +60,10 @@ class CollectExtraData(object):
 		
 		
 		
-		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key_by_project_id(\
+		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_project != None):
-			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key_by_project_id(\
+			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
 

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from constants.constants import FileType, TypePath, FileExtensions
 from django.core.exceptions import MultipleObjectsReturned
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations
+from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
 from utils.result import CountHits
@@ -14,12 +14,17 @@ import os, time
 
 class testsReferenceFiles(TestCase):
 	
+	constantsTestsCase = ConstantsTestsCase()
+	
+	def setUp(self):
+		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), self.constantsTestsCase.MANAGING_TESTS)
+		
 	def test_fasta_and_gb_file(self):
 		"""
 		test fasta and genbank
 		"""
 		utils = Utils()
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		try:
 			count_seqs = utils.is_fasta(fasta_file)
 			self.assertEqual(8, count_seqs)
@@ -32,7 +37,7 @@ class testsReferenceFiles(TestCase):
 		except IOError as e:
 			pass
 		
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FAIL_FASTA)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FAIL_FASTA)
 		try:
 			utils.is_fasta(fasta_file)
 			self.fail("Must throw exception")
@@ -45,7 +50,7 @@ class testsReferenceFiles(TestCase):
 		except IOError as e:
 			pass
 		
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		try:
 			utils.is_fasta(gb_file)
 			self.fail("Must throw exception")
@@ -58,7 +63,7 @@ class testsReferenceFiles(TestCase):
 		except IOError as e:
 			self.fail(e.args)
 		
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_MISS_ONE)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_MISS_ONE)
 		try:
 			utils.is_fasta(gb_file)
 			self.fail("Must throw exception")
@@ -77,8 +82,8 @@ class testsReferenceFiles(TestCase):
 		Compare if fasta file has the same name of locus
 		"""
 		utils = Utils()
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		
 		## compare fasta and genbank
 		try:
@@ -87,22 +92,22 @@ class testsReferenceFiles(TestCase):
 		except ValueError as e:
 			self.fail(e.message)
 			
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_MISS_ONE)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_MISS_ONE)
 		try:
 			utils.compare_locus_fasta_gb(fasta_file, gb_file)
 			self.fail("Must throw exception")
 		except ValueError as e:
 			self.assertEqual("Number of locus are different from fasta to genbank.", e.args[0])
 			
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_DIFF_LENGTH)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_DIFF_LENGTH)
 		try:
 			utils.compare_locus_fasta_gb(fasta_file, gb_file)
 			self.fail("Must throw exception")
 		except ValueError as e:
 			self.assertEqual("Different length. Fasta seq: PB2 length: 2280; Fasta seq: PB2 length: 2277.", e.args[0])
 
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_2)
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_2)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_2)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK_2)
 		try:
 			utils.compare_locus_fasta_gb(fasta_file, gb_file)
 			self.fail("Must throw exception")
@@ -431,12 +436,12 @@ class testsReferenceFiles(TestCase):
 		self.assertTrue(metaKey_sample_2.creation_date > metaKey_sample.creation_date)
 
 		### test alerts
-		meta_key_value = meta_key_and_value.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 'xpto')
+		meta_key_value = meta_key_and_value.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 'xpto')
 		self.assertTrue(meta_key_value.startswith(MetaKeyAndValue.META_KEY_ALERT_COVERAGE) and meta_key_value.endswith('xpto'))
 		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_value, ConstantsTestsCase.VALUE_TEST + 'ddd', 'xxprorot')
-		meta_key_value = meta_key_and_value.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 'xpto1')
+		meta_key_value = meta_key_and_value.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 'xpto1')
 		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_value, ConstantsTestsCase.VALUE_TEST, 'xxprorotw')
-		meta_key_value = meta_key_and_value.get_meta_key_alert_coverage(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, 'xpto2')
+		meta_key_value = meta_key_and_value.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, 'xpto2')
 		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_value, ConstantsTestsCase.VALUE_TEST, 'xxprorotqwqwwq')
 		result_list = manageDatabase.get_project_sample_starts_with_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
 		self.assertEquals(3, len(result_list))
@@ -706,5 +711,61 @@ class testsReferenceFiles(TestCase):
 		### test the remove count variations
 		self.assertTrue(manage_database.delete_variation_count(project_sample, user))
 		self.assertFalse(manage_database.delete_variation_count(project_sample, user))
+
+
+	def test_get_elements_and_genes_from_db(self):
+		
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stage_te_tree"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+		
+		project_name = "several_tree"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.name = project_name
+			project.reference = reference
+			project.owner = user
+			project.save()
+			
+		manage_database = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Project, project.id)
+		meta_project = manage_database.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertEqual(None, meta_project)
+	
+		vect_data = manage_database.get_elements_and_genes_from_db(project, user)
+		self.assertEqual(8, len(vect_data))
+		self.assertEqual('HA', vect_data[0])
+		self.assertEqual('PB2', vect_data[-1])
+
+		meta_project = manage_database.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_project != None)
+		self.assertEqual(8, len(meta_project.description.split(',')))
+		self.assertEqual('HA', meta_project.description.split(',')[0])
+		self.assertEqual('PB2', meta_project.description.split(',')[-1])
+
 
 

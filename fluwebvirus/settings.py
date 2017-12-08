@@ -27,10 +27,16 @@ SECRET_KEY = 'v3j0**zjj(3mvv28vtwf8)ev_^!$$asnf2t9&hxw97(9j#=lj9'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.insa.pt', 'localhost', '127.0.0.1', '[::1]']
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+CSRF_COOKIE_AGE = None
+#CSRF_COOKIE_DOMAIN = '.ourapi.com'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True
+CSRF_USE_SESSIONS = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -46,10 +52,11 @@ INSTALLED_APPS = [
     'django_tables2',
     'bootstrap4',
     'django_q',
-    'django_modalview',
+    'django_user_agents',
     'bootstrap_datepicker',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
+    'log_login.apps.LogLoginConfig',
 ]
 
 MIDDLEWARE = [
@@ -60,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
 ]
 
 ROOT_URLCONF = 'fluwebvirus.urls'
@@ -99,14 +107,16 @@ Q_CLUSTER = {
 
 CACHES = {
     'default': {
-		'BACKEND': \
-			'django.core.cache.backends.locmem.LocMemCache',
+		'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'djangoq-localmem',
-        }
+    }
 }
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 
+# Name of cache backend to cache user agents. If it not specified default
+# cache alias will be used. Set to `None` to disable caching.
+USER_AGENTS_CACHE = 'default'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -162,7 +172,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Berlin'
+TIME_ZONE = 'Europe/Lisbon'
 
 USE_I18N = True
 
@@ -173,6 +183,7 @@ USE_L10N = True
 USE_TZ = True
 
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
@@ -181,12 +192,13 @@ USE_TZ = True
 # https://stackoverflow.com/questions/2472422/django-file-upload-size-limit
 # https://stackoverflow.com/questions/5871730/need-a-minimal-django-file-upload-example
 
-## STATICFILES_DIRS replace STATIC_ROOT
+# STATICFILES_DIRS is the list of folder where Django will search for additional static files, in addition to each static folder of each app installed.
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+# STATIC_ROOT is the folder where every static files will be stored after a manage.py collectstatic
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_all')	## is the absolute path to the directory where collectstatic will collect static files for deployment.
-STATIC_URL = '/static/' 						## is the URL to use when referring to static files located in STATIC_ROOT.
+STATIC_URL = '/static/' 		## is the URL to use when referring to static files located in STATIC_ROOT.
 
 MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

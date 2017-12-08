@@ -22,9 +22,12 @@
     padding-bottom: 2px;
 }
 
+/*
+*	set the background color to the sample_add
+*/
 .rounded-group-box-legend {
-    border-radius: 10px;
-    background: #eeeeee; 										/* For browsers that do not support gradients */
+    border-radius: 2px;
+    background: #eeeee; 										/* For browsers that do not support gradients */
     background: -webkit-linear-gradient(#dddddd, #eeeeee); 		/* For Safari 5.1 to 6.0 */
     background: -o-linear-gradient(#dddddd, #eeeeee); 			/* For Opera 11.1 to 12.0 */
     background: -moz-linear-gradient(#dddddd, #eeeeee); 		/* For Firefox 3.6 to 15 */
@@ -133,3 +136,7 @@ p.software {
     border-bottom: 1px solid #83baf1
 }
 
+a.disabled {
+   pointer-events: none;
+   cursor: default;
+}

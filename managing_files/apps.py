@@ -13,7 +13,6 @@ class ManagingFilesConfig(AppConfig):
 			
 		#### Now upload the 
 		self.upload_default_files()
-		
 
 	def create_default_user(self):
 		"""

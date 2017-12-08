@@ -88,10 +88,11 @@ class SampleTable(tables.Table):
 	extra_info = tables.LinkColumn('Extra Information', orderable=False, empty_values=())
 	type_and_subtype = tables.Column('Type and SubType', empty_values=())
 	fastq_files = tables.Column('#Fastq Files', empty_values=())
+	data_set = tables.Column('Data set', empty_values=())
 	
 	class Meta:
 		model = Sample
-		fields = ('name', 'creation_date', 'fastq_files', 'type_and_subtype', 'number_quality_sequences', 'extra_info')
+		fields = ('name', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set', 'number_quality_sequences', 'extra_info')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Samples to show..."
 	
@@ -110,6 +111,13 @@ class SampleTable(tables.Table):
 		"""
 		return record.get_type_sub_type()
 	
+	def render_data_set(self, record):
+		"""
+		return name of dataset
+		"""
+		return record.name
+		
+		
 	def render_number_quality_sequences(self, record):
 		"""
 		number of quality sequences and average

@@ -63,13 +63,14 @@ class MetaKeyAndValue(object):
 		'''
 		pass
 	
-	def get_meta_key_by_element(self, meta_key_element, element):
+	def get_meta_key(self, meta_key, entity):
 		"""
 		in: MetaKeyAndValue.META_KEY_Tree_All_Sequences, MetaKeyAndValue.META_KEY_Run_Tree_By_Element,
 				META_KEY_ALERT_COVERAGE_9, META_KEY_ALERT_COVERAGE_0
+				META_KEY_Queue_TaskID_Project, META_KEY_Elements_Project
 		return metakey by element
 		"""
-		return '{}_{}'.format(meta_key_element, element)
+		return '{} {}'.format(meta_key, entity)
 	
 	def get_meta_key_queue_by_project_sample_id(self, project_sample_id):
 		"""
@@ -78,7 +79,7 @@ class MetaKeyAndValue(object):
 		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
 		Each project_sample_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
 		"""
-		return '{}_{}'.format(self.META_KEY_Queue_TaskID_ProjectSample, project_sample_id)
+		return self.get_meta_key(self.META_KEY_Queue_TaskID_ProjectSample, project_sample_id)
 	
 	def get_meta_key_queue_by_project_id(self, project_id):
 		"""
@@ -87,26 +88,7 @@ class MetaKeyAndValue(object):
 		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
 		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
 		"""
-		return '{}_{}'.format(self.META_KEY_Queue_TaskID_Project, project_id)
+		return self.get_meta_key(self.META_KEY_Queue_TaskID_Project, project_id)
 	
-	def get_meta_key_by_project_id(self, meta_key, project_id):
-		"""
-		in: meta_key -> META_KEY_Queue_TaskID_Project, META_KEY_Elements_Project
-		in: project_id
-		return : META_KEY_Queue_TaskID_Project + project_sample_id, META_KEY_Elements_Project + project_sample_id
-		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
-		Each project_id as a metakey, that is the final value of META_VALUE_Success or META_VALUE_Error
-		"""
-		return '{}_{}'.format(meta_key, project_id)
-	
-	def get_meta_key_alert_coverage(self, meta_key, sequence_name):
-		"""
-		in: meta_key -> META_KEY_ALERT_COVERAGE_9, META_KEY_ALERT_COVERAGE_0
-		in: sequence_name
-		return META_KEY_ALERT_COVERAGE_90 + sample_name
-		Can assume the value: META_VALUE_Queue, META_VALUE_Success, META_VALUE_Error
-		Each sequence_name has a meta_key with an alert
-		"""
-		return '{} {}'.format(meta_key, sequence_name)
 
 

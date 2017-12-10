@@ -174,13 +174,15 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Lisbon'
 
-USE_I18N = True
+DATE_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
+DATETIME_FORMAT = '%d-%m-%Y %H:%M'
+DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look which kind of date is returned from forms to correct the format
 
 ## set the format in forms.DateField
 ## This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
-USE_L10N = True
+USE_L10N = False
 
-USE_TZ = True
+USE_TZ = True	## enable time zone
 
 
 

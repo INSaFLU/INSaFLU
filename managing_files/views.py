@@ -94,6 +94,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		if (scentific_name is None): scentific_name = ""
 		
 		## create a genbank file
+		temp_genbank_dir = None
 		if (reference_genbank == None):
 			reference_fasta_temp_file_name = NamedTemporaryFile(prefix='flu_fa_', delete=False)
 			reference_fasta.file.seek(0)
@@ -115,11 +116,14 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 				utils.remove_dir(temp_genbank_dir)
 				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
 				return super(ReferenceAddView, self).form_invalid(form)
-			
+
 		hash_value_fasta = hashlib.md5(form.files.get('reference_fasta').read()).hexdigest()
 		if (reference_genbank == None): hash_value_genbank = utils.md5sum(temp_genbank_file)
 		else: hash_value_genbank = hashlib.md5(form.files.get('reference_genbank').read()).hexdigest()
 		
+		## remove genbank temp dir if exist 
+		if (temp_genbank_dir != None): utils.remove_dir(temp_genbank_dir)
+			
 		reference = form.save(commit=False)
 		## set other data
 		reference.owner = self.request.user
@@ -143,9 +147,6 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		else: utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
 		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
-		
-		## remove genbank temp dir if exist 
-		utils.remove_dir(temp_genbank_dir)
 		
 		## create the index before commit in database, throw exception if something goes wrong
 		software.create_fai_fasta(reference.reference_fasta.name)
@@ -333,11 +334,17 @@ class ProjectsView(LoginRequiredMixin, ListView):
 	
 	def get_context_data(self, **kwargs):
 		context = super(ProjectsView, self).get_context_data(**kwargs)
+		tag_search = 'search_projects'
 		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+										Q(reference__name__icontains=self.request.GET.get(tag_search)))
 		table = ProjectTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		
 		### clean check box in the session
-		clean_check_box_in_session(self.request)
+		clean_check_box_in_session(self.request) ## for both samples and references
 
 		context['table'] = table
 		context['nav_project'] = True
@@ -345,53 +352,63 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		return context
 
 
-class ReferenceProjectList(ListView, LoginRequiredMixin):
-	"""
-	
-	"""
-	model = Reference
-	context_object_name = 'reference'
-	ordering = ['id']
-##	group_required = u'company-user' security related with GroupRequiredMixin
-	
-	def get_context_data(self, **kwargs):
-		context = super(ReferenceProjectList, self).get_context_data(**kwargs)
-		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
-		table = ReferenceTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		
-		context['table'] = table
-		context['nav_reference'] = True
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		return context
-
 class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
 	"""
 	Create a new reference
 	"""
+	utils = Utils()
 	model = Project
 	fields = ['name']
 	success_url = reverse_lazy('projects')
 	template_name = 'project/project_add.html'
-
 
 	def get_form_kwargs(self):
 		"""
 		Set the request to pass in the form
 		"""
 		kw = super(ProjectCreateView, self).get_form_kwargs()
-##		kw['request'] = self.request 	# get error
 		return kw
-
 
 	def get_context_data(self, **kwargs):
 		context = super(ProjectCreateView, self).get_context_data(**kwargs)
+		
+		tag_search = 'search_references'
 		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+							Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
+							Q(isolate_name__icontains=self.request.GET.get(tag_search)))
 		table = ReferenceProjectTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER_SMALL
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		
+		### set the check_box, check_box_all is only to control if is the first time or not
+		if (Constants.CHECK_BOX_ALL not in self.request.session):
+			self.request.session[Constants.CHECK_BOX_ALL] = False
+			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)
+		elif ("search_references" in self.request.GET):
+			# clean check boxes in search
+			dt_sample_id_add_temp = {}
+			for reference in query_set: dt_sample_id_add_temp[reference.id] = 1	## add the ids that are in the tables
+			for key in self.request.session.keys():
+				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
+					### this is necessary because of the search. Can occur some checked box that are out of filter.
+					if (int(key.split('_')[2]) not in dt_sample_id_add_temp):
+						self.request.session[key] = False
 			
+		## clean the 
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		if (Constants.PROJECT_NAME in self.request.session): 
+			context[Constants.PROJECT_NAME] = self.request.session[Constants.PROJECT_NAME]
+			del self.request.session[Constants.PROJECT_NAME]
+		if (Constants.ERROR_PROJECT_NAME in self.request.session): 
+			context[Constants.ERROR_PROJECT_NAME] = self.request.session[Constants.ERROR_PROJECT_NAME]
+			del self.request.session[Constants.ERROR_PROJECT_NAME]
+		if (Constants.ERROR_REFERENCE in self.request.session): 
+			context[Constants.ERROR_REFERENCE] = self.request.session[Constants.ERROR_REFERENCE]
+			del self.request.session[Constants.ERROR_REFERENCE]
+		
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		if self.request.POST: 
@@ -408,19 +425,32 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		context = self.get_context_data()
 		project_references = context['project_references']
 		name = form.cleaned_data['name']
+		b_error = False
 		try:
 			Project.objects.get(name=name, owner__username=self.request.user.username)
-			return super(ProjectCreateView, self).form_invalid(form)
+			self.request.session[Constants.ERROR_PROJECT_NAME] = _("Exists a project with this name.")
+			self.request.session[Constants.PROJECT_NAME] = name
+			b_error = True
 		except Project.DoesNotExist:
 			pass
+		
+		select_ref = None
 		if ('select_ref' in project_references.data ): select_ref = project_references.data['select_ref']
-		else: return super(ProjectCreateView, self).form_invalid(form)
+		else:
+			self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference." 
+			b_error = True
 		if (name is None): name = ""
 		
-		try:
-			reference = Reference.objects.get(pk=select_ref)
-		except Sample.DoesNotExist:
-			return super(ProjectCreateView, self).form_invalid(form)
+		if (select_ref != None):
+			try:
+				reference = Reference.objects.get(pk=select_ref)
+			except Reference.DoesNotExist:
+				self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference."
+				self.request.session[Constants.PROJECT_NAME] = name
+				return super(ProjectCreateView, self).form_invalid(form)
+		
+		### exists an error
+		if (b_error): return super(ProjectCreateView, self).form_invalid(form)
 		
 		with transaction.atomic():
 			project = Project()
@@ -463,19 +493,23 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		project = Project.objects.get(pk=self.kwargs['pk'])
 		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
-		tag_search = 'search_add_project_sample'
 		## catch everything that is not in connection with project 
 		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_rejected=False) & Q(is_ready_for_projects=True) &\
 									(Q(project_sample__isnull=True) | ~Q(project_sample__project__id=project.id) |\
 									(Q(project_sample__project__id=project.id) & Q(project_sample__is_deleted=True))) ).distinct()
+		tag_search = 'search_add_project_sample'
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+							Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
+							Q(data_set__name__icontains=self.request.GET.get(tag_search)) |\
+							Q(week__icontains=self.request.GET.get(tag_search)))
+			tag_search
 		table = SampleToProjectsTable(query_set)
 
 		### set the check_box
 		if (Constants.CHECK_BOX_ALL not in self.request.session):
 			self.request.session[Constants.CHECK_BOX_ALL] = False
 			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)
-		elif ("search_in_table" not in self.request.GET and not is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)):
-			self.request.session[Constants.CHECK_BOX_ALL] = False
 
 		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
 		## need to clean all the others if are reject in filter
@@ -667,16 +701,14 @@ def is_all_check_box_in_session(vect_check_to_test, request):
 	
 def clean_check_box_in_session(request):
 	"""
-	check all check boxes
+	check all check boxes on samples/references to add samples
 	"""
 	utils = Utils()
-	request.session[Constants.CHECK_BOX_ALL] = False
 	## clean all check unique
-	vect_keys_to_remove = [Constants.CHECK_BOX_ALL]
+	if (Constants.CHECK_BOX_ALL in request.session): del request.session[Constants.CHECK_BOX_ALL]
+	vect_keys_to_remove = []
 	for key in request.session.keys():
 		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
 			vect_keys_to_remove.append(key)
 	for key in vect_keys_to_remove:
-		del request.session[key]
-
-
+		del request.session[key] 

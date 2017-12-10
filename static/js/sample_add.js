@@ -13,7 +13,7 @@ $('#id_date_of_collection').datepicker({
     format: 'dd/mm/yyyy',
 });
 
-$('#id_date_on_lab').datepicker({
+$('#id_date_of_receipt_lab').datepicker({
     uiLibrary: 'bootstrap4',
     iconsLibrary: 'fontawesome',
     format: 'dd/mm/yyyy',

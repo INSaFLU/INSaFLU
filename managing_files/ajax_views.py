@@ -11,6 +11,7 @@ from utils.utils import Utils
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
+from django.utils.translation import ugettext_lazy as _
 
 ######################################
 ###
@@ -53,6 +54,15 @@ def set_check_box_values(request):
 			for key in request.session.keys():
 				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
 					data[key] = request.session[key]
+		## change single status of a check_box_single
+		elif (Constants.GET_CHANGE_CHECK_BOX_SINGLE in request.GET):
+			data['is_ok'] = True
+			key_name = "{}_{}".format(Constants.CHECK_BOX, request.GET.get(Constants.CHECK_BOX_VALUE))
+			for key in request.session.keys():
+				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+					if (request.session[key]): data[key] = False
+					if (key == key_name): request.session[key] = utils.str2bool(request.GET.get(Constants.GET_CHANGE_CHECK_BOX_SINGLE))
+					else: request.session[key] = False
 		elif (Constants.COUNT_CHECK_BOX in request.GET):
 			count = 0
 			for key in request.session.keys():
@@ -64,6 +74,8 @@ def set_check_box_values(request):
 				Constants.COUNT_CHECK_BOX : count,
 			}
 		return JsonResponse(data)
+
+
 ###
 ###		END AJAX methods for check box in session
 ###
@@ -120,16 +132,14 @@ def get_image_coverage(request):
 @csrf_protect
 def validate_project_reference_name(request):
 	"""
-	test if exist this reference name
+	test if exist this project name
 	"""
 	if request.is_ajax():
 		project_name = request.GET.get('project_name')
-		user_name = request.GET.get('user_name').strip()
-		if (user_name.endswith(" - Logout")): user_name = user_name.replace(" - Logout", "").strip()
 		data = {
-			'is_taken': Project.objects.filter(name__iexact=project_name, owner__username=user_name).exists()
+			'is_taken': Project.objects.filter(name__iexact=project_name, owner__username=request.user.username).exists()
 		}
-		if data['is_taken']: data['error_message'] = _('Exists a project with this name.')
+		if (data['is_taken']): data['error_message'] = _('Exists a project with this name.')
 		return JsonResponse(data)
 
 
@@ -197,7 +207,7 @@ def remove_single_value_database(request):
 				if (value == Constants.DATA_SET_GENERIC):
 					data['is_ok'] = True;
 					data['is_can_remove'] = False;
-					data['message'] = "You can't remove 'Generic' name";
+					data['message'] = "You can't remove 'Generic' data set";
 				else:
 					try:
 						data_set = DataSet.objects.get(name__iexact=value)

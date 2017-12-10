@@ -1,48 +1,12 @@
-		//
-//	This test on the submit
-//
-$('#form_table_project_reference').on('submit', function () {
-    var total_checked = 0;
-    
-    var form = $(this).closest("form");
-    $.ajax({
-        url: form.attr("data-validate-project-reference-url"), // the endpoint
-        data : { project_name : $('#id_project_name').val(),
-        		user_name : $('#id_user_name').text() }, // data sent with the post request
-
-		success: function (data) {
-          if (data.is_taken) {
-          		alert(data.error_message);
-          		return False;
-          }
-        }
-    });
-    
-    $('#form_table_project_reference input:checked').each(function() {
-		total_checked += 1;
-    });
-    if (total_checked == 0){
-     	alert('You need to select one reference!');
-     	return false;
-    }
-    else if (total_checked > 1){
-    	alert('There is more than one reference selected!');
-     	return false;
-    }
-    return true;
-});
-
 //
 //	This test on the name change
 //
 $("#id_project_name").on("change paste keyup", function () {
-      var form = $(this).closest("form");
       $.ajax({
-        url: form.attr("data-validate-project-reference-url"),
+        url: $("#id_form_table_project_reference").attr("data-validate-project-reference-url"),
        // data: form.serialize(),
         // dataType: 'json',
-        data : { project_name : $('#id_project_name').val(),
-        		user_name : $('#id_user_name').text() }, // data sent with the post request
+        data : { project_name : $('#id_project_name').val() }, // data sent with the post request
         success: function (data) {
           $(document).find('#error_1_id_name').remove();
           if (data.is_taken) {
@@ -63,3 +27,52 @@ $("#id_project_name").on("change paste keyup", function () {
         }
    });
 });
+
+
+/// add function to toggle the checkbox in tables
+/// set the Listener and get the checked in the server, and set the box check in the client
+$(document).ready(function(){
+
+	var elements = document.getElementsByName("select_ref");
+	for(var i = 0, n = elements.length; i < n; i++){
+		elements[i].addEventListener('click', toggle_check_box, false);
+	}
+
+	// get if there's any checked in the server
+	$.ajax({
+		url: $('#table_with_check_id').attr("set-check-box-values-url"),
+		data : { get_check_box_single : '1' }, // data sent with the post request
+		success: function (data) {
+			for (key in data){
+				if (key === 'is_ok'){ continue; }
+				var remember = document.getElementById(key);
+				if (remember != null){
+					remember.checked = data[key];
+				}
+			}
+		},
+	});
+});
+
+
+/// toggle checkbox
+function toggle_check_box(source) {
+	$(document).find('#id_reference_error').remove();
+	$.ajax({
+		url: $('#table_with_check_id').attr("set-check-box-values-url"),
+		data : { get_change_check_box_single : source.srcElement.checked,
+				 value : source.srcElement.value }, // data sent with the post request
+		success: function (data) { 
+			for (key in data){
+				if (key === 'is_ok'){ continue; }
+				var remember = document.getElementById(key);
+				if (remember != null){
+					remember.checked = data[key];
+				}
+				else{
+					remember.checked = false;
+				}
+			}
+		},
+	});
+};

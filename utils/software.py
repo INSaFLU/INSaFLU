@@ -425,8 +425,14 @@ class Software(object):
 			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, file_name_1, 
 					os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		else:
+			### need to make links the files to trimmomatic identify the _R1_ and _R2_ 
+			new_file_name = os.path.join(temp_dir, 'name_R1_001.fastq.gz')
+			cmd = "ln -s {} {}".format(file_name_1, new_file_name)
+			os.system(cmd)
+			cmd = "ln -s {} {}".format(file_name_2, os.path.join(temp_dir, 'name_R2_001.fastq.gz'))
+			os.system(cmd)
 			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, 
-										file_name_1, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
+										new_file_name, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -688,9 +694,9 @@ class Software(object):
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			self.utils.remove_dir(temp_dir)
 			return False
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir)
 		
 		### run trimmomatic
 		try:
@@ -704,9 +710,9 @@ class Software(object):
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			self.utils.remove_dir(temp_dir)
 			return False
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir)
 		
 		
 		### run fastq again
@@ -721,9 +727,9 @@ class Software(object):
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			self.utils.remove_dir(temp_dir)
 			return False
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir)
 
 		### collect numbers
 		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))

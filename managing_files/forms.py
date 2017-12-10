@@ -219,7 +219,7 @@ class SampleForm(forms.ModelForm):
 	class Meta:
 		model = Sample
 		# specify what fields should be used in this form.
-		fields = ('name', 'vaccine_status', 'data_set', 'path_name_1', 'path_name_2')
+		fields = ('name', 'vaccine_status', 'data_set', 'date_of_onset', 'date_of_collection', 'date_of_receipt_lab', 'path_name_1', 'path_name_2')
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -230,14 +230,30 @@ class SampleForm(forms.ModelForm):
 		
 		## define a specific query set
 		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
-		self.fields['data_set'].empty_label = None
+		self.fields['data_set'].empty_label = None		## to remove empty label in combo box
 		self.fields['vaccine_status'].queryset = VacineStatus.objects.filter(owner__id = self.request.user.id)
+		
+		##// <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/>
+		self.fields['date_of_onset'].widget.attrs.update({
+            'placeholder': 'dd/mm/yyyy',
+        })
+		self.fields['date_of_receipt_lab'].widget.attrs.update({
+            'placeholder': 'dd/mm/yyyy',
+        })
+		self.fields['date_of_collection'].widget.attrs.update({
+            'placeholder': 'dd/mm/yyyy',
+        })
+		
+		#placeholder="dd/mm/yyyy"
 		
 		## can exclude explicitly
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Unique identify for this sample', True),
+			('date_of_onset', 'Onset date', 'Date of onset', False),
+			('date_of_collection', 'Collection date', 'Date of collection', False),
+			('date_of_receipt_lab', 'Lab reception date', 'Date receipt on the lab.', False),
 			('vaccine_status', 'Vaccine status', 'Discrimination of vaccination status', False),
 			('data_set', 'Dataset', 'Specific dataset, can be used to organize samples', False),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
@@ -252,6 +268,11 @@ class SampleForm(forms.ModelForm):
 			self.fields[x[0]].help_text = x[2]
 			self.fields[x[0]].required = x[3]
 
+		### set formats of date
+		self.fields['date_of_onset'].input_formats = settings.DATETIME_INPUT_FORMATS
+		self.fields['date_of_collection'].input_formats = settings.DATETIME_INPUT_FORMATS
+		self.fields['date_of_receipt_lab'].input_formats = settings.DATETIME_INPUT_FORMATS
+		
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
@@ -277,9 +298,12 @@ class SampleForm(forms.ModelForm):
 				'Dates',
 				Div(
 					Div('like_dates', css_class="col-sm-3"),
-					HTML('<div id="div_id_date_of_onset" class="form-group col-sm-3"> <label for="id_date_of_onset" class="form-control-label ">Date of onset</label>  <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/> <small id="hint_id_date_of_onset" class="text-muted">Date of onset</small> </div>'),
-					HTML('<div id="div_id_date_of_collection" class="form-group col-sm-3"> <label for="id_date_of_collection" class="form-control-label ">Date of collection</label> <input placeholder="dd/mm/yyyy" name="date_of_collection" id="id_date_of_collection"/> <small id="hint_id_date_of_collection" class="text-muted">Date of collection</small> </div>'),
-					HTML('<div id="div_id_date_on_lab" class="form-group col-sm-3"> <label for="id_date_on_lab" class="form-control-label ">Date on Lab</label> <input placeholder="dd/mm/yyyy" name="date_on_lab" id="id_date_on_lab"/> <small id="hint_id_date_on_lab" class="text-muted">Date on Lab</small> </div>'),
+					Div('date_of_onset', css_class="col-sm-3"),
+					Div('date_of_collection', css_class="col-sm-3"),
+					Div('date_of_receipt_lab', css_class="col-sm-3"),
+				#	HTML('<div id="div_id_date_of_onset" class="form-group col-sm-3"> <label for="id_date_of_onset" class="form-control-label ">Date of onset</label>  <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/> <small id="hint_id_date_of_onset" class="text-muted">Date of onset</small> </div>'),
+				#	HTML('<div id="div_id_date_of_collection" class="form-group col-sm-3"> <label for="id_date_of_collection" class="form-control-label ">Date of collection</label> <input placeholder="dd/mm/yyyy" name="date_of_collection" id="id_date_of_collection"/> <small id="hint_id_date_of_collection" class="text-muted">Date of collection</small> </div>'),
+				#	HTML('<div id="div_id_date_on_lab" class="form-group col-sm-3"> <label for="id_date_on_lab" class="form-control-label ">Date on Lab</label> <input placeholder="dd/mm/yyyy" name="date_on_lab" id="id_date_on_lab"/> <small id="hint_id_date_on_lab" class="text-muted">Date on Lab</small> </div>'),
 					css_class = 'row '),
 				css_class = 'article-content'
 			),
@@ -411,6 +435,7 @@ class ReferenceProjectForm(forms.ModelForm):
 		"""
 		cleaned_data = super(ReferenceProjectForm, self).clean()
 		return cleaned_data
+## to put both inline
 ReferenceProjectFormSet = inlineformset_factory(Reference, Project, form=ReferenceProjectForm, extra=1)
 
 	

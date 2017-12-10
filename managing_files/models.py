@@ -33,7 +33,7 @@ class SeasonReference(models.Model):
 
 
 class Reference(models.Model):
-	name = models.CharField(max_length=200, db_index=True, default='New reference')
+	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
@@ -55,7 +55,7 @@ class Reference(models.Model):
 	description = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name='Description')
 
 	def __str__(self):
-		return self.file_name
+		return self.name
 
 	def get_reference_gbk(self, type_path):
 		"""
@@ -265,7 +265,7 @@ class Sample(models.Model):
 			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE)
 			if (len(sz_type) > 0): sz_return += "" if len(sz_return) == 0 else "-" + sz_type
 			return sz_return
-		else: return "-"
+		else: return Constants.EMPTY_VALUE_TABLE
 		
 	def __get_type__(self, vect_identify_virus, type_to_test):
 		vect_return = []

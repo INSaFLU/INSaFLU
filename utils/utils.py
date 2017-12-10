@@ -94,7 +94,8 @@ class Utils(object):
 				raise Exception("Fail to remove a file") 
 
 	def remove_dir(self, path_name):
-		cmd = "rm -r %s*" % (path_name); os.system(cmd)
+		if (path_name != None and os.path.isdir(path_name)):
+			cmd = "rm -r %s*" % (path_name); os.system(cmd)
 
 	def move_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):

@@ -259,7 +259,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.getsize(out_file_2) > 1000)
 		self.utils.remove_dir(out_put_path)
 		self.utils.remove_dir(out_put_path_trimmomatic)
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir);
 
 		sample_name = "sample_name"
 		temp_dir = self.utils.get_temp_dir()
@@ -289,7 +289,7 @@ class Test(TestCase):
 		self.utils.remove_dir(out_put_path)
 
 		## remove all files
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+		self.utils.remove_dir(temp_dir);
 
 
 	def test_run_fastq_and_trimmomatic(self):

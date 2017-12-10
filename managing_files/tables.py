@@ -9,7 +9,7 @@ from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from utils.result import DecodeCoverage
-from django.utils.html import format_html
+from django.conf import settings
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -47,21 +47,29 @@ class ReferenceTable(tables.Table):
 		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
 		return mark_safe('<a href="' + href + '">' + record.reference_genbank_name + '</a>')
 
+	def render_creation_date(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
 
 class ReferenceProjectTable(tables.Table):
 	"""
 	create a new project with a reference
 	"""
-	select_ref = CheckBoxColumnWithName(verbose_name=('Select One'), accessor="pk")
-	is_obsolete = tables.Column(orderable=False)
-	number_of_locus = tables.Column(orderable=False)
+	select_ref = CheckBoxColumnWithName(verbose_name=('Select One'), accessor="pk", orderable=False)
+#	number_of_locus = tables.Column(orderable=False)
 
 	class Meta:
 		model = Reference
-		fields = ('select_ref', 'name', 'isolate_name', 'is_obsolete', 'number_of_locus')
+		fields = ('select_ref', 'name', 'isolate_name', 'creation_date', 'owner', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no References to add..."
 
+	def render_creation_date(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+
+	def render_select_ref(self, value, record):
+		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
 
 class SampleToProjectsTable(tables.Table):
 	"""
@@ -79,6 +87,9 @@ class SampleToProjectsTable(tables.Table):
 	def render_select_ref(self, value, record):
 		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
 
+	def render_creation_date(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
 
 class SampleTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -105,11 +116,16 @@ class SampleTable(tables.Table):
 			return "2"
 		return "0"
 	
+	def render_creation_date(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+
 	def render_type_and_subtype(self, record):
 		"""
 		get type and sub type
 		"""
-		return record.get_type_sub_type()
+		result = record.get_type_sub_type()
+		return _('Not yet') if result == Constants.EMPTY_VALUE_TABLE else record.get_type_sub_type()
 	
 	def render_data_set(self, record):
 		"""
@@ -171,12 +187,9 @@ class ProjectTable(tables.Table):
 		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
 						 '><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
-	def render_reference(self, record):
-		"""
-		return a reference name
-		"""
-		return record.reference.name
-		
+	def render_creation_date(self, **kwargs):
+		record = kwargs.pop("record")
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
 	
 	def render_results(self, record):
 		"""

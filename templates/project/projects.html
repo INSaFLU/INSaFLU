@@ -8,7 +8,6 @@
 
 {% block css %}
 	{% load static from staticfiles %}
-		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -27,12 +26,10 @@
 	                <tr>
 	                    <th colspan="7">
 	                    	<a href="{% url "project-add" %}" data-title="Create a new project to process samples" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Create project</span></a>
-	                        <form method="post" class="form-inline form-search pull-right">
-	                          {% csrf_token %}
-	                            <div>
-	                              <input id="search_form_id" name="search" type="text" class="form-control col-md-8" placeholder="Name, Tag, Type"{% if search %} value="{{ search }}"{% endif %}>
-	                              <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
-	                            </div>              
+	                        <form method="get" class="form-inline form-search pull-right">
+	           		            {% csrf_token %}
+	                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8" placeholder="Name, Reference"{% if search_projects %} value="{{ search_projects }}"{% endif %}>
+	                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
 	                        </form>
 	                    </th>                  
 	                </tr>
@@ -85,6 +82,4 @@
 
 {% block js %}
  	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
- 	<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
- 	<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
 {% endblock js %}

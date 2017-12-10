@@ -62,19 +62,28 @@ class Constants(object):
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	
 	## NUMBER OF SETs to paginate
-	PAGINATE_NUMBER = 15
+	PAGINATE_NUMBER = 12
 	PAGINATE_NUMBER_SMALL = 2
 
 	## tag for check box all in the tables
 	CHECK_BOX_ALL = 'check_box_all'
 	CHECK_BOX = 'check_box'
 	GET_CHECK_BOX_SINGLE = 'get_check_box_single'
+	GET_CHANGE_CHECK_BOX_SINGLE = 'get_change_check_box_single'
 	COUNT_CHECK_BOX = 'count_check_boxes'
 	CHECK_BOX_VALUE = 'value'
 	
 	### sleep time to test if all tasks are finished
 	WAIT_TIME_TASKS_FINISHED = 60		## one minute
 	
+	### empty value used in tables
+	EMPTY_VALUE_TABLE = "-"
+	
+	## errors
+	PROJECT_NAME = 'project_name'
+	ERROR_REFERENCE = 'error_reference'
+	ERROR_PROJECT_NAME = 'error_project_name'
+
 	
 	def get_extensions_by_file_type(self, file_name, file_type):
 		"""
@@ -93,7 +102,6 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
 		return ""
-		
 
 			
 class TypePath(Enum):

@@ -8,7 +8,6 @@
 {% block css %}
 
 	{% load static from staticfiles %}
-		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -24,7 +23,7 @@
 	  <div class="table-container">
 	{% endif %}
 	
-	<form id="form_table_project_reference" action="" data-validate-project-reference-url="{% url 'validate-project-reference' %}" method="post">{% csrf_token %}
+	<form id="id_form_table_project_reference" action="" data-validate-project-reference-url="{% url 'validate-project-reference' %}" method="post">{% csrf_token %}
 	    <div> 
 		    <div class="row"> 
 				<div class="col-sm-1"> 
@@ -32,9 +31,10 @@
 				</div>
 				<div class="col-sm-4"> 
 					<div id="div_id_name" class="form-group"> 
-						<input type="text" name="name" class="textinput textInput form-control js-validate-project-reference-name" id="id_project_name" required="" maxlength="100" placeholder="Project name">
+						<input type="text" {% if project_name %} value="{{ project_name }}" {% endif %} name="name" class="textinput textInput form-control js-validate-project-reference-name" id="id_project_name" required="" maxlength="100" placeholder="Project name">
 						<div id='id_project_name_error'>
-						</duv>
+						{% if error_project_name %} <span id="error_1_id_name" class="fields_error"> {{ error_project_name }} </span> {% endif %}
+						</div>
 						<small id="hint_id_name" class="text-muted">Unique identify for this project</small> 
 					</div> 
 				</div>
@@ -43,20 +43,21 @@
 
 	       	{% block table %}
 			    <div class="table-responsive">
-			        <table class="table table-hover table-bordered table-striped"{% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+			    	<div id='id_reference_error'>
+						{% if error_reference %} <span id="error_1_reference" class="fields_error"> {{ error_reference }} </span> {% endif %}
+					</div>
+			        <table id="table_with_check_id" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
 			            {% block table.thead %}
 			            <thead>                 
 			      			<tr>
-			                    <th colspan="5">
-			                        <form method="post" class="form-inline form-search pull-right">
-			                            {% csrf_token %}
-			                            <div class="row">
-			                            	<div class="col-sm-7"> 
-			                        			<p>Select a reference, please</p>    
-			                            	</div>
-			                            	<input id="search_form_id" name="search" type="text" class="form-control col-sm-3" placeholder="Name, Isolate name"{% if search %} value="{{ search }}"{% endif %}>
-			                              	<button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
-			                            </div>              
+			                    <th colspan="6">
+			                    	<form method="get" class="form-inline form-search pull-left">
+				                    	<label>Select a reference, please</label>
+				                    </form>
+				                    <form method="get" class="form-inline form-search pull-right">    
+				                        {% csrf_token %}
+				                        <input id="search_form_id" name="search_references" type="text" class="form-control col-sm-7" placeholder="Name, Owner, Isolate name" {% if search_references %} value="{{ search_references }}" {% endif %}>
+				                        <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
 			                        </form>
 			                    </th>                  
 			                </tr>
@@ -107,17 +108,15 @@
 			
 	        <input type="submit" name="save" value="Save" class="btn btn-primary btn-primary" id="submit-id-save"/> <a href="{% url 'projects' %}"></a>
 			<input type="button" name="cancel" value="Cancel" class="btn btn-secondary" id="button-id-cancel" onclick="window.location.href='/managing_files/project/projects'">
+			<p> </p>
 	 </form>
 {% endblock %}
 
  {% block js %}
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/project-add.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
      
  {% endblock %}
 

@@ -99,6 +99,15 @@ class ReferenceForm(forms.ModelForm):
 		try:
 			number_locus = self.utils.is_fasta(reference_fasta_temp_file_name.name)
 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
+			
+			## test the max numbers
+			if (number_locus > Constants.MAX_SEQUENCES_FROM_FASTA):
+				self.add_error('reference_fasta', _('Max allow number of sequences in fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_FASTA)))
+				some_error_in_files = True
+			max_fasta = self.utils.get_max_length_fasta(reference_fasta_temp_file_name.name)
+			if (not some_error_in_files and max_fasta > Constants.MAX_LENGTH_SEQUENCE_FROM_FASTA):
+				some_error_in_files = True
+				self.add_error('reference_fasta', _('Max allow length of a sequence in fasta: {}'.format(Constants.MAX_LENGTH_SEQUENCE_FROM_FASTA)))
 		except IOError as e:	## (e.errno, e.strerror)
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True

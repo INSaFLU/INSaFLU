@@ -12,9 +12,6 @@ from django.conf import settings
 import os, filecmp
 from constants.software_names import SoftwareNames
 from utils.result import Coverage
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import MetaKeyProject, User, Project, Reference
-from constants.meta_key_and_values import MetaKeyAndValue
 from constants.constants import FileExtensions
 from Bio import SeqIO
 
@@ -72,7 +69,7 @@ class Test(unittest.TestCase):
 			self.utils.read_text_file(txt_file)
 			self.fail("must raise error")
 		except IOError as e:
-			self.assertEqual("Error: file '/home/mmp/eclipse_oxygen/fluwebvirus/static_all/tests/abricate/abricate_out.txt.xpto' doens't exist.", e.args[0])
+			self.assertTrue(e.args[0].endswith("static_all/tests/abricate/abricate_out.txt.xpto' doens't exist."))
 		
 		txt_file = os.path.join(self.baseDirectory, 'abricate', ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		self.assertTrue(os.path.exists(txt_file))
@@ -183,16 +180,19 @@ class Test(unittest.TestCase):
 		"""
 		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS,\
 					ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		dt_data = self.utils.get_elements_and_genes(genbank_file)
-		self.assertEquals(8, len(dt_data))
-		self.assertTrue('NS' in dt_data)
-		self.assertFalse('xptoNS' in dt_data)
-		self.assertTrue('PB2' in dt_data)
-		self.assertEquals(30, dt_data['PB2'][0][0])
-		self.assertEquals(2280, dt_data['PB2'][0][1])
-		self.assertEquals('PB2', dt_data['PB2'][0][2])
-		self.assertEquals(1, dt_data['PB2'][0][3])
+		geneticElement = self.utils.get_elements_and_genes(genbank_file)
+		self.assertEquals(8, len(geneticElement.get_sorted_elements()))
+		self.assertTrue('NS' in geneticElement.get_sorted_elements())
+		self.assertFalse('xptoNS' in geneticElement.get_sorted_elements())
+		self.assertTrue('PB2' in geneticElement.get_sorted_elements())
+		self.assertEquals('HA,MP,NA,NP,NS,PA,PB1,PB2', ','.join(geneticElement.get_sorted_elements()))
+		self.assertEquals(30, geneticElement.get_genes('PB2')[0].start)
+		self.assertEquals(2280, geneticElement.get_genes('PB2')[0].end)
+		self.assertEquals('PB2', geneticElement.get_genes('PB2')[0].name)
+		self.assertEquals(1, geneticElement.get_genes('PB2')[0].strand)
+		self.assertTrue(geneticElement.get_genes('PB2')[0].is_forward())
 
+		
 	def test_filter_fasta_all_sequences(self):
 		"""
 		test filter fasta
@@ -277,7 +277,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
 		self.assertEquals(8, locus_fasta)
-		
+		self.assertEquals(8, self.utils.get_max_length_fasta(result_fasta))
 		
 		coverage.add_coverage('NA', Coverage.COVERAGE_MORE_9, '99.9')
 		result_fasta = utils.filter_fasta_all_sequences(consensus_EVA001_S66, sample_name, coverage, temp_dir)

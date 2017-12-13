@@ -60,9 +60,25 @@ class SoftwareNames(object):
 	SOFTWARE_GENBANK2GFF3_VERSION = 'Unknown'
 	SOFTWARE_GENBANK2GFF3_PARAMETERS = ''
 	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes")
+	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes-parallel")
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
 	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
+	
+	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE, "snippy/bin/fasta_generate_regions.py")
+	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"
+	SOFTWARE_FASTA_GENERATE_REGIONS_VERSION = "1.0"
+	SOFTWARE_FASTA_GENERATE_REGIONS_PARAMETERS = ""
+	SOFTWARE_COVERAGE_TO_REGIONS = os.path.join(DIR_SOFTWARE, "freebayes/scripts/coverage_to_regions.py")
+	SOFTWARE_COVERAGE_TO_REGIONS_name = "Coverage to Regions"
+	SOFTWARE_COVERAGE_TO_REGIONS_VERSION = "1.0"
+	SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS = ""
+	
+	SOFTWARE_BAMTOOLS = os.path.join(DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools")
+	SOFTWARE_BAMTOOLS_name = "Bamtools"
+	SOFTWARE_BAMTOOLS_VERSION = "2.5"
+	SOFTWARE_BAMTOOLS_PARAMETERS = ""
+	
 	SOFTWARE_COVERAGE = "Coverage, in-house script"
 	SOFTWARE_COVERAGE_name = "Coverage"
 	SOFTWARE_COVERAGE_VERSION = "v1.1"
@@ -176,10 +192,35 @@ class SoftwareNames(object):
 	return freebayes software
 	"""
 	def get_freebayes(self): return self.SOFTWARE_FREEBAYES
+	def get_freebayes_parallel(self): return self.SOFTWARE_FREEBAYES_PARALLEL
 	def get_freebayes_name(self): return self.SOFTWARE_FREEBAYES_name
 	def get_freebayes_version(self): return self.SOFTWARE_FREEBAYES_VERSION
 	def get_freebayes_parameters(self): return self.SOFTWARE_FREEBAYES_PARAMETERS
 
+	"""
+	get fasta generate regions
+	"""
+	def get_fasta_generate_regions(self): return self.SOFTWARE_FASTA_GENERATE_REGIONS
+	def get_fasta_generate_regions_name(self): return self.SOFTWARE_FASTA_GENERATE_REGIONS_name
+	def get_fasta_generate_regions_version(self): return self.SOFTWARE_FASTA_GENERATE_REGIONS_VERSION
+	def get_fasta_generate_regions_parameters(self): return self.SOFTWARE_FASTA_GENERATE_REGIONS_PARAMETERS
+	
+	"""
+	get coverge to regions
+	"""
+	def get_coverage_to_regions(self): return self.SOFTWARE_COVERAGE_TO_REGIONS
+	def get_coverage_to_regions_name(self): return self.SOFTWARE_COVERAGE_TO_REGIONS_name
+	def get_coverage_to_regions_version(self): return self.SOFTWARE_COVERAGE_TO_REGIONS_VERSION
+	def get_coverage_to_regions_parameters(self): return self.SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS
+	
+	"""
+	get bamtools
+	"""
+	def get_bamtools(self): return self.SOFTWARE_BAMTOOLS
+	def get_bamtools_name(self): return self.SOFTWARE_BAMTOOLS_name
+	def get_bamtools_version(self): return self.SOFTWARE_BAMTOOLS_VERSION
+	def get_bamtools_parameters(self): return self.SOFTWARE_BAMTOOLS_PARAMETERS
+	
 	"""
 	return bgzip software
 	"""

@@ -40,12 +40,12 @@ class ReferenceTable(tables.Table):
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_fasta(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '">' + record.reference_fasta_name + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + record.reference_fasta_name + '</a>')
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '">' + record.reference_genbank_name + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + record.reference_genbank_name + '</a>')
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -139,7 +139,7 @@ class SampleTable(tables.Table):
 		number of quality sequences and average
 		"""
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(record, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
@@ -156,7 +156,7 @@ class SampleTable(tables.Table):
 		icon with link to extra info
 		"""
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")

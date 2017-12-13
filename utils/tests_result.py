@@ -5,7 +5,7 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
-from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage, TasksToProcess
+from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage, TasksToProcess, GeneticElement, Gene
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -136,5 +136,35 @@ class Test(TestCase):
 		decodeCoverage = DecodeCoverage()
 		tasksToProcess_2 = decodeCoverage.decode_result(json)
 		self.assertEquals(tasksToProcess, tasksToProcess_2)
+
+
+	def test_elements_genes(self):
+		
+		geneticElement = GeneticElement()
+		self.assertTrue(geneticElement.add_gene('element_name', Gene('name', 12, 45, 1)))
+		self.assertFalse(geneticElement.add_gene('element_name', Gene('name', 12, 45, 1)))
+		self.assertTrue(geneticElement.add_gene('element_name', Gene('name2', 35, 55, -1)))
+		self.assertTrue(geneticElement.add_gene('element_name2', Gene('name', 12, 45, 1)))
+		geneticElement.add_gene('element_name2', Gene('name2', 212, 245, 1))
+		geneticElement.add_gene('element_name2', Gene('name3', 412, 445, -1))
+		geneticElement.add_gene('element', Gene('name', 412, 445, -1))
+
+		json = geneticElement.to_json()
+		decodeCoverage = DecodeCoverage()
+		geneticElement_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(geneticElement, geneticElement_2)
+		self.assertEquals("element,element_name,element_name2", ",".join(geneticElement_2.get_sorted_elements()))
+		self.assertEquals(2, len(geneticElement_2.get_genes('element_name')))
+
+
+
+
+
+
+
+
+
+
+
 
 

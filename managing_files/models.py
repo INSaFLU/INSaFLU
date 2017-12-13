@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from constants.constants import Constants, TypePath
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
+from constants.meta_key_and_values import MetaKeyAndValue
 from django.conf import settings
 import os
 
@@ -31,7 +32,18 @@ class SeasonReference(models.Model):
 	class Meta:
 		ordering = ['name', ]
 
-
+	
+class MetaKey(models.Model):
+	"""
+	Has meta tags to put values, for example, quality in the files, or samples
+	"""
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
+	def __str__(self):
+		return self.name
+	
+	class Meta:
+		ordering = ['name', ]
+		
 class Reference(models.Model):
 	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
@@ -87,17 +99,23 @@ class Reference(models.Model):
 			models.Index(fields=['name'], name='name_idx'),
 		]
 
-
-class MetaKey(models.Model):
+class MetaKeyReference(models.Model):
 	"""
-	Has meta tags to put values, for example, quality in the files, or samples
+	Relation ManyToMany in 
 	"""
-	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
-	def __str__(self):
-		return self.name
+	meta_tag = models.ForeignKey(MetaKey, related_name='meta_key_reference', on_delete=models.CASCADE)
+	reference = models.ForeignKey(Reference, related_name='meta_key_reference', on_delete=models.CASCADE)
+	owner = models.ForeignKey(User, related_name='meta_key_reference', on_delete=models.CASCADE)
+	creation_date = models.DateTimeField('uploaded date', db_index=True, auto_now_add=True)
+	value = models.CharField(default=Constants.META_KEY_VALUE_NOT_NEED, max_length=200)
+	description = models.TextField(default="")
 	
 	class Meta:
-		ordering = ['name', ]
+		ordering = ['reference__id', '-creation_date']
+	
+	def __str__(self):
+		return self.meta_tag.name + " " + self.value + " " + self.description
+
 
 
 class TagName(models.Model):

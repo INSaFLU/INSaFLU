@@ -46,7 +46,8 @@ class MetaKeyAndValue(object):
 	## to check if this project_sample_ID
 	META_KEY_Queue_TaskID_ProjectSample = "TaskID_ProjectSample"	### has the metaKey plus project_sample_id
 	META_KEY_Queue_TaskID_Project = "TaskID_Project"				### has the metaKey plus project_sample_id
-	META_KEY_Elements_Project = "Elements"							### has the elements to a specific project, separated by comma and sorted
+	META_KEY_Elements_Reference = "Elements"						### has the elements to a specific project, separated by comma and sorted
+	META_KEY_Elements_And_CDS_Reference = "Elements And CDS"		### has the elements and the CDS
 	
 	### MetaKey for the alerts
 	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert

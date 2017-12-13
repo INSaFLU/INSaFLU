@@ -159,7 +159,7 @@ class ResultAverageAndNumberReads(object):
 		return ""		
 	
 	def __eq__(self, other):
-		return other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
+		return other != None and other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
 			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
 
 
@@ -310,6 +310,14 @@ class DecodeCoverage(object):
 			a = TasksToProcess()
 			a.__dict__.update(o['__TasksToProcess__'])
 			return a
+		elif '__Gene__' in o:
+			a = Gene(o['__Gene__']['name'], o['__Gene__']['start'], o['__Gene__']['end'], o['__Gene__']['strand'])
+			a.__dict__.update(o['__Gene__'])
+			return a
+		elif '__GeneticElement__' in o:
+			a = GeneticElement()
+			a.__dict__.update(o['__GeneticElement__'])
+			return a
 		elif '__CoverageElement__' in o:
 			a = CoverageElement(o['__CoverageElement__']['element'])
 			a.__dict__.update(o['__CoverageElement__'])
@@ -373,8 +381,52 @@ class TasksToProcess(object):
 		return json.dumps(self, indent=4, cls=CoverageEncoder)
 	
 	def __eq__(self, other):
-		if (len(other.get_tasks_id()) != len(self.vect_tasks_id)): return False
+		if (other == None or len(other.get_tasks_id()) != len(self.vect_tasks_id)): return False
 		for value_ in self.vect_tasks_id:
-			if (value_ not in self.vect_tasks_id): return False
+			if (value_ not in other.vect_tasks_id): return False
 		return True
 
+class Gene(object):
+	
+	def __init__(self, name, start, end, strand):
+		self.name = name
+		self.start = start
+		self.end = end
+		self.strand = strand	## 1 forward, -1 reverse
+		
+	def is_forward(self):
+		return self.strand == 1
+		
+	def __eq__(self, other):
+		return self.name == other.name
+		
+class GeneticElement(object):
+	
+	def __init__(self):
+		self.name = ""
+		self.dt_elements = {}
+		
+	def add_gene(self, element_name, gene):
+		if (element_name in self.dt_elements): 
+			if (gene not in self.dt_elements[element_name]): self.dt_elements[element_name].append(gene)
+			else: return False
+		else: self.dt_elements[element_name] = [gene]
+		return True
+
+	def get_genes(self, element_name):
+		if (element_name in self.dt_elements): return self.dt_elements[element_name]
+		return None
+	
+	def get_sorted_elements(self):
+		return sorted(self.dt_elements.keys())
+	
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=CoverageEncoder)
+
+	def __eq__(self, other):
+		if (other == None or len(other.dt_elements) != len(self.dt_elements)): return False
+		for value_ in self.dt_elements:
+			if (value_ not in other.dt_elements or other.dt_elements[value_] != self.dt_elements[value_]): return False
+		return True
+		
+		

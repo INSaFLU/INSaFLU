@@ -3,13 +3,11 @@ Created on Nov 1, 2017
 
 @author: mmp
 '''
-from managing_files.models import MetaKeySample, MetaKey, MetaKeyProject, MetaKeyProjectSample
+from managing_files.models import MetaKeySample, MetaKey, MetaKeyProject, MetaKeyProjectSample, MetaKeyReference
 from managing_files.models import CountVariations, Statistics, TagName, ProjectSample
 from constants.tag_names_constants import TagNamesConstants
 from constants.meta_key_and_values import MetaKeyAndValue
 from django.db import connection
-from constants.constants import TypePath
-from utils.utils import Utils
 
 class ManageDatabase(object):
 	'''
@@ -20,8 +18,50 @@ class ManageDatabase(object):
 		Constructor
 		'''
 		pass
+	def set_reference_metakey(self, reference, owner, meta_key_name, value, description):
+		"""
+		save a meta key
+		"""
+		try:
+			metaKey = MetaKey.objects.get(name=meta_key_name)
+		except MetaKey.DoesNotExist:
+			metaKey = MetaKey()
+			metaKey.name = meta_key_name
+			metaKey.save()
+		
+		metaKeyReference = MetaKeyReference()
+		metaKeyReference.reference = reference
+		metaKeyReference.meta_tag = metaKey
+		metaKeyReference.owner = owner
+		metaKeyReference.value = value
+		metaKeyReference.description = description
+		metaKeyReference.save()
+		return metaKeyReference
 	
-	def set_metakey(self, sample, owner, meta_key_name, value, description):
+	def get_reference_metakey(self, reference, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): return MetaKeyReference.objects.filter(reference__id=reference.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			return MetaKeyReference.objects.get(reference__id=reference.id, meta_tag__name=meta_key_name, value=value)
+		except MetaKeyReference.DoesNotExist:
+			return None
+	
+	def get_reference_metakey_last(self, reference, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): query_set = MetaKeyReference.objects.filter(reference__id=reference.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			else: query_set = MetaKeyReference.objects.filter(reference__id=reference.id, meta_tag__name=meta_key_name, value=value).order_by('-creation_date')
+			if (query_set.count() > 0 ): return query_set[0]
+			return None
+		except MetaKeyReference.DoesNotExist:
+			return None	
+		
+	
+	def set_sample_metakey(self, sample, owner, meta_key_name, value, description):
 		"""
 		save a meta key
 		"""
@@ -41,7 +81,7 @@ class ManageDatabase(object):
 		metaKeySample.save()
 		return metaKeySample
 	
-	def get_metakey(self, sample, meta_key_name, value):
+	def get_sample_metakey(self, sample, meta_key_name, value):
 		"""
 		value = None, return a list
 		"""
@@ -51,6 +91,18 @@ class ManageDatabase(object):
 		except MetaKeySample.DoesNotExist:
 			return None
 	
+	def get_sample_metakey_last(self, sample, meta_key_name, value):
+		"""
+		value = None, return a list
+		"""
+		try:
+			if (value == None): query_set = MetaKeySample.objects.filter(sample__id=sample.id, meta_tag__name=meta_key_name).order_by('-creation_date')
+			else: query_set = MetaKeySample.objects.filter(sample__id=sample.id, meta_tag__name=meta_key_name, value=value).order_by('-creation_date')
+			if (query_set.count() > 0 ): return query_set[0]
+			return None
+		except MetaKeySample.DoesNotExist:
+			return None	
+		
 	def set_project_metakey(self, project, owner, meta_key_name, value, description):
 		"""
 		save a meta key
@@ -302,19 +354,4 @@ class ManageDatabase(object):
 	#######################################
 	
 	
-	def get_elements_and_genes_from_db(self, project, user):
-		"""
-		return vector with name of elements sorted
-		"""
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Project, project.id)
-		meta_project = self.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
-		if (meta_project == None):
-			utils = Utils()
-			dt_data = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-			if (dt_data != None):
-				self.set_project_metakey(project, user, meta_key,\
-					MetaKeyAndValue.META_VALUE_Success, ','.join(sorted(dt_data.keys())))
-			return sorted(dt_data.keys())
-		return meta_project.description.split(',')
 		

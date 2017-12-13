@@ -177,7 +177,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(file_abricate))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)

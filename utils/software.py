@@ -218,7 +218,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -228,7 +228,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -239,7 +239,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 
@@ -250,7 +250,7 @@ class Software(object):
 				result = Result()
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.software_names.get_abricate_version()))
 				result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
-				manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 				return False
 		
@@ -263,7 +263,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 		
@@ -272,7 +272,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
 
@@ -288,7 +288,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to identify type and sub type")
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -299,8 +299,8 @@ class Software(object):
 		sample.save()
 		
 		## save everything OK
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(), self.software_names.get_abricate_version()))
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(), self.software_names.get_abricate_version()))
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
 		return True
@@ -641,13 +641,24 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run freebayes")
 
-		### create the FAI index
-		self.create_fai_fasta(reference_fasta_temp)
+		reference_fasta_fai = reference_fasta + FileExtensions.FILE_FAI
+		if (not os.path.exists(reference_fasta_fai)):
+			self.logger_production.error('Files doesnt exist: ' + reference_fasta_fai)
+			self.logger_debug.error('Files doesnt exist: ' + reference_fasta_fai)
+			raise Exception("Fail to run freebayes")
+		
+		reference_fasta_temp_fai = os.path.join(temp_dir, os.path.basename(reference_fasta) + FileExtensions.FILE_FAI)
+		cmd = "ln -s {} {}".format(reference_fasta_fai, reference_fasta_temp_fai)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
 		
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s -f %s -b %s > %s" %\
-				(self.software_names.get_freebayes(), self.software_names.get_freebayes_parameters(),
-				reference_fasta_temp, file_to_process, temp_file)
+ 				(self.software_names.get_freebayes(), self.software_names.get_freebayes_parameters(),
+ 				reference_fasta_temp, file_to_process, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -669,7 +680,93 @@ class Software(object):
 		self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
 		return temp_dir
 
+	def run_freebayes_parallel(self, bam_file, reference_fasta, genbank_file, sample_name):
+		"""
+		run freebayes
+		return output directory
+		
+		## freebayes -p 1 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V -f ../$input2 -b {} > {.}.vcf'
+		"""
+		temp_dir = os.path.join(self.utils.get_temp_dir())
+		
+		file_to_process = os.path.join(temp_dir, sample_name + ".bam" )
+		cmd = "ln -s {} {}".format(bam_file, os.path.join(temp_dir, sample_name + ".bam" ))
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
 
+		cmd = "ln -s {} {}.bai".format(bam_file + ".bai", file_to_process)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+
+		reference_fasta_temp = os.path.join(temp_dir, os.path.basename(reference_fasta))
+		cmd = "ln -s {} {}".format(reference_fasta, reference_fasta_temp)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+
+		reference_fasta_fai = reference_fasta + FileExtensions.FILE_FAI
+		if (not os.path.exists(reference_fasta_fai)):
+			self.logger_production.error('Files doesnt exist: ' + reference_fasta_fai)
+			self.logger_debug.error('Files doesnt exist: ' + reference_fasta_fai)
+			raise Exception("Fail to run freebayes")
+		
+		reference_fasta_temp_fai = os.path.join(temp_dir, os.path.basename(reference_fasta) + FileExtensions.FILE_FAI)
+		cmd = "ln -s {} {}".format(reference_fasta_fai, reference_fasta_temp_fai)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+		
+		### create regions
+		temp_file_regions = self.utils.get_temp_file('freebayes_regions', '.txt')
+		# bamtools coverage -in aln.bam | coverage_to_regions.py ref.fa 500 >ref.fa.500.regions
+		cmd = "%s coverage -in %s | %s %s 500 > %s" %\
+				(self.software_names.get_bamtools(), bam_file, self.software_names.get_coverage_to_regions(),
+				reference_fasta_temp_fai, temp_file_regions)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(temp_file_regions)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+		
+		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
+		cmd = "%s %s %s %s -f %s -b %s > %s" %\
+				(self.software_names.get_freebayes_parallel(), temp_file_regions, self.CORES_TO_USE,
+				self.software_names.get_freebayes_parameters(), reference_fasta_temp, file_to_process, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(temp_file_regions)
+			os.unlink(temp_file)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run freebayes")
+		
+		### run snpEff
+		temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+		self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		
+		self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		
+		### add FREQ to vcf file
+		vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
+		os.unlink(temp_file)
+		os.unlink(temp_file_2)
+		os.unlink(temp_file_regions)
+		
+		### pass vcf to tab
+		self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
+		return temp_dir
+	
 	"""
 	Global processing
 	"""
@@ -693,7 +790,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -709,7 +806,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -726,7 +823,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -736,17 +833,17 @@ class Software(object):
 		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		else: (lines_2, average_2) = (None, None)
 		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 
 		## save everything OK
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
 							(self.software_names.get_fastq_version(), self.software_names.get_trimmomatic_version()))
-		manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 
 		### set the flag of the end of the task		
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
-			manageDatabase.set_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
 
 	"""
@@ -862,7 +959,7 @@ class Software(object):
 
 		## run freebayes
 		try:
-			out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
+			out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name)
 			result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))

@@ -41,7 +41,11 @@ class UploadFiles(object):
 			match = re.search('\w+(_[v|V]\d+)\.\w+', base_name)
 			if (match == None): continue
 			if (len(match.regs) == 2):
-				if (not self.utils.is_fasta(os.path.join(path_to_find, file))): continue
+				try:
+					self.utils.is_fasta(os.path.join(path_to_find, file))
+				except IOError as e:
+					continue
+				
 				(temp, path) = (int(match.group(1).lower().replace("_v", "")), os.path.join(path_to_find, file))
 				if (temp > version):
 					version = temp

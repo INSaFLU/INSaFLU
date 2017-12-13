@@ -121,9 +121,6 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		if (reference_genbank == None): hash_value_genbank = utils.md5sum(temp_genbank_file)
 		else: hash_value_genbank = hashlib.md5(form.files.get('reference_genbank').read()).hexdigest()
 		
-		## remove genbank temp dir if exist 
-		if (temp_genbank_dir != None): utils.remove_dir(temp_genbank_dir)
-			
 		reference = form.save(commit=False)
 		## set other data
 		reference.owner = self.request.user
@@ -148,8 +145,15 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
 		
+		### save in database the elements and coordinates
+		self.get_elements_from_db(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), self.request.user)
+		self.get_elements_and_cds_from_db(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), self.request.user)
+
 		## create the index before commit in database, throw exception if something goes wrong
-		software.create_fai_fasta(reference.reference_fasta.name)
+		software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
+		
+		## remove genbank temp dir if exist 
+		if (temp_genbank_dir != None): utils.remove_dir(temp_genbank_dir)
 		
 		messages.success(self.request, "Reference '" + name + "' was created successfully", fail_silently=True)
 		return super(ReferenceAddView, self).form_valid(form)
@@ -265,7 +269,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		
 		### 
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+		manageDatabase.set_sample_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 		
 		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
 		return super(SamplesAddView, self).form_valid(form)
@@ -286,20 +290,20 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		if (sample.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 		context['nav_sample'] = True
 		context['virus_identify'] = sample.get_type_sub_type()
-		context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '</a>')
-		context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '">' + sample.file_name_2 + '</a>')
-		context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
-		context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_2 + '.html</a>')
-		context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-		context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-		context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-		context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+		context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '</a>')
+		context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download>' + sample.file_name_2 + '</a>')
+		context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '.html</a>')
+		context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_2 + '.html</a>')
+		context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download>' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+		context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download>' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+		context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" download>' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+		context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" download>' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
 	
 		### software
 		manageDatabase = ManageDatabase()
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_sample == None):
-			meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
+			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_sample != None):
 				lst_data = meta_sample.description.split(',')
 				context['fastq_software'] = lst_data[1].strip()
@@ -310,9 +314,9 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
 			context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_sample == None):
-			meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_sample != None):
 				lst_data = meta_sample.description.split(',')
 				context['spades_software'] = lst_data[1].strip()
@@ -524,10 +528,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					else: self.request.session[key] = True
 		## END need to clean all the others if are reject in filter
 			
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER_SMALL}).configure(table)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER_SMALL
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['project_name'] = project.name
 		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window

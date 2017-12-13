@@ -34,5 +34,3 @@ $(document).ready(function(){
     $('.nav li.active').removeClass('active').find('a').trigger('click');
 });
 
-
-

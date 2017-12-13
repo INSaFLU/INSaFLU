@@ -2,6 +2,7 @@ from django.db.models import FileField
 from django.forms import forms
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import ugettext_lazy as _
+import logging
 
 class ContentTypeRestrictedFileField(FileField):
 	"""
@@ -18,6 +19,11 @@ class ContentTypeRestrictedFileField(FileField):
 			250MB - 214958080
 			500MB - 429916160
 	"""
+	
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		if ("max_upload_size" in kwargs): self.max_upload_size = kwargs.pop("max_upload_size")
 		else: self.max_upload_size = 10
@@ -31,6 +37,10 @@ class ContentTypeRestrictedFileField(FileField):
 		file = data.file
 		try:
 			content_type = file.content_type
+			
+			### to remove in the future
+			self.logger_production.error('Read content type: ' + content_type)
+			self.logger_debug.error('Read content type: ' + content_type)
 			if content_type in self.content_types:
 				if file._size > self.max_upload_size:
 					raise forms.ValidationError(_('Please keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))

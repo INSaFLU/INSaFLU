@@ -47,24 +47,27 @@ class Test(TestCase):
 		## create an index file from 
 		
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		if os.path.isfile(fasta_file + ".fai"): os.unlink(fasta_file + ".fai")
+		temp_dir = os.path.join(self.utils.get_temp_dir())
+		fasta_file_temp = self.utils.get_temp_file_from_dir(temp_dir, "FaiToFastaFile", FileExtensions.FILE_FASTA)
+		self.utils.copy_file(fasta_file, fasta_file_temp)
 		try:
-			self.software.create_fai_fasta(fasta_file)
-			self.assertTrue(os.path.isfile(fasta_file + ".fai"))
-			self.assertEquals(179, os.path.getsize(fasta_file + ".fai"))
-			os.unlink(fasta_file + ".fai")
+			self.software.create_fai_fasta(fasta_file_temp)
+			self.assertTrue(os.path.isfile(fasta_file_temp + ".fai"))
+			self.assertEquals(179, os.path.getsize(fasta_file_temp + ".fai"))
 		except Exception as e:
 			self.fail(e.args[0])
 		
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FAIL_FASTA)
-		if os.path.isfile(fasta_file + ".fai"): os.unlink(fasta_file + ".fai")
+		fasta_file_temp = self.utils.get_temp_file_from_dir(temp_dir, "FaiToFastaFile", FileExtensions.FILE_FASTA)
+		self.utils.copy_file(fasta_file, fasta_file_temp)
 		try:
-			self.software.create_fai_fasta(fasta_file)
+			self.software.create_fai_fasta(fasta_file_temp)
 			self.fail("Must throw exception")
 		except Exception as e:
 			self.assertEquals("Fail to run samtools", e.args[0])
-			if os.path.isfile(fasta_file + ".fai"): os.unlink(fasta_file + ".fai")
-
+			if os.path.isfile(fasta_file_temp + ".fai"): os.unlink(fasta_file_temp + ".fai")
+		self.utils.remove_dir(temp_dir)
+		
 	def test_is_exist_database_abricate(self):
 		self.assertTrue(self.software.is_exist_database_abricate("ncbi"))
 		self.assertFalse(self.software.is_exist_database_abricate("xpot"))
@@ -331,12 +334,12 @@ class Test(TestCase):
 		### set the job
 		taskID = "xpto_task" 
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 
 		### run software
 		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(taskID, meta_sample.description)
 
@@ -350,14 +353,14 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
@@ -369,7 +372,7 @@ class Test(TestCase):
 		self.assertEqual('39845', result_average.number_file_2)
 		self.assertEqual('142.1', result_average.average_file_2)
 
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
@@ -420,14 +423,14 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
@@ -439,7 +442,7 @@ class Test(TestCase):
 		self.assertEqual(None, result_average.number_file_2)
 		self.assertEqual(None, result_average.average_file_2)
 
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
@@ -516,7 +519,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
@@ -573,12 +576,12 @@ class Test(TestCase):
 		### set the job
 		taskID = "xpto_task" 
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 
 		### run software
 		self.assertTrue(self.software.run_fastq_and_trimmomatic_and_identify_species(sample, user))
 		
-		meta_sample = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(taskID, meta_sample.description)
 
@@ -592,14 +595,14 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
@@ -611,7 +614,7 @@ class Test(TestCase):
 		self.assertEqual('39845', result_average.number_file_2)
 		self.assertEqual('142.1', result_average.average_file_2)
 
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
@@ -624,7 +627,7 @@ class Test(TestCase):
 		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
@@ -737,6 +740,37 @@ class Test(TestCase):
 
 		sample_name = "run_snippy1"
 		out_put_path = self.software.run_freebayes(bam_file, fasta_file, genbank_file, sample_name)
+		result_file = os.path.join(out_put_path, sample_name + ".vcf")
+		result_file_tab = os.path.join(out_put_path, sample_name + ".tab")
+		self.assertTrue(os.path.exists(result_file))
+		self.assertTrue(os.path.getsize(result_file) > 1000)
+		self.assertTrue(os.path.exists(result_file_tab))
+		self.assertTrue(os.path.getsize(result_file_tab) > 1000)
+		temp_file = self.utils.get_temp_file("file_name", ".txt")
+		temp_file_1 = self.utils.get_temp_file("file_name", ".txt")
+		cmd = "grep -E -v '##command|##reference|##fileDate|insaFlu' {} > {}".format(result_file, temp_file)
+		os.system(cmd);
+		cmd = "grep -E -v '##command|##reference|##fileDate|insaFlu' {} > {}".format(vcf_expect_result, temp_file_1)
+		os.system(cmd);
+		self.assertTrue(filecmp.cmp(temp_file_1, temp_file))
+		self.assertTrue(filecmp.cmp(expect_tab_file, result_file_tab))
+		self.utils.remove_temp_file(temp_file_1)
+		self.utils.remove_temp_file(temp_file)
+		self.utils.remove_dir(out_put_path)
+		
+	def test_run_freebayes_parallel(self):
+		"""
+ 		test run freebayes
+ 		create a VCF
+ 		"""
+		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		bam_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_BAM, "run_snippy1.bam")	
+		expect_tab_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.tab")
+		vcf_expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.vcf")
+
+		sample_name = "run_snippy1"
+		out_put_path = self.software.run_freebayes_parallel(bam_file, fasta_file, genbank_file, sample_name)
 		result_file = os.path.join(out_put_path, sample_name + ".vcf")
 		result_file_tab = os.path.join(out_put_path, sample_name + ".tab")
 		self.assertTrue(os.path.exists(result_file))
@@ -1199,7 +1233,7 @@ class Test(TestCase):
 # 		self.assertTrue(os.path.exists(file_abricate))
 # 		
 # 		manageDatabase = ManageDatabase()
-# 		list_meta = manageDatabase.get_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+# 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
 # 		self.assertTrue(len(list_meta) == 1)
 # 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 # 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)

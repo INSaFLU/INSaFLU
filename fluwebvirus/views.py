@@ -6,6 +6,8 @@ from django.core.urlresolvers import reverse_lazy
 from braces.views import AnonymousRequiredMixin, FormValidMessageMixin, LoginRequiredMixin, MessageMixin
 from ipware.ip import get_ip
 from log_login.models import LoginHistory
+from managing_files.models import DataSet
+from constants.constants import Constants
 from .forms import RegistrationForm
 from django.contrib.auth.models import User
 from .forms import LoginForm
@@ -58,6 +60,15 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 			login_history.operation = LoginHistory.LOGIN_IN
 			login_history.description = get_all_info(self.request)
 			login_history.save()
+			
+			result = DataSet.objects.filter(owner__id=self.request.user.id)
+			if (len(result) == 0):
+				### need to create it generic
+				dataSet = DataSet()
+				dataSet.name = Constants.DATA_SET_GENERIC
+				dataSet.owner = self.request.user
+				dataSet.save()
+				
 			return super(LoginView, self).form_valid(form)
 		else:
 			return self.form_invalid(form)

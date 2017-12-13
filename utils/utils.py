@@ -3,13 +3,16 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-from constants.constants import Constants, FileExtensions
+from constants.constants import Constants, FileExtensions, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from managing_files.manage_database import ManageDatabase
+from utils.result import GeneticElement, Gene
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
-from utils.result import CountHits
+from utils.result import CountHits, DecodeCoverage
 import os, random, gzip, hashlib, logging
 from pysam import pysam
 
@@ -54,6 +57,19 @@ class Utils(object):
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
+			try:
+				os.open(return_file, os.O_CREAT | os.O_EXCL)
+				return return_file
+			except FileExistsError:
+				pass
+			
+	def get_temp_file_from_dir(self, dir_out, file_name, sz_type):
+		"""
+		return a temp file name
+		"""
+		if (not os.path.exists(dir_out)): os.makedirs(dir_out)
+		while 1:
+			return_file = os.path.join(dir_out, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
 			try:
 				os.open(return_file, os.O_CREAT | os.O_EXCL)
 				return return_file
@@ -210,7 +226,18 @@ class Utils(object):
 		if (len(record_dict) > 0): return len(record_dict)
 		raise IOError(_("Error: the file is not in FASTA format."))
 
-	
+	def get_max_length_fasta(self, sz_file_name):
+		"""
+		get max length fasta
+		"""
+		n_max = 0
+		record_dict = SeqIO.index(sz_file_name, "fasta")
+		if (len(record_dict) > 0): return len(record_dict)
+		for seq in record_dict:
+			if (len(record_dict[seq].seq) > n_max): n_max = len(record_dict[seq].seq)
+		return n_max
+
+							
 	def is_genbank(self, sz_file_name):
 		"""
 		Test GenBank file
@@ -242,20 +269,55 @@ class Utils(object):
 		vect_genes = [[pos_start, pos_end, name, strand 1|-1], [...], ...]
 		return: dt_data{ element_name : vect_genes, element_name_2 : vect_genes_2, ....} 
 		"""
-		dt_data = {}
+		geneticElement = GeneticElement()
 		for record in SeqIO.parse(genbank_name, "genbank"):
-			vect_genes = []
 			for features in record.features:
 				if (features.type == 'CDS'):
-					vect_gene = []
-					if ('gene' in features.qualifiers): vect_gene = [int(features.location.start), int(features.location.end),\
-								features.qualifiers['gene'][0], features.location.strand]
-					elif ('locus_tag' in features.qualifiers): vect_gene = [int(features.location.start), int(features.location.end),\
-										features.qualifiers['locus_tag'][0], features.location.strand]
-					vect_genes.append(vect_gene)
-			dt_data[record.name] = vect_genes
-		return dt_data
+					if ('gene' in features.qualifiers):
+						geneticElement.add_gene(record.name, Gene(features.qualifiers['gene'][0],
+							int(features.location.start), int(features.location.end), features.location.strand))
+					elif ('locus_tag' in features.qualifiers): 
+						geneticElement.add_gene(record.name, Gene(features.qualifiers['locus_tag'][0],
+							int(features.location.start), int(features.location.end), features.location.strand))
+		return geneticElement
 	
+	def get_elements_from_db(self, reference, user):
+		"""
+		return vector with name of elements sorted
+		"""
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Reference, reference.id)
+		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_reference == None):
+			utils = Utils()
+			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+			if (geneticElement == None): return None
+			manageDatabase.set_reference_metakey(reference, user, meta_key,\
+				MetaKeyAndValue.META_VALUE_Success, ','.join(geneticElement.get_sorted_elements()))
+			return geneticElement.get_sorted_elements()
+		else:
+			return meta_reference.description.split(',')
+	
+	def get_elements_and_cds_from_db(self, reference, user):
+		"""
+		return vector with name of elements sorted
+		"""
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_reference == None):
+			utils = Utils()
+			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+			if (geneticElement == None): return None
+			manageDatabase.set_reference_metakey(reference, user, meta_key,\
+				MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+			return geneticElement
+		else:
+			decodeCoverage = DecodeCoverage()
+			geneticElement = decodeCoverage.decode_result(meta_reference.description)
+			return geneticElement
 			
 	def read_text_file(self, file_name):
 		"""

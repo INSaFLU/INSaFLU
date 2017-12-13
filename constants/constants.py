@@ -16,6 +16,12 @@ class Constants(object):
 	
 	META_KEY_VALUE_NOT_NEED = "value not needed"
 	
+	## MAX LOCUS FROM FASTA
+	MAX_SEQUENCES_FROM_FASTA = 20
+	
+	## MAX LENGTH_SEQUENCE_FROM_FASTA
+	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
+	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
 	
@@ -74,7 +80,7 @@ class Constants(object):
 	CHECK_BOX_VALUE = 'value'
 	
 	### sleep time to test if all tasks are finished
-	WAIT_TIME_TASKS_FINISHED = 60		## one minute
+	WAIT_TIME_TASKS_FINISHED = 30		## one minute
 	
 	### empty value used in tables
 	EMPTY_VALUE_TABLE = "-"
@@ -164,6 +170,7 @@ class FileExtensions(object):
 	FILE_GBK = '.gbk'
 	FILE_FASTA = '.fasta'
 	FILE_FA = '.fa'
+	FILE_FAI = '.fai'
 	FILE_CONSENSUS_FASTA = '.consensus.fasta'
 	FILE_TREE = '.tree'
 	FILE_NWK = '.nwk'

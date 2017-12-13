@@ -4,8 +4,6 @@ Created on Nov 30, 2017
 @author: mmp
 '''
 
-from utils.utils import Utils
-
 class TagNamesConstants(object):
 	'''
 	classdocs
@@ -71,10 +69,9 @@ class TagNamesConstants(object):
 		in: 'percentile 95 Variation <50', and ohers variations
 		return: float(95)
 		"""
-		utils = Utils()
 		lst_data = percentile_name.split(' ')
 		for data_ in lst_data:
-			if (utils.is_float(data_)): return float(data_)
+			if (self.is_float(data_)): return float(data_)
 		return None
 
 	def is_which_var(self, percentile_name, type_var):
@@ -108,5 +105,14 @@ class TagNamesConstants(object):
 		vect_return.append(self.get_percentil_tag_name(self.TAG_PERCENTIL_80, type_percentil))
 		return vect_return
 
-
+	
+	def is_float(self, n_value):
+		"""
+		it also in utils but we can call utils here 
+		"""
+		try:
+			float(n_value)
+			return True
+		except ValueError: 
+			return False
 

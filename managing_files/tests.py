@@ -9,7 +9,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
-from utils.result import CountHits
+from utils.result import CountHits, DecodeCoverage
 import os, time
 
 class testsReferenceFiles(TestCase):
@@ -116,7 +116,7 @@ class testsReferenceFiles(TestCase):
 		except:
 			self.fail("throw other exception")
 
-	def test_meta_key(self):
+	def test_sample_meta_key(self):
 		"""
 		test the metakey system
 		"""
@@ -142,7 +142,7 @@ class testsReferenceFiles(TestCase):
 			sample.save()
 		
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
+		manageDatabase.set_sample_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
 		
 		try:
 			metaKey = MetaKey.objects.get(name=ConstantsTestsCase.META_KEY_TEST)
@@ -150,15 +150,15 @@ class testsReferenceFiles(TestCase):
 		except MetaKey.DoesNotExist:
 			self.fail("must exist the meta_key")
 			
-		metaKey_sample = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
+		metaKey_sample = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
 		self.assertFalse(metaKey_sample == None)
 		self.assertEqual(sample_name, metaKey_sample.sample.name)
 		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample.value)
 		self.assertEqual("description", metaKey_sample.description)
 
-		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2, "description")
-		metaKey_sample = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2)
+		manageDatabase.set_sample_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2, "description")
+		metaKey_sample = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2)
 		self.assertFalse(metaKey_sample == None)
 		self.assertEqual(sample_name, metaKey_sample.sample.name)
 		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
@@ -166,12 +166,89 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual("description", metaKey_sample.description)
 		
 		
-		metaKey_sample_lst = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
+		metaKey_sample_lst = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
 		self.assertEquals(2, metaKey_sample_lst.count())
 		self.assertEqual(sample_name, metaKey_sample_lst[0].sample.name)
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample_lst[0].value)
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample_lst[1].value)
 		
+		metaKey_sample_lst = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertEquals(2, metaKey_sample_lst.count())
+		self.assertEqual(sample_name, metaKey_sample_lst[0].sample.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample_lst[0].value)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample_lst[1].value)
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertFalse(meta_sample == None)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, meta_sample.value)
+		
+		
+	def test_reference_meta_key(self):
+		"""
+		test the metakey system
+		"""
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+			
+			
+		reference_name = "xpto"
+		try:
+			reference = Reference.objects.get(name=reference_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = reference_name
+			reference.isolate_name = reference_name + reference_name
+			reference.owner = user
+			reference.save()
+		
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_reference_metakey(reference, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
+		
+		try:
+			metaKey = MetaKey.objects.get(name=ConstantsTestsCase.META_KEY_TEST)
+			self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey.name)
+		except MetaKey.DoesNotExist:
+			self.fail("must exist the meta_key")
+			
+		metaKey_sample = manageDatabase.get_reference_metakey(reference, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
+		self.assertFalse(metaKey_sample == None)
+		self.assertEqual(reference_name, metaKey_sample.reference.name)
+		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample.value)
+		self.assertEqual("description", metaKey_sample.description)
+
+		manageDatabase.set_reference_metakey(reference, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2, "description")
+		metaKey_sample = manageDatabase.get_reference_metakey(reference, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST_2)
+		self.assertFalse(metaKey_sample == None)
+		self.assertEqual(reference_name, metaKey_sample.reference.name)
+		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample.value)
+		self.assertEqual("description", metaKey_sample.description)
+		
+		
+		metaKey_sample_lst = manageDatabase.get_reference_metakey(reference, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertEquals(2, metaKey_sample_lst.count())
+		self.assertEqual(reference_name, metaKey_sample_lst[0].reference.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample_lst[0].value)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample_lst[1].value)
+		
+		metaKey_sample_lst = manageDatabase.get_reference_metakey(reference, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertEquals(2, metaKey_sample_lst.count())
+		self.assertEqual(reference_name, metaKey_sample_lst[0].reference.name)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample_lst[0].value)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST, metaKey_sample_lst[1].value)
+		
+		meta_sample = manageDatabase.get_reference_metakey_last(reference, ConstantsTestsCase.META_KEY_TEST, None)
+		self.assertFalse(meta_sample == None)
+		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, meta_sample.value)
+
+
 	def test_meta_key_order(self):
 		"""
 		test the metakey system
@@ -198,7 +275,7 @@ class testsReferenceFiles(TestCase):
 			sample.save()
 		
 		manageDatabase = ManageDatabase()
-		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
+		manageDatabase.set_sample_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description")
 		
 		try:
 			metaKey = MetaKey.objects.get(name=ConstantsTestsCase.META_KEY_TEST)
@@ -206,7 +283,7 @@ class testsReferenceFiles(TestCase):
 		except MetaKey.DoesNotExist:
 			self.fail("must exist the meta_key")
 			
-		metaKey_sample = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
+		metaKey_sample = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST)
 		self.assertFalse(metaKey_sample == None)
 		self.assertEqual(sample_name, metaKey_sample.sample.name)
 		self.assertEqual(ConstantsTestsCase.META_KEY_TEST, metaKey_sample.meta_tag.name)
@@ -214,8 +291,8 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual("description", metaKey_sample.description)
 		
 		time.sleep(0.5)
-		manageDatabase.set_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description_2")
-		list_data = manageDatabase.get_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
+		manageDatabase.set_sample_metakey(sample, user, ConstantsTestsCase.META_KEY_TEST, ConstantsTestsCase.VALUE_TEST, "description_2")
+		list_data = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
 		self.assertEquals(2, list_data.count())
 		self.assertEquals("description_2", list_data[0].description)
 		self.assertEquals("description", list_data[1].description)
@@ -740,32 +817,34 @@ class testsReferenceFiles(TestCase):
 			reference.owner = user
 			reference.save()
 		
-		project_name = "several_tree"
-		try:
-			project = Project.objects.get(name=project_name)
-		except Project.DoesNotExist:
-			project = Project()
-			project.name = project_name
-			project.reference = reference
-			project.owner = user
-			project.save()
-			
 		manage_database = ManageDatabase()
 		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Project, project.id)
-		meta_project = manage_database.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
-		self.assertEqual(None, meta_project)
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Reference, reference.id)
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertEqual(None, meta_reference)
 	
-		vect_data = manage_database.get_elements_and_genes_from_db(project, user)
+		utils = Utils()
+		vect_data = utils.get_elements_from_db(reference, user)
 		self.assertEqual(8, len(vect_data))
 		self.assertEqual('HA', vect_data[0])
 		self.assertEqual('PB2', vect_data[-1])
 
-		meta_project = manage_database.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
-		self.assertTrue(meta_project != None)
-		self.assertEqual(8, len(meta_project.description.split(',')))
-		self.assertEqual('HA', meta_project.description.split(',')[0])
-		self.assertEqual('PB2', meta_project.description.split(',')[-1])
-
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertFalse(meta_reference == None)
+		self.assertEqual('HA,MP,NA,NP,NS,PA,PB1,PB2', meta_reference.description)
+		
+		geneticElement = utils.get_elements_and_cds_from_db(reference, user)
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		decodeCoverage = DecodeCoverage()
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertFalse(meta_reference == None)
+		geneticElement_2 = decodeCoverage.decode_result(meta_reference.description)
+		
+		self.assertEquals(geneticElement, geneticElement_2)
+		self.assertEqual(8, len(geneticElement.get_sorted_elements()))
+		self.assertEqual('HA', geneticElement.get_sorted_elements()[0])
+		self.assertEqual('HA', geneticElement.get_genes('HA')[0].name)
+		self.assertEqual('PB2', geneticElement.get_sorted_elements()[-1])
+		
 
 

@@ -5,7 +5,73 @@ Created on Nov 2, 2017
 '''
 import json, os
 from constants.constants import Constants
+from constants.constants_mixed_infection import ConstantsMixedInfection
 
+class DecodeObjects(object):
+
+	def __init__(self):
+		pass
+	
+	def decode_result(self, sz_temp):
+		return json.loads(sz_temp, object_hook=self.decode_object)
+		
+	def decode_object(self, o):
+		if '__Coverage__' in o:
+			a = Coverage()
+			a.__dict__.update(o['__Coverage__'])
+			return a
+		elif '__CountHits__' in o:
+			a = CountHits()
+			a.__dict__.update(o['__CountHits__'])
+			return a
+		elif '__TasksToProcess__' in o:
+			a = TasksToProcess()
+			a.__dict__.update(o['__TasksToProcess__'])
+			return a
+		elif '__Gene__' in o:
+			a = Gene(o['__Gene__']['name'], o['__Gene__']['start'], o['__Gene__']['end'], o['__Gene__']['strand'])
+			a.__dict__.update(o['__Gene__'])
+			return a
+		elif '__GeneticElement__' in o:
+			a = GeneticElement()
+			a.__dict__.update(o['__GeneticElement__'])
+			return a
+		elif '__CoverageElement__' in o:
+			a = CoverageElement(o['__CoverageElement__']['element'])
+			a.__dict__.update(o['__CoverageElement__'])
+			return a
+		elif '__Outputs__' in o:
+			a = Outputs()
+			a.__dict__.update(o['__Outputs__'])
+			return a
+		elif '__Softwares__' in o:
+			a = Softwares()
+			a.__dict__.update(o['__Softwares__'])
+			return a
+		elif '__Result__' in o:
+			a = Result()
+			a.__dict__.update(o['__Result__'])
+			return a
+		elif '__software_desc__' in o:
+			a = SoftwareDesc(o['__software_desc__']['name'], o['__software_desc__']['version'], o['__software_desc__']['parameters'])
+			a.__dict__.update(o['__software_desc__'])
+			return a
+		elif '__output__' in o:
+			a = Output(o['__output__']['file_name'], o['__output__']['path'])
+			a.__dict__.update(o['__output__'])
+			return a
+		elif '__MixedInfectionMainVector__' in o:
+			a = MixedInfectionMainVector()
+			a.__dict__.update(o['__MixedInfectionMainVector__'])
+			return a
+		return o
+
+class ObjectEncoder(json.JSONEncoder):
+
+	def default(self, o):
+		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
+
+	
 class SoftwareDesc(object):
 	
 	def __init__(self, name, version, parameters):
@@ -108,39 +174,6 @@ class ResultEncoder(json.JSONEncoder):
 			return {'__output__': o.__dict__}
 		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
 	
-class DecodeResult(object):
-	
-	def __init__(self):
-		pass
-	
-	def decode_result(self, sz_temp):
-		return json.loads(sz_temp, object_hook=self.decode_object)
-	
-	def decode_object(self, o):
-		
-		if '__Outputs__' in o:
-			a = Outputs()
-			a.__dict__.update(o['__Outputs__'])
-			return a
-		elif '__Softwares__' in o:
-			a = Softwares()
-			a.__dict__.update(o['__Softwares__'])
-			return a
-		elif '__Result__' in o:
-			a = Result()
-			a.__dict__.update(o['__Result__'])
-			return a
-		elif '__software_desc__' in o:
-			a = SoftwareDesc(o['__software_desc__']['name'], o['__software_desc__']['version'], o['__software_desc__']['parameters'])
-			a.__dict__.update(o['__software_desc__'])
-			return a
-		elif '__output__' in o:
-			a = Output(o['__output__']['file_name'], o['__output__']['path'])
-			a.__dict__.update(o['__output__'])
-			return a
-		
-		return o
-
 
 class ResultAverageAndNumberReads(object):
 	"""
@@ -153,7 +186,7 @@ class ResultAverageAndNumberReads(object):
 		self.average_file_2 = average_file_2
 	
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=ResultAverageEncoder)
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
 	def get_result_number(self):
 		return ""		
@@ -161,12 +194,6 @@ class ResultAverageAndNumberReads(object):
 	def __eq__(self, other):
 		return other != None and other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
 			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
-
-
-class ResultAverageEncoder(json.JSONEncoder):
-
-	def default(self, o):
-		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
 
 
 class DecodeResultAverageAndNumberReads(object):
@@ -230,7 +257,7 @@ class Coverage(object):
 		raise Exception("Error: there's no key like this: " + element)
 
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CoverageEncoder)
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
 	def get_result_number(self):
 		return ""
@@ -283,58 +310,21 @@ class Coverage(object):
 		if (self.is_100_more_0(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
 		return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_RED_16_16)
 
-class CoverageEncoder(json.JSONEncoder):
-
-	def default(self, o):
-		return {'__{}__'.format(o.__class__.__name__): o.__dict__}
-
-
-class DecodeCoverage(object):
-	
-	def __init__(self):
-		pass
-	
-	def decode_result(self, sz_temp):
-		return json.loads(sz_temp, object_hook=self.decode_object)
-		
-	def decode_object(self, o):
-		if '__Coverage__' in o:
-			a = Coverage()
-			a.__dict__.update(o['__Coverage__'])
-			return a
-		elif '__CountHits__' in o:
-			a = CountHits()
-			a.__dict__.update(o['__CountHits__'])
-			return a
-		elif '__TasksToProcess__' in o:
-			a = TasksToProcess()
-			a.__dict__.update(o['__TasksToProcess__'])
-			return a
-		elif '__Gene__' in o:
-			a = Gene(o['__Gene__']['name'], o['__Gene__']['start'], o['__Gene__']['end'], o['__Gene__']['strand'])
-			a.__dict__.update(o['__Gene__'])
-			return a
-		elif '__GeneticElement__' in o:
-			a = GeneticElement()
-			a.__dict__.update(o['__GeneticElement__'])
-			return a
-		elif '__CoverageElement__' in o:
-			a = CoverageElement(o['__CoverageElement__']['element'])
-			a.__dict__.update(o['__CoverageElement__'])
-			return a
-		return o
-
 
 class CountHits(object):
 	"""
 	Count the hits in the variations
 	"""
 	def __init__(self):
+		self.hits_more_90 = 0
 		self.hits_50_90 = 0
 		self.hits_less_50 = 0
 		
 	def set_hits_50_90(self, hits_50_90):
 		self.hits_50_90 = hits_50_90
+		
+	def set_hits_more_90(self, hits_more_90):
+		self.hits_more_90 = hits_more_90
 		
 	def set_hits_less_50(self, hits_less_50):
 		self.hits_less_50 = hits_less_50
@@ -345,23 +335,36 @@ class CountHits(object):
 	def add_one_hits_50_90(self):
 		self.hits_50_90 += 1
 	
+	def add_one_hits_more_90(self):
+		self.hits_more_90 += 1
+	
 	def get_hits_50_90(self):
 		return self.hits_50_90
+	
+	def get_hits_more_90(self):
+		return self.hits_more_90
 	
 	def get_hits_less_50(self):
 		return self.hits_less_50
 	
-	def get_total(self):
+	def get_total_50_50_90(self):
 		return self.hits_50_90 + self.hits_less_50
+	
+	def get_total(self):
+		return self.hits_50_90 + self.hits_less_50 + self.hits_more_90
+
+	def get_vect_mixed_infections(self):
+		return [self.get_hits_less_50(), self.get_hits_50_90()]
 
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CoverageEncoder)
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
 	def __eq__(self, other):
-		return other != None and other.hits_50_90 == self.hits_50_90 and other.hits_less_50 == self.hits_less_50
+		return other != None and other.hits_50_90 == self.hits_50_90 and other.hits_more_90 == self.hits_more_90\
+			and other.hits_less_50 == self.hits_less_50
 
 	def __str__(self):
-		return "hits_50_90: {}   hits_less_50: {}".format(self.hits_50_90, self.hits_less_50)
+		return "hits_more_90: {}  hits_50_90: {}   hits_less_50: {}".format(self.hits_more_90, self.hits_50_90, self.hits_less_50)
 
 
 class TasksToProcess(object):
@@ -378,7 +381,7 @@ class TasksToProcess(object):
 		return self.vect_tasks_id
 
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CoverageEncoder)
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
 	
 	def __eq__(self, other):
 		if (other == None or len(other.get_tasks_id()) != len(self.vect_tasks_id)): return False
@@ -421,7 +424,7 @@ class GeneticElement(object):
 		return sorted(self.dt_elements.keys())
 	
 	def to_json(self):
-		return json.dumps(self, indent=4, cls=CoverageEncoder)
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
 	def __eq__(self, other):
 		if (other == None or len(other.dt_elements) != len(self.dt_elements)): return False
@@ -429,4 +432,30 @@ class GeneticElement(object):
 			if (value_ not in other.dt_elements or other.dt_elements[value_] != self.dt_elements[value_]): return False
 		return True
 		
+
+class MixedInfectionMainVector(object):
+	
+	def __init__(self):
+		'''
+		Constructor
+		'''
+		self.vect_start_compare = [[b for b in a] for a in ConstantsMixedInfection.vect_start_compare]
+	
+	def add_vector(self, vector):
+		if (vector not in self.vect_start_compare): self.vect_start_compare.append(vector)
 		
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
+	
+	def get_vector(self):
+		return self.vect_start_compare
+
+	def __eq__(self, other):
+		if (other == None): return False
+		return self.vect_start_compare == other.vect_start_compare
+	
+	def __str__(self):
+		return '; '.join(['-'.join([str(b) for b in a]) for a in self.vect_start_compare])
+
+
+

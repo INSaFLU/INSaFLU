@@ -12,7 +12,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
-from utils.result import CountHits, DecodeCoverage
+from utils.result import CountHits, DecodeObjects
 import os, random, gzip, hashlib, logging
 from pysam import pysam
 
@@ -315,7 +315,7 @@ class Utils(object):
 				MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
 			return geneticElement
 		else:
-			decodeCoverage = DecodeCoverage()
+			decodeCoverage = DecodeObjects()
 			geneticElement = decodeCoverage.decode_result(meta_reference.description)
 			return geneticElement
 			
@@ -510,6 +510,7 @@ class Utils(object):
 						if (self.is_float(value_)):
 							if (float(value_) < 50): count_hits.add_one_hits_less_50()
 							elif (float(value_) < 91): count_hits.add_one_hits_50_90()
+							else: count_hits.add_one_hits_more_90()
 		return count_hits
 
 	def get_variations_by_freq_from_tab(self, tab_file, vect_count_type):
@@ -523,12 +524,13 @@ class Utils(object):
 				del	Deletion	ACGG => ACG
 				complex	Combination of snp/mnp
 		vect_count_type = ['snp', 'ins']
-		out (dict_less_50, dict_more_50)
+		out (dict_less_50, dict_more_50, dict_more_90)
 		out: dict_less_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
 		out: dict_more_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
 		"""
 		dict_less_50 = {}
 		dict_more_50 = {}
+		dict_more_90 = {}
 		with open(tab_file) as handle:
 			for line in handle:
 				sz_temp = line.strip()
@@ -544,12 +546,17 @@ class Utils(object):
 									dict_less_50[lst_data[0]].append(int(lst_data[1]))
 								elif (self.is_integer(lst_data[1])):
 									dict_less_50[lst_data[0]] = [int(lst_data[1])]
-							else:
+							elif (float(value_) < 90):
 								if (lst_data[0] in dict_more_50 and self.is_integer(lst_data[1])): 
 									dict_more_50[lst_data[0]].append(int(lst_data[1]))
 								elif (self.is_integer(lst_data[1])):
 									dict_more_50[lst_data[0]] = [int(lst_data[1])]
-		return (dict_less_50, dict_more_50)
+							else:
+								if (lst_data[0] in dict_more_90 and self.is_integer(lst_data[1])): 
+									dict_more_90[lst_data[0]].append(int(lst_data[1]))
+								elif (self.is_integer(lst_data[1])):
+									dict_more_90[lst_data[0]] = [int(lst_data[1])]
+		return (dict_less_50, dict_more_50, dict_more_90)
 
 
 	def filter_fasta_all_sequences(self, consensus_fasta, sample_name, coverage, out_dir):

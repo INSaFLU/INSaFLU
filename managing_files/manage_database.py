@@ -197,50 +197,27 @@ class ManageDatabase(object):
 		except MetaKeyProject.DoesNotExist:
 			return []	
 
+
+	def get_variation_count(self, count_hits):
+		"""
+		Add values in project_sample
+		"""
+		if (count_hits == None): return None
+		
+		count_variations = CountVariations()
+		count_variations.var_bigger_50_90 = count_hits.get_hits_50_90()
+		count_variations.var_bigger_90 = count_hits.get_hits_more_90()
+		count_variations.var_less_50 = count_hits.get_hits_less_50()
+		count_variations.total = count_hits.get_total()
+		count_variations.save()
+		return count_variations
+
+
 	#######################################
 	###
 	###		deal with percentils
 	###
 
-	def add_variation_count(self, project_sample, user, count_hits):
-		"""
-		Add values in project_sample
-		"""
-		if (count_hits == None): return False
-		
-		if (project_sample.get_is_ready_to_proccess()):
-			try:
-				CountVariations.objects.get(project_sample__id=project_sample.id)
-				return False
-			except CountVariations.DoesNotExist:
-				count_variations = CountVariations()
-				count_variations.project_sample = project_sample
-				count_variations.var_bigger_50 = count_hits.get_hits_50_90()
-				count_variations.var_less_50 = count_hits.get_hits_less_50()
-				count_variations.total = count_hits.get_total()
-				count_variations.save()
-				self.percentils_refresh(user)
-				return True
-		else:
-			self.delete_variation_count(project_sample, user)
-			### refresh the percentils values
-			self.percentils_refresh(user)
-			return True
-		
-	def delete_variation_count(self, project_sample, user):
-		"""
-		remove variation count
-		is not necessary, if is removed it can keep the data...
-		"""
-		try:
-			CountVariations.objects.get(project_sample__id=project_sample.id).delete()
-			### refresh the percentils values
-			self.percentils_refresh(user)
-			return True
-		except CountVariations.DoesNotExist:
-			pass
-		return False
-	
 	
 	def percentils_refresh(self, user):
 		"""

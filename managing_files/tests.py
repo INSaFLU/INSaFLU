@@ -9,7 +9,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
-from utils.result import CountHits, DecodeCoverage
+from utils.result import CountHits, DecodeObjects
 import os, time
 
 class testsReferenceFiles(TestCase):
@@ -614,180 +614,177 @@ class testsReferenceFiles(TestCase):
 
 
 
-	def test_percentil(self):
-		try:
-			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-		except User.DoesNotExist:
-			user = User()
-			user.username = ConstantsTestsCase.TEST_USER_NAME
-			user.is_active = False
-			user.password = ConstantsTestsCase.TEST_USER_NAME
-			user.save()
-
-		ref_name = "second"
-		try:
-			reference = Reference.objects.get(name=ref_name)
-		except Reference.DoesNotExist:
-			reference = Reference()
-			reference.name = ref_name
-			reference.reference_fasta.name = ""
-			reference.reference_fasta_name = ""
-			reference.reference_genbank.name = ""
-			reference.reference_genbank_name = ""
-			reference.owner = user
-			reference.save()
-		
-		project_name = "several"
-		try:
-			project = Project.objects.get(name=project_name)
-		except Project.DoesNotExist:
-			project = Project()
-			project.id= 5000
-			project.name = project_name
-			project.reference = reference
-			project.owner = user
-			project.save()
-		
-		sample_name = "_fddsdffds"
-		try:
-			sample = Sample.objects.get(name=sample_name)
-		except Sample.DoesNotExist:
-			sample = Sample()
-			sample.name = sample_name
-			sample.is_rejected = False
-			sample.is_valid_1 = True
-			sample.file_name_1 = 'vect_file[0]'
-			sample.path_name_1.name = ''
-			sample.is_valid_2 = False
-			sample.file_name_2 = 'vect_file[1]'
-			sample.path_name_2.name = ''
-			sample.owner = user
-			
-			sample.is_ready_for_projects = True
-			sample.is_obsolete = False
-			sample.is_rejected = False
-			sample.save()
-
-
-		manage_database = ManageDatabase()
-		tagNamesConstants = TagNamesConstants()
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
-		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
-
-		value_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(33, value_)
-		
-		total_numbers = 1000
-		project_sample_last = None
-		for i in range(0, total_numbers):
-			count_hits = CountHits()
-			count_hits.set_hits_less_50((i * 999) % 2)
-			count_hits.set_hits_50_90((i * 2999) % 3)
-			
-			## create project_sample
-			project_sample = ProjectSample()
-			project_sample.sample = sample
-			project_sample.project = project
-			project_sample.is_finished = True
-			project_sample.is_deleted = False
-			project_sample.is_error = False
-			project_sample.save()
-			self.assertTrue(manage_database.add_variation_count(project_sample, user, count_hits))
-			project_sample_last = project_sample
-
-		### test if insert an None countHits
-		self.assertFalse(manage_database.add_variation_count(project_sample_last, user, None))
-
-		self.assertEquals(total_numbers, CountVariations.objects.all().count())
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(3, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(3, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(2, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1, raw_)
-		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2, raw_)
-
-		### get all statistics
-		self.assertEquals(18, Statistics.objects.all().count())
-		
-		### get directly from database
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(3.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(3.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
-		self.assertEquals(2.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50))
-		self.assertEquals(1.0, raw_)
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
-		self.assertEquals(2.0, raw_)
-		
-		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90) + "dfsdd")
-		self.assertEquals(None, raw_)
-		
-		count_hits = CountHits()
-		count_hits.set_hits_50_90(1)
-		count_hits.set_hits_less_50(0)
-		###
-		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)
-		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
-		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
-		self.assertEquals(0, len(return_data))
-
-		count_hits.set_hits_50_90(2)
-		count_hits.set_hits_less_50(0)
-		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
-		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
-		self.assertEquals(0, len(return_data))
-		
-		count_hits.set_hits_50_90(3)
-		count_hits.set_hits_less_50(0)
-		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
-		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
-		self.assertEquals(1, len(return_data))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Error, return_data[0].value)
-		self.assertEquals("Warning, this sample has a total of variations '3' bigger than the percentile 80 of all database", return_data[0].description)
-		
-		count_hits.set_hits_50_90(4)
-		count_hits.set_hits_less_50(0)
-		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)
-		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
-		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
-		self.assertEquals(2, len(return_data))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Error, return_data[0].value)
-		self.assertEquals("Warning, this sample has a total of variations '4' bigger than the percentile 98 of all database", return_data[0].description)
-		self.assertEquals("Warning, this sample has a total of variations '3' bigger than the percentile 80 of all database", return_data[1].description)
-
-
-		### test the remove count variations
-		self.assertTrue(manage_database.delete_variation_count(project_sample, user))
-		self.assertFalse(manage_database.delete_variation_count(project_sample, user))
+# 	def test_percentil(self):
+# 		try:
+# 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+# 		except User.DoesNotExist:
+# 			user = User()
+# 			user.username = ConstantsTestsCase.TEST_USER_NAME
+# 			user.is_active = False
+# 			user.password = ConstantsTestsCase.TEST_USER_NAME
+# 			user.save()
+# 
+# 		ref_name = "second"
+# 		try:
+# 			reference = Reference.objects.get(name=ref_name)
+# 		except Reference.DoesNotExist:
+# 			reference = Reference()
+# 			reference.name = ref_name
+# 			reference.reference_fasta.name = ""
+# 			reference.reference_fasta_name = ""
+# 			reference.reference_genbank.name = ""
+# 			reference.reference_genbank_name = ""
+# 			reference.owner = user
+# 			reference.save()
+# 		
+# 		project_name = "several"
+# 		try:
+# 			project = Project.objects.get(name=project_name)
+# 		except Project.DoesNotExist:
+# 			project = Project()
+# 			project.id= 5000
+# 			project.name = project_name
+# 			project.reference = reference
+# 			project.owner = user
+# 			project.save()
+# 		
+# 		sample_name = "_fddsdffds"
+# 		try:
+# 			sample = Sample.objects.get(name=sample_name)
+# 		except Sample.DoesNotExist:
+# 			sample = Sample()
+# 			sample.name = sample_name
+# 			sample.is_rejected = False
+# 			sample.is_valid_1 = True
+# 			sample.file_name_1 = 'vect_file[0]'
+# 			sample.path_name_1.name = ''
+# 			sample.is_valid_2 = False
+# 			sample.file_name_2 = 'vect_file[1]'
+# 			sample.path_name_2.name = ''
+# 			sample.owner = user
+# 			
+# 			sample.is_ready_for_projects = True
+# 			sample.is_obsolete = False
+# 			sample.is_rejected = False
+# 			sample.save()
+# 
+# 
+# 		manage_database = ManageDatabase()
+# 		tagNamesConstants = TagNamesConstants()
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50)))
+# 		self.assertEquals(None, manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)))
+# 
+# 		value_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(33, value_)
+# 		
+# 		total_numbers = 1000
+# 		project_sample_last = None
+# 		for i in range(0, total_numbers):
+# 			count_hits = CountHits()
+# 			count_hits.set_hits_less_50((i * 999) % 2)
+# 			count_hits.set_hits_50_90((i * 2999) % 3)
+# 			
+# 			## create project_sample
+# 			project_sample = ProjectSample()
+# 			project_sample.sample = sample
+# 			project_sample.project = project
+# 			project_sample.count_variations = manage_database.add_variation_count(count_hits)
+# 			project_sample.is_finished = True
+# 			project_sample.is_deleted = False
+# 			project_sample.is_error = False
+# 			project_sample.save()
+# 			project_sample_last = project_sample
+# 
+# 		self.assertEquals(total_numbers, CountVariations.objects.all().count())
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(3, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(3, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(2, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1, raw_)
+# 		raw_ = manage_database.get_percentil_value(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2, raw_)
+# 
+# 		### get all statistics
+# 		self.assertEquals(18, Statistics.objects.all().count())
+# 		
+# 		### get directly from database
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(3.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(3.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_95, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL))
+# 		self.assertEquals(2.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50))
+# 		self.assertEquals(1.0, raw_)
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90))
+# 		self.assertEquals(2.0, raw_)
+# 		
+# 		raw_ = manage_database.get_percentil_value_from_db(tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90) + "dfsdd")
+# 		self.assertEquals(None, raw_)
+# 		
+# 		count_hits = CountHits()
+# 		count_hits.set_hits_50_90(1)
+# 		count_hits.set_hits_less_50(0)
+# 		###
+# 		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_80, TagNamesConstants.TAG_PERCENTIL_VAR_50_90)
+# 		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
+# 		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
+# 		self.assertEquals(0, len(return_data))
+# 
+# 		count_hits.set_hits_50_90(2)
+# 		count_hits.set_hits_less_50(0)
+# 		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
+# 		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
+# 		self.assertEquals(0, len(return_data))
+# 		
+# 		count_hits.set_hits_50_90(3)
+# 		count_hits.set_hits_less_50(0)
+# 		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
+# 		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
+# 		self.assertEquals(1, len(return_data))
+# 		self.assertEquals(MetaKeyAndValue.META_VALUE_Error, return_data[0].value)
+# 		self.assertEquals("Warning, this sample has a total of variations '3' bigger than the percentile 80 of all database", return_data[0].description)
+# 		
+# 		count_hits.set_hits_50_90(4)
+# 		count_hits.set_hits_less_50(0)
+# 		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_98, TagNamesConstants.TAG_PERCENTIL_VAR_TOTAL)
+# 		manage_database.set_percentis_alert(project_sample_last, user, count_hits, percentil_name)
+# 		return_data = manage_database.get_project_sample_starts_with_metakey(project_sample_last, MetaKeyAndValue.META_KEY_ALERT_COUNT_VAR)
+# 		self.assertEquals(2, len(return_data))
+# 		self.assertEquals(MetaKeyAndValue.META_VALUE_Error, return_data[0].value)
+# 		self.assertEquals("Warning, this sample has a total of variations '4' bigger than the percentile 98 of all database", return_data[0].description)
+# 		self.assertEquals("Warning, this sample has a total of variations '3' bigger than the percentile 80 of all database", return_data[1].description)
+# 
+# 
+# 		### test the remove count variations
+# 		self.assertTrue(manage_database.delete_variation_count(project_sample, user))
+# 		self.assertFalse(manage_database.delete_variation_count(project_sample, user))
 
 
 	def test_get_elements_and_genes_from_db(self):
@@ -835,7 +832,7 @@ class testsReferenceFiles(TestCase):
 		
 		geneticElement = utils.get_elements_and_cds_from_db(reference, user)
 		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
-		decodeCoverage = DecodeCoverage()
+		decodeCoverage = DecodeObjects()
 		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		self.assertFalse(meta_reference == None)
 		geneticElement_2 = decodeCoverage.decode_result(meta_reference.description)

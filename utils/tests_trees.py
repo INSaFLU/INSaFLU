@@ -13,7 +13,7 @@ from django.test.utils import override_settings
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
-from utils.result import DecodeResult
+from utils.result import DecodeObjects
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import Coverage
 from utils.tree import CreateTree
@@ -171,7 +171,7 @@ class Test(unittest.TestCase):
 # 			for project_sample in project.project_sample.all():
 # 				if (not project_sample.get_is_ready_to_proccess()): continue
 # 				meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-# 				decode_coverage = DecodeCoverage()
+# 				decode_coverage = DecodeObjects()
 # 				coverage = decode_coverage.decode_result(meta_value.description)
 # 				print(project_sample.sample.name)
 # 				print(coverage)
@@ -194,7 +194,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)))
 		self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE_tree)))
 		
-		decode_result = DecodeResult()
+		decode_result = DecodeObjects()
 		software_names = SoftwareNames()
 		meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Run_Tree_All_Sequences, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_sample != None)
@@ -211,8 +211,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
 		
 		### get all elements and gene names
-		dict_genes = self.utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-		for sequence_name in dict_genes.keys():		
+		for sequence_name in self.utils.get_elements_from_db(reference, user):		
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_MAFFT)))
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)))
 			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE_tree)))

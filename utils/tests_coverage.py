@@ -17,6 +17,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from utils.parse_coverage_file import GetCoverage
 from constants.software_names import SoftwareNames
+from utils.result import Gene
 
 class Test(unittest.TestCase):
 
@@ -26,7 +27,6 @@ class Test(unittest.TestCase):
 		pass
 	
 	def test_coverage(self):
-		
 		coverage = DrawCoverage()
 		vect_coverage = [1,2,4,5,6,7]
 		vect_coverage.extend([2] * 100)
@@ -39,7 +39,8 @@ class Test(unittest.TestCase):
 		vect_coverage.extend([330] * 100)
 		vect_coverage.extend([3] * 100)
 		vect_coverage.extend([33] * 100)
-		vect_genes = [[10, 300, 'xpto', 1], [500, 800, 'xpto2', -1]]
+		vect_genes = [Gene('xpto', 10, 300, 1), Gene('xpto2', 500, 800, -1), Gene('xpto4', 700, 1000, 1)]
+		var_more_90 = [20, 50, 700]
 		var_more_50 = [2, 100, 500, 800]
 		var_less_50 = [6, 200, 350]
 		
@@ -49,7 +50,7 @@ class Test(unittest.TestCase):
 		rati_more_nine = "98"
 		sample_name = "xpto"
 		sequence_name = "1"
-		coverage.create_coverage(vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
+		coverage.create_coverage(vect_coverage, vect_genes, var_more_90, var_more_50, var_less_50, output_image,
 					average_coverage, ratio_more_zero, rati_more_nine, sample_name, sequence_name)
 
 		self.assertTrue(os.path.exists(output_image))
@@ -58,7 +59,6 @@ class Test(unittest.TestCase):
 		
 		
 	def test_coverage_2(self):
-		
 		coverage = DrawCoverage()
 		vect_coverage = [1,2,4,5,6,7]
 		vect_coverage.extend([2] * 100)
@@ -85,7 +85,8 @@ class Test(unittest.TestCase):
 		vect_coverage.extend([330] * 100)
 		vect_coverage.extend([3] * 100)
 		vect_coverage.extend([33] * 100)
-		vect_genes = [[10, 300, 'xpto', 1], [500, 800, 'xpto2', -1]]
+		vect_genes = [Gene('xpto', 10, 300, 1), Gene('xpto2', 500, 800, -1)]
+		var_more_90 = [20, 50, 700]
 		var_more_50 = [2, 100, 500, 800]
 		var_less_50 = [6, 200, 350]
 		
@@ -95,7 +96,7 @@ class Test(unittest.TestCase):
 		rati_more_nine = "98"
 		sample_name = "xpto"
 		sequence_name = "1"
-		coverage.create_coverage(vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
+		coverage.create_coverage(vect_coverage, vect_genes, var_more_90, var_more_50, var_less_50, output_image,
 					average_coverage, ratio_more_zero, rati_more_nine, sample_name, sequence_name)
 
 		self.assertTrue(os.path.exists(output_image))
@@ -186,8 +187,7 @@ class Test(unittest.TestCase):
 
 		draw_all_coverage = DrawAllCoverage()
 		draw_all_coverage.draw_all_coverages(project_sample)
-		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-		for gene in dict_genes:
+		for gene in self.utils.get_elements_from_db(reference, user):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))
 			self.assertTrue(filecmp.cmp(output_image, os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_IMAGES, 'coverage_{}.png'.format(gene) )))

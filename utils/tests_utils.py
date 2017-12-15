@@ -133,7 +133,9 @@ class Test(unittest.TestCase):
 		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
 		self.assertEqual(4, count_hits.get_hits_less_50())
 		self.assertEqual(3, count_hits.get_hits_50_90())
-		self.assertEqual(7, count_hits.get_total())
+		self.assertEqual(118, count_hits.get_hits_more_90())
+		self.assertEqual(7, count_hits.get_total_50_50_90())
+		self.assertEqual(125, count_hits.get_total())
 
 	def test_count_hits_from_tab_2(self):
 		"""
@@ -144,7 +146,9 @@ class Test(unittest.TestCase):
 		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
 		self.assertEqual(3, count_hits.get_hits_less_50())
 		self.assertEqual(0, count_hits.get_hits_50_90())
-		self.assertEqual(3, count_hits.get_total())
+		self.assertEqual(122, count_hits.get_hits_more_90())
+		self.assertEqual(3, count_hits.get_total_50_50_90())
+		self.assertEqual(125, count_hits.get_total())
 		
 	def test_count_hits_from_tab_3(self):
 		"""
@@ -155,7 +159,9 @@ class Test(unittest.TestCase):
 		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
 		self.assertEqual(4, count_hits.get_hits_less_50())
 		self.assertEqual(0, count_hits.get_hits_50_90())
-		self.assertEqual(4, count_hits.get_total())
+		self.assertEqual(122, count_hits.get_hits_more_90())
+		self.assertEqual(4, count_hits.get_total_50_50_90())
+		self.assertEqual(126, count_hits.get_total())
 		
 	def test_get_variations_by_freq_from_tab(self):
 		"""
@@ -163,16 +169,19 @@ class Test(unittest.TestCase):
 		"""
 		tab_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab2.tab")
 		vect_count_type = ['snp']
-		(dict_less_50, dict_more_50) = self.utils.get_variations_by_freq_from_tab(tab_file, vect_count_type)
+		(dict_less_50, dict_more_50, dict_more_90) = self.utils.get_variations_by_freq_from_tab(tab_file, vect_count_type)
 		self.assertEqual(2, len(dict_less_50))
 		self.assertEqual(817, dict_less_50['NS'][0])
 		self.assertEqual(237, dict_less_50['PB2'][0])
 		self.assertEqual(774, dict_less_50['PB2'][1])
 		self.assertEqual(896, dict_less_50['PB2'][2])
-		self.assertEqual(8, len(dict_more_50))
-		self.assertEqual(324, dict_more_50['MP'][0])
-		self.assertEqual(99, dict_more_50['NS'][0])
-		self.assertEqual(117, dict_more_50['PA'][0])
+		self.assertEqual(1, len(dict_more_50))
+		self.assertEqual(774, dict_more_50['PB2'][0])
+		self.assertEqual(1554, dict_more_50['PB2'][1])
+		self.assertEqual(8, len(dict_more_90))
+		self.assertEqual(324, dict_more_90['MP'][0])
+		self.assertEqual(99, dict_more_90['NS'][0])
+		self.assertEqual(117, dict_more_90['PA'][0])
 
 	def test_get_elements_and_genes(self):
 		"""

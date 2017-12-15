@@ -6,7 +6,7 @@ Created on Nov 30, 2017
 
 class TagNamesConstants(object):
 	'''
-	classdocs
+	OBSOLETE, not used for now
 	'''
 	
 	MINIMUM_NUMBER_TO_COUNT_STATISTICS = 110	## has the minimum number of instances in table 'CountVariations' to calculate the statistics

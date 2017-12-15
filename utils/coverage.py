@@ -5,7 +5,7 @@ Created on Nov 21, 2017
 '''
 from PIL import Image, ImageDraw, ImageFont
 from constants.constants import FileType, TypePath, FileExtensions
-from utils.result import DecodeCoverage
+from utils.result import DecodeObjects
 from utils.parse_coverage_file import GetCoverage
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample
@@ -46,7 +46,7 @@ class DrawAllCoverage(object):
 		dict_coverage = get_coverage.get_dict_with_coverage(coverage_file)
 		
 		### get all elements and gene names
-		dict_genes = utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+		geneticElement = utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		
 		### get positions of variations
 		vect_count_type = ['snp']
@@ -55,17 +55,18 @@ class DrawAllCoverage(object):
 			self.logger_production.error("File doesn't exist: " + tab_file_from_freebayes)
 			self.logger_debug.error("File doesn't exist: " + tab_file_from_freebayes)
 			raise IOError("File doesn't exist: " + tab_file_from_freebayes)
-		(dict_less_50, dict_more_50) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
+		(dict_less_50, dict_more_50, dict_more_90) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
 		
 		### get coverage
 		manageDatabase = ManageDatabase()
 		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-		decode_coverage = DecodeCoverage()
+		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		
 		draw_coverage = DrawCoverage()
-		for sequence_name in dict_genes.keys():
-			draw_coverage.create_coverage(dict_coverage[sequence_name], dict_genes[sequence_name],\
+		for sequence_name in geneticElement.get_sorted_elements():
+			draw_coverage.create_coverage(dict_coverage[sequence_name], geneticElement.get_genes(sequence_name),\
+					dict_more_90[sequence_name] if sequence_name in dict_more_90 else [],\
 					dict_more_50[sequence_name] if sequence_name in dict_more_50 else [],\
 					dict_less_50[sequence_name] if sequence_name in dict_less_50 else [],\
 					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, sequence_name, FileExtensions.FILE_PNG),\
@@ -96,14 +97,14 @@ class DrawCoverage(object):
 	SIZE_COVERAGE_Y = 200
 	SHRINK_GENE_BAR_UTR = 2
 	SIZE_TOTAL_COVERAGE_Y = SIZE_COVERAGE_Y + GAP_START_Y	## plus the ruler...
-	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y	+ 4 ## position to draw the exons, green part
+	GAP_START_GENES_Y = SIZE_TOTAL_COVERAGE_Y + DRAW_COVERAGE_Y	+ 10 ## position to draw the exons, green part
 	GAP_START_GENES_X = GAP_START_X + 20
 	DRAW_HEIGHT_GENE_SQUARE_Y = 20
 	DRAW_HEIGHT_GENE_STRAND_Y = 17
 	DRAW_STRAND_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + 5
 	DRAW_BOTTOM_Y = GAP_START_GENES_Y + DRAW_HEIGHT_GENE_SQUARE_Y + DRAW_HEIGHT_GENE_STRAND_Y + (GAP_START_Y >> 1) + (START_DRAW_HEADER << 2) + 40
 	DRAW_HEADER_BOTTOM = DRAW_STRAND_Y + (START_DRAW_HEADER << 2)
-	LIMIT_MINUNUM_COVERAGE = 30
+	LIMIT_MINUNUM_COVERAGE = 10
 	DRAW_MINIMUN_LENGTH_X = 600
 	GAP_MARK_VARIATIONS = 3
 	GAP_MARK_VARIATIONS_BIG = 5
@@ -130,10 +131,11 @@ class DrawCoverage(object):
 		'''
 		self.start_image_x = DrawCoverage.GAP_START_GENES_X
 	
-	def create_coverage(self, vect_coverage, vect_genes, var_more_50, var_less_50, output_image,
+	def create_coverage(self, vect_coverage, vect_genes, var_more_90, var_more_50, var_less_50, output_image,
 					average_coverage, ratio_more_zero, ratio_more_nine, sample_name, sequence_name):
 		"""
-		vect_genes = [[pos_start, pos_end, name, strand 1|-1], [...], ...]
+		vect_genes = [Gene(name, pos_start, pos_end, strand), Gene(...), ...]
+		var_more_90 = [pos, pos1, pos2, ...]
 		var_more_50 = [pos, pos1, pos2, ...]
 		var_less_50 = [pos, pos1, pos2, ...]
 		"""
@@ -184,45 +186,47 @@ class DrawCoverage(object):
 		self.draw_coverage(draw, vect_coverage)
 		
 		color_squares = ColorSquares(draw)
-		if (len(vect_genes) == 0):	## all without genes
-			color_squares.set_color(self.COLOR_RGBBlue_0_0_153)
-			color_squares.paint_bar((self.get_start_x(), self.GAP_START_GENES_Y), (int(len(vect_coverage) / self.rateImage), self.DRAW_HEIGHT_GENE_SQUARE_Y), False)
-		else:
-			stop_position = 0
-			for vect_info_genes in vect_genes:
-				color_squares.paintBarsEx((stop_position + self.get_start_x(), self.GAP_START_GENES_Y),\
-								(self.get_start_x() + int(vect_info_genes[1] / self.rateImage),\
-								self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y),
-								self.get_start_x() + int(vect_info_genes[0] / self.rateImage), self.COLOR_RGBBlue_0_0_153, self.COLOR_RGBGreen_0_153_0,\
-								self.SHRINK_GENE_BAR_UTR, 0, vect_info_genes[2], False)
-				stop_position = int(vect_info_genes[1] / self.rateImage) + 1
-				self.draw_strand(draw, vect_info_genes[3], self.get_start_x() + int(vect_info_genes[0] / self.rateImage),\
-							int((vect_info_genes[1] - vect_info_genes[0]) / self.rateImage))
-			
-			if ( int(len(vect_coverage) / self.rateImage) - stop_position > 10):
-				color_squares.set_color(self.COLOR_RGBBlue_0_0_153)
-				color_squares.paint_bar((stop_position + self.get_start_x(), self.GAP_START_GENES_Y + (self.SHRINK_GENE_BAR_UTR << 1)),\
+		
+		### paint main bar
+		color_squares.set_color(self.COLOR_RGBBlue_0_0_153)
+		color_squares.paint_bar((self.get_start_x(), self.GAP_START_GENES_Y + (self.SHRINK_GENE_BAR_UTR << 1) + 1),\
 									(self.get_start_x() + int(len(vect_coverage) / self.rateImage),\
-									(self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) - (self.SHRINK_GENE_BAR_UTR << 1)), False)
-				
-	def draw_strand(self, draw, direction, start_x, nLength_X):
+									(self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) - (self.SHRINK_GENE_BAR_UTR << 1) - 1), False)
+		for gene in vect_genes:
+# 			y_start_top = self.GAP_START_GENES_Y - (self.SHRINK_GENE_BAR_UTR << 2) if gene.is_forward() else self.GAP_START_GENES_Y + (self.SHRINK_GENE_BAR_UTR << 3)
+# 			y_start_bottom = (self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) - (self.SHRINK_GENE_BAR_UTR << 2) if gene.is_forward() else (self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) + (self.SHRINK_GENE_BAR_UTR << 2)
+# 			color_squares.set_color(self.COLOR_RGBGreen_0_153_0)
+# 			color_squares.paint_bar((int(gene.start / self.rateImage) + self.get_start_x(), y_start_top),\
+# 									(self.get_start_x() + int(gene.end / self.rateImage),\
+# 									y_start_bottom), False)
+			
+			self.draw_strand(draw, 1 if gene.is_forward() else -1, int(gene.start / self.rateImage) + self.get_start_x(),
+							(int(gene.end / self.rateImage) + self.get_start_x()) - (int(gene.start / self.rateImage) + self.get_start_x()),
+							(self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) if gene.is_forward() else\
+							self.GAP_START_GENES_Y )
+			color_squares.draw_text(int(gene.start / self.rateImage) + self.get_start_x(),\
+								self.get_start_x() + int(gene.end / self.rateImage),
+								(self.GAP_START_GENES_Y + self.DRAW_HEIGHT_GENE_SQUARE_Y) if gene.is_forward() else\
+								self.GAP_START_GENES_Y - self.DRAW_HEIGHT_GENE_SQUARE_Y, gene.name)
+			
+			
+	def draw_strand(self, draw, direction, start_x, nLength_X, start_y):
 		"""
 		direction 1|-1
 		"""
-		start_y = self.DRAW_STRAND_Y + (self.DRAW_HEIGHT_GENE_STRAND_Y >> 1) + 4
-		draw.line((start_x, start_y, start_x + nLength_X, start_y), fill=self.COLOR_RGBGreen_0_102_0, width=1)
+		draw.line((start_x, start_y, start_x + nLength_X, start_y), fill=self.COLOR_RGBBlack, width=1)
 		if ((nLength_X >> 4) > 1):
 			for i in range(0, nLength_X >> 4):
 				slice_pos = (i * (nLength_X / (nLength_X >> 4)))
-				draw.point((start_x + slice_pos, start_y - 1), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos + direction, start_y - 2), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos, start_y + 1), fill=self.COLOR_RGBGreen_0_102_0)
-				draw.point((start_x + slice_pos + direction, start_y + 2), fill=self.COLOR_RGBGreen_0_102_0)
+				draw.point((start_x + slice_pos, start_y - 1), fill=self.COLOR_RGBBlack)
+				draw.point((start_x + slice_pos + direction, start_y - 2), fill=self.COLOR_RGBBlack)
+				draw.point((start_x + slice_pos, start_y + 1), fill=self.COLOR_RGBBlack)
+				draw.point((start_x + slice_pos + direction, start_y + 2), fill=self.COLOR_RGBBlack)
 		else: ## draw in the middle
-			draw.point((start_x + (nLength_X >> 1), start_y - 1), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1) + direction, start_y - 2), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1), start_y + 1), fill=self.COLOR_RGBGreen_0_102_0)
-			draw.point((start_x + (nLength_X >> 1) + direction, start_y + 2), fill=self.COLOR_RGBGreen_0_102_0)
+			draw.point((start_x + (nLength_X >> 1), start_y - 1), fill=self.COLOR_RGBBlack)
+			draw.point((start_x + (nLength_X >> 1) + direction, start_y - 2), fill=self.COLOR_RGBBlack)
+			draw.point((start_x + (nLength_X >> 1), start_y + 1), fill=self.COLOR_RGBBlack)
+			draw.point((start_x + (nLength_X >> 1) + direction, start_y + 2), fill=self.COLOR_RGBBlack)
 
 
 	def draw_coverage(self, draw, vect_coverage):
@@ -306,8 +310,8 @@ class DrawCoverage(object):
 		### second line
 		position_x = position_x_second_header;
 		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
-		position_x += self.draw_text_header(draw, font_12, "Max. Coverage: {}".format(max_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_12, "Min. Coverage: {}".format(min_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+#		position_x += self.draw_text_header(draw, font_12, "Max. Coverage: {}".format(max_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+#		position_x += self.draw_text_header(draw, font_12, "Min. Coverage: {}".format(min_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		if (not b_only_calculate_size):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
 		position_x += 7
@@ -317,11 +321,12 @@ class DrawCoverage(object):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBGreen_0_153_0, width=3)
 		position_x += 7
 		position_x += self.draw_text_header(draw, font_12, "Cov. >{}".format((self.rateDrawCoverage * self.SIZE_COVERAGE_Y)), position_x  + lines_size, point_y, self.COLOR_RGBGreen_0_153_0, b_only_calculate_size)
-		position_x_second_header = position_x
+#		position_x_second_header = position_x
 		
 		### third line line
-		position_x = position_x_third_header;
-		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+#		position_x = position_x_third_header;
+#		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+		position_x += 8
 		if (not b_only_calculate_size):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
 			draw.ellipse((position_x + lines_size - 4, point_y + (font_12.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS - 1,\
@@ -330,15 +335,16 @@ class DrawCoverage(object):
 		position_x += lines_size
 		position_x += self.draw_text_header(draw, font_12, "Variants AF <50%", position_x  + 10, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		
-		position_x += 10
+		position_x += 8
 		if (not b_only_calculate_size):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBBlack, width=3)
 			draw.ellipse((position_x + lines_size - 4, point_y + (font_12.getsize("text")[1] >> 1) - self.GAP_MARK_VARIATIONS - 1 ,\
 							position_x + lines_size + 4, point_y + (font_12.getsize("text")[1] >> 1) + self.GAP_MARK_VARIATIONS + 1),
 							fill = self.COLOR_RGBBlack, outline = self.COLOR_RGBBlack)
 		position_x += lines_size
-		position_x += self.draw_text_header(draw, font_12, "Variants AF >50%", position_x  + 10, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
-		position_x_third_header = position_x
+		position_x += self.draw_text_header(draw, font_12, "Variants 50%< AF <90%", position_x  + 10, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x_second_header = position_x
+#		position_x_third_header = position_x
 		return (position_x_first_header, position_x_second_header, position_x_third_header, position_x_fourth_header)
 	
 	
@@ -575,3 +581,10 @@ class ColorSquares(object):
 				middle = nPos + ((rect_point_bottom[0] - nPos) >> 1) - (size_x >> 1) 
 				self.draw.text((middle, rect_point_top[1] + 2), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 
+	def draw_text(self, start_x, end_x, y, text):
+		fontsize = 14
+		font_ = ImageFont.truetype(DrawCoverage.PATH_FONT, fontsize)
+		size_x = font_.getsize(text)[0]
+		middle = start_x + ((end_x - start_x) >> 1) - (size_x >> 1)
+		self.draw.text((middle, y + 2), text, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
+				

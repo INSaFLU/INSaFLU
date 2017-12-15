@@ -419,6 +419,45 @@ class MetaKeyProject(models.Model):
 	def __str__(self):
 		return self.meta_tag.name + " " + self.value + " " + self.description
 
+class MixedInfectionsTag(models.Model):
+	"""
+	Used to tag mixed infections
+	"""
+	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
+	def __str__(self):
+		return self.name
+	
+	class Meta:
+		ordering = ['name', ]
+
+class MixedInfections(models.Model):
+	"""
+	Used to identify mixed infections
+	"""
+	tag = models.ForeignKey(MixedInfectionsTag, related_name='mixed_infections', blank=True, null=True, on_delete=models.CASCADE)
+	average_value = models.FloatField(default=0.0)
+	description = models.TextField(default="")
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
+															## and is not used in projectSample,
+															## It can change across time
+															## to trace the change of tag is set a metaValue in ProjectSample
+	class Meta:
+		ordering = ['tag', ]
+
+class CountVariations(models.Model):
+	"""
+	has the number of variations for a sample
+	"""
+	total = models.PositiveIntegerField(default=0)
+	var_less_50 = models.PositiveIntegerField(default=0)
+	var_bigger_50_90 = models.PositiveIntegerField(default=0)
+	var_bigger_90 = models.PositiveIntegerField(default=0)
+	
+	def __str__(self):
+		return 'Total: {} Less 50:{} 50<Value<90 :{}  Bigger >90:{}'.format(self.total, self.var_less_50, self.var_bigger_50_90, self.var_bigger_90)
+
+
 class ProjectSample(models.Model):
 	
 	PATH_MAIN_RESULT = 'main_result'
@@ -426,6 +465,8 @@ class ProjectSample(models.Model):
 		
 	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
+	mixed_infections = models.ForeignKey(MixedInfections, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
+	count_variations = models.ForeignKey(CountVariations, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_finished = models.BooleanField(default=False)
 	is_deleted = models.BooleanField(default=False)
@@ -481,7 +522,8 @@ class ProjectSample(models.Model):
 		"""
 		return self.is_finished and not self.is_deleted and not self.is_error and self.sample.get_is_ready_for_projects()
 
-
+	
+	
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 
@@ -499,15 +541,6 @@ class MetaKeyProjectSample(models.Model):
 	def __str__(self):
 		return self.meta_tag.name + " " + self.value + " " + self.description
 
-class CountVariations(models.Model):
-	project_sample = models.ForeignKey(ProjectSample, related_name='count_variations', on_delete=models.CASCADE)
-	total = models.PositiveIntegerField(default=0)
-	var_less_50 = models.PositiveIntegerField(default=0)
-	var_bigger_50 = models.PositiveIntegerField(default=0)
-	
-	def __str__(self):
-		return 'Total: {} Less 50:{} Bigger 50:{}'.format(self.total, self.var_less_50, self.var_bigger_50)
-	
 class Statistics(models.Model):
 	"""
 	Has several percentils about the table CountVariations 

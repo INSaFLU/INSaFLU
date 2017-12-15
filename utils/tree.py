@@ -6,7 +6,7 @@ Created on Nov 25, 2017
 from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.result import DecodeCoverage, Result
+from utils.result import DecodeObjects, Result
 from constants.constants import TypePath, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.result import SoftwareDesc
@@ -36,11 +36,8 @@ class CreateTree(object):
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
 		
-		### get all elements and gene names
-		dict_genes = self.utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-		
 		### create for single sequences
-		for sequence_name in dict_genes.keys():
+		for sequence_name in self.utils.get_elements_from_db(project.reference, owner):
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
@@ -64,7 +61,7 @@ class CreateTree(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-			decode_coverage = DecodeCoverage()
+			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
 			
 			### get consensus

@@ -1,6 +1,9 @@
 from django.apps import AppConfig
 # 
 from constants.constants import Constants
+from constants.constants_mixed_infection import ConstantsMixedInfection
+
+
 
 class ManagingFilesConfig(AppConfig):
 	name = 'managing_files'
@@ -13,14 +16,16 @@ class ManagingFilesConfig(AppConfig):
 			
 		#### Now upload the 
 		self.upload_default_files()
+		
+		#### set default fields
+		self.default_database_fields()
 
 	def create_default_user(self):
 		"""
 		create a default user to link the default references...
 		"""
-		
 		from django.contrib.auth.models import User
-		from .models import DataSet
+		from managing_files.models import DataSet
 		try:
 			User.objects.get(username=Constants.DEFAULT_USER)
 			### great, the default user exist 
@@ -68,3 +73,24 @@ class ManagingFilesConfig(AppConfig):
 			if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
 				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
 
+
+	def default_database_fields(self):
+		"""
+		set default fields in database
+		"""
+		
+		### MixedInfectionsTag
+		from managing_files.models import MixedInfectionsTag
+		constants_mixed_infection = ConstantsMixedInfection()
+		for tag in constants_mixed_infection.vect_upload_to_database:
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
+			except MixedInfectionsTag.DoesNotExist as e:
+				mixed_infections_tag = MixedInfectionsTag()
+				mixed_infections_tag.name = tag
+				mixed_infections_tag.save()
+				
+			
+		
+		
+		

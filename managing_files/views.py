@@ -15,7 +15,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
-from utils.result import DecodeResult
+from utils.result import DecodeObjects
 import hashlib, ntpath, os, logging
 from django.contrib import messages
 from django.conf import settings
@@ -309,7 +309,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['fastq_software'] = lst_data[1].strip()
 				context['trimmomatic_software'] = lst_data[2].strip()
 		else:
-			decodeResult = DecodeResult()
+			decodeResult = DecodeObjects()
 			result = decodeResult.decode_result(meta_sample.description)
 			context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
 			context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
@@ -322,7 +322,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['spades_software'] = lst_data[1].strip()
 				context['abricate_software'] = lst_data[2].strip()
 		else:
-			decodeResult = DecodeResult()
+			decodeResult = DecodeObjects()
 			result = decodeResult.decode_result(meta_sample.description)
 			context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
 			context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)

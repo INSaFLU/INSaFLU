@@ -4,8 +4,8 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 from django.test import TestCase
-from utils.result import Output, SoftwareDesc, DecodeResult, Result, ResultAverageAndNumberReads, CountHits
-from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeCoverage, TasksToProcess, GeneticElement, Gene
+from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
+from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -20,7 +20,7 @@ class Test(TestCase):
 		self.assertTrue(sz_return.find('"version": "11212"') != 0)
 		self.assertTrue(sz_return.find('"name": "name_s"') != 0)
 		
-		decodeResult = DecodeResult()
+		decodeResult = DecodeObjects()
 		result_2 = decodeResult.decode_result(sz_return)
 		self.assertEqual(result_2.result, result.result)
 		self.assertEqual(len(result_2.outputs.list_output), len(result.outputs.list_output))
@@ -39,7 +39,7 @@ class Test(TestCase):
 		self.assertTrue(sz_return.find('"version": "11212"') != 0)
 		self.assertTrue(sz_return.find('"name": "name_s"') != 0)
 		
-		decodeResult = DecodeResult()
+		decodeResult = DecodeObjects()
 		result_2 = decodeResult.decode_result(sz_return)
 		self.assertEqual(result_2.result, result.result)
 		self.assertEqual(len(result_2.outputs.list_output), len(result.outputs.list_output))
@@ -85,7 +85,7 @@ class Test(TestCase):
 		coverage.add_coverage('2', Coverage.COVERAGE_MORE_9, '19')
 		
 		json = coverage.to_json()
-		decodeCoverage = DecodeCoverage()
+		decodeCoverage = DecodeObjects()
 		coverage_2 = decodeCoverage.decode_result(json)
 		self.assertTrue("10", coverage_2.get_coverage('3', Coverage.COVERAGE_ALL))
 		self.assertTrue("0", coverage_2.get_coverage('3', Coverage.COVERAGE_MORE_0))
@@ -110,9 +110,10 @@ class Test(TestCase):
 		count_hits = CountHits()	
 		count_hits.set_hits_50_90(40)
 		count_hits.set_hits_less_50(140)
+		count_hits.set_hits_more_90(10)
 		
 		json = count_hits.to_json()
-		decodeCoverage = DecodeCoverage()
+		decodeCoverage = DecodeObjects()
 		count_hits_2 = decodeCoverage.decode_result(json)
 		self.assertEquals(count_hits_2, count_hits)
 
@@ -121,9 +122,14 @@ class Test(TestCase):
 		self.assertNotEqual(count_hits_2, count_hits)
 		self.assertEquals(count_hits_2.get_hits_less_50(), 141)
 		self.assertEquals(count_hits.get_hits_50_90(), 41)
+		self.assertEquals(count_hits.get_hits_more_90(), 10)
 
 		count_hits.add_one_hits_less_50()
 		count_hits_2.add_one_hits_50_90()
+		count_hits_2.add_one_hits_more_90()
+		self.assertNotEqual(count_hits_2, count_hits)
+		
+		count_hits.add_one_hits_more_90()
 		self.assertEquals(count_hits_2, count_hits)
 
 	def test_tasks_to_process(self):
@@ -133,7 +139,7 @@ class Test(TestCase):
 		tasksToProcess.add_taskd_id('sdsdds3')
 		
 		json = tasksToProcess.to_json()
-		decodeCoverage = DecodeCoverage()
+		decodeCoverage = DecodeObjects()
 		tasksToProcess_2 = decodeCoverage.decode_result(json)
 		self.assertEquals(tasksToProcess, tasksToProcess_2)
 
@@ -150,21 +156,29 @@ class Test(TestCase):
 		geneticElement.add_gene('element', Gene('name', 412, 445, -1))
 
 		json = geneticElement.to_json()
-		decodeCoverage = DecodeCoverage()
+		decodeCoverage = DecodeObjects()
 		geneticElement_2 = decodeCoverage.decode_result(json)
 		self.assertEquals(geneticElement, geneticElement_2)
 		self.assertEquals("element,element_name,element_name2", ",".join(geneticElement_2.get_sorted_elements()))
 		self.assertEquals(2, len(geneticElement_2.get_genes('element_name')))
 
 
+	def test_mixed_infection_main_vector(self):
+		
+		mixedInfectionMainVector = MixedInfectionMainVector()
+
+		self.assertEquals(8, len(mixedInfectionMainVector.get_vector()))
+		mixedInfectionMainVector.add_vector([10, 34])
+		mixedInfectionMainVector.add_vector([78, 56])
+		self.assertEquals(9, len(mixedInfectionMainVector.get_vector()))
+		json = mixedInfectionMainVector.to_json()
+		
+		decodeCoverage = DecodeObjects()
+		mixedInfectionMainVector_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(9, len(mixedInfectionMainVector_2.get_vector()))
 
 
-
-
-
-
-
-
-
+		mixedInfectionMainVector_3 = MixedInfectionMainVector()
+		self.assertEquals(8, len(mixedInfectionMainVector_3.get_vector()))
 
 

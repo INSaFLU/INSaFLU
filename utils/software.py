@@ -18,9 +18,9 @@ from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
 from utils.parse_coverage_file import GetCoverage
+from utils.mixed_infections_management import MixedInfectionsManagement
 from django.db import transaction
 from constants.software_names import SoftwareNames
-from constants.tag_names_constants import TagNamesConstants
 from Bio import SeqIO
 
 class Software(object):
@@ -869,7 +869,7 @@ class Software(object):
 
 
 	"""
-	Global processing, fastQ, trimmomatic and GetSpecies
+	Global processing, Snippy, Coverage, Freebayes and MixedInfections
 	"""
 	@transaction.atomic
 	def process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
@@ -925,17 +925,16 @@ class Software(object):
 			################################
 			##################################
 			### set the alerts in the coverage
-			
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			for element in coverage.get_dict_data():
 				if (not coverage.is_100_more_9(element)):
 					project_sample.alert_second_level += 1
 					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_9(element))
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_9(element))
 				elif (not coverage.is_100_more_0(element)):
 					project_sample.alert_first_level += 1
 					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Error, coverage.get_fault_message_0(element))
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_0(element))
 			project_sample.save()
 			
 		except Exception as e:
@@ -986,6 +985,21 @@ class Software(object):
 			count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
 			### set flag that is finished
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
+		else:
+			result = Result()
+			result.set_error("Fail to collect tab file from freebayes")
+			result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+			return False
 		
 		self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
 		self.utils.remove_dir(out_put_path)
@@ -994,19 +1008,21 @@ class Software(object):
 		draw_all_coverage = DrawAllCoverage()
 		draw_all_coverage.draw_all_coverages(project_sample)
 		
+		## get instances
+		manage_database = ManageDatabase()
+		mixed_infections_management = MixedInfectionsManagement()
+		
+		## set the alert also
+		mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
+		
 		### get again
 		project_sample = ProjectSample.objects.get(pk=project_sample.id)
 		project_sample.is_finished = True
 		project_sample.is_deleted = False
 		project_sample.is_error = False
+		project_sample.count_variations = manage_database.get_variation_count(count_hits)
+		project_sample.mixed_infections = mixed_infection
 		project_sample.save()
-		
-		#### set the alerts of count_hits based on percentiles
-		manage_database = ManageDatabase()
-		tagNamesConstants = TagNamesConstants()
-		manage_database.add_variation_count(project_sample, user, count_hits)
-		percentil_name = tagNamesConstants.get_percentil_tag_name(TagNamesConstants.TAG_PERCENTIL_INSAFLU, TagNamesConstants.TAG_PERCENTIL_VAR_INSAFLU)
-		manage_database.set_percentis_alert(project_sample, user, count_hits, percentil_name)
 		
 		### set the tag of result OK 
 		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())

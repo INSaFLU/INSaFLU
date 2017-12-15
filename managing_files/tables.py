@@ -8,7 +8,7 @@ from utils.result import DecodeResultAverageAndNumberReads
 from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
-from utils.result import DecodeCoverage
+from utils.result import DecodeObjects
 from django.conf import settings
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -233,7 +233,7 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		manageDatabase = ManageDatabase()
 		meta_value = manageDatabase.get_project_sample_metakey(record, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-		decode_coverage = DecodeCoverage()
+		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():

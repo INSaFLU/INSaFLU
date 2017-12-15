@@ -8,7 +8,7 @@ from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.result import DecodeCoverage
+from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants
 from utils.tree import CreateTree
 import os, time
@@ -80,7 +80,7 @@ class CollectExtraData(object):
 			
 			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_data == None): continue
-			decodeCoverage = DecodeCoverage()
+			decodeCoverage = DecodeObjects()
 			count_hits = decodeCoverage.decode_result(meta_data.description)
 			vect_data_sample.append([project_sample.sample.name, count_hits.get_total(), count_hits.get_hits_less_50(), count_hits.get_hits_50_90()])
 		

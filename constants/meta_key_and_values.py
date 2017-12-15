@@ -34,7 +34,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_COVERAGE = "Alert Coverage"
 	META_KEY_ALERT_COVERAGE_9 = META_KEY_ALERT_COVERAGE + " >9"
 	META_KEY_ALERT_COVERAGE_0 = META_KEY_ALERT_COVERAGE + " >0"
-	META_KEY_ALERT_COUNT_VAR = "AlertCountAverage"
+	META_KEY_ALERT_MIXED_INFECTION = "AlertMixedInfection"
 	
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"

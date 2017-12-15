@@ -13,7 +13,7 @@ from utils.software import Software
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from utils.result import DecodeResultAverageAndNumberReads, DecodeResult, DecodeCoverage, Coverage
+from utils.result import DecodeResultAverageAndNumberReads, DecodeObjects, Coverage
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from manage_virus.uploadFiles import UploadFiles
@@ -812,7 +812,7 @@ class Test(TestCase):
 			user.password = ConstantsTestsCase.TEST_USER_NAME
 			user.save()
 
-		ref_name = "second_stage_2"
+		ref_name = "second_stagis_single_file2"
 		try:
 			reference = Reference.objects.get(name=ref_name)
 		except Reference.DoesNotExist:
@@ -829,7 +829,7 @@ class Test(TestCase):
 		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
 			
-		sample_name = "run_snippy2_1"
+		sample_name = "run_snippyis_single_file1"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -845,7 +845,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		project_name = "file_name_3"
+		project_name = "file_naais_single_filee_3"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:
@@ -902,18 +902,30 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_KEY_Count_Hits, list_meta[0].meta_tag.name)
 		
 		### get the hits value
-		decode_coverage = DecodeCoverage()
+		decode_coverage = DecodeObjects()
 		count_hits = decode_coverage.decode_result(list_meta[0].description)
 		self.assertEquals(0, count_hits.get_hits_50_90())
 		self.assertEquals(3, count_hits.get_hits_less_50())
-		self.assertEquals(3, count_hits.get_total())
+		self.assertEquals(3, count_hits.get_total_50_50_90())
+		self.assertEquals(125, count_hits.get_total())
+		
+		self.assertEquals(3, project_sample.count_variations.var_less_50)
+		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
+		self.assertEquals(122, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(0, project_sample.alert_first_level)
+		self.assertEquals(0, project_sample.alert_second_level)
+		
+		### test mixed infections
+		self.assertEquals('0.815100969586423', '{}'.format(project_sample.mixed_infections.average_value))
+		self.assertEquals('No', project_sample.mixed_infections.tag.name)
+		self.assertFalse(project_sample.mixed_infections.has_master_vector)
 		
 		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
 		self.assertEquals(1, len(list_meta))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
 		
-		decode_result = DecodeResult()
+		decode_result = DecodeObjects()
 		result = decode_result.decode_result(list_meta[0].description)
 		self.assertTrue(result is not None)
 		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
@@ -921,7 +933,7 @@ class Test(TestCase):
  						result.get_software(self.software_names.get_freebayes_name()))
 
 		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-		decode_coverage = DecodeCoverage()
+		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "527.4")
 		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "2198.8")
@@ -939,8 +951,7 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
 		
 		### check if the images exist
-		dict_genes = self.utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
-		for gene in dict_genes:
+		for gene in self.utils.get_elements_from_db(reference, user):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))
 
@@ -1036,7 +1047,7 @@ class Test(TestCase):
 		os.unlink(out_file_clean)
 		os.unlink(out_file)
 
-	def test_prokka(self):
+	def test_elements(self):
 		"""
 		test prokka method
 		"""
@@ -1048,25 +1059,25 @@ class Test(TestCase):
 		genbank_file = os.path.join(temp_out, name_strain + FileExtensions.FILE_GBK)
 		self.assertTrue(os.path.exists(genbank_file))
 		
-		dt_data = self.utils.get_elements_and_genes(genbank_file)
-		self.assertEquals(2, len(dt_data))
-		self.assertTrue('PB2' in dt_data)
-		self.assertTrue('MP' in dt_data)
-		self.assertFalse('xptoNS' in dt_data)
+		geneticElement = self.utils.get_elements_and_genes(genbank_file)
+		self.assertEquals(2, len(geneticElement.get_sorted_elements()))
+		self.assertTrue('PB2' in geneticElement.get_sorted_elements())
+		self.assertTrue('MP' in geneticElement.get_sorted_elements())
+		self.assertFalse('xptoNS' in geneticElement.get_sorted_elements())
 		
-		self.assertEquals(30, dt_data['PB2'][0][0])
-		self.assertEquals(2280, dt_data['PB2'][0][1])
-		self.assertEquals('PB2', dt_data['PB2'][0][2])
-		self.assertEquals(1, dt_data['PB2'][0][3])
-		self.assertEquals(2325, dt_data['PB2'][1][0])
-		self.assertEquals(4599, dt_data['PB2'][1][1])
-		self.assertEquals('PB1', dt_data['PB2'][1][2])
-		self.assertEquals(-1, dt_data['PB2'][1][3])
+		self.assertEquals(30, geneticElement.get_genes('PB2')[0].start)
+		self.assertEquals(2280, geneticElement.get_genes('PB2')[0].end)
+		self.assertEquals('PB2', geneticElement.get_genes('PB2')[0].name)
+		self.assertTrue(geneticElement.get_genes('PB2')[0].is_forward())
+		self.assertEquals(2325, geneticElement.get_genes('PB2')[1].start)
+		self.assertEquals(4599, geneticElement.get_genes('PB2')[1].end)
+		self.assertEquals('PB1', geneticElement.get_genes('PB2')[1].name)
+		self.assertFalse(geneticElement.get_genes('PB2')[1].is_forward())
 		
-		self.assertEquals(0, dt_data['MP'][0][0])
-		self.assertEquals(759, dt_data['MP'][0][1])
-		self.assertEquals('M', dt_data['MP'][0][2])
-		self.assertEquals(1, dt_data['MP'][0][3])
+		self.assertEquals(0, geneticElement.get_genes('MP')[0].start)
+		self.assertEquals(759, geneticElement.get_genes('MP')[0].end)
+		self.assertEquals('M', geneticElement.get_genes('MP')[0].name)
+		self.assertTrue(geneticElement.get_genes('MP')[0].is_forward())
 		
 		try:
 			self.utils.compare_locus_fasta_gb(fasta_file, genbank_file)

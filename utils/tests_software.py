@@ -645,7 +645,7 @@ class Test(TestCase):
 		run snippy
 		"""
 
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
 
@@ -732,8 +732,8 @@ class Test(TestCase):
  		test run freebayes
  		create a VCF
  		"""
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		bam_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_BAM, "run_snippy1.bam")	
 		expect_tab_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippy1.tab")	
 		vcf_expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippy1.vcf")	
@@ -763,8 +763,8 @@ class Test(TestCase):
  		test run freebayes
  		create a VCF
  		"""
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		bam_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_BAM, "run_snippy1.bam")	
 		expect_tab_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.tab")
 		vcf_expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.vcf")
@@ -798,8 +798,8 @@ class Test(TestCase):
 		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
 
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
 
@@ -964,10 +964,10 @@ class Test(TestCase):
   		test snippy_vcf_to_tab method
   		"""
 		
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		vcf_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
-		result_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
+		result_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
 
 		out_file = self.utils.get_temp_file("file_name", ".tab")
 		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file, out_file)
@@ -982,7 +982,7 @@ class Test(TestCase):
 		test snippy_vcf_to_tab method
 		"""
 	
-		vcf_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, 'temp.vcf')
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, 'temp.vcf')
 		temp_dir = self.utils.get_temp_dir()
 		self.utils.copy_file(vcf_file, os.path.join(temp_dir, os.path.basename(vcf_file)))
 		
@@ -1004,8 +1004,8 @@ class Test(TestCase):
 		"""
 		test genbank2gff3 method
 		"""
-		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		gff_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GFF)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GFF)
 		out_file = self.utils.get_temp_file("file_name", ".txt")
 		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file)
 		self.assertEquals(out_file, out_file_2)
@@ -1017,8 +1017,8 @@ class Test(TestCase):
 		"""
 		test get_snpeff_config method
 		"""
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		snpeff_config_expect = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_SNPEF_config)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		snpeff_config_expect = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_SNPEF_config)
 		
 		(base_name, out_file) = self.software.get_snpeff_config(fasta_file)
 		file_name = os.path.basename(fasta_file)
@@ -1031,10 +1031,10 @@ class Test(TestCase):
 		"""
 		test snpEff method
 		"""
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		freebayes_vcf = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_VCF)
-		freebayes_expect_vcf = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_VCF)
+		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF)
 		
 		out_file = self.utils.get_temp_file("file_name", ".vcf")
 		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
@@ -1051,7 +1051,7 @@ class Test(TestCase):
 		"""
 		test prokka method
 		"""
-		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, 'TwoGenesJoined.fasta')
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, 'TwoGenesJoined.fasta')
 		temp_out = self.software.run_prokka(fasta_file, 'TwoGenesJoined.fasta')
 
 		name_strain = os.path.basename(fasta_file)
@@ -1140,7 +1140,6 @@ class Test(TestCase):
 		os.unlink(temp_file_1)
 		os.unlink(out_file)
 
-
 	def test_run_mafft(self):
 		"""
  		test run mafft
@@ -1151,11 +1150,64 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(expect_file))
 		
 		out_file = self.utils.get_temp_file("mafft", ".fasta")
-		output_file = self.software.run_mafft(in_file, out_file)
+		output_file = self.software.run_mafft(in_file, out_file, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
 		self.assertEquals(output_file, out_file)
 		self.assertTrue(filecmp.cmp(out_file, expect_file))
 		os.unlink(out_file)
 
+	def test_run_mafft_2(self):
+		"""
+ 		test run mafft
+ 		"""
+	
+		in_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.MANAGING_MAFFT_IN_PROTEIN)
+		expect_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.MANAGING_MAFFT_IN_PROTEIN_EXPECTED)
+		self.assertTrue(os.path.exists(in_file))
+		self.assertTrue(os.path.exists(expect_file))
+		
+		out_file = self.utils.get_temp_file("mafft", ".faa")
+		output_file = self.software.run_mafft(in_file, out_file, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_PROTEIN)
+		self.assertEquals(output_file, out_file)
+		self.assertTrue(filecmp.cmp(out_file, expect_file))
+		os.unlink(out_file)
+		
+	def test_run_mafft_3(self):
+		"""
+ 		test run mafft
+ 		"""
+		in_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.MANAGING_MAFFT_IN)
+		expect_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.MANAGING_MAFFT_IN_EXPECTED)
+		self.assertTrue(os.path.exists(in_file))
+		self.assertTrue(os.path.exists(expect_file))
+		
+		out_file = self.utils.get_temp_file("mafft", ".fasta")
+		output_file = self.software.run_mafft(in_file, out_file, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
+		self.assertEquals(output_file, out_file)
+		self.assertTrue(filecmp.cmp(out_file, expect_file))
+		os.unlink(out_file)
+		
+	def test_run_seqret(self):
+		"""
+ 		test run seqret
+ 		"""
+		in_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.FILE_OUT_MAFFT_RESULT)
+		expect_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, ConstantsTestsCase.FILE_OUT_NEX_RESULT)
+		self.assertTrue(os.path.exists(in_file))
+		self.assertTrue(os.path.exists(expect_file))
+		
+		out_file = self.utils.get_temp_file("seqret", ".nex")
+		output_file = self.software.run_seqret_nex(in_file, out_file)
+		self.assertEquals(output_file, out_file)
+		temp_file = self.utils.get_temp_file("file_name", ".txt")
+		temp_file_1 = self.utils.get_temp_file("file_name", ".txt")
+		cmd = "grep -E -v 'TITLE: Written by EMBOSS' {} > {}".format(out_file, temp_file)
+		os.system(cmd);
+		cmd = "grep -E -v 'TITLE: Written by EMBOSS' {} > {}".format(expect_file, temp_file_1)
+		os.system(cmd);
+		self.assertTrue(filecmp.cmp(temp_file, temp_file_1))
+		os.unlink(temp_file)
+		os.unlink(temp_file_1)
+		os.unlink(out_file)
 
 	def test_run_fasttree(self):
 		"""
@@ -1168,7 +1220,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(in_file))
 		
 		out_file = self.utils.get_temp_file("fasttree", ".nwk")
-		output_file = self.software.run_fasttree(in_file, out_file)
+		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters())
 		self.assertEquals(output_file, out_file)
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)

@@ -23,8 +23,10 @@ class MetaKeyAndValue(object):
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
 	META_KEY_Tree_Count_All_Sequences = "Tree_Count_All_Sequences"		## has the number of samples processed to build the tree
 	META_KEY_Tree_Count_By_Element = "Tree_Count_By_Element"			## has the number of samples processed to build the tree by element
+	META_KEY_Tree_Count_Protein_By_Element = "Tree_Count_Protein By_Element"			## has the number of samples processed to build the tree by protein element
 	META_KEY_Run_Tree_All_Sequences = "Tree_All_Sequences"				## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_all 
 	META_KEY_Run_Tree_By_Element = "Tree_By_Element"					## Used to identify the status on run tree.CreateTree.create_tree_and_alignments_by_sequence 
+	META_KEY_Run_Proteins_Alignment_By_Element = "Proteins_Alignment_By_Element"		## Used to identify the status on run tree.CreateTree.create_alignement_for_element 
 	META_KEY_Count_Samples_Var_Graph = "Count_samples_var_graph"		## has the number of samples in var graph
 	META_KEY_Snippy = "Snippy"
 	META_KEY_Freebayes = "Freebayes"

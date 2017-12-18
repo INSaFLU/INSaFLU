@@ -189,10 +189,10 @@ class Test(unittest.TestCase):
 		create_tree = CreateTree()
 		create_tree.create_tree_and_alignments(project, user)
 		
-		#### test files for global sequences
-		self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_MAFFT)))
-		self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)))
-		self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE_tree)))
+		#### test all type of files for global sequences
+		for type_files in project.vect_clean_file:
+			print(type_files, project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_files))
+			self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_files)))
 		
 		decode_result = DecodeObjects()
 		software_names = SoftwareNames()
@@ -201,20 +201,19 @@ class Test(unittest.TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		result = decode_result.decode_result(meta_sample.description)
 		self.assertEquals('Mauve-Feb 13 2015 at 05:57:13', result.get_software(software_names.get_mauve_name()))
-		self.assertEquals('Mafft-7.313', result.get_software(software_names.get_mafft_name()))
-		self.assertEquals(4, result.get_number_softwares())
+		self.assertEquals('Mafft-7.313; (--preservecase)', result.get_software(software_names.get_mafft_name()))
+		self.assertEquals(5, result.get_number_softwares())
 		
 		meta_sample = manageDatabase.get_project_metakey(project, MetaKeyAndValue.META_KEY_Tree_Count_All_Sequences, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
-		self.assertEquals('5', meta_sample.description)
-		self.assertTrue(os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
+		self.assertEquals('4', meta_sample.description)
+		self.assertTrue(os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)) == 95)
 		
 		### get all elements and gene names
-		for sequence_name in self.utils.get_elements_from_db(reference, user):		
-			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_MAFFT)))
-			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)))
-			self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE_tree)))
+		for sequence_name in self.utils.get_elements_from_db(reference, user):
+			for type_files in project.vect_clean_file:
+				self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, type_files)))
 			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
 
 			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
@@ -223,8 +222,9 @@ class Test(unittest.TestCase):
 			self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 			result = decode_result.decode_result(meta_sample.description)
 			self.assertEquals('Mauve-Feb 13 2015 at 05:57:13', result.get_software(software_names.get_mauve_name()))
-			self.assertEquals('Mafft-7.313', result.get_software(software_names.get_mafft_name()))
-			self.assertEquals(4, result.get_number_softwares())
+			self.assertEquals('Mafft-7.313; (--preservecase)', result.get_software(software_names.get_mafft_name()))
+			self.assertEquals('seqret (EMBOSS)-6.6.0.0; (-sformat fasta -osformat2 nexusnon)', result.get_software(software_names.get_seqret_name()))
+			self.assertEquals(5, result.get_number_softwares())
 		
 			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
 			meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)

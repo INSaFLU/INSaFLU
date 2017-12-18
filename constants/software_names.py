@@ -103,12 +103,20 @@ class SoftwareNames(object):
 	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(DIR_SOFTWARE, "mafft-7.313-without-extensions/binaries"))
 	SOFTWARE_MAFFT_name = "Mafft"
 	SOFTWARE_MAFFT_VERSION = "7.313"
-	SOFTWARE_MAFFT_PARAMETERS = ""
+	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion"
+	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--maxiterate 1000 --localpair --preservecase --amino"
+	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"
+	
+	SOFTWARE_SEQRET = "seqret"
+	SOFTWARE_SEQRET_name = "seqret (EMBOSS)"
+	SOFTWARE_SEQRET_VERSION = "6.6.0.0"
+	SOFTWARE_SEQRET_NEX_PARAMETERS = "-sformat fasta -osformat2 nexusnon"
 	
 	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTree")
 	SOFTWARE_FASTTREE_name = "FastTree"
 	SOFTWARE_FASTTREE_VERSION = "2.1.10 SSE3"
 	SOFTWARE_FASTTREE_PARAMETERS = "-gtr -boot 1000 -nt"
+	SOFTWARE_FASTTREE_PARAMETERS_PROTEIN = "-gtr -boot 1000"
 	
 	def __init__(self):
 		'''
@@ -277,6 +285,16 @@ class SoftwareNames(object):
 	def get_mafft_name(self): return self.SOFTWARE_MAFFT_name
 	def get_mafft_version(self): return self.SOFTWARE_MAFFT_VERSION
 	def get_mafft_parameters(self): return self.SOFTWARE_MAFFT_PARAMETERS
+	def get_mafft_parameters_two_parameters(self): return self.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES
+	
+	
+	"""
+	return seqret software EMBOSS
+ 	"""
+	def get_seqret(self): return self.SOFTWARE_SEQRET
+	def get_seqret_name(self): return self.SOFTWARE_SEQRET_name
+	def get_seqret_version(self): return self.SOFTWARE_SEQRET_VERSION
+	def get_seqret_nex_parameters(self): return self.SOFTWARE_SEQRET_NEX_PARAMETERS
 	
 	"""
 	return FastTree software
@@ -285,5 +303,6 @@ class SoftwareNames(object):
 	def get_fasttree_name(self): return self.SOFTWARE_FASTTREE_name
 	def get_fasttree_version(self): return self.SOFTWARE_FASTTREE_VERSION
 	def get_fasttree_parameters(self): return self.SOFTWARE_FASTTREE_PARAMETERS
+	def get_fasttree_parameters_protein(self): return self.SOFTWARE_FASTTREE_PARAMETERS_PROTEIN
 
 

@@ -208,6 +208,7 @@ class Utils(object):
 		"""
 		Test Fata file
 		"""
+		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
 		handle = open(sz_file_name)
 		b_pass = False
 		for line in handle:
@@ -236,6 +237,17 @@ class Utils(object):
 		for seq in record_dict:
 			if (len(record_dict[seq].seq) > n_max): n_max = len(record_dict[seq].seq)
 		return n_max
+	
+	def get_total_length_fasta(self, sz_file_name):
+		"""
+		get max length fasta
+		"""
+		n_total = 0
+		record_dict = SeqIO.index(sz_file_name, "fasta")
+		if (len(record_dict) > 0): return len(record_dict)
+		for seq in record_dict:
+			n_total += len(record_dict[seq].seq)
+		return n_total
 
 							
 	def is_genbank(self, sz_file_name):
@@ -301,7 +313,7 @@ class Utils(object):
 	
 	def get_elements_and_cds_from_db(self, reference, user):
 		"""
-		return vector with name of elements sorted
+		return geneticElement
 		"""
 		manageDatabase = ManageDatabase()
 		metaKeyAndValue = MetaKeyAndValue()
@@ -559,6 +571,21 @@ class Utils(object):
 		return (dict_less_50, dict_more_50, dict_more_90)
 
 
+	def get_sequence_from_genbank(self, sequence_name, gene, genbank_file):
+		"""
+		get seq instance from genbank file
+		"""
+		for record in SeqIO.parse(genbank_file, "genbank"):
+			if (record.name != sequence_name): continue
+			for features in record.features:
+				if (features.type == 'CDS'):
+					if ('gene' in features.qualifiers and features.qualifiers['gene'][0] == gene.name):
+						return features.location.extract(record).seq
+					elif ('locus_tag' in features.qualifiers and features.qualifiers['locus_tag'][0] == gene.name):
+						return features.location.extract(record).seq
+		return None
+
+
 	def filter_fasta_all_sequences(self, consensus_fasta, sample_name, coverage, out_dir):
 		"""
 		filter fasta file
@@ -570,13 +597,17 @@ class Utils(object):
 		### doesn't have the same size, sequences in consensus/coverage
 		if (locus_fasta != len(coverage.get_dict_data())): return None
 		
+		### need to have all with 100 more 9
+		for key in coverage.get_dict_data(): 
+			if (not coverage.is_100_more_9(key)): return None
+					
 		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
 		b_saved = False
 		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
 		with open(file_name, 'w') as handle:
-			for key in coverage.get_dict_data():
+			for key in sorted(coverage.get_dict_data()):
 				if (coverage.is_100_more_9(key)):
-					handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq)))
+					handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq).upper()))
 					b_saved = True
 		if (not b_saved): os.unlink(file_name)
 		return file_name if b_saved else None
@@ -585,7 +616,7 @@ class Utils(object):
 		"""
 		filter fasta file
 		file name out: None if not saved, else output file name
-		coverage can be None
+		coverage can be None, print all
 		return True if has sequences, False doesn't have sequences
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
@@ -599,15 +630,15 @@ class Utils(object):
 		with open(file_name, 'w') as handle:
 			if (coverage == None):
 				if sequence_name in record_dict:
-					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
+					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq).upper()))
 					b_saved = True
 			else:
 				if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
-					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq)))
+					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq).upper()))
 					b_saved = True
 		if (not b_saved): os.unlink(file_name)
 		return file_name if b_saved else None
-
+	
 	def clean_fasta_names(self, vect_names_to_clean, in_file, out_file):
 		"""
 		clean name in fasta files

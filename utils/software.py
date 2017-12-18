@@ -22,6 +22,7 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from django.db import transaction
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
+from symbol import parameters
 
 class Software(object):
 	'''
@@ -381,13 +382,13 @@ class Software(object):
 		os.unlink(temp_file)
 		return out_file
 
-	def run_mafft(self, input_file, out_file):
+	def run_mafft(self, input_file, out_file, parameters):
 		"""
 		run mafft
 		out: out_file
 		"""
-		cmd = "{}; {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
-							input_file, out_file)
+		cmd = "{}; {} {} --thread {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
+							parameters, self.CORES_TO_USE, input_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -395,17 +396,31 @@ class Software(object):
 			raise Exception("Fail to run mafft")
 		return out_file
 	
-	def run_fasttree(self, input_file, out_file):
+	def run_seqret_nex(self, input_file, out_file):
 		"""
-		run fasttree
+		run mafft
 		out: out_file
 		"""
-		cmd = "{} {} {} > {}".format(self.software_names.get_fasttree(), self.software_names.get_fasttree_parameters(), input_file, out_file)
+		cmd = "{} -sequence {} {} -outseq {}".format(self.software_names.get_seqret(), input_file,\
+							self.software_names.get_seqret_nex_parameters(), out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run progressive mauve")
+			raise Exception("Fail to run seqret")
+		return out_file
+
+	def run_fasttree(self, input_file, out_file, parameters):
+		"""
+		run fasttree
+		out: out_file
+		"""
+		cmd = "{} {} {} > {}".format(self.software_names.get_fasttree(), parameters, input_file, out_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run fasttree")
 		return out_file
 	
 	def run_trimmomatic(self, file_name_1, file_name_2, sample_name):

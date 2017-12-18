@@ -11,6 +11,7 @@ from constants.constants import TypePath, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.result import SoftwareDesc
 from utils.software import Software
+from utils.proteins import Proteins
 import os
 
 class CreateTree(object):
@@ -36,10 +37,15 @@ class CreateTree(object):
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
 		
+		proteins = Proteins()
+		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, owner)
 		### create for single sequences
-		for sequence_name in self.utils.get_elements_from_db(project.reference, owner):
+		for sequence_name in geneticElement.get_sorted_elements():
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
+			### create the protein alignments
+			proteins.create_alignement_for_element(project, owner, geneticElement, sequence_name)
+			
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
 		create the tree and the alignments
@@ -80,12 +86,13 @@ class CreateTree(object):
 					n_files_with_sequences += 1
 			n_count_samples_processed += 1
 		
-		
-		### error, there's no enough files to create consensus file
+		### error, there's no enough files to create tree file
 		if (n_files_with_sequences < 2):
 			manageDatabase.set_project_metakey(project, owner, meta_key,\
-					MetaKeyAndValue.META_VALUE_Error, "Error: there's no enough valid sequences to create the tree.")
+					MetaKeyAndValue.META_VALUE_Error, "Error: there's no enough valid sequences to create a tree.")
 			self.utils.remove_dir(temp_dir)
+			## remove files that are going o be create
+			self.clean_file_by_vect(project, sequence_name, project.vect_clean_file)
 			return False
 		
 		### copy the reference
@@ -105,9 +112,7 @@ class CreateTree(object):
 		result_all = Result()
 		### run progressive mauve in all fasta files
 		try:
-			temp_file_to_remove = self.utils.get_temp_file("progressive_mauve", ".xfma")
-			os.unlink(temp_file_to_remove)
-			out_file_mauve = os.path.join(temp_dir, os.path.basename(temp_file_to_remove))	
+			out_file_mauve = self.utils.get_temp_file_from_dir(temp_dir, "progressive_mauve", ".xfma")
 			self.software.run_mauve(temp_dir, out_file_mauve)
 			result_all.add_software(SoftwareDesc(self.software_names.get_mauve_name(), self.software_names.get_mauve_version(), self.software_names.get_mauve_parameters()))
 		except Exception:
@@ -120,9 +125,7 @@ class CreateTree(object):
 		
 		### run Convert.pl in mauve result
 		try:
-			temp_file_to_remove = self.utils.get_temp_file("convert_mauve", ".fasta")
-			os.unlink(temp_file_to_remove)
-			out_file_convert_mauve = os.path.join(temp_dir, os.path.basename(temp_file_to_remove))	
+			out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
 			out_file_convert_mauve = self.software.run_convert_mauve(out_file_mauve, out_file_convert_mauve)
 			result_all.add_software(SoftwareDesc(self.software_names.get_convert_mauve_name(), self.software_names.get_convert_mauve_version(),\
 							self.software_names.get_convert_mauve_parameters()))
@@ -137,27 +140,38 @@ class CreateTree(object):
 		
 		### run mafft
 		try:
-			temp_file_to_remove = self.utils.get_temp_file("mafft", ".fasta")
-			os.unlink(temp_file_to_remove)
-			out_file_mafft = os.path.join(temp_dir, os.path.basename(temp_file_to_remove))		### keep this one
-			self.software.run_mafft(out_file_convert_mauve, out_file_mafft)
+			out_file_mafft = self.utils.get_temp_file_from_dir(temp_dir, "mafft", ".fasta")
+			self.software.run_mafft(out_file_convert_mauve, out_file_mafft, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
 			result_all.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\
 							self.software_names.get_mafft_parameters()))
 		except Exception:
 			result = Result()
-			result.set_error("MAfft (%s) fail to run" % (self.software_names.get_mafft_version()))
+			result.set_error("Mafft (%s) fail to run" % (self.software_names.get_mafft_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\
 							self.software_names.get_mafft_parameters()))
+			manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			self.utils.remove_dir(temp_dir)
+			return False
+		
+		### run seqret to produce nex
+		try:
+			out_file_nex = self.utils.get_temp_file_from_dir(temp_dir, "seq_ret", ".nex")
+			self.software.run_seqret_nex(out_file_mafft, out_file_nex)
+			result_all.add_software(SoftwareDesc(self.software_names.get_seqret_name(), self.software_names.get_seqret_version(),\
+							self.software_names.get_seqret_nex_parameters()))
+		except Exception:
+			result = Result()
+			result.set_error("{} {} fail to run".format(self.software_names.get_seqret_name(), self.software_names.get_seqret_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_seqret_name(), self.software_names.get_seqret_version(),\
+							self.software_names.get_seqret_nex_parameters()))
 			manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 
 		### run fastTree
 		try:
-			temp_file_to_remove = self.utils.get_temp_file("fasttree", FileExtensions.FILE_NWK)
-			os.unlink(temp_file_to_remove)
-			out_file_fasttree = os.path.join(temp_dir, os.path.basename(temp_file_to_remove))	### keep this file
-			self.software.run_fasttree(out_file_mafft, out_file_fasttree)
+			out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree", FileExtensions.FILE_NWK)
+			self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters())
 			result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
 							self.software_names.get_fasttree_parameters()))
 		except Exception:
@@ -180,11 +194,32 @@ class CreateTree(object):
 			self.utils.copy_file(out_file_mafft, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_MAFFT))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE_tree))
+			self.utils.copy_file(out_file_nex, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_nex))
 		else:
 			self.utils.copy_file(out_file_mafft, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_MAFFT))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE_tree))
+			self.utils.copy_file(out_file_nex, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_nex))
 		self.utils.remove_dir(temp_dir)
 		return True
 
 
+	def clean_file_by_vect(self, project, sequence_name, vect_type_file):
+		"""
+		type_file: project.PROJECT_FILE_NAME_MAFFT, project.PROJECT_FILE_NAME_FASTTREE, project.PROJECT_FILE_NAME_FASTTREE_tree
+		"""
+		for type_file in vect_type_file: 
+			self.clean_file(project, sequence_name, type_file)
+
+
+	def clean_file(self, project, sequence_name, type_file):
+		"""
+		type_file: project.PROJECT_FILE_NAME_MAFFT, project.PROJECT_FILE_NAME_FASTTREE, project.PROJECT_FILE_NAME_FASTTREE_tree
+		"""
+		if (sequence_name == None): path_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		else: path_file = project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, type_file)
+		if (os.path.exists(path_file)): os.unlink(path_file)
+		
+
+
+		

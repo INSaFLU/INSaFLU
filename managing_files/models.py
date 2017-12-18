@@ -346,8 +346,16 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_MAFFT = "Alignment_whole_genome.fasta"
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
+	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
+	
+	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
+	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
+					PROJECT_FILE_NAME_FASTTREE_tree, PROJECT_FILE_NAME_nex]
+
+	## obsolete
 	PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML = "graph_minor_var.html"
 	PROJECT_FILE_NAME_GRAPH_MINO_VAR_PNG = "graph_minor_var.png"
+	## end obsolete
 	
 	### this is only to join with other names
 	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
@@ -377,6 +385,25 @@ class Project(models.Model):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
+		if (self.PROJECT_FILE_NAME_nex == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+		return None
+
+	def get_global_file_by_element_and_cds(self, type_path, element, CDS, file_name):
+		"""
+		get file names for proteins
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		element: element name or None
+		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
+		"""
+		if (self.PROJECT_FILE_NAME_MAFFT == file_name):		## protein alignement
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.faa".format(self.PROJECT_FILE_NAME_MAFFT_element, element, CDS))
+		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element, CDS))
+		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element, CDS))
+		if (self.PROJECT_FILE_NAME_nex == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element, element, CDS))
 		return None
 
 	def get_global_file_by_project(self, type_path, file_name):

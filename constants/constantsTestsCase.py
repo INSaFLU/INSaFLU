@@ -26,7 +26,15 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_FASTA_2 = "temp_2.fasta"
 	MANAGING_FILES_GBK_2 = "temp_2.gbk"
 	MANAGING_TEST_ABRICATE = "abricate_out.txt"
-
+	MANAGING_TWO_GENES_JOINED_GBK = "TwoGenesJoined.gbk"
+	MANAGING_CONSENSUS_ALIGNMENT_PROTEIN = "concensus_alignment_protein.fasta"
+	MANAGING_OUT_PROTEIN = "out_protein.faa"
+	MANAGING_MAFFT_IN = 'mafft_2.fasta'
+	MANAGING_MAFFT_IN_EXPECTED = 'mafft_2_expected.fasta'
+	MANAGING_MAFFT_IN_PROTEIN = 'mafft_protein.fasta'
+	MANAGING_MAFFT_IN_PROTEIN_EXPECTED = 'mafft_protein_expected.fasta'
+	MANAGING_TREE_out_protein = 'Alignment_MP_M.nex'
+	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"
 	FILES_EVA002_S52_consensus = "EVA002_S52.consensus.fasta"
@@ -35,6 +43,7 @@ class ConstantsTestsCase(object):
 	FILE_OUT_MAUVE = 'mauve.xfma'
 	FILE_OUT_CONVERT_MAUVE_RESULT = 'convert_mauve_result.fasta'
 	FILE_OUT_MAFFT_RESULT = 'mafft_result.fasta'
+	FILE_OUT_NEX_RESULT = 'mafft_result.nex'
 	FILE_FASTTREE_RESULT_NWK = 'mafft_result.nwk'
 	FILE_FASTTREE_RESULT_TREE = 'mafft_result.tree'
 	FILE_TO_CLEAN_NAME = "to_clean_name.fasta"
@@ -42,9 +51,11 @@ class ConstantsTestsCase(object):
 	MANAGING_FILE_GRAPH_VAR_HTML = 'file_graph_var.html'
 	MANAGING_FILE_GRAPH_VAR_PNG = 'file_graph_var.png'
 	
+	
 	DIR_ABRICATE = "abricate"
 	DIR_COVERAGE = "coverage"
 	DIR_BAM = "bam"
+	DIR_TREE = "tree"
 	DIR_VCF = "vcf"
 	DIR_IMAGES = "images"
 	DIR_PROJECTS = "projects"

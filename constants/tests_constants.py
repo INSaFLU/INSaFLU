@@ -44,3 +44,31 @@ class Test(unittest.TestCase):
 		self.assertEqual("file_name.vcf", self.constants.get_extensions_by_file_type("file_name", FileType.FILE_VCF))
 		self.assertEqual("file_name.vcf.gz", self.constants.get_extensions_by_file_type("file_name", FileType.FILE_VCF_GZ))
 		self.assertEqual("file_name.vcf.gz.tbi", self.constants.get_extensions_by_file_type("file_name", FileType.FILE_VCF_GZ_TBI))
+		
+	def testConstants(self):
+		constants = Constants()
+		self.assertEqual(constants.complement("AAATTTCCC"), "TTTAAAGGG", "must be equal")
+		self.assertEqual(constants.complement("AAATTGGGTCCC"), "TTTAACCCAGGG", "must be equal")
+		self.assertEqual(constants.reverse_complement("AAGGGATTTCCC"), "GGGAAATCCCTT", "must be equal")
+		self.assertEqual(constants.reverse_complement("AAATTAGTCCC"), "GGGACTAATTT", "must be equal")
+		self.assertEqual(constants.ambiguos_to_unambiguous("YARWATTTCCC"), "[TC]A[AG][AT]ATTTCCC", "must be equal")
+		self.assertEqual(constants.ambiguos_to_unambiguous("RYKMSWBDHVN"), "[AG][TC][GT][AC][GC][AT][CGT][AGT][ACT][ACG][ACGT]", "must be equal")
+		self.assertEqual(constants.complement("RYKMSWBDHVN"), "YRMKSWVHDBN", "must be equal")
+
+	def testGet_diff_between_two_seq(self):
+		constants = Constants()
+		self.assertEqual(constants.get_diff_between_two_seq("AAATTTCCC", "TTTAAAGGG"), 9)
+		self.assertEqual(constants.get_diff_between_two_seq("AAATTTCCC", "TTTAAAGGGS"), 0)
+		self.assertEqual(constants.get_diff_between_two_seq("AAATTTCCC", "AAATTTCCC"), 0)
+		self.assertEqual(constants.get_diff_between_two_seq("GAATTTCCC", "AAATTTCCC"), 1)
+		self.assertEqual(constants.get_diff_between_two_seq("AAATTTCCC", "AAATTTCCG"), 1)
+
+	def test_is_poly_n(self):
+		constants = Constants()
+		self.assertTrue(constants.is_poly_n("AAAAAAA"))
+		self.assertFalse(constants.is_poly_n("AAAAAACA"))
+		self.assertTrue(constants.is_poly_n("CCCCCCCCCCCCC"))
+		self.assertTrue(constants.is_poly_n("TTTTTTTT"))
+		self.assertFalse(constants.is_poly_n("TTCTTTTTT"))
+		
+	

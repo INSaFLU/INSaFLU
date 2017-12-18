@@ -72,8 +72,8 @@ class MixedInfectionsManagement(object):
 		f_total = 0.0
 		vect_data_to_test = count_hits.get_vect_mixed_infections()
 		for vect_data in mixed_infections_main_vector.get_vector():
-			print("[{}-{}] - [{}-{}] {}".format(vect_data_to_test[0], vect_data_to_test[1], vect_data[0], vect_data[1],\
-								1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
+	#		print("[{}-{}] - [{}-{}] {}".format(vect_data_to_test[0], vect_data_to_test[1], vect_data[0], vect_data[1],\
+	#							1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
 			f_total += 1 - spatial.distance.cosine(vect_data, vect_data_to_test)
 		
 		if (len(mixed_infections_main_vector.get_vector()) == 0): return 0.0

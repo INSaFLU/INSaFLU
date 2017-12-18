@@ -1,0 +1,132 @@
+CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT
+PB2	30	snp	G	A	100								
+PB2	187	snp	G	A	100	CDS	+	157/2250	52/748	synonymous_variant c.156G>A p.Gly52Gly	locus_00001		Polymerase basic protein 2
+PB2	237	snp	C	T	100	CDS	+	207/2250	69/748	missense_variant c.206C>T p.Ala69Val	locus_00001		Polymerase basic protein 2
+PB2	546	snp	A	G	100	CDS	+	516/2250	172/748	missense_variant c.515A>G p.Asn172Ser	locus_00001		Polymerase basic protein 2
+PB2	774	snp	C	T	100	CDS	+	744/2250	248/748	missense_variant c.743C>T p.Ala248Val	locus_00001		Polymerase basic protein 2
+PB2	816	snp	A	G	100	CDS	+	786/2250	262/748	missense_variant c.785A>G p.Tyr262Cys	locus_00001		Polymerase basic protein 2
+PB2	829	snp	T	C	100	CDS	+	799/2250	266/748	synonymous_variant c.798T>C p.His266His	locus_00001		Polymerase basic protein 2
+PB2	873	snp	A	G	2.46575	CDS	+	843/2250	281/748	missense_variant c.842A>G p.Glu281Gly	locus_00001		Polymerase basic protein 2
+PB2	896	snp	G	A	99.8603	CDS	+	866/2250	289/748	missense_variant c.865G>A p.Asp289Asn	locus_00001		Polymerase basic protein 2
+PB2	981	snp	C	A	99.8791	CDS	+	951/2250	317/748	missense_variant c.950C>A p.Ala317Asp	locus_00001		Polymerase basic protein 2
+PB2	1032	snp	G	T	99.8824	CDS	+	1002/2250	334/748	missense_variant c.1001G>T p.Cys334Phe	locus_00001		Polymerase basic protein 2
+PB2	1197	snp	C	T	99.7735	CDS	+	1167/2250	389/748	missense_variant c.1166C>T p.Ser389Leu	locus_00001		Polymerase basic protein 2
+PB2	1332	snp	A	G	99.7868	CDS	+	1302/2250	434/748	missense_variant c.1301A>G p.Tyr434Cys	locus_00001		Polymerase basic protein 2
+PB2	1554	snp	T	C	100	CDS	+	1524/2250	508/748	missense_variant c.1523T>C p.Leu508Ser	locus_00001		Polymerase basic protein 2
+PB2	1575	snp	G	A	100	CDS	+	1545/2250	515/748	missense_variant c.1544G>A p.Arg515Lys	locus_00001		Polymerase basic protein 2
+PB2	1632	complex	AGTC	GGTT	99.6377	CDS	+	1602/2250	534/748	missense_variant c.1601_1604delAGTCinsGGTT p.GlnSer534ArgPhe	locus_00001		Polymerase basic protein 2
+PB2	1680	snp	T	C	100	CDS	+	1650/2250	550/748	missense_variant c.1649T>C p.Leu550Ser	locus_00001		Polymerase basic protein 2
+PB2	1763	snp	T	C	99.8557	CDS	+	1733/2250	578/748	synonymous_variant c.1732T>C p.Leu578Leu	locus_00001		Polymerase basic protein 2
+PB2	1872	snp	T	C	100	CDS	+	1842/2250	614/748	missense_variant c.1841T>C p.Leu614Pro	locus_00001		Polymerase basic protein 2
+PB2	1932	snp	G	A	18.9427	CDS	+	1902/2250	634/748	missense_variant c.1901G>A p.Gly634Glu	locus_00001		Polymerase basic protein 2
+PB2	1980	snp	G	A	99.6965	CDS	+	1950/2250	650/748	missense_variant c.1949G>A p.Arg650Lys	locus_00001		Polymerase basic protein 2
+PB2	2004	snp	C	T	99.8519	CDS	+	1974/2250	658/748	missense_variant c.1973C>T p.Ser658Leu	locus_00001		Polymerase basic protein 2
+PB2	2118	snp	T	A	98.9343	CDS	+	2088/2250	696/748	missense_variant c.2087T>A p.Leu696Gln	locus_00001		Polymerase basic protein 2
+PB2	2157	snp	A	G	100	CDS	+	2127/2250	709/748	missense_variant c.2126A>G p.Glu709Gly	locus_00001		Polymerase basic protein 2
+PB1	141	snp	C	T	100	CDS	+	141/2274	47/756	missense_variant c.140C>T p.Thr47Ile	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	168	snp	G	A	99.7347	CDS	+	168/2274	56/756	missense_variant c.167G>A p.Arg56Gln	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	318	snp	A	C	100	CDS	+	318/2274	106/756	missense_variant c.317A>C p.His106Pro	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	348	snp	A	G	100	CDS	+	348/2274	116/756	missense_variant c.347A>G p.Lys116Arg	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	408	snp	T	C	100	CDS	+	408/2274	136/756	missense_variant c.407T>C p.Ile136Thr	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	454	snp	A	T	100	CDS	+	454/2274	151/756	missense_variant c.453A>T p.Glu151Asp	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	486	snp	A	G	99.7938	CDS	+	486/2274	162/756	missense_variant c.485A>G p.Asp162Gly	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	497	snp	A	T	100	CDS	+	497/2274	166/756	missense_variant c.496A>T p.Thr166Ser	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	528	snp	A	G	100	CDS	+	528/2274	176/756	missense_variant c.527A>G p.Lys176Arg	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	627	snp	G	A	99.6774	CDS	+	627/2274	209/756	missense_variant c.626G>A p.Ser209Asn	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	633	complex	AGTGAAC	GGTGAAT	95.1351	CDS	+	633/2274	211/756	stop_retained_variant c.632_638delAGTGAACinsGGTGAAT p.GluTerThr211GlyTerIle	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	687	snp	A	G	100	CDS	+	687/2274	229/756	missense_variant c.686A>G p.Lys229Arg	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	876	snp	C	T	100	CDS	+	876/2274	292/756	missense_variant c.875C>T p.Thr292Ile	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	897	snp	C	T	100	CDS	+	897/2274	299/756	missense_variant c.896C>T p.Pro299Leu	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	987	snp	G	A	100	CDS	+	987/2274	329/756	missense_variant c.986G>A p.Ser329Asn	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1143	snp	T	C	100	CDS	+	1143/2274	381/756	missense_variant c.1142T>C p.Leu381Ser	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1482	del	CTTTTTTTA	CTTTTTTA	1.25858	CDS	+	1489/2274	496/756	frameshift_variant c.1488delT p.Phe496fs	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1554	snp	T	C	99.8713	CDS	+	1554/2274	518/756	missense_variant c.1553T>C p.Met518Thr	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1608	snp	C	T	100	CDS	+	1608/2274	536/756	missense_variant c.1607C>T p.Thr536Ile	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1674	snp	A	G	100	CDS	+	1674/2274	558/756	missense_variant c.1673A>G p.His558Arg	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	1992	snp	C	T	99.8588	CDS	+	1992/2274	664/756	missense_variant c.1991C>T p.Thr664Ile	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PB1	2058	snp	G	A	99.8512	CDS	+	2058/2274	686/756	missense_variant c.2057G>A p.Ser686Asn	locus_00002		RNA-directed RNA polymerase catalytic subunit
+PA	117	snp	C	T	100	CDS	+	117/2151	39/715	missense_variant c.116C>T p.Ala39Val	locus_00003		Polymerase acidic protein
+PA	132	snp	C	G	100	CDS	+	132/2151	44/715	missense_variant c.131C>G p.Ser44Cys	locus_00003		Polymerase acidic protein
+PA	261	snp	A	C	100	CDS	+	261/2151	87/715	missense_variant c.260A>C p.His87Pro	locus_00003		Polymerase acidic protein
+PA	270	snp	A	C	99.6491	CDS	+	270/2151	90/715	stop_lost c.269A>C p.Ter90Serext*?	locus_00003		Polymerase acidic protein
+PA	342	snp	G	A	99.2647	CDS	+	342/2151	114/715	missense_variant c.341G>A p.Arg114Lys	locus_00003		Polymerase acidic protein
+PA	480	snp	T	C	100	CDS	+	480/2151	160/715	missense_variant c.479T>C p.Ile160Thr	locus_00003		Polymerase acidic protein
+PA	759	snp	G	A	99.4885	CDS	+	759/2151	253/715	stop_retained_variant c.758G>A p.Ter253Ter	locus_00003		Polymerase acidic protein
+PA	815	snp	A	G	100	CDS	+	815/2151	272/715	missense_variant c.814A>G p.Met272Val	locus_00003		Polymerase acidic protein
+PA	837	snp	G	A	99.8008	CDS	+	837/2151	279/715	missense_variant c.836G>A p.Gly279Asp	locus_00003		Polymerase acidic protein
+PA	921	snp	G	A	99.8066	CDS	+	921/2151	307/715	missense_variant c.920G>A p.Arg307Gln	locus_00003		Polymerase acidic protein
+PA	1116	snp	G	A	99.8347	CDS	+	1116/2151	372/715	missense_variant c.1115G>A p.Arg372Lys	locus_00003		Polymerase acidic protein
+PA	1167	snp	T	C	99.6825	CDS	+	1167/2151	389/715	missense_variant c.1166T>C p.Ile389Thr	locus_00003		Polymerase acidic protein
+PA	1261	snp	G	A	99.8808	CDS	+	1261/2151	420/715	synonymous_variant c.1260G>A p.Gln420Gln	locus_00003		Polymerase acidic protein
+PA	1356	snp	T	C	99.8767	CDS	+	1356/2151	452/715	missense_variant c.1355T>C p.Ile452Thr	locus_00003		Polymerase acidic protein
+PA	1383	snp	G	A	100	CDS	+	1383/2151	461/715	missense_variant c.1382G>A p.Arg461Lys	locus_00003		Polymerase acidic protein
+PA	1512	snp	C	T	99.7872	CDS	+	1512/2151	504/715	missense_variant c.1511C>T p.Ser504Leu	locus_00003		Polymerase acidic protein
+PA	1531	snp	T	C	99.8931	CDS	+	1531/2151	510/715	synonymous_variant c.1530T>C p.Ile510Ile	locus_00003		Polymerase acidic protein
+PA	1557	snp	T	C	99.8737	CDS	+	1557/2151	519/715	missense_variant c.1556T>C p.Ile519Thr	locus_00003		Polymerase acidic protein
+PA	1587	snp	C	T	100	CDS	+	1587/2151	529/715	missense_variant c.1586C>T p.Thr529Ile	locus_00003		Polymerase acidic protein
+PA	1620	snp	C	T	99.7271	CDS	+	1620/2151	540/715	missense_variant c.1619C>T p.Thr540Ile	locus_00003		Polymerase acidic protein
+PA	1641	snp	T	C	99.5757	CDS	+	1641/2151	547/715	missense_variant c.1640T>C p.Ile547Thr	locus_00003		Polymerase acidic protein
+PA	1653	snp	A	G	100	CDS	+	1653/2151	551/715	missense_variant c.1652A>G p.Glu551Gly	locus_00003		Polymerase acidic protein
+PA	1716	snp	G	A	99.7151	CDS	+	1716/2151	572/715	missense_variant c.1715G>A p.Arg572Lys	locus_00003		Polymerase acidic protein
+PA	1980	snp	G	A	100	CDS	+	1980/2151	660/715	missense_variant c.1979G>A p.Arg660Gln	locus_00003		Polymerase acidic protein
+PA	2025	snp	G	A	100	CDS	+	2025/2151	675/715	missense_variant c.2024G>A p.Ser675Asn	locus_00003		Polymerase acidic protein
+HA	117	snp	A	G	3.30124	CDS	+	117/1701	39/565	missense_variant c.116A>G p.Glu39Gly	locus_00004		Hemagglutinin
+HA	138	snp	G	A	100	CDS	+	138/1701	46/565	missense_variant c.137G>A p.Arg46Gln	locus_00004		Hemagglutinin
+HA	172	snp	C	T	99.7579	CDS	+	172/1701	57/565	synonymous_variant c.171C>T p.Ser57Ser	locus_00004		Hemagglutinin
+HA	234	snp	A	G	100	CDS	+	234/1701	78/565	missense_variant c.233A>G p.Lys78Arg	locus_00004		Hemagglutinin
+HA	411	snp	C	A	100	CDS	+	411/1701	137/565	missense_variant c.410C>A p.Thr137Lys	locus_00004		Hemagglutinin
+HA	472	snp	A	G	99.9382	CDS	+	472/1701	157/565	synonymous_variant c.471A>G p.Gly157Gly	locus_00004		Hemagglutinin
+HA	531	snp	C	T	99.7492	CDS	+	531/1701	177/565	missense_variant c.530C>T p.Thr177Ile	locus_00004		Hemagglutinin
+HA	561	snp	T	G	99.8013	CDS	+	561/1701	187/565	missense_variant c.560T>G p.Met187Arg	locus_00004		Hemagglutinin
+HA	1197	snp	A	G	100	CDS	+	1197/1701	399/565	missense_variant c.1196A>G p.Asp399Gly	locus_00004		Hemagglutinin
+HA	1206	snp	G	A	99.8197	CDS	+	1206/1701	402/565	missense_variant c.1205G>A p.Gly402Glu	locus_00004		Hemagglutinin
+HA	1264	snp	A	G	99.9296	CDS	+	1264/1701	421/565	synonymous_variant c.1263A>G p.Glu421Glu	locus_00004		Hemagglutinin
+HA	1269	snp	G	A	99.6585	CDS	+	1269/1701	423/565	missense_variant c.1268G>A p.Arg423Lys	locus_00004		Hemagglutinin
+HA	1437	snp	C	A	99.8784	CDS	+	1437/1701	479/565	missense_variant c.1436C>A p.Ala479Glu	locus_00004		Hemagglutinin
+HA	1499	snp	G	A	100	CDS	+	1499/1701	500/565	missense_variant c.1498G>A p.Glu500Lys	locus_00004		Hemagglutinin
+HA	1683	snp	G	A	100	CDS	+	1683/1701	561/565	missense_variant c.1682G>A p.Gly561Asp	locus_00004		Hemagglutinin
+NP	162	snp	G	A	99.3243	CDS	+	162/1497	54/497	missense_variant c.161G>A p.Gly54Asp	locus_00005		Nucleoprotein
+NP	174	snp	G	A	99.3651	CDS	+	174/1497	58/497	missense_variant c.173G>A p.Arg58Lys	locus_00005		Nucleoprotein
+NP	408	snp	A	T	100	CDS	+	408/1497	136/497	stop_lost c.407A>T p.Ter136Leuext*?	locus_00005		Nucleoprotein
+NP	468	snp	A	G	100	CDS	+	468/1497	156/497	missense_variant c.467A>G p.Glu156Gly	locus_00005		Nucleoprotein
+NP	561	snp	G	A	99.7585	CDS	+	561/1497	187/497	missense_variant c.560G>A p.Gly187Glu	locus_00005		Nucleoprotein
+NP	840	snp	G	A	99.6534	CDS	+	840/1497	280/497	missense_variant c.839G>A p.Arg280His	locus_00005		Nucleoprotein
+NP	864	snp	G	T	99.6627	CDS	+	864/1497	288/497	missense_variant c.863G>T p.Gly288Val	locus_00005		Nucleoprotein
+NP	873	snp	C	T	100	CDS	+	873/1497	291/497	missense_variant c.872C>T p.Ser291Leu	locus_00005		Nucleoprotein
+NP	957	snp	C	T	100	CDS	+	957/1497	319/497	missense_variant c.956C>T p.Thr319Met	locus_00005		Nucleoprotein
+NP	1128	snp	G	A	99.8205	CDS	+	1128/1497	376/497	missense_variant c.1127G>A p.Arg376Gln	locus_00005		Nucleoprotein
+NP	1141	snp	T	C	100	CDS	+	1141/1497	380/497	synonymous_variant c.1140T>C p.Asn380Asn	locus_00005		Nucleoprotein
+NP	1179	snp	G	A	99.2509	CDS	+	1179/1497	393/497	missense_variant c.1178G>A p.Gly393Glu	locus_00005		Nucleoprotein
+NP	1414	snp	A	G	99.6875	CDS	+	1414/1497	471/497	synonymous_variant c.1413A>G p.Gln471Gln	locus_00005		Nucleoprotein
+NA	84	mnp	TT	CC	99.726	CDS	+	84/1410	28/468	missense_variant c.83_84delTTinsCC p.Phe28Ser	locus_00006		Neuraminidase
+NA	192	snp	A	G	100	CDS	+	192/1410	64/468	missense_variant c.191A>G p.Lys64Arg	locus_00006		Neuraminidase
+NA	204	complex	AACT	GACC	99.2574	CDS	+	204/1410	68/468	stop_retained_variant c.203_206delAACTinsGACC p.Leu69Pro	locus_00006		Neuraminidase
+NA	691	snp	A	G	99.9204	CDS	+	691/1410	230/468	synonymous_variant c.690A>G p.Ala230Ala	locus_00006		Neuraminidase
+NA	734	snp	G	A	100	CDS	+	734/1410	245/468	missense_variant c.733G>A p.Val245Met	locus_00006		Neuraminidase
+NA	739	snp	T	A	100	CDS	+	739/1410	246/468	synonymous_variant c.738T>A p.Leu246Leu	locus_00006		Neuraminidase
+NA	800	snp	C	A	99.9363	CDS	+	800/1410	267/468	missense_variant c.799C>A p.His267Asn	locus_00006		Neuraminidase
+NA	888	complex	GGGC	AGGA	99.0196	CDS	+	888/1410	296/468	missense_variant c.887_890delGGGCinsAGGA p.ArgAla296LysAsp	locus_00006		Neuraminidase
+NA	897	snp	T	C	99.9197	CDS	+	897/1410	299/468	missense_variant c.896T>C p.Ile299Thr	locus_00006		Neuraminidase
+NA	1015	snp	G	A	99.921	CDS	+	1015/1410	338/468	stop_gained c.1014G>A p.Trp338*	locus_00006		Neuraminidase
+NA	1089	snp	A	G	100	CDS	+	1089/1410	363/468	missense_variant c.1088A>G p.Glu363Gly	locus_00006		Neuraminidase
+NA	1116	snp	A	T	100	CDS	+	1116/1410	372/468	stop_lost c.1115A>T p.Ter372Leuext*?	locus_00006		Neuraminidase
+NA	1138	snp	A	G	100	CDS	+	1138/1410	379/468	synonymous_variant c.1137A>G p.Ser379Ser	locus_00006		Neuraminidase
+NA	1158	snp	T	C	99.714	CDS	+	1158/1410	386/468	missense_variant c.1157T>C p.Leu386Pro	locus_00006		Neuraminidase
+NA	1175	snp	C	T	100	CDS	+	1175/1410	392/468	stop_gained c.1174C>T p.Gln392*	locus_00006		Neuraminidase
+NA	1403	snp	C	A	99.0385	CDS	+	1403/1410	468/468	missense_variant c.1402C>A p.Leu468Ile	locus_00006		Neuraminidase
+MP	324	snp	A	G	100	CDS	+	324/759	108/251	missense_variant c.323A>G p.His108Arg	locus_00007		Matrix protein 1
+MP	402	snp	A	G	99.9345	CDS	+	402/759	134/251	missense_variant c.401A>G p.Glu134Gly	locus_00007		Matrix protein 1
+MP	973	snp	G	A	99.8148								
+NS	99	snp	T	C	100	CDS	+	99/693	33/229	missense_variant c.98T>C p.Leu33Ser	locus_00008		Non-structural protein 1
+NS	135	snp	A	G	100	CDS	+	135/693	45/229	missense_variant c.134A>G p.Glu45Gly	locus_00008		Non-structural protein 1
+NS	154	snp	T	C	100	CDS	+	154/693	51/229	synonymous_variant c.153T>C p.Val51Val	locus_00008		Non-structural protein 1
+NS	166	snp	G	T	99.9075	CDS	+	166/693	55/229	missense_variant c.165G>T p.Lys55Asn	locus_00008		Non-structural protein 1
+NS	192	snp	T	C	99.8286	CDS	+	192/693	64/229	missense_variant c.191T>C p.Leu64Ser	locus_00008		Non-structural protein 1
+NS	212	snp	A	G	99.4841	CDS	+	212/693	71/229	missense_variant c.211A>G p.Lys71Glu	locus_00008		Non-structural protein 1
+NS	220	snp	A	G	100	CDS	+	220/693	73/229	synonymous_variant c.219A>G p.Leu73Leu	locus_00008		Non-structural protein 1
+NS	273	snp	T	C	99.8451	CDS	+	273/693	91/229	missense_variant c.272T>C p.Leu91Pro	locus_00008		Non-structural protein 1
+NS	339	snp	A	G	99.7914	CDS	+	339/693	113/229	missense_variant c.338A>G p.Asp113Gly	locus_00008		Non-structural protein 1
+NS	544	snp	G	A	99.7924	CDS	+	544/693	181/229	synonymous_variant c.543G>A p.Ser181Ser	locus_00008		Non-structural protein 1
+NS	718	snp	A	G	99.9113								
+NS	787	snp	G	A	100								
+NS	817	snp	C	T	99.5816								

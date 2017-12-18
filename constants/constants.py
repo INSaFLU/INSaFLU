@@ -21,6 +21,8 @@ class Constants(object):
 	
 	## MAX LENGTH_SEQUENCE_FROM_FASTA
 	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
+	MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = 20000
+	MAX_NUMBER_REFS_BY_USER = 30		## toDo
 	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
@@ -28,7 +30,10 @@ class Constants(object):
 	## main path for all paths
 	MAIN_PATH = "/usr/local/insaflu"
 	
-
+	## https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
+	## translate table number
+	TRANSLATE_TABLE_NUMBER = 11
+	
 	DIR_PROCESSED_FILES_UPLOADS = "uploads"
 	
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
@@ -90,6 +95,22 @@ class Constants(object):
 	ERROR_REFERENCE = 'error_reference'
 	ERROR_PROJECT_NAME = 'error_project_name'
 
+	vect_ambigous = ['R', 'Y', 'K', 'M', 'S', 'W', 'B', 'D', 'H', 'V', 'N', '*']
+	dt_ambigous = { 'R':'[AG]', 'Y':'[TC]', 'K':'[GT]', 'M':'[AC]', 'S':'[GC]', 
+			'W':'[AT]', 'B':'[CGT]', 'D':'[AGT]', 'H':'[ACT]', 'V':'[ACG]',
+			'N':'[ACGT]', '*':'.' }
+	dict_complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A',
+					'R': 'Y', 
+					'Y': 'R', 
+					'K': 'M', 
+					'M': 'K', 
+					'S': 'S', 
+					'W': 'W', 
+					'B': 'V', 
+					'D': 'H',
+					'H': 'D',
+					'V': 'B',
+					'N': 'N'}
 	
 	def get_extensions_by_file_type(self, file_name, file_type):
 		"""
@@ -109,7 +130,46 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
 		return ""
 
-			
+	### complement
+	def complement(self, seq):  
+		complseq = [self.dict_complement[base] if base in self.dict_complement else base for base in seq]  
+		return ''.join(complseq)
+	
+	#reverse
+	def reverse_complement(self, seq):  
+		seq = list(seq)  
+		seq.reverse()   
+		return self.complement(''.join(seq))
+	
+	
+	###
+	def ambiguos_to_unambiguous(self, sequence):
+		for ambig in self.vect_ambigous:
+			sequence = sequence.replace(ambig, self.dt_ambigous[ambig])
+		#print sequence
+		return sequence
+	
+	def get_diff_between_two_seq(self, seq1, seq2):
+		if (len(seq1) != len(seq2)): return 0
+		n_diff = 0
+		for i in range(0, len(seq1)):
+			if (seq1[i] != seq2[i]): n_diff += 1
+		return n_diff
+
+	def is_poly_n(self, sequence):
+		"""
+		if it has the same letter is poly N
+		"""
+		letter_previous = ""
+		for letter in sequence:
+			if (letter_previous == ""):
+				letter_previous = letter
+				continue
+			if (letter_previous != letter): return False
+		return True
+	
+	
+	
 class TypePath(Enum):
 	"""
 	Has the type of paths you can get from file paths
@@ -169,6 +229,8 @@ class FileExtensions(object):
 	FILE_PNG = '.png'
 	FILE_GBK = '.gbk'
 	FILE_FASTA = '.fasta'
+	FILE_FNA = '.fna'
+	FILE_FAA = '.faa'
 	FILE_FA = '.fa'
 	FILE_FAI = '.fai'
 	FILE_CONSENSUS_FASTA = '.consensus.fasta'

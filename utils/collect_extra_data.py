@@ -44,18 +44,19 @@ class CollectExtraData(object):
 			time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
 	
 		#### create variation graph, png and html
-		(out_file_html, out_file_png) = self.create_graph_minor_variants(project, user)
-		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML)
-		if (out_file_html != None):
-			self.utils.copy_file(out_file_html, file_destination)
-			os.unlink(out_file_html)
-		elif (os.path.exists(file_destination)): os.unlink(file_destination)
-		
-		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_PNG)
-		if (out_file_png != None):
-			self.utils.copy_file(out_file_png, file_destination)
-			os.unlink(out_file_png)
-		elif (os.path.exists(file_destination)): os.unlink(file_destination)
+		## Obsolete, is to make a html graph, now it is with chart.js
+# 		(out_file_html, out_file_png) = self.create_graph_minor_variants(project, user)
+# 		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML)
+# 		if (out_file_html != None):
+# 			self.utils.copy_file(out_file_html, file_destination)
+# 			os.unlink(out_file_html)
+# 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
+# 		file_destination = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_GRAPH_MINO_VAR_PNG)
+# 		if (out_file_png != None):
+# 			self.utils.copy_file(out_file_png, file_destination)
+# 			os.unlink(out_file_png)
+# 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
+
 		### create trees
 		createTree = CreateTree()
 		createTree.create_tree_and_alignments(project, user)
@@ -66,9 +67,10 @@ class CollectExtraData(object):
 			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
-
+	
 	def create_graph_minor_variants(self, project, user):
 		"""
+		OBSOLETE
 		Create a html graph with minor variants data
 		return: html and png file
 		"""

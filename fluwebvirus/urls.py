@@ -16,19 +16,25 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from fluwebvirus.views import LoginView, HomePageView, LogOutView, SignUpView
+from fluwebvirus.views import ResetPasswordView, ChangePasswordView
 from django.conf import settings
 from django.conf.urls.static import static
+from fluwebvirus.views import activate, reset_password_key
 
 urlpatterns = [
     url('^$', HomePageView.as_view(), name='home'),
-##    url(r'^accounts/register/$', SignUpView.as_view(), name='signup'),
+    url(r'^accounts/register/$', SignUpView.as_view(), name='register'),
+    url(r'^accounts/reset_password/$', ResetPasswordView.as_view(), name='reset_password'),
+    url(r'^accounts/change_password/$', ChangePasswordView.as_view(), name='change_password'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', LogOutView.as_view(), name='logout'),
+    url(r'^accounts/activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', activate, name='activate'),
+    url(r'^accounts/reset_password_key/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', reset_password_key, name='reset_password_key'),
+    url(r'^accounts/change_password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', ChangePasswordView.as_view(), name='change_password'),
     url(r'^dashboard/$', HomePageView.as_view(), name='dashboard'),
 
     url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),
-
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

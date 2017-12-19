@@ -90,6 +90,9 @@ class Constants(object):
 	### empty value used in tables
 	EMPTY_VALUE_TABLE = "-"
 	
+	## session values
+	SESSION_KEY_USER_ID = 'session_key_user_id'
+	
 	## errors
 	PROJECT_NAME = 'project_name'
 	ERROR_REFERENCE = 'error_reference'

@@ -1,0 +1,10 @@
+{% autoescape off %}
+Hi {{ user.username }},
+Welcome to InsaFlu web site.
+
+Please, click on the link below to reset your password:
+http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+All the best,
+InsaFlu team.
+{% endautoescape %}

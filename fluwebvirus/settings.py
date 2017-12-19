@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from decouple import config
 
 RUN_TEST_IN_COMMAND_LINE = False
 
@@ -22,12 +23,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v3j0**zjj(3mvv28vtwf8)ev_^!$$asnf2t9&hxw97(9j#=lj9'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['.insa.pt', 'localhost', '127.0.0.1', '[::1]']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -53,10 +54,10 @@ INSTALLED_APPS = [
     'bootstrap4',
     'django_q',
     'django_user_agents',
-    'bootstrap_datepicker',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
     'log_login.apps.LogLoginConfig',
+    'extend_user.apps.ExtendUserConfig',
 ]
 
 MIDDLEWARE = [
@@ -137,6 +138,15 @@ CACHES = {
     }
 }
 
+#### EMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_HOST = config('EMAIL_HOST')
+# EMAIL_PORT = config('EMAIL_PORT', cast=int)
+# EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+# EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
+
+
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 
 # Name of cache backend to cache user agents. If it not specified default
@@ -160,10 +170,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
 ##        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fluwebvirus',
-        'USER': 'fluwebvirususer',
-        'PASSWORD': 'fluwebvirus_pass',
-        'HOST': '127.0.0.1',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
         'PORT': '5432',
         'TEST': {
             'NAME': 'fluwebvirus_test',

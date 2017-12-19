@@ -8,10 +8,17 @@ from ipware.ip import get_ip
 from log_login.models import LoginHistory
 from managing_files.models import DataSet
 from constants.constants import Constants
-from .forms import RegistrationForm
+from django.contrib import messages
+from fluwebvirus.forms import RegistrationForm, LoginForm, ResetPasswordForm, ChangePasswordForm
 from django.contrib.auth.models import User
-from .forms import LoginForm
-
+from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import render, redirect
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.template.loader import render_to_string
+from fluwebvirus.tokens import account_activation_token
+from django.utils.encoding import force_text
+from django.utils.http import urlsafe_base64_decode
 
 class HomePageView(generic.TemplateView):
 	"""
@@ -32,6 +39,109 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 	model = User
 	template_name = 'accounts/signup.html'
 
+	def get_context_data(self, **kwargs):
+		context = super(SignUpView, self).get_context_data(**kwargs)
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+	
+	def form_valid(self, form):
+		
+		if form.is_valid():
+			user = form.save(commit=False)
+			user.is_active = False
+			user.save()
+			user.profile.institution = form.cleaned_data['institution']
+			user.profile.save()
+			
+			current_site = get_current_site(self.request)
+			subject = 'Activate your InsaFlu Account'
+			message = render_to_string('accounts/account_activation_email.html', {
+				'user': user,
+				'domain': current_site.domain,
+				'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+				'token': account_activation_token.make_token(user),
+			})
+			user.email_user(subject, message)
+			messages.success(self.request, "An email was sent to validate your account. Please, follow the link.", fail_silently=True)
+			return redirect('dashboard')
+			
+	## static method
+	form_valid_message = ""
+
+
+class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Reset password
+	"""
+	form_class = ResetPasswordForm
+	model = User
+	template_name = 'accounts/reset_password.html'
+
+	def get_context_data(self, **kwargs):
+		context = super(ResetPasswordView, self).get_context_data(**kwargs)
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+	
+	def form_valid(self, form):
+		
+		if form.is_valid():
+			try:
+				user = User.objects.get(email__iexact=form.cleaned_data['email'])
+				## invalidate current account
+				user.is_active = False
+				user.save()
+				current_site = get_current_site(self.request)
+				subject = 'Reseting password  in your InsaFlu Account'
+				message = render_to_string('accounts/account_reset_pass_email.html', {
+					'user': user,
+					'domain': current_site.domain,
+					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+					'token': account_activation_token.make_token(user),
+				})
+				user.email_user(subject, message)
+			except User.DoesNotExist as e:
+				pass
+			messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
+			return redirect('dashboard')
+			
+	## static method
+	form_valid_message = ""
+	
+class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Change the passwords
+	"""
+	form_class = ChangePasswordForm
+	model = User
+	template_name = 'accounts/change_password.html'
+
+	def get_context_data(self, **kwargs):
+		context = super(ChangePasswordView, self).get_context_data(**kwargs)
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+	
+	def form_valid(self, form):
+		
+		if form.is_valid() and Constants.SESSION_KEY_USER_ID in self.request.session:
+			try:
+				user = User.objects.get(pk=self.request.session[Constants.SESSION_KEY_USER_ID])
+				user.set_password(form.cleaned_data['password1'])
+				user.is_active = True
+				user.save()
+				
+				## clean value in session
+				del self.request.session[Constants.SESSION_KEY_USER_ID]
+				
+				messages.success(self.request, "Congratulations, your account has new passwords.", fail_silently=True)
+				return redirect('dashboard')
+			except User.DoesNotExist as e:
+				pass
+
+		messages.error(self.request, "Error, fail to change passwords.", fail_silently=True)
+		return redirect('dashboard')
+			
+	## static method
+	form_valid_message = ""
 
 class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""
@@ -50,6 +160,8 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 		username = form.cleaned_data['username']
 		password = form.cleaned_data['password']
 		user = authenticate(username=username, password=password)
+		### if none try it with email
+		if (user is None): user = authenticate(email=username, password=password)
 		if user is not None and user.is_active:
 			login(self.request, user)
 			
@@ -61,8 +173,7 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 			login_history.description = get_all_info(self.request)
 			login_history.save()
 			
-			result = DataSet.objects.filter(owner__id=self.request.user.id)
-			if (len(result) == 0):
+			if (DataSet.objects.filter(owner__id=user.id).count() == 0):
 				### need to create it generic
 				dataSet = DataSet()
 				dataSet.name = Constants.DATA_SET_GENERIC
@@ -100,6 +211,53 @@ class LogOutView(LoginRequiredMixin, MessageMixin, generic.RedirectView):
 		self.messages.success("You've been logged out. Come back soon!")
 		return super(LogOutView, self).get(request, *args, **kwargs)
 
+def activate(request, uidb64, token):
+	try:
+		uid = force_text(urlsafe_base64_decode(uidb64))
+		user = User.objects.get(pk=uid)
+	except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+		user = None
+
+	if user is not None and account_activation_token.check_token(user, token):
+		user.is_active = True
+		user.profile.email_confirmed = True
+		user.save()
+		login(request, user)
+		
+		## set login history
+		login_history = LoginHistory()
+		login_history.ip = get_ip(request)
+		login_history.owner = user
+		login_history.operation = LoginHistory.LOGIN_IN
+		login_history.description = get_all_info(request)
+		login_history.save()
+		
+		if (DataSet.objects.filter(owner__id=user.id).count() == 0):
+			### need to create it generic
+			dataSet = DataSet()
+			dataSet.name = Constants.DATA_SET_GENERIC
+			dataSet.owner = user
+			dataSet.save()
+		
+		messages.success(request, "Congratulations, your account was confirmed. Enjoy the experience.", fail_silently=True)
+		return redirect('dashboard')
+	else:
+		messages.error(request, "Error, your account activation token is invalid.", fail_silently=True)
+		return redirect('dashboard')
+	
+def reset_password_key(request, uidb64, token):
+	try:
+		uid = force_text(urlsafe_base64_decode(uidb64))
+		user = User.objects.get(pk=uid)
+	except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+		user = None
+
+	if user is not None and account_activation_token.check_token(user, token):
+		request.session[Constants.SESSION_KEY_USER_ID] = uid
+		return redirect('change_password')
+	else:
+		messages.error(request, "Error, your reset password token is invalid.", fail_silently=True)
+		return redirect('dashboard')
 
 
 def get_all_info(request):
@@ -123,5 +281,3 @@ def get_all_info(request):
 	# Device properties
 	sz_return += ";   device_family: {}".format(request.user_agent.device.family)  # returns 'iPhone'
 	return sz_return
-
-

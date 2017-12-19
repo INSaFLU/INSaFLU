@@ -7,6 +7,9 @@
 {% endblock  %}
 
 {% block content %}
-{% include 'accounts/login_inner.html' %}
+{% load crispy_forms_tags %}
+<form class="form-horizontal" action="{% url 'login' %}" method="post">
+    {% crispy form %}
+</form>
 {% endblock %}
 

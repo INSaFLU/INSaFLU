@@ -1,7 +1,5 @@
 from django.db import models
-
 from django.contrib.auth.models import User
-
 # Create your models here.
 
 
@@ -23,3 +21,4 @@ class LoginHistory(models.Model):
 		return "{} {} {}".format(self.owner.username, self.ip, self.creation_date)
 	class Meta:
 		ordering = ['-creation_date', ]
+	

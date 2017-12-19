@@ -1,0 +1,21 @@
+{% extends '_layouts/base.html' %}
+
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h2>Create an account, please.</h2>
+	</div>
+{% endblock  %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+<form class="form-horizontal" action="{% url 'register' %}" method="post">
+    {% crispy form %}
+</form>
+{% endblock %}
+

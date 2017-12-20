@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from constants.constants import Constants, TypePath
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
-from constants.meta_key_and_values import MetaKeyAndValue
 from django.conf import settings
 import os
 
@@ -144,17 +143,20 @@ class DataSet(models.Model):
 	class Meta:
 		ordering = ['creation_date', 'name', ]
 		
-class VacineStatus(models.Model):
+class VaccineStatus(models.Model):
 	"""
 	Each sample needs a dataset 
 	"""
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
-	owner = models.ForeignKey(User, related_name='vacine_status', blank=True, null=True, on_delete=models.CASCADE)
+	owner = models.ForeignKey(User, related_name='vaccine_status', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Date creation')
+	
 	def __str__(self):
 		return self.name
+	
 	class Meta:
 		ordering = ['creation_date', 'name', ]
+
 	
 class Sample(models.Model):
 	"""
@@ -166,7 +168,7 @@ class Sample(models.Model):
 	objects = models.Manager()	## need to check this
 	
 	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
-																	##    prefix_R2_001.fastq.gz),
+																	##	prefix_R2_001.fastq.gz),
 	date_of_onset = models.DateField('date of onset', blank=True, null=True)
 	date_of_collection = models.DateField('date of collection', blank=True, null=True)
 	date_of_receipt_lab = models.DateField('date of receipt lab', blank=True, null=True)
@@ -174,17 +176,19 @@ class Sample(models.Model):
 	day = models.IntegerField(blank=True, null=True)	## from "Date of onset” or “Date of collection” 
 	month = models.IntegerField(blank=True, null=True)
 	year = models.IntegerField(blank=True, null=True)
-	vaccine_status = models.ForeignKey(VacineStatus, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
+	vaccine_status = models.ForeignKey(VaccineStatus, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	is_rejected = models.BooleanField(default=False)
 	is_obsolete = models.BooleanField(default=False)
 	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	tag_names = models.ManyToManyField(TagName)
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
 	geo_manager = GeoManager()
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
+
+	## many to many relation	
+	tag_names = models.ManyToManyField(TagName, through='TagNames')
 	
 	### files
 	is_valid_1 = models.BooleanField(default=False)
@@ -298,7 +302,14 @@ class Sample(models.Model):
 		"""
 		return self.is_ready_for_projects and not self.is_obsolete and not self.is_rejected
 
+class TagNames(models.Model):
+	value = models.CharField(max_length=150)
+	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)
+	sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
 
+	def __str__(self):
+		return self.value
+	
 class MetaKeySample(models.Model):
 	"""
 	Relation ManyToMany in 
@@ -315,25 +326,6 @@ class MetaKeySample(models.Model):
 	
 	def __str__(self):
 		return self.meta_tag.name + " " + self.value + " " + self.description
-	
-class UploadFiles(models.Model):
-	"""
-	this class has the files that the user can upload, has he want,
-	then the system make the relations with the samples
-	"""
-	is_valid = models.BooleanField(default=False)
-	file_name = models.CharField(max_length=300, blank=True, null=True)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
-	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream'], max_upload_size=30971520, max_length=500)
-	is_day_month_year_from_date_of_onset = models.BooleanField(default=False)
-	is_day_month_year_from_date_of_collection = models.BooleanField(default=False)
-	
-	class Meta:
-		ordering = ['creation_date']
-
-	def __str__(self):
-		return self.file_name
 	
 class Project(models.Model):
 	"""
@@ -609,3 +601,33 @@ class Software(models.Model):
 		ordering = ['name', 'version__name']
 
 
+class UploadFiles(models.Model):
+	"""
+	this class has the files that the user can upload, has he want,
+	then the system make the relations with the samples
+	"""
+	is_valid = models.BooleanField(default=False)			## true if everything is OK with the file
+	is_samples_list = models.BooleanField(default=False)	## if it's a sample csv file
+	is_processed = models.BooleanField(default=False)		## if is processed, everything went well
+	is_first_fastq_file= models.BooleanField(default=True)	## if it's the first in fastq files
+	is_deleted = models.BooleanField(default=False)
+	number_errors = models.IntegerField(default=0)			## if has errors don't do anything
+	number_files_processed = models.IntegerField(default=0)	## samples_list, has the number of files already processed
+															## in fastq files, has the number of mate, max 1, or zero -> none
+
+	type_file = models.ForeignKey(MetaKey, related_name='upload_files', blank=True, null=True, on_delete=models.CASCADE)	## has the type of file
+															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
+															## constants.TYPE_FILE.TYPE_FILE_sample_file
+	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
+	creation_date = models.DateTimeField('upload_files', auto_now_add=True)
+	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
+	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
+	sample = models.ForeignKey(Sample, related_name='upload_files', blank=True, null=True) ## in fastq file has the sample where it belongs
+	upload_file = models.ForeignKey('self', blank=True, null=True) 			## in fastq file has the sample list where it belongs
+	description = models.TextField(default="")				## has a json result.ProcessResults instance with errors or successes
+	
+	class Meta:
+		ordering = ['creation_date']
+
+	def __str__(self):
+		return self.file_name

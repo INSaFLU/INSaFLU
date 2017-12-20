@@ -13,7 +13,7 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
 from constants.constants import Constants
-from managing_files.models import Reference, Sample, DataSet, VacineStatus, Project
+from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project
 import os
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -144,39 +144,6 @@ class ReferenceForm(forms.ModelForm):
 		return cleaned_data
 
 
-class DataSetForm(forms.ModelForm):
-
-	class Meta:
-		model = DataSet
-		fields = ('name',)
-		
-	def __init__(self, *args, **kwargs):
-		self.request = kwargs.pop('request')
-		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
-
-		field_text= [
-			# (field_name, Field title label, Detailed field description, requiered)
-			('data_set', 'Dataset', 'Define a specific dataset, can be used in the future to filter samples', True),
-		]
-		for x in field_text:
-			self.fields[x[0]].label = x[1]
-			self.fields[x[0]].help_text = x[2]
-			self.fields[x[0]].required = x[3]
-
-		self.helper = FormHelper()
-		self.helper.form_method = 'POST'
-		self.helper.layout = Layout(
-			Div(
-				Div('data_set', css_class="col-sm-3"),
-				css_class = 'row'
-			),
-			ButtonHolder(
-				Submit('save', 'Save', css_class='btn-primary'),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('sample-add')))
-			)
-		)
-
-
 class RelatedFieldWidgetCanAdd(widgets.Select):
 
 	def __init__(self, related_model, related_url=None, *args, **kw):
@@ -197,10 +164,6 @@ class RelatedFieldWidgetCanAdd(widgets.Select):
 		output.append('<a href="%s" class="add-another" id="add_id_%s" onclick="return showAddAnotherPopup(this);"> ' % (self.related_url, name))
 		output.append('<img src={% static \'admin/img/icon_addlink.gif\' %} width="10" height="10" alt="Add Another"/></a>')
 		return mark_safe(''.join(output))
-
-
-class DateInput(forms.DateInput):
-	input_type = 'date'
 
 
 ## https://stackoverflow.com/questions/4497684/django-class-based-views-with-inline-model-form-or-formset
@@ -240,7 +203,7 @@ class SampleForm(forms.ModelForm):
 		## define a specific query set
 		self.fields['data_set'].queryset = DataSet.objects.filter(owner__id = self.request.user.id)
 		self.fields['data_set'].empty_label = None		## to remove empty label in combo box
-		self.fields['vaccine_status'].queryset = VacineStatus.objects.filter(owner__id = self.request.user.id)
+		self.fields['vaccine_status'].queryset = VaccineStatus.objects.filter(owner__id = self.request.user.id)
 		
 		##// <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/>
 		self.fields['date_of_onset'].widget.attrs.update({

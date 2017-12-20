@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import TagName, DataSet, VacineStatus
+from .models import TagName, DataSet, VaccineStatus
 
 class DataSetAdmin(admin.ModelAdmin):
 	fields = ('name', )
@@ -20,7 +20,7 @@ class DataSetAdmin(admin.ModelAdmin):
 class VacineStatusAdmin(admin.ModelAdmin):
 	fields = ('name', )
 	class Meta:
-		model = VacineStatus
+		model = VaccineStatus
 	
 	def has_add_permission(self, request):
 		return True
@@ -31,4 +31,4 @@ class VacineStatusAdmin(admin.ModelAdmin):
 
 admin.site.register(TagName)
 admin.site.register(DataSet, DataSetAdmin)
-admin.site.register(VacineStatus)
+admin.site.register(VaccineStatus)

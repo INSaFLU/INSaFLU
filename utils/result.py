@@ -64,6 +64,20 @@ class DecodeObjects(object):
 			a = MixedInfectionMainVector()
 			a.__dict__.update(o['__MixedInfectionMainVector__'])
 			return a
+		elif '__SingleResult__' in o:
+			a = SingleResult(o['__SingleResult__']['result'], o['__SingleResult__']['message'])
+			a.__dict__.update(o['__SingleResult__'])
+			return a
+		elif '__ProcessResults__' in o:
+			a = ProcessResults()
+			a.__dict__.update(o['__ProcessResults__'])
+			return a
+		elif '__ResultAverageAndNumberReads__' in o:
+			a = ResultAverageAndNumberReads(o['__ResultAverageAndNumberReads__']['number_file_1'],\
+						o['__ResultAverageAndNumberReads__']['average_file_1'], o['__ResultAverageAndNumberReads__']['number_file_2'],\
+						o['__ResultAverageAndNumberReads__']['average_file_2'], )
+			a.__dict__.update(o['__ResultAverageAndNumberReads__'])
+			return a
 		return o
 
 class ObjectEncoder(json.JSONEncoder):
@@ -143,11 +157,11 @@ class Result(object):
 		self.softwares = Softwares()
 	
 	def set_error(self, message):
-		self.result = self.SUCCESS
+		self.result = self.ERROR
 		self.message = message
 	
 	def set_success(self, message):
-		self.result = self.ERROR
+		self.result = self.SUCCESS
 		self.message = message
 	
 	def add_output(self, output):
@@ -165,6 +179,9 @@ class Result(object):
 	def get_number_softwares(self):
 		return self.softwares.get_number_softwares()
 	
+	def is_success(self):
+		return self.result == Result.SUCCESS
+
 class ResultEncoder(json.JSONEncoder):
 
 	def default(self, o):
@@ -194,24 +211,6 @@ class ResultAverageAndNumberReads(object):
 	def __eq__(self, other):
 		return other != None and other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
 			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
-
-
-class DecodeResultAverageAndNumberReads(object):
-	
-	def __init__(self):
-		pass
-	
-	def decode_result(self, sz_temp):
-		return json.loads(sz_temp, object_hook=self.decode_object)
-		
-	def decode_object(self, o):
-		if '__ResultAverageAndNumberReads__' in o:
-			a = ResultAverageAndNumberReads(o['__ResultAverageAndNumberReads__']['number_file_1'],\
-						o['__ResultAverageAndNumberReads__']['average_file_1'], o['__ResultAverageAndNumberReads__']['number_file_2'],\
-						o['__ResultAverageAndNumberReads__']['average_file_2'], )
-			a.__dict__.update(o['__ResultAverageAndNumberReads__'])
-			return a
-		return o
 
 
 class CoverageElement(object):
@@ -457,5 +456,69 @@ class MixedInfectionMainVector(object):
 	def __str__(self):
 		return '; '.join(['-'.join([str(b) for b in a]) for a in self.vect_start_compare])
 
+
+class SingleResult(object):
+	'''
+	single status result
+	'''
+	SUCCESS = "Success"
+	ERROR = "Error"
+	def __init__(self, result, message):
+		'''
+		Constructor
+		'''
+		self.result = result
+		self.message = message
+
+	def set_error(self, message):
+		self.result = self.ERROR
+		self.message = message
+	
+	def set_success(self, message):
+		self.result = self.SUCCESS
+		self.message = message
+		
+	def is_success(self):
+		return self.result == Result.SUCCESS
+	
+	def __eq__(self, other):
+		if (other == None): return False
+		return self.result == other.result and self.message == other.message
+	
+	def __str__(self):
+		return '{} - {}'.format(self.result, self.message)
+
+
+class ProcessResults(object):
+	"""
+	global process result
+	"""
+	def __init__(self):
+		self.vect_results = []
+		
+	def add_single_result(self, single_result):
+		self.vect_results.append(single_result)
+
+	def get_vect_results(self):
+		return self.vect_results
+
+	def get_len_vect_results(self):
+		return len(self.vect_results)
+	
+	def get_error(self, index):
+		return self.vect_results[index]
+	
+	def has_errors(self):
+		return self.get_len_vect_results() > 0
+	
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
+
+	def __eq__(self, other):
+		if (other == None): return False
+		return self.vect_results == other.vect_results
+
+	def __str__(self):
+		return '\n'.join([str(a) for a in self.vect_results])
 
 

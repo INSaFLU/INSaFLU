@@ -34,6 +34,11 @@ class ConstantsTestsCase(object):
 	MANAGING_MAFFT_IN_PROTEIN = 'mafft_protein.fasta'
 	MANAGING_MAFFT_IN_PROTEIN_EXPECTED = 'mafft_protein_expected.fasta'
 	MANAGING_TREE_out_protein = 'Alignment_MP_M.nex'
+	MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+	MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+	MANAGING_TEMPLATE_INPUT_DATA_TSV = "template_input_data.tsv"
+	MANAGING_TEMPLATE_INPUT_DATA_CSV = "template_input_data.csv"
+	MANAGING_TEMPLATE_INPUT_DATA_FAIL = "template_input_data_fail.csv"
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"
@@ -60,6 +65,7 @@ class ConstantsTestsCase(object):
 	DIR_IMAGES = "images"
 	DIR_PROJECTS = "projects"
 	DIR_GLOBAL_PROJECT = "global_project"
+	DIR_INPUT_FILES = "input_files"
 	
 	## fastq files
 	DIR_FASTQ = "fastq"

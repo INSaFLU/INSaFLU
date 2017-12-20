@@ -5,7 +5,7 @@ Created on Dec 6, 2017
 '''
 
 import os
-from managing_files.models import Project, ProjectSample, DataSet, VacineStatus
+from managing_files.models import Project, ProjectSample, DataSet, VaccineStatus
 from constants.constants import Constants, TypePath, FileExtensions
 from utils.utils import Utils
 from django.http import JsonResponse
@@ -147,7 +147,7 @@ def validate_project_reference_name(request):
 def add_single_value_database(request):
 	"""
 	add a single value to a table in database
-	possible tables to add: TagName, DataSet, VacineStatus
+	possible tables to add: TagName, DataSet, VaccineStatus
 	"""
 	if request.is_ajax():
 		data = { 'is_ok' : False }
@@ -172,9 +172,9 @@ def add_single_value_database(request):
 			## add to vaccine status
 			elif (request.GET[key_type_data] == 'id_vaccine_add_modal'):
 				try:
-					VacineStatus.objects.get(name__iexact=value)
-				except VacineStatus.DoesNotExist as e:
-					vacine_status = VacineStatus()
+					VaccineStatus.objects.get(name__iexact=value)
+				except VaccineStatus.DoesNotExist as e:
+					vacine_status = VaccineStatus()
 					vacine_status.name = value
 					vacine_status.owner = request.user
 					vacine_status.save()
@@ -236,7 +236,7 @@ def remove_single_value_database(request):
 			## add to vaccine status
 			elif (request.GET[key_type_data] == 'id_vaccine_remove_modal'):
 				try:
-					vacine_status = VacineStatus.objects.get(name__iexact=value)
+					vacine_status = VaccineStatus.objects.get(name__iexact=value)
 					if (vacine_status.sample.count() > 0):
 						if (is_to_test):
 							data['is_ok'] = True;
@@ -256,7 +256,7 @@ def remove_single_value_database(request):
 							data['message'] = "'{}' was removed.".format(value);
 							data['value_to_remove'] = vacine_status.id;
 							vacine_status.delete()
-				except VacineStatus.DoesNotExist as e:
+				except VaccineStatus.DoesNotExist as e:
 					data['is_ok'] = True;
 					data['is_remove'] = False;
 					data['message'] = "You can't remove '{}'.".format(value);

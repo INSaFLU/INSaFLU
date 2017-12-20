@@ -14,7 +14,7 @@ from utils.software import Software
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from utils.result import DecodeResultAverageAndNumberReads, DecodeObjects, Coverage, CountHits
+from utils.result import DecodeObjects, Coverage, CountHits
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference, Statistics
 from manage_virus.uploadFiles import UploadFiles

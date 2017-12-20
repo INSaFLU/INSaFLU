@@ -13,7 +13,7 @@ from utils.software import Software
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from utils.result import DecodeResultAverageAndNumberReads, DecodeObjects, Coverage
+from utils.result import DecodeObjects, Coverage
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from manage_virus.uploadFiles import UploadFiles
@@ -365,7 +365,7 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 
-		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 		self.assertEqual('39845', result_average.number_file_1)
 		self.assertEqual('144.0', result_average.average_file_1)
@@ -435,7 +435,7 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 
-		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 		self.assertEqual('42534', result_average.number_file_1)
 		self.assertEqual('143.4', result_average.average_file_1)
@@ -607,7 +607,7 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 
-		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 		self.assertEqual('39845', result_average.number_file_1)
 		self.assertEqual('144.0', result_average.average_file_1)

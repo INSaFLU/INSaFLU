@@ -19,6 +19,8 @@ class ManagingFilesConfig(AppConfig):
 		
 		#### set default fields
 		self.default_database_fields()
+		
+#		pass
 
 	def create_default_user(self):
 		"""

@@ -218,6 +218,13 @@ class FileType(Enum):
 	FILE_VCF_GZ = 9
 	FILE_VCF_GZ_TBI = 10
 	FILE_CSV = 11
+
+class TypeFile(object):
+	
+	TYPE_FILE_fastq_gz = "fastq.gz"
+	TYPE_FILE_sample_file = "sample-file imported" 	## file that the user import with sample descriptions
+	
+	
 	
 class FileExtensions(object):
 	"""
@@ -239,5 +246,6 @@ class FileExtensions(object):
 	FILE_CONSENSUS_FASTA = '.consensus.fasta'
 	FILE_TREE = '.tree'
 	FILE_NWK = '.nwk'
+	FILE_GZ = '.gz'
 
 

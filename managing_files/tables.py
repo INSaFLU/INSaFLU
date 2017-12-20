@@ -4,7 +4,7 @@ from managing_files.models import Reference, Sample, Project, ProjectSample
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.result import DecodeResultAverageAndNumberReads
+from utils.result import DecodeObjects
 from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -141,7 +141,7 @@ class SampleTable(tables.Table):
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-			decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 			if (result_average.number_file_2 is None): return _('%s/%s' % (result_average.number_file_1, result_average.average_file_1 ))
 			return _('%s/%s-%s/%s' % (result_average.number_file_1,\

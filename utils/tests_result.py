@@ -5,7 +5,8 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
-from utils.result import DecodeResultAverageAndNumberReads, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
+from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
+from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -31,10 +32,12 @@ class Test(TestCase):
 	def test_result_software(self):
 		result = Result()
 		result.set_error("xpto")
+		
 		result.add_output(Output("name", 'path'))
 		result.outputs.list_output[0].set_software(SoftwareDesc("name44_s", '4444', 'sdfd'))
 		result.add_software(SoftwareDesc("name_s", '11212', "sdd"))
 		
+		self.assertFalse(result.is_success())
 		sz_return = result.to_json()
 		self.assertTrue(sz_return.find('"version": "11212"') != 0)
 		self.assertTrue(sz_return.find('"name": "name_s"') != 0)
@@ -60,7 +63,7 @@ class Test(TestCase):
 		self.assertTrue(sz_return.find('"number_file_1": "21"') != 0)
 		self.assertTrue(sz_return.find('"average_file_1": "43"') != 0)
 		
-		decodeResultAverageAndNumberReads = DecodeResultAverageAndNumberReads()
+		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_2 = decodeResultAverageAndNumberReads.decode_result(sz_return)
 		self.assertEqual(result_2, resultAverageAndNumberReads)
 		
@@ -181,4 +184,17 @@ class Test(TestCase):
 		mixedInfectionMainVector_3 = MixedInfectionMainVector()
 		self.assertEquals(8, len(mixedInfectionMainVector_3.get_vector()))
 
+	def test_process_results(self):
+		
+		process_results = ProcessResults()
+		process_results.add_single_result(SingleResult(SingleResult.ERROR, 'xprto errroer'))
+		process_results.add_single_result(SingleResult(SingleResult.SUCCESS, 'xprto'))
+		self.assertEquals(2, len(process_results.get_vect_results()))
+		
+		json = process_results.to_json()
+		
+		decodeCoverage = DecodeObjects()
+		process_results_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(process_results, process_results_2)
+		self.assertEquals("Error - xprto errroer\nSuccess - xprto", str(process_results_2))
 

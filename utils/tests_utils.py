@@ -529,4 +529,35 @@ class Test(unittest.TestCase):
                     'SEIMKICSTIEELRRQK*', str(seq.translate(table=Constants.TRANSLATE_TABLE_NUMBER)))
 
 
+	def test_validate_date(self):
+		
+		try:
+			self.utils.validate_date('12/12/2017')
+		except ValueError as e:
+			self.fail('Real date')
+		
+		try:
+			self.utils.validate_date('12-12-2017')
+		except ValueError as e:
+			self.fail('Real date')
+
+		try:
+			self.utils.validate_date('12.12.2017')
+			self.fail('must throw exception')
+		except ValueError as e:
+			pass
+		
+		try:
+			self.utils.validate_date('2017-12-12')
+			self.fail('must throw exception')
+		except ValueError as e:
+			pass
+		
+		try:
+			self.utils.validate_date('12-21-2017')
+			self.fail('must throw exception')
+		except ValueError as e:
+			pass
+
+
 

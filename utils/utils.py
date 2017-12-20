@@ -13,6 +13,7 @@ from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from utils.result import CountHits, DecodeObjects
+from datetime import datetime
 import os, random, gzip, hashlib, logging
 from pysam import pysam
 
@@ -698,5 +699,17 @@ class Utils(object):
 		return d.hexdigest()
 	
 	
-	
+	def validate_date(self, date_text):
+		"""
+		The international format yyyy-mm-dd or yyyymmdd
+		validate date time
+		"""
+		try:
+			date_ = datetime.strptime(date_text, '%d-%m-%Y')
+		except ValueError:
+			try:
+				date_ = datetime.strptime(date_text, '%d/%m/%Y')
+			except ValueError:
+				raise ValueError("Incorrect data format, should be dd/mm/YYYY")
+		return date_
 	

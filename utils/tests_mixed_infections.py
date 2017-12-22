@@ -144,7 +144,6 @@ class Test(unittest.TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)

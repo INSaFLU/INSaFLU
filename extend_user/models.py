@@ -11,6 +11,8 @@ class Profile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	institution = models.TextField(max_length=100, blank=True)
 	email_confirmed = models.BooleanField(default=False)
+	max_references = models.IntegerField(default=30)
+	max_samples = models.IntegerField(default=500)
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

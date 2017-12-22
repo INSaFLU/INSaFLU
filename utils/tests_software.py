@@ -183,7 +183,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -235,7 +234,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -274,7 +272,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -321,7 +318,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -345,12 +341,12 @@ class Test(TestCase):
 
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -406,7 +402,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -418,9 +413,9 @@ class Test(TestCase):
 		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -484,7 +479,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
@@ -561,7 +555,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -587,12 +580,12 @@ class Test(TestCase):
 
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -668,7 +661,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -796,6 +788,7 @@ class Test(TestCase):
  		test global method
  		"""
 		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
 
 		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
@@ -835,7 +828,6 @@ class Test(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
@@ -1260,7 +1252,6 @@ class Test(TestCase):
 # 		except Sample.DoesNotExist:
 # 			sample = Sample()
 # 			sample.name = sample_name
-# 			sample.is_rejected = False
 # 			sample.is_valid_1 = True
 # 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 # 			sample.path_name_1.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)

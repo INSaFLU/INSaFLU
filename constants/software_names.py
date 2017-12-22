@@ -115,6 +115,8 @@ class SoftwareNames(object):
 	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTree")
 	SOFTWARE_FASTTREE_name = "FastTree"
 	SOFTWARE_FASTTREE_VERSION = "2.1.10 SSE3"
+#	SOFTWARE_FASTTREE_name = "FastTreeDbl"
+#	SOFTWARE_FASTTREE_VERSION = "2.1.10 Double precision"
 	SOFTWARE_FASTTREE_PARAMETERS = "-gtr -boot 1000 -nt"
 	SOFTWARE_FASTTREE_PARAMETERS_PROTEIN = "-gtr -boot 1000"
 	

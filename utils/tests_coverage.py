@@ -148,7 +148,6 @@ class Test(unittest.TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.is_valid_2 = False

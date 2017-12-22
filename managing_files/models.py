@@ -178,7 +178,7 @@ class Sample(models.Model):
 	year = models.IntegerField(blank=True, null=True)
 	vaccine_status = models.ForeignKey(VaccineStatus, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
-	is_rejected = models.BooleanField(default=False)
+	is_deleted = models.BooleanField(default=False)
 	is_obsolete = models.BooleanField(default=False)
 	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
@@ -192,11 +192,13 @@ class Sample(models.Model):
 	
 	### files
 	is_valid_1 = models.BooleanField(default=False)
-	file_name_1 = models.CharField(max_length=300, blank=True, null=True)
+	file_name_1 = models.CharField(max_length=200, blank=True, null=True)
+	candidate_file_name_1 = models.CharField(max_length=200, blank=True, null=True)
 	## 30M
 	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
-	file_name_2 = models.CharField(max_length=300, blank=True, null=True)
+	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
+	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
 
 	## has files, the user can upload the files after
@@ -235,8 +237,20 @@ class Sample(models.Model):
 		type_path = [MEDIA_ROOT, MEDIA_URL]
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
-		return os.path.join(self.__get_path__(type_path, b_first_file), self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
-	
+		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
+		os.makedirs(path_out, mode=0o755, exist_ok=True)
+		return os.path.join(path_out, self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
+
+	def get_fastq_trimmomatic(self, type_path, b_first_file):
+		"""
+		return fastq output first step
+		"""
+		if (not b_first_file and not self.exist_file_2()): return None
+		
+		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
+		os.makedirs(path_out, mode=0o755, exist_ok=True)
+		return os.path.join(path_out, self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
+
 	def get_fastq(self, type_path, b_first_file):
 		"""
 		return fastq output first step
@@ -250,14 +264,6 @@ class Sample(models.Model):
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
-
-	
-	def get_fastq_trimmomatic(self, type_path, b_first_file):
-		"""
-		return fastq output first step
-		"""
-		if (not b_first_file and not self.exist_file_2()): return None
-		return os.path.join(self.__get_path__(type_path, b_first_file), self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
 
 	def __get_path__(self, type_path, b_first_file):
 		"""
@@ -300,7 +306,7 @@ class Sample(models.Model):
 		"""
 		need to be true to be ready for projects
 		"""
-		return self.is_ready_for_projects and not self.is_obsolete and not self.is_rejected
+		return self.is_ready_for_projects and not self.is_obsolete and not self.is_deleted
 
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
@@ -606,23 +612,27 @@ class UploadFiles(models.Model):
 	this class has the files that the user can upload, has he want,
 	then the system make the relations with the samples
 	"""
-	is_valid = models.BooleanField(default=False)			## true if everything is OK with the file
-	is_samples_list = models.BooleanField(default=False)	## if it's a sample csv file
-	is_processed = models.BooleanField(default=False)		## if is processed, everything went well
-	is_first_fastq_file= models.BooleanField(default=True)	## if it's the first in fastq files
-	is_deleted = models.BooleanField(default=False)
-	number_errors = models.IntegerField(default=0)			## if has errors don't do anything
+	is_valid = models.BooleanField(default=False)			## true if everything is OK with the file, without errors
+	is_processed = models.BooleanField(default=False)		## if samples file -> True when all files is attributed
+															## if fastq.gz -> True when the file is attributed
+	is_deleted = models.BooleanField(default=False)			## if this file is removed
+	number_errors = models.IntegerField(default=0)			## if has errors don't do anything, need to remove and upload again.
 	number_files_processed = models.IntegerField(default=0)	## samples_list, has the number of files already processed
-															## in fastq files, has the number of mate, max 1, or zero -> none
-
+															## in fastq files, if this file is associated to a sample or not
+	number_files_to_process = models.IntegerField(default=0)	## samples_list, has the number of files to process. At the end this number must be equal
+	
 	type_file = models.ForeignKey(MetaKey, related_name='upload_files', blank=True, null=True, on_delete=models.CASCADE)	## has the type of file
 															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
 															## constants.TYPE_FILE.TYPE_FILE_sample_file
 	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
 	creation_date = models.DateTimeField('upload_files', auto_now_add=True)
 	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
+	
+	### need to create a random name for this file
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
-	sample = models.ForeignKey(Sample, related_name='upload_files', blank=True, null=True) ## in fastq file has the sample where it belongs
+	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
+												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted
+												##   to add other samples file
 	upload_file = models.ForeignKey('self', blank=True, null=True) 			## in fastq file has the sample list where it belongs
 	description = models.TextField(default="")				## has a json result.ProcessResults instance with errors or successes
 	

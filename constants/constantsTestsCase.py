@@ -38,6 +38,7 @@ class ConstantsTestsCase(object):
 	MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_TSV = "template_input_data.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_CSV = "template_input_data.csv"
+	MANAGING_TEMPLATE_INPUT_DATA_2_CSV = "template_input_data_2.csv"
 	MANAGING_TEMPLATE_INPUT_DATA_FAIL = "template_input_data_fail.csv"
 	
 	### consensus files

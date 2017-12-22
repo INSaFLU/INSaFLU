@@ -136,7 +136,6 @@ class testsReferenceFiles(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.path_name_1.name = "sdasa"
 			sample.owner = user
 			sample.save()
@@ -269,7 +268,6 @@ class testsReferenceFiles(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.path_name_1.name = "sdasa"
 			sample.owner = user
 			sample.save()
@@ -317,7 +315,6 @@ class testsReferenceFiles(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.path_name_1.name = "/tmp/zpt"
 			sample.owner = user
 			sample.save()
@@ -470,7 +467,6 @@ class testsReferenceFiles(TestCase):
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.path_name_1.name = "sdasa"
 			sample.owner = user
 			sample.save()
@@ -572,7 +568,6 @@ class testsReferenceFiles(TestCase):
 			sample = Sample()
 			sample.id=1000
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.path_name_1.name = "sdasa"
 			sample.owner = user
 			sample.save()
@@ -654,7 +649,6 @@ class testsReferenceFiles(TestCase):
 # 		except Sample.DoesNotExist:
 # 			sample = Sample()
 # 			sample.name = sample_name
-# 			sample.is_rejected = False
 # 			sample.is_valid_1 = True
 # 			sample.file_name_1 = 'vect_file[0]'
 # 			sample.path_name_1.name = ''
@@ -665,7 +659,6 @@ class testsReferenceFiles(TestCase):
 # 			
 # 			sample.is_ready_for_projects = True
 # 			sample.is_obsolete = False
-# 			sample.is_rejected = False
 # 			sample.save()
 # 
 # 

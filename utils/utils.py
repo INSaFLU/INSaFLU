@@ -123,6 +123,16 @@ class Utils(object):
 				self.logger_production.error('Fail to run: ' + cmd)
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to make a move a file") 
+	
+	def link_file(self, sz_file_from, sz_file_to):
+		if os.path.exists(sz_file_from):
+			self.make_path(os.path.dirname(sz_file_to))
+			cmd = "ln -s " + sz_file_from + " " + sz_file_to
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to link a file") 
 			
 	def copy_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):

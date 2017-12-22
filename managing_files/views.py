@@ -224,7 +224,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample = form.save(commit=False)
 		## set other data
 		sample.owner = self.request.user
-		sample.is_rejected = False
+		sample.is_deleted = False
 		sample.is_obsolete = False
 		sample.file_name_1 = os.path.basename(sample.path_name_1.name)
 		sample.is_valid_1 = True
@@ -498,7 +498,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
 		## catch everything that is not in connection with project 
-		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_rejected=False) & Q(is_ready_for_projects=True) &\
+		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_deleted=False) & Q(is_ready_for_projects=True) &\
 									(Q(project_sample__isnull=True) | ~Q(project_sample__project__id=project.id) |\
 									(Q(project_sample__project__id=project.id) & Q(project_sample__is_deleted=True))) ).distinct()
 		tag_search = 'search_add_project_sample'

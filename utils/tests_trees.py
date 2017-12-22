@@ -103,7 +103,6 @@ class Test(unittest.TestCase):
 			sample = Sample()
 			sample.id = 5000 + count + 1
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = vect_file[0]
 			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
@@ -111,10 +110,8 @@ class Test(unittest.TestCase):
 			sample.file_name_2 = vect_file[1]
 			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
 			sample.owner = user
-			
 			sample.is_ready_for_projects = True
 			sample.is_obsolete = False
-			sample.is_rejected = False
 			sample.save()
 
 			## create project_sample

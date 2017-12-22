@@ -115,7 +115,6 @@ class Test(unittest.TestCase):
 			sample = Sample()
 			sample.id = 5100 + count + 1
 			sample.name = sample_name
-			sample.is_rejected = False
 			sample.is_valid_1 = True
 			sample.file_name_1 = vect_file[0]
 			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
@@ -123,10 +122,8 @@ class Test(unittest.TestCase):
 			sample.file_name_2 = vect_file[1]
 			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
 			sample.owner = user
-			
 			sample.is_ready_for_projects = True
 			sample.is_obsolete = False
-			sample.is_rejected = False
 			sample.save()
 
 			## create project_sample
@@ -221,8 +218,14 @@ class Test(unittest.TestCase):
 
 		expect_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_TREE, ConstantsTestsCase.MANAGING_TREE_out_protein)
 		self.assertTrue(os.path.join(expect_file))
-		self.assertTrue(filecmp.cmp(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_nex), expect_file))
-		
+		temp_file = self.utils.get_temp_file("file_name", ".txt")
+		temp_file_1 = self.utils.get_temp_file("file_name", ".txt")
+		cmd = "grep -E -v 'TITLE: Written by EMBOSS' {} > {}".format(\
+				project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_nex), temp_file)
+		os.system(cmd);
+		cmd = "grep -E -v 'TITLE: Written by EMBOSS' {} > {}".format(expect_file, temp_file_1)
+		os.system(cmd);
+		self.assertTrue(filecmp.cmp(temp_file_1, temp_file))
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 		

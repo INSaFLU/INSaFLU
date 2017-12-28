@@ -7,9 +7,12 @@ urlpatterns = [
 	url(r'references/reference_add$', views.ReferenceAddView.as_view(), name='reference-add'),
 	url(r'samples/samples$', views.SamplesView.as_view(), name='samples'),
 	url(r'samples/sample_add$', views.SamplesAddView.as_view(), name='sample-add'),
-	url(r'samples/sample_file$', views.SamplesAddView.as_view(), name='sample-file'),	## add xls file with several samples 
-	url(r'samples/sample_fastq$', views.SamplesAddView.as_view(), name='sample-fastq'),	## add several fastq.gz
+	url(r'samples/sample_add_file$', views.SamplesAddDescriptionFileView.as_view(), name='sample-add-file'),	## add xls file with several samples 
+	url(r'samples/sample_add_single_csv_file$', views.SamplesUploadDescriptionFileView.as_view(), name='sample-add-single-csv-file'),	## upload xls file with several samples 
 	url(r'samples/(?P<pk>\d+)/sample_description$', views.SamplesDetailView.as_view(), name='sample-description'),
+	url(r'samples/sample_add_fastq$', views.SamplesAddFastQView.as_view(), name='sample-add-fastq'),			## add several fastq.gz
+	url(r'samples/sample_upload_fastq$', views.SamplesUploadFastQView.as_view(), name='sample-upload-fastq'),		## upload several fastq.gz
+	
 	url(r'project/projects$', views.ProjectsView.as_view(), name='projects'),
 	url(r'project/project_add', views.ProjectCreateView.as_view(), name='project-add'),
 	url(r'samples/(?P<pk>\d+)/add_sample_project$', views.AddSamplesProjectsView.as_view(), name='add-sample-project'),

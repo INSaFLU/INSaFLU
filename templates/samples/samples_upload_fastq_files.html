@@ -1,0 +1,73 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+	{% breadcrumb "Add fastq files" "sample-add-fastq" %}
+	{% breadcrumb "Upload 'fastq' files" "sample-upload-fastq" %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="well text-muted text-center" style="padding-top: 4rem; padding-bottom: 4rem;">
+	  	<span class="fa fa-arrow-down" style="font-size: 4rem;"></span>
+ 			<h3>Drop fastq.gz here...</h3>
+	</div>
+	
+	<a href="#" data-title="Open a multi-select dialog to upload files" class="btn btn-small btn-primary dark js-upload-files"><span class="hidden-phone"><i class="fa fa-upload"></i> Or Upload fastq.gz files from here</span></a>
+
+	{# 2. FILE INPUT TO BE USED BY THE PLUG-IN #}
+	<input id="fileupload" type="file" name="path_name" multiple
+	       style="display: none;"
+	       data-url="{% url 'sample-upload-fastq' %}"
+	       data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+	
+	<p> </p>
+	{# 3. TABLE TO DISPLAY THE UPLOADED PHOTOS #}
+	<table id="gallery" class="table table-bordered">
+	  <thead>
+	    <tr>
+	      <th>Files uploaded</th>
+	      <th>Status</th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	  </tbody>
+	</table>
+
+	<!--  -->
+	<div class="modal fade" id="modal-progress" data-backdrop="static" data-keyboard="false">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h4 class="modal-title">Uploading...</h4>
+	      </div>
+	      <div class="modal-body">
+	        <div class="progress">
+	          <div class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+{% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 	<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/vendor/jquery.ui.widget.js' %}"></script>
+		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.iframe-transport.js' %}"></script>
+		<script type="text/javascript" src="{% static 'jQuery_File_Upload/js/jquery.fileupload.js' %}"></script>
+	 	
+	 	<!-- Custom scripts for all pages-->
+    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+    	<script type="text/javascript" src="{% static 'js/upload-fastq-files.js' %}"></script>
+ {% endblock %}
+

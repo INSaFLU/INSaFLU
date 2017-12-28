@@ -4,14 +4,17 @@
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
-
+{% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
 	{% load static from staticfiles %}
-		<link rel="stylesheet" href="{% static 'django_modalview/css/modal.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+{% endblock %}
 
 {% block content %}
 	
@@ -27,8 +30,8 @@
 	                <tr>
 	                    <th colspan="7">
 	                    	<a href="{% url "sample-add" %}" data-title="Add one sample at time" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample</span></a>
-	                    	<a href="{% url "sample-file" %}" data-title="Add multiple samples and fastq files later" class="btn btn-small btn-primary dark disabled" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Samples from csv file</span></a>
-	                    	<a href="{% url "sample-fastq" %}" data-title="Upload fastq files to match the samples uploaded" class="btn btn-small btn-primary dark disabled" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Fastq Files</span></a>
+	                    	<a href="{% url "sample-add-file" %}" data-title="Add multiple samples and fastq files later" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Samples from csv file</span></a>
+	                    	<a href="{% url "sample-add-fastq" %}" data-title="Upload fastq files to match the samples uploaded" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Fastq Files</span></a>
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>
@@ -78,6 +81,7 @@
 	
 	{% if table.page and show_paginatior %}
 	    {% block pagination %}
+	    	<label class="pull-right">Total samples: {{ total_itens }}</label>
 	        {% bootstrap_pagination table.page url=request.get_full_path %}
 	    {% endblock pagination %}
 	  </div>
@@ -87,6 +91,4 @@
 
 {% block js %}
  	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
- 	<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
- 	<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
 {% endblock js %}

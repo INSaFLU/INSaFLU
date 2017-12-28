@@ -11,8 +11,13 @@ class Profile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	institution = models.TextField(max_length=100, blank=True)
 	email_confirmed = models.BooleanField(default=False)
+	
+	## some limits by user
 	max_references = models.IntegerField(default=30)
 	max_samples = models.IntegerField(default=500)
+	max_file_size_fastq = models.IntegerField(default=50000000)
+	max_length_reference_fasta = models.IntegerField(default=20000)
+	max_sequence_reference = models.IntegerField(default=20)
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

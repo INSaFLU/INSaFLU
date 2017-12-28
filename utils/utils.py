@@ -3,7 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-from constants.constants import Constants, FileExtensions, TypePath
+from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from utils.result import GeneticElement, Gene
@@ -14,7 +14,7 @@ from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-import os, random, gzip, hashlib, logging
+import os, random, gzip, hashlib, logging, ntpath
 from pysam import pysam
 
 class Utils(object):
@@ -50,6 +50,27 @@ class Utils(object):
 		"""
 		return os.path.join(Constants.DIR_PROCESSED_FILES_PROJECT, "userId_{0}".format(user_id), "projectId_{0}".format(project_id))
 	
+	def get_path_upload_file(self, user_id, type_file):
+		"""
+		user_id ->
+		type_file -> TypeFile.TYPE_FILE_sample_file, TypeFile.TYPE_FILE_fastq_gz
+		"""
+		return os.path.join(Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES, "userId_{0}".format(user_id),\
+				"{}".format('fastq_files' if type_file == TypeFile.TYPE_FILE_fastq_gz else 'csv_sample_file'))
+		
+	def get_unique_file(self, file_name):
+		"""
+		get unique file name from a file_name
+		return '<path file_name>/<random number>_<file_name>'
+		"""
+		temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+		main_path = os.path.dirname(file_name)
+		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		while 1:
+			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
+			temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+		return os.path.join(main_path, temp_file_name)
+
 	def get_temp_file(self, file_name, sz_type):
 		"""
 		return a temp file name
@@ -76,6 +97,7 @@ class Utils(object):
 				return return_file
 			except FileExistsError:
 				pass
+
 
 	def get_temp_dir(self):
 		"""
@@ -127,7 +149,7 @@ class Utils(object):
 	def link_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):
 			self.make_path(os.path.dirname(sz_file_to))
-			cmd = "ln -s " + sz_file_from + " " + sz_file_to
+			cmd = "ln -f -s " + sz_file_from + " " + sz_file_to
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
@@ -173,7 +195,7 @@ class Utils(object):
 		"""
 		test if the file name ends in gzip
 		""" 
-		return True if (file_name.rfind(".gz") == len(file_name) - 3) else False
+		return file_name.endswith(".gz")
 	
 	def is_fastq_gz(self, file_name):
 		"""
@@ -191,7 +213,7 @@ class Utils(object):
 		except Exception as e:
 			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
 			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
-		raise Exception("File is not in fastq.gz format")
+		raise Exception("File is not in fastq.gz format.")
 		
 	def get_type_file(self, file_name):
 		"""

@@ -1,6 +1,7 @@
 {% extends '_layouts/base.html' %}
 
 {% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
 
@@ -8,11 +9,12 @@
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block header %}
-	<div class="rounded-header">
-   		<h1>Sample details</h1>
-   	</div>
-{% endblock  %}
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+	{% breadcrumb "Sample details" "sample-description" %}
+{% endblock %}
 
 <!-- https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Generic_views -->
 {% block content %}
@@ -101,7 +103,7 @@
 			</div>
 		</div>
 		  
-		<a href="{% url "samples" %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 	{% endif %}
 	
 {% endblock %}
@@ -110,7 +112,5 @@
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'django_modalview/js/django_modal_view.js' %}"></script>
- 			<script type="text/javascript" src="{% static 'django_modalview/js/jquery.form.js' %}></script>
  {% endblock %}
 

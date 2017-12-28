@@ -1,22 +1,25 @@
 # Create your views here.
 
+import hashlib, ntpath, os, logging, sys
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
-from managing_files.models import Reference, Sample, Project, ProjectSample
-from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable, ShowProjectSamplesResults
-from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm
+from managing_files.models import Reference, Sample, Project, ProjectSample, UploadFiles, MetaKey
+from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable
+from managing_files.tables import ShowProjectSamplesResults, AddSamplesFromCvsFileTable, AddSamplesFromFastqFileTable
+from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm, SamplesUploadMultipleFastqForm
+from managing_files.forms import SamplesUploadDescriptionForm
 from managing_files.manage_database import ManageDatabase
-from constants.constants import Constants, TypePath, FileExtensions
+from constants.constants import Constants, TypePath, FileExtensions, TypeFile
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
+from utils.parse_in_files import UploadFilesByDjangoQ, ParseInFiles
 from utils.result import DecodeObjects
-import hashlib, ntpath, os, logging
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -26,6 +29,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
+from django.http import JsonResponse
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -146,8 +150,8 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.save()
 		
 		### save in database the elements and coordinates
-		self.get_elements_from_db(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), self.request.user)
-		self.get_elements_and_cds_from_db(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), self.request.user)
+		utils.get_elements_from_db(reference, self.request.user)
+		utils.get_elements_and_cds_from_db(reference, self.request.user)
 
 		## create the index before commit in database, throw exception if something goes wrong
 		software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
@@ -181,6 +185,7 @@ class SamplesView(LoginRequiredMixin, ListView):
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['nav_sample'] = True
+		context['total_itens'] = query_set.count()
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
 	
@@ -275,6 +280,271 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		return super(SamplesAddView, self).form_valid(form)
 
 	form_valid_message = ""		## need to have this, even empty
+
+
+class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Create a new reference
+	"""
+	utils = Utils()
+	success_url = reverse_lazy('samples')
+	template_name = 'samples/sample_description_file.html'
+	model = UploadFiles
+	fields = ['file_name']
+	
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesAddDescriptionFileView, self).get_form_kwargs()
+		return kw
+	
+	def get_context_data(self, **kwargs):
+		context = super(SamplesAddDescriptionFileView, self).get_context_data(**kwargs)
+		tag_search = 'search_samples'
+		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
+										Q(owner__username__icontains=self.request.GET.get(tag_search)))
+		table = AddSamplesFromCvsFileTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['nav_sample'] = True
+		
+		### test if exists files to process to match with 'csv' file
+		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date').count() == 0
+				
+		### test if can add other csv file
+		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
+		if (count_not_complete > 0): context['can_add_other_file'] = "You can't add other file because there's a file not completed." 
+		return context
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+		return super(SamplesAddDescriptionFileView, self).form_valid(form)
+
+	form_valid_message = ""		## need to have this, even empty
+
+
+class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+	"""
+	Create a new reference
+	"""
+	form_class = SamplesUploadDescriptionForm
+	success_url = reverse_lazy('sample-add-file')
+	template_name = 'samples/samples_upload_description_file.html'
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesUploadDescriptionFileView, self).get_form_kwargs()
+		kw['request'] = self.request 	# get error
+		return kw
+	
+	def get_context_data(self, **kwargs):
+		context = super(SamplesUploadDescriptionFileView, self).get_context_data(**kwargs)
+		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')): context['error_in_file'] = kwargs['form'].error_in_file
+		context['nav_sample'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+
+	def form_valid(self, form):
+		utils = Utils()
+		
+		path_name = form.cleaned_data['path_name']
+
+		## create a genbank file
+		if (path_name != None):
+			upload_files = form.save(commit=False)
+			upload_files.is_valid = True
+			upload_files.is_processed = False
+			upload_files.is_deleted = False
+			upload_files.number_errors = 0
+			upload_files.number_files_processed = 0
+			upload_files.number_files_to_process = form.number_files_to_process
+			
+			try:
+				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+			except MetaKey.DoesNotExist:
+				type_file = MetaKey()
+				type_file.name = TypeFile.TYPE_FILE_sample_file
+				type_file.save()
+			
+			upload_files.type_file = type_file
+			upload_files.file_name = ntpath.basename(path_name.name)
+			upload_files.owner = self.request.user
+			
+			upload_files.description = ""
+			upload_files.save()
+		
+			## move the files to the right place
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
+													TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
+			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
+			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file),  ntpath.basename(sz_file_to))
+			upload_files.save()
+			
+			### send message to upload samples in the system
+			upload_files_by_djangoq = UploadFilesByDjangoQ()
+			b_testing = False
+			taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
+			
+			messages.success(self.request, "File '" + upload_files.file_name + "' with samples was uploaded successfully", fail_silently=True)
+			return super(SamplesUploadDescriptionFileView, self).form_valid(form)
+		return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+
+class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+	"""
+	Create a new reference
+	"""
+	form_class = SampleForm
+	success_url = reverse_lazy('samples')
+	template_name = 'samples/sample_fastq_file.html'
+
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesAddFastQView, self).get_form_kwargs()
+		kw['request'] = self.request 	# the trick!
+		return kw
+
+
+	def get_context_data(self, **kwargs):
+		context = super(SamplesAddFastQView, self).get_context_data(**kwargs)
+		
+		### test to show only the processed or all
+		if ('show-not-only-checked' in self.request.GET):
+			b_show_all = self.request.GET.get('show-not-only-checked') != 'on'
+		else: b_show_all = True
+		
+		### 
+		tag_search = 'search_samples'
+		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_fastq_gz).order_by('-creation_date')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
+			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
+							Q(owner__username__icontains=self.request.GET.get(tag_search)))
+		if (not b_show_all):
+			query_set = query_set.filter(Q(is_processed=b_show_all))
+			
+		table = AddSamplesFromFastqFileTable(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['total_itens'] = query_set.count() 
+		context['nav_sample'] = True
+		context['check_box_not_show_processed_files'] = not b_show_all
+		return context
+
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+		return super(SamplesAddFastQView, self).form_valid(form)
+
+	form_valid_message = ""		## need to have this, even empty
+	
+class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+	"""
+	Create a new reference
+	"""
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	form_class = SamplesUploadMultipleFastqForm
+	success_url = reverse_lazy('sample-add-fastq')
+	template_name = 'samples/samples_upload_fastq_files.html'
+	utils = Utils()
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesUploadFastQView, self).get_form_kwargs()
+		kw['request'] = self.request 	# get error
+		return kw
+	
+	def get_context_data(self, **kwargs):
+		context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
+		context['nav_sample'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		return context
+
+	def post(self, request):
+		form = SamplesUploadMultipleFastqForm(request.POST, request.FILES, request=request)
+		
+		data = {}	## return data
+		try:
+			if form.is_valid():
+				## doesn't work like that
+				#upload_files = form.save()
+							
+				### get the temporary variable
+				path_name = form.cleaned_data['path_name']
+				
+				if (path_name == None):
+					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, path not found.' }
+					return JsonResponse(data)
+				
+				upload_files = UploadFiles()
+				upload_files.file_name = path_name.name
+				## move the files to the right place
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
+														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
+				sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+				self.utils.copy_file(path_name.file.name, sz_file_to)
+				upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+										TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
+				try:
+					type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
+				except MetaKey.DoesNotExist:
+					type_file = MetaKey()
+					type_file.name = TypeFile.TYPE_FILE_fastq_gz
+					type_file.save()
+	
+				upload_files.is_valid = True
+				upload_files.is_processed = False			## True when all samples are set
+				upload_files.owner = request.user
+				upload_files.type_file = type_file
+				upload_files.number_files_to_process = 1
+				upload_files.number_files_processed = 0
+				upload_files.description = ""
+				upload_files.save()
+	
+				data = {'is_valid': True, 'name': upload_files.file_name, 'url': mark_safe(upload_files.get_path_to_file(TypePath.MEDIA_URL)) }
+			else:
+				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : str(form.errors['path_name'][0]) }
+		except:
+			self.logger_debug.error(sys.exc_info())
+			self.logger_production.error(sys.exc_info())
+			data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, unknown error.' }
+			return JsonResponse(data)
+	
+		## if is last file send a message to link files with sample csv file
+		if ('is_valid' in data and data['is_valid']): 
+			parse_in_files = ParseInFiles()
+			b_testing = False
+			taskID = async(parse_in_files.link_files, self.request.user, b_testing)
+		return JsonResponse(data)
+	
+	form_valid_message = ""		## need to have this, even empty
+
 
 
 class SamplesDetailView(LoginRequiredMixin, DetailView):
@@ -661,9 +931,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		utils = Utils()
 		vect_genes = utils.get_elements_from_db(project.reference, self.request.user)
 		if (vect_genes != None): context['elements'] = vect_genes
-		
 		return context
-	
 
 
 def is_all_check_box_in_session(vect_check_to_test, request):

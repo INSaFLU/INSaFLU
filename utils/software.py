@@ -3,10 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip
-import logging
-import cmd
-import subprocess
+import os, gzip, logging, cmd, subprocess
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -22,7 +19,6 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from django.db import transaction
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
-from symbol import parameters
 
 class Software(object):
 	'''

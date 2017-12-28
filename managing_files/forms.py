@@ -12,9 +12,10 @@ from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
-from constants.constants import Constants
-from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project
-import os
+from utils.parse_in_files import ParseInFiles
+from constants.constants import Constants, TypeFile
+from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
+import os, logging, sys
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -207,14 +208,14 @@ class SampleForm(forms.ModelForm):
 		
 		##// <input placeholder="dd/mm/yyyy" name="date_of_onset" id="id_date_of_onset"/>
 		self.fields['date_of_onset'].widget.attrs.update({
-            'placeholder': 'dd/mm/yyyy',
-        })
+			'placeholder': 'dd/mm/yyyy',
+		})
 		self.fields['date_of_receipt_lab'].widget.attrs.update({
-            'placeholder': 'dd/mm/yyyy',
-        })
+			'placeholder': 'dd/mm/yyyy',
+		})
 		self.fields['date_of_collection'].widget.attrs.update({
-            'placeholder': 'dd/mm/yyyy',
-        })
+			'placeholder': 'dd/mm/yyyy',
+		})
 		
 		#placeholder="dd/mm/yyyy"
 		
@@ -303,7 +304,6 @@ class SampleForm(forms.ModelForm):
 				Submit('save', 'Save', css_class='btn-primary'),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('samples'))),
 			),
-			HTML('<p></p>'),
 		)
 
 	def clean(self):
@@ -433,57 +433,127 @@ class AddSampleProjectForm(forms.ModelForm):
 	
 
 
-
-
-# 	def clean_name(self):
-# 		"""
-# 		Clean only the name
-# 		"""
-# 		name = self.cleaned_data['name']
-# 		try:
-# 			Reference.objects.get(name=name, owner__username=self.request.user.username)
-# 			raise forms.ValidationError(_("This name '" + name +"' already exist in database, please choose other."))
-# 		except Reference.DoesNotExist:
-# 			pass
-# 		return name
-#	
-# 	def clean_reference_fasta(self):
-# 		"""
-# 		Test Fasta file
-# 		"""
-# 		reference_fasta = self.cleaned_data['reference_fasta']
-# 		#reference_genbank = self.cleaned_data['reference_genbank']
-# 		#if (reference_fasta.name == reference_genbank): raise forms.ValidationError("Error: both files has the same name. Please two different files.")
-# 		
-# 		reference_fasta_temp_file_name = NamedTemporaryFile(prefix='flu_fa_', delete=False)
-# 		reference_fasta_temp_file_name.write(reference_fasta.file.read())
-# 		reference_fasta_temp_file_name.flush()
-# 		reference_fasta_temp_file_name.close()
-# 		utils = Constants()
-# 		try:
-# 			number_locus = utils.is_fasta(reference_fasta_temp_file_name.name)
-# 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
-# 			os.unlink(reference_fasta_temp_file_name.name)
-# 		except IOError as e:	## (e.errno, e.strerror)
-# 			os.unlink(reference_fasta_temp_file_name.name)
-# 			raise forms.ValidationError(e.args[0])
-# 		return reference_fasta
-# 	
-# 	def clean_reference_genbank(self):
-# 		"""
-# 		Test genBank file
-# 		"""
-# 		reference_genbank_temp_file_name = NamedTemporaryFile(prefix='flu_gb_', delete=False)
-# 		reference_genbank = self.cleaned_data['reference_genbank']
-# 		reference_genbank_temp_file_name.write(reference_genbank.read())
-# 		reference_genbank_temp_file_name.flush()
-# 		reference_genbank_temp_file_name.close()
-# 		utils = Constants()
-# 		try:
-# 			utils.is_genbank(reference_genbank_temp_file_name.name)
-# 			os.unlink(reference_genbank_temp_file_name.name)
-# 		except IOError as e:
-# 			os.unlink(reference_genbank_temp_file_name.name)
-# 			raise forms.ValidationError(e.args[0])
-# 		return reference_genbank
+class SamplesUploadDescriptionForm(forms.ModelForm):
+	"""
+	Add samples to project without files 
+	"""
+	error_css_class = 'error'
 	
+	class Meta:
+		model = UploadFiles
+		exclude = ()
+		fields = ('path_name', )
+
+	def __init__(self, *args, **kwargs):
+		self.request = kwargs.pop('request')
+		super(SamplesUploadDescriptionForm, self).__init__(*args, **kwargs)
+		
+		field_text= [
+			('path_name', 'File name', '"csv" or "tsv" file with several samples to upload fastq.gz files later', True),
+		]
+		for x in field_text:
+			self.fields[x[0]].label = x[1]
+			self.fields[x[0]].help_text = x[2]
+			self.fields[x[0]].required = x[3]
+		
+		self.helper = FormHelper()
+		self.helper.form_method = 'POST'
+		self.helper.layout = Layout(
+			HTML('<p> </p>'),
+			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TEMPLATE_INPUT,\
+					Constants.FILE_TEMPLATE_INPUT_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'csv\'</a> </div>'),
+			HTML('<p> </p>'),
+			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TEMPLATE_INPUT,\
+					Constants.FILE_TEMPLATE_INPUT_tsv)) + '" download> <span> <i class="fa fa-download"></i></span> Template file \'tsv\'</a> </div>'),
+			HTML('<p> </p>'),
+			HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TEMPLATE_INPUT,\
+					Constants.FILE_TEMPLATE_INPUT_data_csv)) + '" download> <span> <i class="fa fa-download"></i></span> Example Template file \'csv\'</a> </div>'),
+			HTML('<p> </p>'),
+			Div('path_name', css_class="col-lm-3"),
+			HTML('<p> </p>'),
+			ButtonHolder(
+				Submit('save', 'Upload', css_class='btn-primary'),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('sample-add-file')))
+			),
+		)
+
+	def clean(self):
+		"""
+		Clean all 
+		"""
+		cleaned_data = super(SamplesUploadDescriptionForm, self).clean()
+		
+		### get path name
+		path_name = self.cleaned_data['path_name']
+		
+		## testing fastq
+		temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.csv', delete=False)
+		temp_file_name.write(path_name.file.read())
+		temp_file_name.flush()
+		temp_file_name.close()
+		
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(temp_file_name.name, self.request.user, b_test_char_encoding, ParseInFiles.STATE_READ_only_detect_errors)
+		
+		os.unlink(temp_file_name.name)
+		if (parse_in_files.get_errors().has_errors()):
+			self.add_error('path_name', _('There are errors in the file'))
+			self.error_in_file = str(parse_in_files.get_errors())		## pass error_file kwargs for context
+		else:
+			self.number_files_to_process = parse_in_files.get_number_samples()
+		return cleaned_data
+
+class SamplesUploadMultipleFastqForm(forms.ModelForm):
+	"""
+	Add samples to project without files 
+	"""
+	
+	class Meta:
+		model = UploadFiles
+		fields = ('path_name', )
+
+	def __init__(self, *args, **kwargs):
+		self.request = kwargs.pop('request')
+		super(SamplesUploadMultipleFastqForm, self).__init__(*args, **kwargs)
+		
+	def clean(self):
+		"""
+		Clean all 
+		"""
+		cleaned_data = super(SamplesUploadMultipleFastqForm, self).clean()
+		
+		### get path name
+		if ('path_name' not in self.cleaned_data):
+			self.add_error('path_name', "There's no file to upload")
+			return cleaned_data
+		path_name = self.cleaned_data['path_name']
+		
+		### test the file name if exist
+		number_files = UploadFiles.objects.filter(file_name__iexact=os.path.basename(path_name.name), owner=self.request.user,\
+ 										is_processed=False, is_deleted=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
+
+		if (number_files > 0):
+			self.add_error('path_name', "There's one file with this name already")
+			return cleaned_data
+		
+		utils = Utils()
+		## testing fastq
+		temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
+		utils.link_file(path_name.file.name, temp_file_name.name)
+
+		try:
+			utils.is_fastq_gz(temp_file_name.name)
+		except Exception as e:	## (e.errno, e.strerror)
+			os.unlink(temp_file_name.name)
+			self.add_error('path_name', e.args[0])
+			return cleaned_data
+
+		if (path_name.size > Constants.MAX_FASTQ_FILE):
+			os.unlink(temp_file_name.name)
+			self.add_error('path_name', "Max file size is: {}".format(Constants.MAX_FASTQ_FILE))
+			return cleaned_data
+		
+		os.unlink(temp_file_name.name)
+		return cleaned_data
+

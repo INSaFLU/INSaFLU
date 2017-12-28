@@ -7,7 +7,7 @@ Created on Nov 1, 2017
 from django.db import transaction
 from utils.utils import Utils
 from utils.result import ProcessResults, SingleResult
-from constants.constants import Constants, TypeFile
+from constants.constants import Constants, TypeFile, TypePath
 from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNames, UploadFiles
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.gis.geos import Point
@@ -44,6 +44,9 @@ class ParseInFiles(object):
 	def get_vect_samples(self):
 		return self.vect_samples
 
+	def get_number_samples(self):
+		return self.number_samples
+
 	def clean_data(self):
 		"""
 		clean data
@@ -55,6 +58,8 @@ class ParseInFiles(object):
 		self.dict_other_fields_repeated = {}	## to test if it is other fields repeated
 		self.dict_samples_out = {}				## to test if it is other samples in the file
 
+		self.number_samples = 0					## has the number of samples
+		
 	def parse_sample_files(self, file_name, user, b_test_char_encoding, read_state):
 		"""
 		#The first eleven header fields are mandatory, then you can add what you want as a field											
@@ -85,6 +90,8 @@ class ParseInFiles(object):
 					self.process_file(f, user, read_state)
 		except UnicodeDecodeError as e:
 			self.errors.add_single_result(SingleResult(SingleResult.ERROR, str(e)))
+		except csv.Error as e:
+			self.errors.add_single_result(SingleResult(SingleResult.ERROR, 'csv or tsv file. ' + str(e)))
 
 	def process_file(self, f, user, read_state):
 		"""
@@ -124,7 +131,7 @@ class ParseInFiles(object):
 			count_row += 1
 		if (header == None):
 			self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Header not found in the file. Please, check the names in the header, must be equal and have the same order of the template file.")))
-		elif (len(self.vect_samples) == 0 and not self.errors.has_errors()):
+		elif (self.number_samples == 0 and not self.errors.has_errors()):
 			self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no samples to process.")))
 
 	def process_row(self, row, count_row, header, user, read_state):
@@ -163,13 +170,13 @@ class ParseInFiles(object):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the samples file. Line: {} Column: {}".\
 											format(fastq1.strip(), count_row, 2))))
 				else:
-					number_files = UploadFiles.objects.filter(file_name__iexact=fastq1.strip(), owner=user,\
-										is_processed=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
-					if (number_files > 0):
-						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the database and it's not processed yet. Line: {} Column: {}".\
-																	format(fastq1.strip(), count_row, 2))))
-					else:
-						self.dict_file_names[fastq1.strip()] = 1
+# 					number_files = UploadFiles.objects.filter(file_name__iexact=fastq1.strip(), owner=user,\
+# 										is_processed=False, is_deleted=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
+# 					if (number_files > 0):
+# 						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the database and it's not processed yet. Line: {} Column: {}".\
+# 																	format(fastq1.strip(), count_row, 2))))
+# 					else:
+					self.dict_file_names[fastq1.strip()] = 1
 			else:
 				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no fastq1 file name. Line: {} Column: {}".format(count_row, 2))))
 	
@@ -178,18 +185,18 @@ class ParseInFiles(object):
 				fastq2 = row[2]
 				if (not fastq2.endswith(FileExtensions.FILE_GZ)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '' not ends with '{}'. Fastq gzip compressed file is needed. Line: {} Column: {}".\
-											format(fastq1, FileExtensions.FILE_GZ, count_row, 3))))
+											format(fastq2, FileExtensions.FILE_GZ, count_row, 3))))
 				elif (fastq2.strip() in self.dict_file_names):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the samples file. Line: {} Column: {}".\
 											format(fastq2.strip(), count_row, 3))))
 				else:
-					number_files = UploadFiles.objects.filter(file_name__iexact=fastq2.strip(), owner=user,\
-										is_processed=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
-					if (number_files > 0):
-						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the database and it's not processed yet. Line: {} Column: {}".\
-																	format(fastq1.strip(), count_row, 3))))
-					else:
-						self.dict_file_names[fastq2.strip()] = 1
+# 					number_files = UploadFiles.objects.filter(file_name__iexact=fastq2.strip(), owner=user,\
+# 										is_processed=False, is_deleted=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
+# 					if (number_files > 0):
+# 						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("File '{}' is repeated in the database and it's not processed yet. Line: {} Column: {}".\
+# 																	format(fastq2.strip(), count_row, 3))))
+# 					else:
+					self.dict_file_names[fastq2.strip()] = 1
 	
 			### anything to do with data set and vaccine status, are free fields
 			
@@ -215,6 +222,7 @@ class ParseInFiles(object):
 				if (not self.utils.is_float(longitude) or float(longitude) > 100 or float(longitude) < -100):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'longitude' must have values between -180<long<180. Line: {} Column: {}".format(count_row, 3))))
 
+		self.number_samples += 1
 		### there's no errors, process this sample
 		if (n_errors == len(self.errors.get_vect_results()) and\
 				(read_state == ParseInFiles.STATE_READ_all or\
@@ -351,7 +359,7 @@ class ParseInFiles(object):
 			
 		## save uplaod files
 		upload_files.is_valid = True
-		upload_files.is_processed = False			## True when all samples are setted
+		upload_files.is_processed = False			## True when all samples are set
 		upload_files.number_files_to_process = len(self.vect_samples)
 		upload_files.number_files_processed = 0		## has the number of files linked 
 		upload_files.save()
@@ -457,5 +465,22 @@ class ParseInFiles(object):
 		if (upload_files.number_files_processed == upload_files.number_files_to_process): upload_files.is_processed = True
 		upload_files.save()
 			
+	
+class UploadFilesByDjangoQ(object):
+	
+	def __init__(self):
+		pass
+	
+	def read_sample_file(self, user, upload_files, b_testing):
+		"""
+		read samples csv file, and link files if they exists		
+		"""
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(upload_files.get_path_to_file(TypePath.MEDIA_ROOT), user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		if (parse_in_files.get_errors().has_errors()): return False
 		
-		
+		parse_in_files.create_samples(upload_files, user)
+		parse_in_files.link_files(user, b_testing)
+		return True
+

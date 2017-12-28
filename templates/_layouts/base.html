@@ -145,7 +145,7 @@
     </div>
   </nav>
   <div class="content-wrapper">
-    
+
     <div class="container-fluid">
 	    <!-- MESSAGES -->
 	    <div class="container">
@@ -159,15 +159,14 @@
 			{% endif %}
 		</div>
 
-
-		<!-- Breadcrumbs-->
-		{% if bread_crumb %} 
-			<ol class="breadcrumb">
-				{% block breadcrumb %}{% endblock breadcrumb %}
-			</ol>
-		{% endif %}
-		
 		{% if nav_modal %} <div class="container"> {% endif %}
+			{% load django_bootstrap_breadcrumbs %}
+			{% block breadcrumbs %}
+				{% clear_breadcrumbs %}
+    			{% breadcrumb "Home" "/" %} 
+			{% endblock breadcrumbs %}
+			{% render_breadcrumbs %} 
+			
 			{% block header %}{% endblock header %}
 			{% block content %}{% endblock content %}
 		{% if nav_modal %} <div> {% endif %}

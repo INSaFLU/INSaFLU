@@ -35,6 +35,7 @@ class ConstantsTestsCase(object):
 	MANAGING_MAFFT_IN_PROTEIN_EXPECTED = 'mafft_protein_expected.fasta'
 	MANAGING_TREE_out_protein = 'Alignment_MP_M.nex'
 	MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+	MANAGING_TEMPLATE_INPUT_error = "vncServer.txt"
 	MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_TSV = "template_input_data.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_CSV = "template_input_data.csv"

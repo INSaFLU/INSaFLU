@@ -23,6 +23,9 @@ class Constants(object):
 	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
 	MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = 20000
 	MAX_NUMBER_REFS_BY_USER = 30		## toDo
+	MAX_FASTQ_FILE = 30971520			## 30M
+	MAX_REF_FASTA_FILE = 100000			## 100k
+	MAX_REF_GENBANK_FILE = 150000		## 150k
 	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
@@ -41,11 +44,16 @@ class Constants(object):
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
 	DIR_PROCESSED_FILES_PROJECT = DIR_PROCESSED_FILES_UPLOADS + "/project"
+	DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
 
 	DIR_ICONS = "icons"
+	DIR_TEMPLATE_INPUT = "template_input"
 	TEMP_DIRECTORY = "/tmp"
 	COUNT_DNA_TEMP_DIRECTORY = "insaFlu"
 
+	FILE_TEMPLATE_INPUT_csv = "template_input.csv"
+	FILE_TEMPLATE_INPUT_tsv = "template_input.tsv"
+	FILE_TEMPLATE_INPUT_data_csv = "template_input_data.csv"
 	FORMAT_FASTA = "fasta"
 	FORMAT_FASTQ = "fastq"
 	EXTENSION_ZIP = ".gz"
@@ -84,6 +92,7 @@ class Constants(object):
 	GET_CHANGE_CHECK_BOX_SINGLE = 'get_change_check_box_single'
 	COUNT_CHECK_BOX = 'count_check_boxes'
 	CHECK_BOX_VALUE = 'value'
+	CHECK_BOX_not_show_processed_files = 'check_box_not_show_processed_files'
 	
 	### sleep time to test if all tasks are finished
 	WAIT_TIME_TASKS_FINISHED = 30		## one minute
@@ -224,7 +233,6 @@ class TypeFile(object):
 	
 	TYPE_FILE_fastq_gz = "fastq.gz"
 	TYPE_FILE_sample_file = "sample-file imported" 	## file that the user import with sample descriptions
-	
 	
 	
 class FileExtensions(object):

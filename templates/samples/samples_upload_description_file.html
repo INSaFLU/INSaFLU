@@ -1,0 +1,32 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+	{% breadcrumb "Add samples from a 'csv' file" "sample-add-file" %}
+	{% breadcrumb "Upload 'csv' file" "sample_add_single_csv_file" %}
+{% endblock %}
+
+{% block content %}
+
+	{% if error_in_file %}
+		<div class="alert alert-warning"> {{ error_in_file }} </div>
+	{% endif %}	
+	{% crispy form %} 
+{% endblock %}
+
+ {% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+ {% endblock %}
+

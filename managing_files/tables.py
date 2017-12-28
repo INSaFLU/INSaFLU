@@ -10,6 +10,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from utils.result import DecodeObjects
 from django.conf import settings
+from django.db.models import F
+from django.db.models.functions import Length
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -94,7 +96,7 @@ class SampleToProjectsTable(tables.Table):
 class SampleTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-	number_quality_sequences = tables.Column('#Quality Seq.', orderable=False, empty_values=())
+	number_quality_sequences = tables.Column('#Quality Seq. (Fastq1)-(Fastq2)', footer = '#original number sequence', orderable=False, empty_values=())
 #	extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
 	extra_info = tables.LinkColumn('Extra Information', orderable=False, empty_values=())
 	type_and_subtype = tables.Column('Type and SubType', empty_values=())
@@ -106,6 +108,7 @@ class SampleTable(tables.Table):
 		fields = ('name', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set', 'number_quality_sequences', 'extra_info')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Samples to show..."
+		tooltips = ('Name for everyone', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set', 'number_quality_sequences', 'extra_info')
 	
 	def render_fastq_files(self, record):
 		"""
@@ -124,14 +127,15 @@ class SampleTable(tables.Table):
 		"""
 		get type and sub type
 		"""
-		result = record.get_type_sub_type()
-		return _('Not yet') if result == Constants.EMPTY_VALUE_TABLE else record.get_type_sub_type()
+		return _('Not yet') if record.type_subtype == None else record.type_subtype
+# 		result = record.get_type_sub_type()
+# 		return _('Not yet') if result == Constants.EMPTY_VALUE_TABLE else record.get_type_sub_type()
 	
 	def render_data_set(self, record):
 		"""
 		return name of dataset
 		"""
-		return record.name
+		return record.data_set.name
 		
 		
 	def render_number_quality_sequences(self, record):
@@ -144,9 +148,9 @@ class SampleTable(tables.Table):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 			if (result_average.number_file_2 is None): return _('%s/%s' % (result_average.number_file_1, result_average.average_file_1 ))
-			return _('%s/%s-%s/%s' % (result_average.number_file_1,\
+			return _('(%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_2,\
-					result_average.average_file_2) )
+					result_average.average_file_2, int(result_average.number_file_1) + int(result_average.number_file_2)) )
 		elif (list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
 			return _("Error")
 		return _('Not yet')
@@ -161,6 +165,15 @@ class SampleTable(tables.Table):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")
 		return _('Not yet')
+	
+	def order_fastq_files(self, queryset, is_descending):
+		queryset = queryset.annotate(is_valid__1 = F('is_valid_1'), is_valid__2 = F('is_valid_2')).order_by(('-' if is_descending else '') + 'is_valid__1',\
+																						('-' if is_descending else '') + 'is_valid__2')
+		return (queryset, True)
+	
+	def order_type_and_subtype(self, queryset, is_descending):
+		queryset = queryset.annotate(type_and_subtype = F('type_subtype')).order_by(('-' if is_descending else '') + 'type_subtype')
+		return (queryset, True)
 	
 	
 class ProjectTable(tables.Table):
@@ -265,3 +278,76 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.sample.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
 
+
+class AddSamplesFromCvsFileTable(tables.Table):
+	"""
+	To add samples to projects
+	"""
+	samples_processed = tables.Column('Samples processed', empty_values=())
+	number_samples = tables.Column('#Samples', empty_values=())
+	is_completed = tables.Column('Is completed', empty_values=())
+	
+	class Meta:
+		model = Sample
+		fields = ('file_name', 'creation_date', 'owner', 'number_samples', 'samples_processed', 'is_completed')
+		attrs = {"class": "table-striped table-bordered"}
+		empty_text = "There are no 'csv' or 'tsv' files with samples to add..."
+	
+	def render_creation_date(self, value, record):
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+
+	def render_number_samples(self, value, record):
+		return record.number_files_to_process
+	
+	def render_samples_processed(self, value, record):
+		return record.number_files_processed
+
+	def render_is_completed(self, value, record):
+		return 'True' if record.is_processed else 'False'
+	
+	def render_file_name(self, value, record):
+		href = record.get_path_to_file(TypePath.MEDIA_URL)		
+		return mark_safe('<a href="' + href + '" download>' + record.file_name + '</a>')
+	
+	def order_is_completed(self, queryset, is_descending):
+		queryset = queryset.annotate(is_completed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')
+		return (queryset, True)
+	
+	def order_samples_processed(self, queryset, is_descending):
+		queryset = queryset.annotate(samples_processed = F('number_files_processed')).order_by(('-' if is_descending else '') + 'number_files_processed')
+		return (queryset, True)
+	
+	def order_number_samples(self, queryset, is_descending):
+		queryset = queryset.annotate(number_samples = F('number_files_to_process')).order_by(('-' if is_descending else '') + 'number_files_to_process')
+		return (queryset, True)
+	
+class AddSamplesFromFastqFileTable(tables.Table):
+	"""
+	To add samples to projects
+	"""
+	is_completed = tables.Column('Is attached', empty_values=())
+	
+	class Meta:
+		model = Sample
+		fields = ('file_name', 'creation_date', 'owner', 'is_completed')
+		attrs = {"class": "table-striped table-bordered"}
+		empty_text = "There's no 'fastq' files with to show..."
+	
+	def render_creation_date(self, value, record):
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+
+	def render_is_completed(self, value, record):
+		return 'True' if record.is_processed else 'False'
+	
+	def render_file_name(self, value, record):
+		href = record.get_path_to_file(TypePath.MEDIA_URL)		
+		return mark_safe('<a href="' + href + '" download>' + record.file_name + '</a>')
+	
+	def order_is_completed(self, queryset, is_descending):
+		queryset = queryset.annotate(is_completed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')
+		return (queryset, True)
+	
+
+
+
+	

@@ -1,20 +1,22 @@
 {% extends '_layouts/base.html' %}
 
 {% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
-
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block header %}
-	<div class="page-header rounded-header">
-    	<h1>Create new sample</h1>
-	</div>
-{% endblock  %}
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+	{% breadcrumb "Add a single sample" "sample-add" %}
+{% endblock %}
 
+<!-- Main content-->
 {% block content %}
 	{% crispy form %} 
 	

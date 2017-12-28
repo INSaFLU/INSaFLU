@@ -32,6 +32,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.spl
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
 
 CSRF_COOKIE_AGE = None
 #CSRF_COOKIE_DOMAIN = '.ourapi.com'
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'bootstrap4',
     'django_q',
     'django_user_agents',
+    'django_bootstrap_breadcrumbs',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
     'log_login.apps.LogLoginConfig',
@@ -283,7 +285,12 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': '/var/log/insaFlu/warning.log',
             'formatter': 'verbose',
-        }
+        },
+		'console':{
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {

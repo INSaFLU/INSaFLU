@@ -49,12 +49,14 @@ class Reference(models.Model):
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=100000, blank=True, null=True, max_length=500)
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'],\
+										max_upload_size=Constants.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=200000, blank=True, null=True, max_length=500)
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'],\
+									max_upload_size=Constants.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
 
@@ -194,12 +196,15 @@ class Sample(models.Model):
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=200, blank=True, null=True)
 	candidate_file_name_1 = models.CharField(max_length=200, blank=True, null=True)
+	
 	## 30M
-	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
+	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
+					content_types=['application/octet-stream', 'application/gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
-	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
+	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
+					content_types=['application/octet-stream', 'application/gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -238,7 +243,7 @@ class Sample(models.Model):
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		os.makedirs(path_out, mode=0o755, exist_ok=True)
+		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
 		return os.path.join(path_out, self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
 
 	def get_fastq_trimmomatic(self, type_path, b_first_file):
@@ -248,7 +253,7 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		
 		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		os.makedirs(path_out, mode=0o755, exist_ok=True)
+		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
 		return os.path.join(path_out, self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
 
 	def get_fastq(self, type_path, b_first_file):
@@ -629,7 +634,10 @@ class UploadFiles(models.Model):
 	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
 	
 	### need to create a random name for this file
-	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True, content_types=['application/octet-stream', 'application/gzip'], max_upload_size=30971520, max_length=500)
+	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
+					content_types=['application/octet-stream', 'application/gzip', 'text/csv', 'text/tsv'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+#	path_name = models.FileField(upload_to=user_directory_path, blank=True, null=True)
+
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
 												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted
 												##   to add other samples file
@@ -637,7 +645,20 @@ class UploadFiles(models.Model):
 	description = models.TextField(default="")				## has a json result.ProcessResults instance with errors or successes
 	
 	class Meta:
-		ordering = ['creation_date']
+		ordering = ['-creation_date']
 
 	def __str__(self):
 		return self.file_name
+	
+	def get_path_to_file(self, type_path):
+		"""
+		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.path_name.name
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+
+

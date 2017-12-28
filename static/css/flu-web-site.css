@@ -92,10 +92,11 @@ p.software {
 
 /**
 *	draw line around the input
-*/
+*
 .error input, .error select {
     border: 2px red solid;
 }
+*/
 
 /*
 *	START tooltip

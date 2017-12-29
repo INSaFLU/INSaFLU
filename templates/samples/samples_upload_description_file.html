@@ -19,7 +19,10 @@
 {% block content %}
 
 	{% if error_in_file %}
-		<div class="alert alert-warning"> {{ error_in_file }} </div>
+		<div class="alert alert-warning alert-dismissable">
+			<a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
+		 	{{ error_in_file }} 
+		</div>
 	{% endif %}	
 	{% crispy form %} 
 {% endblock %}

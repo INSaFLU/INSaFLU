@@ -630,7 +630,8 @@ class UploadFiles(models.Model):
 															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
 															## constants.TYPE_FILE.TYPE_FILE_sample_file
 	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
-	creation_date = models.DateTimeField('upload_files', auto_now_add=True)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
+	attached_date = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')		## only used in fastq.gz files
 	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
 	
 	### need to create a random name for this file

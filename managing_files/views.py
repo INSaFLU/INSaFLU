@@ -351,7 +351,8 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesUploadDescriptionFileView, self).get_context_data(**kwargs)
-		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')): context['error_in_file'] = kwargs['form'].error_in_file
+		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')):
+			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		return context
@@ -559,44 +560,52 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		sample = kwargs['object']
 		if (sample.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 		context['nav_sample'] = True
-		context['virus_identify'] = sample.get_type_sub_type()
-		context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '</a>')
-		context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download>' + sample.file_name_2 + '</a>')
-		context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '.html</a>')
-		context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_2 + '.html</a>')
-		context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-		context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-		context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-		context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
-	
-		### software
-		manageDatabase = ManageDatabase()
-		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
-		if (meta_sample == None):
-			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_sample != None):
-				lst_data = meta_sample.description.split(',')
-				context['fastq_software'] = lst_data[1].strip()
-				context['trimmomatic_software'] = lst_data[2].strip()
-		else:
-			decodeResult = DecodeObjects()
-			result = decodeResult.decode_result(meta_sample.description)
-			context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
-			context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
-
-		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
-		if (meta_sample == None):
-			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_sample != None):
-				lst_data = meta_sample.description.split(',')
-				context['spades_software'] = lst_data[1].strip()
-				context['abricate_software'] = lst_data[2].strip()
-		else:
-			decodeResult = DecodeObjects()
-			result = decodeResult.decode_result(meta_sample.description)
-			context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-			context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
 		
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		## the info can be called from two distinct sources
+		## main info
+		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
+			context['virus_identify'] = sample.get_type_sub_type()
+			context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '</a>')
+			context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download>' + sample.file_name_2 + '</a>')
+			context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '.html</a>')
+			context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_2 + '.html</a>')
+			context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+			context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+			context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+			context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+	
+			### software
+			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_sample == None):
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample != None):
+					lst_data = meta_sample.description.split(',')
+					context['fastq_software'] = lst_data[1].strip()
+					context['trimmomatic_software'] = lst_data[2].strip()
+			else:
+				decodeResult = DecodeObjects()
+				result = decodeResult.decode_result(meta_sample.description)
+				context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
+				context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+	
+			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_sample == None):
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample != None):
+					lst_data = meta_sample.description.split(',')
+					context['spades_software'] = lst_data[1].strip()
+					context['abricate_software'] = lst_data[2].strip()
+			else:
+				decodeResult = DecodeObjects()
+				result = decodeResult.decode_result(meta_sample.description)
+				context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
+				context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
+			context['candidate_file_name_1'] = sample.candidate_file_name_1
+			if (sample.candidate_file_name_2 != None and len(sample.candidate_file_name_2) > 0):
+				context['candidate_file_name_2'] = sample.candidate_file_name_2
 		return context
 
 

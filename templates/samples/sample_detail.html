@@ -57,6 +57,13 @@
 				<div class="tab-content">
 					<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
 						<p class="title-box">Original fastq files and quality result</p>
+						{% if candidate_file_name_1 %}
+							<div class="row">
+								<div class="col-lg-6"><strong>Candidate fastq 1:</strong> {{ candidate_file_name_1 }}</div>
+					  			<div class="col-lg-6"><strong>Candidate fastq 2:</strong> {{ candidate_file_name_2 }}</div>
+					  		</div>
+					  		<hr>
+						{% endif %}
 						<div class="row">
 							<div class="col-lg-6"><strong>Original fastq 1:</strong> {{ href_fastq_1 }}</div>
 				  			<div class="col-lg-6"><strong>Original fastq 2:</strong> {{ href_fastq_2 }}</div>
@@ -82,7 +89,7 @@
 				  			<div class="col-lg-6"><strong>Trimmomatic fastq quality 2:</strong> {{ href_trimmonatic_quality_2 }}</div>
 				  		</div>
 				  		<hr>
-				  		<p class="software"><strong>Software version: </strong>{{ trimmomatic_software }}/{{ fastq_software }}</p>
+				  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 			  		</div>
 					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
 						<p class="title-box">Identifying virus with Sapdes and Abricate</p>
@@ -97,7 +104,7 @@
 				  			</div>
 				  			<hr>
 						{% endfor %}
-						<p class="software"><strong>Software version: </strong>{{ spades_software }}/{{ abricate_software }}</p>
+						<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 					</div>
 				</div>
 			</div>

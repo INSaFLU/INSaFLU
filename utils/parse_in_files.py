@@ -18,6 +18,7 @@ from django_q.tasks import async
 from utils.software import Software
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
+from datetime import datetime
 
 class ParseInFiles(object):
 	'''
@@ -431,6 +432,7 @@ class ParseInFiles(object):
 				upload_files_1.upload_file = upload_files
 				upload_files_1.number_files_processed = 1
 				upload_files_1.samples.add(sample)
+				upload_files_1.attached_date = datetime.now()
 				upload_files_1.save()
 				
 				if (upload_files_2 != None):

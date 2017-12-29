@@ -163,6 +163,8 @@ class SampleTable(tables.Table):
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
+		elif (record.candidate_file_name_1 != None and len(record.candidate_file_name_1) > 0):
+			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")
 		return _('Not yet')
 	
@@ -326,15 +328,25 @@ class AddSamplesFromFastqFileTable(tables.Table):
 	To add samples to projects
 	"""
 	is_completed = tables.Column('Is attached', empty_values=())
+	sample_attached = tables.Column('Sample attached', empty_values=())
 	
 	class Meta:
 		model = Sample
-		fields = ('file_name', 'creation_date', 'owner', 'is_completed')
+		fields = ('file_name', 'creation_date', 'owner', 'attached_date', 'sample_attached', 'is_completed')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There's no 'fastq' files with to show..."
 	
 	def render_creation_date(self, value, record):
 		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+	
+	def render_attached_date(self, value, record):
+		if (record.attached_date == None): return '---'
+		return record.attached_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+	
+	def render_sample_attached(self, value, record):
+		samples = record.samples.all()
+		if (samples.count() > 0): return samples[0].name
+		return '---'
 
 	def render_is_completed(self, value, record):
 		return 'True' if record.is_processed else 'False'
@@ -345,6 +357,10 @@ class AddSamplesFromFastqFileTable(tables.Table):
 	
 	def order_is_completed(self, queryset, is_descending):
 		queryset = queryset.annotate(is_completed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')
+		return (queryset, True)
+	
+	def order_sample_attached(self, queryset, is_descending):
+		queryset = queryset.annotate(sample_name = F('samples__name')).order_by(('-' if is_descending else '') + 'sample_name')
 		return (queryset, True)
 	
 

@@ -38,9 +38,9 @@ class ContentTypeRestrictedFileField(FileField):
 		try:
 			content_type = file.content_type
 			
-			### to remove in the future
-			self.logger_production.error('Read content type: ' + content_type)
-			self.logger_debug.error('Read content type: ' + content_type)
+			### Important to catch the content_type 
+			self.logger_production.warning("Read '{}' size '{}' content type: {}".format(file.name, file._size, content_type))
+			self.logger_debug.warning("Read '{}' size '{}' content type: {}".format(file.name, file._size, content_type))
 			if content_type in self.content_types:
 				if file._size > self.max_upload_size:
 					raise forms.ValidationError(_('Please keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))

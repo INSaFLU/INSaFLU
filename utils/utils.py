@@ -343,7 +343,7 @@ class Utils(object):
 			return geneticElement.get_sorted_elements()
 		else:
 			return meta_reference.description.split(',')
-	
+
 	def get_elements_and_cds_from_db(self, reference, user):
 		"""
 		return geneticElement
@@ -363,7 +363,28 @@ class Utils(object):
 			decodeCoverage = DecodeObjects()
 			geneticElement = decodeCoverage.decode_result(meta_reference.description)
 			return geneticElement
-			
+
+	def get_vect_cds_from_element_from_db(self, element_name, reference, user):
+		"""
+		return geneticElement
+		"""
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_reference == None):
+			utils = Utils()
+			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+			if (geneticElement == None): return None
+			manageDatabase.set_reference_metakey(reference, user, meta_key,\
+				MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+			return geneticElement.get_vect_gene_names(element_name)
+		else:
+			decodeCoverage = DecodeObjects()
+			geneticElement = decodeCoverage.decode_result(meta_reference.description)
+			return geneticElement.get_vect_gene_names(element_name)
+		return None
+
 	def read_text_file(self, file_name):
 		"""
 		read text file and put the result in an vector
@@ -663,11 +684,11 @@ class Utils(object):
 		with open(file_name, 'w') as handle:
 			if (coverage == None):
 				if sequence_name in record_dict:
-					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq).upper()))
+					handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
 					b_saved = True
 			else:
 				if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
-					handle.write(">{}\n{}\n".format(sequence_name, str(record_dict[sequence_name].seq).upper()))
+					handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
 					b_saved = True
 		if (not b_saved): os.unlink(file_name)
 		return file_name if b_saved else None

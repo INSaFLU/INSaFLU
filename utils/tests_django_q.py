@@ -64,7 +64,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(task == None)
 		n_count = 0
 		while True:
-			time.sleep(.10)
+			time.sleep(.20)
 			task = fetch(task_id)
 			if (task != None): break
 			if (n_count > 10): break
@@ -77,7 +77,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(task == None)
 		n_count = 0
 		while True:
-			time.sleep(.10)
+			time.sleep(.20)
 			task = fetch(task_id)
 			if (task != None): break
 			if (n_count > 10): break

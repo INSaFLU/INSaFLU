@@ -6,6 +6,7 @@ Created on Dec 6, 2017
 
 import os
 from managing_files.models import Project, ProjectSample, DataSet, VaccineStatus
+from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath, FileExtensions
 from utils.utils import Utils
 from django.http import JsonResponse
@@ -94,18 +95,152 @@ def show_phylo_canvas(request):
 			project_id = int(request.GET.get(key_with_project_id))
 			element_name = 'all_together'
 			key_element_name = 'key_element_name'
-			if (key_element_name in request.GET): element_name = int(request.GET.get(key_element_name))
+			if (key_element_name in request.GET): element_name = request.GET.get(key_element_name)
 			try:
 				project = Project.objects.get(id=project_id)
-				if (element_name == 'all_together'): file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
-				else: file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+				if (element_name == 'all_together'): 
+					file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+					file_name_nwk = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE)
+				else: 
+					file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+					file_name_nwk = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_FASTTREE)
 				if (os.path.exists(file_name)):
 					string_file_content = utils.read_file_to_string(file_name).strip()
 					if (string_file_content != None and len(string_file_content) > 0):
 						data['is_ok'] = True
 						data['tree'] = string_file_content
+						data['tree_nwk_id'] = mark_safe("<strong>Tree 'nwk':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe("<strong>Tree 'tree':</strong> <a href=\"{}\" download> {}</a>".format(file_name, os.path.basename(file_name)))
 			except Project.DoesNotExist:
 				pass
+		return JsonResponse(data)
+
+@csrf_protect
+def show_msa_nucleotide(request):
+	"""
+	manage msa nucleotide alignments
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			element_name = 'all_together'
+			key_element_name = 'key_element_name'
+			if (key_element_name in request.GET): element_name = request.GET.get(key_element_name)
+			try:
+				manage_database = ManageDatabase()
+				project = Project.objects.get(id=project_id)
+				if (element_name == 'all_together'): 
+					file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT)
+					file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_nex)
+				else: 
+					file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_MAFFT)
+					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
+				data['is_ok'] = True
+				data['alignment_fasta_show_id'] = mark_safe("{}".format(request.build_absolute_uri(file_name_fasta)))
+				data['alignment_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
+				data['alignment_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
+				b_calculate_again = False
+				data['max_length_label'] = manage_database.get_max_length_label(project, request.user, b_calculate_again)
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)
+
+@csrf_protect
+def show_msa_protein(request):
+	"""
+	manage check boxes through ajax
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			gene_name = ''
+			element_name = ''
+			key_element_name = 'key_element_name'
+			key_gene_name = 'key_gene_name'
+			if (key_element_name in request.GET): element_name = request.GET.get(key_element_name)
+			if (key_gene_name in request.GET): gene_name = request.GET.get(key_gene_name)
+			if (len(element_name) > 0  and len(gene_name) > 0):
+				try:
+					manage_database = ManageDatabase()
+					project = Project.objects.get(id=project_id)
+					file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
+					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
+					data['is_ok'] = True
+					data['alignment_amino_fasta_show_id'] = mark_safe("{}".format(request.build_absolute_uri(file_name_fasta)))
+					data['alignment_amino_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
+					data['alignment_amino_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
+					b_calculate_again = False
+					data['max_length_label'] = manage_database.get_max_length_label(project, request.user, b_calculate_again)
+				except Project.DoesNotExist:
+					pass
+		return JsonResponse(data)
+
+@csrf_protect
+def show_count_variations(request):
+	"""
+	get chart information
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			try:
+				project = Project.objects.get(id=project_id)
+				## need to be order by total
+				data['labels'] = []				## vector with all sample names
+				data['data_less_50'] = []		## number of variations less than 50
+				data['data_50_var_90_50'] = []	##number of variations 50<var<90
+				
+				data_out = []		## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
+				for project_sample in project.project_samples.all():
+					if (project_sample.is_deleted): continue
+					if (project_sample.is_error): continue
+					if (not project_sample.is_finished): continue
+					data_out.append([project_sample.count_variations.var_less_50, project_sample.count_variations.var_bigger_50_90, project_sample.sample.name])
+
+				if (len(data_out) > 0):
+					data['is_ok'] = True
+					data_out = sorted(data_out, key=lambda data_temp: data_temp[0] + data_temp[1], reverse=True)
+					for data_temp in data_out:
+						data['labels'].append(data_temp[2])
+						data['data_less_50'].append(data_temp[0])
+						data['data_50_var_90_50'].append(data_temp[1])
+					data['sample_number'] = len(data_out) 
+				else:
+					data['error_message'] = "There's no samples to collect data to show."
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)
+
+
+@csrf_protect
+def get_cds_from_element(request):
+	"""
+	return the cds's for a specific element, can be more than one
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			element_name = ''
+			key_element_name = 'key_element_name'
+			if (key_element_name in request.GET): element_name = request.GET.get(key_element_name)
+			if (len(element_name) > 0):
+				try:
+					utils = Utils()
+					project = Project.objects.get(id=project_id)
+					vect_genes = utils.get_vect_cds_from_element_from_db(element_name, project.reference, project.owner)
+					if (vect_genes != None):
+						data['is_ok'] = True
+						data['vect_genes'] = vect_genes
+				except Project.DoesNotExist:
+					pass
 		return JsonResponse(data)
 
 @csrf_protect

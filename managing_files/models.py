@@ -8,6 +8,8 @@ from constants.constants import Constants, TypePath
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
+from django.utils.safestring import mark_safe
 import os
 
 def reference_directory_path(instance, filename):
@@ -45,6 +47,7 @@ class MetaKey(models.Model):
 		
 class Reference(models.Model):
 	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
+	display_name = models.CharField(max_length=200, db_index=True, default='', verbose_name='Display name')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
@@ -191,7 +194,7 @@ class Sample(models.Model):
 
 	## many to many relation	
 	tag_names = models.ManyToManyField(TagName, through='TagNames')
-	
+
 	### files
 	is_valid_1 = models.BooleanField(default=False)
 	file_name_1 = models.CharField(max_length=200, blank=True, null=True)
@@ -350,6 +353,10 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
+	PROJECT_FILE_NAME_COVERAGE = "coverage.csv"
+	PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY = "variation_snippy.vcf.gz" 
+	PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES = "variations_freebays.vcf.gz" 
+	PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES = "count_variations.csv" 
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
@@ -415,7 +422,16 @@ class Project(models.Model):
 		file_name:	Project.PROJECT_FILE_NAME_MAFFT, ....  
 		"""
 		return os.path.join(self.__get_global_path__(type_path, None), file_name)
-	
+
+	def get_global_file_by_project_web(self, file_name):
+		
+		out_file = self.get_global_file_by_project(TypePath.MEDIA_ROOT, file_name)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_global_file_by_project(\
+						TypePath.MEDIA_URL, file_name), file_name))
+		return _('File no available yet.')
+		
+		
 	def __get_user_result_global_directory_path__(self, element):
 		# file will be uploaded to MEDIA_ROOT/<filename>
 		if (element != None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
@@ -468,6 +484,7 @@ class MixedInfections(models.Model):
 	average_value = models.FloatField(default=0.0)
 	description = models.TextField(default="")
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
 	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
 															## and is not used in projectSample,
 															## It can change across time
@@ -493,10 +510,10 @@ class ProjectSample(models.Model):
 	PATH_MAIN_RESULT = 'main_result'
 	PREFIX_FILE_COVERAGE = 'coverage'
 		
-	project = models.ForeignKey(Project, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
-	sample = models.ForeignKey(Sample, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
-	mixed_infections = models.ForeignKey(MixedInfections, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
-	count_variations = models.ForeignKey(CountVariations, related_name='project_sample', blank=True, null=True, on_delete=models.CASCADE)
+	project = models.ForeignKey(Project, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
+	sample = models.ForeignKey(Sample, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
+	mixed_infections = models.ForeignKey(MixedInfections, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
+	count_variations = models.ForeignKey(CountVariations, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_finished = models.BooleanField(default=False)
 	is_deleted = models.BooleanField(default=False)

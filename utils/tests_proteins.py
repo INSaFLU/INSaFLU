@@ -83,6 +83,7 @@ class Test(unittest.TestCase):
 		except Reference.DoesNotExist:
 			reference = Reference()
 			reference.name = ref_name
+			reference.display_name = ref_name
 			reference.reference_fasta.name = fasta_file
 			reference.reference_fasta_name = os.path.basename(fasta_file)
 			reference.reference_genbank.name = gb_file
@@ -205,7 +206,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		self.assertEquals('4', meta_sample.description)
-		self.assertTrue(os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)) == 83)
+		self.assertEquals(125, os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)))
 		
 		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_Protein_By_Element, 'sequence_name')
 		meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)

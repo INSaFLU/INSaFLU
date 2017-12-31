@@ -28,7 +28,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
@@ -127,6 +127,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		
 		reference = form.save(commit=False)
 		## set other data
+		reference.display_name = reference.name
 		reference.owner = self.request.user
 		reference.is_obsolete = False
 		reference.number_of_locus = self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE]
@@ -920,6 +921,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(sample__name__icontains=self.request.GET.get(tag_search)) |\
 										Q(sample__data_set__name__icontains=self.request.GET.get(tag_search)) |\
+										Q(mixed_infections__tag__name__icontains=self.request.GET.get(tag_search)) |\
 										Q(sample__type_subtype__icontains=self.request.GET.get(tag_search)))
 		table = ShowProjectSamplesResults(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
@@ -930,16 +932,31 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')		
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['project_name'] = project.name
 		context['project_id'] = project.id
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['nav_project'] = True
-		context['nav_modal'] = True	## short the size of modal window
+		
+		context['project_name'] = project.name
+		context['reference_name'] = project.reference.name
+		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False).count()
+		context['number_of_alerts'] = ProjectSample.objects.filter(project=project, is_deleted=False,\
+								is_error=False).aggregate(total=Sum('alert_first_level') + Sum('alert_second_level'))['total']
+		context['samples_in_process'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=False).count()
+		context['samples_error'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=True, is_finished=False).count()
+		
+		## Files
+		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
+		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY)
+		context['freebays_variations_50_50_var_90_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES)
+		context['count_freebays_variations_50_50_var_90'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)
 		
 		## tODO , set this in database 
 		utils = Utils()
-		vect_genes = utils.get_elements_from_db(project.reference, self.request.user)
-		if (vect_genes != None): context['elements'] = vect_genes
+		vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
+		if (vect_elements != None and len(vect_elements) > 0): 
+			context['elements'] = vect_elements
+			### get a vect of genes name
+			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements[0], project.reference, self.request.user)
 		return context
 
 

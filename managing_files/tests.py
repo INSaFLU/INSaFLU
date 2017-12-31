@@ -576,6 +576,7 @@ class testsReferenceFiles(TestCase):
 		project_sample = ProjectSample()
 		project_sample.sample = sample
 		project_sample.project = project
+		project_sample.is_finished = True
 		project_sample.save()
 		
 		software = None
@@ -606,6 +607,40 @@ class testsReferenceFiles(TestCase):
 		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_FASTTREE_tree).\
 						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
 						'/xpto/' + Project.PROJECT_FILE_NAME_FASTTREE_element + '_xpto' + FileExtensions.FILE_TREE))
+
+		manage_database = ManageDatabase()
+		b_calculate_again = False
+		self.assertEqual(len(sample_name), manage_database.get_max_length_label(project, user, b_calculate_again))
+		meta_data = manage_database.get_project_metakey(project, MetaKeyAndValue.META_KEY_Project_max_sample_length, MetaKeyAndValue.META_VALUE_Success)
+		self.assertEqual("12", meta_data.description)
+		
+		sample_name = "xpt_2_4_f_6oxpt_2_4_f_6o"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.path_name_1.name = "sdasa"
+			sample.owner = user
+			sample.save()
+			
+		### project
+		project_sample = ProjectSample()
+		project_sample.sample = sample
+		project_sample.project = project
+		project_sample.is_finished = True
+		project_sample.save()
+		
+		b_calculate_again = True
+		self.assertEqual(len(sample_name), manage_database.get_max_length_label(project, user, b_calculate_again))
+		meta_data = manage_database.get_project_metakey(project, MetaKeyAndValue.META_KEY_Project_max_sample_length, MetaKeyAndValue.META_VALUE_Success)
+		self.assertEqual("24", meta_data.description)
+		
+		b_calculate_again = False
+		self.assertEqual(len(sample_name), manage_database.get_max_length_label(project, user, b_calculate_again))
+		MetaKeyProject.objects.all().delete()
+		ProjectSample.objects.all().delete()
+		Sample.objects.all().delete()
 
 
 
@@ -836,5 +871,8 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual('HA', geneticElement.get_genes('HA')[0].name)
 		self.assertEqual('PB2', geneticElement.get_sorted_elements()[-1])
 		
-
+		self.assertEquals(['HA'], geneticElement.get_vect_gene_names('HA'))
+		self.assertEquals(['HA'], utils.get_vect_cds_from_element_from_db('HA', reference, user))
+		self.assertEquals(['PB2'], utils.get_vect_cds_from_element_from_db('PB2', reference, user))
+		self.assertEquals(None, utils.get_vect_cds_from_element_from_db('xpto', reference, user))
 

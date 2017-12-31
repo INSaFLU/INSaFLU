@@ -46,9 +46,10 @@ class Proteins(object):
 		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Proteins_Alignment_By_Element, sequence_name)
 		
 		dt_out_files = {}	### dictonary with files
+		dict_out_sample_name = {}
 		n_files_with_sequences = 0
 		n_count_samples_processed = 0
-		for project_sample in project.project_sample.all():
+		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
@@ -69,11 +70,14 @@ class Proteins(object):
 			b_first = True
 			for gene in geneticElement.get_genes(sequence_name):
 				## get file name
-				if (gene.name not in dt_out_files): dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
+				if (gene.name not in dt_out_files): 
+					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
 							"{}_{}".format(sequence_name, gene.name), FileExtensions.FILE_FAA)
-				if (self.save_protein_by_sequence_name_and_cds(consensus_fasta, project.reference.reference_genbank.name,
+				
+				if (self.save_protein_by_sequence_name_and_cds(consensus_fasta, project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
 							project_sample.sample.name, sequence_name, gene, coverage, temp_dir, dt_out_files[gene.name])):
 					if (b_first): n_files_with_sequences += 1
+					dict_out_sample_name["{}_{}_{}".format(project_sample.sample.name, sequence_name, gene.name)] = 1
 					b_first = False
 			n_count_samples_processed += 1
 
@@ -86,6 +90,13 @@ class Proteins(object):
 			self.clean_file_by_vect(project, sequence_name, geneticElement, project.vect_clean_file)
 			return False
 		
+		### save the reference protein
+		for gene in geneticElement.get_genes(sequence_name):
+			self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+							project.reference.display_name, sequence_name, gene,\
+							dt_out_files[gene.name], dict_out_sample_name)
+			
+			
 		### start processing the data
 		result_all = Result()
 		b_first = True	
@@ -170,6 +181,21 @@ class Proteins(object):
 			path_file = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, gene.name, type_file)
 			if (os.path.exists(path_file)): os.unlink(path_file)
 
+	def save_protein_reference_cds(self, genbank_file, reference_name, sequence_name, gene,\
+							out_file, dict_out_sample_name):
+		"""
+		add the reference protein to the file
+		"""
+		### get protein reference sequence
+		seq_ref = self.utils.get_sequence_from_genbank(sequence_name, gene, genbank_file)
+		## this is not necessary because if seq is reversed the Bio.Seq is returned in forward always  
+		## if not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
+		coding_protein = seq_ref.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
+		with open(out_file, 'a') as handle:
+			out_name = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, gene.name)
+			if (out_name in dict_out_sample_name): out_name += 'Ref_' + out_name
+			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
+
 	def save_protein_by_sequence_name_and_cds(self, consensus_fasta_file, genbank_file,
 							sample_name, sequence_name, gene, coverage, out_dir, out_file):
 		"""
@@ -231,10 +257,11 @@ class Proteins(object):
 
 			sz_out = sz_out.replace('-', '')
 			coding_dna = Seq(sz_out, generic_dna)
-			if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
+			## this is not necessary because if seq is reversed the Bio.Seq is returned in forward always  
+			## if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
 			coding_protein = coding_dna.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 			with open(out_file, 'a') as handle:
-				handle.write('>{}_{}_{}\n{}\n'.format(sample_name, sequence_name, gene.name, str(coding_protein)))
+				handle.write('>{}_{}_{}\n{}\n'.format(sample_name.replace(' ', '_'), sequence_name, gene.name, str(coding_protein)))
 			return True
 		return False
 		

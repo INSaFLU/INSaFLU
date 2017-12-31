@@ -199,7 +199,11 @@ class ProjectTable(tables.Table):
 		add_remove = ""
 		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
 			add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-		return mark_safe("({}/{}/{}) ".format("0", "0", "0") + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
+			
+		n_processed = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
+		n_error = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=True, is_finished=False).count()
+		n_processing = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
+		return mark_safe("({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
 						 '><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
 	def render_creation_date(self, **kwargs):
@@ -227,12 +231,13 @@ class ShowProjectSamplesResults(tables.Table):
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 	type_subtype = tables.LinkColumn('Type-Subtype', empty_values=())
+	mixed_infections = tables.LinkColumn('Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 		
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'type_subtype', 'dataset', 'coverage', 'alerts', 'results')
+		fields = ('sample_name', 'type_subtype', 'mixed_infections', 'dataset', 'coverage', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -268,6 +273,12 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return record.sample.type_subtype
 	
+	def render_mixed_infections(self, record):
+		"""
+		return number
+		"""
+		return record.mixed_infections.tag.name
+	
 	def render_dataset(self, record):
 		"""
 		return number
@@ -280,7 +291,26 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.sample.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
 
+	def order_sample_name(self, queryset, is_descending):
+		queryset = queryset.annotate(sample_name = F('sample__name')).order_by(('-' if is_descending else '') + 'sample_name')
+		return (queryset, True)
 
+	def order_type_subtype(self, queryset, is_descending):
+		queryset = queryset.annotate(type_subtype = F('sample__type_subtype')).order_by(('-' if is_descending else '') + 'type_subtype')
+		return (queryset, True)
+
+	def order_dataset(self, queryset, is_descending):
+		queryset = queryset.annotate(dataset = F('sample__data_set__name')).order_by(('-' if is_descending else '') + 'dataset')
+		return (queryset, True)
+
+	def order_alerts(self, queryset, is_descending):
+		queryset = queryset.annotate(alerts = F('alert_first_level') + F('alert_second_level')).order_by(('-' if is_descending else '') + 'alerts')
+		return (queryset, True)
+	
+	def order_mixed_infections(self, queryset, is_descending):
+		queryset = queryset.annotate(mixed_infection = F('mixed_infections__tag__name')).order_by(('-' if is_descending else '') + 'mixed_infection')
+		return (queryset, True)
+	
 class AddSamplesFromCvsFileTable(tables.Table):
 	"""
 	To add samples to projects

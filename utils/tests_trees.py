@@ -71,6 +71,7 @@ class Test(unittest.TestCase):
 		except Reference.DoesNotExist:
 			reference = Reference()
 			reference.name = ref_name
+			reference.display_name = ref_name
 			reference.reference_fasta.name = fasta_file
 			reference.reference_fasta_name = os.path.basename(fasta_file)
 			reference.reference_genbank.name = gb_file
@@ -92,6 +93,8 @@ class Test(unittest.TestCase):
 		## get all fastq files
 		vect_files = self.constants_tests_case.get_all_fastq_files(self.baseDirectory)
 		
+		ProjectSample.objects.all().delete()
+		Sample.objects.all().delete()
 		temp_dir = self.utils.get_temp_dir()
 		count = 0
 		b_at_least_one_less_than_100 = False
@@ -165,7 +168,7 @@ class Test(unittest.TestCase):
 ## print all coverage values
 # 		try:
 # 			project = Project.objects.get(name=project_name)
-# 			for project_sample in project.project_sample.all():
+# 			for project_sample in project.project_samples.all():
 # 				if (not project_sample.get_is_ready_to_proccess()): continue
 # 				meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 # 				decode_coverage = DecodeObjects()
@@ -205,7 +208,8 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		self.assertEquals('4', meta_sample.description)
-		self.assertTrue(os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)) == 95)
+		print(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE))
+		self.assertTrue(95, os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)))
 		
 		### get all elements and gene names
 		for sequence_name in self.utils.get_elements_from_db(reference, user):

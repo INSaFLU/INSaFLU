@@ -4,21 +4,25 @@
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
-
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block header %}
-	<div class="page-header rounded-header">
-    	<h1>Add samples to project: {{ project_name }}</h1>
-	</div>
-{% endblock  %}
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Projects" "projects" %}
+	{% breadcrumb "Add samples to project" "add-sample-project" %}
+{% endblock %}
 
 {% block content %}
 
+	<div class="alert alert-info" role="alert">
+	  <strong>Porject name</strong> -> {{ project_name }}
+	</div>
+	
 	{% if table.page and show_paginatior %}
 	  <div class="table-container">
 	{% endif %}
@@ -95,7 +99,7 @@
 			  </div>
 			{% endif %}
 	
-			<a href="{% url 'projects' %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+			<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 {% endblock %}
 
  {% block js %}

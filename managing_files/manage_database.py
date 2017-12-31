@@ -123,6 +123,26 @@ class ManageDatabase(object):
 		metaKeyProject.save()
 		return MetaKeyProject
 	
+	def update_project_metakey(self, project, owner, meta_key_name, value, description):
+		"""
+		update the meta_key, if not exist create other
+		"""
+		try:
+			metaKey = MetaKey.objects.get(name=meta_key_name)
+		except MetaKey.DoesNotExist:	## doesn't have, create new
+			return self.set_project_metakey(project, owner, meta_key_name, value, description)
+		
+		metaKeyProject_list = MetaKeyProject.objects.filter(project=project, meta_tag=metaKey, owner=owner)
+		if (metaKeyProject_list.count() == 0):
+			return self.set_project_metakey(project, owner, meta_key_name, value, description)
+		else:
+			meta_key_project = metaKeyProject_list[0]
+			meta_key_project.value = value
+			meta_key_project.description = description
+			meta_key_project.save()
+		return meta_key_project
+
+	
 	def get_project_metakey(self, project, meta_key_name, value):
 		"""
 		value = None, return a list
@@ -213,6 +233,40 @@ class ManageDatabase(object):
 		return count_variations
 
 
+	#######################################
+	###
+	###		Other methods
+	###
+	
+	def get_max_length_label(self, project, user, b_calculate_again):
+		"""
+		Get the max length of the samples in a specific project in chars
+		b_calculate_again = True calculate again
+		"""
+		
+		if (not b_calculate_again):
+			meta_data = self.get_project_metakey(project, MetaKeyAndValue.META_KEY_Project_max_sample_length,\
+										MetaKeyAndValue.META_VALUE_Success)
+			if (meta_data != None):
+				return int(meta_data.description)
+			
+		### calculate and save
+		n_max_value = 0
+		for project_sample in project.project_samples.all():
+			if (not project_sample.is_finished): continue
+			if (project_sample.is_deleted): continue
+			if (project_sample.is_error): continue
+			if (len(project_sample.sample.name) > n_max_value): n_max_value = len(project_sample.sample.name)
+		if (len(project.reference.display_name) > n_max_value): n_max_value = len(project.reference.display_name)
+			
+		meta_data = self.update_project_metakey(project, user, MetaKeyAndValue.META_KEY_Project_max_sample_length,\
+							MetaKeyAndValue.META_VALUE_Success, str(n_max_value))
+		return n_max_value
+	###
+	###
+	###
+	#######################################
+	
 	#######################################
 	###
 	###		deal with percentils

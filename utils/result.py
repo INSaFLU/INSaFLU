@@ -419,6 +419,11 @@ class GeneticElement(object):
 		if (element_name in self.dt_elements): return self.dt_elements[element_name]
 		return None
 	
+	def get_vect_gene_names(self, element_name):
+		if (element_name in self.dt_elements): 
+			return [gene.name for gene in self.dt_elements[element_name]]
+		return None
+	
 	def get_sorted_elements(self):
 		return sorted(self.dt_elements.keys())
 	

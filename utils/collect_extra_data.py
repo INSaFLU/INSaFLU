@@ -38,7 +38,7 @@ class CollectExtraData(object):
 		"""
 		### get the taskID and seal it
 		metaKeyAndValue = MetaKeyAndValue()
-		manageDatabase = ManageDatabase()
+		manage_database = ManageDatabase()
 		
 		while not self.utils.is_all_tasks_finished(vect_taskID):
 			time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
@@ -57,14 +57,53 @@ class CollectExtraData(object):
 # 			os.unlink(out_file_png)
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 
+
+		## calculate the max sample label size of the samples that belong to this project
+		## used in MSA viewer 
+		b_calculate_again = True
+		manage_database.get_max_length_label(project, user, b_calculate_again)
+		
+		## collect coverage file for all samples
+		out_file = self.create_coverage_file(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)
+		if (out_file != None):
+			self.utils.copy_file(out_file, out_file_file_system)
+			os.unlink(out_file)
+		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+
+		## collect vcf variations snippy
+		out_file = self.create_coverage_file(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY)
+		if (out_file != None):
+			self.utils.copy_file(out_file, out_file_file_system)
+			os.unlink(out_file)
+		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		
+		## collect vcf variations freebayes, <50% and 50<var<90
+		out_file = self.create_coverage_file(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES)
+		if (out_file != None):
+			self.utils.copy_file(out_file, out_file_file_system)
+			os.unlink(out_file)
+		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		
+		## collect count variations freebayes, <50% and 50<var<90
+		## also has the cosine distance
+		out_file = self.create_coverage_file(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)
+		if (out_file != None):
+			self.utils.copy_file(out_file, out_file_file_system)
+			os.unlink(out_file)
+		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		
 		### create trees
 		createTree = CreateTree()
 		createTree.create_tree_and_alignments(project, user)
 		
-		meta_project = manageDatabase.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
+		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_project != None):
-			manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
 	
@@ -77,7 +116,7 @@ class CollectExtraData(object):
 		manageDatabase = ManageDatabase()
 		vect_data_sample = []
 		
-		for project_sample in project.project_sample.all():
+		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			
 			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success)

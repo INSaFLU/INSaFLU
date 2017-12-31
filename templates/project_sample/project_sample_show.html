@@ -4,43 +4,69 @@
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
-
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
-{% block header %}
-	<div class="page-header rounded-header">
-    	<h1>Show results to project: {{ project_name }}</h1>
-	</div>
-{% endblock  %}
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Projects" "projects" %}
+	{% breadcrumb "Show project results" "show-sample-project-results" %}
+{% endblock %}
 
 {% block content %}
 
 	
 	<div id="accordion" role="tablist" aria-multiselectable="true">
+		<!-- Card overall project-->
 		<div class="card">
 			<div class="card-header" role="tab" id="headingOne">
 				<h5 class="mb-0">
 					<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-						Project: {{ project_name }}
+						<strong>Project</strong> {{ project_name }}
         			</a>
       			</h5>
     		</div>
 
     		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
       			<div class="card-block">
-        			trxpoto
+      				<div style="padding: 20px">
+						<div class="row">
+							<div class="col-lg-4"><strong>Project Name:</strong> {{ project_name }}</div>
+						  	<div class="col-lg-4"><strong>Reference Name:</strong> {{ reference_name }}</div>
+						  	<div class="col-lg-4"><strong>#Samples:</strong> {{ number_of_samples }}</div>
+						</div>
+						<hr>
+						<div class="row">
+						  	<div class="col-lg-4"><strong>#Alerts:</strong> {{ number_of_alerts }}</div>
+						  	<div class="col-lg-4"><strong>#Samples in process:</strong> {{ samples_in_process }}</div>
+						  	<div class="col-lg-4"><strong>#Samples with error:</strong> {{ samples_error }}</div>
+						</div>
+						<hr>
+						<div class="row">
+						  	<div class="col-lg-4"><strong>Coverage:</strong> {{ coverage_file }}</div>
+						  	<div class="col-lg-4"><strong>Main variations:</strong> {{ main_variations_snippy_file }}</div>
+						  	<div class="col-lg-4"><strong>Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ freebays_variations_50_50_var_90_file }}</div>
+						</div>
+						<hr>
+						<div class="row">
+						  	<div class="col-lg-4"><strong>Statistics Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ count_freebays_variations_50_50_var_90 }}</div>
+						</div>
+					</div>
       			</div>
     		</div>
   		</div>
+
+  
+		<!-- Card Phylogenetic trees by PhyloCanvas -->
 		<div class="card">
 			<div class="card-header" role="tab" id="headingTwo">
 				<h5 class="mb-0">
 					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-						Show tree with PhyloCanvas
+						<strong>Phylogenetic trees</strong> by PhyloCanvas
         			</a>
       			</h5>
     		</div>
@@ -52,7 +78,7 @@
 						<form class="form-inline regular_info_box">
 							<div class="form-group">
 								<label for="selectElement">Select an element</label>
-						  		<select class="custom-select mx-sm-3">
+						  		<select id="combo_select_elements_phylocanvas_id" class="custom-select mx-sm-3">
 		      						<option selected value="all_together">All together</option>
 		      						{% for element in elements %}
 		      							<option value="{{ element }}">{{ element }}</option>
@@ -60,32 +86,143 @@
 		      					</select>
 							</div>
       					</form>
+      					<br>
+      					<div class="regular_info_box form-inline">
+					  		<div id="tree_nwk_id" class="col-lg-5"></div>
+					  		<div id="tree_tree_id" class="col-lg-5"></div>
+      					</div>
+      					
+      					
       					<!-- Show files to download, trees -->
       					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
-        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"/>
+        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
         			</div>
       			</div>
     		</div>
   		</div>
-  		<div class="card">
+  		
+  		<!-- Card Nucleotide alignments by MSAViewer -->
+		<div class="card">
 			<div class="card-header" role="tab" id="headingThree">
 				<h5 class="mb-0">
 					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-						Show variation results
+						<strong>Nucleotide alignments</strong> by MSAViewer
         			</a>
       			</h5>
     		</div>
 
     		<div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
       			<div class="card-block">
-      				<div class="container">
-      					<!-- Show files to download, varation -->
-      					<!-- <div id='loader_variation'><img src="{{ spinner_url }}"/></div> -->
-        				
+      				<div class="container-fluid">
+      					<br>
+						<form class="form-inline regular_info_box">
+							<div class="form-group">
+								<label for="selectElement">Select an element</label>
+						  		<select id="combo_select_elements_nucleotids_alignments_id" class="custom-select mx-sm-3">
+		      						<option selected value="all_together">All together</option>
+		      						{% for element in elements %}
+		      							<option value="{{ element }}">{{ element }}</option>
+		      						{% endfor %}
+		      					</select>
+							</div>
+      					</form>
+      					<br>
+      					<div class="regular_info_box form-inline">
+					  		<div id="alignment_fasta_id" class="col-lg-5"></div>
+					  		<div id="alignment_nex_id" class="col-lg-5"></div>
+      					</div>
+      					<br>
+      					<!-- Show files to download -->
+      					<div id='loader_msa_viewer_nucleote_id'><img src="{{ spinner_url }}"/></div>
+        				<div id="msa_viewer_nucleote_id" project_id="{{ project_id }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide' %}"></div>
         			</div>
       			</div>
     		</div>
   		</div>
+  		
+  		<!-- Card Amino acid alignments by MSAViewer-->
+		<div class="card">
+			<div class="card-header" role="tab" id="headingFourth">
+				<h5 class="mb-0">
+					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFourth" aria-expanded="false" aria-controls="collapseFourth">
+						<strong>Amino acid alignments</strong> by MSAViewer
+        			</a>
+      			</h5>
+    		</div>
+
+    		<div id="collapseFourth" class="collapse" role="tabpanel" aria-labelledby="headingFourth">
+      			<div class="card-block">
+      				<div class="container-fluid">
+      					<br>
+						<form class="form-inline regular_info_box">
+							<div class="form-group">
+								<label for="selectElement">Select an element</label>
+						  		<select id="combo_select_elements_amino_alignments_id" get-cds-from-element-url="{% url 'get-cds-from-element' %}" class="custom-select mx-sm-3">
+		      						{% for element in elements %}
+		      							{% if forloop.first %}
+		      								<option selected value="{{ element }}">{{ element }}</option>
+		      							{% else %}
+		      								<option value="{{ element }}">{{ element }}</option>
+		      							{% endif %}
+		      						{% endfor %}
+		      					</select>
+		      					
+		      					<label for="selectElement">Select a gene</label>
+						  		<select id="combo_select_gene_amino_alignments_id" class="custom-select mx-sm-3">
+		      						{% for gene in genes %}
+		      							{% if forloop.first %}
+		      								<option selected value="{{ gene }}">{{ gene }}</option>
+		      							{% else %}
+		      								<option value="{{ gene }}">{{ gene }}</option>
+		      							{% endif %}
+		      						{% endfor %}
+		      					</select>
+							</div>
+      					</form>
+      					<br>
+      					<div class="regular_info_box form-inline">
+					  		<div id="alignment_amino_fasta_id" class="col-lg-5"></div>
+					  		<div id="alignment_amino_nex_id" class="col-lg-5"></div>
+      					</div>
+      					<br>
+      					<!-- Show files to download -->
+      					<div id='loader_msa_viewer_amino_id'><img src="{{ spinner_url }}"/></div>
+        				<div id="msa_viewer_amino_id" project_id="{{ project_id }}" show-msa-amino-url="{% url 'show-msa-protein' %}"></div>
+        			</div>
+      			</div>
+    		</div>
+    	</div>
+    		
+   		<!-- Card Coverage overview-->
+   		<div class="card">
+				<div class="card-header" role="tab" id="headingFifth">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFifth" aria-expanded="false" aria-controls="collapseFifth">
+							<strong>Intra-host minor variants annotation</strong> and detection of mixed infections
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseFifth" class="collapse" role="tabpanel" aria-labelledby="headingFifth">
+	      			<div class="card-block">
+		      			<div class="container-fluid">
+		      				<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div class="col-lg-5"><strong>Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ freebays_variations_50_50_var_90_file }}</div>
+						  		<div class="col-lg-5"><strong>Statistics Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ count_freebays_variations_50_50_var_90 }}</div>
+	      					</div>
+		      				<br>
+	      					<div id='loader_count_variations_id'><img src="{{ spinner_url }}"/></div>
+	        				<div id="show_count_variations_id"></div>
+		      				<canvas id="canvas_count_variations_id" height="300" project_id="{{ project_id }}" show_count_variations-url="{% url 'show-count-variations' %}"></canvas>
+		      				<br>
+		      			</div>
+		      		</div>
+	    		</div>
+	    		
+	    		
+	  	</div>
+  		
 	</div>
 
 	<hr>
@@ -102,7 +239,7 @@
 			                        <form method="get" action="" class="form-inline form-search pull-right">
 			                        	{% csrf_token %}
 			                            <div class="pull-right form-search">
-			                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Type and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+			                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Mixed, Type and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
 			                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
 			                            </div>              
 			                        </form>
@@ -153,8 +290,7 @@
 			  </div>
 			{% endif %}
 	
-			<a href="{% url 'projects' %}" class="btn btn-small btn-secondary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
-			
+			<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 			
 			
 			<!-- The Modal -->
@@ -192,6 +328,8 @@
 	    	<script type="text/javascript" src="{% static 'js/phylocanvas-quickstart-2.8.1.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/show-sample-project.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+	    	<script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script>
+	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
  {% endblock %}
 
 

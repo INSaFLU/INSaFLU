@@ -59,7 +59,7 @@ class Test(unittest.TestCase):
 		try:
 			self.assertTrue(self.utils.is_fastq_gz(path_file))
 		except Exception as e:
-			self.assertEqual("File is not in fastq.gz format", e.args[0])
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 	
 	def test_read_text_file(self):
 		"""
@@ -528,6 +528,30 @@ class Test(unittest.TestCase):
                     'LEDEQMYQKCCNLFEKFFPSSSYRRPIGISSMVEAMVSRARIDARIDFESGRIKKEEF' +\
                     'SEIMKICSTIEELRRQK*', str(seq.translate(table=Constants.TRANSLATE_TABLE_NUMBER)))
 
+
+	def test_get_sequence_from_genbank_reversed(self):
+		"""
+		If the sequence is complement the Bio.Seq() return in the right order
+		"""
+		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_pb2_reversed)
+		self.assertTrue(os.path.join(genbank_file))
+		
+		gene = Gene('PB2', 10, 20, 1)
+		seq = self.utils.get_sequence_from_genbank('PB2_reversed', gene, genbank_file)
+		self.assertEquals('MSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPSLRMKWMMAMK' +\
+                    'YPITADKRVTEMVPERNEQGQTLWSKMSDAGSDRVMVSPLAVTWWNRNGPVTSTVHYP' +\
+                    'KVYKTYFDKVERLKHGTFGPVHFRNQVKIRRRVDINPGHADLSAKEAQDVIMEVVFPN' +\
+                    'EVGARILTSESQLTITKEKKEELRDCKISPLMVAYMLERELVRKTRFLPVAGGTSSIY' +\
+                    'IEVLHLTQGTCWEQMYTPGGGVRNDDVDQSLIIAARNIVRRAAVSADPLASLLEMCHS' +\
+                    'TQIGGTRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTSGSSVKKEEEV' +\
+                    'LTGNLQTLRIRVHEGYEEFTMVGKRATAILRKATRRLVQLIVSGRDEQSIAEAIIVAM' +\
+                    'VFSQEDCMIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVLFQNWGVEHIDSVMGM' +\
+                    'VGVLPDMTPSTEMSMRGIRVSKMGVDEYSSTERVVVSIDRFLRVRDQRGNVLLSPEEV' +\
+                    'SETQGTERLTITYSSSMMWEINGPESVLVNTYQWIIRNWEAVKIQWSQNPAMLYNKME' +\
+                    'FEPFQSLVPKAIRSQYSGFVRTLFQQMRDVLGTFDTAQIIKLLPFAAAPPKQSRMQFS' +\
+                    'SLTVNVRGSGMRILVRGNSPVFNYNKTTKRLTILGKDAGTLIEDPDESTSGVESAVLR' +\
+                    'GFLIIGKEDRRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRDSSILTDSQTA' +\
+                    'TKRIRMAIN*', str(seq.translate(table=Constants.TRANSLATE_TABLE_NUMBER)))
 
 	def test_validate_date(self):
 		

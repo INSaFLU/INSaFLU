@@ -37,6 +37,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_COVERAGE_9 = META_KEY_ALERT_COVERAGE + " >9"
 	META_KEY_ALERT_COVERAGE_0 = META_KEY_ALERT_COVERAGE + " >0"
 	META_KEY_ALERT_MIXED_INFECTION = "AlertMixedInfection"
+	META_KEY_ALERT_COUNT_VAR = "Alert count variation percentile"	## obsolete
 	
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
@@ -51,6 +52,9 @@ class MetaKeyAndValue(object):
 	META_KEY_Elements_Reference = "Elements"						### has the elements to a specific project, separated by comma and sorted
 	META_KEY_Elements_And_CDS_Reference = "Elements And CDS"		### has the elements and the CDS
 	
+	### has the max sample length for a specific project
+	META_KEY_Project_max_sample_length = "Project_max_sample_length"### has the max sample length for a specific project
+
 	### MetaKey for the alerts
 	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert
 	META_KEY_Alert_Second_level = "AlertSecondLevel"		### has the alert description for lowest level alert

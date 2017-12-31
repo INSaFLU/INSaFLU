@@ -63,7 +63,7 @@ class CreateTree(object):
 		n_count_samples_processed = 0
 		### create a fasta file with all consensus that pass in filters for each project_sample
 		dict_out_sample_name = {}
-		for project_sample in project.project_sample.all():
+		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
@@ -96,15 +96,14 @@ class CreateTree(object):
 			return False
 		
 		### copy the reference
+		sample_name = project.reference.display_name.replace(' ', '_')
 		if (sequence_name != None):
 			## test if exist a sample that is equal
-			sample_name = self.utils.clean_extension(project.reference.reference_fasta_name)
-			if (sample_name in dict_out_sample_name): sample_name = 'Ref_' + sample_name 
+			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
 			self.utils.filter_fasta_by_sequence_names(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						sample_name, sequence_name, None, temp_dir)
 		else:
-			sample_name = self.utils.clean_extension(os.path.basename(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)))
-			if (sample_name in dict_out_sample_name): sample_name = 'Ref_' + sample_name 
+			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
 			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
 		n_files_with_sequences += 1
 		

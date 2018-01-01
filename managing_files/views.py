@@ -779,8 +779,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 
 		## catch everything that is not in connection with project 
 		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_deleted=False) & Q(is_ready_for_projects=True) &\
-									(Q(project_sample__isnull=True) | ~Q(project_sample__project__id=project.id) |\
-									(Q(project_sample__project__id=project.id) & Q(project_sample__is_deleted=True))) ).distinct()
+									(Q(project_samples__isnull=True) | ~Q(project_samples__project__id=project.id) |\
+									(Q(project_samples__project__id=project.id) & Q(project_samples__is_deleted=True))) ).distinct()
 		tag_search = 'search_add_project_sample'
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
@@ -959,7 +959,24 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements[0], project.reference, self.request.user)
 		return context
 
-
+class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
+	"""
+	"""
+	model = ProjectSample
+	template_name = 'project_sample/project_sample_single_detail.html'
+	context_object_name = 'project_sample'
+	
+	def get_context_data(self, **kwargs):
+		context = super(ShowSampleProjectsDetailsView, self).get_context_data(**kwargs)
+		try:
+			project_sample = ProjectSample.objects.get(pk=self.kwargs['pk'])
+			
+			## several data to show
+			context['project_sample'] = project_sample
+		except ProjectSample.DoesNotExist:
+			context['error_cant_see'] = 1
+		return context
+		
 def is_all_check_box_in_session(vect_check_to_test, request):
 	"""
 	test if all check boxes are in session 

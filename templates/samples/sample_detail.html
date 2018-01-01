@@ -41,7 +41,7 @@
 			<div class="row">
 				<div class="col-lg-3"><strong>Upload date:</strong> {{ sample.creation_date|date }}</div>
 			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ sample.geo_local.coords }}</div>
-			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ virus_identify }}</div>
+			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ sample.owner.username }}</div>
 			</div>
 			<hr>
@@ -114,10 +114,4 @@
 	{% endif %}
 	
 {% endblock %}
-
- {% block js %}
- 	 {% load static from staticfiles %}
- 	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
- {% endblock %}
 

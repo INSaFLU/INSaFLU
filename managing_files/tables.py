@@ -198,7 +198,9 @@ class ProjectTable(tables.Table):
 		"""
 		add_remove = ""
 		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
-			add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
+		#	TODO
+		#	add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
+			add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 			
 		n_processed = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
 		n_error = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=True, is_finished=False).count()
@@ -289,7 +291,7 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		icon with link to extra info
 		"""
-		return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.sample.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
+		return mark_safe('<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
 
 	def order_sample_name(self, queryset, is_descending):
 		queryset = queryset.annotate(sample_name = F('sample__name')).order_by(('-' if is_descending else '') + 'sample_name')

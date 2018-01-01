@@ -15,9 +15,10 @@ urlpatterns = [
 	
 	url(r'project/projects$', views.ProjectsView.as_view(), name='projects'),
 	url(r'project/project_add', views.ProjectCreateView.as_view(), name='project-add'),
-	url(r'samples/(?P<pk>\d+)/add_sample_project$', views.AddSamplesProjectsView.as_view(), name='add-sample-project'),
-	url(r'samples/(?P<pk>\d+)/remove_sample_project$', views.SamplesDetailView.as_view(), name='remove-sample-project'),
-	url(r'samples/(?P<pk>\d+)/show_sample_project_result$', views.ShowSampleProjectsView.as_view(), name='show-sample-project-results'),
+	url(r'project_samples/(?P<pk>\d+)/add_sample_project$', views.AddSamplesProjectsView.as_view(), name='add-sample-project'),
+	url(r'project_samples/(?P<pk>\d+)/remove_sample_project$', views.SamplesDetailView.as_view(), name='remove-sample-project'),
+	url(r'project_samples/(?P<pk>\d+)/show_sample_project_results$', views.ShowSampleProjectsView.as_view(), name='show-sample-project-results'),
+	url(r'project_samples/(?P<pk>\d+)/show_sample_project_single_details$', views.ShowSampleProjectsDetailsView.as_view(), name='show-sample-project-single-detail'),
 
 	### ajax functions
 	url(r'^ajax/validate_project_reference_name$', ajax_views.validate_project_reference_name, name='validate-project-reference'),
@@ -30,4 +31,5 @@ urlpatterns = [
 	url(r'^ajax/get_image_coverage', ajax_views.get_image_coverage, name='get_image_coverage'),
 	url(r'^ajax/add_single_value_database', ajax_views.add_single_value_database, name='add_single_value_database'),	## add a single value to a table in database
 	url(r'^ajax/remove_single_value_database', ajax_views.remove_single_value_database, name='remove_single_value_database'),	## add a single value to a table in database
+	url(r'^ajax/show_igv', ajax_views.show_igv, name='show_igv'),	## get values for IGV
 ] 

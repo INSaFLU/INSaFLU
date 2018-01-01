@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from constants.constants import Constants, TypePath
+from constants.constants import Constants, TypePath, FileExtensions
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 from django.conf import settings
@@ -94,6 +94,12 @@ class Reference(models.Model):
 		else:
 			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
+	
+	def get_reference_fasta_index(self, type_path):
+		"""
+		get a fasta fai path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		return self.get_reference_fasta(type_path) + FileExtensions.FILE_FAI
 
 	class Meta:
 		verbose_name = 'Reference'
@@ -272,6 +278,12 @@ class Sample(models.Model):
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
+
+	def get_bam(self, type_path):
+		"""
+		return fastq output first step
+		"""
+		return os.path.join(self.__get_path__(type_path, True), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
 
 	def __get_path__(self, type_path, b_first_file):
 		"""
@@ -541,7 +553,7 @@ class ProjectSample(models.Model):
 		return file path output by software
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
 		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
-		software: Software.SOFTWARE_FREEBAYES_name, Software.SOFTWARE_SNIPPY_name
+		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
 		"""
 		constants = Constants()
 		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))

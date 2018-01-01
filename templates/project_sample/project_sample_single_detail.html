@@ -1,0 +1,166 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+
+	{% load static from staticfiles %}
+		<link rel="stylesheet" type="text/css" href="{% static 'css/flu-web-site.css' %}"/>
+		<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/>
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="https://igv.org/web/release/1.0.1/igv-1.0.1.css">
+{% endblock css %}
+
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Projects" "projects" %}
+	{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.id %}
+	{% breadcrumb "Show sample detail results" "show-sample-project-single-detail" %}
+{% endblock %}
+
+{% block content %}
+	{% if error_cant_see %}
+		<hr>
+		<p><strong>Sample not available</strong></p>
+	{% else %}
+		<div class="container-fluid">
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Name:</strong> {{ project_sample.sample.name }}</div>
+			  	<div class="col-lg-3"><strong>Onset Date:</strong> {{ project_sample.sample.date_of_onset|date }}</div>
+			  	<div class="col-lg-3"><strong>Collection Date:</strong> {{ project_sample.sample.date_of_collection|date }}</div>
+			  	<div class="col-lg-3"><strong>Reception Date:</strong> {{ project_sample.sample.date_of_receipt_lab|date }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Week:</strong> {{ project_sample.sample.week }}</div> <!-- author detail link not yet defined -->
+			  	<div class="col-lg-3"><strong>Vaccine status:</strong> {{ project_sample.sample.vaccine_status.name }}</div>
+			  	<div class="col-lg-3"><strong>Data set:</strong> {{ project_sample.sample.data_set.name }}</div>
+			  	<div class="col-lg-3"><strong>Is obsolete:</strong> {{ project_sample.sample.is_obsolete }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
+			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
+			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ project_sample.sample.type_subtype }}</div>
+			  	<div class="col-lg-3"><strong>Owner:</strong> {{ project_sample.sample.owner.username }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Reference Name:</strong> {{ project_sample.project.reference.display_name }}</div>
+			</div>
+			<hr>
+			
+			<div id="accordion" role="tablist" aria-multiselectable="true">
+				<!-- Card overall project-->
+				<div class="card">
+					<div class="card-header" role="tab" id="headingOne">
+						<h5 class="mb-0">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+								<strong>IGV</strong> - show '{{ project_sample.sample.name }}' bam file 
+		        			</a>
+		      			</h5>
+		    		</div>
+		
+		    		<div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="headingOne">
+		      			<div class="card-block">
+		      				<div class="container-fluid">
+		      					<br>
+		      					<div class="regular_info_box form-inline">
+							  		<div id="bam_file_id" class="col-lg-5"></div>
+							  		<div id="vcf_file_id" class="col-lg-5"></div>
+		      					</div>
+		      					<br>
+		      					
+		      					<!-- Show files to download, trees -->
+		      					<div id='loader_igv_id'><img src="{{ spinner_url }}"/></div>
+		        				<div id="show_igv_id" project_sample_id="{{ project_sample.id }}" show-igv-url="{% url 'show_igv' %}"></div>
+		        			</div>
+		      			</div>
+		    		</div>
+		  		</div>
+		  	</div>
+		  	<br>
+	  	
+			<!-- NAV tabs -->
+			<div class="container">
+				<ul class="nav nav-tabs" role="tablist">
+					<li class="nav-item active"><a class="nav-link fa fa-download" href="#download_files" role="tab" data-toggle="tab" > Download files</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-crosshairs" href="#consice_distance" role="tab" data-toggle="tab"> Detection of mixed infections</a></li>
+				</ul>
+	
+				<div class="tab-content">
+					<div id="download_files" role="tabpanel" class="tab-pane fade active box-blue">
+						<p class="title-box">Files available to download</p>
+						{% if candidate_file_name_1 %}
+							<div class="row">
+								<div class="col-lg-6"><strong>Candidate fastq 1:</strong> {{ candidate_file_name_1 }}</div>
+					  			<div class="col-lg-6"><strong>Candidate fastq 2:</strong> {{ candidate_file_name_2 }}</div>
+					  		</div>
+					  		<hr>
+						{% endif %}
+						<div class="row">
+							<div class="col-lg-6"><strong>Original fastq 1:</strong> {{ href_fastq_1 }}</div>
+				  			<div class="col-lg-6"><strong>Original fastq 2:</strong> {{ href_fastq_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<div class="row">
+							<div class="col-lg-6"><strong>Original fastq quality 1:</strong> {{ href_fastq_quality_1 }}</div> 
+				  			<div class="col-lg-6"><strong>Original fastq quality 2:</strong> {{ href_fastq_quality_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<p class="software"><strong>Software version: </strong>{{ fastq_software }}</p>
+					</div>
+					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
+			    		<p class="title-box">Alerts on the sample</p>
+			    		<div class="row">
+							<div class="col-lg-6"><strong>Trimmomatic fastq 1:</strong> {{ href_trimmonatic_1 }}</div>
+				  			<div class="col-lg-6"><strong>Trimmomatic fastq 2:</strong> {{ href_trimmonatic_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<div class="row">
+							<div class="col-lg-6"><strong>Trimmomatic fastq quality 1:</strong> {{ href_trimmonatic_quality_1 }}</div>
+							<hr>
+				  			<div class="col-lg-6"><strong>Trimmomatic fastq quality 2:</strong> {{ href_trimmonatic_quality_2 }}</div>
+				  		</div>
+				  		<hr>
+				  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
+			  		</div>
+					<div id="consice_distance" role="tabpanel" class="tab-pane fade box-blue">
+						<p class="title-box">Result of cosine distance on detection of mixed infections</p>
+						
+						{% for identify_virus in sample.identify_virus.all %}
+							<div class="row">
+								<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
+				  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
+				  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
+				  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+				  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
+				  			</div>
+				  			<hr>
+						{% endfor %}
+						<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+  		<br>
+		<a href="{% url 'show-sample-project-results' pk=project_sample.project.id %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+	{% endif %}
+	
+{% endblock %}
+
+{% block js %}
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/show-sample-project-single.js' %}"></script>
+	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.3/es6-shim.js"></script>
+			
+			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+			<script src="https://igv.org/web/release/1.0.1/igv-1.0.1.js"></script>
+{% endblock %}

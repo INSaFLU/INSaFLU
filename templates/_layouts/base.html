@@ -22,7 +22,8 @@
 		<!-- favicons-->
 		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
   		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-192x192.png' %}" sizes="192x192">
-  
+
+
   {% block css %} 		
   
   {% endblock css %}
@@ -31,6 +32,7 @@
 <body class="fixed-nav sticky-footer bg-dark" id="page-top">
   <!-- Navigation-->
   <nav class="navbar navbar-expand-lg navbar-dark bg-info fixed-top" id="mainNav">
+  	<img src="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" style="width:40px; padding-right:10px" id='main_logo_id'>
   	<a class="navbar-brand" href="{% url 'dashboard' %}"><strong>INSa</strong>FLU</a>
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -217,9 +219,10 @@
 	    	<script type="text/javascript" src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 	    	<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/sb-admin.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
      	
 	{% block js %}
-	     	
+
     {% endblock js %}
   </div>
 </body>

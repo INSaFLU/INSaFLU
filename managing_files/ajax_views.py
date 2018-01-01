@@ -7,7 +7,8 @@ Created on Dec 6, 2017
 import os
 from managing_files.models import Project, ProjectSample, DataSet, VaccineStatus
 from managing_files.manage_database import ManageDatabase
-from constants.constants import Constants, TypePath, FileExtensions
+from constants.constants import Constants, TypePath, FileExtensions, FileType
+from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
@@ -138,7 +139,7 @@ def show_msa_nucleotide(request):
 					file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_MAFFT)
 					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
 				data['is_ok'] = True
-				data['alignment_fasta_show_id'] = mark_safe("{}".format(request.build_absolute_uri(file_name_fasta)))
+				data['alignment_fasta_show_id'] = request.build_absolute_uri(file_name_fasta)
 				data['alignment_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
 				data['alignment_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
 				b_calculate_again = False
@@ -170,7 +171,7 @@ def show_msa_protein(request):
 					file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
 					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
 					data['is_ok'] = True
-					data['alignment_amino_fasta_show_id'] = mark_safe("{}".format(request.build_absolute_uri(file_name_fasta)))
+					data['alignment_amino_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
 					data['alignment_amino_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
 					data['alignment_amino_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
 					b_calculate_again = False
@@ -263,6 +264,35 @@ def get_image_coverage(request):
 				pass
 		return JsonResponse(data)
 
+
+@csrf_protect
+def show_igv(request):
+	"""
+	get data for IGV
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_sample_id = 'project_sample_id'
+		if (key_with_project_sample_id in request.GET):
+			try:
+				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
+				path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
+				path_name_vcf_gz = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
+				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
+				data['is_ok'] = True
+				data['path_bam'] = mark_safe(request.build_absolute_uri(path_name_bam))
+				data['path_reference'] = mark_safe(request.build_absolute_uri(path_name_reference))
+				data['path_reference_index'] = mark_safe(request.build_absolute_uri(path_name_reference_index))
+				data['reference_name'] = project_sample.project.reference.display_name
+				data['sample_name'] = project_sample.sample.name
+				
+				#### other files
+				data['bam_file_id'] = mark_safe("<strong>Bam file:</strong> <a href=\"{}\" download> {}</a>".format(path_name_bam, os.path.basename(path_name_bam)))
+				data['vcf_file_id'] = mark_safe("<strong>Vcf file:</strong> <a href=\"{}\" download> {}</a>".format(path_name_vcf_gz, os.path.basename(path_name_vcf_gz)))
+			except ProjectSample.DoesNotExist as e:
+				pass
+		return JsonResponse(data)
 
 @csrf_protect
 def validate_project_reference_name(request):

@@ -3,16 +3,21 @@ from django.test import TestCase
 # Create your tests here.
 from constants.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
+from utils.utils import Utils
 from .uploadFiles import UploadFiles
-from constants.constants import Constants
+from constants.constants import Constants, TypePath
 from utils.parse_out_files import ParseOutFiles
+from django.contrib.auth.models import User
 from .models import UploadFile, Tags, SeqVirus
+from managing_files.models import Reference
+from django.test.utils import override_settings
 import os
 
 class Test(TestCase):
 
 	### static
 	constantsTestsCase = ConstantsTestsCase()
+	utils = Utils()
 	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), self.constantsTestsCase.MANAGING_TESTS)
@@ -133,11 +138,52 @@ class Test(TestCase):
 		self.assertEquals("Victoria", vect_identify_virus[3].seq_virus.name)
 		self.assertEquals(Constants.SEQ_VIRUS_LINEAGE, vect_identify_virus[3].seq_virus.kind_type.name)
 		
+	
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_upload_references(self):
+		"""
+		"""
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+		uploadFiles = UploadFiles()
 		
+		try:
+			User.objects.get(username=Constants.DEFAULT_USER)
+			### great, the default user exist 
+		except User.DoesNotExist:
+			
+			### need to create it
+			user = User()
+			user.username = Constants.DEFAULT_USER
+			user.password = Constants.DEFAULT_USER_PASS
+			user.first_name = Constants.DEFAULT_USER
+			user.is_active = False
+			user.is_staff = False
+			user.is_superuser = False
+			user.save()
+			
+		b_test = True
+		uploadFiles.upload_default_references(user, b_test)
 		
-		
-		
-		
+		path_to_find = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_REFERENCES)
+		n_files = 0
+		for file in self.utils.get_all_files(path_to_find):
+			n_files += 1
+			
+			name = self.utils.clean_extension(os.path.basename(file))
+			try:
+				reference = Reference.objects.get(owner=user, is_obsolete=False, is_deleted=False, name__iexact=name)
+			except Reference.DoesNotExist as e:
+				self.fail("must exist")
+			
+			self.assertTrue(os.path.exists(reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)))
+			self.assertTrue(os.path.exists(reference.get_reference_fasta(TypePath.MEDIA_ROOT)))
+			self.assertTrue(os.path.exists(reference.get_reference_gbk(TypePath.MEDIA_ROOT)))
+			if (n_files > 1): break
+		self.assertTrue(n_files > 1)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
 	
 		
 		

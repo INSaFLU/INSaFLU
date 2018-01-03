@@ -317,13 +317,16 @@ class Utils(object):
 		"""
 		geneticElement = GeneticElement()
 		for record in SeqIO.parse(genbank_name, "genbank"):
+			length = 0
 			for features in record.features:
-				if (features.type == 'CDS'):
+				if (features.type == 'source'):
+					length = abs(features.location.end - features.location.start)
+				elif (features.type == 'CDS'):
 					if ('gene' in features.qualifiers):
-						geneticElement.add_gene(record.name, Gene(features.qualifiers['gene'][0],
+						geneticElement.add_gene(record.name, length, Gene(features.qualifiers['gene'][0],
 							int(features.location.start), int(features.location.end), features.location.strand))
 					elif ('locus_tag' in features.qualifiers): 
-						geneticElement.add_gene(record.name, Gene(features.qualifiers['locus_tag'][0],
+						geneticElement.add_gene(record.name, length, Gene(features.qualifiers['locus_tag'][0],
 							int(features.location.start), int(features.location.end), features.location.strand))
 		return geneticElement
 	
@@ -332,8 +335,7 @@ class Utils(object):
 		return vector with name of elements sorted
 		"""
 		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Reference, reference.id)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_Reference
 		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_reference == None):
 			utils = Utils()
@@ -344,14 +346,15 @@ class Utils(object):
 			return geneticElement.get_sorted_elements()
 		else:
 			return meta_reference.description.split(',')
+		return None
+
 
 	def get_elements_and_cds_from_db(self, reference, user):
 		"""
 		return geneticElement
 		"""
 		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
 		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_reference == None):
 			utils = Utils()
@@ -364,14 +367,14 @@ class Utils(object):
 			decodeCoverage = DecodeObjects()
 			geneticElement = decodeCoverage.decode_result(meta_reference.description)
 			return geneticElement
-
+		return None
+	
 	def get_vect_cds_from_element_from_db(self, element_name, reference, user):
 		"""
 		return geneticElement
 		"""
 		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
 		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_reference == None):
 			utils = Utils()
@@ -778,13 +781,19 @@ class Utils(object):
 		"""
 		if (not os.path.exists(in_file)): return
 		
-		with open(out_file, "w+") as output_file:
+		with open(out_file, "w+") as output_file_handle:
 			vect_sequences = []
 			for seq_record in SeqIO.parse(in_file, "fasta"):
 				# Take the current sequence
 				vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
-			SeqIO.write(vect_sequences, out_file, "fasta")
+			SeqIO.write(vect_sequences, output_file_handle, "fasta")
 
 
+	def short_name(self, name, max_size):
+		"""
+		short the name for the size of max_size
+		"""
+		if (len(name) > max_size): return "{}...{}".format(name[:int(max_size/2)], name[int(len(name) - (max_size/2)):])
+		return name
 
 

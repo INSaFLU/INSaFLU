@@ -843,8 +843,7 @@ class testsReferenceFiles(TestCase):
 			reference.save()
 		
 		manage_database = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_Reference, reference.id)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_Reference
 		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		self.assertEqual(None, meta_reference)
 	
@@ -859,7 +858,7 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual('HA,MP,NA,NP,NS,PA,PB1,PB2', meta_reference.description)
 		
 		geneticElement = utils.get_elements_and_cds_from_db(reference, user)
-		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference, reference.id)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
 		decodeCoverage = DecodeObjects()
 		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		self.assertFalse(meta_reference == None)
@@ -869,6 +868,7 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual(8, len(geneticElement.get_sorted_elements()))
 		self.assertEqual('HA', geneticElement.get_sorted_elements()[0])
 		self.assertEqual('HA', geneticElement.get_genes('HA')[0].name)
+		self.assertEqual(1701, geneticElement.get_size_element('HA'))
 		self.assertEqual('PB2', geneticElement.get_sorted_elements()[-1])
 		
 		self.assertEquals(['HA'], geneticElement.get_vect_gene_names('HA'))

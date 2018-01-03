@@ -390,7 +390,8 @@ class ParseInFiles(object):
 		software = Software()
 		utils = Utils()
 		upload_files = self.get_upload_samples_file(user)
-		
+		if (upload_files == None): return	## there's no files to match
+
 		n_files_processed = 0
 		for sample in upload_files.samples.all():
 			if (sample.has_files):
@@ -446,6 +447,7 @@ class ParseInFiles(object):
 					upload_files_2.upload_file = upload_files
 					upload_files_2.number_files_processed = 1
 					upload_files_2.samples.add(sample)
+					upload_files_2.attached_date = datetime.now()
 					upload_files_2.save()
 					
 				### sample file

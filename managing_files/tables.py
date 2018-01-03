@@ -12,6 +12,7 @@ from utils.result import DecodeObjects
 from django.conf import settings
 from django.db.models import F
 from django.db.models.functions import Length
+from utils.utils import Utils
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -27,10 +28,13 @@ class ReferenceTable(tables.Table):
 	reference_genbank_name = tables.LinkColumn('reference_genbank_name', args=[tables.A('pk')], verbose_name='GenBank file')
 	owner = tables.Column("Owner", orderable=True, empty_values=())
 	number_of_locus = tables.Column(orderable=False)
-
+	utils = Utils()
+	
+	SHORT_NAME_LENGTH = 20
+	
 	class Meta:
 		model = Reference
-		fields = ('name', 'isolate_name', 'reference_fasta_name', 'reference_genbank_name',
+		fields = ('name', 'reference_fasta_name', 'reference_genbank_name',
 				  'creation_date', 'owner', 'number_of_locus')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no References to show..."
@@ -42,22 +46,27 @@ class ReferenceTable(tables.Table):
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_fasta(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + record.reference_fasta_name + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + self.utils.short_name(record.reference_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + record.reference_genbank_name + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + self.utils.short_name(record.reference_genbank_name, self.SHORT_NAME_LENGTH) + '</a>')
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
 		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
 
+	def order_owner(self, queryset, is_descending):
+		queryset = queryset.annotate(owner_name = F('owner__username')).order_by(('-' if is_descending else '') + 'owner_name')
+		return (queryset, True)
+	
 class ReferenceProjectTable(tables.Table):
 	"""
 	create a new project with a reference
 	"""
 	select_ref = CheckBoxColumnWithName(verbose_name=('Select One'), accessor="pk", orderable=False)
+	owner = tables.Column("Owner", orderable=True, empty_values=())
 #	number_of_locus = tables.Column(orderable=False)
 
 	class Meta:
@@ -73,6 +82,10 @@ class ReferenceProjectTable(tables.Table):
 	def render_select_ref(self, value, record):
 		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
 
+	def order_owner(self, queryset, is_descending):
+		queryset = queryset.annotate(owner_name = F('owner__username')).order_by(('-' if is_descending else '') + 'owner_name')
+		return (queryset, True)
+	
 class SampleToProjectsTable(tables.Table):
 	"""
 	To add samples to projects

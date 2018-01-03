@@ -78,7 +78,7 @@ class ReferenceForm(forms.ModelForm):
 		cleaned_data = super(ReferenceForm, self).clean()
 		name = cleaned_data['name']
 		try:
-			Reference.objects.get(name=name, owner__username=self.request.user.username)
+			Reference.objects.get(name=name, owner=self.request.user, is_obsolete=False, is_deleted=False)
 			self.add_error('name', _("This name '" + name +"' already exist in database, please choose other."))
 		except Reference.DoesNotExist:
 			pass

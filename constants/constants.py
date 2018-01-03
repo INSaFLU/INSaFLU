@@ -11,7 +11,7 @@ class Constants(object):
 	'''
 	
 	### default user that has the default references to be used in mapping
-	DEFAULT_USER = "default_user"
+	DEFAULT_USER = "system"
 	DEFAULT_USER_PASS = "default_user_123_$%_2"
 	
 	META_KEY_VALUE_NOT_NEED = "value not needed"
@@ -60,6 +60,7 @@ class Constants(object):
 	
 	## Has all the versions of type influenza typing
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
+	DIR_TYPE_REFERENCES = "db/references/"
 	
 	INSAFLU_NAME = 'insaflu'
 	

@@ -30,6 +30,8 @@ from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
+from operator import attrgetter
+from itertools import chain
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -44,7 +46,7 @@ class ReferenceView(LoginRequiredMixin, ListView):
 		context = super(ReferenceView, self).get_context_data(**kwargs)
 		
 		tag_search = 'search_references'
-		query_set = Reference.objects.filter(owner__id=self.request.user.id).order_by('-name')
+		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False).order_by('-name')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 										Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
@@ -52,12 +54,21 @@ class ReferenceView(LoginRequiredMixin, ListView):
 										Q(reference_fasta_name__icontains=self.request.GET.get(tag_search)) |\
 										Q(isolate_name__icontains=self.request.GET.get(tag_search)))
 		
-		table = ReferenceTable(query_set)
+		### get the references from the system
+		query_set_system = Reference.objects.filter(owner__username=Constants.DEFAULT_USER, is_obsolete=False, is_deleted=False).order_by('-name')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set_system = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+									Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
+									Q(reference_genbank_name__icontains=self.request.GET.get(tag_search)) |\
+									Q(reference_fasta_name__icontains=self.request.GET.get(tag_search)) |\
+									Q(isolate_name__icontains=self.request.GET.get(tag_search)))
+		query_set_result = sorted(chain(query_set, query_set_system), key=attrgetter('creation_date'))
+		table = ReferenceTable(query_set_result)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['nav_reference'] = True
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
 		return context
 
 
@@ -661,12 +672,20 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		context = super(ProjectCreateView, self).get_context_data(**kwargs)
 		
 		tag_search = 'search_references'
-		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False).order_by('-name')
+		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False).order_by('-name')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 							Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
 							Q(isolate_name__icontains=self.request.GET.get(tag_search)))
-		table = ReferenceProjectTable(query_set)
+		
+		### get the references from the system
+		query_set_system = Reference.objects.filter(owner__username=Constants.DEFAULT_USER, is_obsolete=False, is_deleted=False).order_by('-name')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set_system = query_set_system.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+							Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
+							Q(isolate_name__icontains=self.request.GET.get(tag_search)))
+		query_set_result = sorted(chain(query_set, query_set_system), key=attrgetter('creation_date'))
+		table = ReferenceProjectTable(query_set_result)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		
 		### set the check_box, check_box_all is only to control if is the first time or not
@@ -676,7 +695,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		elif ("search_references" in self.request.GET):
 			# clean check boxes in search
 			dt_sample_id_add_temp = {}
-			for reference in query_set: dt_sample_id_add_temp[reference.id] = 1	## add the ids that are in the tables
+			for reference in query_set_result: dt_sample_id_add_temp[reference.id] = 1	## add the ids that are in the tables
 			for key in self.request.session.keys():
 				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
 					### this is necessary because of the search. Can occur some checked box that are out of filter.
@@ -696,9 +715,8 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 			del self.request.session[Constants.ERROR_REFERENCE]
 		
 		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
 		context['nav_project'] = True
-		context['nav_modal'] = True	## short the size of modal window
 		if self.request.POST: 
 			context['project_references'] = ReferenceProjectFormSet(self.request.POST)
 		else: 
@@ -950,9 +968,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		
 		## Files
 		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
-		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY)
-		context['freebays_variations_50_50_var_90_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES)
-		context['count_freebays_variations_50_50_var_90'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)
+		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
+		context['freebays_variations_50_50_var_90_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
+		context['sample_file_result'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT)
 		
 		## tODO , set this in database 
 		utils = Utils()
@@ -995,8 +1013,11 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				if (meta_data != None):
 					alert_out.append(meta_data.description)
 			
-			## mixed infection
-			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION, MetaKeyAndValue.META_VALUE_Success)
+			## two types of mixed infection
+			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_data != None):
+				alert_out.append(meta_data.description)
+			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_data != None):
 				alert_out.append(meta_data.description)
 			context['alerts'] = alert_out

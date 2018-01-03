@@ -197,10 +197,12 @@ class Test(unittest.TestCase):
 		self.assertTrue('PB2' in geneticElement.get_sorted_elements())
 		self.assertEquals('HA,MP,NA,NP,NS,PA,PB1,PB2', ','.join(geneticElement.get_sorted_elements()))
 		self.assertEquals(30, geneticElement.get_genes('PB2')[0].start)
+		self.assertEquals(2280, geneticElement.get_size_element('PB2'))
 		self.assertEquals(2280, geneticElement.get_genes('PB2')[0].end)
 		self.assertEquals('PB2', geneticElement.get_genes('PB2')[0].name)
 		self.assertEquals(1, geneticElement.get_genes('PB2')[0].strand)
 		self.assertTrue(geneticElement.get_genes('PB2')[0].is_forward())
+		self.assertEquals(1410, geneticElement.get_size_element('NA'))
 
 		
 	def test_filter_fasta_all_sequences(self):
@@ -597,4 +599,14 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, cleanned_file))
 		#os.unlink(out_file)
+
+	def test_short_name(self):
+		"""
+		test short names
+		"""
+		utils = Utils()
+		self.assertEquals('short_name_short_name_short_name', utils.short_name('short_name_short_name_short_name', 100))
+		self.assertEquals('short..._name', utils.short_name('short_name_short_name_short_name', 10))
+
+
 

@@ -4,7 +4,7 @@ Created on Oct 31, 2017
 @author: mmp
 '''
 from django.db import transaction
-from constants.constants import Constants
+from constants.constants import Constants, FileExtensions
 from utils.parse_out_files import ParseOutFiles
 from utils.utils import Utils
 from django.conf import settings
@@ -212,4 +212,66 @@ class UploadFiles(object):
 					vect_data_out.append(dt_data)
 					vect_out_gene.append(dt_data[ParseOutFiles.GENE])
 		return vect_data_out
+	
+	
+	@transaction.atomic
+	def upload_default_references(self, user, b_test):
+		"""
+		upload default files for reference
+		"""
+		from managing_files.models import Reference
+		from utils.software import Software
 		
+		software = Software()
+		path_to_find = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_REFERENCES)
+		n_upload = 0
+		for file in self.utils.get_all_files(path_to_find):
+			file = os.path.join(path_to_find, file)
+			try:
+				number_of_elements = self.utils.is_fasta(file)
+			except IOError as e:
+				print(e.args[0])
+				continue
+			
+			name = self.utils.clean_extension(os.path.basename(file))
+			try:
+				reference = Reference.objects.get(owner=user, is_obsolete=False, is_deleted=False, name__iexact=name)
+			except Reference.DoesNotExist as e:
+				print("create")
+				reference = Reference()
+				reference.display_name = name
+				reference.isolate_name = name
+				reference.name = reference.display_name
+				reference.owner = user
+				reference.is_obsolete = False
+				reference.number_of_locus = number_of_elements
+				reference.hash_reference_fasta = self.utils.md5sum(file)
+				reference.reference_fasta_name = os.path.basename(file)
+				reference.scentific_name = os.path.basename(file)
+				reference.reference_genbank_name = name + FileExtensions.FILE_GBK
+				reference.save()
+				
+				## move the files to the right place
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_fasta_name)
+				self.utils.copy_file(file, sz_file_to)
+				reference.reference_fasta.name = os.path.join(self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_fasta_name)
+				
+				temp_dir = software.run_prokka(file, os.path.basename(file))
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_genbank_name)
+				self.utils.move_file(os.path.join(temp_dir, reference.reference_genbank_name), sz_file_to)
+				reference.reference_genbank.name = os.path.join(self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_genbank_name)
+				reference.hash_reference_genbank = self.utils.md5sum(sz_file_to)
+				reference.save()
+				
+				### save in database the elements and coordinates
+				self.utils.get_elements_from_db(reference, user)
+				self.utils.get_elements_and_cds_from_db(reference, user)
+
+				## create the index before commit in database, throw exception if something goes wrong
+				software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
+		
+				### remove dir
+				self.utils.remove_dir(temp_dir)
+				n_upload += 1
+			
+			if (b_test and n_upload > 2): break

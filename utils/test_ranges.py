@@ -20,9 +20,9 @@ class Test(unittest.TestCase):
 		pass
 
 
-	def test_ranges(self):
-		url = mark_safe('http://127.0.0.1:8000/media/uploads/references/userId_1/refId_1/ref_H3.fasta')
-		headers = {"Range": "bytes=0-100"}
-		r = requests.get(url, headers=headers)
-		self.assertEquals(101, len(str(r.text)))
+# 	def test_ranges(self):
+# 		url = mark_safe('http://127.0.0.1:8000/media/uploads/references/userId_1/refId_1/ref_H3.fasta')
+# 		headers = {"Range": "bytes=0-100"}
+# 		r = requests.get(url, headers=headers)
+# 		self.assertEquals(101, len(str(r.text)))
 

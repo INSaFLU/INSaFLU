@@ -15,6 +15,7 @@ import os, time
 import plotly.graph_objs as go
 from plotly.offline import plot
 from django.db import transaction
+from utils.result import Coverage
 
 class CollectExtraData(object):
 	'''
@@ -73,30 +74,27 @@ class CollectExtraData(object):
 
 		## collect tab variations snippy
 		## split missense_variant c.157G>A p.Val53Ile
-		out_file = self.create_coverage_file(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY)
-		if (out_file != None):
-			self.utils.copy_file(out_file, out_file_file_system)
-			os.unlink(out_file)
+		out_file = self.collect_variations_snippy(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
+		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		## collect tab variations freebayes, <50% and 50<var<90
 		## remove del or ins
 		## split synonymous_variant c.156G>A p.Gly52Gly
-		out_file = self.create_coverage_file(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES)
-		if (out_file != None):
-			self.utils.copy_file(out_file, out_file_file_system)
-			os.unlink(out_file)
+		out_file = self.collect_variations_freebayes(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
+		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		## collect sample table with plus type and subtype, mixed infection, equal to upload table
-		out_file = self.create_coverage_file(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)
-		if (out_file != None):
-			self.utils.copy_file(out_file, out_file_file_system)
-			os.unlink(out_file)
+		out_file = self.collect_sample_table(project, user)
+		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT)
+		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### create trees
 		createTree = CreateTree()
@@ -193,3 +191,128 @@ class CollectExtraData(object):
 		plot(fig, filename=temp_file_html, auto_open=False, image_width=400, image_height=300, show_link=False)
 		return (temp_file_html, temp_file_png)
 
+
+	def create_coverage_file(self, project, user):
+		"""
+		collect all coverage and make a file
+		"""
+		decode_coverage = DecodeObjects()
+		manageDatabase = ManageDatabase()
+		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+		if (geneticElement == None): return None
+		
+		vect_ratios = [0, 9]
+		vect_reference = geneticElement.get_sorted_elements()
+		out_file = self.utils.get_temp_file('coverage_file', '.tsv')
+		n_count = 0
+		with open(out_file, "w") as output_file_handle:
+
+			### write headers
+			output_file_handle.write("\nChromosome\nName\t" + "\t".join(vect_reference) + "\nLength")
+			for element_name in vect_reference:
+				output_file_handle.write("\t{}".format(geneticElement.get_size_element(element_name)))
+			
+			output_file_handle.write("\n\nCoverage\t" + "\t" * len(vect_reference))
+			print("\t" * len(vect_reference))
+			for ratio in vect_ratios: output_file_handle.write("\tRatio>%d" % (ratio) + "\t" * len(vect_reference))
+			output_file_handle.write("\n")
+			
+			for project_sample in project.project_samples.all():
+				if (not project_sample.get_is_ready_to_proccess()): continue
+				sz_out = project_sample.sample.name
+				
+				meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_data == None): continue
+				coverage = decode_coverage.decode_result(meta_data.description)
+				
+				for element_name in vect_reference:
+					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_ALL))
+				
+				sz_out += "\t"
+				for element_name in vect_reference:
+					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_0))
+					
+				sz_out += "\t"
+				for element_name in vect_reference:
+					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9))
+				output_file_handle.write(sz_out + "\n")
+				n_count += 1
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
+		return out_file
+
+
+	def collect_variations_snippy(self, project, user):
+		"""
+		collect snippy variations
+		"""
+		decode_coverage = DecodeObjects()
+		manageDatabase = ManageDatabase()
+		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+		if (geneticElement == None): return None
+		
+		vect_reference = geneticElement.get_sorted_elements()
+		out_file = self.utils.get_temp_file('variations_snippy', '.tsv')
+		n_count = 0
+		with open(out_file, "w") as output_file_handle:
+			for project_sample in project.project_samples.all():
+				if (not project_sample.get_is_ready_to_proccess()): continue
+				sz_out = project_sample.sample.name
+				output_file_handle.write(sz_out + "\n")
+				n_count += 1
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
+		return out_file
+
+
+	def collect_variations_freebayes(self, project, user):
+		"""
+		collect freebayes variations
+		"""
+		decode_coverage = DecodeObjects()
+		manageDatabase = ManageDatabase()
+		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+		if (geneticElement == None): return None
+		
+		vect_reference = geneticElement.get_sorted_elements()
+		out_file = self.utils.get_temp_file('variations_freebayes', '.tsv')
+		n_count = 0
+		with open(out_file, "w") as output_file_handle:
+
+			for project_sample in project.project_samples.all():
+				if (not project_sample.get_is_ready_to_proccess()): continue
+				sz_out = project_sample.sample.name
+				output_file_handle.write(sz_out + "\n")
+				n_count += 1
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
+		return out_file
+
+
+	def collect_sample_table(self, project, user):
+		"""
+		collect sample table
+		"""
+		decode_coverage = DecodeObjects()
+		manageDatabase = ManageDatabase()
+		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+		if (geneticElement == None): return None
+		
+		vect_reference = geneticElement.get_sorted_elements()
+		out_file = self.utils.get_temp_file('sample_table', '.tsv')
+		n_count = 0
+		with open(out_file, "w") as output_file_handle:
+			
+			for project_sample in project.project_samples.all():
+				if (not project_sample.get_is_ready_to_proccess()): continue
+				sz_out = project_sample.sample.name
+				output_file_handle.write(sz_out + "\n")
+				n_count += 1
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
+		return out_file
+		

@@ -421,16 +421,23 @@ class GeneticElement(object):
 	def __init__(self):
 		self.name = ""
 		self.dt_elements = {}
+		self.dt_elements_size = {}
 		
-	def add_gene(self, element_name, gene):
+	def add_gene(self, element_name, length, gene):
 		if (element_name in self.dt_elements): 
 			if (gene not in self.dt_elements[element_name]): self.dt_elements[element_name].append(gene)
 			else: return False
-		else: self.dt_elements[element_name] = [gene]
+		else: 
+			self.dt_elements[element_name] = [gene]
+			self.dt_elements_size[element_name] = length
 		return True
 
 	def get_genes(self, element_name):
 		if (element_name in self.dt_elements): return self.dt_elements[element_name]
+		return None
+	
+	def get_size_element(self, element_name):
+		if (element_name in self.dt_elements_size): return self.dt_elements_size[element_name]
 		return None
 	
 	def get_vect_gene_names(self, element_name):

@@ -15,11 +15,15 @@ from managing_files.models import Sample, Project, ProjectSample, Reference
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
 from django.test.utils import override_settings
+from utils.parse_coverage_file import GetCoverage
+from constants.constants import TypePath, FileType
+from constants.software_names import SoftwareNames
 
 class Test(unittest.TestCase):
 
 	constants_tests_case = ConstantsTestsCase()
-
+	utils = Utils()
+	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
 		pass
@@ -120,5 +124,111 @@ class Test(unittest.TestCase):
 		os.unlink(file_out_html)
 		if (file_out_png != None): os.unlink(file_out_png)
 
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_create_tree_and_alignments(self):
+		"""
+ 		test global method
+ 		"""
+		software_names = SoftwareNames()
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		path_destination = os.path.join(getattr(settings, "MEDIA_ROOT_TEST", None), ConstantsTestsCase.DIR_PROJECTS)
+		self.utils.make_path(os.path.join(getattr(settings, "MEDIA_ROOT_TEST", None), ConstantsTestsCase.DIR_PROJECTS))
+		cmd = 'cp -r {}/{}/* {}'.format(self.baseDirectory, ConstantsTestsCase.DIR_PROJECTS, path_destination)
+		os.system(cmd)
+		
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_coverage_output.tsv")
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5000')
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME + '5000'
+			user.id = 5000
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stage_2_ test_create_tree"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.display_name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+		
+		project_name = "several_names_test_create_tree"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.id= 5000
+			project.name = project_name
+			project.reference = reference
+			project.owner = user
+			project.save()
+		
+		## get all fastq files
+		vect_files = self.constants_tests_case.get_all_fastq_files(self.baseDirectory)
+		
+		get_coverage = GetCoverage()
+		ProjectSample.objects.all().delete()
+		Sample.objects.all().delete()
+		temp_dir = self.utils.get_temp_dir()
+		count = 0
+		for vect_file in vect_files:
+			self.utils.copy_file(vect_file[0], os.path.join(temp_dir, os.path.basename(vect_file[0])))
+			self.utils.copy_file(vect_file[1], os.path.join(temp_dir, os.path.basename(vect_file[1])))
+				
+			sample_name = "_".join(os.path.basename(vect_file[0]).split('_')[0:2])
+			sample = Sample()
+			sample.id = 5000 + count + 1
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = vect_file[0]
+			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
+			sample.is_valid_2 = False
+			sample.file_name_2 = vect_file[1]
+			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
+			sample.owner = user
+			sample.is_ready_for_projects = True
+			sample.is_obsolete = False
+			sample.save()
+
+			## create project_sample
+			project_sample = ProjectSample()
+			project_sample.id = 5000 + count + 1
+			project_sample.sample = sample
+			project_sample.project = project
+			project_sample.is_finished = True
+			project_sample.is_deleted = False
+			project_sample.is_error = False
+			project_sample.save()
+			
+			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
+						software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+			meta_value = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
+			count += 1
+		
+		
+		collect_extra_data = CollectExtraData();
+		out_file = collect_extra_data.create_coverage_file(project, user)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
+
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 

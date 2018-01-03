@@ -65,6 +65,7 @@ class Reference(models.Model):
 
 	owner = models.ForeignKey(User, related_name='reference', blank=True, null=True, on_delete=models.CASCADE)
 	is_obsolete = models.BooleanField(default=False, verbose_name='Obsolete')
+	is_deleted = models.BooleanField(default=False, verbose_name='Deleted')
 	number_of_locus = models.IntegerField(default=0, verbose_name='#Sequences')
 	
 	season = models.ManyToManyField(SeasonReference)		## can have the season
@@ -360,10 +361,10 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
-	PROJECT_FILE_NAME_COVERAGE = "coverage.csv"
-	PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY = "variation_snippy.vcf.gz" 
-	PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES = "variations_freebays.vcf.gz" 
-	PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES = "count_variations.csv" 
+	PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
+	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "variations_snippy.tsv" 
+	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "variations_freebays.tsv" 
+	PROJECT_FILE_NAME_SAMPLE_RESULT = "sample_result.tsv" 
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\

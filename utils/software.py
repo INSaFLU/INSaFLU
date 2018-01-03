@@ -342,7 +342,7 @@ class Software(object):
 		
 		## clean /mol_type=
 		gbk_file = os.path.join(temp_dir, self.utils.clean_extension(original_file_name) + FileExtensions.FILE_GBK)
-		temp_file = self.utils.get_temp_file_from_dir(temp_dir, 'new_file', '.gbk')
+		temp_file = self.utils.get_temp_file_from_dir(temp_dir, 'new_file', FileExtensions.FILE_GBK)
 		cmd = "grep -E -v '/mol_type=' {} > {}".format(gbk_file, temp_file)
 		os.system(cmd);
 		self.utils.move_file(temp_file, gbk_file)

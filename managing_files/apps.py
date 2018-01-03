@@ -1,8 +1,9 @@
 from django.apps import AppConfig
 # 
-from constants.constants import Constants
+from constants.constants import Constants, FileExtensions
 from constants.constants_mixed_infection import ConstantsMixedInfection
-
+from django.db import transaction
+import os
 
 
 class ManagingFilesConfig(AppConfig):
@@ -19,6 +20,9 @@ class ManagingFilesConfig(AppConfig):
 		
 		#### set default fields
 		self.default_database_fields()
+		
+		#### set default references
+		self.upload_default_references()
 		
 #		pass
 
@@ -91,8 +95,19 @@ class ManagingFilesConfig(AppConfig):
 				mixed_infections_tag = MixedInfectionsTag()
 				mixed_infections_tag.name = tag
 				mixed_infections_tag.save()
-				
-			
+	
+	
+	@transaction.atomic
+	def upload_default_references(self):
+		"""
+		upload default files for reference
+		"""
+		from manage_virus.uploadFiles import UploadFiles
+		from django.contrib.auth.models import User
 		
+		uploadFiles = UploadFiles()
+		self.create_default_user()
+		b_test = False
+		uploadFiles.upload_default_references(User.objects.get(username=Constants.DEFAULT_USER), b_test) 
 		
-		
+

@@ -233,7 +233,7 @@ class ShowProjectSamplesResults(tables.Table):
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 	type_subtype = tables.LinkColumn('Type-Subtype', empty_values=())
-	mixed_infections = tables.LinkColumn('Mixed-infection', empty_values=())
+	mixed_infections = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 		

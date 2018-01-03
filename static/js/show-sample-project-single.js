@@ -14,6 +14,9 @@ $('#collapseOne').on('hidden.bs.collapse', function () {
 	$('#vcf_file_id').empty()
 });
 
+// https://github.com/igvteam/igv.js/issues/241
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+// https://github.com/racitup/static-ranges
 
 // show igv
 function show_igv() {
@@ -43,8 +46,9 @@ function show_igv() {
 			  
 			  /// set options
 	    	  options = {
+				  	showNavigation: true,
+				  	showRuler: true,
 	    		  	showChromosomeWidget: true,
-	    		  	genome: data['reference_name'],
 	    		  	reference: {
 	                    id: data['reference_name'],
 	                    fastaURL: data['path_reference'],

@@ -71,7 +71,8 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
 
-		## collect vcf variations snippy
+		## collect tab variations snippy
+		## split missense_variant c.157G>A p.Val53Ile
 		out_file = self.create_coverage_file(project, user)
 		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_SNIPPY)
 		if (out_file != None):
@@ -79,7 +80,9 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
 		
-		## collect vcf variations freebayes, <50% and 50<var<90
+		## collect tab variations freebayes, <50% and 50<var<90
+		## remove del or ins
+		## split synonymous_variant c.156G>A p.Gly52Gly
 		out_file = self.create_coverage_file(project, user)
 		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_VCF_VARIATIONS_FREEBAYES)
 		if (out_file != None):
@@ -87,8 +90,9 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
 		
-		## collect count variations freebayes, <50% and 50<var<90
-		## also has the cosine distance
+		## collect all consensus in fasta format to downlaod
+		
+		## collect sample table with plus type and subtype, mixed infection, equal to upload table
 		out_file = self.create_coverage_file(project, user)
 		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)
 		if (out_file != None):

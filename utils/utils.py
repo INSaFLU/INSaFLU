@@ -5,6 +5,7 @@ Created on Oct 31, 2017
 '''
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
+from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
 from utils.result import GeneticElement, Gene
 from Bio import SeqIO
@@ -439,10 +440,13 @@ class Utils(object):
 		"""
 		compress files
 		"""
-		## test if the file exists
-		if (os.path.exists(file_name + ".gz")): return
+		### get extension of output
+		extension = FileExtensions.FILE_VCF_BGZ if software == SoftwareNames.SOFTWARE_BGZIP_name else FileExtensions.FILE_VCF_GZ
 		
-		cmd = "{} -c {} > {}.gz".format(software, file_name, file_name)
+		## test if the file exists
+		if (os.path.exists(file_name + extension)): return
+		
+		cmd = "{} -c {} > {}{}".format(software, file_name, file_name, extension)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -451,14 +455,17 @@ class Utils(object):
 
 	def create_index_files(self, software, file_name):
 		"""
-		create index, need to be .gz
+		create index, need to be .bgz
 		"""
 		file_to_index = file_name
-		if (not file_to_index.endswith(".gz")): file_to_index += ".gz"
+		if (not file_to_index.endswith(FileExtensions.FILE_VCF_BGZ)): file_to_index += FileExtensions.FILE_VCF_BGZ
 		if (not os.path.exists(file_to_index)):
-			self.logger_production.error("File doesn't exist: " + file_to_index)
-			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
-			raise Exception("File doesn't exist")
+			file_to_index = file_name
+			if (not file_to_index.endswith(FileExtensions.FILE_VCF_GZ)): file_to_index += FileExtensions.FILE_VCF_GZ
+			if (not os.path.exists(file_to_index)):
+				self.logger_production.error("File doesn't exist: " + file_to_index)
+				self.logger_debug.error("Fail doesn't exist: " + file_to_index)
+				raise Exception("File doesn't exist")
 		
 		## test if tbi exists
 		if (os.path.exists(file_to_index + '.tbi')): return

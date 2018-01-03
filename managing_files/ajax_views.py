@@ -271,6 +271,7 @@ def show_igv(request):
 	get data for IGV
 	"""
 	if request.is_ajax():
+		utils = Utils()
 		data = { 'is_ok' : False }
 		key_with_project_sample_id = 'project_sample_id'
 		if (key_with_project_sample_id in request.GET):
@@ -288,8 +289,10 @@ def show_igv(request):
 				data['sample_name'] = project_sample.sample.name
 				
 				#### other files
-				data['bam_file_id'] = mark_safe("<strong>Bam file:</strong> <a href=\"{}\" download> {}</a>".format(path_name_bam, os.path.basename(path_name_bam)))
-				data['vcf_file_id'] = mark_safe("<strong>Vcf file:</strong> <a href=\"{}\" download> {}</a>".format(path_name_vcf_gz, os.path.basename(path_name_vcf_gz)))
+				data['bam_file_id'] = mark_safe('<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
+								os.path.basename(path_name_bam), os.path.basename(path_name_bam)))
+				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf_gz,\
+								utils.clean_extension(os.path.basename(path_name_vcf_gz)), utils.clean_extension(os.path.basename(path_name_vcf_gz))))
 			except ProjectSample.DoesNotExist as e:
 				pass
 		return JsonResponse(data)

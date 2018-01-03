@@ -51,7 +51,7 @@ class Software(object):
 		"""
 		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
-				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
+				FileType.FILE_TAB, FileType.FILE_VCF, FileType.FILE_CSV]
 		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
 
@@ -66,16 +66,22 @@ class Software(object):
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, software))
 			elif (type_file == FileType.FILE_VCF):	## vcf file
-				### create the gzip file
+				### create the bgzip file
 				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
 				### create the tabix
-				self.utils.create_index_files(self.software_names.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
-				
+				self.utils.create_index_files(self.software_names.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_BGZ, software))))
+				### create the bzip file
+				self.utils.compress_files(self.software_names.get_bzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
+	
 				### copy both
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_BGZ, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_BGZ_TBI, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_BGZ_TBI, software))
+				
+				## copy the vcf.gz too to make the download, chrome try to unzip and corrupt the file if is bgz
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))
-				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))),\
-					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))
 			else:
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
@@ -334,11 +340,19 @@ class Software(object):
 		name_strain = self.utils.clean_extension(os.path.basename(original_file_name))
 		cmd = "{} {} {} --strain {} --force --outdir {} --prefix {}".format(\
 					self.software_names.get_prokka(), fasta_file_name, self.software_names.get_prokka_parameters(), name_strain, temp_dir, name_strain)
+		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run prokka")
+		
+		## clean /mol_type=
+		gbk_file = os.path.join(temp_dir, self.utils.clean_extension(original_file_name) + FileExtensions.FILE_GBK)
+		temp_file = self.utils.get_temp_file_from_dir(temp_dir, 'new_file', '.gbk')
+		cmd = "grep -E -v '/mol_type=' {} > {}".format(gbk_file, temp_file)
+		os.system(cmd);
+		self.utils.move_file(temp_file, gbk_file)
 		return temp_dir
 	
 	def run_mauve(self, dir_to_process, out_file):
@@ -992,7 +1006,7 @@ class Software(object):
 		## count hits from tab file
 		file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
 		if (os.path.exists(file_tab)):
-			vect_count_type = ['snp']
+			vect_count_type = ['snp']	## only detects snp
 			count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
 			### set flag that is finished
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())

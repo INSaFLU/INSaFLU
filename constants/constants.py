@@ -139,8 +139,9 @@ class Constants(object):
 		if (file_type == FileType.FILE_DEPTH_GZ_TBI): return "{}.depth.gz.tbi".format(file_name)
 		if (file_type == FileType.FILE_TAB): return "{}.tab".format(file_name)
 		if (file_type == FileType.FILE_VCF): return "{}.vcf".format(file_name)
+		if (file_type == FileType.FILE_VCF_BGZ): return "{}.vcf.bgz".format(file_name)
+		if (file_type == FileType.FILE_VCF_BGZ_TBI): return "{}.vcf.bgz.tbi".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
-		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
 		return ""
 
 	### complement
@@ -225,9 +226,10 @@ class FileType(Enum):
 	FILE_DEPTH_GZ_TBI = 6
 	FILE_TAB = 7
 	FILE_VCF = 8
-	FILE_VCF_GZ = 9
-	FILE_VCF_GZ_TBI = 10
+	FILE_VCF_BGZ = 9
+	FILE_VCF_BGZ_TBI = 10
 	FILE_CSV = 11
+	FILE_VCF_GZ = 12
 
 class TypeFile(object):
 	
@@ -242,8 +244,9 @@ class FileExtensions(object):
 	FILE_TSV = '.tsv'
 	FILE_TAB = '.tab'
 	FILE_VCF = '.vcf'
+	FILE_VCF_BGZ = 'vcf.bgz'
+	FILE_VCF_BGZ_TBI = 'vcf.bgz.tbi'
 	FILE_VCF_GZ = 'vcf.gz'
-	FILE_VCF_GZ_TBI = 'vcf.gz.tbi'
 	FILE_CSV = '.csv'
 	FILE_PNG = '.png'
 	FILE_GBK = '.gbk'

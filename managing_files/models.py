@@ -279,12 +279,6 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
 
-	def get_bam(self, type_path):
-		"""
-		return fastq output first step
-		"""
-		return os.path.join(self.__get_path__(type_path, True), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
-
 	def __get_path__(self, type_path, b_first_file):
 		"""
 		get a path, from MEDIA_URL or MEDIA_ROOT

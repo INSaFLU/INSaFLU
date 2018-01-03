@@ -240,6 +240,8 @@ class Coverage(object):
 
 	def __init__(self):
 		self.dt_data = {}
+		self.ratio_value_9 = 0
+		self.ratio_value_0 = 0
 
 	def get_dict_data(self): return self.dt_data
 	
@@ -267,10 +269,12 @@ class Coverage(object):
 	
 	def is_100_more_9(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
+		self.ratio_value_9 = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
 	
 	def is_100_more_0(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_0)
+		self.ratio_value_0 = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
 		
 	def __is_100__(self, value_coverage):
@@ -289,9 +293,9 @@ class Coverage(object):
 		return sz_return
 
 	def get_fault_message_9(self, element_name):
-		return "Fail, element '{}' has a ratio under of 100 for a coverage of 10 or bigger".format(element_name)
+		return "Fail, element '{}' has a ratio '{}%' under of 100% for a coverage of 10 or bigger.".format(element_name, self.ratio_value_9)
 	def get_fault_message_0(self, element_name):
-		return "Fail, element '{}' has a ratio under of 100 for a coverage of 1 or bigger".format(element_name)
+		return "Fail, element '{}' has a ratio '{}%' under of 100% for a coverage of 1 or bigger.".format(element_name, self.ratio_value_0)
 
 	def get_message_to_show_in_web_site(self, element):
 		"""
@@ -349,11 +353,21 @@ class CountHits(object):
 	def get_total_50_50_90(self):
 		return self.hits_50_90 + self.hits_less_50
 	
+	def get_mixed_infection_ratio(self):
+		return self.hits_50_90 / float(self.hits_less_50)
+	
+	def get_mixed_infection_ratio_str(self):
+		return '%.1f' % (self.get_mixed_infection_ratio())
+	
 	def get_total(self):
 		return self.hits_50_90 + self.hits_less_50 + self.hits_more_90
 
 	def get_vect_mixed_infections(self):
 		return [self.get_hits_less_50(), self.get_hits_50_90()]
+
+	def is_mixed_infection_ratio_test(self):
+		if (self.get_mixed_infection_ratio() > 0.5 and self.get_mixed_infection_ratio() < 1.5 and self.get_total_50_50_90() > 20): return True
+		return False
 
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)

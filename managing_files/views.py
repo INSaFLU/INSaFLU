@@ -568,14 +568,18 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		## main info
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			context['virus_identify'] = sample.get_type_sub_type()
-			context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '</a>')
-			context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download>' + sample.file_name_2 + '</a>')
-			context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_1 + '.html</a>')
-			context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" download>' + sample.file_name_2 + '.html</a>')
-			context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-			context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-			context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-			context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+			context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
+			context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+			context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_1 + '.html</a>')
+			context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_2 + '.html</a>')
+			context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
+				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+			context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
+				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+			context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' +\
+				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+			context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' +\
+				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
 	
 			### software
 			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
@@ -962,6 +966,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 	"""
 	"""
+	utils = Utils()
 	model = ProjectSample
 	template_name = 'project_sample/project_sample_single_detail.html'
 	context_object_name = 'project_sample'
@@ -973,6 +978,29 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			
 			## several data to show
 			context['project_sample'] = project_sample
+			context['num_alerts'] = project_sample.alert_first_level + project_sample.alert_second_level
+
+			## collect alerts
+			alert_out = []
+			manageDatabase = ManageDatabase()
+			metaKeyAndValue = MetaKeyAndValue()
+			vect_elements = self.utils.get_elements_from_db(project_sample.project.reference, project_sample.project.owner)
+			for element_temp in vect_elements:
+				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element_temp)
+				meta_data = manageDatabase.get_project_sample_metakey(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_data != None):
+					alert_out.append(meta_data.description)
+				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element_temp)
+				meta_data = manageDatabase.get_project_sample_metakey(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_data != None):
+					alert_out.append(meta_data.description)
+			
+			## mixed infection
+			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_data != None):
+				alert_out.append(meta_data.description)
+			context['alerts'] = alert_out
+			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context

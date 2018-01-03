@@ -5,6 +5,8 @@ Created on Nov 26, 2017
 '''
 
 import os
+from constants.constants import Constants
+
 
 class SoftwareNames(object):
 	'''
@@ -21,6 +23,9 @@ class SoftwareNames(object):
 	SOFTWARE_BGZIP_name = "bgzip"
 	SOFTWARE_BGZIP_VERSION = "1.3"
 	SOFTWARE_BGZIP_PARAMETERS = ""
+	SOFTWARE_GZIP_name = "gzip"
+	SOFTWARE_GZIP_VERSION = "1.6"
+	SOFTWARE_GZIP_PARAMETERS = ""
 	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, "snippy/bin/tabix")
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
@@ -87,7 +92,8 @@ class SoftwareNames(object):
 	SOFTWARE_PROKKA = os.path.join(DIR_SOFTWARE, "prokka/bin/prokka")
 	SOFTWARE_PROKKA_name = "Prokka"
 	SOFTWARE_PROKKA_VERSION = "1.2"
-	SOFTWARE_PROKKA_PARAMETERS = "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain ref_PREFIX_FILES_OUT"
+	SOFTWARE_PROKKA_PARAMETERS = "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "\
+					"ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
 	
 	SOFTWARE_MAUVE = os.path.join(DIR_SOFTWARE, "mauve/progressiveMauve")
 	SOFTWARE_MAUVE_name = "Mauve"
@@ -112,11 +118,12 @@ class SoftwareNames(object):
 	SOFTWARE_SEQRET_VERSION = "6.6.0.0"
 	SOFTWARE_SEQRET_NEX_PARAMETERS = "-sformat fasta -osformat2 nexusnon"
 	
-	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTree")
-	SOFTWARE_FASTTREE_name = "FastTree"
-	SOFTWARE_FASTTREE_VERSION = "2.1.10 SSE3"
-#	SOFTWARE_FASTTREE_name = "FastTreeDbl"
-#	SOFTWARE_FASTTREE_VERSION = "2.1.10 Double precision"
+#	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTree")
+#	SOFTWARE_FASTTREE_name = "FastTree"
+#	SOFTWARE_FASTTREE_VERSION = "2.1.10 SSE3"
+	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTreeDbl")
+	SOFTWARE_FASTTREE_name = "FastTreeDbl"
+	SOFTWARE_FASTTREE_VERSION = "2.1.10 Double precision"
 	SOFTWARE_FASTTREE_PARAMETERS = "-gtr -boot 1000 -nt"
 	SOFTWARE_FASTTREE_PARAMETERS_PROTEIN = "-gtr -boot 1000"
 	
@@ -239,6 +246,14 @@ class SoftwareNames(object):
 	def get_bgzip_version(self): return self.SOFTWARE_BGZIP_VERSION
 	def get_bgzip_parameters(self): return self.SOFTWARE_BGZIP_PARAMETERS
 
+	"""
+	return gzip software
+	"""
+	def get_gzip(self): return self.SOFTWARE_GZIP
+	def get_gzip_name(self): return self.SOFTWARE_GZIP_name
+	def get_gzip_version(self): return self.SOFTWARE_GZIP_VERSION
+	def get_gzip_parameters(self): return self.SOFTWARE_GZIP_PARAMETERS
+	
 	"""
 	return tabix software
 	"""

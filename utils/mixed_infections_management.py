@@ -32,6 +32,10 @@ class MixedInfectionsManagement(object):
 		constants_mixed_infection = ConstantsMixedInfection()
 		tag = constants_mixed_infection.get_tag_by_value(value)
 		
+		## test ratio method
+		if (count_hits.is_mixed_infection_ratio_test()):	## doesn't matter the other
+			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+			
 		### get tag
 		try:
 			mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
@@ -47,15 +51,21 @@ class MixedInfectionsManagement(object):
 		mixed_infections.save()
 		
 		##  set the alert
-		if (constants_mixed_infection.is_alert(tag)):
+		manage_database = ManageDatabase()
+		if (constants_mixed_infection.is_alert(tag) or count_hits.is_mixed_infection_ratio_test()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()
 			
-			manage_database = ManageDatabase()
-			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION,\
+			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE,\
 									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has an average cosine distance " +\
-									"of '{}'\nSuggest mixed infection".format(value))
+									"of '{}'.\nSuggest mixed infection.".format(value))
+			
+			## test mixed infection by empirical values
+			if (count_hits.is_mixed_infection_ratio_test()):
+				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a ratio of '{}' and a total of '{}' variations.\nSuggest mixed infection.".\
+									format(count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()))
 		return mixed_infections
 		
 	

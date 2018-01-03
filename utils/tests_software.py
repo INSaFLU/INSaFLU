@@ -33,7 +33,6 @@ class Test(TestCase):
 	
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
-		pass
 
 
 	def tearDown(self):
@@ -695,8 +694,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ_TBI, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
+		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ_TBI, "")))))
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
@@ -712,8 +711,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ_TBI, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
+		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ_TBI, "")))))
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
@@ -875,15 +874,14 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		## freebayes
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
 		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
 
 
@@ -1039,7 +1037,7 @@ class Test(TestCase):
 		os.unlink(out_file_clean)
 		os.unlink(out_file)
 
-	def test_elements(self):
+	def test_run_prokka(self):
 		"""
 		test prokka method
 		"""
@@ -1213,6 +1211,7 @@ class Test(TestCase):
 		
 		out_file = self.utils.get_temp_file("fasttree", ".nwk")
 		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters())
+		self.assertTrue(self.software_names.get_fasttree().endswith(self.software_names.get_fasttree_name()))
 		self.assertEquals(output_file, out_file)
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)

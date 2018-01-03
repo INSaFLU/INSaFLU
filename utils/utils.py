@@ -5,8 +5,8 @@ Created on Oct 31, 2017
 '''
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
+from Bio.Alphabet import IUPAC
 from utils.result import GeneticElement, Gene
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -441,7 +441,8 @@ class Utils(object):
 		compress files
 		"""
 		### get extension of output
-		extension = FileExtensions.FILE_VCF_BGZ if software == SoftwareNames.SOFTWARE_BGZIP_name else FileExtensions.FILE_VCF_GZ
+		# extension = FileExtensions.FILE_BGZ if software == SoftwareNames.SOFTWARE_BGZIP_name else FileExtensions.FILE_GZ
+		extension = FileExtensions.FILE_GZ
 		
 		## test if the file exists
 		if (os.path.exists(file_name + extension)): return
@@ -455,17 +456,14 @@ class Utils(object):
 
 	def create_index_files(self, software, file_name):
 		"""
-		create index, need to be .bgz
+		create index, need to be .bz
 		"""
 		file_to_index = file_name
-		if (not file_to_index.endswith(FileExtensions.FILE_VCF_BGZ)): file_to_index += FileExtensions.FILE_VCF_BGZ
+		if (not file_to_index.endswith(FileExtensions.FILE_VCF_GZ)): file_to_index += FileExtensions.FILE_VCF_GZ
 		if (not os.path.exists(file_to_index)):
-			file_to_index = file_name
-			if (not file_to_index.endswith(FileExtensions.FILE_VCF_GZ)): file_to_index += FileExtensions.FILE_VCF_GZ
-			if (not os.path.exists(file_to_index)):
-				self.logger_production.error("File doesn't exist: " + file_to_index)
-				self.logger_debug.error("Fail doesn't exist: " + file_to_index)
-				raise Exception("File doesn't exist")
+			self.logger_production.error("File doesn't exist: " + file_to_index)
+			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
+			raise Exception("File doesn't exist")
 		
 		## test if tbi exists
 		if (os.path.exists(file_to_index + '.tbi')): return
@@ -773,3 +771,20 @@ class Utils(object):
 				raise ValueError("Incorrect data format, should be dd/mm/YYYY")
 		return date_
 	
+	
+	def clean_fasta_file(self, in_file, out_file):
+		"""
+		clean fasta file from '-'
+		"""
+		if (not os.path.exists(in_file)): return
+		
+		with open(out_file, "w+") as output_file:
+			vect_sequences = []
+			for seq_record in SeqIO.parse(in_file, "fasta"):
+				# Take the current sequence
+				vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+			SeqIO.write(vect_sequences, out_file, "fasta")
+
+
+
+

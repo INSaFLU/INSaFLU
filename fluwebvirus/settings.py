@@ -219,7 +219,7 @@ DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look whic
 ## This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
 USE_L10N = False
 
-USE_TZ = True	## enable time zone
+USE_TZ = False	## enable time zone
 
 
 

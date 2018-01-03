@@ -36,17 +36,17 @@ $(document).ready(function(){
 
 
 //	START expanding logo
-window.onscroll = function() {
-	growShrinkLogo()
-};
+//window.onscroll = function() {
+//	growShrinkLogo()
+//};
 
 // https://stackoverflow.com/questions/24765155/shrinking-navigation-bar-when-scrolling-down-bootstrap3
-function growShrinkLogo() {
-	var Logo = document.getElementById("main_logo_id_")
-	if (document.body.scrollTop > 5 || document.documentElement.scrollTop > 5) {
-		Logo.style.width = '30px';
-	} else {
-		Logo.style.width = '60px';
-	}
-}
+//function growShrinkLogo() {
+//	var Logo = document.getElementById("main_logo_id_")
+//	if (document.body.scrollTop > 5 || document.documentElement.scrollTop > 5) {
+//		Logo.style.width = '30px';
+//	} else {
+//		Logo.style.width = '60px';
+//	}
+//}
 //	END expanding logo

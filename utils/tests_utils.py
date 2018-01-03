@@ -101,7 +101,7 @@ class Test(unittest.TestCase):
 			self.utils.create_index_files(SoftwareNames.SOFTWARE_TABIX, temp_file)
 			self.fail("must raise exception")
 		except Exception as e:
-			self.assertEquals("Fail to create index", e.args[0])
+			self.assertEquals("File doesn't exist", e.args[0])
 		os.unlink(test_file_to_remove)
 		print("These two faults are expected: 'Not a BGZF file' and 'tbx_index_build failed'")
 		self.utils.remove_dir(temp_path)
@@ -584,4 +584,17 @@ class Test(unittest.TestCase):
 			pass
 
 
+	def test_clean_fasta_file(self):
+		"""
+		test clean file
+		"""
+		to_clean_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "to_clean_sequences.fasta")
+		cleanned_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "cleanned_sequences.fasta")
+		self.assertTrue(os.path.exists(to_clean_file))
+		self.assertTrue(os.path.exists(cleanned_file))
+		out_file = self.utils.get_temp_file('clean_sequences', '.fasta')
+		self.utils.clean_fasta_file(to_clean_file, out_file)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, cleanned_file))
+		#os.unlink(out_file)
 

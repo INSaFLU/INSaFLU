@@ -90,8 +90,6 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
 		
-		## collect all consensus in fasta format to downlaod
-		
 		## collect sample table with plus type and subtype, mixed infection, equal to upload table
 		out_file = self.create_coverage_file(project, user)
 		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COUNT_VARIATIONS_FREEBAYES)

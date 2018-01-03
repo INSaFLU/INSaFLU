@@ -256,120 +256,119 @@ function draw_protein_alignments() {
 
 // graphics to show count variations
 $('#collapseFifth').on('shown.bs.collapse', function () {
-	draw_count_variations_chart();
+	if (! $(".chartjs-size-monitor")[0]){
+		draw_count_variations_chart();
+	}
 });
 
 //remove the tree from the screen
 $('#collapseFifth').on('hidden.bs.collapse', function () {
 	$('#show_count_variations_id').empty();
-	/// need to remove this div with this class because chart.js add this div everytime that is expanded
-	//$( "div" ).remove( ".chartjs-size-monitor" );
 });
 
 
 /// get count variations from server and show in a graph
 function draw_count_variations_chart(){
 	
-	if (! $(".chartjs-size-monitor")[0]){
-		$.ajax({
-	    	/// spin 
-	    	beforeSend: function() {
-	    		$('#show_count_variations_id').empty();
-	    		$('#loader_count_variations_id').show();
-	    	},
-	    	complete: function(){
-	    		$('#loader_count_variations_id').hide();
-	    	},
-	    	
-		    data : { 
-		    	project_id : $('#canvas_count_variations_id').attr("project_id"),
-		    }, // data sent with the get request
-		    
-		    url: $('#canvas_count_variations_id').attr("show_count_variations-url"),
-		    success: function (data) {
-		      
-		      if (data['is_ok']) {
-		    	  window.chartColors = {
-		    			  red: 'rgb(255, 99, 132)',
-		    			  orange: 'rgb(255, 159, 64)',
-		    			  yellow: 'rgb(255, 205, 86)',
-		    			  green: 'rgb(75, 192, 192)',
-		    			  blue: 'rgb(54, 162, 235)',
-		    			  purple: 'rgb(153, 102, 255)',
-		    			  grey: 'rgb(231,233,237)'
-			      };
-		    	  
-		    	  var color = Chart.helpers.color;
-		    	  var barChartData = {
-	    	            labels: data['labels'],
-	    	            datasets: [{
-	    	                label: 'Variations <50%',
-	    	                borderColor: window.chartColors.red,
-	    	                backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-	    	                borderWidth: 1,
-	    	                stack: 'Stack 0',
-	    	                data: data['data_less_50']
-	    	            }, {
-	    	                label: '50% < Variations < 90%',
-	    	                backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
-	    	                borderColor: window.chartColors.blue,
-	    	                stack: 'Stack 0',
-	    	                data: data['data_50_var_90_50']
-	    	            }]
-	    	      };
+	
+	$.ajax({
+    	/// spin 
+    	beforeSend: function() {
+    		$('#show_count_variations_id').empty();
+    		$('#loader_count_variations_id').show();
+    	},
+    	complete: function(){
+    		$('#loader_count_variations_id').hide();
+    	},
+    	
+	    data : { 
+	    	project_id : $('#canvas_count_variations_id').attr("project_id"),
+	    }, // data sent with the get request
+	    
+	    url: $('#canvas_count_variations_id').attr("show_count_variations-url"),
+	    success: function (data) {
+	      
+	      if (data['is_ok']) {
+	    	  window.chartColors = {
+	    			  red: 'rgb(255, 99, 132)',
+	    			  orange: 'rgb(255, 159, 64)',
+	    			  yellow: 'rgb(255, 205, 86)',
+	    			  green: 'rgb(75, 192, 192)',
+	    			  blue: 'rgb(54, 162, 235)',
+	    			  purple: 'rgb(153, 102, 255)',
+	    			  grey: 'rgb(231,233,237)'
+		      };
+	    	  
+	    	  var color = Chart.helpers.color;
+	    	  var barChartData = {
+    	            labels: data['labels'],
+    	            datasets: [{
+    	                label: 'Variations <50%',
+    	                borderColor: window.chartColors.red,
+    	                backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+    	                borderWidth: 1,
+    	                stack: 'Stack 0',
+    	                data: data['data_less_50']
+    	            }, {
+    	                label: '50% < Variations < 90%',
+    	                backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
+    	                borderColor: window.chartColors.blue,
+    	                stack: 'Stack 0',
+    	                data: data['data_50_var_90_50']
+    	            }]
+    	      };
 
-		    	  // set the height
-		    	  var height = data['sample_number'] * 6 + 30
-		    	  $("#canvas_count_variations_id").attr("height", height) // 200 header
-		    	  
-		    	  /// load the chart
-	              var ctx = document.getElementById("canvas_count_variations_id").getContext("2d");
-	              window.myHorizontalBar = new Chart(ctx, {
-	                  type: 'horizontalBar',
-	                  data: barChartData,
-	                  options: {
-	                      // Elements options apply to all of the options unless overridden in a dataset
-	                      // In this case, we are setting the border of each horizontal bar to be 2px wide
-	                      elements: {
-	                          rectangle: {
-	                              borderWidth: 2,
-	                          }
-	                      },
-	                      responsive: true,
-	                      legend: {
-	                          position: 'right',
-	                      },
-	                      tooltips: {
-	                          mode: 'index',
-	                          intersect: false
-	                      },
-	                      title: {
-	                          display: true,
-	                          text: 'Variations <50% and 50%<Variations<90%'
-	                      },
-	                      scales: {
-	                          xAxes: [{
-	                              stacked: true,
-	                          }],
-	                          yAxes: [{
-	                              stacked: true
-	                          }]
-	                      }
-	                  }
-	              });
-		      }
-		      else{
-		    	  $('#show_count_variations_id').append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> ' + data['error_message'] + '</div>')
-		      }
-		    },
-		    
-		    // handle a non-successful response
-		    error : function(xhr,errmsg,err) {
-		    	$('#show_count_variations_id').append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load the data from the server.</div>')
-		        console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-		    }
-	    });
-	}
+	    	  // set the height
+	    	  var height = data['sample_number'] * 6 + 30
+	    	  $("#canvas_count_variations_id").attr("height", height) // 200 header
+	    	  
+	    	  /// load the chart
+              var ctx = document.getElementById("canvas_count_variations_id").getContext("2d");
+              window.myHorizontalBar = new Chart(ctx, {
+                  type: 'horizontalBar',
+                  data: barChartData,
+                  options: {
+                      // Elements options apply to all of the options unless overridden in a dataset
+                      // In this case, we are setting the border of each horizontal bar to be 2px wide
+                      elements: {
+                          rectangle: {
+                              borderWidth: 2,
+                          }
+                      },
+                      responsive: true,
+                      legend: {
+                          position: 'right',
+                      },
+                      tooltips: {
+                          mode: 'index',
+                          intersect: false
+                      },
+                      title: {
+                          display: true,
+                          text: 'Variations <50% and 50%<Variations<90%'
+                      },
+                      scales: {
+                          xAxes: [{
+                              stacked: true,
+                          }],
+                          yAxes: [{
+                              stacked: true
+                          }]
+                      }
+                  }
+              });
+	      }
+	      else{
+	    	  $('#show_count_variations_id').append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> ' + data['error_message'] + '</div>')
+	      }
+	    },
+	    
+	    // handle a non-successful response
+	    error : function(xhr,errmsg,err) {
+	    	$('#show_count_variations_id').append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load the data from the server.</div>')
+	        console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+	    }
+    });
 }
 
 

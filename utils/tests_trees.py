@@ -191,7 +191,6 @@ class Test(unittest.TestCase):
 		
 		#### test all type of files for global sequences
 		for type_files in project.vect_clean_file:
-			print(type_files, project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_files))
 			self.assertTrue(os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_files)))
 		
 		decode_result = DecodeObjects()
@@ -208,7 +207,6 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		self.assertEquals('4', meta_sample.description)
-		print(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE))
 		self.assertTrue(95, os.path.getsize(project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE)))
 		
 		### get all elements and gene names
@@ -216,6 +214,7 @@ class Test(unittest.TestCase):
 			for type_files in project.vect_clean_file:
 				self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, type_files)))
 			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
+			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTA)) > 100)
 
 			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
 			meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)

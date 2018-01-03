@@ -343,8 +343,7 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.tab"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, ""))
 		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.vcf"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, ""))
 		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.vcf.gz"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, ""))
-		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.vcf.bgz"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_BGZ, ""))
-		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.vcf.bgz.tbi"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_BGZ_TBI, ""))
+		self.assertEquals(os.path.join(settings.MEDIA_URL, path_to_project, "file_name_2.vcf.gz.tbi"), project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ_TBI, ""))
 
 
 

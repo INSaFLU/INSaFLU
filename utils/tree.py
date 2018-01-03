@@ -188,14 +188,20 @@ class CreateTree(object):
 			metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_By_Element, sequence_name)
 		manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Success, str(n_files_with_sequences))
 		
+		## clean fasta file from alignment
+		out_clean_fasta_file = self.utils.get_temp_file_from_dir(temp_dir, "clean", ".fasta")
+		self.utils.clean_fasta_file(out_file_mafft, out_clean_fasta_file)
+		
 		### copy files for the project
 		if (sequence_name == None):
 			self.utils.copy_file(out_file_mafft, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_MAFFT))
+			self.utils.copy_file(out_clean_fasta_file, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTA))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_FASTTREE_tree))
 			self.utils.copy_file(out_file_nex, project.get_global_file_by_project(TypePath.MEDIA_ROOT, project.PROJECT_FILE_NAME_nex))
 		else:
 			self.utils.copy_file(out_file_mafft, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_MAFFT))
+			self.utils.copy_file(out_clean_fasta_file, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTA))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE))
 			self.utils.copy_file(out_file_fasttree, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE_tree))
 			self.utils.copy_file(out_file_nex, project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_nex))

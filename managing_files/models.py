@@ -356,6 +356,7 @@ class Project(models.Model):
 	PATH_MAIN_RESULT = 'main_result'
 	
 	PROJECT_FILE_NAME_MAFFT = "Alignment_whole_genome.fasta"
+	PROJECT_FILE_NAME_FASTA = "whole_genome.fasta"
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
@@ -366,7 +367,8 @@ class Project(models.Model):
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
-					PROJECT_FILE_NAME_FASTTREE_tree, PROJECT_FILE_NAME_nex]
+					PROJECT_FILE_NAME_FASTTREE_tree, PROJECT_FILE_NAME_nex,\
+					PROJECT_FILE_NAME_FASTA]
 
 	## obsolete
 	PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML = "graph_minor_var.html"
@@ -376,6 +378,7 @@ class Project(models.Model):
 	### this is only to join with other names
 	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
 	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
+	PROJECT_FILE_NAME_FASTA_element = "Sequences"
 	
 	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
@@ -397,6 +400,8 @@ class Project(models.Model):
 		"""
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+		if (self.PROJECT_FILE_NAME_FASTA == file_name):
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_FASTA_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):

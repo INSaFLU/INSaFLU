@@ -197,7 +197,7 @@ class Test(unittest.TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		result = decode_result.decode_result(meta_sample.description)
 		self.assertEquals('', result.get_software(software_names.get_mauve_name()))
-		self.assertEquals('FastTree-2.1.10 SSE3; (-gtr -boot 1000)', result.get_software(software_names.get_fasttree_name()))
+		self.assertEquals('FastTreeDbl-2.1.10 Double precision; (-gtr -boot 1000)', result.get_software(software_names.get_fasttree_name()))
 		self.assertEquals('Mafft-7.313; (--maxiterate 1000 --localpair --preservecase --amino)', result.get_software(software_names.get_mafft_name()))
 		self.assertEquals(3, result.get_number_softwares())
 		

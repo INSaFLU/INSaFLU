@@ -225,7 +225,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		context['nav_modal'] = True	## short the size of modal window
 		return context
 
-
+	@transaction.atomic
 	def form_valid(self, form):
 		"""
 		Validate the form
@@ -267,7 +267,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
 			sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
 		
-		sample.geo_local = Point(lat, lng)
+		### test geo spacing
+		if (lat != None and lng != None): sample.geo_local = Point(lat, lng)
 		sample.save()
 
 		## move the files to the right place

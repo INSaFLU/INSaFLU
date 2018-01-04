@@ -692,7 +692,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		### set the check_box, check_box_all is only to control if is the first time or not
 		if (Constants.CHECK_BOX_ALL not in self.request.session):
 			self.request.session[Constants.CHECK_BOX_ALL] = False
-			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set], self.request)
+			is_all_check_box_in_session(["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set_result], self.request)
 		elif ("search_references" in self.request.GET):
 			# clean check boxes in search
 			dt_sample_id_add_temp = {}

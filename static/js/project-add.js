@@ -60,8 +60,8 @@ function toggle_check_box(source) {
 	$(document).find('#id_reference_error').remove();
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),
-		data : { get_change_check_box_single : source.srcElement.checked,
-				 value : source.srcElement.value }, // data sent with the post request
+		data : { get_change_check_box_single : source.target.checked,
+				 value : source.target.value }, // data sent with the post request
 		success: function (data) { 
 			for (key in data){
 				if (key === 'is_ok'){ continue; }

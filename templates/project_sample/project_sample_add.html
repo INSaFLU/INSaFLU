@@ -92,14 +92,14 @@
 			    </div>
 			{% endblock table %}
 			
-			{% if table.page and show_paginatior %}
-			    {% block pagination %}
-			        {% bootstrap_pagination table.page url=request.get_full_path %}
-			    {% endblock pagination %}
-			  </div>
-			{% endif %}
+		{% if table.page and show_paginatior %}
+		    {% block pagination %}
+		        {% bootstrap_pagination table.page url=request.get_full_path %}
+		    {% endblock pagination %}
+		  </div>
+		{% endif %}
 	
-			<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 {% endblock %}
 
  {% block js %}

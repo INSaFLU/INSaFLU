@@ -28,10 +28,12 @@ class MixedInfectionsManagement(object):
 		
 		### calculate mixed infection value
 		value = self.get_value_mixed_infection(count_hits)
+
+		## Old version of cosine, not used anymore
+		#constants_mixed_infection = ConstantsMixedInfection()
+		#tag = constants_mixed_infection.get_tag_by_value(value)
 		
-		constants_mixed_infection = ConstantsMixedInfection()
-		tag = constants_mixed_infection.get_tag_by_value(value)
-		
+		tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
 		## test ratio method
 		if (count_hits.is_mixed_infection_ratio_test()):	## doesn't matter the other
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
@@ -52,20 +54,20 @@ class MixedInfectionsManagement(object):
 		
 		##  set the alert
 		manage_database = ManageDatabase()
-		if (constants_mixed_infection.is_alert(tag) or count_hits.is_mixed_infection_ratio_test()):
+#		if (constants_mixed_infection.is_alert(tag) or count_hits.is_mixed_infection_ratio_test()):
+		if (count_hits.is_mixed_infection_ratio_test()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()
 			
-			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE,\
-									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has an average cosine distance " +\
-									"of '{}'.\nSuggest mixed infection.".format(value))
+# 			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE,\
+# 									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has an average cosine distance " +\
+# 									"of '{}'.\nSuggest mixed infection.".format(value))
 			
 			## test mixed infection by empirical values
-			if (count_hits.is_mixed_infection_ratio_test()):
-				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
-									MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a ratio of '{}' and a total of '{}' variations.\nSuggest mixed infection.".\
-									format(count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()))
+			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+								MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a ratio of '{}' and a total of '{}' variations.\nSuggest mixed infection.".\
+								format(count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()))
 		return mixed_infections
 		
 	
@@ -81,9 +83,11 @@ class MixedInfectionsManagement(object):
 		### get the average of cosine distance
 		f_total = 0.0
 		vect_data_to_test = count_hits.get_vect_mixed_infections()
+		if (sum(vect_data_to_test) == 0): return 0.0
+		
 		for vect_data in mixed_infections_main_vector.get_vector():
-	#		print("[{}-{}] - [{}-{}] {}".format(vect_data_to_test[0], vect_data_to_test[1], vect_data[0], vect_data[1],\
-	#							1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
+#			print("[{}-{}] - [{}-{}] {}".format(vect_data_to_test[0], vect_data_to_test[1], vect_data[0], vect_data[1],\
+#								1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
 			f_total += 1 - spatial.distance.cosine(vect_data, vect_data_to_test)
 		
 		if (len(mixed_infections_main_vector.get_vector()) == 0): return 0.0

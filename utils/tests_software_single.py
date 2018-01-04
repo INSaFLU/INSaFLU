@@ -23,9 +23,10 @@ from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
 from utils.tree import CreateTree
 import os, filecmp
-
-
-from managing_files.models import CountVariations
+from utils.parse_in_files import ParseInFiles
+from utils.result import DecodeObjects, MixedInfectionMainVector
+from managing_files.models import CountVariations, MixedInfections
+from utils.mixed_infections_management import MixedInfectionsManagement
 
 class Test(TestCase):
 
@@ -45,3 +46,6 @@ class Test(TestCase):
 		pass
 
 
+	
+	
+	

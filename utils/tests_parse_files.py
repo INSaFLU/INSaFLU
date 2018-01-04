@@ -58,7 +58,7 @@ class Test(TestCase):
 		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 
-	def test_parse_abricate_file_error(self):
+	def test_parse_input_file_error(self):
 		"""
 		Test input files
 		"""
@@ -88,7 +88,7 @@ class Test(TestCase):
 		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		
-	def test_parse_abricate_file_1(self):
+	def test_parse_input_file_1(self):
 		"""
 		Test input files
 		"""
@@ -118,8 +118,31 @@ class Test(TestCase):
 		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		
+	
+	def test_parse_input_file_big(self):
+		"""
+		"""
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_big_data_csv)
+		self.assertTrue(os.path.exists(txt_file))
 		
-	def test_parse_abricate_file_2(self):
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		self.assertEquals(0, parse_in_files.get_errors().get_len_vect_results())
+		self.assertTrue(parse_in_files.get_errors().get_error(0) == None)
+		self.assertEquals(192, len(parse_in_files.get_vect_samples()))
+
+
+	def test_parse_input_file_2(self):
 		"""
 		Test input files
 		"""
@@ -149,7 +172,7 @@ class Test(TestCase):
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		self.assertEquals(0, parse_in_files.get_number_samples())
 
-	def test_parse_abricate_file_3(self):
+	def test_parse_input_file_3(self):
 		"""
 		Test input files
 		"""
@@ -208,7 +231,7 @@ class Test(TestCase):
 		self.assertEquals('SRID=4326;POINT (30.2 43.5)', str(parse_in_files.get_vect_samples()[1][0].geo_local))
 		
 	
-	def test_parse_abricate_file_4(self):
+	def test_parse_input_file_4(self):
 		"""
 		Test input files
 		"""
@@ -263,7 +286,7 @@ class Test(TestCase):
 
 
 
-	def test_parse_abricate_file_5_fail(self):
+	def test_parse_input_file_5_fail(self):
 		"""
 		Test input files
 		"""
@@ -298,7 +321,7 @@ class Test(TestCase):
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		
 	
-	def test_parse_abricate_file_5(self):
+	def test_parse_input_file_5(self):
 		"""
 		Test input files
 		"""
@@ -368,7 +391,7 @@ class Test(TestCase):
 		self.assertEquals(2, len(parse_in_files.get_vect_samples()))
 
 		
-	def test_parse_abricate_file_6(self):
+	def test_parse_input_file_6(self):
 		"""
 		Test input files
 		"""

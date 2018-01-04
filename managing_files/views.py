@@ -580,17 +580,17 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		## main info
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			context['virus_identify'] = sample.get_type_sub_type()
-			context['href_fastq_1'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
-			context['href_fastq_2'] = mark_safe('<a href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
-			context['href_fastq_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_1 + '.html</a>')
-			context['href_fastq_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_2 + '.html</a>')
-			context['href_trimmonatic_1'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
+			context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
+			context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+			context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_1 + '.html</a>')
+			context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_2 + '.html</a>')
+			context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
 				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-			context['href_trimmonatic_2'] = mark_safe('<a href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
+			context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
 				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-			context['href_trimmonatic_quality_1'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' +\
+			context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' +\
 				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-			context['href_trimmonatic_quality_2'] = mark_safe('<a target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' +\
+			context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' +\
 				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
 	
 			### software
@@ -801,9 +801,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
 		## catch everything that is not in connection with project 
-		query_set = Sample.objects.filter(Q(owner__id=self.request.user.id) & Q(is_obsolete=False) & Q(is_deleted=False) & Q(is_ready_for_projects=True) &\
-									(Q(project_samples__isnull=True) | ~Q(project_samples__project__id=project.id) |\
-									(Q(project_samples__project__id=project.id) & Q(project_samples__is_deleted=True))) ).distinct()
+		samples_out = ProjectSample.objects.filter(Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)).values('sample__pk')
+		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False,\
+					is_ready_for_projects=True).exclude(pk__in=samples_out)
+					
 		tag_search = 'search_add_project_sample'
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
@@ -937,7 +938,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
 		project = Project.objects.get(pk=self.kwargs['pk'])
-		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False).order_by('-creation_date')
+		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False, is_error=False).order_by('-creation_date')
 		
 		tag_search = 'search_add_project_sample'
 		### filter the search

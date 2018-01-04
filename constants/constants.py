@@ -250,6 +250,7 @@ class FileExtensions(object):
 	FILE_PNG = '.png'
 	FILE_GBK = '.gbk'
 	FILE_FASTA = '.fasta'
+	FILE_FASTQ = '.fastq'
 	FILE_FNA = '.fna'
 	FILE_FAA = '.faa'
 	FILE_FA = '.fa'

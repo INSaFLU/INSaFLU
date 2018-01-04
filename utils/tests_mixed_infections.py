@@ -81,6 +81,12 @@ class Test(unittest.TestCase):
 		count_hits.set_hits_less_50(66)
 		count_hits.set_hits_50_90(75)
 		self.assertEquals('0.9681224546782758', '{}'.format(mixed_infections_management.get_value_mixed_infection(count_hits)))
+		count_hits.set_hits_less_50(4)
+		count_hits.set_hits_50_90(2)
+		self.assertEquals('0.984995168387904', '{}'.format(mixed_infections_management.get_value_mixed_infection(count_hits)))
+		count_hits.set_hits_less_50(0)
+		count_hits.set_hits_50_90(0)
+		self.assertEquals('0.0', '{}'.format(mixed_infections_management.get_value_mixed_infection(count_hits)))
 
 	def test_constants_mixed_infection(self):
 		constants_mixed_infection = ConstantsMixedInfection()
@@ -191,13 +197,13 @@ class Test(unittest.TestCase):
 		self.assertTrue(count_hits.is_mixed_infection_ratio_test())
 		
 		### 
-		manage_database = ManageDatabase()
-		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
-		self.assertFalse(meta_project == None)
-		self.assertEquals("Warning, this sample has an average cosine distance of '0.995925821845502'.\nSuggest mixed infection.", meta_project.description)
-		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
-		self.assertFalse(meta_project == None)
-		self.assertEquals("Warning, this sample has a ratio of '0.7' and a total of '120' variations.\nSuggest mixed infection.", meta_project.description)
+# 		manage_database = ManageDatabase()
+# 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
+# 		self.assertFalse(meta_project == None)
+# 		self.assertEquals("Warning, this sample has an average cosine distance of '0.995925821845502'.\nSuggest mixed infection.", meta_project.description)
+# 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
+# 		self.assertFalse(meta_project == None)
+# 		self.assertEquals("Warning, this sample has a ratio of '0.7' and a total of '120' variations.\nSuggest mixed infection.", meta_project.description)
 		
 		
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
@@ -299,13 +305,13 @@ class Test(unittest.TestCase):
 		self.assertTrue(count_hits.is_mixed_infection_ratio_test())
 		
 		### 
-		manage_database = ManageDatabase()
-		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
-		self.assertFalse(meta_project == None)
-		self.assertEquals("Warning, this sample has an average cosine distance of '0.9394790479330498'.\nSuggest mixed infection.", meta_project.description)
-		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
-		self.assertFalse(meta_project == None)
-		self.assertEquals("Warning, this sample has a ratio of '1.4' and a total of '120' variations.\nSuggest mixed infection.", meta_project.description)
+# 		manage_database = ManageDatabase()
+# 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
+# 		self.assertFalse(meta_project == None)
+# 		self.assertEquals("Warning, this sample has an average cosine distance of '0.9394790479330498'.\nSuggest mixed infection.", meta_project.description)
+# 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
+# 		self.assertFalse(meta_project == None)
+# 		self.assertEquals("Warning, this sample has a ratio of '1.4' and a total of '120' variations.\nSuggest mixed infection.", meta_project.description)
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_get_mixed_infections_3(self):

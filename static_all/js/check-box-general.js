@@ -83,8 +83,8 @@ function toggle_check_box(source) {
 
 	$.ajax({
 		url: $('#table_with_check_id').attr("set-check-box-values-url"),
-		data : { check_box : source.srcElement.checked,
-				 value : source.srcElement.value }, // data sent with the post request
+		data : { check_box : source.target.checked,
+				 value : source.target.value }, // data sent with the post request
 		success: function (data) { 
 			// disable/enable the check submit
 			if (data['total_checked'] > 0) $("#id_submit_checked").removeAttr("disabled");

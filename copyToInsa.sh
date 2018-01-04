@@ -15,4 +15,5 @@ echo 'templates'
 scp -P 2023 -r templates* insa@193.137.95.75:/usr/local/web_site
 echo 'utils'
 scp -P 2023 -r utils* insa@193.137.95.75:/usr/local/web_site
-
+echo 'local js'
+scp -P 2023 -r static/js* insa@193.137.95.75:/usr/local/web_site/static

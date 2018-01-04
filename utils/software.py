@@ -106,6 +106,32 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run spades")
 		return cmd
+	
+	def run_abyss(self, fastq_1, out_dir):
+		"""
+		Run spades,
+		return out file
+		"""
+		
+		new_file_name = self.utils.get_temp_file_from_dir(out_dir, 'in_file', fastq_1[fastq_1.rfind('.'):])
+		if (os.path.exists(new_file_name)): os.unlink(new_file_name)
+		print(new_file_name)
+		print(fastq_1)
+		cmd = "ln -s {} {}".format(fastq_1, new_file_name)
+		print(cmd)
+		os.system(cmd)
+		
+		prefix = "prefix"
+		unitigs = "unitigs"
+		cmd = '{} {} se={} name="{}" "{}" -C {}'.format(self.software_names.get_abyss(), 
+				self.software_names.get_abyss_parameters(), new_file_name, prefix, unitigs, out_dir)
+		print(cmd)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run abyss")
+		return os.path.join(out_dir, prefix + '-unitigs.fa')
 
 	def is_exist_database_abricate(self, database):
 		"""
@@ -154,7 +180,8 @@ class Software(object):
 		"""
 		Run abricator
 		"""
-		cmd = "%s --db %s --quiet %s > %s" % (self.software_names.get_abricate(), database, file_name, out_file)
+		cmd = "%s --db %s %s --quiet %s > %s" % (self.software_names.get_abricate(), database,\
+				self.software_names.get_abricate_parameters(), file_name, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -208,27 +235,49 @@ class Software(object):
 		### temp dir out spades		
 		out_dir_spades = self.utils.get_temp_dir()
 		result_all = Result()
-		try:
-			cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
-			result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-		except Exception:
-			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-			return False
+		if (fastq1_2 == None or len(fastq1_2) == 0): ## run abyss
+			try:
+				file_out = self.run_abyss(fastq1_1, out_dir_spades)
+				result_all.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_parameters(), self.software_names.get_abyss_parameters()))
+			except Exception:
+				result = Result()
+				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				return False
+			
+			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
+				## save error in MetaKeySample
+				result = Result()
+				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				return False
+		else:	## run spades
+			try:
+				cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
+				result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+			except Exception:
+				result = Result()
+				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				return False
+			
+			file_out = os.path.join(out_dir_spades, "contigs.fasta")
+			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
+				## save error in MetaKeySample
+				result = Result()
+				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				return False
 		
-		file_out = os.path.join(out_dir_spades, "contigs.fasta")
-		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
-			## save error in MetaKeySample
-			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-			return False
-		
+		### test id abricate has the database
 		try:
 			uploadFile = UploadFile.objects.order_by('-version')[0]
 		except UploadFile.DoesNotExist:

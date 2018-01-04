@@ -100,12 +100,24 @@ class ParseInFiles(object):
 		"""
 		sniffer = csv.Sniffer()
 		n_lines = 0
-		delimiter = ','
+		dict_delimiter = {}
+		## get biggest delimiter
 		for line in f:
 			dialect = sniffer.sniff(line)
 			delimiter = dialect.delimiter
+			if (delimiter in dict_delimiter): dict_delimiter[delimiter] += 1
+			else: dict_delimiter[delimiter] = 1
 			if (n_lines > 15): break
-
+			n_lines += 1
+			
+		### get delimiter from the biggest one
+		delimiter = ','
+		count_delimiter = 0
+		for key in dict_delimiter:
+			if (dict_delimiter[key] > count_delimiter):
+				count_delimiter = dict_delimiter[key]
+				delimiter = key
+				
 		f.seek(0)
 		reader = csv.reader(f, delimiter=delimiter)
 		header = None

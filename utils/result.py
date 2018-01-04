@@ -354,6 +354,7 @@ class CountHits(object):
 		return self.hits_50_90 + self.hits_less_50
 	
 	def get_mixed_infection_ratio(self):
+		if (self.hits_less_50 == 0): return 0.0;
 		return self.hits_50_90 / float(self.hits_less_50)
 	
 	def get_mixed_infection_ratio_str(self):
@@ -532,7 +533,8 @@ class ProcessResults(object):
 		return len(self.vect_results)
 	
 	def get_error(self, index):
-		return self.vect_results[index]
+		if (index < len(self.vect_results)): return self.vect_results[index]
+		return None
 	
 	def has_errors(self):
 		return self.get_len_vect_results() > 0

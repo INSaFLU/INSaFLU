@@ -93,6 +93,18 @@ class Test(TestCase):
 		exist_status = os.system(cmd)
 		self.assertTrue(exist_status == 0)
 		self.assertFalse(self.software.is_exist_database_abricate(database_name))
+	
+	def test_run_abyss(self):
+		
+		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		self.assertTrue(os.path.isfile(fastq1_1))
+		
+		out_dir = self.utils.get_temp_dir()
+		self.assertTrue(os.path.isdir(out_dir))
+		result_file = self.software.run_abyss(fastq1_1, out_dir)
+		self.assertTrue(os.path.exists(result_file))
+		self.assertTrue(os.path.getsize(result_file) > 100)
+		self.utils.remove_dir(out_dir)
 		
 	def testRunSpadesAndAbricate(self):
 		"""
@@ -362,10 +374,10 @@ class Test(TestCase):
 
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-		self.assertEqual('39845', result_average.number_file_1)
-		self.assertEqual('144.0', result_average.average_file_1)
-		self.assertEqual('39845', result_average.number_file_2)
-		self.assertEqual('142.1', result_average.average_file_2)
+		self.assertEqual('41254', result_average.number_file_1)
+		self.assertEqual('142.0', result_average.average_file_1)
+		self.assertEqual('41254', result_average.number_file_2)
+		self.assertEqual('139.1', result_average.average_file_2)
 
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
@@ -431,8 +443,8 @@ class Test(TestCase):
 
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-		self.assertEqual('42534', result_average.number_file_1)
-		self.assertEqual('143.4', result_average.average_file_1)
+		self.assertEqual('43560', result_average.number_file_1)
+		self.assertEqual('141.0', result_average.average_file_1)
 		self.assertEqual(None, result_average.number_file_2)
 		self.assertEqual(None, result_average.average_file_2)
 
@@ -601,10 +613,10 @@ class Test(TestCase):
 
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-		self.assertEqual('39845', result_average.number_file_1)
-		self.assertEqual('144.0', result_average.average_file_1)
-		self.assertEqual('39845', result_average.number_file_2)
-		self.assertEqual('142.1', result_average.average_file_2)
+		self.assertEqual('41254', result_average.number_file_1)
+		self.assertEqual('142.0', result_average.average_file_1)
+		self.assertEqual('41254', result_average.number_file_2)
+		self.assertEqual('139.1', result_average.average_file_2)
 
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
@@ -948,6 +960,174 @@ class Test(TestCase):
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_process_second_stage_analysis_single_file_2(self):
+		"""
+ 		test global method
+ 		"""
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stagis_single_file2"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+			
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_snippyis_single_file1"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.owner = user
+			sample.save()
+
+		project_name = "file_naais_single_filee_3"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.name = project_name
+			project.reference = reference
+			project.owner = user
+			project.save()
+		
+		## create project_sample
+		project_sample = ProjectSample()
+		project_sample.sample = sample
+		project_sample.project = project
+		project_sample.save()
+		
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
+		self.assertTrue(self.software.process_second_stage_snippy_coverage_freebayes(project_sample, user))
+		try:
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+		except ProjectSample.DoesNotExist:
+			self.fail("Must exist")
+		self.assertTrue(project_sample.is_finished)
+		
+		### test the files
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name).index(SoftwareNames.SOFTWARE_SNIPPY_name.lower()) != -1)
+		
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		## freebayes
+		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+
+
+		### set flag that is finished
+		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Count_Hits, list_meta[0].meta_tag.name)
+		
+		### get the hits value
+		decode_coverage = DecodeObjects()
+		count_hits = decode_coverage.decode_result(list_meta[0].description)
+		self.assertEquals(0, count_hits.get_hits_50_90())
+		self.assertEquals(0, count_hits.get_hits_less_50())
+		self.assertEquals(0, count_hits.get_total_50_50_90())
+		self.assertEquals(4, count_hits.get_total())
+		
+		self.assertEquals(0, project_sample.count_variations.var_less_50)
+		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
+		self.assertEquals(4, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(0, project_sample.alert_first_level)
+		self.assertEquals(7, project_sample.alert_second_level)
+		
+		### test mixed infections
+		self.assertEquals('0.0', '{}'.format(project_sample.mixed_infections.average_value))
+		self.assertEquals('No', project_sample.mixed_infections.tag.name)
+		self.assertFalse(project_sample.mixed_infections.has_master_vector)
+		
+		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
+		self.assertEquals(1, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
+		
+		decode_result = DecodeObjects()
+		result = decode_result.decode_result(list_meta[0].description)
+		self.assertTrue(result is not None)
+		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
+		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V)",\
+ 						result.get_software(self.software_names.get_freebayes_name()))
+
+		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		decode_coverage = DecodeObjects()
+		coverage = decode_coverage.decode_result(meta_value.description)
+
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "11.0")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "139.5")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_ALL), "20.2")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_9), "44.1")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_9), "85.4")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_0), "99.3")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
+		
+		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
+		self.assertEquals(2, len(lst_meta_sample))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Queue, lst_meta_sample[1].value)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
+		
+		### check if the images exist
+		for gene in self.utils.get_elements_from_db(reference, user):
+			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
+			self.assertTrue(os.path.exists(output_image))
+
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
+
 	def test_run_snippy_vcf_to_tab(self):
 		"""
   		test snippy_vcf_to_tab method
@@ -1215,79 +1395,75 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)
 
-###
-###			THIS doesn't work because spades don't run with one single file
-###
-# 	def test_identify_type_and_sub_type_single_file(self):
-# 		"""
-# 		get type and sub_type
-# 		"""
-# 		uploadFiles = UploadFiles()
-# 		to_test = True
-# 		(version, file) = uploadFiles.get_file_to_upload(to_test)
-# 		self.assertEqual("2", version)
-# 		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
-# 		uploadFiles.upload_file(version, file)	## upload file
-# 		
-# 		try:
-# 			uploadFile = UploadFile.objects.order_by('-version')[0]
-# 			self.assertEqual("test_db_influenza_typing_v2", uploadFile.abricate_name)
-# 		except UploadFile.DoesNotExist:
-# 			self.fail("must have values")
-# 		
-# 		try:
-# 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-# 		except User.DoesNotExist:
-# 			user = User()
-# 			user.username = ConstantsTestsCase.TEST_USER_NAME
-# 			user.is_active = False
-# 			user.password = ConstantsTestsCase.TEST_USER_NAME
-# 			user.save()
-# 			
-# 		sample_name = "identify_type_and_sub_type"
-# 		try:
-# 			sample = Sample.objects.get(name=sample_name)
-# 		except Sample.DoesNotExist:
-# 			sample = Sample()
-# 			sample.name = sample_name
-# 			sample.is_valid_1 = True
-# 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
-# 			sample.path_name_1.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-# 			sample.is_valid_2 = False
-# 			sample.owner = user
-# 			sample.save()
-# 			
-# 		return_value = self.software.identify_type_and_sub_type(sample, sample.path_name_1.name, None, user)
-# 		self.assertTrue(return_value)
-# 		
-# 		vect_identify_virus = sample.identify_virus.all()
-# 		self.assertEqual(3, len(vect_identify_virus))
-# 		for identify_virus in vect_identify_virus:
-# 			print(identify_virus.coverage)
-# 			print(identify_virus.identity)
-# 			print(identify_virus.seq_virus.name)
-# 			if (identify_virus.rank == 0):
-# 				self.assertEquals("100.00", identify_virus.coverage)
-# 				self.assertEquals("99.69", identify_virus.identity)
-# 				self.assertEquals("A", identify_virus.seq_virus.name)
-# 				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
-# 			elif (identify_virus.rank == 1):
-# 				self.assertEquals("100.00", identify_virus.coverage)
-# 				self.assertEquals("99.18", identify_virus.identity)
-# 				self.assertEquals("H3", identify_virus.seq_virus.name)
-# 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
-# 			elif (identify_virus.rank == 2):
-# 				self.assertEquals("100.00", identify_virus.coverage)
-# 				self.assertEquals("98.65", identify_virus.identity)
-# 				self.assertEquals("N2", identify_virus.seq_virus.name)
-# 				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
-# 		file_abricate = self.constants.get_abricate_output(TypePath.MEDIA_ROOT)
-# 		self.assertTrue(os.path.exists(file_abricate))
-# 		
-# 		manageDatabase = ManageDatabase()
-# 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
-# 		self.assertTrue(len(list_meta) == 1)
-# 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-# 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
-# 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
-# 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
+	### test single file in sample
+	def test_identify_type_and_sub_type_single_file(self):
+		"""
+		get type and sub_type
+		"""
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		try:
+			uploadFile = UploadFile.objects.order_by('-version')[0]
+			self.assertEqual("test_db_influenza_typing_v2", uploadFile.abricate_name)
+		except UploadFile.DoesNotExist:
+			self.fail("must have values")
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+			
+		sample_name = "identify_type_and_sub_type"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.owner = user
+			sample.save()
+			
+		return_value = self.software.identify_type_and_sub_type(sample, sample.path_name_1.name, None, user)
+		self.assertTrue(return_value)
+		
+		vect_identify_virus = sample.identify_virus.all()
+		self.assertEqual(3, len(vect_identify_virus))
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.rank == 0):
+				self.assertEquals("100.00", identify_virus.coverage)
+				self.assertEquals("99.69", identify_virus.identity)
+				self.assertEquals("A", identify_virus.seq_virus.name)
+				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
+			elif (identify_virus.rank == 1):
+				self.assertEquals("100.00", identify_virus.coverage)
+				self.assertEquals("99.18", identify_virus.identity)
+				self.assertEquals("H3", identify_virus.seq_virus.name)
+				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+			elif (identify_virus.rank == 2):
+				self.assertEquals("100.00", identify_virus.coverage)
+				self.assertEquals("98.65", identify_virus.identity)
+				self.assertEquals("N2", identify_virus.seq_virus.name)
+				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(file_abricate))
+		
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
+		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
+

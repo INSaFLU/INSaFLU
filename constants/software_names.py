@@ -30,15 +30,19 @@ class SoftwareNames(object):
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
-	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py") 
+	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
 	SOFTWARE_SPAdes_PARAMETERS = ""
+	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
+	SOFTWARE_ABYSS_name = "abyss" 
+	SOFTWARE_ABYSS_VERSION = "2.0"
+	SOFTWARE_ABYSS_PARAMETERS = 'k=63'
 	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
 	SOFTWARE_ABRICATE_name = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
-	SOFTWARE_ABRICATE_PARAMETERS = ""
+	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70"
 	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
 	SOFTWARE_FASTQ_name = "FastQC"
 	SOFTWARE_FASTQ_VERSION = "0.11.5"
@@ -46,7 +50,7 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
-	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:55 TOPHRED33"
+	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
@@ -97,7 +101,7 @@ class SoftwareNames(object):
 	
 	SOFTWARE_MAUVE = os.path.join(DIR_SOFTWARE, "mauve/progressiveMauve")
 	SOFTWARE_MAUVE_name = "Mauve"
-	SOFTWARE_MAUVE_VERSION = "Feb 13 2015 at 05:57:13"
+	SOFTWARE_MAUVE_VERSION = "2.4.0, Feb 13 2015"
 	SOFTWARE_MAUVE_PARAMETERS = ""
 	
 	SOFTWARE_CONVERT = os.path.join(DIR_SOFTWARE, "scripts/convert.pl")
@@ -146,6 +150,15 @@ class SoftwareNames(object):
 	def get_spades_name(self): return self.SOFTWARE_SPAdes_name
 	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
 	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
+
+
+	"""
+	return abyss software
+	"""
+	def get_abyss(self): return self.SOFTWARE_ABYSS
+	def get_abyss_name(self): return self.SOFTWARE_ABYSS_name
+	def get_abyss_version(self): return self.SOFTWARE_ABYSS_VERSION
+	def get_abyss_parameters(self): return self.SOFTWARE_ABYSS_PARAMETERS
 
 	"""
 	return abricate software

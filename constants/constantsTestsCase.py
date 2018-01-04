@@ -42,6 +42,7 @@ class ConstantsTestsCase(object):
 	MANAGING_TEMPLATE_INPUT_DATA_CSV = "template_input_data.csv"
 	MANAGING_TEMPLATE_INPUT_DATA_2_CSV = "template_input_data_2.csv"
 	MANAGING_TEMPLATE_INPUT_DATA_FAIL = "template_input_data_fail.csv"
+	MANAGING_TEMPLATE_INPUT_big_data_csv = "sample_data_season_2016_17_.csv"
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"

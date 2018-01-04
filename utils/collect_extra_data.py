@@ -6,7 +6,7 @@ Created on Nov 27, 2017
 
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project
+from managing_files.models import Project, ProjectSample
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants
@@ -58,6 +58,11 @@ class CollectExtraData(object):
 # 			os.unlink(out_file_png)
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 
+		## test number of samples, or remove all files
+		## remove all from main result forward
+		if (ProjectSample.objects.filter(project=project, is_finished=True, is_deleted=False, is_error=False).count() < 3):
+			self.utils.remove_dir(project.__get_global_path__(TypePath.MEDIA_ROOT, None))
+			return
 
 		## calculate the max sample label size of the samples that belong to this project
 		## used in MSA viewer 

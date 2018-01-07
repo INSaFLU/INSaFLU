@@ -259,5 +259,8 @@ class FileExtensions(object):
 	FILE_TREE = '.tree'
 	FILE_NWK = '.nwk'
 	FILE_GZ = '.gz'
+	FILE_BED = '.bed'
+	FILE_TBI = '.tbi'	### create with tabix
+	FILE_IDX = '.idx'	### created from igvtools
 
 

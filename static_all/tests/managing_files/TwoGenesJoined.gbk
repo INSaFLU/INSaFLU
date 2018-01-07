@@ -13,6 +13,9 @@ FEATURES             Location/Qualifiers
                      /organism="Influenzavirus influenzavirus"
                      /mol_type="genomic DNA"
                      /strain="TwoGenesJoined"
+     gene            31..2280
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
      CDS             31..2280
                      /gene="PB2"
                      /locus_tag="locus_00001"

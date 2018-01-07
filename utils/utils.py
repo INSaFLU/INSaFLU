@@ -457,27 +457,6 @@ class Utils(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to compress file") 
 
-	def create_index_files(self, software, file_name):
-		"""
-		create index, need to be .bz
-		"""
-		file_to_index = file_name
-		if (not file_to_index.endswith(FileExtensions.FILE_VCF_GZ)): file_to_index += FileExtensions.FILE_VCF_GZ
-		if (not os.path.exists(file_to_index)):
-			self.logger_production.error("File doesn't exist: " + file_to_index)
-			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
-			raise Exception("File doesn't exist")
-		
-		## test if tbi exists
-		if (os.path.exists(file_to_index + '.tbi')): return
-
-		cmd = "{} {}".format(software, file_name)
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to create index") 
-	
 	def str2bool(self, v):
 		"""
 		str to bool
@@ -797,3 +776,35 @@ class Utils(object):
 		return name
 
 
+	def from_genbank_to_bed(self, file_in, file_out):
+		"""
+		from genbank to bed
+		"""
+		header = """track name=Genes description="{} genes" itemRgb=On\n""".format(self.clean_extension(os.path.basename(file_in)) )
+		with open(file_out, 'w+') as outh: 
+			outh.write(header)
+			for record in SeqIO.parse(open(file_in, "rU"), "genbank") :
+				dt_out = {}
+				for feature in record.features:
+					if feature.type == 'gene' or feature.type == 'CDS':
+						start = feature.location.start.position
+						stop = feature.location.end.position
+						try:
+							name = feature.qualifiers['gene'][0]
+						except:
+							try:
+								name = feature.qualifiers['CDS'][0]
+							except:
+								# some features only have a locus tag
+								name = feature.qualifiers['locus_tag'][0]
+						if (name in dt_out): continue
+						dt_out[name] = 1
+						if feature.strand < 0:
+							strand = "-"
+						else:
+							strand = "+"
+						bed_line = "{4}\t{0}\t{1}\t{2}\t1000\t{3}\t{0}\t{1}\t{5}\n".format(start, stop, name,\
+												strand, record.id, '65,105,225' if strand == '+' else '105,180,65')
+						outh.write(bed_line)
+						
+			outh.close()

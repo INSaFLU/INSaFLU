@@ -31,6 +31,7 @@ class MetaKeyAndValue(object):
 	META_KEY_Snippy = "Snippy"
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"
+	META_KEY_Mixed_Infection = "Mixed Infection"
 	
 	## metakey about the alerts
 	META_KEY_ALERT_COVERAGE = "Alert Coverage"

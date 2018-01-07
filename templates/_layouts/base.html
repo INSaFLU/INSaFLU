@@ -23,17 +23,15 @@
 		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
   		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-192x192.png' %}" sizes="192x192">
 
-
-  {% block css %} 		
-  
+  {% block css %}  
   {% endblock css %}
 </head>
 
 <body class="fixed-nav sticky-footer bg-dark" id="page-top">
   <!-- Navigation-->
   <nav class="navbar navbar-expand-lg navbar-dark bg-info fixed-top" id="mainNav">
-  	<img src="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" style="width:40px; padding-right:10px" id='main_logo_id'>
-  	<a class="navbar-brand" href="{% url 'dashboard' %}"><strong>INSa</strong>FLU</a>
+  	<img src="{% static 'insa/insa_log.svg' %}" style="width:250px; padding-right:10px" id='main_logo_id'>
+  	<a class="navbar-brand" href="{% url 'dashboard' %}"><strong>_INSa</strong>FLU</a>
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -146,42 +144,45 @@
       </ul>
     </div>
   </nav>
-  <div class="content-wrapper">
 
-    <div class="container-fluid">
-	    <!-- MESSAGES -->
-	    <div class="container">
-			{% if messages %}
-				{% for message in messages %}
+	<div class="content-wrapper">
+
+    	<div class="container-fluid">
+		    <!-- MESSAGES -->
+		    <div class="container">
+				{% if messages %}
+					{% for message in messages %}
 						<div class="alert alert-dismissible {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %}">
-						{{ message }}
-						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					</div>
-				{% endfor %}
-			{% endif %}
-		</div>
-
-		{% if nav_modal %} <div class="container"> {% endif %}
-			{% load django_bootstrap_breadcrumbs %}
-			{% block breadcrumbs %}
-				{% clear_breadcrumbs %}
-    			{% breadcrumb "Home" "/" %} 
-			{% endblock breadcrumbs %}
-			{% render_breadcrumbs %} 
-			
-			{% block header %}{% endblock header %}
-			{% block content %}{% endblock content %}
-		{% if nav_modal %} <div> {% endif %}
-    </div>
-    
+							{{ message }}
+							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+						</div>
+					{% endfor %}
+				{% endif %}
+			</div>
+	
+ 			{% if nav_modal %} <div class="container"> {% endif %}
+				{% if not not_show_breadcrumbs %}
+					{% load django_bootstrap_breadcrumbs %}
+					{% block breadcrumbs %}
+						{% clear_breadcrumbs %}
+		    			{% breadcrumb "Home" "/" %} 
+					{% endblock breadcrumbs %}
+					{% render_breadcrumbs %}
+				{% endif %} 
+				
+				{% block header %}{% endblock header %}
+				{% block content %}{% endblock content %}
+			{% if nav_modal %} <div> {% endif %}
+     	</div>
+	</div>
    <!-- /.container-fluid-->
    <!-- /.content-wrapper-->
    <p> </p> <!-- space between everything and footer -->
    <footer class="sticky-footer">
 		<div class="container">
-			<div class="text-center">
-				<small>Copyright © INSA 2017 - <a href="http://www.insa.pt/" target="_blank">INSA</a> Instituto Nacional de Saúde Dr. Ricardo Jorge</small>
-			</div>
+				<div class="text-center">
+					<small><a href="http://www.insa.pt/" target="_blank">_INSA</a> Instituto Nacional de Saúde Dr. Ricardo Jorge</small>
+				</div>
 		</div>
    </footer>
 

@@ -4,7 +4,7 @@ Created on Oct 31, 2017
 @author: mmp
 '''
 from django.db import transaction
-from constants.constants import Constants, FileExtensions
+from constants.constants import Constants, FileExtensions, TypePath
 from utils.parse_out_files import ParseOutFiles
 from utils.utils import Utils
 from django.conf import settings
@@ -252,16 +252,20 @@ class UploadFiles(object):
 				reference.save()
 				
 				## move the files to the right place
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_fasta_name)
+				sz_file_to = os.path.join(getattr(settings, TypePath.MEDIA_ROOT, None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_fasta_name)
 				self.utils.copy_file(file, sz_file_to)
 				reference.reference_fasta.name = os.path.join(self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_fasta_name)
 				
 				temp_dir = software.run_prokka(file, os.path.basename(file))
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_genbank_name)
+				sz_file_to = os.path.join(getattr(settings, TypePath.MEDIA_ROOT, None), self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_genbank_name)
 				self.utils.move_file(os.path.join(temp_dir, reference.reference_genbank_name), sz_file_to)
 				reference.reference_genbank.name = os.path.join(self.utils.get_path_to_reference_file(user.id, reference.id), reference.reference_genbank_name)
 				reference.hash_reference_genbank = self.utils.md5sum(sz_file_to)
 				reference.save()
+				
+				### create bed and index for genbank
+				self.utils.from_genbank_to_bed(sz_file_to, reference.get_reference_bed(TypePath.MEDIA_ROOT))
+				self.software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
 				
 				### save in database the elements and coordinates
 				self.utils.get_elements_from_db(reference, user)

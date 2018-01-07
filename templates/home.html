@@ -1,35 +1,104 @@
 {% extends '_layouts/base.html' %}
 
+{% load static from staticfiles %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
+{% endblock css %}
+
 {% block headline %}
 {% endblock headline %}
 
-
 {% block content %}
-	<div class="alert alert-primary" role="alert">
-	  <strong>Vitor:</strong> já está quase :)
-	</div>
-	<div class="alert alert-secondary" role="alert">
-	  <strong>Vitor_</strong> já está quase :)
-	</div>
-	<div class="alert alert-success" role="alert">
-	  <strong>Vitor-</strong> já está quase :)
-	</div>
-	<div class="alert alert-danger" role="alert">
-	  <strong>Vitor+</strong> já está quase :)
-	</div>
-	<div class="alert alert-error" role="alert">
-	  <strong>Vitor+</strong> já está quase :)
-	</div>
-	<div class="alert alert-warning" role="alert">
-	  <strong>Vitor*</strong> já está quase :)
-	</div>
-	<div class="alert alert-info" role="alert">
-	  <strong>Vitor~</strong> já está quase :)
-	</div>
-	<div class="alert alert-light" role="alert">
-	  <strong>Vitor^</strong> já está quase :)
-	</div>
-	<div class="alert alert-dark" role="alert">
-	  <strong>Vitor&</strong> já está quase :)
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-8">
+				<div class="insa-header">
+			      	<div class="container">
+			        	<h1 class="insa-title">From “reads” to WGS-based first-line influenza laboratory surveillance</h1>
+			        	<p class="insa-description">INSaFLU (“INSide the FLU”) is an influenza-specific bioinformatics free web-based suite that deals
+								  with primary data (reads) towards the automatic generation of the output data that are actually the core first-line 
+								  “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and 
+								  whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). Data integration is continuously 
+								  scalable, fitting the need for a real-time epidemiological surveillance during the flu epidemics.</p>
+			      	</div>
+			    </div>
+			    
+			    <div class="container">
+				    <div class="card">
+						<div class="card-block">
+							<h4 class="card-title">Future Directions</h4>
+							<p class="card-text">NSaFLU is under active development in order to have additional features, such as modules to automatically 
+							detect virus reassortment and to perform temporal and geographical data integration and visualization.</p>
+						<!-- 	<a href="#" class="card-link">Card link</a>
+							<a href="#" class="card-link">Another link</a> -->
+						</div>
+					</div>
+					<p> </p>
+					<div class="card">
+						<div class="card-block">
+							<h4 class="card-title">How to cite</h4>
+							<p class="card-text">If you use INSaFLU in your work, please cite this publication:</p>
+						 	<a href="#" class="card-link">Borges V, Pinheiro M et al. 2018, bioRxiv</a>
+						</div>
+					</div>
+					<p> </p>
+					<div class="card">
+						<div class="card-block">
+							<h4 class="card-title">Contacts</h4>
+							<p class="card-text">If you have any questions, comments or suggestions, please contact us:</p>
+						 	<a href="mailto:vitor.borges@insa.min-saude.pt?subject=InsaFlu" class="card-link">vitor.borges at insa.min-saude.pt</a>
+						 	<a href="mailto:j.paulo.gomes@insa.min-saude.pt?subject=InsaFlu" class="card-link">j.paulo.gomes at insa.min-saude.pt</a>
+						</div>
+					</div>
+					
+					<p> </p>
+					<div class="row">
+						<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:240px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
+						<img src="{% static 'insa/SNS_logo.svg' %}" style="width:240px; padding-right:10px" id='sns_logo_id'>
+						<img src="{% static 'insa/insa_log.svg' %}" style="width:240px; padding-right:10px; padding-top:15px" id='insa_logo_id'>
+					</div>
+				</div>
+			</div>
+			
+			<div class="col-sm-3 offset-sm-1 insa-sidebar">
+				<img src="{% static 'insa/insaFlu.png' %}" style="width:300px; padding-right:30px; padding-top:15px; padding-bottom:15px" id='main_logo_id'>
+				<div class="sidebar-module">
+					<h4 class="insa-h4">Protocols</h4>
+					<ol class="list-unstyled">
+						<li><a href="#" target="_blank">Find here a pre-NGS wet-lab protocol</a></li>
+						<li><a href="#" target="_blank">Find here how to design a NGS run</a></li>
+					</ol>
+          		</div>
+				<div class="sidebar-module">
+					<h4 class="insa-h4">News</h4>
+					<div class="insa-post">
+		            	<h2 class="insa-post-title-news">INSaFLU 1.0.0 was launched.</h2>
+		            	<p class="insa-post-meta">January 15, 2018 by <a href="#" target="_blank">Vitor Borges</a></p>
+		            	<p>The first release of InsaFlu was made available for the flu community. Another senteces</p>
+		            	<hr>
+		            </div>
+          		</div>
+				<div class="sidebar-module">
+					<h4 class="insa-h4">Useful links</h4>
+					<ol class="list-unstyled">
+					<li><a href="https://www.fludb.org" target="_blank">Influenza Research Database/Fludb</a></li>
+					<li><a href="https://nextflu.org" target="_blank">Nextflu</a></li>
+					<li><a href="https://omictools.com/gisaid-epiflu-database-tool" target="_blank">EpiFLU/GISAID</a></li>
+					<li><a href="https://www.ncbi.nlm.nih.gov/genomes/FLU/Database/nph-select.cgi?go=database" target="_blank">NCBI Influenza Virus Resource</a></li>
+					<li><a href="http://openflu.vital-it.ch/browse.php" target="_blank">OpenFluDB</a></li>
+					<li><a href="https://ecdc.europa.eu/en/home" target="_blank">ECDC</a></li>
+					<li><a href="https://www.cdc.gov/" target="_blank">CDC</a></li>
+					</ol>
+				</div>
+				
+				<div class="sidebar-module sidebar-module-inset">
+					<h6>INSaFLU version 1</h6>
+					<p class="insa-authors">Pipeline development by Vítor Borges and Miguel Pinheiro.</p>
+					<p class="insa-authors">Website construction by Miguel Pinheiro.</p>
+				</div>
+			</div><!-- /.blog-sidebar -->
+		</div> <!-- row -->
 	</div>
 {% endblock %}

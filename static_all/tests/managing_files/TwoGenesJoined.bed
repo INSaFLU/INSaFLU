@@ -1,0 +1,4 @@
+track name=Genes description="TwoGenesJoined genes" itemRgb=On
+PB2	30	2280	PB2	1000	+	30	2280	65,105,225
+PB2	2325	4599	PB1	1000	-	2325	4599	105,180,65
+MP	0	759	M	1000	+	0	759	65,105,225

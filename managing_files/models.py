@@ -102,6 +102,20 @@ class Reference(models.Model):
 		"""
 		return self.get_reference_fasta(type_path) + FileExtensions.FILE_FAI
 
+	def get_reference_bed(self, type_path):
+		"""
+		get a fasta bed path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		file_name = self.get_reference_gbk(type_path)
+		return file_name[:file_name.rfind('.')] + FileExtensions.FILE_BED
+	
+	def get_reference_bed_index(self, type_path):
+		"""
+		get a fasta bed.idx path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		return self.get_reference_bed(type_path) + FileExtensions.FILE_IDX
+
+
 	class Meta:
 		verbose_name = 'Reference'
 		verbose_name_plural = 'References'
@@ -235,7 +249,7 @@ class Sample(models.Model):
 		return sz_return
 
 	def exist_file_2(self):
-		if (self.path_name_2 is None or self.path_name_2.name is None): return False
+		if (self.path_name_2 is None or self.path_name_2.name is None or len(self.path_name_2.name) == 0): return False
 		return True
 
 	def get_abricate_output(self, type_path):

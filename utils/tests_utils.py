@@ -22,6 +22,7 @@ class Test(unittest.TestCase):
 	### static
 	constantsTestsCase = ConstantsTestsCase()
 	utils = Utils()
+	software = Software()
 
 	def setUp(self):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), self.constantsTestsCase.MANAGING_TESTS)
@@ -94,11 +95,11 @@ class Test(unittest.TestCase):
 		self.utils.compress_files(SoftwareNames.SOFTWARE_BGZIP, temp_file)
 		self.assertTrue(os.path.exists(temp_file + ".gz"))
 		self.assertTrue(os.path.getsize(temp_file + ".gz") > 1000)
-		self.utils.create_index_files(SoftwareNames.SOFTWARE_TABIX, temp_file + ".gz")
+		self.software.create_index_files(temp_file + ".gz")
 		self.assertTrue(os.path.exists(temp_file + ".gz.tbi"))
 		self.utils.remove_temp_file(temp_file + ".gz.tbi")
 		try:
-			self.utils.create_index_files(SoftwareNames.SOFTWARE_TABIX, temp_file)
+			self.software.create_index_files(temp_file)
 			self.fail("must raise exception")
 		except Exception as e:
 			self.assertEquals("File doesn't exist", e.args[0])
@@ -115,8 +116,7 @@ class Test(unittest.TestCase):
 		
 		self.utils.copy_file(vcf_file, temp_vcf_file)
 		
-		software = Software()
-		software.test_bgzip_and_tbi_in_vcf(temp_vcf_file)
+		self.software.test_bgzip_and_tbi_in_vcf(temp_vcf_file)
 		vcf_file_out = self.utils.get_temp_file("temp_vcf", ".vcf")
 		vcf_file_out = self.utils.add_freq_to_vcf(vcf_file, vcf_file_out)
 		self.assertTrue(filecmp.cmp(vcf_file_expected, vcf_file_out))
@@ -598,7 +598,7 @@ class Test(unittest.TestCase):
 		self.utils.clean_fasta_file(to_clean_file, out_file)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, cleanned_file))
-		#os.unlink(out_file)
+		os.unlink(out_file)
 
 	def test_short_name(self):
 		"""
@@ -609,4 +609,31 @@ class Test(unittest.TestCase):
 		self.assertEquals('short..._name', utils.short_name('short_name_short_name_short_name', 10))
 
 
-
+	def test_from_genbank_to_bed(self):
+		"""
+		test create bed from genbank
+		"""
+		
+		file_expected = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_BED)
+		file_in = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		file_out = self.utils.get_temp_file("test_genbank_to_bed", FileExtensions.FILE_BED)
+		self.utils.from_genbank_to_bed(file_in, file_out)
+		self.assertTrue(os.path.exists(file_out))
+		self.assertTrue(os.path.getsize(file_out) > 10)
+		self.assertTrue(filecmp.cmp(file_expected, file_out))
+		
+		### create .tbi
+		self.software.create_index_files_from_igv_tools(file_out)
+		self.assertTrue(os.path.exists(file_out + FileExtensions.FILE_IDX))
+		self.assertTrue(os.path.getsize(file_out + FileExtensions.FILE_IDX) > 100)
+		os.unlink(file_out + FileExtensions.FILE_IDX)
+		
+		file_expected = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_TWO_GENES_JOINED_BED)
+		file_in = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_TWO_GENES_JOINED_GBK)
+		self.utils.from_genbank_to_bed(file_in, file_out)
+		self.assertTrue(os.path.exists(file_out))
+		self.assertTrue(os.path.getsize(file_out) > 10)
+		self.assertTrue(filecmp.cmp(file_expected, file_out))
+		os.unlink(file_out)
+	
+	

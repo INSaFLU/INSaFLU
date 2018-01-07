@@ -30,12 +30,16 @@ class SoftwareNames(object):
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
+	SOFTWARE_IGVTOOLS = os.path.join(DIR_SOFTWARE, "IGVTools/igvtools.jar")
+	SOFTWARE_IGVTOOLS_name = "igvtools"
+	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
+	SOFTWARE_IGVTOOLS_PARAMETERS = ""
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
 	SOFTWARE_SPAdes_PARAMETERS = ""
 	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
-	SOFTWARE_ABYSS_name = "abyss" 
+	SOFTWARE_ABYSS_name = "Abyss" 
 	SOFTWARE_ABYSS_VERSION = "2.0"
 	SOFTWARE_ABYSS_PARAMETERS = 'k=63'
 	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
@@ -274,6 +278,14 @@ class SoftwareNames(object):
 	def get_tabix_name(self): return self.SOFTWARE_TABIX_name
 	def get_tabix_version(self): return self.SOFTWARE_TABIX_VERSION
 	def get_tabix_parameters(self): return self.SOFTWARE_TABIX_PARAMETERS
+	
+	"""
+	return igvtools software
+	"""
+	def get_igvtools(self): return self.SOFTWARE_IGVTOOLS
+	def get_igvtools_name(self): return self.SOFTWARE_IGVTOOLS_name
+	def get_igvtools_version(self): return self.SOFTWARE_IGVTOOLS_VERSION
+	def get_igvtools_parameters(self): return self.SOFTWARE_IGVTOOLS_PARAMETERS
 	
 	"""
 	return Coverage software

@@ -68,7 +68,16 @@ function show_igv() {
                             autoHeight: false,
                             viewAsPairs: true,
                             name: data['sample_name'],
-                        }
+                        },
+//                        {
+//                            name: "Genes",
+//                            type: "annotation",
+//                            format: "bed",
+//                            sourceType: "file",
+//                            url: data['path_bed'],
+//                            indexURL: data['path_bed_idx'], // "//igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.idx",
+//                            displayMode: "EXPANDED"
+//                       }
                     ]
 	    	  }
 	    	  browser = igv.createBrowser(document.getElementById("show_igv_id"), options);

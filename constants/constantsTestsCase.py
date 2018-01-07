@@ -16,6 +16,7 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_SNPEF_config = "snpeff.config"
 	MANAGING_FILES_FAIL_FASTA = "A_H3N2_A_Hong_Kong_4801_2014_fail.fasta"
 	MANAGING_FILES_GBK = "A_H3N2_A_Hong_Kong_4801_2014.gbk"
+	MANAGING_FILES_BED = "A_H3N2_A_Hong_Kong_4801_2014.bed"
 	MANAGING_FILES_GFF = "A_H3N2_A_Hong_Kong_4801_2014.gff"
 	MANAGING_FILES_FREEBAYES_VCF = "freebayes.vcf"
 	MANAGING_FILES_FREEBAYES_ANNOTATED_VCF = "freebayes_annotated.vcf"
@@ -28,6 +29,7 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_GBK_2 = "temp_2.gbk"
 	MANAGING_TEST_ABRICATE = "abricate_out.txt"
 	MANAGING_TWO_GENES_JOINED_GBK = "TwoGenesJoined.gbk"
+	MANAGING_TWO_GENES_JOINED_BED = "TwoGenesJoined.bed"
 	MANAGING_CONSENSUS_ALIGNMENT_PROTEIN = "concensus_alignment_protein.fasta"
 	MANAGING_OUT_PROTEIN = "out_protein.faa"
 	MANAGING_MAFFT_IN = 'mafft_2.fasta'

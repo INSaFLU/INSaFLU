@@ -28,7 +28,8 @@ class HomePageView(generic.TemplateView):
 	
 	def get_context_data(self, **kwargs):
 		context = super(HomePageView, self).get_context_data(**kwargs)
-		context['nav_dashboard'] = True	## short the size of modal window
+		context['nav_dashboard'] = True			
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 
 class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):

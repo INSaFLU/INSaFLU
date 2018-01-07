@@ -160,7 +160,7 @@ class SampleTable(tables.Table):
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-			if (result_average.number_file_2 is None): return _('%s/%s' % (result_average.number_file_1, result_average.average_file_1 ))
+			if (result_average.number_file_2 is None): return _('(%s/%s)' % (result_average.number_file_1, result_average.average_file_1 ))
 			return _('(%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_2,\
 					result_average.average_file_2, int(result_average.number_file_1) + int(result_average.number_file_2)) )

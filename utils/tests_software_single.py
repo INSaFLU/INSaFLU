@@ -34,7 +34,6 @@ class Test(TestCase):
 	software = Software()
 	utils = Utils()
 	constants = Constants()
-	software_names = SoftwareNames()
 	constants_tests_case = ConstantsTestsCase()
 
 	def setUp(self):
@@ -44,6 +43,7 @@ class Test(TestCase):
 
 	def tearDown(self):
 		pass
+
 
 
 	

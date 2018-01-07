@@ -40,9 +40,9 @@ class Software(object):
 		self.utils.compress_files(self.software_names.get_bgzip(), vcf_file)
 		### create the tabix
 		if (vcf_file.endswith('.gz')):
-			self.utils.create_index_files(self.software_names.get_tabix(), vcf_file)
+			self.create_index_files(vcf_file)
 		else:
-			self.utils.create_index_files(self.software_names.get_tabix(), vcf_file + ".gz")
+			self.create_index_files(vcf_file + ".gz")
 
 
 	def get_vect_type_files_to_copy(self, software):
@@ -69,7 +69,7 @@ class Software(object):
 				### create the bgzip file
 				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
 				### create the tabix
-				self.utils.create_index_files(self.software_names.get_tabix(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
+				self.create_index_files(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))))
 	
 				### copy both
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))),\
@@ -238,7 +238,7 @@ class Software(object):
 		if (fastq1_2 == None or len(fastq1_2) == 0): ## run abyss
 			try:
 				file_out = self.run_abyss(fastq1_1, out_dir_spades)
-				result_all.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_parameters(), self.software_names.get_abyss_parameters()))
+				result_all.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
 			except Exception:
 				result = Result()
 				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
@@ -247,7 +247,7 @@ class Software(object):
 				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 				return False
 			
-			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
+			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
 				## save error in MetaKeySample
 				result = Result()
 				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
@@ -268,7 +268,7 @@ class Software(object):
 				return False
 			
 			file_out = os.path.join(out_dir_spades, "contigs.fasta")
-			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 100):
+			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
 				## save error in MetaKeySample
 				result = Result()
 				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
@@ -922,7 +922,7 @@ class Software(object):
 		b_return = self.run_fastq_and_trimmomatic(sample, user)
 		
 		### queue the quality check and
-		if (b_return and sample.exist_file_2()):	## don't run for single file because spades doesn't work for one single file
+		if (b_return):	## don't run for single file because spades doesn't work for one single file
 			self.identify_type_and_sub_type(sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), user)
 
@@ -1071,16 +1071,50 @@ class Software(object):
 		self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
 		self.utils.remove_dir(out_put_path)
 		
-		### make the coverage images
-		draw_all_coverage = DrawAllCoverage()
-		draw_all_coverage.draw_all_coverages(project_sample)
+		### draw coverage
+		try:
+			### make the coverage images
+			draw_all_coverage = DrawAllCoverage()
+			draw_all_coverage.draw_all_coverages(project_sample)
+		except:
+			result = Result()
+			result.set_error("Fail to draw coverage images")
+			result.add_software(SoftwareDesc('In house software', '1.0', ''))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+			return False
 		
-		## get instances
-		manage_database = ManageDatabase()
-		mixed_infections_management = MixedInfectionsManagement()
-		
-		## set the alert also
-		mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
+		### mixed infection
+		try:
+			## get instances
+			manage_database = ManageDatabase()
+			mixed_infections_management = MixedInfectionsManagement()
+			
+			## set the alert also
+			mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
+		except:
+			result = Result()
+			result.set_error("Fail to calculate mixed infextion")
+			result.add_software(SoftwareDesc('In house software', '1.0', ''))
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Mixed_Infection, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			
+			### get again and set error
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+			project_sample.is_error = True
+			project_sample.save()
+			
+			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+			return False
 		
 		### get again
 		project_sample = ProjectSample.objects.get(pk=project_sample.id)
@@ -1099,5 +1133,39 @@ class Software(object):
 		if (meta_sample != None):
 			manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
+
+
+	def create_index_files(self, file_name):
+		"""
+		create index, need to be .bz
+		"""
+		file_to_index = file_name
+		if (not file_to_index.endswith(FileExtensions.FILE_VCF_GZ)): file_to_index += FileExtensions.FILE_VCF_GZ
+		if (not os.path.exists(file_to_index)):
+			self.logger_production.error("File doesn't exist: " + file_to_index)
+			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
+			raise Exception("File doesn't exist")
+		
+		## test if tbi exists
+		if (os.path.exists(file_to_index + FileExtensions.FILE_TBI)): return
+
+		cmd = "{} {}".format(self.software_names.get_tabix(), file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create index") 
+	
+	
+	def create_index_files_from_igv_tools(self, file_name):
+		"""
+		Create index from igvtools
+		"""
+		cmd = "java -jar {} index {}".format(self.software_names.get_igvtools(), file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create index") 
 
 

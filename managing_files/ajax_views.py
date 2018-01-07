@@ -281,8 +281,12 @@ def show_igv(request):
 				path_name_vcf_gz = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
+				path_bed = project_sample.project.reference.get_reference_bed(TypePath.MEDIA_URL)
+				path_bed_idx = project_sample.project.reference.get_reference_bed_index(TypePath.MEDIA_URL)
 				data['is_ok'] = True
 				data['path_bam'] = mark_safe(request.build_absolute_uri(path_name_bam))
+				data['path_bed'] = mark_safe(request.build_absolute_uri(path_bed))
+				data['path_bed_idx'] = mark_safe(request.build_absolute_uri(path_bed_idx))
 				data['path_reference'] = mark_safe(request.build_absolute_uri(path_name_reference))
 				data['path_reference_index'] = mark_safe(request.build_absolute_uri(path_name_reference_index))
 				data['reference_name'] = project_sample.project.reference.display_name

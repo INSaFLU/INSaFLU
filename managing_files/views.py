@@ -57,7 +57,7 @@ class ReferenceView(LoginRequiredMixin, ListView):
 		### get the references from the system
 		query_set_system = Reference.objects.filter(owner__username=Constants.DEFAULT_USER, is_obsolete=False, is_deleted=False).order_by('-name')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set_system = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+			query_set_system = query_set_system.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 									Q(owner__username__icontains=self.request.GET.get(tag_search)) |\
 									Q(reference_genbank_name__icontains=self.request.GET.get(tag_search)) |\
 									Q(reference_fasta_name__icontains=self.request.GET.get(tag_search)) |\
@@ -117,7 +117,6 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 			reference_fasta_temp_file_name.flush()
 			reference_fasta_temp_file_name.close()
 			
-			software = Software()
 			try:
 				temp_genbank_dir = software.run_prokka(reference_fasta_temp_file_name.name, ntpath.basename(reference_fasta.name))
 			except Exception as e:
@@ -161,6 +160,10 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
 		
+		### create bed and index for genbank
+		utils.from_genbank_to_bed(sz_file_to, reference.get_reference_bed(TypePath.MEDIA_ROOT))
+		software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
+				
 		### save in database the elements and coordinates
 		utils.get_elements_from_db(reference, self.request.user)
 		utils.get_elements_and_cds_from_db(reference, self.request.user)
@@ -581,18 +584,26 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			context['virus_identify'] = sample.get_type_sub_type()
 			context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
-			context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
-			context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_1 + '.html</a>')
-			context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '" target="_blank">' + sample.file_name_2 + '.html</a>')
+			context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
 			context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
 				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-			context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
-				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-			context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '" target="_blank">' +\
+			context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
 				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-			context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '" target="_blank">' +\
-				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
-	
+			
+			trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
+			if (trimmomatic_file_name != None):
+				context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
+					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+				context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '"">' + sample.file_name_2 + '.html</a>')
+				context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+				context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
+					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+			else:	## there's no second file
+				context['href_trimmonatic_2'] = _("Not available")
+				context['href_fastq_quality_2'] = _("Not available")
+				context['href_fastq_2'] = _("Not available")
+				context['href_trimmonatic_quality_2'] = _("Not available")
+
 			### software
 			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_sample == None):
@@ -618,6 +629,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				decodeResult = DecodeObjects()
 				result = decodeResult.decode_result(meta_sample.description)
 				context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
+				if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_ABYSS_name)
 				context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
@@ -760,11 +772,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		if (b_error): return super(ProjectCreateView, self).form_invalid(form)
 		
 		with transaction.atomic():
-			project = Project()
-			project.name = name
+			project = form.save()
 			project.reference = reference
 			project.owner = self.request.user
-			project.is_deleted = False
 			project.save()
 
 		messages.success(self.request, "Project '" + name + "' was created successfully", fail_silently=True)
@@ -923,8 +933,9 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (len(vect_task_id_submited) == 0):
 			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
 		else:
-			messages.success(self.request, _("'{}' {} added to your project '{}'".format(\
-				len(vect_task_id_submited), "samples were" if len(vect_task_id_submited) > 1 else "sample is", project.name)), fail_silently=True)
+			messages.success(self.request, _("{} added to your project '{}'".format(\
+				len(vect_task_id_submited), "'{}' samples were".format(len(vect_task_id_submited)) if\
+				len(vect_task_id_submited) > 1 else "One sample was", project.name)), fail_silently=True)
 			
 		return super(AddSamplesProjectsView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty

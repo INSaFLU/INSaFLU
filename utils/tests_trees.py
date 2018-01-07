@@ -199,7 +199,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		result = decode_result.decode_result(meta_sample.description)
-		self.assertEquals('Mauve-Feb 13 2015 at 05:57:13', result.get_software(software_names.get_mauve_name()))
+		self.assertEquals('Mauve-2.4.0, Feb 13 2015', result.get_software(software_names.get_mauve_name()))
 		self.assertEquals('Mafft-7.313; (--preservecase)', result.get_software(software_names.get_mafft_name()))
 		self.assertEquals(5, result.get_number_softwares())
 		
@@ -221,7 +221,7 @@ class Test(unittest.TestCase):
 			self.assertTrue(meta_sample != None)
 			self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 			result = decode_result.decode_result(meta_sample.description)
-			self.assertEquals('Mauve-Feb 13 2015 at 05:57:13', result.get_software(software_names.get_mauve_name()))
+			self.assertEquals('Mauve-2.4.0, Feb 13 2015', result.get_software(software_names.get_mauve_name()))
 			self.assertEquals('Mafft-7.313; (--preservecase)', result.get_software(software_names.get_mafft_name()))
 			self.assertEquals('seqret (EMBOSS)-6.6.0.0; (-sformat fasta -osformat2 nexusnon)', result.get_software(software_names.get_seqret_name()))
 			self.assertEquals(5, result.get_number_softwares())

@@ -309,7 +309,7 @@ def validate_project_reference_name(request):
 	if request.is_ajax():
 		project_name = request.GET.get('project_name')
 		data = {
-			'is_taken': Project.objects.filter(name__iexact=project_name, owner__username=request.user.username).exists()
+			'is_taken': Project.objects.filter(name__iexact=project_name, is_deleted=False, owner__username=request.user.username).exists()
 		}
 		if (data['is_taken']): data['error_message'] = _('Exists a project with this name.')
 		return JsonResponse(data)

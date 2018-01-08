@@ -68,8 +68,7 @@ function show_igv() {
                             autoHeight: false,
                             viewAsPairs: true,
                             name: data['sample_name'],
-                        },
-                        {
+                        },{
                             name: "Genes",
                             type: "annotation",
                             format: "bed",

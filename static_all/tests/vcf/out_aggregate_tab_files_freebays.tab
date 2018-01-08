@@ -1,4 +1,4 @@
-CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	EFFECT.c	EFFECT.p	LOCUS_TAG	GENE	PRODUCT
-PB2	873	snp	A	G	2.58398	CDS	+	843/2250	281/748	missense_variant	c.842A>G	p.Glu281Gly	locus_00001		Polymerase basic protein 2
-PB2	1932	snp	G	A	20.2381	CDS	+	1902/2250	634/748	missense_variant	c.1901G>A	p.Gly634Glu	locus_00001		Polymerase basic protein 2
-HA	117	snp	A	G	3.39321	CDS	+	117/1701	39/565	missense_variant	c.116A>G	p.Glu39Gly	locus_00004		Hemagglutinin
+ID	CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	EFFECT.c	EFFECT.p	LOCUS_TAG	GENE	PRODUCT
+sample_name	PB2	873	snp	A	G	2.58398	CDS	+	843/2250	281/748	missense_variant	c.842A>G	p.Glu281Gly	locus_00001		Polymerase basic protein 2
+sample_name	PB2	1932	snp	G	A	20.2381	CDS	+	1902/2250	634/748	missense_variant	c.1901G>A	p.Gly634Glu	locus_00001		Polymerase basic protein 2
+sample_name	HA	117	snp	A	G	3.39321	CDS	+	117/1701	39/565	missense_variant	c.116A>G	p.Glu39Gly	locus_00004		Hemagglutinin

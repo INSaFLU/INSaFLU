@@ -6,7 +6,7 @@ Created on Nov 27, 2017
 
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Project, ProjectSample, TagNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
@@ -24,8 +24,8 @@ class CollectExtraData(object):
 	classdocs
 	'''
 
-	HEADER_SAMPLE_OUT_TAB = "id	fastq1	fastq2	data set	vaccine status	week	onset date	collection date	lab reception date	latitude	longitude	type-subtype	mixedinfection"
-	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,mixedinfection"
+	HEADER_SAMPLE_OUT_TAB = "id	fastq1	fastq2	data set	vaccine status	week	onset date	collection date	lab reception date	latitude	longitude	type-subtype	putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 	SEPARATOR_COMMA = ','
 	SEPARATOR_TAB = '\t'
 	
@@ -182,7 +182,6 @@ class CollectExtraData(object):
 		"""
 		Collect extra files
  		"""
-		number_of_sample = ProjectSample.objects.filter(project=project, is_finished=True, is_deleted=False, is_error=False).count()
 		out_file = None
 		out_file_file_system = None
 		if (type_file == Project.PROJECT_FILE_NAME_COVERAGE):
@@ -197,20 +196,17 @@ class CollectExtraData(object):
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES):
 			## freebayes <50
-			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
-				out_file = self.collect_variations_freebayes(project)
+			out_file = self.collect_variations_freebayes(project)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV):
 			## samples csv
-			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
-				out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+			out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV):
 			## samples tsv
-			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
-				out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
+			out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		if (out_file != None):
@@ -228,7 +224,7 @@ class CollectExtraData(object):
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 		if (geneticElement == None): return None
 		
-		vect_ratios = [0, 9]
+		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least 10-fold"]
 		vect_reference = geneticElement.get_sorted_elements()
 		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
@@ -239,9 +235,9 @@ class CollectExtraData(object):
 			for element_name in vect_reference:
 				output_file_handle.write("\t{}".format(geneticElement.get_size_element(element_name)))
 			
-			output_file_handle.write("\n\nCoverage\t" + "\t" * len(vect_reference))
+			output_file_handle.write("\n\nMean depth of coverage\t" + "\t" * len(vect_reference))
 			print("\t" * len(vect_reference))
-			for ratio in vect_ratios: output_file_handle.write("\tRatio>%d" % (ratio) + "\t" * len(vect_reference))
+			for ratio in vect_ratios: output_file_handle.write("\t%s" % (ratio) + "\t" * len(vect_reference))
 			output_file_handle.write("\n")
 			
 			for project_sample in project.project_samples.all():
@@ -284,7 +280,7 @@ class CollectExtraData(object):
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 				if (not os.path.exists(tab_file_to_process)): continue
-				parse_out_files.parse_tab_files(tab_file_to_process, output_file_handle, vect_type_out, 101, True if n_count == 0 else False)
+				parse_out_files.parse_tab_files_snippy(project_sample.sample.name, tab_file_to_process, output_file_handle, vect_type_out, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -305,7 +301,7 @@ class CollectExtraData(object):
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 				if (not os.path.exists(tab_file_to_process)): continue
-				parse_out_files.parse_tab_files(tab_file_to_process, output_file_handle, vect_type_out, 50, True if n_count == 0 else False)
+				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, output_file_handle, vect_type_out, 50, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -345,7 +341,7 @@ class CollectExtraData(object):
 				### vaccine status
 				sz_out += column_separator + (project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
 				### week
-				sz_out += column_separator + (project_sample.sample.week if project_sample.sample.week != None else '')
+				sz_out += column_separator + (str(project_sample.sample.week) if project_sample.sample.week != None else '')
 				### onset date
 				sz_out += column_separator + (project_sample.sample.date_of_onset.strftime('%Y-%m-%d') if project_sample.sample.date_of_onset != None else '')
 				### collection date
@@ -353,18 +349,19 @@ class CollectExtraData(object):
 				### lab reception date
 				sz_out += column_separator + (project_sample.sample.date_of_receipt_lab.strftime('%Y-%m-%d') if project_sample.sample.date_of_receipt_lab != None else '')
 				### latitude
-				sz_out += column_separator + (project_sample.sample.geo_local.coords[0] if project_sample.sample.geo_local != None else '')
+				sz_out += column_separator + (str(project_sample.sample.geo_local.coords[0]) if project_sample.sample.geo_local != None else '')
 				### longitude
-				sz_out += column_separator + (project_sample.sample.geo_local.coords[1] if project_sample.sample.geo_local != None else '')
+				sz_out += column_separator + (str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
 				### type_subtype
 				sz_out += column_separator + (project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
 				### mixedinfection
-				sz_out += column_separator + (project_sample.sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
+				sz_out += column_separator + (project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
 
-				### print extra information				
+				### print extra informatios
+				query_set = TagNames.objects.filter(sample=project_sample.sample)
 				for tag_name_to_test in vect_tags:
 					b_print = False
-					for tag_names in project_sample.sample.tag_names.all():
+					for tag_names in query_set:
 						if (tag_names.tag_name.name == tag_name_to_test):
 							sz_out += column_separator + tag_names.value
 							b_print = True
@@ -386,10 +383,10 @@ class CollectExtraData(object):
 		vect_tags_out = []
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
-			for tag_names in project_sample.sample.tag_names.all():
-				if (tag_names.tag_name.name in dict_tags_out): continue
-				dict_tags_out[tag_names.tag_name.name] = 1
-				vect_tags_out.append(tag_names.tag_name.name)
+			for tag_name in project_sample.sample.tag_names.all():
+				if (tag_name.name in dict_tags_out): continue
+				dict_tags_out[tag_name.name] = 1
+				vect_tags_out.append(tag_name.name)
 		return vect_tags_out
 			
 			

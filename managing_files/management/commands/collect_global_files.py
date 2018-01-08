@@ -26,7 +26,7 @@ class Command(BaseCommand):
 		self.stdout.write("Stating")
 		
 		collect_extra_data = CollectExtraData()
-		project_id = 1
+		project_id = 2
 		try:
 			project = Project.objects.get(pk=project_id)
 			collect_extra_data.collect_extra_data_for_project(project, project.owner, None)

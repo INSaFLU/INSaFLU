@@ -37,8 +37,8 @@
 			<hr>
 			<div class="row">
 				<div class="col-lg-3"><strong>Upload date:</strong> {{ sample.creation_date|date }}</div>
-			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ sample.geo_local.coords }}</div>
-			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ sample.type_subtype }}</div>
+			  	<div class="col-lg-3"><strong>Geolocation pos.(Lat, Lng):</strong> {{ sample.geo_local.coords }}</div>
+			  	<div class="col-lg-3"><strong>Type and subtype/lineage:</strong> {{ sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ sample.owner.username }}</div>
 			</div>
 			<hr>
@@ -47,8 +47,8 @@
 			<div class="container">
 				<ul class="nav nav-tabs" role="tablist">
 					<li class="nav-item active"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Trimmomatic files</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Virus Identification</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage detection</a></li>
 				</ul>
 	
 				<div class="tab-content">

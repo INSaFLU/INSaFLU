@@ -4,13 +4,24 @@
 */
 .rounded-header {
 	border-radius: 5px;
-	background: #369;
+	background: #569dd4;
 	border-color: #05264c;
 	color: #05264c;
 	padding: 13px;
 	margin-bottom: 30px;
 	font-size: 24px;
 	font-weight: 700;
+}
+
+
+.bg-insa-fixed-top{
+   background-color: #F6F6FF !important;
+   color: #05264c !important;
+}
+
+a.bg-insa-fixed-top:focus, a.bg-insa-fixed-top:hover {
+  background-color: #e5e5e5 !important;
+  color: #05264c !important
 }
 
 .rounded-group-box {
@@ -123,7 +134,6 @@ p.software {
 /*
 *	END tooltip
 */
-
 
 #phylocanvas {
       width: 100%;

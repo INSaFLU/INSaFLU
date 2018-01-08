@@ -274,7 +274,6 @@ class Utils(object):
 		record_dict = SeqIO.index(sz_file_name, "fasta")
 		if (len(record_dict) > 0): return len(record_dict)
 		raise IOError(_("Error: the file is not in FASTA format."))
-	
 
 	def get_max_length_fasta(self, sz_file_name):
 		"""
@@ -318,9 +317,13 @@ class Utils(object):
 		if (not b_pass): raise IOError(_("Error: the file is not in GenBank format."))
 
 		n_number_locus = 0
-		for record in SeqIO.parse(sz_file_name, "genbank"):
+		handle = open(sz_file_name)
+		for record in SeqIO.parse(handle, "genbank"):
 			n_number_locus += 1
-		if (n_number_locus > 0): return n_number_locus
+		if (n_number_locus > 0): 
+			handle.close()
+			return n_number_locus
+		handle.close()
 		raise IOError(_("Error: the file is not in GenBank format."))
 
 
@@ -331,7 +334,8 @@ class Utils(object):
 		return: dt_data{ element_name : vect_genes, element_name_2 : vect_genes_2, ....} 
 		"""
 		geneticElement = GeneticElement()
-		for record in SeqIO.parse(genbank_name, "genbank"):
+		handle = open(genbank_name)
+		for record in SeqIO.parse(handle, "genbank"):
 			length = 0
 			for features in record.features:
 				if (features.type == 'source'):
@@ -343,6 +347,7 @@ class Utils(object):
 					elif ('locus_tag' in features.qualifiers): 
 						geneticElement.add_gene(record.name, length, Gene(features.qualifiers['locus_tag'][0],
 							int(features.location.start), int(features.location.end), features.location.strand))
+		handle.close()
 		return geneticElement
 	
 	def get_elements_from_db(self, reference, user):
@@ -432,18 +437,25 @@ class Utils(object):
 		
 		record_dict = SeqIO.index(fasta_file, "fasta")
 		try:
-			for record in SeqIO.parse(gb_file, "genbank"):
+			handle_gb = open(gb_file)
+			for record in SeqIO.parse(handle_gb, "genbank"):
 				b_found = False
 				for seq in record_dict:
 					if (seq == record.name):
 						if (len(record_dict[seq].seq) != len(record.seq)):
+							handle_gb.close()
 							raise ValueError(_("Different length. Fasta seq: %s length: %d; Fasta seq: %s length: %d." 
 										% (seq, len(record_dict[seq].seq), record.name, len(record.seq))) )
 						b_found = True
 						break
-				if (not b_found): raise ValueError(_("This locus '" + record.name + "' is not in fasta file."))
+				if (not b_found): 
+					handle_gb.close()
+					raise ValueError(_("This locus '" + record.name + "' is not in fasta file."))
 		except AttributeError as e:
+			handle_gb.close()
 			raise ValueError(_(e.args[0]))
+	
+		handle_gb.close()
 		return locus_fasta
 
 
@@ -635,14 +647,18 @@ class Utils(object):
 		"""
 		get seq instance from genbank file
 		"""
-		for record in SeqIO.parse(genbank_file, "genbank"):
+		handle_gb = open(genbank_file)
+		for record in SeqIO.parse(handle_gb, "genbank"):
 			if (record.name != sequence_name): continue
 			for features in record.features:
 				if (features.type == 'CDS'):
 					if ('gene' in features.qualifiers and features.qualifiers['gene'][0] == gene.name):
+						handle_gb.close()
 						return features.location.extract(record).seq
 					elif ('locus_tag' in features.qualifiers and features.qualifiers['locus_tag'][0] == gene.name):
+						handle_gb.close()
 						return features.location.extract(record).seq
+		handle_gb.close()
 		return None
 
 
@@ -663,13 +679,14 @@ class Utils(object):
 					
 		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
 		b_saved = False
-		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
-		with open(file_name, 'w') as handle:
-			for key in sorted(coverage.get_dict_data()):
-				if (coverage.is_100_more_9(key)):
-					handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq).upper()))
-					b_saved = True
-		if (not b_saved): os.unlink(file_name)
+		with open(consensus_fasta) as handle_consensus:
+			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
+			with open(file_name, 'w') as handle:
+				for key in sorted(coverage.get_dict_data()):
+					if (coverage.is_100_more_9(key)):
+						handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq).upper()))
+						b_saved = True
+		if (not b_saved and os.path.exists(file_name)): os.unlink(file_name)
 		return file_name if b_saved else None
 	
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
@@ -686,17 +703,18 @@ class Utils(object):
 		
 		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
 		b_saved = False
-		record_dict = SeqIO.to_dict(SeqIO.parse(consensus_fasta, "fasta"))
-		with open(file_name, 'w') as handle:
-			if (coverage == None):
-				if sequence_name in record_dict:
-					handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
-					b_saved = True
-			else:
-				if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
-					handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
-					b_saved = True
-		if (not b_saved): os.unlink(file_name)
+		with open(consensus_fasta) as handle_consensus:
+			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
+			with open(file_name, 'w') as handle:
+				if (coverage == None):
+					if sequence_name in record_dict:
+						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
+						b_saved = True
+				else:
+					if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
+						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
+						b_saved = True
+		if (not b_saved and os.path.exists(file_name)): os.unlink(file_name)
 		return file_name if b_saved else None
 	
 	def clean_fasta_names(self, vect_names_to_clean, in_file, out_file):
@@ -781,10 +799,11 @@ class Utils(object):
 		
 		with open(out_file, "w+") as output_file_handle:
 			vect_sequences = []
-			for seq_record in SeqIO.parse(in_file, "fasta"):
-				# Take the current sequence
-				vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
-			SeqIO.write(vect_sequences, output_file_handle, "fasta")
+			with open(in_file) as file_handle:
+				for seq_record in SeqIO.parse(file_handle, "fasta"):
+					# Take the current sequence
+					vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+				SeqIO.write(vect_sequences, output_file_handle, "fasta")
 
 
 	def short_name(self, name, max_size):
@@ -802,28 +821,29 @@ class Utils(object):
 		header = """track name=Genes description="{} genes" itemRgb=On\n""".format(self.clean_extension(os.path.basename(file_in)) )
 		with open(file_out, 'w+') as outh: 
 			outh.write(header)
-			for record in SeqIO.parse(open(file_in, "rU"), "genbank") :
-				dt_out = {}
-				for feature in record.features:
-					if feature.type == 'gene' or feature.type == 'CDS':
-						start = feature.location.start.position
-						stop = feature.location.end.position
-						try:
-							name = feature.qualifiers['gene'][0]
-						except:
+			with open(file_in) as file_handle:
+				for record in SeqIO.parse(file_handle, "genbank") :
+					dt_out = {}
+					for feature in record.features:
+						if feature.type == 'gene' or feature.type == 'CDS':
+							start = feature.location.start.position
+							stop = feature.location.end.position
 							try:
-								name = feature.qualifiers['CDS'][0]
+								name = feature.qualifiers['gene'][0]
 							except:
-								# some features only have a locus tag
-								name = feature.qualifiers['locus_tag'][0]
-						if (name in dt_out): continue
-						dt_out[name] = 1
-						if feature.strand < 0:
-							strand = "-"
-						else:
-							strand = "+"
-						bed_line = "{4}\t{0}\t{1}\t{2}\t1000\t{3}\t{0}\t{1}\t{5}\n".format(start, stop, name,\
-												strand, record.id, '65,105,225' if strand == '+' else '105,180,65')
-						outh.write(bed_line)
+								try:
+									name = feature.qualifiers['CDS'][0]
+								except:
+									# some features only have a locus tag
+									name = feature.qualifiers['locus_tag'][0]
+							if (name in dt_out): continue
+							dt_out[name] = 1
+							if feature.strand < 0:
+								strand = "-"
+							else:
+								strand = "+"
+							bed_line = "{4}\t{0}\t{1}\t{2}\t1000\t{3}\t{0}\t{1}\t{5}\n".format(start, stop, name,\
+													strand, record.id, '65,105,225' if strand == '+' else '105,180,65')
+							outh.write(bed_line)
 						
 			outh.close()

@@ -28,7 +28,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q
 from django.http import JsonResponse
 from operator import attrgetter
 from itertools import chain
@@ -748,7 +748,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		name = form.cleaned_data['name']
 		b_error = False
 		try:
-			Project.objects.get(name=name, owner__username=self.request.user.username)
+			Project.objects.get(name__iexact=name, is_deleted=False, owner__username=self.request.user.username)
 			self.request.session[Constants.ERROR_PROJECT_NAME] = _("Exists a project with this name.")
 			self.request.session[Constants.PROJECT_NAME] = name
 			b_error = True
@@ -782,7 +782,6 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		messages.success(self.request, "Project '" + name + "' was created successfully", fail_silently=True)
 		return super(ProjectCreateView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
-
 
 class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
 	"""
@@ -977,8 +976,8 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['reference_name'] = project.reference.name
 		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
 		context['number_of_alerts'] = ProjectSample.objects.filter(project=project, is_deleted=False,\
-								is_error=False, is_finished=True, alert_first_level__gte=0,\
-								alert_second_level__gte=0).count()
+								is_error=False, is_finished=True, alert_first_level__gte=1,\
+								alert_second_level__gte=1).count()
 		context['samples_in_process'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=False).count()
 		context['samples_error'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=True, is_finished=False).count()
 		

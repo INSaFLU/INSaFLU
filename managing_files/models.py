@@ -330,6 +330,7 @@ class Sample(models.Model):
 		for identify_virus in vect_identify_virus:
 			if (identify_virus.seq_virus.kind_type.name == type_to_test):
 				vect_return.append(identify_virus.seq_virus.name)
+		if (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
 		return ''.join(sorted(vect_return))
 				
 	def get_is_ready_for_projects(self):
@@ -375,7 +376,7 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_FASTA = "All_nt.fasta"
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
-	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
+	PROJECT_FILE_NAME_nex = "Alignment_nt_All.nex"
 	PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
 	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv" 
 	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50

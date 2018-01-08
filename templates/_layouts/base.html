@@ -15,9 +15,9 @@
 	  	<!-- Custom fonts for this template-->
 	  	<link rel="stylesheet" href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
 	  	<!-- Custom styles for this template-->
-		<link rel="stylesheet" href="{% static 'css/sb-admin.css' %}" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href="{% static 'css/sb-admin.min.css' %}" rel="stylesheet" type="text/css">
 		<!-- pre-define in-house css -->
-		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" rel="stylesheet" type="text/css"> 
 		
 		<!-- favicons-->
 		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
@@ -27,11 +27,11 @@
   {% endblock css %}
 </head>
 
-<body class="fixed-nav sticky-footer bg-dark" id="page-top">
+<body class="fixed-nav sticky-footer" id="page-top">
   <!-- Navigation-->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-info fixed-top" id="mainNav">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
   	<img src="{% static 'insa/insa_logo.png' %}" style="width:250px; padding-right:10px" id='main_logo_id'>
-  	<a class="navbar-brand" href="{% url 'dashboard' %}"><strong>_INSa</strong>FLU</a>
+  	<a class="navbar-brand bg-insa-fixed-top" href="{% url 'dashboard' %}"><strong>_INSa</strong>FLU</a>
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -77,12 +77,12 @@
       </ul>
       <ul class="navbar-nav ml-auto">
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle mr-lg-2" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fa fa-fw fa-envelope"></i>
             <span class="d-lg-none">Messages 
             	{% if num_reference %}
             		<span class="indicator text-primary d-none d-lg-block">
-              			<i class="fa fa-fw fa-circle"></i>
+              			<i class="fa fa-fw fa-circle bg-insa-fixed-top"></i>
             		</span>
               		<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
 				{% else %}
@@ -99,7 +99,7 @@
           </a>
           <!--  MESSAGES -->
 	   {% if num_reference %}
-	   <div class="dropdown-menu" aria-labelledby="messagesDropdown">
+	   <div class="dropdown-menu bg-insa-fixed-top" aria-labelledby="messagesDropdown">
             <h6 class="dropdown-header">New Messages:</h6>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="#">
@@ -140,10 +140,10 @@
         </li> -->
 
 		{% if user.is_authenticated %}
-			<a class="nav-link" data-toggle="modal" id="id_user_name" data-target="#logoutModal">
+			<a class="nav-link bg-insa-fixed-top" data-toggle="modal" id="id_user_name" data-target="#logoutModal">
             	<i class="fa fa-fw fa-sign-out"></i> {{ user.username }} - Logout</a>
 		{% else %}
-			<a class="nav-link" href="{% url 'login' %}">
+			<a class="nav-link bg-insa-fixed-top" href="{% url 'login' %}">
             	<i class="fa fa-fw fa-sign-in"></i>Login</a>
 		{% endif %}
 
@@ -184,7 +184,7 @@
    <!-- /.container-fluid-->
    <!-- /.content-wrapper-->
    <p> </p> <!-- space between everything and footer -->
-   <footer class="sticky-footer">
+   <footer class="sticky-footer bg-insa-fixed-top">
 		<div class="container">
 				<div class="text-center">
 					<small><a href="http://www.insa.pt/" target="_blank">_INSA</a> Instituto Nacional de Saúde Dr. Ricardo Jorge</small>

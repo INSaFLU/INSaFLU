@@ -407,6 +407,8 @@ class ReferenceProjectForm(forms.ModelForm):
 		"""
 		cleaned_data = super(ReferenceProjectForm, self).clean()
 		return cleaned_data
+
+
 ## to put both inline
 ReferenceProjectFormSet = inlineformset_factory(Reference, Project, form=ReferenceProjectForm, extra=1)
 

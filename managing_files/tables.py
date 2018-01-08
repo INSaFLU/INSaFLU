@@ -256,14 +256,14 @@ class ShowProjectSamplesResults(tables.Table):
 	coverage = tables.Column('Coverage', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
-	type_subtype = tables.LinkColumn('Type and Subtype', empty_values=())
-	mixed_infections = tables.LinkColumn('Putative Mixed-infection', empty_values=())
+	type_and_subtype = tables.LinkColumn('Type and Subtype', empty_values=())
+	putative_mixed_infections = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 		
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'type_subtype', 'mixed_infections', 'dataset', 'coverage', 'alerts', 'results')
+		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infections', 'dataset', 'coverage', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -293,13 +293,13 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return "{}".format(record.alert_first_level + record.alert_second_level)
 	
-	def render_type_subtype(self, record):
+	def render_type_and_subtype(self, record):
 		"""
 		return number
 		"""
 		return record.sample.type_subtype
 	
-	def render_mixed_infections(self, record):
+	def render_putative_mixed_infections(self, record):
 		"""
 		return number
 		"""

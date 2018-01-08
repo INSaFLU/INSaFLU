@@ -302,10 +302,13 @@ class DrawCoverage(object):
 		
 		point_y = self.DRAW_HEADER_BOTTOM
 		position_x = position_x_fourth_header;
-		position_x += self.draw_text_header(draw, font_12, "Coverage: {}".format(average_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_12, "Ratio >0: {}%".format(ratio_more_zero), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
-		position_x += self.draw_text_header(draw, font_12, "Ratio >9: {}%".format(rati_more_nine), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Mean depth of coverage: {}".format(average_coverage), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "% of size covered by at least 1-fold: {}%".format(ratio_more_zero), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		position_x_fourth_header = position_x
+		position_x = position_x_third_header
+		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
+		position_x += self.draw_text_header(draw, font_12, "% of size covered by at least 10-fold: {}%".format(rati_more_nine), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x_third_header = position_x
 		
 		### second line
 		position_x = position_x_second_header;

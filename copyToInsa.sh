@@ -15,11 +15,19 @@ echo 'templates'
 scp -P 2023 -r templates* insa@193.137.95.75:/usr/local/web_site
 echo 'utils'
 scp -P 2023 -r utils* insa@193.137.95.75:/usr/local/web_site
+echo 'phylogeny'
+scp -P 2023 -r phylogeny* insa@193.137.95.75:/usr/local/web_site
 echo 'local js'
 scp -P 2023 -r static/js* insa@193.137.95.75:/usr/local/web_site/static
 echo 'local css'
 scp -P 2023 -r static/css* insa@193.137.95.75:/usr/local/web_site/static
 echo 'local icons'
-scp -P 2023 -r static/css* insa@193.137.95.75:/usr/local/web_site/static
+scp -P 2023 -r static/icons* insa@193.137.95.75:/usr/local/web_site/static
 echo 'local insa'
 scp -P 2023 -r static/insa* insa@193.137.95.75:/usr/local/web_site/static
+echo 'local template_input'
+scp -P 2023 -r static/template_input* insa@193.137.95.75:/usr/local/web_site/static
+echo 'local db'
+scp -P 2023 -r static/db* insa@193.137.95.75:/usr/local/web_site/static
+echo 'local email'
+scp -P 2023 -r static/email* insa@193.137.95.75:/usr/local/web_site/static

@@ -133,10 +133,10 @@ class Test(unittest.TestCase):
 		vect_count_type = ['snp']
 		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
 		self.assertEqual(4, count_hits.get_hits_less_50())
-		self.assertEqual(3, count_hits.get_hits_50_90())
+		self.assertEqual(2, count_hits.get_hits_50_90())
 		self.assertEqual(118, count_hits.get_hits_more_90())
-		self.assertEqual(7, count_hits.get_total_50_50_90())
-		self.assertEqual(125, count_hits.get_total())
+		self.assertEqual(6, count_hits.get_total_50_50_90())
+		self.assertEqual(124, count_hits.get_total())
 
 	def test_count_hits_from_tab_2(self):
 		"""
@@ -164,6 +164,32 @@ class Test(unittest.TestCase):
 		self.assertEqual(4, count_hits.get_total_50_50_90())
 		self.assertEqual(126, count_hits.get_total())
 		
+	def test_count_hits_from_tab_4(self):
+		"""
+		test cout hits
+		"""
+		tab_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "have_multiple_var.tab")
+		vect_count_type = ['snp']
+		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
+		self.assertEqual(1, count_hits.get_hits_less_50())
+		self.assertEqual(1, count_hits.get_hits_50_90())
+		self.assertEqual(2, count_hits.get_hits_more_90())
+		self.assertEqual(2, count_hits.get_total_50_50_90())
+		self.assertEqual(4, count_hits.get_total())
+		
+	def test_count_hits_from_tab_5(self):
+		"""
+		test cout hits
+		"""
+		tab_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "have_multiple_var.tab")
+		vect_count_type = ['del']
+		count_hits = self.utils.count_hits_from_tab(tab_file, vect_count_type)
+		self.assertEqual(1, count_hits.get_hits_less_50())
+		self.assertEqual(0, count_hits.get_hits_50_90())
+		self.assertEqual(0, count_hits.get_hits_more_90())
+		self.assertEqual(1, count_hits.get_total_50_50_90())
+		self.assertEqual(1, count_hits.get_total())
+		
 	def test_get_variations_by_freq_from_tab(self):
 		"""
 		test get variations by freq
@@ -177,8 +203,7 @@ class Test(unittest.TestCase):
 		self.assertEqual(774, dict_less_50['PB2'][1])
 		self.assertEqual(896, dict_less_50['PB2'][2])
 		self.assertEqual(1, len(dict_more_50))
-		self.assertEqual(774, dict_more_50['PB2'][0])
-		self.assertEqual(1554, dict_more_50['PB2'][1])
+		self.assertEqual(1554, dict_more_50['PB2'][0])
 		self.assertEqual(8, len(dict_more_90))
 		self.assertEqual(324, dict_more_90['MP'][0])
 		self.assertEqual(99, dict_more_90['NS'][0])

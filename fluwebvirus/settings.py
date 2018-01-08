@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django_bootstrap_breadcrumbs',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
+    'phylogeny.apps.PhylogenyConfig',
     'log_login.apps.LogLoginConfig',
     'extend_user.apps.ExtendUserConfig',
 ]

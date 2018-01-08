@@ -99,10 +99,9 @@ p.software {
 */
 
 /*
-*	START tooltip
+*	START tooltip, show two tooltips
 */
-.tip{
-    display: inline;
+/* .tip{
     position: relative;
     background
 }
@@ -119,7 +118,8 @@ p.software {
     position: absolute;
     z-index: 98;
     width: 320px;
-}
+} */
+
 /*
 *	END tooltip
 */

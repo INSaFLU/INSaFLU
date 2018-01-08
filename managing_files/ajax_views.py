@@ -110,8 +110,8 @@ def show_phylo_canvas(request):
 					if (string_file_content != None and len(string_file_content) > 0):
 						data['is_ok'] = True
 						data['tree'] = string_file_content
-						data['tree_nwk_id'] = mark_safe("<strong>Tree 'nwk':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
-						data['tree_tree_id'] = mark_safe("<strong>Tree 'tree':</strong> <a href=\"{}\" download> {}</a>".format(file_name, os.path.basename(file_name)))
+						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name, os.path.basename(file_name)))
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)

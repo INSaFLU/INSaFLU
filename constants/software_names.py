@@ -37,7 +37,8 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
-	SOFTWARE_SPAdes_PARAMETERS = ""
+	SOFTWARE_SPAdes_PARAMETERS = "--meta --only-assembler"
+	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"
 	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
 	SOFTWARE_ABYSS_name = "Abyss" 
 	SOFTWARE_ABYSS_VERSION = "2.0"
@@ -154,6 +155,7 @@ class SoftwareNames(object):
 	def get_spades_name(self): return self.SOFTWARE_SPAdes_name
 	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
 	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
+	def get_spades_parameters_single(self): return self.SOFTWARE_SPAdes_PARAMETERS_single
 
 
 	"""

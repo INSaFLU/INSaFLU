@@ -125,7 +125,21 @@ class Utils(object):
 		"""
 		if (sz_file_name == None): return
 		
-		if os.path.exists(sz_file_name) and len(sz_file_name) > 0 and sz_file_name.find(Constants.TEMP_DIRECTORY) == 0:
+		if os.path.exists(sz_file_name) and len(sz_file_name) > 0 and sz_file_name.startswith(Constants.TEMP_DIRECTORY):
+			cmd = "rm " + sz_file_name
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to remove a file") 
+
+	def remove_file(self, sz_file_name):
+		"""
+		prevent to remove files outside of temp directory
+		"""
+		if (sz_file_name == None): return
+		
+		if os.path.exists(sz_file_name) and len(sz_file_name) > 0:
 			cmd = "rm " + sz_file_name
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
@@ -260,6 +274,7 @@ class Utils(object):
 		record_dict = SeqIO.index(sz_file_name, "fasta")
 		if (len(record_dict) > 0): return len(record_dict)
 		raise IOError(_("Error: the file is not in FASTA format."))
+	
 
 	def get_max_length_fasta(self, sz_file_name):
 		"""
@@ -557,13 +572,15 @@ class Utils(object):
 				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
 				lst_data = sz_temp.split('\t')
 				if (len(lst_data) > 5):
-					freq_data = lst_data[5]
-					if (lst_data[2] not in vect_count_type): continue
-					for value_ in freq_data.split(','):
-						if (self.is_float(value_)):
-							if (float(value_) < 50): count_hits.add_one_hits_less_50()
-							elif (float(value_) < 91): count_hits.add_one_hits_50_90()
-							else: count_hits.add_one_hits_more_90()
+					lst_freq_data = lst_data[5].split(',')
+					lst_type_var = lst_data[2].split(',')
+					for i in range(0, len(lst_type_var)):
+						if (lst_type_var[i] in vect_count_type):
+							value_ = lst_freq_data[i]
+							if (self.is_float(value_)):
+								if (float(value_) < 50): count_hits.add_one_hits_less_50()
+								elif (float(value_) < 91): count_hits.add_one_hits_50_90()
+								else: count_hits.add_one_hits_more_90()
 		return count_hits
 
 	def get_variations_by_freq_from_tab(self, tab_file, vect_count_type):
@@ -590,25 +607,27 @@ class Utils(object):
 				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
 				lst_data = sz_temp.split('\t')
 				if (len(lst_data) > 5):
-					freq_data = lst_data[5]
-					if (lst_data[2] not in vect_count_type): continue
-					for value_ in freq_data.split(','):
-						if (self.is_float(value_)):
-							if (float(value_) < 50):
-								if (lst_data[0] in dict_less_50 and self.is_integer(lst_data[1])): 
-									dict_less_50[lst_data[0]].append(int(lst_data[1]))
-								elif (self.is_integer(lst_data[1])):
-									dict_less_50[lst_data[0]] = [int(lst_data[1])]
-							elif (float(value_) < 90):
-								if (lst_data[0] in dict_more_50 and self.is_integer(lst_data[1])): 
-									dict_more_50[lst_data[0]].append(int(lst_data[1]))
-								elif (self.is_integer(lst_data[1])):
-									dict_more_50[lst_data[0]] = [int(lst_data[1])]
-							else:
-								if (lst_data[0] in dict_more_90 and self.is_integer(lst_data[1])): 
-									dict_more_90[lst_data[0]].append(int(lst_data[1]))
-								elif (self.is_integer(lst_data[1])):
-									dict_more_90[lst_data[0]] = [int(lst_data[1])]
+					lst_freq_data = lst_data[5].split(',')
+					lst_type_var = lst_data[2].split(',')
+					for i in range(0, len(lst_type_var)):
+						if (lst_type_var[i] in vect_count_type):
+							value_ = lst_freq_data[i]
+							if (self.is_float(value_)):
+								if (float(value_) < 50):
+									if (lst_data[0] in dict_less_50 and self.is_integer(lst_data[1])): 
+										dict_less_50[lst_data[0]].append(int(lst_data[1]))
+									elif (self.is_integer(lst_data[1])):
+										dict_less_50[lst_data[0]] = [int(lst_data[1])]
+								elif (float(value_) < 90):
+									if (lst_data[0] in dict_more_50 and self.is_integer(lst_data[1])): 
+										dict_more_50[lst_data[0]].append(int(lst_data[1]))
+									elif (self.is_integer(lst_data[1])):
+										dict_more_50[lst_data[0]] = [int(lst_data[1])]
+								else:
+									if (lst_data[0] in dict_more_90 and self.is_integer(lst_data[1])): 
+										dict_more_90[lst_data[0]].append(int(lst_data[1]))
+									elif (self.is_integer(lst_data[1])):
+										dict_more_90[lst_data[0]] = [int(lst_data[1])]
 		return (dict_less_50, dict_more_50, dict_more_90)
 
 

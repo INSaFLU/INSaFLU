@@ -41,15 +41,15 @@
 						</div>
 						<hr>
 						<div class="row">
-						  	<div class="col-lg-4"><strong>#Alerts:</strong> {{ number_of_alerts }}</div>
+						  	<div class="col-lg-4"><strong>#Samples with Alerts:</strong> {{ number_of_alerts }}</div>
 						  	<div class="col-lg-4"><strong>#Samples in process:</strong> {{ samples_in_process }}</div>
 						  	<div class="col-lg-4"><strong>#Samples with error:</strong> {{ samples_error }}</div>
 						</div>
 						<hr>
 						<div class="row">
 						  	<div class="col-lg-4"><strong>Coverage:</strong> {{ coverage_file }}</div>
-						  	<div class="col-lg-4"><strong>Snippy variations:</strong> {{ main_variations_snippy_file }}</div>
-						  	<div class="col-lg-4"><strong>Variations &#60;50% and 50%&#60;var&#60;90%:</strong> {{ freebays_variations_50_50_var_90_file }}</div>
+						  	<div class="col-lg-4"><strong>Variants:</strong> {{ main_variations_snippy_file }}</div>
+						  	<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebays_variations_50_50_var_90_file }}</div>
 						</div>
 						<hr>
 						<div class="row">
@@ -77,9 +77,9 @@
       					<br>
 						<form class="form-inline regular_info_box">
 							<div class="form-group">
-								<label for="selectElement">Select an element</label>
+								<label for="selectElement">Select a locus</label>
 						  		<select id="combo_select_elements_phylocanvas_id" class="custom-select mx-sm-3">
-		      						<option selected value="all_together">All together</option>
+		      						<option selected value="all_together">All</option>
 		      						{% for element in elements %}
 		      							<option value="{{ element }}">{{ element }}</option>
 		      						{% endfor %}
@@ -117,9 +117,9 @@
       					<br>
 						<form class="form-inline regular_info_box">
 							<div class="form-group">
-								<label for="selectElement">Select an element</label>
+								<label for="selectElement">Select a locus</label>
 						  		<select id="combo_select_elements_nucleotids_alignments_id" class="custom-select mx-sm-3">
-		      						<option selected value="all_together">All together</option>
+		      						<option selected value="all_together">All</option>
 		      						{% for element in elements %}
 		      							<option value="{{ element }}">{{ element }}</option>
 		      						{% endfor %}
@@ -156,7 +156,7 @@
       					<br>
 						<form class="form-inline regular_info_box">
 							<div class="form-group">
-								<label for="selectElement">Select an element</label>
+								<label for="selectElement">Select a locus</label>
 						  		<select id="combo_select_elements_amino_alignments_id" get-cds-from-element-url="{% url 'get-cds-from-element' %}" class="custom-select mx-sm-3">
 		      						{% for element in elements %}
 		      							{% if forloop.first %}
@@ -198,7 +198,7 @@
 				<div class="card-header" role="tab" id="headingFifth">
 					<h5 class="mb-0">
 						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFifth" aria-expanded="false" aria-controls="collapseFifth">
-							<strong>Intra-host minor variants annotation</strong> and detection of mixed infections
+							<strong>Intra-host minor variants annotation</strong> and uncovering of mixed infections
 	        			</a>
 	      			</h5>
 	    		</div>
@@ -208,8 +208,7 @@
 		      			<div class="container-fluid">
 		      				<br>
 	      					<div class="regular_info_box form-inline">
-						  		<div class="col-lg-5"><strong>Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ freebays_variations_50_50_var_90_file }}</div>
-						  		<div class="col-lg-5"><strong>Statistics Variations &#60;50 and 50&#60;var&#60;90:</strong> {{ count_freebays_variations_50_50_var_90 }}</div>
+						  		<div class="col-lg-5"><strong>Minor intra-host SNVs (iSNVs):</strong> {{ freebays_variations_50_file }}</div>
 	      					</div>
 		      				<br>
 	      					<div id='loader_count_variations_id'><img src="{{ spinner_url }}"/></div>
@@ -327,11 +326,11 @@
 	    	<script type="text/javascript" src="{% static 'js/phylocanvas-quickstart-2.8.1.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'msa/latest/msa.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'Chart.js/2.7.1/Chart.min.js' %}"></script>
+	    	<!-- <script type="text/javascript" src="{% static 'msa/latest/msa.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'Chart.js/2.7.1/Chart.min.js' %}"></script> -->
 	    	
-	    	<!-- <script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script> -->
-	    	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script> -->
+	    	<script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script>
+	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
  {% endblock %}
 
 

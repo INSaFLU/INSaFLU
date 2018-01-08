@@ -97,8 +97,10 @@ class Software(object):
 		"""
 		Run spades
 		"""
-		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s --meta --only-assembler -t %d -o %s" % (self.software_names.get_spades(), fastq_1, self.CORES_TO_USE, out_dir)
-		else: cmd = "%s --pe1-1 %s --pe1-2 %s --meta --only-assembler -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2, self.CORES_TO_USE, out_dir)
+		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
+					self.software_names.get_spades_parameters_single(), self.CORES_TO_USE, out_dir)
+		else: cmd = "%s --pe1-1 %s --pe1-2 %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2,\
+					self.software_names.get_spades_parameters(), self.CORES_TO_USE, out_dir)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -235,47 +237,28 @@ class Software(object):
 		### temp dir out spades		
 		out_dir_spades = self.utils.get_temp_dir()
 		result_all = Result()
-		if (fastq1_2 == None or len(fastq1_2) == 0): ## run abyss
-			try:
-				file_out = self.run_abyss(fastq1_1, out_dir_spades)
-				result_all.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
-			except Exception:
-				result = Result()
-				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
-				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-				return False
-			
-			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
-				## save error in MetaKeySample
-				result = Result()
-				result.set_error("Abyss (%s) fail to run" % (self.software_names.get_abyss_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_abyss_name(), self.software_names.get_abyss_version(), self.software_names.get_abyss_parameters()))
-				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-				return False
-		else:	## run spades
-			try:
-				cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
-				result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			except Exception:
-				result = Result()
-				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-				return False
-			
-			file_out = os.path.join(out_dir_spades, "contigs.fasta")
-			if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
-				## save error in MetaKeySample
-				result = Result()
-				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
-				return False
+		try:
+			cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
+			parameters = self.software_names.get_spades_parameters()
+			if (fastq1_2 == None or len(fastq1_2) == 0): self.software_names.get_spades_parameters_single()
+			result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), parameters))
+		except Exception:
+			result = Result()
+			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			return False
+		
+		file_out = os.path.join(out_dir_spades, "contigs.fasta")
+		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
+			## save error in MetaKeySample
+			result = Result()
+			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			return False
 		
 		### test id abricate has the database
 		try:

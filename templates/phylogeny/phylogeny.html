@@ -1,0 +1,26 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Phylogeny" "phylogeny" %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+	<h3 >We are developing a tool to create pylogenic tress between several references and samples from different projects.</h3>
+	<p></p>
+	<h3>You will hear from us soon...</h3>
+</div>
+{% endblock %}
+
+{% block js %}
+{% endblock %}

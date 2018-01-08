@@ -35,6 +35,7 @@ urlpatterns = [
 
     url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),
+    url(r'^phylogeny/', include('phylogeny.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

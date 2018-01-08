@@ -212,7 +212,8 @@ class Sample(models.Model):
 	geo_manager = GeoManager()
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
-
+	number_alerts = models.IntegerField(blank=True, null=True)				## has the number of alerts
+	
 	## many to many relation	
 	tag_names = models.ManyToManyField(TagName, through='TagNames')
 
@@ -370,15 +371,16 @@ class Project(models.Model):
 	### has the path for main result
 	PATH_MAIN_RESULT = 'main_result'
 	
-	PROJECT_FILE_NAME_MAFFT = "Alignment_whole_genome.fasta"
+	PROJECT_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
 	PROJECT_FILE_NAME_FASTA = "whole_genome.fasta"
-	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_WG.nwk"
-	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_WG.tree"
+	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
+	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
 	PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
-	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "variations_snippy.tsv" 
-	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "variations_freebays.tsv" 
-	PROJECT_FILE_NAME_SAMPLE_RESULT = "sample_result.tsv" 
+	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv" 
+	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50
+	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
@@ -391,9 +393,10 @@ class Project(models.Model):
 	## end obsolete
 	
 	### this is only to join with other names
-	PROJECT_FILE_NAME_FASTTREE_element = "Tree"
-	PROJECT_FILE_NAME_MAFFT_element = "Alignment"
-	PROJECT_FILE_NAME_FASTA_element = "Sequences"
+	PROJECT_FILE_NAME_FASTTREE_element = "Tree_ML"
+	PROJECT_FILE_NAME_MAFFT_element_nt = "Alignment_nt"
+	PROJECT_FILE_NAME_MAFFT_element_aa = "Alignment_aa"
+	PROJECT_FILE_NAME_FASTA_element = "Sequences_nt"
 	
 	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
@@ -414,7 +417,7 @@ class Project(models.Model):
 		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
 		"""
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element_nt, element))
 		if (self.PROJECT_FILE_NAME_FASTA == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.PROJECT_FILE_NAME_FASTA_element, element))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
@@ -422,7 +425,7 @@ class Project(models.Model):
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element))
 		if (self.PROJECT_FILE_NAME_nex == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element, element))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element_nt, element))
 		return None
 
 	def get_global_file_by_element_and_cds(self, type_path, element, CDS, file_name):
@@ -433,13 +436,13 @@ class Project(models.Model):
 		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
 		"""
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):		## protein alignement
-			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.faa".format(self.PROJECT_FILE_NAME_MAFFT_element, element, CDS))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.faa".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element, CDS))
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.tree".format(self.PROJECT_FILE_NAME_FASTTREE_element, element, CDS))
 		if (self.PROJECT_FILE_NAME_nex == file_name):
-			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element, element, CDS))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
 		return None
 
 	def get_global_file_by_project(self, type_path, file_name):

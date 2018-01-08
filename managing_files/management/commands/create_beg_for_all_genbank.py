@@ -32,10 +32,12 @@ class Command(BaseCommand):
 			bed_path = reference.get_reference_bed(TypePath.MEDIA_ROOT)
 			self.stdout.write("{}) {}: ".format(count, reference.reference_genbank_name))
 			if os.path.exists(bed_path):
-				print("already exist")
+				self.stdout.write("already exist\n")
 				continue
 		
 			### create bed and index for genbank
 			utils.from_genbank_to_bed(reference.get_reference_gbk(TypePath.MEDIA_ROOT), reference.get_reference_bed(TypePath.MEDIA_ROOT))
 			software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
 			self.stdout.write("created\n")
+			
+		self.stdout.write("End")

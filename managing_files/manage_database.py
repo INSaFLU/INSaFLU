@@ -257,6 +257,7 @@ class ManageDatabase(object):
 			if (project_sample.is_deleted): continue
 			if (project_sample.is_error): continue
 			if (len(project_sample.sample.name) > n_max_value): n_max_value = len(project_sample.sample.name)
+		## calculate for the reference too
 		if (len(project.reference.display_name) > n_max_value): n_max_value = len(project.reference.display_name)
 			
 		meta_data = self.update_project_metakey(project, user, MetaKeyAndValue.META_KEY_Project_max_sample_length,\

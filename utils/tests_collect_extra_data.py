@@ -132,7 +132,6 @@ class Test(unittest.TestCase):
  		"""
 		software_names = SoftwareNames()
 		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
 		
 		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
@@ -191,16 +190,16 @@ class Test(unittest.TestCase):
 		for vect_file in vect_files:
 			self.utils.copy_file(vect_file[0], os.path.join(temp_dir, os.path.basename(vect_file[0])))
 			self.utils.copy_file(vect_file[1], os.path.join(temp_dir, os.path.basename(vect_file[1])))
-				
+			
 			sample_name = "_".join(os.path.basename(vect_file[0]).split('_')[0:2])
 			sample = Sample()
 			sample.id = 5000 + count + 1
 			sample.name = sample_name
 			sample.is_valid_1 = True
-			sample.file_name_1 = vect_file[0]
+			sample.file_name_1 = os.path.basename(vect_file[0])
 			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
 			sample.is_valid_2 = False
-			sample.file_name_2 = vect_file[1]
+			sample.file_name_2 = os.path.basename(vect_file[1])
 			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
 			sample.owner = user
 			sample.is_ready_for_projects = True
@@ -222,12 +221,16 @@ class Test(unittest.TestCase):
 			meta_value = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		
-		
 		collect_extra_data = CollectExtraData();
 		out_file = collect_extra_data.create_coverage_file(project, user)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
-
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		### need to improve this test
+		out_file = collect_extra_data.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+		
+		### get sample result file
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 

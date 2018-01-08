@@ -23,9 +23,12 @@ class Constants(object):
 	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
 	MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = 20000
 	MAX_NUMBER_REFS_BY_USER = 30		## toDo
-	MAX_FASTQ_FILE = 30971520			## 30M
+	MAX_FASTQ_FILE = 50971520			## 50M
 	MAX_REF_FASTA_FILE = 100000			## 100k
 	MAX_REF_GENBANK_FILE = 150000		## 150k
+	
+	### has the minimun number of files to calculate global files
+	MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES = 2
 	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"

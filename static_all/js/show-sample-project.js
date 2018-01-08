@@ -290,6 +290,7 @@ function draw_count_variations_chart(){
 	      
 	      if (data['is_ok']) {
 	    	  window.chartColors = {
+	    			  rose: 'rgb(252,180,213)',
 	    			  red: 'rgb(255, 99, 132)',
 	    			  orange: 'rgb(255, 159, 64)',
 	    			  yellow: 'rgb(255, 205, 86)',
@@ -303,14 +304,14 @@ function draw_count_variations_chart(){
 	    	  var barChartData = {
     	            labels: data['labels'],
     	            datasets: [{
-    	                label: 'Variations <50%',
-    	                borderColor: window.chartColors.red,
-    	                backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+    	                label: 'iSNV at 1-50%  (minor iSNVs)',
+    	                borderColor: window.chartColors.rose,
+    	                backgroundColor: color(window.chartColors.rose).alpha(0.5).rgbString(),
     	                borderWidth: 1,
     	                stack: 'Stack 0',
     	                data: data['data_less_50']
     	            }, {
-    	                label: '50% < Variations < 90%',
+    	                label: 'iSNV at 50-90%',
     	                backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
     	                borderColor: window.chartColors.blue,
     	                stack: 'Stack 0',
@@ -345,16 +346,30 @@ function draw_count_variations_chart(){
                       },
                       title: {
                           display: true,
-                          text: 'Variations <50% and 50%<Variations<90%'
+                          text: 'SNVs at frequency 1-50%  (minor iSNVs) and 50-90%'
                       },
                       scales: {
                           xAxes: [{
                               stacked: true,
-                          }],
+                              position: 'top',
+                              id: "x-axis-0",
+                              gridLines : {
+                                  display : true
+                              },                      
+                          },  
+//                          {
+//                              stacked: false,
+//                              position: 'bottom',
+//                              id: "x-axis-1",
+//                              gridLines : {
+//                                  display : false
+//                              },                      
+//                          }
+                          ],
                           yAxes: [{
                               stacked: true
-                          }]
-                      }
+                          }],
+                      },
                   }
               });
 	      }

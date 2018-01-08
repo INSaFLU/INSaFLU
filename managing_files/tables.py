@@ -160,8 +160,18 @@ class SampleTable(tables.Table):
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-			if (result_average.number_file_2 is None): return _('(%s/%s)' % (result_average.number_file_1, result_average.average_file_1 ))
-			return _('(%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
+			if (result_average.number_file_2 is None):
+				tip_info = '<span ><i class="tip fa fa-info-circle" title="#Reads from fastq1: {}\n'\
+						'Length average from fastq1: {}\n"></i></span>'.format(result_average.number_file_1, result_average.average_file_1) 
+				return mark_safe(tip_info + ' (%s/%s) (%s)' % (result_average.number_file_1,\
+					result_average.average_file_1, result_average.number_file_1 ))
+
+			tip_info = '<span ><i class="tip fa fa-info-circle" title="#Reads from fastq1: {}\n'\
+						'Length average from fastq1: {}\n\n#Reads from fastq2: {}\n'\
+						'Length average from fastq2: {}\n\n#Total reads: {}"></i></span>'.format(result_average.number_file_1,\
+							result_average.average_file_1, result_average.number_file_2, result_average.average_file_2,\
+							int(result_average.number_file_1) + int(result_average.number_file_2)) 
+			return mark_safe(tip_info + ' (%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_2,\
 					result_average.average_file_2, int(result_average.number_file_1) + int(result_average.number_file_2)) )
 		elif (list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
@@ -218,7 +228,8 @@ class ProjectTable(tables.Table):
 		n_processed = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
 		n_error = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=True, is_finished=False).count()
 		n_processing = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
-		return mark_safe("({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
+		tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(n_processed, n_processing, n_error)
+		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
 						 '><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
 	def render_creation_date(self, **kwargs):
@@ -231,7 +242,7 @@ class ProjectTable(tables.Table):
 		"""
 		## there's nothing to show
 		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
-		if (count > 0): return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i></span> More info</a>')
+		if (count > 0): return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i></span> See results</a>')
 		count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
 		if (count_not_finished > 0): return _("{} processing".format(count_not_finished))
 		return "-"
@@ -242,10 +253,10 @@ class ShowProjectSamplesResults(tables.Table):
 	Has the results from the result samples processed against references
 	"""
 	sample_name = tables.Column('Sample name', empty_values=())
-	coverage = tables.Column('Coverage >9', orderable=False, empty_values=())
+	coverage = tables.Column('Coverage', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
-	type_subtype = tables.LinkColumn('Type-Subtype', empty_values=())
+	type_subtype = tables.LinkColumn('Type and Subtype', empty_values=())
 	mixed_infections = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
@@ -332,7 +343,7 @@ class AddSamplesFromCvsFileTable(tables.Table):
 	"""
 	samples_processed = tables.Column('Samples processed', empty_values=())
 	number_samples = tables.Column('#Samples', empty_values=())
-	is_completed = tables.Column('Is completed', empty_values=())
+	is_completed = tables.Column('Load completed', empty_values=())
 	
 	class Meta:
 		model = Sample
@@ -372,7 +383,7 @@ class AddSamplesFromFastqFileTable(tables.Table):
 	"""
 	To add samples to projects
 	"""
-	is_completed = tables.Column('Is attached', empty_values=())
+	is_completed = tables.Column('Is it attached?', empty_values=())
 	sample_attached = tables.Column('Sample attached', empty_values=())
 	
 	class Meta:

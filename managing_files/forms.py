@@ -43,8 +43,8 @@ class ReferenceForm(forms.ModelForm):
 			('reference_fasta', 'Reference (fasta)', 'Reference file in fasta format', True),
 			('reference_genbank', 'Reference (genBank)', 
 					"""Reference file in genBank format.<br>
-					All locus must have the same name of fasta locus file.<br>
-					If you don't upload a Genbank file 'prokka' software will annotate fasta file for you.""", False),
+					Locus designations in the multi-GenBank file must have the same name as in the respective fasta file.<br>
+					If you do not upload a Genbank file, INSaFLU will annotate the upload fasta file for you""", False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
@@ -223,18 +223,18 @@ class SampleForm(forms.ModelForm):
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
-			('name', 'Name', 'Unique identify for this sample', True),
+			('name', 'Name', 'Unique identifier for this sample', True),
 			('date_of_onset', 'Onset date', 'Date of onset', False),
 			('date_of_collection', 'Collection date', 'Date of collection', False),
 			('date_of_receipt_lab', 'Lab reception date', 'Date receipt on the lab.', False),
 			('vaccine_status', 'Vaccine status', 'Discrimination of vaccination status', False),
-			('data_set', 'Dataset', 'Specific dataset, can be used to organize samples', False),
+			('data_set', 'Dataset', 'Specific dataset (useful for grouping sets of samples)', False),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
-			('lat', 'Latitude', 'Geo position where the sample was collected', False),
-			('lng', 'Longitude', 'Geo position where the sample was collected', False),
+			('lat', 'Latitude', 'Geolocation where the sample was collected', False),
+			('lng', 'Longitude', 'Geolocation where the sample was collected', False),
 			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 30MB)', True),
 			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 30MB)', False),
-			('like_dates', 'Choose a date', 'Choose a date to collect the Day, Week and Year', False),
+			('like_dates', 'Choose a date', 'Choose the option you want to be used to calculate the calendar week number.', False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
@@ -394,7 +394,7 @@ class ReferenceProjectForm(forms.ModelForm):
 		super(ReferenceProjectForm, self).__init__(*args, **kwargs)
 		
 		field_text= [
-			('name', 'Name', 'Unique identify for this project', True),
+			('name', 'Name', 'Unique identifier for this project', True),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]

@@ -9,19 +9,26 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
-from constants.constants import TypePath, Constants
+from constants.constants import TypePath, Constants, FileType, FileExtensions
+from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
 import os, time
 import plotly.graph_objs as go
 from plotly.offline import plot
 from django.db import transaction
 from utils.result import Coverage
+from utils.parse_out_files import ParseOutFiles
 
 class CollectExtraData(object):
 	'''
 	classdocs
 	'''
 
+	HEADER_SAMPLE_OUT_TAB = "id	fastq1	fastq2	data set	vaccine status	week	onset date	collection date	lab reception date	latitude	longitude	type-subtype	mixedinfection"
+	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,mixedinfection"
+	SEPARATOR_COMMA = ','
+	SEPARATOR_TAB = '\t'
+	
 	utils = Utils()
 	
 	def __init__(self):
@@ -41,8 +48,9 @@ class CollectExtraData(object):
 		metaKeyAndValue = MetaKeyAndValue()
 		manage_database = ManageDatabase()
 		
-		while not self.utils.is_all_tasks_finished(vect_taskID):
-			time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
+		if (vect_taskID != None and len(vect_taskID) > 0):
+			while not self.utils.is_all_tasks_finished(vect_taskID):
+				time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
 	
 		#### create variation graph, png and html
 		## Obsolete, is to make a html graph, now it is with chart.js
@@ -58,58 +66,32 @@ class CollectExtraData(object):
 # 			os.unlink(out_file_png)
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 
-		## test number of samples, or remove all files
-		## remove all from main result forward
-		if (ProjectSample.objects.filter(project=project, is_finished=True, is_deleted=False, is_error=False).count() < 3):
-			self.utils.remove_dir(project.__get_global_path__(TypePath.MEDIA_ROOT, None))
-			return
 
 		## calculate the max sample label size of the samples that belong to this project
 		## used in MSA viewer 
 		b_calculate_again = True
 		manage_database.get_max_length_label(project, user, b_calculate_again)
 		
-		## collect coverage file for all samples
-		out_file = self.create_coverage_file(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)
-		if (out_file != None):
-			self.utils.copy_file(out_file, out_file_file_system)
-			os.unlink(out_file)
-		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
-
+		### calculate global file
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
 		## collect tab variations snippy
-		## split missense_variant c.157G>A p.Val53Ile
-		out_file = self.collect_variations_snippy(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
-		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
-		if (os.path.exists(out_file)): os.unlink(out_file)
-		
-		## collect tab variations freebayes, <50% and 50<var<90
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY, project, user)
+		## collect tab variations freebayes, <50%
 		## remove del or ins
-		## split synonymous_variant c.156G>A p.Gly52Gly
-		out_file = self.collect_variations_freebayes(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
-		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
-		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
-		if (os.path.exists(out_file)): os.unlink(out_file)
-		
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
 		## collect sample table with plus type and subtype, mixed infection, equal to upload table
-		out_file = self.collect_sample_table(project, user)
-		out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT)
-		if (out_file != None): self.utils.copy_file(out_file, out_file_file_system)
-		elif (os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
-		if (os.path.exists(out_file)): os.unlink(out_file)
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 		
 		### create trees
-		createTree = CreateTree()
-		createTree.create_tree_and_alignments(project, user)
-		
-		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
-					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_project != None):
-			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
-					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+# 		createTree = CreateTree()
+# 		createTree.create_tree_and_alignments(project, user)
+# 		
+# 		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
+# 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
+# 		if (meta_project != None):
+# 			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+# 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
 	
 	def create_graph_minor_variants(self, project, user):
@@ -196,6 +178,46 @@ class CollectExtraData(object):
 		plot(fig, filename=temp_file_html, auto_open=False, image_width=400, image_height=300, show_link=False)
 		return (temp_file_html, temp_file_png)
 
+	def calculate_global_files(self, type_file, project, user):
+		"""
+		Collect extra files
+ 		"""
+		number_of_sample = ProjectSample.objects.filter(project=project, is_finished=True, is_deleted=False, is_error=False).count()
+		out_file = None
+		out_file_file_system = None
+		if (type_file == Project.PROJECT_FILE_NAME_COVERAGE):
+			## collect coverage file for all samples
+			out_file = self.create_coverage_file(project, user)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+			
+		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY):
+			## snippy variations
+			out_file = self.collect_variations_snippy(project)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		
+		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES):
+			## freebayes <50
+			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
+				out_file = self.collect_variations_freebayes(project)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV):
+			## samples csv
+			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
+				out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV):
+			## samples tsv
+			if (number_of_sample < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
+				out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		
+		if (out_file != None):
+			self.utils.copy_file(out_file, out_file_file_system)
+			os.unlink(out_file)
+		elif (out_file_file_system != None and os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+
 
 	def create_coverage_file(self, project, user):
 		"""
@@ -208,7 +230,7 @@ class CollectExtraData(object):
 		
 		vect_ratios = [0, 9]
 		vect_reference = geneticElement.get_sorted_elements()
-		out_file = self.utils.get_temp_file('coverage_file', '.tsv')
+		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
 		with open(out_file, "w") as output_file_handle:
 
@@ -248,23 +270,21 @@ class CollectExtraData(object):
 		return out_file
 
 
-	def collect_variations_snippy(self, project, user):
+	def collect_variations_snippy(self, project):
 		"""
 		collect snippy variations
 		"""
-		decode_coverage = DecodeObjects()
-		manageDatabase = ManageDatabase()
-		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
-		if (geneticElement == None): return None
 		
-		vect_reference = geneticElement.get_sorted_elements()
-		out_file = self.utils.get_temp_file('variations_snippy', '.tsv')
+		out_file = self.utils.get_temp_file('variations_snippy', FileExtensions.FILE_TSV)
+		parse_out_files = ParseOutFiles()
 		n_count = 0
+		vect_type_out = ['snp', 'del', 'ins']
 		with open(out_file, "w") as output_file_handle:
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
-				sz_out = project_sample.sample.name
-				output_file_handle.write(sz_out + "\n")
+				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
+				if (not os.path.exists(tab_file_to_process)): continue
+				parse_out_files.parse_tab_files(tab_file_to_process, output_file_handle, vect_type_out, 101, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -272,24 +292,20 @@ class CollectExtraData(object):
 		return out_file
 
 
-	def collect_variations_freebayes(self, project, user):
+	def collect_variations_freebayes(self, project):
 		"""
 		collect freebayes variations
 		"""
-		decode_coverage = DecodeObjects()
-		manageDatabase = ManageDatabase()
-		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
-		if (geneticElement == None): return None
-		
-		vect_reference = geneticElement.get_sorted_elements()
-		out_file = self.utils.get_temp_file('variations_freebayes', '.tsv')
+		out_file = self.utils.get_temp_file('variations_freebayes', FileExtensions.FILE_TSV)
+		parse_out_files = ParseOutFiles()
 		n_count = 0
+		vect_type_out = ['snp']
 		with open(out_file, "w") as output_file_handle:
-
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
-				sz_out = project_sample.sample.name
-				output_file_handle.write(sz_out + "\n")
+				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+				if (not os.path.exists(tab_file_to_process)): continue
+				parse_out_files.parse_tab_files(tab_file_to_process, output_file_handle, vect_type_out, 50, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -297,27 +313,84 @@ class CollectExtraData(object):
 		return out_file
 
 
-	def collect_sample_table(self, project, user):
+	def collect_sample_table(self, project, column_separator):
 		"""
 		collect sample table
+		column_separator : COMMA or TAB
+		id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
 		"""
-		decode_coverage = DecodeObjects()
-		manageDatabase = ManageDatabase()
-		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
-		if (geneticElement == None): return None
 		
-		vect_reference = geneticElement.get_sorted_elements()
-		out_file = self.utils.get_temp_file('sample_table', '.tsv')
-		n_count = 0
-		with open(out_file, "w") as output_file_handle:
+		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
+					column_separator == CollectExtraData.SEPARATOR_COMMA else FileExtensions.FILE_CSV)
+		
+		with open(out_file, 'w') as handle_out:
+			if (column_separator == CollectExtraData.SEPARATOR_COMMA): handle_out.write(CollectExtraData.HEADER_SAMPLE_OUT_CSV)
+			else: handle_out.write(CollectExtraData.HEADER_SAMPLE_OUT_TAB)
 			
+			### extra tags
+			vect_tags = self.get_tags_for_samples_in_projects(project)
+			if (len(vect_tags) > 0): handle_out.write(column_separator + column_separator.join(vect_tags))
+
+			handle_out.write('\n')
+			n_count = 0
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				sz_out = project_sample.sample.name
-				output_file_handle.write(sz_out + "\n")
+				### fastq1
+				sz_out += column_separator + project_sample.sample.file_name_1
+				### fastq2
+				sz_out += column_separator + (project_sample.sample.file_name_2 if project_sample.sample.file_name_2 != None and len(project_sample.sample.file_name_2) > 0 else '')
+				### dataset
+				sz_out += column_separator + (project_sample.sample.data_set.name if project_sample.sample.data_set != None else '')
+				### vaccine status
+				sz_out += column_separator + (project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
+				### week
+				sz_out += column_separator + (project_sample.sample.week if project_sample.sample.week != None else '')
+				### onset date
+				sz_out += column_separator + (project_sample.sample.date_of_onset.strftime('%Y-%m-%d') if project_sample.sample.date_of_onset != None else '')
+				### collection date
+				sz_out += column_separator + (project_sample.sample.date_of_collection.strftime('%Y-%m-%d') if project_sample.sample.date_of_collection != None else '')
+				### lab reception date
+				sz_out += column_separator + (project_sample.sample.date_of_receipt_lab.strftime('%Y-%m-%d') if project_sample.sample.date_of_receipt_lab != None else '')
+				### latitude
+				sz_out += column_separator + (project_sample.sample.geo_local.coords[0] if project_sample.sample.geo_local != None else '')
+				### longitude
+				sz_out += column_separator + (project_sample.sample.geo_local.coords[1] if project_sample.sample.geo_local != None else '')
+				### type_subtype
+				sz_out += column_separator + (project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
+				### mixedinfection
+				sz_out += column_separator + (project_sample.sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
+
+				### print extra information				
+				for tag_name_to_test in vect_tags:
+					b_print = False
+					for tag_names in project_sample.sample.tag_names.all():
+						if (tag_names.tag_name.name == tag_name_to_test):
+							sz_out += column_separator + tag_names.value
+							b_print = True
+							break
+					if (not b_print): sz_out += column_separator
+
+				handle_out.write(sz_out + "\n")
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
 			return None
 		return out_file
-		
+	
+	def get_tags_for_samples_in_projects(self, project):
+		"""
+		tags for samples in projects
+		"""
+		dict_tags_out = {}
+		vect_tags_out = []
+		for project_sample in project.project_samples.all():
+			if (not project_sample.get_is_ready_to_proccess()): continue
+			for tag_names in project_sample.sample.tag_names.all():
+				if (tag_names.tag_name.name in dict_tags_out): continue
+				dict_tags_out[tag_names.tag_name.name] = 1
+				vect_tags_out.append(tag_names.tag_name.name)
+		return vect_tags_out
+			
+			
+			

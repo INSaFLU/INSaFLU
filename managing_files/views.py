@@ -203,7 +203,8 @@ class SamplesView(LoginRequiredMixin, ListView):
 		context['total_itens'] = query_set.count()
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		return context
-	
+
+
 class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""
 	Create a new reference
@@ -227,6 +228,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		return context
+
 
 	@transaction.atomic
 	def form_valid(self, form):
@@ -973,17 +975,19 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		
 		context['project_name'] = project.name
 		context['reference_name'] = project.reference.name
-		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False).count()
+		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
 		context['number_of_alerts'] = ProjectSample.objects.filter(project=project, is_deleted=False,\
-								is_error=False).aggregate(total=Sum('alert_first_level') + Sum('alert_second_level'))['total']
+								is_error=False, is_finished=True, alert_first_level__gte=0,\
+								alert_second_level__gte=0).count()
 		context['samples_in_process'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=False).count()
 		context['samples_error'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=True, is_finished=False).count()
 		
 		## Files
 		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
 		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		context['freebays_variations_50_50_var_90_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
-		context['sample_file_result'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT)
+		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
+		context['sample_file_result_csv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
+		context['sample_file_result_tsv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)
 		
 		## tODO , set this in database 
 		utils = Utils()

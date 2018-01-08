@@ -288,8 +288,8 @@ class Coverage(object):
 	def __str__(self):
 		sz_return = ""
 		for key in self.dt_data:
-			sz_return += "{} - All {}; 0 {}; 9 {}\n".format(key, self.get_coverage(key, Coverage.COVERAGE_ALL),\
-				self.get_coverage(key, Coverage.COVERAGE_MORE_0), self.get_coverage(key, Coverage.COVERAGE_MORE_9))
+			sz_return += "{} - All {}; 9 {}; 0 {}\n".format(key, self.get_coverage(key, Coverage.COVERAGE_ALL),\
+				self.get_coverage(key, Coverage.COVERAGE_MORE_9), self.get_coverage(key, Coverage.COVERAGE_MORE_0))
 		return sz_return
 
 	def get_fault_message_9(self, element_name):
@@ -301,9 +301,9 @@ class Coverage(object):
 		"""
 		get message for web site about coverage in More than 9
 		"""
-		return "Element: {}\n\nCoverage: {}\nRatio coverage >9: {}%\nRatio coverage >0: {}%".format(element,\
-				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_9),\
-				self.get_coverage(element, self.COVERAGE_MORE_0))
+		return "Element: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
+				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
+				self.get_coverage(element, self.COVERAGE_MORE_9))
 	
 	def get_icon(self, element):
 		"""

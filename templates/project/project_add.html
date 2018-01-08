@@ -7,8 +7,6 @@
 {% load django_bootstrap_breadcrumbs %}
 
 {% block css %}
-	{% load static from staticfiles %}
-		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
 {% block breadcrumbs %}
@@ -32,7 +30,7 @@
 						<div id='id_project_name_error'>
 						{% if error_project_name %} <span id="error_1_id_name" class="fields_error"> {{ error_project_name }} </span> {% endif %}
 						</div>
-						<small id="hint_id_name" class="text-muted">Unique identify for this project</small> 
+						<small id="hint_id_name" class="text-muted">Unique identifier for this project</small> 
 					</div> 
 				</div>
 			</div>
@@ -113,12 +111,12 @@
 	 </form>
 {% endblock %}
 
- {% block js %}
+{% block js %}
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/project-add.js' %}"></script>
      
- {% endblock %}
+{% endblock %}
 
 
 

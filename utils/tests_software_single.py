@@ -47,5 +47,3 @@ class Test(TestCase):
 
 
 	
-	
-	

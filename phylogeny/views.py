@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 from django.shortcuts import render
 from django.views import generic
+from braces.views import LoginRequiredMixin
 
 
 class PhylogenyView(LoginRequiredMixin, generic.TemplateView):

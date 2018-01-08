@@ -84,14 +84,14 @@ class CollectExtraData(object):
 		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 		
 		### create trees
-# 		createTree = CreateTree()
-# 		createTree.create_tree_and_alignments(project, user)
-# 		
-# 		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
-# 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
-# 		if (meta_project != None):
-# 			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
-# 					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+		createTree = CreateTree()
+		createTree.create_tree_and_alignments(project, user)
+		
+		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
+					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_project != None):
+			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 
 	
 	def create_graph_minor_variants(self, project, user):

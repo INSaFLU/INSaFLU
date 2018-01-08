@@ -372,7 +372,7 @@ class Project(models.Model):
 	PATH_MAIN_RESULT = 'main_result'
 	
 	PROJECT_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
-	PROJECT_FILE_NAME_FASTA = "whole_genome.fasta"
+	PROJECT_FILE_NAME_FASTA = "All_nt.fasta"
 	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_whole_genome.nex"
@@ -386,6 +386,8 @@ class Project(models.Model):
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
 					PROJECT_FILE_NAME_FASTTREE_tree, PROJECT_FILE_NAME_nex,\
 					PROJECT_FILE_NAME_FASTA]
+	
+	vect_exclude_clean_file_from_proteins = [PROJECT_FILE_NAME_FASTA]
 
 	## obsolete
 	PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML = "graph_minor_var.html"
@@ -436,7 +438,7 @@ class Project(models.Model):
 		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
 		"""
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):		## protein alignement
-			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.faa".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
+			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nwk".format(self.PROJECT_FILE_NAME_FASTTREE_element, element, CDS))
 		if (self.PROJECT_FILE_NAME_FASTTREE_tree == file_name):

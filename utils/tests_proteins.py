@@ -214,6 +214,8 @@ class Test(unittest.TestCase):
 		
 		### get all elements and gene names
 		for type_files in project.vect_clean_file:
+			if (type_files in project.vect_exclude_clean_file_from_proteins): continue
+			print(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', type_files))
 			self.assertTrue(os.path.exists(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', type_files)))
 		self.assertTrue(os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)) > 80)
 

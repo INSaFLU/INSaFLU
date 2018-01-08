@@ -31,3 +31,5 @@ echo 'local db'
 scp -P 2023 -r static/db* insa@193.137.95.75:/usr/local/web_site/static
 echo 'local email'
 scp -P 2023 -r static/email* insa@193.137.95.75:/usr/local/web_site/static
+echo 'local template'
+scp -P 2023 -r static/template* insa@193.137.95.75:/usr/local/web_site/static

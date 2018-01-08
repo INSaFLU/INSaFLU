@@ -4,6 +4,7 @@
 
 {% block css %}
 	{% load static from staticfiles %}
+		<!-- pre-define in-house css for main page-->
 		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 {% endblock css %}
 
@@ -57,13 +58,13 @@
 					<div class="row">
 						<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:240px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
 						<img src="{% static 'insa/SNS_logo.svg' %}" style="width:240px; padding-right:10px" id='sns_logo_id'>
-						<img src="{% static 'insa/insa_log.svg' %}" style="width:240px; padding-right:10px; padding-top:15px" id='insa_logo_id'>
+						<img src="{% static 'insa/insa_logo.png' %}" style="width:325px; height:93px; padding-right:12px; padding-top:35px" id='insa_logo_id'>
 					</div>
 				</div>
 			</div>
 			
 			<div class="col-sm-3 offset-sm-1 insa-sidebar">
-				<img src="{% static 'insa/insaFlu.png' %}" style="width:300px; padding-right:30px; padding-top:15px; padding-bottom:15px" id='main_logo_id'>
+				<img src="{% static 'insa/insaflu_logo.png' %}" style="width:270px; padding-right:30px; padding-top:15px; padding-bottom:15px" id='main_logo_id'>
 				<div class="sidebar-module">
 					<h4 class="insa-h4">Protocols</h4>
 					<ol class="list-unstyled">

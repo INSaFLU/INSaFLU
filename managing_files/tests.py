@@ -604,9 +604,9 @@ class testsReferenceFiles(TestCase):
 						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
 						'/xpto/' + Project.PROJECT_FILE_NAME_MAFFT_element_nt + '_xpto' + FileExtensions.FILE_FASTA))
 		
-		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_MAFFT).\
-						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
-						'/xpto/' + Project.PROJECT_FILE_NAME_MAFFT_element_aa + '_xpto' + FileExtensions.FILE_FASTA))
+# 		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_MAFFT).\
+# 						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\
+# 						'/xpto/' + Project.PROJECT_FILE_NAME_MAFFT_element_aa + '_xpto' + FileExtensions.FILE_FASTA))
 
 		self.assertTrue(project.get_global_file_by_element(TypePath.MEDIA_ROOT, 'xpto', Project.PROJECT_FILE_NAME_FASTTREE_tree).\
 						endswith("projects/result/user_1000/project_1000/" + Project.PATH_MAIN_RESULT +\

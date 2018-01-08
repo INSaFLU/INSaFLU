@@ -57,6 +57,7 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_csv = "template_input.csv"
 	FILE_TEMPLATE_INPUT_tsv = "template_input.tsv"
 	FILE_TEMPLATE_INPUT_data_csv = "template_input_data.csv"
+	FILE_TEMPLATE_INPUT_data_tsv = "template_input_data.tsv"
 	FORMAT_FASTA = "fasta"
 	FORMAT_FASTQ = "fastq"
 	EXTENSION_ZIP = ".gz"

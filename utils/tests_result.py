@@ -74,7 +74,7 @@ class Test(TestCase):
 		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION, SoftwareNames.SOFTWARE_TRIMMOMATIC_PARAMETERS))
 		
 		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
-		self.assertEqual("SPAdes-3.11.1", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertEqual("SPAdes-3.11.1; (--meta --only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
 		
 		
 	def test_Coverage(self):
@@ -150,13 +150,13 @@ class Test(TestCase):
 	def test_elements_genes(self):
 		
 		geneticElement = GeneticElement()
-		self.assertTrue(geneticElement.add_gene('element_name', Gene('name', 12, 45, 1)))
-		self.assertFalse(geneticElement.add_gene('element_name', Gene('name', 12, 45, 1)))
-		self.assertTrue(geneticElement.add_gene('element_name', Gene('name2', 35, 55, -1)))
-		self.assertTrue(geneticElement.add_gene('element_name2', Gene('name', 12, 45, 1)))
-		geneticElement.add_gene('element_name2', Gene('name2', 212, 245, 1))
-		geneticElement.add_gene('element_name2', Gene('name3', 412, 445, -1))
-		geneticElement.add_gene('element', Gene('name', 412, 445, -1))
+		self.assertTrue(geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertFalse(geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertTrue(geneticElement.add_gene('element_name', 100, Gene('name2', 35, 55, -1)))
+		self.assertTrue(geneticElement.add_gene('element_name2', 200, Gene('name', 12, 45, 1)))
+		geneticElement.add_gene('element_name2', 200, Gene('name2', 212, 245, 1))
+		geneticElement.add_gene('element_name2', 200, Gene('name3', 412, 445, -1))
+		geneticElement.add_gene('element', 50, Gene('name', 412, 445, -1))
 
 		json = geneticElement.to_json()
 		decodeCoverage = DecodeObjects()
@@ -164,6 +164,8 @@ class Test(TestCase):
 		self.assertEquals(geneticElement, geneticElement_2)
 		self.assertEquals("element,element_name,element_name2", ",".join(geneticElement_2.get_sorted_elements()))
 		self.assertEquals(2, len(geneticElement_2.get_genes('element_name')))
+		self.assertEquals(100, geneticElement_2.get_size_element('element_name'))
+		self.assertEquals(200, geneticElement_2.get_size_element('element_name2'))
 
 
 	def test_mixed_infection_main_vector(self):

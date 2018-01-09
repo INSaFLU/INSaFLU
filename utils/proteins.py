@@ -261,7 +261,7 @@ class Proteins(object):
 			## if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
 			coding_protein = coding_dna.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 			with open(out_file, 'a') as handle:
-				handle.write('>{}_{}_{}\n{}\n'.format(sample_name.replace(' ', '_'), sequence_name, gene.name, str(coding_protein)))
+				handle.write('>{}\n{}\n'.format(sample_name.replace(' ', '_'), str(coding_protein)))
 			return True
 		return False
 		

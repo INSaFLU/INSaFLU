@@ -74,7 +74,7 @@
 				  		<p class="software"><strong>Software version: </strong>{{ fastq_software }}</p>
 					</div>
 					<div id="trimmomatic" role="tabpanel" class="tab-pane fade box-blue">
-			    		<p class="title-box">Trimmomatic result and quality resul</p>
+			    		<p class="title-box">Processed reads and quality results</p>
 			    		<div class="row">
 							<div class="col-lg-6"><strong>Trimmomatic fastq 1:</strong> {{ href_trimmonatic_1 }}</div>
 				  			<div class="col-lg-6"><strong>Trimmomatic fastq 2:</strong> {{ href_trimmonatic_2 }}</div>
@@ -89,7 +89,7 @@
 				  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 			  		</div>
 					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
-						<p class="title-box">Identifying virus with Sapdes and Abricate</p>
+						<p class="title-box">Type and subtype/lineage</p>
 						
 						{% for identify_virus in sample.identify_virus.all %}
 							<div class="row">

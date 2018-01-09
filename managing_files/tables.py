@@ -257,13 +257,13 @@ class ShowProjectSamplesResults(tables.Table):
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 	type_and_subtype = tables.LinkColumn('Type and Subtype', empty_values=())
-	putative_mixed_infections = tables.LinkColumn('Putative Mixed-infection', empty_values=())
+	putative_mixed_infection = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 		
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infections', 'dataset', 'coverage', 'alerts', 'results')
+		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infection', 'dataset', 'coverage', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -299,7 +299,7 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return record.sample.type_subtype
 	
-	def render_putative_mixed_infections(self, record):
+	def render_putative_mixed_infection(self, record):
 		"""
 		return number
 		"""

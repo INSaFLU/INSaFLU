@@ -29,10 +29,12 @@
 }
 
 .insa-description {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   text-align: justify;
 }
-
+.insa-news {
+	text-align: justify;
+}
 .insa-h4 {
   margin-bottom: 10px;
   font-size: 1.5rem;

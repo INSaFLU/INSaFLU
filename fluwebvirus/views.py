@@ -43,6 +43,7 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 	def get_context_data(self, **kwargs):
 		context = super(SignUpView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 	
 	def form_valid(self, form):
@@ -81,6 +82,7 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 	def get_context_data(self, **kwargs):
 		context = super(ResetPasswordView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 	
 	def form_valid(self, form):
@@ -119,6 +121,7 @@ class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.
 	def get_context_data(self, **kwargs):
 		context = super(ChangePasswordView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 	
 	def form_valid(self, form):
@@ -155,6 +158,7 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 	def get_context_data(self, **kwargs):
 		context = super(LoginView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 	
 	def form_valid(self, form):

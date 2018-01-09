@@ -52,10 +52,6 @@
 						  	<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebays_variations_50_file }}</div>
 						</div>
 						<hr>
-						<div class="row">
-						  	<div class="col-lg-4"><strong>List sample results (.csv):</strong> {{ sample_file_result_csv }}</div>
-						  	<div class="col-lg-4"><strong>List sample results (.tsv):</strong> {{ sample_file_result_tsv }}</div>
-						</div>
 					</div>
       			</div>
     		</div>
@@ -236,6 +232,8 @@
 			            <thead>                 
 			      			<tr>
 			                    <th colspan="7">
+			                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
+									<strong style="padding-left:20px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
 			                        <form method="get" action="" class="form-inline form-search pull-right">
 			                        	{% csrf_token %}
 			                            <div class="pull-right form-search">

@@ -15,7 +15,7 @@ from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-import os, random, gzip, hashlib, logging, ntpath
+import os, random, gzip, hashlib, logging, ntpath, stat
 from pysam import pysam
 
 class Utils(object):
@@ -180,6 +180,9 @@ class Utils(object):
 				self.logger_production.error('Fail to run: ' + cmd)
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to make a move a file") 
+			
+			### set attributes to file 664
+			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 			
 	def make_path(self, path_name):
 		if (not os.path.isdir(path_name) and not os.path.isfile(path_name)):
@@ -692,6 +695,7 @@ class Utils(object):
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
 		"""
 		filter fasta file
+		write a file for each element 
 		file name out: None if not saved, else output file name
 		coverage can be None, print all
 		return True if has sequences, False doesn't have sequences
@@ -701,7 +705,8 @@ class Utils(object):
 		### doesn't have the same size, sequences in consensus/coverage
 		if (coverage != None and locus_fasta != len(coverage.get_dict_data())): return None
 		
-		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
+		file_name = os.path.join(out_dir, sample_name + FileExtensions.FILE_FASTA)
+#		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
 		b_saved = False
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))

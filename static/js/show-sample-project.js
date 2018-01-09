@@ -75,6 +75,7 @@ $('#collapseThree').on('shown.bs.collapse', function () {
 
 //remove the tree from the screen
 $('#collapseThree').on('hidden.bs.collapse', function () {
+	$('.smenubar').remove();
 	$('#msa_viewer_nucleote_id').empty();
 });
 
@@ -91,6 +92,7 @@ function draw_nucleotide_alignments() {
     	/// spin 
     	beforeSend: function() {
     		$('#msa_viewer_nucleote_id').empty();
+    		$('.smenubar').remove();
     		$('#loader_msa_viewer_nucleote_id').show();
     	},
     	complete: function(){
@@ -112,11 +114,15 @@ function draw_nucleotide_alignments() {
 	    	  var m = msa({
 	    			el: rootDiv,
 	    			vis: {
-	    			      labelId: false
+	    				conserv: true,
+	    				overviewbox: false,
+	    			    labelId: false
 	    			},
 	    	        zoomer: {
 	    	        	labelNameLength: labelNameLength,
 	    	        },
+	    	        menu: "small",
+	    	        bootstrapMenu: true,
 	    	  });
 	    	  msa.io.fasta.read(data['alignment_fasta_show_id'], function(err, seqs){
 	    			m.seqs.reset(seqs);
@@ -152,6 +158,7 @@ $('#collapseFourth').on('shown.bs.collapse', function () {
 
 //remove the tree from the screen
 $('#collapseFourth').on('hidden.bs.collapse', function () {
+	$('.smenubar').remove();
 	$('#msa_viewer_amino_id').empty();
 });
 
@@ -203,6 +210,7 @@ function draw_protein_alignments() {
     	/// spin 
     	beforeSend: function() {
     		$('#msa_viewer_amino_id').empty();
+    		$('.smenubar').remove();
     		$('#loader_msa_viewer_amino_id').show();
     	},
     	complete: function(){
@@ -222,13 +230,17 @@ function draw_protein_alignments() {
 	    	  var rootDiv = document.getElementById("msa_viewer_amino_id");
 	    	  var labelNameLength = data['max_length_label'] * 14 + 10;	// multiply by 14 because the labelFontsize is 13; https://github.com/wilzbach/msa in zoomer section
 	    	  var m = msa({
-	    			el: rootDiv,
-	    			vis: {
-	    			      labelId: false
+	    		    el: rootDiv,
+	    		    vis: {
+	    				conserv: true,
+	    				overviewbox: false,
+	    			    labelId: false
 	    			},
 	    	        zoomer: {
 	    	        	labelNameLength: labelNameLength,
 	    	        },
+	    	        menu: "small",
+	    	        bootstrapMenu: true,
 	    	  });
 	    	  msa.io.fasta.read(data['alignment_amino_fasta_show_id'], function(err, seqs){
 	    			m.seqs.reset(seqs);

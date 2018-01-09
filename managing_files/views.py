@@ -975,9 +975,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['project_name'] = project.name
 		context['reference_name'] = project.reference.name
 		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
-		context['number_of_alerts'] = ProjectSample.objects.filter(project=project, is_deleted=False,\
-								is_error=False, is_finished=True, alert_first_level__gte=1,\
-								alert_second_level__gte=1).count()
+		context['number_of_alerts'] = ProjectSample.objects.filter(Q(project=project) & Q(is_deleted=False) &\
+								Q(is_error=False) & Q(is_finished=True) & (Q(alert_first_level__gte=1) |\
+								Q(alert_second_level__gte=1))).count()
 		context['samples_in_process'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=False).count()
 		context['samples_error'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=True, is_finished=False).count()
 		
@@ -1013,7 +1013,8 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			## several data to show
 			context['project_sample'] = project_sample
 			context['num_alerts'] = project_sample.alert_first_level + project_sample.alert_second_level
-
+			context['nav_project'] = True
+			
 			## collect alerts
 			alert_out = []
 			manageDatabase = ManageDatabase()

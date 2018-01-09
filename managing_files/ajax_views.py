@@ -140,8 +140,8 @@ def show_msa_nucleotide(request):
 					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
 				data['is_ok'] = True
 				data['alignment_fasta_show_id'] = request.build_absolute_uri(file_name_fasta)
-				data['alignment_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
-				data['alignment_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
+				data['alignment_fasta_id'] = mark_safe("<strong>Alignment (.fasta):</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
+				data['alignment_nex_id'] = mark_safe("<strong>Alignment (.nex):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
 				b_calculate_again = False
 				data['max_length_label'] = manage_database.get_max_length_label(project, request.user, b_calculate_again)
 			except Project.DoesNotExist:

@@ -68,6 +68,7 @@ function show_igv() {
                             autoHeight: false,
                             viewAsPairs: true,
                             name: data['sample_name'],
+                            colorBy: "firstInPairStrand"
                         },{
                             name: "Genes",
                             type: "annotation",

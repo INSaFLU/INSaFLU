@@ -43,8 +43,8 @@
 			<hr>
 			<div class="row">
 				<div class="col-lg-3"><strong>Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
-			  	<div class="col-lg-3"><strong>Geographic pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
-			  	<div class="col-lg-3"><strong>Virus identified:</strong> {{ project_sample.sample.type_subtype }}</div>
+			  	<div class="col-lg-3"><strong>Geolocation pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
+			  	<div class="col-lg-3"><strong>Type and subtype/lineage:</strong> {{ project_sample.sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ project_sample.sample.owner.username }}</div>
 			</div>
 			<hr>

@@ -9,7 +9,7 @@
   <meta name="author" content="">
   <title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
   <!-- Bootstrap core CSS-->
-  
+
 	  {% load static from staticfiles %}
 	  	<link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css">
 	  	<!-- Custom fonts for this template-->
@@ -30,8 +30,8 @@
 <body class="fixed-nav sticky-footer" id="page-top">
   <!-- Navigation-->
   <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
-  	<img src="{% static 'insa/insa_logo.png' %}" style="width:250px; padding-right:10px" id='main_logo_id'>
-  	<a class="navbar-brand bg-insa-fixed-top" href="{% url 'dashboard' %}"><strong>_INSa</strong>FLU</a>
+  	<img src="{% static 'insa/insa_logo.png' %}" style="width:250px; padding-right:10px" id='main_insa_logo_id'>
+  	<img src="{% static 'insa/insaflu_logo.png' %}" style="width:105px; padding-right:36px;" id='main_insaflu_logo_id'>
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -187,7 +187,7 @@
    <footer class="sticky-footer bg-insa-fixed-top">
 		<div class="container">
 				<div class="text-center">
-					<small><a href="http://www.insa.pt/" target="_blank">_INSA</a> Instituto Nacional de Saúde Dr. Ricardo Jorge</small>
+					<small><a href="http://www.insa.pt/" target="_blank">Instituto Nacional de Saúde Doutor Ricardo Jorge</a></small>
 				</div>
 		</div>
    </footer>

@@ -90,3 +90,7 @@
 .sidebar-module-inset ol:last-child {
   margin-bottom: 0;
 }
+
+.remove_box_sizing{
+	box-sizing: content-box;
+}

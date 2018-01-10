@@ -13,7 +13,9 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
+from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
+from django_q.tasks import async
 from datetime import datetime
 import os, random, gzip, hashlib, logging, ntpath, stat
 from pysam import pysam
@@ -852,3 +854,23 @@ class Utils(object):
 							outh.write(bed_line)
 						
 			outh.close()
+
+	def send_email(self, address, header, message):
+		"""
+		send an email
+		"""
+	#	async('django.core.mail.send_mail', header, message, 'insaflu@insa.min-saude.pt', [address])
+		send_mail(header, message, 'insaflu@insa.min-saude.pt', [address])
+
+
+	def open_file(self, b_close):
+		"""
+		used ony for tests
+		"""
+		file_name = self.get_temp_file('test_max_files_', '.txt')
+		handle = open(file_name, 'w')
+		handle.write('xpto')
+		if(b_close): handle.close()
+		return
+		
+		

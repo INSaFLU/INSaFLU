@@ -1,10 +1,11 @@
 {% autoescape off %}
-Hi {{ user.username }},
-Welcome to InsaFlu web site.
+Dear {{ user.username }},
+Welcome to INSaFLU website.
 
 Please, click on the link below to change your password:
 http://{{ domain }}{% url 'reset_password_key' uidb64=uid token=token %}
 
 All the best,
-InsaFlu team.
+<strong>InsaFlu team.</strong>
+<a href="www.insaflu.insa.pt">www.insaflu.insa.pt</a>
 {% endautoescape %}

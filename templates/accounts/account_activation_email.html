@@ -1,10 +1,11 @@
 {% autoescape off %}
-Hi {{ user.username }},
-Welcome to InsaFlu web site.
+Dear {{ user.username }},
+Welcome to INSaFLU website.
 
-Please, click on the link below to reset your password:
+Please, click on the link below to active your account:
 http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
 
 All the best,
-InsaFlu team.
+<strong>InsaFlu team.</strong>
+<a href="www.insaflu.insa.pt">www.insaflu.insa.pt</a>
 {% endautoescape %}

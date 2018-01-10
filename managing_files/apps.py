@@ -24,6 +24,9 @@ class ManagingFilesConfig(AppConfig):
 		#### set default references
 		self.upload_default_references()
 		
+		#### only used for test of max open files
+#		self.test_open_files()
+		
 #		pass
 
 	def create_default_user(self):
@@ -110,4 +113,16 @@ class ManagingFilesConfig(AppConfig):
 		b_test = False
 		uploadFiles.upload_default_references(User.objects.get(username=Constants.DEFAULT_USER), b_test) 
 		
-
+	def test_open_files(self):
+		
+		from utils.utils import Utils
+		from django_q.tasks import async
+		utils = Utils()
+		b_close = False
+		n_count = 0
+		max_files = 10000
+		while n_count < max_files:
+			async(utils.open_file, b_close)
+			n_count += 1
+			print('file: ' +  str(n_count) + '   close: ' + str(b_close))
+		print('finished')

@@ -83,7 +83,7 @@ class Utils(object):
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
 			try:
-				os.open(return_file, os.O_CREAT | os.O_EXCL)
+				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file
 			except FileExistsError:
 				pass
@@ -96,7 +96,7 @@ class Utils(object):
 		while 1:
 			return_file = os.path.join(dir_out, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
 			try:
-				os.open(return_file, os.O_CREAT | os.O_EXCL)
+				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file
 			except FileExistsError:
 				pass

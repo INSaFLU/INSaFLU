@@ -120,7 +120,7 @@ class Proteins(object):
 			
 			### run seqret to produce nex
 			try:
-				out_file_nex = self.utils.get_temp_file_from_dir(temp_dir, "seq_ret", ".nex")
+				out_file_nex = self.utils.get_temp_file_from_dir(temp_dir, "seq_ret_proteins", ".nex")
 				self.software.run_seqret_nex(out_file_mafft, out_file_nex)
 				if (b_first): result_all.add_software(SoftwareDesc(self.software_names.get_seqret_name(), self.software_names.get_seqret_version(),\
 								self.software_names.get_seqret_nex_parameters()))
@@ -135,7 +135,7 @@ class Proteins(object):
 	
 			### run fastTree
 			try:
-				out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree", FileExtensions.FILE_NWK)
+				out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree_proteins", FileExtensions.FILE_NWK)
 				self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters_protein())
 				if (b_first): result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
 								self.software_names.get_fasttree_parameters_protein()))

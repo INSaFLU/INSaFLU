@@ -31,7 +31,40 @@
 .insa-description {
   font-size: 1.5rem;
   text-align: justify;
+  padding:10px
 }
+
+.insa-description-read-more-header {
+	font-size: 1.3rem;
+	padding-left: 12px;
+	padding-top: 12px;
+	padding-bottom: 0px;
+}
+
+.insa-description-read-more {
+	font-size: 1.2rem;
+	text-align: justify;
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
+.insa-description-read-more-first {
+	font-size: 1.2rem;
+	text-align: justify;
+	padding-left: 12px;
+	padding-right: 12px;
+	padding-top: 12px;
+}
+.insa-description-read-more-last {
+	font-size: 1.2rem;
+	text-align: justify;
+	padding-left: 12px;
+	padding-right: 12px;
+	padding-bottom: 12px;
+}
+
+
+
 .insa-news {
 	text-align: justify;
 }
@@ -89,4 +122,8 @@
 .sidebar-module-inset ul:last-child,
 .sidebar-module-inset ol:last-child {
   margin-bottom: 0;
+}
+
+.remove_box_sizing{
+	box-sizing: content-box;
 }

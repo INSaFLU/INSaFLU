@@ -402,7 +402,7 @@ class Software(object):
 		run convert mauve
 		out: out_file
 		"""
-		temp_file = self.utils.get_temp_file('clean_fasta_names', FileExtensions.FILE_FASTA)
+		temp_file = self.utils.get_temp_file('convert_mauve_software', FileExtensions.FILE_FASTA)
 		cmd = "perl {} -c -i {} -o {} -f fasta".format(self.software_names.get_convert_mauve(), input_file, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -542,6 +542,10 @@ class Software(object):
 		"""
 		bp_genbank2gff3 --filter gene --filter region --outdir stdout --quiet static/tests/managing_files/A_H3N2_A_Hong_Kong_4801_2014.gbk
 		"""
+		## IMPORTANT
+		## REMOVED by MIGUEL 11/01/2018 to be compatible to snippy
+		## Need to comment next line (1138) in bp_genbank2gff3 to be compatible with snippy
+		#$g->remove_tag('gene');
 		vect_filter = ['gene', 'region']
 		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
 		cmd = "%s --filter %s --outdir stdout %s > %s" %\
@@ -656,7 +660,7 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run snippy-vcf-to-tab")
-		os.unlink(temp_file)
+#		os.unlink(temp_file)
 		return out_file
 
 	def run_freebayes(self, bam_file, reference_fasta, genbank_file, sample_name):

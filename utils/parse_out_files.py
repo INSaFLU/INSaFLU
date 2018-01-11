@@ -66,7 +66,7 @@ class ParseOutFiles(object):
 		return sorted(vect_out, reverse=True, key=lambda k: "%03d %03d" % (int(k[self.COVERAGE]) , int(k[self.IDENTITY])))
 
 
-	def parse_tab_files(self, sample_name, file_to_parse, handle_out, vect_type_out, limit_freq, b_add_header):
+	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, limit_freq, b_add_header):
 		"""
 		limit_freq -> the tre max freq to accept the variation
 		process tab files
@@ -79,7 +79,7 @@ class ParseOutFiles(object):
 		vect_count_type = ['snp', 'ins']
 		"""
 		
-		if (b_add_header): handle_out.write(self.HEADER_TAB_FILE_WRITE + "\n")
+		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
 			for line in handle_to_process:
@@ -93,14 +93,18 @@ class ParseOutFiles(object):
 						lst_type_var = lst_data[2].split(',')
 						for i in range(0, len(lst_type_var)):
 							if (lst_type_var[i] in vect_type_out and self.utils.is_float(lst_freq_data[i]) and float(lst_freq_data[i]) < limit_freq):
+								vect_to_write = [sample_name]
 								if (len(lst_data) > 10):
-									handle_out.write(sample_name + '\t' + '\t'.join(lst_data[:10]) + '\t' + lst_data[10].replace(' ', '\t') + '\t' + '\t'.join(lst_data[11:]) + "\n")
-								else: handle_out.write(sample_name + '\t' + sz_temp + "\n")
+									vect_to_write.extend(lst_data[:10])
+									vect_to_write.extend(lst_data[10].split(' '))
+									vect_to_write.extend(lst_data[11:])
+								else: vect_to_write.extend(lst_data)
+								csv_writer.writerow(vect_to_write)
 								break
 
 		return True
 
-	def parse_tab_files_snippy(self, sample_name, file_to_parse, handle_out, vect_type_out, b_add_header):
+	def parse_tab_files_snippy(self, sample_name, file_to_parse, csv_writer, vect_type_out, b_add_header):
 		"""
 		limit_freq -> the tre max freq to accept the variation
 		process tab files
@@ -113,7 +117,7 @@ class ParseOutFiles(object):
 		vect_count_type = ['snp', 'ins']
 		"""
 		
-		if (b_add_header): handle_out.write(self.HEADER_TAB_FILE_WRITE_snippy + "\n")
+		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
 			for line in handle_to_process:
@@ -126,9 +130,13 @@ class ParseOutFiles(object):
 						lst_type_var = lst_data[2].split(',')
 						for i in range(0, len(lst_type_var)):
 							if (lst_type_var[i] in vect_type_out):
+								vect_to_write = [sample_name]
 								if (len(lst_data) > 10):
-									handle_out.write(sample_name + '\t' + '\t'.join(lst_data[:10]) + '\t' + lst_data[10].replace(' ', '\t') + '\t' + '\t'.join(lst_data[11:]) + "\n")
-								else: handle_out.write(sample_name + '\t' + sz_temp + "\n")
+									vect_to_write.extend(lst_data[:10])
+									vect_to_write.extend(lst_data[10].split(' '))
+									vect_to_write.extend(lst_data[11:])
+								else: vect_to_write.extend(lst_data)
+								csv_writer.writerow(vect_to_write)
 								break
 		return True
 

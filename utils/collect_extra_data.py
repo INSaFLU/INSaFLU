@@ -12,7 +12,7 @@ from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
-import os, time
+import os, time, csv
 import plotly.graph_objs as go
 from plotly.offline import plot
 from django.db import transaction
@@ -24,7 +24,6 @@ class CollectExtraData(object):
 	classdocs
 	'''
 
-	HEADER_SAMPLE_OUT_TAB = "id	fastq1	fastq2	data set	vaccine status	week	onset date	collection date	lab reception date	latitude	longitude	type-subtype	putative mixed-infection"
 	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 	SEPARATOR_COMMA = ','
 	SEPARATOR_TAB = '\t'
@@ -275,12 +274,13 @@ class CollectExtraData(object):
 		parse_out_files = ParseOutFiles()
 		n_count = 0
 		vect_type_out = ['snp', 'del', 'ins']
-		with open(out_file, "w") as output_file_handle:
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 				if (not os.path.exists(tab_file_to_process)): continue
-				parse_out_files.parse_tab_files_snippy(project_sample.sample.name, tab_file_to_process, output_file_handle, vect_type_out, True if n_count == 0 else False)
+				parse_out_files.parse_tab_files_snippy(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -296,12 +296,13 @@ class CollectExtraData(object):
 		parse_out_files = ParseOutFiles()
 		n_count = 0
 		vect_type_out = ['snp']
-		with open(out_file, "w") as output_file_handle:
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 				if (not os.path.exists(tab_file_to_process)): continue
-				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, output_file_handle, vect_type_out, 50, True if n_count == 0 else False)
+				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out, 50, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -317,45 +318,46 @@ class CollectExtraData(object):
 		"""
 		
 		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
-					column_separator == CollectExtraData.SEPARATOR_COMMA else FileExtensions.FILE_CSV)
+					column_separator == CollectExtraData.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
 		
-		with open(out_file, 'w') as handle_out:
-			if (column_separator == CollectExtraData.SEPARATOR_COMMA): handle_out.write(CollectExtraData.HEADER_SAMPLE_OUT_CSV)
-			else: handle_out.write(CollectExtraData.HEADER_SAMPLE_OUT_TAB)
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
+						quoting=csv.QUOTE_MINIMAL if column_separator == CollectExtraData.SEPARATOR_COMMA else csv.QUOTE_ALL)
+			vect_out = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
 			
 			### extra tags
 			vect_tags = self.get_tags_for_samples_in_projects(project)
-			if (len(vect_tags) > 0): handle_out.write(column_separator + column_separator.join(vect_tags))
+			vect_out.extend(vect_tags)
+			csv_writer.writerow(vect_out)
 
-			handle_out.write('\n')
 			n_count = 0
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
-				sz_out = project_sample.sample.name
+				vect_out = [project_sample.sample.name]
 				### fastq1
-				sz_out += column_separator + project_sample.sample.file_name_1
+				vect_out.append(project_sample.sample.file_name_1)
 				### fastq2
-				sz_out += column_separator + (project_sample.sample.file_name_2 if project_sample.sample.file_name_2 != None and len(project_sample.sample.file_name_2) > 0 else '')
+				vect_out.append(project_sample.sample.file_name_2 if project_sample.sample.file_name_2 != None and len(project_sample.sample.file_name_2) > 0 else '')
 				### dataset
-				sz_out += column_separator + (project_sample.sample.data_set.name if project_sample.sample.data_set != None else '')
+				vect_out.append(project_sample.sample.data_set.name if project_sample.sample.data_set != None else '')
 				### vaccine status
-				sz_out += column_separator + (project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
+				vect_out.append(project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
 				### week
-				sz_out += column_separator + (str(project_sample.sample.week) if project_sample.sample.week != None else '')
+				vect_out.append(str(project_sample.sample.week) if project_sample.sample.week != None else '')
 				### onset date
-				sz_out += column_separator + (project_sample.sample.date_of_onset.strftime('%Y-%m-%d') if project_sample.sample.date_of_onset != None else '')
+				vect_out.append(project_sample.sample.date_of_onset.strftime('%Y-%m-%d') if project_sample.sample.date_of_onset != None else '')
 				### collection date
-				sz_out += column_separator + (project_sample.sample.date_of_collection.strftime('%Y-%m-%d') if project_sample.sample.date_of_collection != None else '')
+				vect_out.append(project_sample.sample.date_of_collection.strftime('%Y-%m-%d') if project_sample.sample.date_of_collection != None else '')
 				### lab reception date
-				sz_out += column_separator + (project_sample.sample.date_of_receipt_lab.strftime('%Y-%m-%d') if project_sample.sample.date_of_receipt_lab != None else '')
+				vect_out.append(project_sample.sample.date_of_receipt_lab.strftime('%Y-%m-%d') if project_sample.sample.date_of_receipt_lab != None else '')
 				### latitude
-				sz_out += column_separator + (str(project_sample.sample.geo_local.coords[0]) if project_sample.sample.geo_local != None else '')
+				vect_out.append(str(project_sample.sample.geo_local.coords[0]) if project_sample.sample.geo_local != None else '')
 				### longitude
-				sz_out += column_separator + (str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
+				vect_out.append(str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
 				### type_subtype
-				sz_out += column_separator + (project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
+				vect_out.append(project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
 				### mixedinfection
-				sz_out += column_separator + (project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
+				vect_out.append(project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
 
 				### print extra informatios
 				query_set = TagNames.objects.filter(sample=project_sample.sample)
@@ -363,12 +365,12 @@ class CollectExtraData(object):
 					b_print = False
 					for tag_names in query_set:
 						if (tag_names.tag_name.name == tag_name_to_test):
-							sz_out += column_separator + tag_names.value
+							vect_out.append(tag_names.value)
 							b_print = True
 							break
-					if (not b_print): sz_out += column_separator
+					if (not b_print): vect_out.append('')
 
-				handle_out.write(sz_out + "\n")
+				csv_writer.writerow(vect_out)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)

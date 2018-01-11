@@ -106,7 +106,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.getsize(result_file) > 100)
 		self.utils.remove_dir(out_dir)
 		
-	def test_run_sapdes_single(self):
+	def test_run_spades_single(self):
 		
 		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		self.assertTrue(os.path.isfile(fastq1_1))
@@ -1151,7 +1151,7 @@ class Test(TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
 		result_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
 
-		out_file = self.utils.get_temp_file("file_name", ".tab")
+		out_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab")
 		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file, out_file)
 		self.assertEquals(out_file, out_file_2)
 		
@@ -1179,7 +1179,6 @@ class Test(TestCase):
 		self.assertTrue(os.path.getsize(new_vcf_file + '.gz.tbi') > 200)
 		self.assertTrue(os.path.exists(new_vcf_file + '.gz.tbi'))
 		self.utils.remove_dir(temp_dir)
-
 
 
 	def test_run_genbank2gff3(self):

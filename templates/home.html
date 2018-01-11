@@ -48,7 +48,7 @@
 							<p class="insa-description-read-more-header"><strong>Alignment/phylogeny</strong></p>
 							<p class="insa-description-read-more">INSaFLU dynamically builds ready-to-explore nucleotide/amino acid sequence alignments and phylogenetic trees at both locus and
 							whole-genome scale. These outputs are automatically re-build and updated as more samples are added to user-restricted INSaFLU projects, making continuous data integration
-							completely flexible and scalable. This module can also be run independently over a set of user-selected sequences so that phylogenetic diversity of circulating viruses
+							completely flexible and scalable. <strong>This module can also be run independently</strong> over a set of user-selected sequences so that phylogenetic diversity of circulating viruses
 							can be better evaluated and integrated according with users’ specific needs. Alignments and trees can be explored in situ or through multiple compatible downstream
 							applications for fine-tune data analysis.</p>
 							<p class="insa-description-read-more-header"><strong>Intra-host minor variant detection (and uncovering of putative mixed infections)</strong></p>
@@ -91,14 +91,15 @@
 				<div class="row">
 					<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:180px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
 					<img src="{% static 'insa/SNS_logo.svg' %}" style="width:180px; padding-right:10px" id='sns_logo_id'>
-					<img src="{% static 'insa/insa_logo.png' %}" style="width:230px; height:80px; padding-right:12px; padding-top:35px" id='insa_logo_id'>
+					<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:220px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
 				</div>
 			</div>
 			
 			<div class="col-sm-3 offset-sm-1 insa-sidebar">
-				<img src="{% static 'insa/insaflu_logo.png' %}" style="width:250px; padding-right:25px; padding-top:15px; padding-bottom:15px" id='main_logo_id'>
+				<a href="{% url 'dashboard' %}"><img src="{% static 'insa/insaflu_logo.png' %}" style="width:250px; padding-right:25px; padding-top:15px; padding-bottom:15px" id='main_logo_id'></a>
 				<div class="sidebar-module">
 					<ol class="list-unstyled" style="font-size: 1.3rem;">
+						<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank">Main Help</a></li>
 						<li><a href="#" target="_blank">Find here a pre-NGS wet-lab protocol</a></li>
 						<li><a href="#" target="_blank">Find here how to design a NGS run</a></li>
 					</ol>

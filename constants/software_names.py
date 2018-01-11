@@ -69,7 +69,12 @@ class SoftwareNames(object):
 	SOFTWARE_SNP_EFF_name = "snpEff"
 	SOFTWARE_SNP_EFF_VERSION = "4.3p"
 	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
-	SOFTWARE_GENBANK2GFF3 = 'bp_genbank2gff3'
+	
+	## IMPORTANT
+	## REMOVED by MIGUEL 11/01/2018 to be compatible to snippy
+	## Need to comment next line (1138) in bp_genbank2gff3 to be compatible with snippy
+	#$g->remove_tag('gene');
+	SOFTWARE_GENBANK2GFF3 = os.path.join(DIR_SOFTWARE, 'genbank2gff3/insa_genbank2gff3')
 	SOFTWARE_GENBANK2GFF3_name = 'Genbank2gff3'
 	SOFTWARE_GENBANK2GFF3_VERSION = 'Unknown'
 	SOFTWARE_GENBANK2GFF3_PARAMETERS = ''

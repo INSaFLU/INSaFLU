@@ -11,7 +11,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from utils.result import CountHits 
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
-from managing_files.models import Sample, Project, ProjectSample, Reference
+from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
 from django.test.utils import override_settings
@@ -182,6 +182,16 @@ class Test(unittest.TestCase):
 		## get all fastq files
 		vect_files = self.constants_tests_case.get_all_fastq_files(self.baseDirectory)
 		
+		tag_name_name = 'xpto'
+		try:
+			tag_name = TagName.objects.get(name='xpto')
+		except TagName.DoesNotExist as e:
+			tag_name = TagName()
+			tag_name.owner = user
+			tag_name.name = tag_name_name
+			tag_name.is_meta_data = False
+			tag_name.save()
+		
 		get_coverage = GetCoverage()
 		ProjectSample.objects.all().delete()
 		Sample.objects.all().delete()
@@ -204,8 +214,16 @@ class Test(unittest.TestCase):
 			sample.owner = user
 			sample.is_ready_for_projects = True
 			sample.is_obsolete = False
+			sample.type_subtype = 'xpto, zpto'
 			sample.save()
 
+			## add tag names to sample
+			tag_names = TagNames()
+			tag_names.value = tag_name_name + " " + tag_name_name
+			tag_names.tag_name = tag_name
+			tag_names.sample = sample
+			tag_names.save()
+					
 			## create project_sample
 			project_sample = ProjectSample()
 			project_sample.id = 5000 + count + 1
@@ -227,8 +245,32 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
-		### need to improve this test
+		### samples test
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.csv")
 		out_file = collect_extra_data.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+		
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.tsv")
+		out_file = collect_extra_data.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
+		
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		### collect variations from snippy
+		out_file = collect_extra_data.collect_variations_snippy(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_snippy.tsv")
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		### collect variations from freebayes
+		out_file = collect_extra_data.collect_variations_freebayes(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes.tsv")
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)

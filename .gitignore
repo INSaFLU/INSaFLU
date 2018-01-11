@@ -135,6 +135,9 @@ target/
 # pyenv
 .python-version
 
+# django
+static_all/
+
 # celery beat schedule file
 celerybeat-schedule
 

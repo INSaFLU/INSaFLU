@@ -237,10 +237,10 @@ class SampleForm(forms.ModelForm):
 			('vaccine_status', 'Vaccine status', 'Discrimination of vaccination status', False),
 			('data_set', 'Dataset', 'Specific dataset (useful for grouping sets of samples)', False),
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
-			('lat', 'Latitude', 'Geolocation where the sample was collected', False),
-			('lng', 'Longitude', 'Geolocation where the sample was collected', False),
-			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 30MB)', True),
-			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 30MB)', False),
+			('lat', 'Latitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
+			('lng', 'Longitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
+			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 50MB)', True),
+			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 50MB)', False),
 			('like_dates', 'Choose a date', 'Choose the option you want to be used to calculate the calendar week number.', False),
 		]
 		for x in field_text:

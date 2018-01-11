@@ -39,6 +39,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_COVERAGE_0 = META_KEY_ALERT_COVERAGE + " >0"
 	META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE = "AlertMixedInfectionCosineDistance"
 	META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST = "AlertMixedInfectionRatioTest"
+	META_KEY_ALERT_MIXED_INFECTION_SUM_TEST = "AlertMixedInfectionSumTest"
 	META_KEY_ALERT_COUNT_VAR = "Alert count variation percentile"	## obsolete
 	
 	## coverage about bam file

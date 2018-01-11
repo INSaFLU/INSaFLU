@@ -259,7 +259,7 @@ def get_image_coverage(request):
 				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
 				data['is_ok'] = True
 				data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
-				data['text'] = _("Coverage for element '{}'".format(request.GET.get(key_element)))
+				data['text'] = _("Coverage for locus '{}'".format(request.GET.get(key_element)))
 			except ProjectSample.DoesNotExist as e:
 				pass
 		return JsonResponse(data)

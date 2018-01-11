@@ -268,6 +268,8 @@ class CollectExtraData(object):
 	def collect_variations_snippy(self, project):
 		"""
 		collect snippy variations
+		
+		add flag if to snippy when coverage is yellow or red add column 'VARIANTS IN INCOMPLETE LOCUS' Yes or empty
 		"""
 		
 		out_file = self.utils.get_temp_file('variations_snippy', FileExtensions.FILE_TSV)

@@ -2,6 +2,12 @@
 /**
 * used in header forms
 */
+.main-page-documentation {
+	padding-right:30px;
+	padding-top:19px;
+	font-size: 1.5rem;
+}
+
 .rounded-header {
 	border-radius: 5px;
 	background: #569dd4;

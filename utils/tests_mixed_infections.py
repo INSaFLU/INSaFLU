@@ -87,6 +87,9 @@ class Test(unittest.TestCase):
 		count_hits.set_hits_less_50(0)
 		count_hits.set_hits_50_90(0)
 		self.assertEquals('0.0', '{}'.format(mixed_infections_management.get_value_mixed_infection(count_hits)))
+		count_hits.set_hits_less_50(4)
+		count_hits.set_hits_50_90(2)
+		self.assertEquals('0.984995168387904', '{}'.format(mixed_infections_management.get_value_mixed_infection(count_hits)))
 
 	def test_constants_mixed_infection(self):
 		constants_mixed_infection = ConstantsMixedInfection()
@@ -417,4 +420,114 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_project == None)
 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_project == None)
+		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_project == None)
+		
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_get_mixed_infections_4(self):
+		"""
+ 		test global method
+ 		"""
+		
+		try:
+			mixed_infections_ = MixedInfections.objects.get(has_master_vector=True)
+			mixed_infections_.delete()
+		except MixedInfections.DoesNotExist as e:
+			pass
+		
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+
+		gb_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_statest_get_mixed_infections"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+			
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_snippytest_get_mixed_infections"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.owner = user
+			sample.save()
+
+		project_name = "file_nametest_get_mixed_infections"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.name = project_name
+			project.reference = reference
+			project.owner = user
+			project.save()
+		
+		## create project_sample
+		project_sample = ProjectSample()
+		project_sample.sample = sample
+		project_sample.project = project
+		project_sample.save()
+
+		## set count hits		
+		count_hits = CountHits()
+		count_hits.set_hits_less_50(200)
+		count_hits.set_hits_50_90(50)
+		
+		decodeResult = DecodeObjects()
+		mixed_infection_main_vector = MixedInfectionMainVector()
+		mixed_infections_management = MixedInfectionsManagement()
+		mixed_infections = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
+		self.assertEquals('0.9295706783216093', '{}'.format(mixed_infections.average_value))
+		self.assertEquals(mixed_infection_main_vector, decodeResult.decode_result(mixed_infections.description))
+		self.assertFalse(mixed_infections.has_master_vector)
+		self.assertEquals('Yes', mixed_infections.tag.name)
+		
+		project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
+		self.assertEquals(1, project_sample_.alert_first_level)
+		
+		self.assertEquals(0.25, count_hits.get_mixed_infection_ratio())
+		self.assertEquals("0.2", count_hits.get_mixed_infection_ratio_str())
+		self.assertFalse(count_hits.is_mixed_infection_ratio_test())
+		
+		### 
+		manage_database = ManageDatabase()
+		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_project == None)
+		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_project == None)
+		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST, MetaKeyAndValue.META_VALUE_Success)
+		self.assertFalse(meta_project == None)
+		
 

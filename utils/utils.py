@@ -82,6 +82,7 @@ class Utils(object):
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
+			if (os.path.exists(return_file)): continue
 			try:
 				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file
@@ -95,6 +96,7 @@ class Utils(object):
 		if (not os.path.exists(dir_out)): os.makedirs(dir_out)
 		while 1:
 			return_file = os.path.join(dir_out, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
+			if (os.path.exists(return_file)): continue
 			try:
 				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file

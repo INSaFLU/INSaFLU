@@ -30,8 +30,8 @@
 <body class="fixed-nav sticky-footer" id="page-top">
   <!-- Navigation-->
   <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
-  	<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:250px; padding-right:10px" id='main_insa_logo_id'></a>
-  	<a href="{% url 'dashboard' %}"><img src="{% static 'insa/insaflu_logo.png' %}" class="remove_box_sizing" style="width:65px;" id='main_insaflu_logo_id'></a>
+  	<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a>
+  	<a href="{% url 'dashboard' %}"><img src="{% static 'insa/insaflu_logo.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a>
 <!--     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button> -->
@@ -64,7 +64,7 @@
         <li class="nav-item {% if nav_phylogeny %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Phylogeny">
           <a class="nav-link" href="{% url 'phylogeny' %}">
             <i class="fa fa-fw fa-magic"></i>
-            <span class="nav-link-text active">Phylogeny</span>
+            <span class="nav-link-text active">Extra Alignment/Phylogeny</span>
           </a>
         </li>
       </ul>
@@ -76,6 +76,8 @@
         </li>
       </ul>
       <ul class="navbar-nav ml-auto">
+      	<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank" class="main-page-documentation"><strong>Documentation</strong></a></li>
+        
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fa fa-fw fa-envelope"></i>
@@ -187,7 +189,7 @@
    <footer class="sticky-footer bg-insa-fixed-top">
 		<div class="container">
 				<div class="text-center">
-					<small><a href="http://www.insa.pt/" target="_blank">Instituto Nacional de Saúde Doutor Ricardo Jorge</a></small>
+					<small><a href="http://www.insa.pt/" target="_blank">Instituto Nacional de Saúde (INSA) Doutor Ricardo Jorge, I.P.</a></small>
 				</div>
 		</div>
    </footer>

@@ -4,8 +4,10 @@
 "#Mandatory fields to fulfill: 'sample name', 'fastq1'",,,,,,,,,,,,,,
 #Date format: dd/mm/yyyy,,,,,,,,,,,,,,
 #Fastq file names must be complete and match the ones from the files that you are going to upload later,,,,,,,,,,,,,,
-#Sample names must be unique in you account,,,,,,,,,,,,,,
+#Sample names must be unique in your account,,,,,,,,,,,,,,
 #The aforementioned instructions do not need to be deleted before submission,,,,,,,,,,,,,,
+#Latitude and Longitude are in Decimal Degrees (DD),,,,,,,,,,,,,,
+"#Sample name: only numbers, letters and underscores are allowed",,,,,,,,,,,,,,
 sample name,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,host,day,year,month
 xpto12,flu_temp_S66_L001_R1_001.fastq.gz,flu_temp_L001_R2_001.fastq.gz,,ok,12,12-12-2017,13/12/2017,14/12/2017,12.2,14.3,human,12,2017,12
 xpto23,flu_second_L001_R1_001.fastq.gz,flu_second_L001_R2_001.fastq.gz,data set,missing last,11,22/12/2017,23/12/2017,24/12/2017,30.2,43.5,avian,22,2017,12

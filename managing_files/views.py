@@ -934,9 +934,11 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (len(vect_task_id_submited) == 0):
 			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
 		else:
-			messages.success(self.request, _("{} added to your project '{}'".format(\
-				len(vect_task_id_submited), "'{}' samples were".format(len(vect_task_id_submited)) if\
-				len(vect_task_id_submited) > 1 else "One sample was", project.name)), fail_silently=True)
+			if (len(vect_task_id_submited) > 1):
+				messages.success(self.request, _("'{}' samples were added to your project.".format(\
+							len(vect_task_id_submited))), fail_silently=True)
+			else:
+				messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
 			
 		return super(AddSamplesProjectsView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty

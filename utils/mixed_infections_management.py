@@ -35,7 +35,7 @@ class MixedInfectionsManagement(object):
 		
 		tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
 		## test ratio method
-		if (count_hits.is_mixed_infection_ratio_test()):	## doesn't matter the other
+		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 			
 		### get tag
@@ -55,7 +55,7 @@ class MixedInfectionsManagement(object):
 		##  set the alert
 		manage_database = ManageDatabase()
 #		if (constants_mixed_infection.is_alert(tag) or count_hits.is_mixed_infection_ratio_test()):
-		if (count_hits.is_mixed_infection_ratio_test()):
+		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()
@@ -65,9 +65,14 @@ class MixedInfectionsManagement(object):
 # 									"of '{}'.\nSuggest mixed infection.".format(value))
 			
 			## test mixed infection by empirical values
-			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+			if (count_hits.is_mixed_infection_ratio_test()):
+				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
 								MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a ratio of '{}' and a total of '{}' variations.\nSuggest mixed infection.".\
 								format(count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()))
+			elif (count_hits.total_grather_than_mixed_infection()):
+				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+								MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a sum '{}' bigger than '{}'.\nSuggest mixed infection.".\
+								format(count_hits.get_total_50_50_90(), count_hits.TOTAL_GRATHER_THAN_MIXED))
 		return mixed_infections
 		
 	
@@ -86,7 +91,7 @@ class MixedInfectionsManagement(object):
 		if (sum(vect_data_to_test) == 0): return 0.0
 		
 		for vect_data in mixed_infections_main_vector.get_vector():
-#			print("[{}-{}] - [{}-{}] {}".format(vect_data_to_test[0], vect_data_to_test[1], vect_data[0], vect_data[1],\
+#			print("[{}-{}] - [{}-{}] {}".format(vect_data[0], vect_data[1], vect_data_to_test[0], vect_data_to_test[1],\
 #								1 - spatial.distance.cosine(vect_data, vect_data_to_test)))
 			f_total += 1 - spatial.distance.cosine(vect_data, vect_data_to_test)
 		

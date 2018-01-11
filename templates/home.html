@@ -26,14 +26,14 @@
 						<div class="collapse bg-insa-fixed-top" id="collapseExample">
   							<p class="insa-description-read-more-first">The INSaFLU bioinformatics pipeline currently consists of 6 core steps (see Figure). For more details about INSaFLU, please read <strong>Borges V,
   							Pinheiro M et al. 2018</strong>, <a href="#">bioRxiv</a>. A detailed tutorial of INSaFLU usage, as well as documentation about the current software settings and versions,
-  							is provided <a href="#">here</a>.</p>
+  							is provided <a href="http://insaflu.readthedocs.io/en/latest/" target="_blank">here</a>.</p>
   							
   							<img src="{% static 'insa/CORE_STEPS.png' %}" style="width:450px; margin-left:auto; margin-right:auto; display: block;" id='insa_logo_id'>
   							<p class="insa-description-read-more-header"><strong>Read quality analysis and improvement</strong></p>
   							<p class="insa-description-read-more">This first step automatically analyzes and improves the quality of the uploaded raw sequencing data (reads). It generates improved NGS 
   							data and graphical quality control reports.</p>
   							
-  							<p class="insa-description-read-more-header"><strong>Type and sub-type detection</strong></p>
+  							<p class="insa-description-read-more-header"><strong>Type and sub-type identification</strong></p>
 							<p class="insa-description-read-more">INSaFLU automatically detects the influenza type and sub-type/lineage of each sample upon data submission. This typing data guides 
 							the subsequent downstream module and constitutes an optimal complement to the traditional real-time RT-PCR assays, as INSaFLU is able to discriminate all currently defined
 							18 hemagglutinin subtypes, 11 neuraminidase sub-types and influenza B lineages.</p>
@@ -48,8 +48,8 @@
 							<p class="insa-description-read-more-header"><strong>Alignment/phylogeny</strong></p>
 							<p class="insa-description-read-more">INSaFLU dynamically builds ready-to-explore nucleotide/amino acid sequence alignments and phylogenetic trees at both locus and
 							whole-genome scale. These outputs are automatically re-build and updated as more samples are added to user-restricted INSaFLU projects, making continuous data integration
-							completely flexible and scalable. <strong>This module can also be run independently</strong> over a set of user-selected sequences so that phylogenetic diversity of circulating viruses
-							can be better evaluated and integrated according with users’ specific needs. Alignments and trees can be explored in situ or through multiple compatible downstream
+							completely flexible and scalable.<!--  <strong>This module can also be run independently</strong> over a set of user-selected sequences so that phylogenetic diversity of circulating viruses
+							can be better evaluated and integrated according with users’ specific needs. --> Alignments and trees can be explored in situ or through multiple compatible downstream
 							applications for fine-tune data analysis.</p>
 							<p class="insa-description-read-more-header"><strong>Intra-host minor variant detection (and uncovering of putative mixed infections)</strong></p>
 							<p class="insa-description-read-more-last">Influenza evolution has historically been inferred from consensus sequences representing the dominant virus lineage within
@@ -99,7 +99,6 @@
 				<a href="{% url 'dashboard' %}"><img src="{% static 'insa/insaflu_logo.png' %}" style="width:250px; padding-right:25px; padding-top:15px; padding-bottom:15px" id='main_logo_id'></a>
 				<div class="sidebar-module">
 					<ol class="list-unstyled" style="font-size: 1.3rem;">
-						<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank">Main Help</a></li>
 						<li><a href="#" target="_blank">Find here a pre-NGS wet-lab protocol</a></li>
 						<li><a href="#" target="_blank">Find here how to design a NGS run</a></li>
 					</ol>
@@ -119,12 +118,12 @@
 					<h4 class="insa-h4">Useful links</h4>
 					<ol class="list-unstyled">
 					<li><a href="https://www.fludb.org" target="_blank">Influenza Research Database/Fludb</a></li>
-					<li><a href="https://nextflu.org" target="_blank">Nextflu</a></li>
 					<li><a href="https://www.gisaid.org/" target="_blank">EpiFLU/GISAID</a></li>
 					<li><a href="https://www.ncbi.nlm.nih.gov/genomes/FLU/Database/nph-select.cgi?go=database" target="_blank">NCBI Influenza Virus Resource</a></li>
-					<li><a href="http://openflu.vital-it.ch/browse.php" target="_blank">OpenFluDB</a></li>
 					<li><a href="https://ecdc.europa.eu/en/seasonal-influenza" target="_blank">ECDC</a></li>
 					<li><a href="https://www.cdc.gov/flu/index.htm" target="_blank">CDC</a></li>
+					<li><a href="http://openflu.vital-it.ch/browse.php" target="_blank">OpenFluDB</a></li>
+					<li><a href="https://nextflu.org" target="_blank">Nextflu</a></li>
 					<li><a href="https://microreact.org/showcase" target="_blank">Microreact</a></li>
 					<li><a href="https://jameshadfield.github.io/phandango/#/" target="_blank">Phandango</a></li>
 					<li><a href="http://www.phyloviz.net/" target="_blank">PHYLOViZ</a></li>

@@ -301,7 +301,7 @@ class Coverage(object):
 		"""
 		get message for web site about coverage in More than 9
 		"""
-		return "Element: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
+		return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
 				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 				self.get_coverage(element, self.COVERAGE_MORE_9))
 	
@@ -318,6 +318,8 @@ class CountHits(object):
 	"""
 	Count the hits in the variations
 	"""
+	TOTAL_GRATHER_THAN_MIXED = 100	## used to test mixed infection
+	
 	def __init__(self):
 		self.hits_more_90 = 0
 		self.hits_50_90 = 0
@@ -367,9 +369,20 @@ class CountHits(object):
 		return [self.get_hits_less_50(), self.get_hits_50_90()]
 
 	def is_mixed_infection_ratio_test(self):
+		"""
+		mixed infection positive
+		0.5 < ratio < 1.5 and total > 20
+		"""
 		if (self.get_mixed_infection_ratio() > 0.5 and self.get_mixed_infection_ratio() < 1.5 and self.get_total_50_50_90() > 20): return True
 		return False
 
+	def total_grather_than_mixed_infection(self):
+		"""
+		if its bigger than 200 is also mixed infection
+		"""
+		if (self.get_total_50_50_90() > CountHits.TOTAL_GRATHER_THAN_MIXED): return True
+		return False
+	
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
 

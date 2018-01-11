@@ -661,4 +661,29 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(file_expected, file_out))
 		os.unlink(file_out)
 	
-	
+	def test_fasta_files(self):
+		"""
+		test fasta files to degenerated bases
+		"""
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA, "fasta_1.fasta")
+		self.assertTrue(os.path.exists(txt_file))
+		try:
+			self.assertFalse(self.utils.has_degenerated_bases(txt_file))
+		except Exception as e:
+			self.fail("must pass")
+		
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA, "fasta_fail_1.fasta")
+		self.assertTrue(os.path.exists(txt_file))
+		try:
+			self.utils.has_degenerated_bases(txt_file)
+			self.fail("must raise error")
+		except Exception as e:
+			self.assertEquals(e.args[0], "Error: file is not in FASTA format.")
+
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA, "fasta_fail_2.fasta")
+		self.assertTrue(os.path.exists(txt_file))
+		try:
+			self.utils.has_degenerated_bases(txt_file)
+			self.fail("must raise error")
+		except Exception as e:
+			self.assertEquals(e.args[0], "Error: sequence 'EVA011_S54' must have only 'A', 'C', 'T' and 'G' bases.")

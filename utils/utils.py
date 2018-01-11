@@ -17,7 +17,7 @@ from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
 from django_q.tasks import async
 from datetime import datetime
-import os, random, gzip, hashlib, logging, ntpath, stat
+import os, random, gzip, hashlib, logging, ntpath, stat, re
 from pysam import pysam
 
 class Utils(object):
@@ -274,11 +274,39 @@ class Utils(object):
 				handle.close()
 				raise IOError(_("Error: the file is not in FASTA format."))
 		handle.close()
-		if (not b_pass): raise IOError(_("Error: the file is not in FASTA format."))
+		if (not b_pass): raise IOError(_("Error: file is not in FASTA format."))
 
 		record_dict = SeqIO.index(sz_file_name, "fasta")
 		if (len(record_dict) > 0): return len(record_dict)
-		raise IOError(_("Error: the file is not in FASTA format."))
+		raise IOError(_("Error: file is not in FASTA format."))
+	
+	def has_degenerated_bases(self, sz_file_name):
+		"""
+		Test Fata file
+		"""
+		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
+		handle = open(sz_file_name)
+		sequence_name = ""
+		going_to_test_sequence = False
+		for line in handle:
+			sz_temp = line.strip()
+			if (len(sz_temp) == 0): continue
+			if (sz_temp[0] == ">"):
+				if (going_to_test_sequence):
+					handle.close()
+					raise Exception(_("Error: file is not in FASTA format."))
+				sequence_name = sz_temp[1:].split(' ')[0]
+				going_to_test_sequence = True 
+			else:
+				going_to_test_sequence = False
+				if (len(sequence_name) == 0):
+					handle.close()
+					raise Exception(_("Error: file is not in FASTA format."))
+				if (len(sz_temp) != len(re.findall("A|C|G|T", sz_temp.upper()))):
+					handle.close()
+					raise Exception(_("Error: sequence '{}' must have only 'A', 'C', 'T' and 'G' bases.".format(sequence_name)))
+		handle.close()
+		return False
 
 	def get_max_length_fasta(self, sz_file_name):
 		"""

@@ -114,6 +114,13 @@ class ReferenceForm(forms.ModelForm):
 			some_error_in_files = True
 			self.add_error('reference_fasta', e.args[0])
 		
+		### test if it has degenerated bases
+		try:
+			self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+		except Exception as e:
+			os.unlink(reference_fasta_temp_file_name.name)
+			self.add_error('reference_fasta', e.args[0])
+			
 		### testing genbank
 		reference_genbank_temp_file_name = NamedTemporaryFile(prefix='flu_gb_', delete=False)
 		reference_genbank = cleaned_data['reference_genbank']

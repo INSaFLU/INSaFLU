@@ -72,6 +72,7 @@ class ConstantsTestsCase(object):
 	DIR_PROJECTS = "projects"
 	DIR_GLOBAL_PROJECT = "global_project"
 	DIR_INPUT_FILES = "input_files"
+	DIR_FASTA = "fasta"
 	
 	## fastq files
 	DIR_FASTQ = "fastq"

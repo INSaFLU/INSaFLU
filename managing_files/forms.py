@@ -230,7 +230,7 @@ class SampleForm(forms.ModelForm):
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
-			('name', 'Name', 'Unique identifier for this sample. Only letters, numbers and underscore are allowed.', True),
+			('name', 'Name', 'Unique identifier for this sample. Only letters, numbers and underscores are allowed.', True),
 			('date_of_onset', 'Onset date', 'Date of onset', False),
 			('date_of_collection', 'Collection date', 'Date of collection', False),
 			('date_of_receipt_lab', 'Lab reception date', 'Date receipt on the lab.', False),

@@ -321,7 +321,7 @@ class ShowProjectSamplesResults(tables.Table):
 		queryset = queryset.annotate(sample_name = F('sample__name')).order_by(('-' if is_descending else '') + 'sample_name')
 		return (queryset, True)
 
-	def order_type_subtype(self, queryset, is_descending):
+	def order_type_and_subtype(self, queryset, is_descending):
 		queryset = queryset.annotate(type_subtype = F('sample__type_subtype')).order_by(('-' if is_descending else '') + 'type_subtype')
 		return (queryset, True)
 
@@ -333,7 +333,7 @@ class ShowProjectSamplesResults(tables.Table):
 		queryset = queryset.annotate(alerts = F('alert_first_level') + F('alert_second_level')).order_by(('-' if is_descending else '') + 'alerts')
 		return (queryset, True)
 	
-	def order_mixed_infections(self, queryset, is_descending):
+	def order_putative_mixed_infection(self, queryset, is_descending):
 		queryset = queryset.annotate(mixed_infection = F('mixed_infections__tag__name')).order_by(('-' if is_descending else '') + 'mixed_infection')
 		return (queryset, True)
 	

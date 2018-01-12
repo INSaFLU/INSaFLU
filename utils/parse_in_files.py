@@ -12,7 +12,7 @@ from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNa
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.gis.geos import Point
 from constants.constants import FileExtensions
-import chardet, csv, os 
+import chardet, csv, os, re
 from django.conf import settings
 from django_q.tasks import async
 from utils.software import Software
@@ -158,21 +158,27 @@ class ParseInFiles(object):
 		if (read_state != ParseInFiles.STATE_READ_dont_detect_errors):
 			if len(row) > 0 and len(row[0].strip()) > 0:
 				sample_name = row[0].strip()
-				try:
-					sample = Sample.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
-					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' exists in database. Line: {} Column: {}".format(sample_name, count_row, 1))))
-				except Sample.DoesNotExist as e:
-					pass
 				
-				## test repeated samples
-				if (sample_name in self.dict_samples_out):
-					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' is repeated in the file. Line: {} Column: {}".\
-											format(sample_name, count_row, 1))))
+				## test clean name
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				if (len(result_filer_sample_name) != len(sample_name)):
+					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
 				else:
-					self.dict_samples_out[sample_name] = 1
+					try:
+						sample = Sample.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
+						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' exists in database. Line: {} Column: {}".format(sample_name, count_row, 1))))
+					except Sample.DoesNotExist as e:
+						pass
+					
+					## test repeated samples
+					if (sample_name in self.dict_samples_out):
+						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' is repeated in the file. Line: {} Column: {}".\
+												format(sample_name, count_row, 1))))
+					else:
+						self.dict_samples_out[sample_name] = 1
 			else:
 				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no sample name Line: {} Column: {}".format(count_row, 1))))
-				
+
 			### check if fastq1 file as gz
 			if len(row) > 1:
 				fastq1 = row[1]

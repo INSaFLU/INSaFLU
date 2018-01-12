@@ -310,13 +310,14 @@ class Test(TestCase):
 		parse_in_files = ParseInFiles()
 		b_test_char_encoding = True
 		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
-		self.assertEquals(6, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals(7, parse_in_files.get_errors().get_len_vect_results())
 		self.assertEquals("Error - 'longitude' must have values between -180<long<180. Line: 7 Column: 3\n" +\
 						"Error - Sample name 'xpto1' is repeated in the file. Line: 8 Column: 1\n" +\
 						"Error - File 'asdws.fastq.gz' is repeated in the samples file. Line: 8 Column: 2\n" +\
 						"Error - 'week' must be integer. Line: 8 Column: 3\n" +\
 						"Error - The 'onset date' must have this format DD/MM/YYYY. Line: 8 Column: 7\n" +\
-						"Error - 'latitude' must have values between -90<lat<90. Line: 8 Column: 3",\
+						"Error - 'latitude' must have values between -90<lat<90. Line: 8 Column: 3\n" +\
+						"Error - Sample name 'xpto1 sd $ 23!”!”' only letters, numbers and underscores are allowed. Line: 9 Column: 1",\
 						str(parse_in_files.get_errors()))
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		

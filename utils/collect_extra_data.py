@@ -227,8 +227,11 @@ class CollectExtraData(object):
 		vect_reference = geneticElement.get_sorted_elements()
 		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
-		with open(out_file, "w") as output_file_handle:
+# 		with open(out_file, "w", newline='') as output_file_handle:
+# 			csv_writer = csv.writer(output_file_handle, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 
+		with open(out_file, "w") as output_file_handle:
+			
 			### write headers
 			output_file_handle.write("\nChromosome\nName\t" + "\t".join(vect_reference) + "\nLength")
 			for element_name in vect_reference:
@@ -332,6 +335,8 @@ class CollectExtraData(object):
 			vect_out.extend(vect_tags)
 			csv_writer.writerow(vect_out)
 
+			vect_out = [project.reference.name]
+			csv_writer.writerow(vect_out)
 			n_count = 0
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue

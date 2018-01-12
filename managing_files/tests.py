@@ -112,7 +112,7 @@ class testsReferenceFiles(TestCase):
 			utils.compare_locus_fasta_gb(fasta_file, gb_file)
 			self.fail("Must throw exception")
 		except ValueError as e:
-			self.assertEqual("This element 'locus_1' is not in fasta file.", e.args[0])
+			self.assertEqual("This locus 'locus_1' is not in fasta file.", e.args[0])
 		except:
 			self.fail("throw other exception")
 

@@ -102,16 +102,18 @@ def show_phylo_canvas(request):
 				if (element_name == 'all_together'): 
 					file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 					file_name_nwk = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE)
+					file_name_tree = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 				else: 
 					file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 					file_name_nwk = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_FASTTREE)
+					file_name_tree = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 				if (os.path.exists(file_name)):
 					string_file_content = utils.read_file_to_string(file_name).strip()
 					if (string_file_content != None and len(string_file_content) > 0):
 						data['is_ok'] = True
 						data['tree'] = string_file_content
 						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
-						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name, os.path.basename(file_name)))
+						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name_tree, os.path.basename(file_name_tree)))
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)

@@ -15,7 +15,7 @@ from utils.utils import Utils
 from utils.parse_in_files import ParseInFiles
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
-import os, logging, sys
+import os, re
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -230,7 +230,7 @@ class SampleForm(forms.ModelForm):
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
-			('name', 'Name', 'Unique identifier for this sample', True),
+			('name', 'Name', 'Unique identifier for this sample. Only letters, numbers and underscore are allowed.', True),
 			('date_of_onset', 'Onset date', 'Date of onset', False),
 			('date_of_collection', 'Collection date', 'Date of collection', False),
 			('date_of_receipt_lab', 'Lab reception date', 'Date receipt on the lab.', False),
@@ -318,7 +318,13 @@ class SampleForm(forms.ModelForm):
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
 		cleaned_data = super(SampleForm, self).clean()
-		name = self.cleaned_data['name']
+		name = self.cleaned_data['name'].strip()
+		
+		result_filer_name = re.sub('[^A-Za-z0-9_]+', '', name)
+		if (len(result_filer_name) != len(name)):
+			self.add_error('name', _("Error: Only letters, numbers and underscores are allowed."))
+			return cleaned_data
+			
 		try:
 			Sample.objects.get(name=name, owner__username=self.request.user.username)
 			self.add_error('name', ValidationError(_("This name '" + name +"' already exist in database, please choose other."), code='invalid'))

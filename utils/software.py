@@ -650,7 +650,7 @@ class Software(object):
 		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
 		"""
 		
-		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
+		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab") 
 		self.run_genbank2gff3(genbank, temp_file)
 		
 		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.software_names.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
@@ -660,7 +660,7 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run snippy-vcf-to-tab")
-#		os.unlink(temp_file)
+		os.unlink(temp_file)
 		return out_file
 
 	def run_freebayes(self, bam_file, reference_fasta, genbank_file, sample_name):
@@ -970,6 +970,12 @@ class Software(object):
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
 
+		### make the link for the new tab file name
+		path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+		if (os.path.exists(path_snippy_tab)):
+			sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+			self.utils.link_file(path_snippy_tab, sz_file_to)
+		
 		## get coverage from deep file
 		get_coverage = GetCoverage()
 		try:
@@ -1119,7 +1125,8 @@ class Software(object):
 		
 		from utils.collect_extra_data import CollectExtraData
 		collect_extra_data = CollectExtraData()
-		### get a clean freebays file
+		
+		### get a clean freebayes file
 		tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 		if (os.path.exists(tab_freebayes_file)):
 			file_out = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CLEAN_FREEBAYES_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
@@ -1129,7 +1136,7 @@ class Software(object):
 		consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
 		if (os.path.exists(consensus_fasta)):
 			file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-			self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out)
+			self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, False)
 			
 		### set the tag of result OK 
 		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())

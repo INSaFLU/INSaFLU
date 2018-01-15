@@ -313,6 +313,8 @@ def validate_project_reference_name(request):
 	"""
 	if request.is_ajax():
 		project_name = request.GET.get('project_name')
+		request.session[Constants.PROJECT_NAME_SESSION] = project_name
+		
 		data = {
 			'is_taken': Project.objects.filter(name__iexact=project_name, is_deleted=False, owner__username=request.user.username).exists()
 		}

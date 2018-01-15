@@ -20,6 +20,7 @@ from fluwebvirus.tokens import account_activation_token
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.conf import settings
+import urllib, json
 
 class HomePageView(generic.TemplateView):
 	"""
@@ -50,22 +51,38 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 	def form_valid(self, form):
 		
 		if form.is_valid():
-			user = form.save(commit=False)
-			user.is_active = False
-			user.save()
-			user.profile.institution = form.cleaned_data['institution']
-			user.profile.save()
+			### Begin reCAPTCHA validation '''
+			recaptcha_response = self.request.POST.get('g-recaptcha-response')
+			url = 'https://www.google.com/recaptcha/api/siteverify'
+			values = {
+				'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+				'response': recaptcha_response
+			}
+			data = urllib.parse.urlencode(values).encode("utf-8")
+			req = urllib.request.Request(url, data)
+			response = urllib.request.urlopen(req).read()
+			result = json.loads(response.decode('utf-8'))
+			### End reCAPTCHA validation
 			
-			current_site = get_current_site(self.request)
-			subject = 'Activate your InsaFlu Account'
-			message = render_to_string('accounts/account_activation_email.html', {
-				'user': user,
-				'domain': current_site.domain,
-				'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-				'token': account_activation_token.make_token(user),
-			})
-			user.email_user(subject, message)
-			messages.success(self.request, "An email was sent to validate your account. Please, follow the link.", fail_silently=True)
+			if (not result['success']):
+				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
+			else:
+				user = form.save(commit=False)
+				user.is_active = False
+				user.save()
+				user.profile.institution = form.cleaned_data['institution']
+				user.profile.save()
+				
+				current_site = get_current_site(self.request)
+				subject = 'Activate your InsaFlu Account'
+				message = render_to_string('accounts/account_activation_email.html', {
+					'user': user,
+					'domain': current_site.domain,
+					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+					'token': account_activation_token.make_token(user),
+				})
+				user.email_user(subject, message)
+				messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
 			return redirect('dashboard')
 			
 	## static method
@@ -91,24 +108,40 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 		if form.is_valid():
 			email_name = form.cleaned_data['email']
 			try:
-				user = User.objects.get(email__iexact=email_name)
-				## invalidate current account
-				user.is_active = False
-				user.save()
-				current_site = get_current_site(self.request)
-				subject = 'Reseting password  in your InsaFlu Account'
-				message = render_to_string('accounts/account_reset_pass_email.html', {
-					'user': user,
-					'domain': current_site.domain,
-					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-					'token': account_activation_token.make_token(user),
-				})
-				user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, auth_user=settings.EMAIL_HOST_USER,\
-						auth_password=settings.EMAIL_HOST_PASSWORD, html_message=message)
-				messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
+				### Begin reCAPTCHA validation '''
+				recaptcha_response = self.request.POST.get('g-recaptcha-response')
+				url = 'https://www.google.com/recaptcha/api/siteverify'
+				values = {
+					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+					'response': recaptcha_response
+				}
+				data = urllib.parse.urlencode(values).encode("utf-8")
+				req = urllib.request.Request(url, data)
+				response = urllib.request.urlopen(req).read()
+				result = json.loads(response.decode('utf-8'))
+				### End reCAPTCHA validation
+				
+				if (result['success']):
+					user = User.objects.get(email__iexact=email_name)
+					## invalidate current account
+					user.is_active = False
+					user.save()
+					current_site = get_current_site(self.request)
+					subject = 'Reseting password  in your InsaFlu Account'
+					message = render_to_string('accounts/account_reset_pass_email.html', {
+						'user': user,
+						'domain': current_site.domain,
+						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+						'token': account_activation_token.make_token(user),
+					})
+					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, auth_user=settings.EMAIL_HOST_USER,\
+							auth_password=settings.EMAIL_HOST_PASSWORD, html_message=message)
+					messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
+				else:
+					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
+					
 			except User.DoesNotExist as e:
 				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
-				pass
 			
 			return redirect('dashboard')
 			

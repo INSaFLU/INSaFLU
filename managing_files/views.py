@@ -332,7 +332,7 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['nav_sample'] = True
 		
-		### test if exists files to process to match with 'csv' file
+		### test if exists files to process to match with (csv/tsv) file
 		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date').count() == 0
 				
@@ -670,6 +670,10 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		### clean check box in the session
 		clean_check_box_in_session(self.request) ## for both samples and references
 
+		### clean project name session
+		if Constants.PROJECT_NAME_SESSION in self.request.session:
+			del self.request.session[Constants.PROJECT_NAME_SESSION]
+
 		context['table'] = table
 		context['nav_project'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -696,6 +700,8 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 	def get_context_data(self, **kwargs):
 		context = super(ProjectCreateView, self).get_context_data(**kwargs)
 		
+		### get project name
+		project_name = self.request.session[Constants.PROJECT_NAME_SESSION] if Constants.PROJECT_NAME_SESSION in self.request.session else ''
 		tag_search = 'search_references'
 		query_set = Reference.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False).order_by('-name')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
@@ -739,6 +745,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 			context[Constants.ERROR_REFERENCE] = self.request.session[Constants.ERROR_REFERENCE]
 			del self.request.session[Constants.ERROR_REFERENCE]
 		
+		context['project_name'] = project_name
 		context['table'] = table
 		context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
 		context['nav_project'] = True

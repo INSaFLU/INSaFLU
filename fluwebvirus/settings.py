@@ -30,6 +30,9 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 
+## google recaptcha
+GOOGLE_RECAPTCHA_SECRET_KEY = config('GOOGLE_RECAPTCHA_SECRET_KEY')
+
 ### crispy template
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
@@ -149,7 +152,7 @@ CACHES = {
 # http://www.techspacekh.com/configuring-postfix-to-relay-mail-to-local-exchange-mail-server-in-rhel-centos-7/
 # http://www.postfix.org/SASL_README.html#saslauthd
 ## see more dropbox/insa
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = config('EMAIL_BACKEND')
 EMAIL_HOST = '127.0.0.1' ###config('EMAIL_HOST')
 DEFAULT_FROM_EMAIL = config('EMAIL_NAME')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)

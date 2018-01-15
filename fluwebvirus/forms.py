@@ -3,14 +3,12 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button
+from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, HTML
 from django.urls import reverse
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_decode
-from fluwebvirus.tokens import account_activation_token
-from django.contrib import messages
+from django.conf import settings
+import urllib, json
 
 ## https://simpleisbetterthancomplex.com/tutorial/2016/06/13/how-to-send-email.html
 class RegistrationForm(UserCreationForm):
@@ -46,6 +44,10 @@ class RegistrationForm(UserCreationForm):
 				Div('institution', css_class="col-sm-4"),
 				css_class='row'
 			),
+			Div(
+				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="6LcU1UAUAAAAANaQlLPE5WwVVlio0rTBLTdq_mbi"></div>'),
+				css_class='row'
+			),
 			ButtonHolder(
 				Submit('register', 'Register', css_class='btn-primary'),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
@@ -57,12 +59,20 @@ class RegistrationForm(UserCreationForm):
 		Test the account name
 		"""
 		cleaned_data = super(RegistrationForm, self).clean()
+		username = cleaned_data['username']
 		email = cleaned_data['email']
+		try:
+			User.objects.get(username__iexact=username)
+			self.add_error('username', ValidationError(_("There's an account with this username."), code='invalid'))
+		except User.DoesNotExist:
+			pass
+		
 		try:
 			User.objects.get(email__iexact=email)
 			self.add_error('email', ValidationError(_("There's an account with this email."), code='invalid'))
 		except User.DoesNotExist:
 			pass
+			
 		return cleaned_data
 
 
@@ -88,6 +98,10 @@ class ResetPasswordForm(forms.ModelForm):
 		self.helper.layout = Layout(
 			Div(
 				Div('email', css_class="col-sm-4"),
+				css_class='row'
+			),
+			Div(
+				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="6LcU1UAUAAAAANaQlLPE5WwVVlio0rTBLTdq_mbi"></div>'),
 				css_class='row'
 			),
 			ButtonHolder(

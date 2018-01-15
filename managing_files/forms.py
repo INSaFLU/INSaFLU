@@ -16,7 +16,6 @@ from utils.parse_in_files import ParseInFiles
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
 import os, re, logging
-from symbol import except_clause
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -345,11 +344,11 @@ class SampleForm(forms.ModelForm):
 			path_name_1 = self.cleaned_data.get('path_name_1')
 			path_name_2 = self.cleaned_data.get('path_name_2')
 			
-			## to remove
-			self.logger_production.warning('Sample: {}  Path name1: {}'.format(name, path_name_1))
-			self.logger_production.warning('Sample: {}  Path name2: {}'.format(name, path_name_2))
-			self.logger_debug.warning('Sample: {}  Path name1: {}'.format(name, path_name_1))
-			self.logger_debug.warning('Sample: {}  Path name2: {}'.format(name, path_name_2))
+			## verbose log...
+			self.logger_production.warning('New Sample: {}  Path name1: {}'.format(name, path_name_1))
+			self.logger_production.warning('New Sample: {}  Path name2: {}'.format(name, path_name_2))
+			self.logger_debug.warning('New Sample: {}  Path name1: {}'.format(name, path_name_1))
+			self.logger_debug.warning('New Sample: {}  Path name2: {}'.format(name, path_name_2))
 
 			if (path_name_2 != None and path_name_1.name == path_name_2.name):
 				self.add_error('path_name_1', _("Error: both files has the same name. Please, different files."))
@@ -367,9 +366,9 @@ class SampleForm(forms.ModelForm):
 			date_of_collection = self.cleaned_data.get('date_of_collection')
 			date_of_receipt_lab = self.cleaned_data.get('date_of_receipt_lab')
 			
-			## to remove
-			self.logger_production.warning('Sample: {} Pass dates...'.format(name))
-			self.logger_debug.warning('Sample: {} Pass dates...'.format(name))
+			## verbose log...
+			self.logger_production.warning('New Sample: {} Pass dates...'.format(name))
+			self.logger_debug.warning('New Sample: {} Pass dates...'.format(name))
 			
 			#####
 			if (like_dates == None and date_of_onset != None and date_of_collection != None and date_of_receipt_lab != None):
@@ -388,9 +387,9 @@ class SampleForm(forms.ModelForm):
 				self.add_error('path_name_1', e.args[0])
 				return cleaned_data
 			
-			## to remove
-			self.logger_production.warning('Sample: {} Pass is_fastq_gz 1...'.format(name))
-			self.logger_debug.warning('Sample: {} Pass is_fastq_gz 1...'.format(name))
+			## verbose log...
+			self.logger_production.warning('New Sample: {} Pass is_fastq_gz 1...'.format(name))
+			self.logger_debug.warning('New Sample: {} Pass is_fastq_gz 1...'.format(name))
 			
 			## testing fastq
 			if (path_name_2 != None):
@@ -406,16 +405,16 @@ class SampleForm(forms.ModelForm):
 					self.add_error('path_name_1', e.args[0])
 					return cleaned_data
 			
-			## to remove
-			self.logger_production.warning('Sample: {} end...'.format(name))
-			self.logger_debug.warning('Sample: {} end...'.format(name))
+			## verbose log...
+			self.logger_production.warning('New Sample: {} end...'.format(name))
+			self.logger_debug.warning('New Sample: {} end...'.format(name))
 			
 			## remove temp files
 			os.unlink(fastaq_temp_file_name.name)
 			if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
 		except:
-			self.logger_production.warning("Sample: {}  Path name1: {} Can't reach second file".format(name, path_name_1))
-			self.logger_debug.warning("Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_2))
+			self.logger_production.warning("New Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_1))
+			self.logger_debug.warning("New Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_2))
 			self.add_error('path_name_2', "Can't reach second file")
 		return cleaned_data
 		

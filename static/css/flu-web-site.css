@@ -2,6 +2,11 @@
 /**
 * used in header forms
 */
+
+.insa-recaptcha{
+	padding:15px	
+}
+
 .insa-center-text {
   text-align: center;
 }

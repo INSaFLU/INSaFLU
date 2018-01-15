@@ -75,6 +75,9 @@ class Constants(object):
 	
 	INSAFLU_NAME = 'insaflu'
 	
+	### key for a session with project name
+	PROJECT_NAME_SESSION = 'project_name_session'
+	
 	####
 	SEQ_VIRUS_TYPE = "Type"
 	SEQ_VIRUS_SUB_TYPE = "Subtype"

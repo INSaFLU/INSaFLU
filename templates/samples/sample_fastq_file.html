@@ -30,7 +30,7 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="7">
-	                    	<a href="{% url 'sample-upload-fastq' %}" data-title="Load fastq.gz files to match with samples added by a 'csv' sample file" 
+	                    	<a href="{% url 'sample-upload-fastq' %}" data-title="Load fastq.gz files to match with samples added by a (csv/tsv) sample file" 
 	                    		class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-upload"></i> Upload fastq.gz files</span></a>
 	                        <form id="form_samples_fastq_id" method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}

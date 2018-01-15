@@ -353,7 +353,7 @@ class AddSamplesFromCvsFileTable(tables.Table):
 		model = Sample
 		fields = ('file_name', 'creation_date', 'owner', 'number_samples', 'samples_processed', 'is_completed')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There are no 'csv' or 'tsv' files with samples to add..."
+		empty_text = "There are no (csv) or (tsv) files with samples to add..."
 	
 	def render_creation_date(self, value, record):
 		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)

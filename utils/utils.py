@@ -704,9 +704,9 @@ class Utils(object):
 		return True if has sequences, False doesn't have sequences
 		"""
 		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
-		return self.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_name)
+		return self.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_name, True)
 	
-	def filter_fasta_all_sequences_file(self, consensus_fasta, coverage, file_out):
+	def filter_fasta_all_sequences_file(self, consensus_fasta, coverage, file_out, test_all_locus_good_coverage):
 		"""
 		filter fasta file
 		file name out: None if not saved, else output file name
@@ -718,8 +718,9 @@ class Utils(object):
 		if (locus_fasta != len(coverage.get_dict_data())): return None
 		
 		### need to have all with 100 more 9
-		for key in coverage.get_dict_data(): 
-			if (not coverage.is_100_more_9(key)): return None
+		if (test_all_locus_good_coverage):
+			for key in coverage.get_dict_data(): 
+				if (not coverage.is_100_more_9(key)): return None
 					
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
@@ -728,11 +729,11 @@ class Utils(object):
 				for key in sorted(coverage.get_dict_data()):
 					if (coverage.is_100_more_9(key)):
 						records.append(SeqRecord(Seq(str(record_dict[key].seq)), id = key, description=""))
-				SeqIO.write(records, handle_write, "fasta")
+				if (len(records) > 0): SeqIO.write(records, handle_write, "fasta")
 		if (len(records) == 0 and os.path.exists(file_out)): os.unlink(file_out)
 		return file_out if len(records) > 0 else None
-	
-	
+
+
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
 		"""
 		filter fasta file

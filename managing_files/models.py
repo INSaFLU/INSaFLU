@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager
 from django.contrib.auth.models import User
-from constants.constants import Constants, TypePath, FileExtensions
+from constants.constants import Constants, TypePath, FileExtensions, FileType
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.models import IdentifyVirus
 from django.conf import settings
@@ -12,6 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from operator import itemgetter
 import os
+from constants.software_names import SoftwareNames
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -570,6 +571,7 @@ class ProjectSample(models.Model):
 	PATH_MAIN_RESULT = 'main_result'
 	PREFIX_FILE_COVERAGE = 'coverage'
 	FILE_CONSENSUS_FILE = "Consensus_"
+	FILE_SNIPPY_TAB = "validated_variants_sample_"
 	
 	project = models.ForeignKey(Project, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
@@ -606,6 +608,27 @@ class ProjectSample(models.Model):
 		"""
 		constants = Constants()
 		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
+
+	def get_file_output_human(self, type_path, file_type, software):
+		"""
+		return file path output by software, but with human name
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
+		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
+		"""
+		constants = Constants()
+		
+		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None),\
+				constants.get_extensions_by_file_type(self.__get_human_name_file__(software, file_type), file_type))
+
+	def __get_human_name_file__(self, software, file_type):
+		"""
+		get human file name
+		"""
+		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
+			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
+		return self.sample.name
+
 
 	def __get_user_result_directory_path__(self, software):
 		# file will be uploaded to MEDIA_ROOT/<filename>
@@ -654,10 +677,11 @@ class ProjectSample(models.Model):
 		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
 		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
 		"""
-		out_file = self.get_file_output(TypePath.MEDIA_ROOT, file_type, software)
+		out_file = self.get_file_output_human(TypePath.MEDIA_ROOT, file_type, software)
 		if (os.path.exists(out_file)):
-			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_file_output(\
-						TypePath.MEDIA_URL, file_type, software), os.path.basename(out_file), 15))
+			return mark_safe('<a href="{}" download> {}</a>'.format(\
+				self.get_file_output_human(TypePath.MEDIA_URL, file_type, software),\
+				self.constants.short_name(os.path.basename(out_file), 20)))
 		return _('Not available.')
 		
 		

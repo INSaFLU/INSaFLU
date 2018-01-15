@@ -28,31 +28,50 @@
 		<div class="container-fluid">
 			<hr>
 			<div class="row">
+				<div class="col-lg-3"><strong>Project Name:</strong> {{ project_sample.project.name }}</div>
+				<div class="col-lg-3"><strong>Reference Name:</strong> {{ project_sample.project.reference.display_name }}</div>
 				<div class="col-lg-3"><strong>Sample Name:</strong> {{ project_sample.sample.name }}</div>
-			  	<div class="col-lg-3"><strong>Onset Date:</strong> {{ project_sample.sample.date_of_onset|date }}</div>
+				<div class="col-lg-3"><strong>#Alerts:</strong> {{ num_alerts }}</div>
+			</div>
+			<hr>
+			<div class="row">
+				<div class="col-lg-3"><strong>Onset Date:</strong> {{ project_sample.sample.date_of_onset|date }}</div>
 			  	<div class="col-lg-3"><strong>Collection Date:</strong> {{ project_sample.sample.date_of_collection|date }}</div>
 			  	<div class="col-lg-3"><strong>Reception Date:</strong> {{ project_sample.sample.date_of_receipt_lab|date }}</div>
+				<div class="col-lg-3"><strong>Week:</strong> {{ project_sample.sample.week }}</div> <!-- author detail link not yet defined -->
 			</div>
 			<hr>
 			<div class="row">
-				<div class="col-lg-3"><strong>Week:</strong> {{ project_sample.sample.week }}</div> <!-- author detail link not yet defined -->
-			  	<div class="col-lg-3"><strong>Vaccine status:</strong> {{ project_sample.sample.vaccine_status.name }}</div>
+				<div class="col-lg-3"><strong>Vaccine status:</strong> {{ project_sample.sample.vaccine_status.name }}</div>
 			  	<div class="col-lg-3"><strong>Data set:</strong> {{ project_sample.sample.data_set.name }}</div>
 			  	<div class="col-lg-3"><strong>Is obsolete:</strong> {{ project_sample.sample.is_obsolete }}</div>
+			  	<div class="col-lg-3"><strong>Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
 			</div>
 			<hr>
 			<div class="row">
-				<div class="col-lg-3"><strong>Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
-			  	<div class="col-lg-3"><strong>Geolocation pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
+				<div class="col-lg-3"><strong>Geolocation pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
 			  	<div class="col-lg-3"><strong>Type and subtype/lineage:</strong> {{ project_sample.sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ project_sample.sample.owner.username }}</div>
 			</div>
-			<hr>
-			<div class="row">
-				<div class="col-lg-3"><strong>#Alerts:</strong> {{ num_alerts }}</div>
-				<div class="col-lg-3"><strong>Reference Name:</strong> {{ project_sample.project.reference.display_name }}</div>
-				<div class="col-lg-3"><strong>Project Name:</strong> {{ project_sample.project.name }}</div>
-			</div>
+			
+			{% if extra_data_sample_expand %}
+				<hr>
+				<p class="insa-center-text"><a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Extra sample tags</a></p>
+				<div class="collapse" id="collapseExample">
+			{% endif %}
+			
+				{% for group in extra_data_sample %}
+						<hr>
+						<div class="row">
+							{% for tag_names in group %}
+								<div class="col-lg-3"><strong>{{ tag_names.tag_name.name }}:</strong> {{ tag_names.value }}</div>
+							{% endfor %}	
+						</div>
+				{% endfor %}	
+			
+			{% if extra_data_sample_expand %}
+				</div>
+			{% endif %}
 			<hr>
 			
 			<div id="accordion" role="tablist" aria-multiselectable="true">
@@ -71,8 +90,9 @@
 		      				<div class="container-fluid">
 		      					<br>
 		      					<div class="regular_info_box form-inline">
-							  		<div id="bam_file_id" class="col-lg-5"></div>
-							  		<div id="vcf_file_id" class="col-lg-5"></div>
+							  		<div id="bam_file_id" class="col-lg-4"></div>
+							  		<div id="bai_file_id" class="col-lg-4"></div>
+							  		<div id="vcf_file_id" class="col-lg-4"></div>
 		      					</div>
 		      					<br>
 		      					
@@ -91,7 +111,6 @@
 				<ul class="nav nav-tabs" role="tablist">
 					<li class="nav-item active"><a class="nav-link fa fa-download" href="#download_files" role="tab" data-toggle="tab" > Download files</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
-					<li class="nav-item"><a class="nav-link fa fa-crosshairs" href="#consice_distance" role="tab" data-toggle="tab"> Detection of mixed infections</a></li>
 				</ul>
 	
 				<div class="tab-content">
@@ -99,41 +118,25 @@
 						<p class="title-box">Files available to download</p>
 						<!--   Download consensus for each element   -->	
 						<div class="row">
-							<div class="col-lg-6"><strong>Original fastq 1:</strong> {{ href_fastq_1 }}</div>
-				  			<div class="col-lg-6"><strong>Original fastq 2:</strong> {{ href_fastq_2 }}</div>
+							<div class="col-lg-4"><strong>Consensus:</strong> {{ consensus_file }}</div>
+				  			<div class="col-lg-4"><strong>Snippy variants:</strong> {{ snippy_variants_file }}</div>
+				  			<div class="col-lg-4"><strong>Freebayes variants:</strong> {{ freebayes_variants_file }}</div>
 				  		</div>
 				  		<hr>
-				  		<div class="row">
-							<div class="col-lg-6"><strong>Original fastq quality 1:</strong> {{ href_fastq_quality_1 }}</div> 
-				  			<div class="col-lg-6"><strong>Original fastq quality 2:</strong> {{ href_fastq_quality_2 }}</div>
-				  		</div>
-				  		<hr>
-				  		<p class="software"><strong>Software version: </strong>{{ fastq_software }}</p>
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
 			    		<p class="title-box">Alerts for sample {{ project_sample.sample.name }}</p>
-			    		{% for alert in alerts  %}
-			    			<div class="row">
-								<div class="col-lg-12">{{ alert }}</div>
-				  			</div>
-				  			<hr>
-				  		{% endfor %}
+			    		{% if alerts  %}
+				    		{% for alert in alerts  %}
+				    			<div class="row">
+									<div class="col-lg-12">{{ alert }}</div>
+					  			</div>
+					  			<hr>
+					  		{% endfor %}
+					  	{% else %}
+					  		<p class="software">There's no alerts.</p>
+						{% endif %}
 			  		</div>
-					<div id="consice_distance" role="tabpanel" class="tab-pane fade box-blue">
-						<p class="title-box">Result of cosine distance on detection of mixed infections</p>
-						
-						{% for identify_virus in sample.identify_virus.all %}
-							<div class="row">
-								<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
-				  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
-				  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
-				  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
-				  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
-				  			</div>
-				  			<hr>
-						{% endfor %}
-						<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
-					</div>
 				</div>
 			</div>
 		</div>

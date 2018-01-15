@@ -12,9 +12,8 @@ from django.conf import settings
 import os, filecmp
 from constants.software_names import SoftwareNames
 from utils.result import Coverage
-from constants.constants import FileExtensions
+from constants.constants import FileExtensions, Constants
 from utils.result import Gene
-from constants.constants import Constants
 
 class Test(unittest.TestCase):
 
@@ -624,15 +623,6 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, cleanned_file))
 		os.unlink(out_file)
-
-	def test_short_name(self):
-		"""
-		test short names
-		"""
-		utils = Utils()
-		self.assertEquals('short_name_short_name_short_name', utils.short_name('short_name_short_name_short_name', 100))
-		self.assertEquals('short..._name', utils.short_name('short_name_short_name_short_name', 10))
-
 
 	def test_from_genbank_to_bed(self):
 		"""

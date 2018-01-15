@@ -143,11 +143,18 @@ CACHES = {
 
 #### EMAIL
 #EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+## NTLM in  preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN] 
+# sudo ssh -p 2023 -L 25:192.168.32.99:25 insa@193.137.95.75
+
+# http://www.techspacekh.com/configuring-postfix-to-relay-mail-to-local-exchange-mail-server-in-rhel-centos-7/
+# http://www.postfix.org/SASL_README.html#saslauthd
+## see more dropbox/insa
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_HOST = '127.0.0.1' ###config('EMAIL_HOST')
+DEFAULT_FROM_EMAIL = config('EMAIL_NAME')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = ''   		### config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = '' 	### config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'

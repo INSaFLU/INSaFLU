@@ -5,7 +5,6 @@ Created on Nov 27, 2017
 '''
 import unittest, os, filecmp
 from django.conf import settings 
-from utils.software import Software
 from utils.utils import Utils
 from constants.constantsTestsCase import ConstantsTestsCase
 from utils.result import CountHits 
@@ -16,7 +15,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
 from django.test.utils import override_settings
 from utils.parse_coverage_file import GetCoverage
-from constants.constants import TypePath, FileType
+from constants.constants import TypePath, FileType, Constants
 from constants.software_names import SoftwareNames
 
 class Test(unittest.TestCase):
@@ -110,6 +109,9 @@ class Test(unittest.TestCase):
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
 			count += 1
 
+		## test group tag_names
+		self.assertTrue(project_sample.sample.get_tag_names() == None)
+		
 		### test the graph
 		collectExtraData = CollectExtraData()
 		(file_out_html, file_out_png) = collectExtraData.create_graph_minor_variants(project, user)
@@ -239,6 +241,9 @@ class Test(unittest.TestCase):
 			meta_value = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		
+		### test group set tag names
+		self.assertTrue(project_sample.sample.get_tag_names().count() == 1) 
+		
 		collect_extra_data = CollectExtraData();
 		out_file = collect_extra_data.create_coverage_file(project, user)
 		self.assertTrue(os.path.exists(out_file))
@@ -247,14 +252,14 @@ class Test(unittest.TestCase):
 		
 		### samples test
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.csv")
-		out_file = collect_extra_data.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA)
 		
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.tsv")
-		out_file = collect_extra_data.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB)
 		
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))

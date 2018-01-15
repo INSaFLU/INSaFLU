@@ -91,7 +91,7 @@ class CreateTree(object):
 			manageDatabase.set_project_metakey(project, owner, meta_key,\
 					MetaKeyAndValue.META_VALUE_Error, "Error: there's no enough valid sequences to create a tree.")
 			self.utils.remove_dir(temp_dir)
-			## remove files that are going o be create
+			## remove files that are going to be created
 			self.clean_file_by_vect(project, sequence_name, project.vect_clean_file)
 			return False
 		

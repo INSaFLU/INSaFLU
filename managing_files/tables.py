@@ -1,5 +1,4 @@
 import django_tables2 as tables
-from django_tables2.utils import A
 from managing_files.models import Reference, Sample, Project, ProjectSample
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
@@ -8,10 +7,8 @@ from utils.result import DecodeObjects
 from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
-from utils.result import DecodeObjects
 from django.conf import settings
 from django.db.models import F
-from django.db.models.functions import Length
 from utils.utils import Utils
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -27,8 +24,7 @@ class ReferenceTable(tables.Table):
 	reference_fasta_name = tables.LinkColumn('reference_fasta_name', args=[tables.A('pk')], verbose_name='Fasta file')
 	reference_genbank_name = tables.LinkColumn('reference_genbank_name', args=[tables.A('pk')], verbose_name='GenBank file')
 	owner = tables.Column("Owner", orderable=True, empty_values=())
-	number_of_locus = tables.Column(orderable=False)
-	utils = Utils()
+	constants = Constants()
 	
 	SHORT_NAME_LENGTH = 20
 	
@@ -46,12 +42,12 @@ class ReferenceTable(tables.Table):
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_fasta(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + self.utils.short_name(record.reference_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
 		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + self.utils.short_name(record.reference_genbank_name, self.SHORT_NAME_LENGTH) + '</a>')
+		return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_genbank_name, self.SHORT_NAME_LENGTH) + '</a>')
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -60,7 +56,8 @@ class ReferenceTable(tables.Table):
 	def order_owner(self, queryset, is_descending):
 		queryset = queryset.annotate(owner_name = F('owner__username')).order_by(('-' if is_descending else '') + 'owner_name')
 		return (queryset, True)
-	
+
+
 class ReferenceProjectTable(tables.Table):
 	"""
 	create a new project with a reference
@@ -220,10 +217,10 @@ class ProjectTable(tables.Table):
 		return a reference name
 		"""
 		add_remove = ""
-		if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
+		#if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
 		#	TODO
 		#	add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-			add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
+		#	add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 			
 		n_processed = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
 		n_error = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=True, is_finished=False).count()
@@ -260,10 +257,11 @@ class ShowProjectSamplesResults(tables.Table):
 	putative_mixed_infection = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
-		
+	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
+	
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infection', 'dataset', 'coverage', 'alerts', 'results')
+		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infection', 'dataset', 'coverage', 'consensus_file', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -310,7 +308,13 @@ class ShowProjectSamplesResults(tables.Table):
 		return number
 		"""
 		return record.sample.data_set.name
-	
+
+	def render_consensus_file(self, record):
+		"""
+		return link to consensus file
+		"""
+		return record.get_consensus_file_web()
+
 	def render_results(self, record):
 		"""
 		icon with link to extra info

@@ -280,6 +280,7 @@ def show_igv(request):
 			try:
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
 				path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
+				path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_vcf_gz = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
@@ -297,8 +298,10 @@ def show_igv(request):
 				#### other files
 				data['bam_file_id'] = mark_safe('<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
 								os.path.basename(path_name_bam), os.path.basename(path_name_bam)))
+				data['bai_file_id'] = mark_safe('<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
+								os.path.basename(path_name_bai), os.path.basename(path_name_bai)))
 				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf_gz,\
-								utils.clean_extension(os.path.basename(path_name_vcf_gz)), utils.clean_extension(os.path.basename(path_name_vcf_gz))))
+								utils.clean_extension(os.path.basename(path_name_vcf_gz)), os.path.basename(path_name_vcf_gz)))
 			except ProjectSample.DoesNotExist as e:
 				pass
 		return JsonResponse(data)

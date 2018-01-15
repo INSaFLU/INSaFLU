@@ -6,7 +6,7 @@ Created on Nov 27, 2017
 
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, ProjectSample, TagNames
+from managing_files.models import Project, TagNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
@@ -25,9 +25,7 @@ class CollectExtraData(object):
 	'''
 
 	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
-	SEPARATOR_COMMA = ','
-	SEPARATOR_TAB = '\t'
-	
+
 	utils = Utils()
 	
 	def __init__(self):
@@ -200,12 +198,12 @@ class CollectExtraData(object):
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV):
 			## samples csv
-			out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_COMMA)
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV):
 			## samples tsv
-			out_file = self.collect_sample_table(project, CollectExtraData.SEPARATOR_TAB)
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		if (out_file != None):
@@ -227,40 +225,52 @@ class CollectExtraData(object):
 		vect_reference = geneticElement.get_sorted_elements()
 		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
-# 		with open(out_file, "w", newline='') as output_file_handle:
-# 			csv_writer = csv.writer(output_file_handle, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+		with open(out_file, "w", newline='') as output_file_handle_csv:
+			csv_writer = csv.writer(output_file_handle_csv, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 
-		with open(out_file, "w") as output_file_handle:
 			
 			### write headers
-			output_file_handle.write("\nChromosome\nName\t" + "\t".join(vect_reference) + "\nLength")
-			for element_name in vect_reference:
-				output_file_handle.write("\t{}".format(geneticElement.get_size_element(element_name)))
+			csv_writer.writerow([])
+			csv_writer.writerow(['Chromosome'])
+			vect_out = ['Name']
+			vect_out.extend(vect_reference)
+			csv_writer.writerow(vect_out)
 			
-			output_file_handle.write("\n\nMean depth of coverage\t" + "\t" * len(vect_reference))
-			print("\t" * len(vect_reference))
-			for ratio in vect_ratios: output_file_handle.write("\t%s" % (ratio) + "\t" * len(vect_reference))
-			output_file_handle.write("\n")
+			## length chromosome
+			vect_out = ['Length']
+			for element_name in vect_reference:
+				vect_out.append(geneticElement.get_size_element(element_name))
+			csv_writer.writerow(vect_out)
+			
+			csv_writer.writerow([])
+			csv_writer.writerow([])
+			vect_out = ['Mean depth of coverage']
+			vect_out.extend([''] * len(vect_reference))
+			vect_out.append('')
+			for ratio in vect_ratios: 
+				vect_out.append(ratio)
+				vect_out.extend([''] * len(vect_reference))
+			csv_writer.writerow(vect_out)
 			
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
-				sz_out = project_sample.sample.name
+				vect_out = [project_sample.sample.name]
 				
 				meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data == None): continue
 				coverage = decode_coverage.decode_result(meta_data.description)
 				
 				for element_name in vect_reference:
-					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_ALL))
+					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_ALL))
 				
-				sz_out += "\t"
+				vect_out.append('')
 				for element_name in vect_reference:
-					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_0))
+					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_0))
 					
-				sz_out += "\t"
+				vect_out.append('')
 				for element_name in vect_reference:
-					sz_out += "\t{}".format(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9))
-				output_file_handle.write(sz_out + "\n")
+					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9))
+				csv_writer.writerow(vect_out)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -280,7 +290,7 @@ class CollectExtraData(object):
 		n_count = 0
 		vect_type_out = ['snp', 'del', 'ins']
 		with open(out_file, 'w', newline='') as handle_out:
-			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
@@ -302,7 +312,7 @@ class CollectExtraData(object):
 		n_count = 0
 		vect_type_out = ['snp']
 		with open(out_file, 'w', newline='') as handle_out:
-			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
@@ -313,6 +323,20 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 			return None
 		return out_file
+	
+	def collect_variations_freebayes_only_one_file(self, file_in, file_out):
+		"""
+		collect freebayes variations
+		"""
+		parse_out_files = ParseOutFiles()
+		vect_type_out = ['snp']
+		with open(file_out, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			parse_out_files.parse_tab_files(None, file_in, csv_writer, vect_type_out, 50, True)
+		if (not os.path.exists(file_out)):
+			os.unlink(file_out)
+			return None
+		return file_out
 
 
 	def collect_sample_table(self, project, column_separator):
@@ -323,11 +347,11 @@ class CollectExtraData(object):
 		"""
 		
 		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
-					column_separator == CollectExtraData.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
+					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
 		
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
-						quoting=csv.QUOTE_MINIMAL if column_separator == CollectExtraData.SEPARATOR_COMMA else csv.QUOTE_ALL)
+						quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
 			vect_out = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
 			
 			### extra tags

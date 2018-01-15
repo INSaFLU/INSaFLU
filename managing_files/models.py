@@ -10,6 +10,7 @@ from manage_virus.models import IdentifyVirus
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from operator import itemgetter
 import os
 
 def reference_directory_path(instance, filename):
@@ -52,13 +53,13 @@ class Reference(models.Model):
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'],\
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
 										max_upload_size=Constants.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/gzip'],\
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
 									max_upload_size=Constants.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
@@ -66,7 +67,7 @@ class Reference(models.Model):
 	owner = models.ForeignKey(User, related_name='reference', blank=True, null=True, on_delete=models.CASCADE)
 	is_obsolete = models.BooleanField(default=False, verbose_name='Obsolete')
 	is_deleted = models.BooleanField(default=False, verbose_name='Deleted')
-	number_of_locus = models.IntegerField(default=0, verbose_name='#Sequences')
+	number_of_locus = models.IntegerField(default=0, verbose_name='#Locus')
 	
 	season = models.ManyToManyField(SeasonReference)		## can have the season
 	description = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name='Description')
@@ -190,6 +191,10 @@ class Sample(models.Model):
 	"""
 	OUT_FILE_ABRICATE = "abricate.txt"
 	
+	### consensus file
+	OUT_CONSENSUS_FILE = "consensus.fasta"
+	
+	
 	## to remove in future
 	objects = models.Manager()	## need to check this
 	
@@ -224,12 +229,12 @@ class Sample(models.Model):
 	
 	## 30M
 	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -295,6 +300,7 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
 
+		
 	def __get_path__(self, type_path, b_first_file):
 		"""
 		get a path, from MEDIA_URL or MEDIA_ROOT
@@ -339,6 +345,25 @@ class Sample(models.Model):
 		"""
 		return self.is_ready_for_projects and not self.is_obsolete and not self.is_deleted
 
+	def get_vect_tag_names_and_value(self):
+		"""
+		return [[header1, value1], [header2, value2], [header3, value3], ...]
+		"""
+		vect_out = []
+		query_set = TagNames.objects.filter(sample=self)
+		for tag_names in query_set:
+			vect_out.append([tag_names.tag_name.name, tag_names.value])
+		return sorted(vect_out, key=itemgetter(1))
+
+	def get_tag_names(self):
+		"""
+		get the tag names grouped by a number
+		"""
+		query_set = TagNames.objects.filter(sample=self)
+		if (query_set.count() == 0): return None
+		return query_set
+
+
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
 	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)
@@ -346,7 +371,8 @@ class TagNames(models.Model):
 
 	def __str__(self):
 		return self.value
-	
+
+
 class MetaKeySample(models.Model):
 	"""
 	Relation ManyToMany in 
@@ -539,9 +565,12 @@ class CountVariations(models.Model):
 
 class ProjectSample(models.Model):
 	
+	constants = Constants()
+	
 	PATH_MAIN_RESULT = 'main_result'
 	PREFIX_FILE_COVERAGE = 'coverage'
-		
+	FILE_CONSENSUS_FILE = "Consensus_"
+	
 	project = models.ForeignKey(Project, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	mixed_infections = models.ForeignKey(MixedInfections, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
@@ -601,8 +630,37 @@ class ProjectSample(models.Model):
 		"""
 		return self.is_finished and not self.is_deleted and not self.is_error and self.sample.get_is_ready_for_projects()
 
+	def get_consensus_file(self, type_path):
+		"""
+		get clean consensus file name
+		"""
+		return os.path.join(self.__get_path__(type_path, ProjectSample.PATH_MAIN_RESULT), "{}{}{}".format(\
+					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
 	
-	
+	def get_consensus_file_web(self):
+		"""
+		get consensus file web
+		"""
+		out_file = self.get_consensus_file(TypePath.MEDIA_ROOT)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_consensus_file(\
+						TypePath.MEDIA_URL), self.constants.short_name(os.path.basename(out_file), 15)))
+		return _('Not available.')
+
+	def get_file_web(self, file_type, software):
+		"""
+		get file web from different softwares
+		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
+		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
+		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
+		"""
+		out_file = self.get_file_output(TypePath.MEDIA_ROOT, file_type, software)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_file_output(\
+						TypePath.MEDIA_URL, file_type, software), os.path.basename(out_file), 15))
+		return _('Not available.')
+		
+		
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 

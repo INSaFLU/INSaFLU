@@ -2,6 +2,10 @@
 /**
 * used in header forms
 */
+.insa-center-text {
+  text-align: center;
+}
+
 .main-page-documentation {
 	padding-right:30px;
 	padding-top:19px;

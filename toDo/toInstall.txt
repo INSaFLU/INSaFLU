@@ -80,6 +80,7 @@ $ python3 manage.py qinfo
  To keep db: python3 manage.py test --keepdb
  to stop tests after first error: python3 manage.py test --failfast
 
- 
+# to open in all ips and in a port 
+$ python3 manage.py runserver 0.0.0.0:8000
  
  

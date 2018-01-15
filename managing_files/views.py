@@ -12,7 +12,7 @@ from managing_files.tables import ShowProjectSamplesResults, AddSamplesFromCvsFi
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm, SamplesUploadMultipleFastqForm
 from managing_files.forms import SamplesUploadDescriptionForm
 from managing_files.manage_database import ManageDatabase
-from constants.constants import Constants, TypePath, FileExtensions, TypeFile
+from constants.constants import Constants, TypePath, FileExtensions, TypeFile, FileType
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
@@ -340,6 +340,7 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
 		if (count_not_complete > 0): context['can_add_other_file'] = "You can't add other file because there's a file not completed." 
+		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file." 
 		return context
 
 	def form_valid(self, form):
@@ -570,6 +571,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 	"""
 	Sample detail view
 	"""
+	utils = Utils()
 	model = Sample
 	template_name = "samples/sample_detail.html"
 
@@ -633,6 +635,14 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
 				if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_ABYSS_name)
 				context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+				
+			##### extra data sample, columns added by the user
+			## [[header1, value1], [header2, value2], [header3, value3], ...]
+			### if it's to big expand button is better
+			tag_names = sample.get_tag_names()
+			context['extra_data_sample_expand'] = (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
+			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
+			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
 			if (sample.candidate_file_name_2 != None and len(sample.candidate_file_name_2) > 0):
@@ -1041,10 +1051,22 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
 			
+			##### extra data sample, columns added by the user
+			## [[header1, value1], [header2, value2], [header3, value3], ...]
+			### if it's to big expand button is better
+			tag_names = project_sample.sample.get_tag_names()
+			context['extra_data_sample_expand'] = (tag_names != None) ## (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
+			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
+			
+			context['consensus_file'] = project_sample.get_consensus_file_web()
+			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB ,SoftwareNames.SOFTWARE_SNIPPY_name)
+			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_CLEAN_FREEBAYES_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context
-		
+
+
 def is_all_check_box_in_session(vect_check_to_test, request):
 	"""
 	test if all check boxes are in session 

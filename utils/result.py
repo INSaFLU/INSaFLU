@@ -257,6 +257,9 @@ class Coverage(object):
 		if (element in self.dt_data): return self.dt_data[element].get_coverage(type_coverage)
 		raise Exception("Error: there's no key like this: " + element)
 
+	def exist_this_element(self, element):
+		return (element in self.dt_data)
+
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
@@ -278,6 +281,7 @@ class Coverage(object):
 		return self.__is_100__(value_coverage)
 		
 	def __is_100__(self, value_coverage):
+		if (value_coverage == None): return False
 		try:
 			(i, d) = divmod(float(value_coverage), 1)
 			if (int(i) == 100): return True

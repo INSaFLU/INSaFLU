@@ -6,6 +6,8 @@ Created on Nov 1, 2017
 
 from utils.utils import Utils
 from django.utils.translation import ugettext_lazy as _
+from constants.constants import Constants, FileExtensions
+import csv, os
 
 class ParseOutFiles(object):
 	'''
@@ -14,9 +16,12 @@ class ParseOutFiles(object):
 
 	## header tab file
 	HEADER_TAB_FILE = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_snippy = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_WRITE_snippy = "ID	CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	
+	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	
 	GENE = 'Gene'
 	COVERAGE = 'Coverage'
@@ -79,7 +84,9 @@ class ParseOutFiles(object):
 		vect_count_type = ['snp', 'ins']
 		"""
 		
-		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE.split('\t'))
+		if (b_add_header): 
+			if (sample_name == None): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID.split('\t'))
+			else: csv_writer.writerow(self.HEADER_TAB_FILE_WRITE.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
 			for line in handle_to_process:
@@ -93,7 +100,8 @@ class ParseOutFiles(object):
 						lst_type_var = lst_data[2].split(',')
 						for i in range(0, len(lst_type_var)):
 							if (lst_type_var[i] in vect_type_out and self.utils.is_float(lst_freq_data[i]) and float(lst_freq_data[i]) < limit_freq):
-								vect_to_write = [sample_name]
+								vect_to_write = []
+								if (sample_name != None): vect_to_write = [sample_name]
 								if (len(lst_data) > 10):
 									vect_to_write.extend(lst_data[:10])
 									vect_to_write.extend(lst_data[10].split(' '))
@@ -117,13 +125,13 @@ class ParseOutFiles(object):
 		vect_count_type = ['snp', 'ins']
 		"""
 		
-		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy.split('\t'))
+		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy_expanded.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
 			for line in handle_to_process:
 				sz_temp = line.strip()
 				if (len(sz_temp) == 0): continue
-				if (sz_temp == self.HEADER_TAB_FILE_snippy): b_header = True
+				if (sz_temp == self.HEADER_TAB_FILE_snippy_changed): b_header = True
 				elif (b_header): 	## start processing data
 					lst_data = sz_temp.split('\t')
 					if (len(lst_data) > 5):
@@ -131,12 +139,49 @@ class ParseOutFiles(object):
 						for i in range(0, len(lst_type_var)):
 							if (lst_type_var[i] in vect_type_out):
 								vect_to_write = [sample_name]
-								if (len(lst_data) > 10):
-									vect_to_write.extend(lst_data[:10])
-									vect_to_write.extend(lst_data[10].split(' '))
-									vect_to_write.extend(lst_data[11:])
-								else: vect_to_write.extend(lst_data)
+								vect_to_write.extend(lst_data)
 								csv_writer.writerow(vect_to_write)
 								break
 		return True
+
+
+	def add_variants_in_incomplete_locus(self, file_to_process, coverage):
+		"""
+		add variants_in_incomplete_locus in low coverage locus
+		"""
+		out_file = self.utils.get_temp_file('variants_in_incomplete_locus', FileExtensions.FILE_TSV)
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_NONE)
+			csv_writer.writerow(self.HEADER_TAB_FILE_snippy_changed.split('\t'))
+			n_size_array = len(self.HEADER_TAB_FILE_snippy_changed.split('\t'))
+			with open(file_to_process) as handle_to_process:
+				b_header = False
+				for line in handle_to_process:
+					sz_temp = line.strip()
+					if (len(sz_temp) == 0): continue
+					if (sz_temp == self.HEADER_TAB_FILE_snippy_original): b_header = True
+					elif (b_header): 	## start processing data
+						lst_data = sz_temp.split('\t')
+						vect_to_write = []
+						if (len(lst_data) > 10):
+							vect_to_write.extend(lst_data[:10])
+							vect_to_write.extend(lst_data[10].split(' '))
+							vect_to_write.extend(lst_data[11:])
+							if (len(lst_data) > 1 and coverage.exist_this_element(lst_data[0]) and\
+									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
+								vect_to_write.append('yes')
+						else:
+							vect_to_write.extend(lst_data)
+							if (len(lst_data) > 1 and coverage.exist_this_element(lst_data[0]) and\
+									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
+								vect_to_write.extend([''] * (n_size_array - len(lst_data) - 1))
+								vect_to_write.append('yes')
+						csv_writer.writerow(vect_to_write)
+
+		### copy to the origin to the result file
+		if (os.path.exists(out_file)):
+			if (os.path.getsize(out_file) > 0): self.utils.copy_file(out_file, file_to_process)
+			os.unlink(out_file)
+
+
 

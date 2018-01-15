@@ -15,7 +15,8 @@ from utils.utils import Utils
 from utils.parse_in_files import ParseInFiles
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
-import os, re
+import os, re, logging
+from symbol import except_clause
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -195,6 +196,8 @@ class SampleForm(forms.ModelForm):
 	error_css_class = 'error'
 
 ##	geo_local = PointField(widget=CustomPointWidget(), required=False, srid=4326)
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
 	
 	class Meta:
 		model = Sample
@@ -320,76 +323,100 @@ class SampleForm(forms.ModelForm):
 		cleaned_data = super(SampleForm, self).clean()
 		name = self.cleaned_data['name'].strip()
 		
-		result_filer_name = re.sub('[^A-Za-z0-9_]+', '', name)
-		if (len(result_filer_name) != len(name)):
-			self.add_error('name', _("Error: Only letters, numbers and underscores are allowed."))
-			return cleaned_data
-			
 		try:
-			Sample.objects.get(name=name, owner__username=self.request.user.username)
-			self.add_error('name', ValidationError(_("This name '" + name +"' already exist in database, please choose other."), code='invalid'))
-		except Sample.DoesNotExist:
-			pass
-		
-		## latitude in degrees is -90 and +90 for the southern and northern hemisphere respectively. Longitude is in the range -180 and +180
-		lat = self.cleaned_data.get('lat')
-		if (lat != None and (lat > 90 or lat < -90)): self.add_error('lat', _("Latitute must have values between +90 and -90."))
-		lng = self.cleaned_data.get('lng')
-		if (lng != None and (lng > 180 or lng < -180)): self.add_error('lng', _("Longitude must have values between +180 and -180."))
-		
-		### testing file names
-		path_name_1 = self.cleaned_data.get('path_name_1')
-		path_name_2 = self.cleaned_data.get('path_name_2')
-		if (path_name_2 != None and path_name_1.name == path_name_2.name):
-			self.add_error('path_name_1', _("Error: both files has the same name. Please, different files."))
-			self.add_error('path_name_2', _("Error: both files has the same name. Please, different files."))
-			return cleaned_data
-		
-		## testing fastq
-		fastaq_temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
-		fastaq_temp_file_name.write(path_name_1.file.read())
-		fastaq_temp_file_name.flush()
-		fastaq_temp_file_name.close()
-		
-		like_dates = self.cleaned_data.get('like_dates')
-		date_of_onset = self.cleaned_data.get('date_of_onset')
-		date_of_collection = self.cleaned_data.get('date_of_collection')
-		date_of_receipt_lab = self.cleaned_data.get('date_of_receipt_lab')
-		
-		#####
-		if (like_dates == None and date_of_onset != None and date_of_collection != None and date_of_receipt_lab != None):
-			self.add_error('like_dates', _("Please, choose a data to collect the day, week and year."))
-		elif (like_dates == 'date_of_onset' and date_of_onset == None):
-			self.add_error('like_dates', _("Error, the Onset date is null."))
-		elif (like_dates == 'date_of_collection' and date_of_collection == None):
-			self.add_error('date_of_collection', _("Error, the Collection date is null."))
-		elif (like_dates == 'date_of_receipt_lab' and date_of_receipt_lab == None):
-			self.add_error('date_of_receipt_lab', _("Error, the Lab Receipt date is null."))
-			
-		try:
-			self.utils.is_fastq_gz(fastaq_temp_file_name.name)
-		except Exception as e:	## (e.errno, e.strerror)
-			os.unlink(fastaq_temp_file_name.name)
-			self.add_error('path_name_1', e.args[0])
-			return cleaned_data
-		
-		## testing fastq
-		if (path_name_2 != None):
-			fastaq_temp_file_name_2 = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
-			fastaq_temp_file_name_2.write(path_name_2.file.read())
-			fastaq_temp_file_name_2.flush()
-			fastaq_temp_file_name_2.close()
-			
+			result_filer_name = re.sub('[^A-Za-z0-9_]+', '', name)
+			if (len(result_filer_name) != len(name)):
+				self.add_error('name', _("Error: Only letters, numbers and underscores are allowed."))
+				return cleaned_data
+				
 			try:
-				self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+				Sample.objects.get(name=name, owner__username=self.request.user.username)
+				self.add_error('name', ValidationError(_("This name '" + name +"' already exist in database, please choose other."), code='invalid'))
+			except Sample.DoesNotExist:
+				pass
+			
+			## latitude in degrees is -90 and +90 for the southern and northern hemisphere respectively. Longitude is in the range -180 and +180
+			lat = self.cleaned_data.get('lat')
+			if (lat != None and (lat > 90 or lat < -90)): self.add_error('lat', _("Latitute must have values between +90 and -90."))
+			lng = self.cleaned_data.get('lng')
+			if (lng != None and (lng > 180 or lng < -180)): self.add_error('lng', _("Longitude must have values between +180 and -180."))
+			
+			### testing file names
+			path_name_1 = self.cleaned_data.get('path_name_1')
+			path_name_2 = self.cleaned_data.get('path_name_2')
+			
+			## to remove
+			self.logger_production.warning('Sample: {}  Path name1: {}'.format(name, path_name_1))
+			self.logger_production.warning('Sample: {}  Path name2: {}'.format(name, path_name_2))
+			self.logger_debug.warning('Sample: {}  Path name1: {}'.format(name, path_name_1))
+			self.logger_debug.warning('Sample: {}  Path name2: {}'.format(name, path_name_2))
+
+			if (path_name_2 != None and path_name_1.name == path_name_2.name):
+				self.add_error('path_name_1', _("Error: both files has the same name. Please, different files."))
+				self.add_error('path_name_2', _("Error: both files has the same name. Please, different files."))
+				return cleaned_data
+			
+			## testing fastq
+			fastaq_temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
+			fastaq_temp_file_name.write(path_name_1.file.read())
+			fastaq_temp_file_name.flush()
+			fastaq_temp_file_name.close()
+			
+			like_dates = self.cleaned_data.get('like_dates')
+			date_of_onset = self.cleaned_data.get('date_of_onset')
+			date_of_collection = self.cleaned_data.get('date_of_collection')
+			date_of_receipt_lab = self.cleaned_data.get('date_of_receipt_lab')
+			
+			## to remove
+			self.logger_production.warning('Sample: {} Pass dates...'.format(name))
+			self.logger_debug.warning('Sample: {} Pass dates...'.format(name))
+			
+			#####
+			if (like_dates == None and date_of_onset != None and date_of_collection != None and date_of_receipt_lab != None):
+				self.add_error('like_dates', _("Please, choose a data to collect the day, week and year."))
+			elif (like_dates == 'date_of_onset' and date_of_onset == None):
+				self.add_error('like_dates', _("Error, the Onset date is null."))
+			elif (like_dates == 'date_of_collection' and date_of_collection == None):
+				self.add_error('date_of_collection', _("Error, the Collection date is null."))
+			elif (like_dates == 'date_of_receipt_lab' and date_of_receipt_lab == None):
+				self.add_error('date_of_receipt_lab', _("Error, the Lab Receipt date is null."))
+				
+			try:
+				self.utils.is_fastq_gz(fastaq_temp_file_name.name)
 			except Exception as e:	## (e.errno, e.strerror)
-				os.unlink(fastaq_temp_file_name_2.name)
+				os.unlink(fastaq_temp_file_name.name)
 				self.add_error('path_name_1', e.args[0])
 				return cleaned_data
-
-		## remove temp files
-		os.unlink(fastaq_temp_file_name.name)
-		if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
+			
+			## to remove
+			self.logger_production.warning('Sample: {} Pass is_fastq_gz 1...'.format(name))
+			self.logger_debug.warning('Sample: {} Pass is_fastq_gz 1...'.format(name))
+			
+			## testing fastq
+			if (path_name_2 != None):
+				fastaq_temp_file_name_2 = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
+				fastaq_temp_file_name_2.write(path_name_2.file.read())
+				fastaq_temp_file_name_2.flush()
+				fastaq_temp_file_name_2.close()
+				
+				try:
+					self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+				except Exception as e:	## (e.errno, e.strerror)
+					os.unlink(fastaq_temp_file_name_2.name)
+					self.add_error('path_name_1', e.args[0])
+					return cleaned_data
+			
+			## to remove
+			self.logger_production.warning('Sample: {} end...'.format(name))
+			self.logger_debug.warning('Sample: {} end...'.format(name))
+			
+			## remove temp files
+			os.unlink(fastaq_temp_file_name.name)
+			if (path_name_2 != None): os.unlink(fastaq_temp_file_name_2.name)
+		except:
+			self.logger_production.warning("Sample: {}  Path name1: {} Can't reach second file".format(name, path_name_1))
+			self.logger_debug.warning("Sample: {}  Path name2: {} Can't reach second file".format(name, path_name_2))
+			self.add_error('path_name_2', "Can't reach second file")
 		return cleaned_data
 		
 

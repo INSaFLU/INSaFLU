@@ -124,7 +124,7 @@ class SoftwareNames(object):
 	SOFTWARE_MAFFT_name = "Mafft"
 	SOFTWARE_MAFFT_VERSION = "7.313"
 	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion"
-	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--maxiterate 1000 --localpair --preservecase --amino"
+	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino"
 	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"
 	
 	SOFTWARE_SEQRET = "seqret"

@@ -19,6 +19,7 @@ from django.template.loader import render_to_string
 from fluwebvirus.tokens import account_activation_token
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
+from django.conf import settings
 
 class HomePageView(generic.TemplateView):
 	"""
@@ -88,8 +89,9 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 	def form_valid(self, form):
 		
 		if form.is_valid():
+			email_name = form.cleaned_data['email']
 			try:
-				user = User.objects.get(email__iexact=form.cleaned_data['email'])
+				user = User.objects.get(email__iexact=email_name)
 				## invalidate current account
 				user.is_active = False
 				user.save()
@@ -101,10 +103,13 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
 					'token': account_activation_token.make_token(user),
 				})
-				user.email_user(subject, message)
+				user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, auth_user=settings.EMAIL_HOST_USER,\
+						auth_password=settings.EMAIL_HOST_PASSWORD, html_message=message)
+				messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
 			except User.DoesNotExist as e:
+				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
 				pass
-			messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
+			
 			return redirect('dashboard')
 			
 	## static method
@@ -136,7 +141,7 @@ class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.
 				## clean value in session
 				del self.request.session[Constants.SESSION_KEY_USER_ID]
 				
-				messages.success(self.request, "Congratulations, your account has new passwords.", fail_silently=True)
+				messages.success(self.request, "Congratulations, your account has a new password.", fail_silently=True)
 				return redirect('dashboard')
 			except User.DoesNotExist as e:
 				pass

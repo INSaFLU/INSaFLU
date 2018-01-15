@@ -40,9 +40,16 @@ class Constants(object):
 	## translate table number
 	TRANSLATE_TABLE_NUMBER = 11
 	
+	## start expand tag name rows
+	START_EXPAND_SAMPLE_TAG_NAMES_ROWS = 4
+	
 	DIR_PROCESSED_FILES_UPLOADS = "uploads"
 	DIR_PROCESSED_PROCESSED = 'processed'
 	
+	### separators
+	SEPARATOR_COMMA = ','
+	SEPARATOR_TAB = '\t'
+
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
@@ -146,6 +153,7 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF): return "{}.vcf".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
+		if (file_type == FileType.FILE_CLEAN_FREEBAYES_TAB): return "{}.freebayes.tab".format(file_name)
 		return ""
 
 	### complement
@@ -186,7 +194,13 @@ class Constants(object):
 			if (letter_previous != letter): return False
 		return True
 	
-	
+
+	def short_name(self, name, max_size):
+		"""
+		short the name for the size of max_size
+		"""
+		if (len(name) > max_size): return "{}...{}".format(name[:int(max_size/2)], name[int(len(name) - (max_size/2)):])
+		return name
 	
 class TypePath(Enum):
 	"""
@@ -233,6 +247,7 @@ class FileType(Enum):
 	FILE_VCF_GZ = 9
 	FILE_VCF_GZ_TBI = 10
 	FILE_CSV = 11
+	FILE_CLEAN_FREEBAYES_TAB = 12	## has the clean freebayes data, 
 
 class TypeFile(object):
 	

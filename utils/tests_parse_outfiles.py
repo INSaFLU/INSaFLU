@@ -7,9 +7,10 @@ import unittest
 from constants.constantsTestsCase import ConstantsTestsCase
 from utils.utils import Utils
 from utils.software import Software
+from utils.result import Coverage
 from django.conf import settings
 from utils.parse_out_files import ParseOutFiles
-from utils.collect_extra_data import CollectExtraData
+from constants.constants import Constants, FileExtensions
 import os, filecmp, csv
 
 class Test(unittest.TestCase):
@@ -34,7 +35,7 @@ class Test(unittest.TestCase):
 		vect_type_out = ['snp']
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
-			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 101, b_add_header)
 			
 			vect_type_out = ['del']
@@ -57,13 +58,13 @@ class Test(unittest.TestCase):
 		vect_type_out = ['snp', 'del']
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
-			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 101, b_add_header)
 			
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
-		
+
 		
 	def test_parse_freebays_tab_files_2(self):
 		"""
@@ -77,11 +78,54 @@ class Test(unittest.TestCase):
 		vect_type_out = ['snp', 'del']
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
-			csv_writer = csv.writer(handle_out, delimiter=CollectExtraData.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 50, b_add_header)
 			
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
+
+
+	def test_add_variants_in_incomplete_locus(self):
+		"""
+		test ParseOutFiles for tab files
+		"""
+		parse_out_files = ParseOutFiles()
+		tab_file_to_process = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "have_multiple_var_snippy.tab")
+		expected_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "out_snippy_translated.tsv")
+
+		temp_file = self.utils.get_temp_file('test_add_variants_in_incomplete_locus', FileExtensions.FILE_TSV)
+		self.utils.copy_file(tab_file_to_process, temp_file)
+		
+		coverage = Coverage()
+		coverage.add_coverage('2', Coverage.COVERAGE_ALL, '1400.0')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_0, '100.0')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_9, '98.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_ALL, '1400.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_0, '100.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_9, '100.0')
+		
+		###
+		parse_out_files.add_variants_in_incomplete_locus(temp_file, coverage)
+			
+		self.assertTrue(os.path.exists(temp_file))
+		self.assertTrue(filecmp.cmp(expected_file, temp_file))
+		
+		self.utils.copy_file(tab_file_to_process, temp_file)
+		coverage = Coverage()
+		coverage.add_coverage('2', Coverage.COVERAGE_ALL, '1400.0')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_0, '100.0')
+		coverage.add_coverage('2', Coverage.COVERAGE_MORE_9, '98.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_ALL, '1400.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_0, '98.0')
+		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_9, '100.0')
+		
+		###
+		parse_out_files.add_variants_in_incomplete_locus(temp_file, coverage)
+		
+		expected_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "out_snippy_translated_2.tsv")
+		self.assertTrue(os.path.exists(temp_file))
+		self.assertTrue(filecmp.cmp(expected_file, temp_file))
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
 
 

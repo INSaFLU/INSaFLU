@@ -990,7 +990,10 @@ class Software(object):
 					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_0(element))
 			project_sample.save()
-			
+		
+			## set the coverage in database
+			meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
+								MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to get coverage: " + e.args[0])
@@ -1007,9 +1010,11 @@ class Software(object):
 				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 			return False
 		
-		meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
-								MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
-
+		## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in ares with coverage problems
+		parse_out_files = ParseOutFiles()
+		parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
+									self.software_names.get_snippy_name()), coverage)
+		
 		## run freebayes
 		try:
 			out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
@@ -1112,6 +1117,20 @@ class Software(object):
 		project_sample.mixed_infections = mixed_infection
 		project_sample.save()
 		
+		from utils.collect_extra_data import CollectExtraData
+		collect_extra_data = CollectExtraData()
+		### get a clean freebays file
+		tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+		if (os.path.exists(tab_freebayes_file)):
+			file_out = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CLEAN_FREEBAYES_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
+			
+		### get clean consensus file
+		consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+		if (os.path.exists(consensus_fasta)):
+			file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+			self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out)
+			
 		### set the tag of result OK 
 		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		

@@ -41,6 +41,8 @@ function show_igv() {
 	    	  /// set the files names
 			  $('#bam_file_id').empty()
 			  $('#bam_file_id').append(data['bam_file_id'])
+			  $('#bai_file_id').empty()
+			  $('#bai_file_id').append(data['bai_file_id'])
 			  $('#vcf_file_id').empty()
 			  $('#vcf_file_id').append(data['vcf_file_id'])
 			  

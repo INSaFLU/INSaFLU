@@ -132,7 +132,7 @@ class ParseInFiles(object):
 					count_column += 1
 				if (n_columns_ok == len(self.vect_header)):
 					header = row
-					for i in range(0, len(row)):
+					for i in range(0, len(row)):	## test all header names
 						if (row[i].strip() in self.dict_other_fields_repeated):
 							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Column name '{}' is repeated in the header. Line: {} Column: {}".\
 										format(row[i].strip(), count_row, i+1))))

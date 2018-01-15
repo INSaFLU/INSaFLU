@@ -15,10 +15,10 @@ from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
-from django_q.tasks import async
 from datetime import datetime
 import os, random, gzip, hashlib, logging, ntpath, stat, re
 from pysam import pysam
+
 
 class Utils(object):
 	'''
@@ -703,6 +703,15 @@ class Utils(object):
 		file name out: None if not saved, else output file name
 		return True if has sequences, False doesn't have sequences
 		"""
+		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
+		return self.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_name)
+	
+	def filter_fasta_all_sequences_file(self, consensus_fasta, coverage, file_out):
+		"""
+		filter fasta file
+		file name out: None if not saved, else output file name
+		return True if has sequences, False doesn't have sequences
+		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
 		### doesn't have the same size, sequences in consensus/coverage
@@ -712,17 +721,17 @@ class Utils(object):
 		for key in coverage.get_dict_data(): 
 			if (not coverage.is_100_more_9(key)): return None
 					
-		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
-		b_saved = False
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
-			with open(file_name, 'w') as handle:
+			with open(file_out, 'w') as handle_write:
+				records = []
 				for key in sorted(coverage.get_dict_data()):
 					if (coverage.is_100_more_9(key)):
-						handle.write(">{}\n{}\n".format(key, str(record_dict[key].seq).upper()))
-						b_saved = True
-		if (not b_saved and os.path.exists(file_name)): os.unlink(file_name)
-		return file_name if b_saved else None
+						records.append(SeqRecord(Seq(str(record_dict[key].seq)), id = key, description=""))
+				SeqIO.write(records, handle_write, "fasta")
+		if (len(records) == 0 and os.path.exists(file_out)): os.unlink(file_out)
+		return file_out if len(records) > 0 else None
+	
 	
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
 		"""
@@ -843,13 +852,6 @@ class Utils(object):
 				SeqIO.write(vect_sequences, output_file_handle, "fasta")
 
 
-	def short_name(self, name, max_size):
-		"""
-		short the name for the size of max_size
-		"""
-		if (len(name) > max_size): return "{}...{}".format(name[:int(max_size/2)], name[int(len(name) - (max_size/2)):])
-		return name
-
 
 	def from_genbank_to_bed(self, file_in, file_out):
 		"""
@@ -893,14 +895,9 @@ class Utils(object):
 		send_mail(header, message, 'insaflu@insa.min-saude.pt', [address])
 
 
-	def open_file(self, b_close):
+	def grouped(self, l, n):
 		"""
-		used ony for tests
+		group instances
 		"""
-		file_name = self.get_temp_file('test_max_files_', '.txt')
-		handle = open(file_name, 'w')
-		handle.write('xpto')
-		if(b_close): handle.close()
-		return
-		
-		
+		for i in range(0, len(l), n):
+			yield l[i:i+n]

@@ -41,6 +41,25 @@
 			  	<div class="col-lg-3"><strong>Type and subtype/lineage:</strong> {{ sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ sample.owner.username }}</div>
 			</div>
+			
+			{% if extra_data_sample_expand %}
+				<hr>
+				<p class="insa-center-text"><a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Extra sample tags</a></p>
+				<div class="collapse" id="collapseExample">
+			{% endif %}
+			
+				{% for group in extra_data_sample %}
+						<hr>
+						<div class="row">
+							{% for tag_names in group %}
+								<div class="col-lg-3"><strong>{{ tag_names.tag_name.name }}:</strong> {{ tag_names.value }}</div>
+							{% endfor %}	
+						</div>
+				{% endfor %}	
+			
+			{% if extra_data_sample_expand %}
+				</div>
+			{% endif %}
 			<hr>
 			
 			<!-- NAV tabs -->

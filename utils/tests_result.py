@@ -108,6 +108,8 @@ class Test(TestCase):
 		except Exception as e:
 			self.assertEquals("Error: there's no key like this: xpto", e.args[0])
 
+		self.assertTrue(coverage_2.exist_this_element('3'))
+		self.assertFalse(coverage_2.exist_this_element('adsa'))
 
 	def test_count_hits(self):
 		count_hits = CountHits()	

@@ -7,6 +7,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from django.conf import settings 
 from constants.constantsTestsCase import ConstantsTestsCase
+from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
@@ -44,4 +45,7 @@ class Test(TestCase):
 
 	def tearDown(self):
 		pass
+
+
+
 

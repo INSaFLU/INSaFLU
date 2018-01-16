@@ -40,6 +40,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE = "AlertMixedInfectionCosineDistance"
 	META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST = "AlertMixedInfectionRatioTest"
 	META_KEY_ALERT_MIXED_INFECTION_SUM_TEST = "AlertMixedInfectionSumTest"
+	META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE = "AlertMixedInfectionTypeSubtype"
 	META_KEY_ALERT_COUNT_VAR = "Alert count variation percentile"	## obsolete
 	
 	## coverage about bam file
@@ -100,5 +101,15 @@ class MetaKeyAndValue(object):
 		"""
 		return self.get_meta_key(self.META_KEY_Queue_TaskID_Project, project_id)
 	
-
-
+	def get_keys_show_alerts_in_sample_projects_details_view(self):
+		"""
+		this show the alerts in SampleProjectsDetailsView
+		"""
+		return [MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+			MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
+		
+	def get_keys_show_alerts_in_sample_details_view(self):
+		"""
+		this show the alerts in SampleDetailsView
+		"""
+		return [MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]

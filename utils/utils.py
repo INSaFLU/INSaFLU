@@ -165,6 +165,9 @@ class Utils(object):
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to make a move a file") 
 	
+			### set attributes to file 664
+			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
+			
 	def link_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):
 			self.make_path(os.path.dirname(sz_file_to))

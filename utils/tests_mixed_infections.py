@@ -255,7 +255,7 @@ class Test(unittest.TestCase):
 		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
 			
-		sample_name = "run_snippytest_get_mixed_infections"
+		sample_name = "run_snippytest_get_mixed_infections_2323"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -286,6 +286,10 @@ class Test(unittest.TestCase):
 		project_sample.project = project
 		project_sample.save()
 
+		manage_database = ManageDatabase()
+		manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, 'this is a mixed infection of type and subtype')
+		
 		## set count hits		
 		count_hits = CountHits()
 		count_hits.set_hits_less_50(50)
@@ -307,6 +311,21 @@ class Test(unittest.TestCase):
 		self.assertEquals("1.4", count_hits.get_mixed_infection_ratio_str())
 		self.assertTrue(count_hits.is_mixed_infection_ratio_test())
 		
+		meta_data = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data == None)
+		meta_data = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertEquals("Warning: this sample has a ratio of the number of iSNVs at frequency 1-50% (minor iSNVs) and 50-90% of '1.4' " +\
+						"(within the range 0.5-1-5) and a total number of iSNVs from the two categories of '120' (i.e., above 20) suggesting " +\
+						"that may represent a 'mixed infection'.", meta_data.description)
+
+		meta_data = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertEquals('this is a mixed infection of type and subtype', meta_data.description)
+
 		### 
 # 		manage_database = ManageDatabase()
 # 		meta_project = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)

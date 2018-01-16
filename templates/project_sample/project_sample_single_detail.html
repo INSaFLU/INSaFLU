@@ -125,11 +125,11 @@
 				  		<hr>
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
-			    		<p class="title-box">Alerts for sample {{ project_sample.sample.name }}</p>
+			    		<p class="title-box">Alerts for sample: '{{ project_sample.sample.name }}'</p>
 			    		{% if alerts  %}
 				    		{% for alert in alerts  %}
 				    			<div class="row">
-									<div class="col-lg-12">{{ alert }}</div>
+									<div class="col-lg-12 alert-limit-text">{{ alert }}</div>
 					  			</div>
 					  			<hr>
 					  		{% endfor %}

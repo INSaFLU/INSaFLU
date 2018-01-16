@@ -7,6 +7,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from django.conf import settings 
 from constants.constantsTestsCase import ConstantsTestsCase
+from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
@@ -653,10 +654,139 @@ class Test(TestCase):
 		self.assertEquals("A-H3N2", sample.get_type_sub_type())
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		
+		### mixed infections
+		self.assertEquals(0, sample.number_alerts)
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, sample.mixed_infections_tag.name)
+		
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_run_fastq_and_trimmomatic_and_identify_species_2(self):
+		"""
+		Test run fastq and trimmomatic all together
+		"""
+
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ5_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ5_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ5_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ5_2))
+			
+		sample_name = "run_fastq_and_trimmomatic"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ5_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ5_1)
+			sample.is_valid_2 = True
+			sample.file_name_2 = ConstantsTestsCase.FASTQ5_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ5_2)
+			sample.owner = user
+			sample.save()
+		
+		self.assertFalse(sample.is_ready_for_projects)
+		
+		### set the job
+		taskID = "xpto_task" 
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+
+		### run software
+		self.assertTrue(self.software.run_fastq_and_trimmomatic_and_identify_species(sample, user))
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_sample != None)
+		self.assertEquals(taskID, meta_sample.description)
+
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
+		
+		### number of sequences
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
+
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		self.assertEqual('128050', result_average.number_file_1)
+		self.assertEqual('139.5', result_average.average_file_1)
+		self.assertEqual('128050', result_average.number_file_2)
+		self.assertEqual('136.8', result_average.average_file_2)
+
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Fastq(0.11.5), Trimmomatic(0.27)", list_meta[0].description)
+		
+		sample = Sample.objects.get(pk=sample.id)
+		self.assertTrue(sample.is_ready_for_projects)
+		self.assertTrue(sample.get_is_ready_for_projects())
+		
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
+		self.assertEquals("A-H1pdm09|H3|N1pdm09|N2", sample.type_subtype)
+		self.assertEquals("A-H1pdm09|H3|N1pdm09|N2", sample.get_type_sub_type())
+		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
+		
+		### mixed infections
+		self.assertEquals(1, sample.number_alerts)
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, sample.mixed_infections_tag.name)
+		
+		manage_database = ManageDatabase()
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertEquals("Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.", meta_data.description)
+		
+				
+		## remove all files
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+		
 	def test_run_snippy(self):
 		"""
 		run snippy
@@ -877,6 +1007,10 @@ class Test(TestCase):
 		project_sample.project = project
 		project_sample.save()
 		
+		### copy to trimmomatic files
+		self.utils.copy_file(file_1, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		self.utils.copy_file(file_2, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+		
 		manageDatabase = ManageDatabase()
 		metaKeyAndValue = MetaKeyAndValue()
 		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
@@ -1055,6 +1189,10 @@ class Test(TestCase):
 		project_sample.project = project
 		project_sample.save()
 		
+		### copy to trimmomatic files
+		self.utils.copy_file(file_1, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		self.utils.copy_file(file_2, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+
 		manageDatabase = ManageDatabase()
 		metaKeyAndValue = MetaKeyAndValue()
 		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)

@@ -2,6 +2,14 @@
 /**
 * used in header forms
 */
+.alert-limit-text {
+   	max-width: 900px;
+}
+  
+.insa-recaptcha{
+	padding:15px	
+}
+
 .insa-center-text {
   text-align: center;
 }

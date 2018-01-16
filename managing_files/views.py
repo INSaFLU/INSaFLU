@@ -643,6 +643,14 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['extra_data_sample_expand'] = (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
 			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
 			
+			### get different types of alerts
+			metaKeyAndValue = MetaKeyAndValue()
+			alert_out = []
+			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_details_view():
+				meta_data = manageDatabase.get_sample_metakey(sample, key, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_data != None): alert_out.append(meta_data.description)
+			context['alerts'] = alert_out
+			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
 			if (sample.candidate_file_name_2 != None and len(sample.candidate_file_name_2) > 0):
@@ -1049,13 +1057,10 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				if (meta_data != None):
 					alert_out.append(meta_data.description)
 			
-			## two types of mixed infection
-			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_data != None):
-				alert_out.append(meta_data.description)
-			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_data != None):
-				alert_out.append(meta_data.description)
+			### get different types of alerts
+			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_projects_details_view():
+				meta_data = manageDatabase.get_project_sample_metakey(project_sample, key, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_data != None): alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
 			
 			##### extra data sample, columns added by the user

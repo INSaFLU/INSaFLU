@@ -8,9 +8,10 @@ from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
 from constants.constants import Constants, TypePath, FileType, FileExtensions
+from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
-from managing_files.models import Sample, ProjectSample
+from managing_files.models import Sample, ProjectSample, MixedInfectionsTag
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
@@ -117,17 +118,13 @@ class Software(object):
 		
 		new_file_name = self.utils.get_temp_file_from_dir(out_dir, 'in_file', fastq_1[fastq_1.rfind('.'):])
 		if (os.path.exists(new_file_name)): os.unlink(new_file_name)
-		print(new_file_name)
-		print(fastq_1)
 		cmd = "ln -s {} {}".format(fastq_1, new_file_name)
-		print(cmd)
 		os.system(cmd)
 		
 		prefix = "prefix"
 		unitigs = "unitigs"
 		cmd = '{} {} se={} name="{}" "{}" -C {}'.format(self.software_names.get_abyss(), 
 				self.software_names.get_abyss_parameters(), new_file_name, prefix, unitigs, out_dir)
-		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -918,7 +915,27 @@ class Software(object):
 			sample_to_update = Sample.objects.get(pk=sample.id)
 			sample_to_update.is_ready_for_projects = True
 			sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
+			
+			tag_mixed_infection = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
+			if (sample_to_update.is_mixed_infection()):
+				tag_mixed_infection = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
+				else: sample_to_update.number_alerts += 1
+
+				manage_database = ManageDatabase()
+				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, sample_to_update.get_message_mixed_infection())
+
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+			except MixedInfectionsTag.DoesNotExist as e:
+				mixed_infections_tag = MixedInfectionsTag()
+				mixed_infections_tag.name = tag_mixed_infection
+				mixed_infections_tag.save()
+			
+			sample_to_update.mixed_infections_tag = mixed_infections_tag
 			sample_to_update.save()
+			
 		return b_return
 
 
@@ -943,8 +960,8 @@ class Software(object):
 
 		## process snippy
 		try:
-			out_put_path = self.run_snippy(project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, True),\
-					project_sample.sample.get_fastq(TypePath.MEDIA_ROOT, False),\
+			out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
+					project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
 					project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 					project_sample.sample.name)
 			result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))

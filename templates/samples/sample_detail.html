@@ -32,7 +32,7 @@
 				<div class="col-lg-3"><strong>Week:</strong> {{ sample.week }}</div> <!-- author detail link not yet defined -->
 			  	<div class="col-lg-3"><strong>Vaccine status:</strong> {{ sample.vaccine_status.name }}</div>
 			  	<div class="col-lg-3"><strong>Data set:</strong> {{ sample.data_set.name }}</div>
-			  	<div class="col-lg-3"><strong>Is obsolete:</strong> {{ sample.is_obsolete }}</div>
+			  	<div class="col-lg-3"><strong>Alerts:</strong> {{ sample.number_alerts }}</div>
 			</div>
 			<hr>
 			<div class="row">
@@ -68,6 +68,7 @@
 					<li class="nav-item active"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage identification</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
 				</ul>
 	
 				<div class="tab-content">
@@ -122,6 +123,19 @@
 						{% endfor %}
 						<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 					</div>
+					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
+			    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>
+			    		{% if alerts  %}
+				    		{% for alert in alerts  %}
+				    			<div class="row">
+									<div class="col-lg-12 .alert-limit-text">{{ alert }}</div>
+					  			</div>
+					  			<hr>
+					  		{% endfor %}
+					  	{% else %}
+					  		<p class="software">There's no alerts.</p>
+						{% endif %}
+			  		</div>
 				</div>
 			</div>
 		</div>

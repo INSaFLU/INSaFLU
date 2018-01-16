@@ -84,6 +84,8 @@ class ConstantsTestsCase(object):
 	FASTQ3_2 = "EVA003_S91_L001_R2_001.fastq.gz"
 	FASTQ4_1 = "EVA011_S54_L001_R1_001.fastq.gz"
 	FASTQ4_2 = "EVA011_S54_L001_R2_001.fastq.gz"
+	FASTQ5_1 = "x_mix_H3N2_H1N1_1P.fastq.gz"
+	FASTQ5_2 = "x_mix_H3N2_H1N1_2P.fastq.gz"
 
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"

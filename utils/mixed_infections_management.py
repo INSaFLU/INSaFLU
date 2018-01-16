@@ -52,10 +52,13 @@ class MixedInfectionsManagement(object):
 		mixed_infections.description = self.get_mixed_infection_main_vector().to_json()
 		mixed_infections.save()
 		
-		##  set the alert
+		## get mixed infection from sample
 		manage_database = ManageDatabase()
-#		if (constants_mixed_infection.is_alert(tag) or count_hits.is_mixed_infection_ratio_test()):
-		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
+		meta_data_sample_mixed_infection = manage_database.get_sample_metakey(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+
+		##  set the alert
+		if (meta_data_sample_mixed_infection != None or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()
@@ -67,12 +70,21 @@ class MixedInfectionsManagement(object):
 			## test mixed infection by empirical values
 			if (count_hits.is_mixed_infection_ratio_test()):
 				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
-								MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a ratio of '{}' and a total of '{}' variations.\nSuggest mixed infection.".\
-								format(count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()))
+								MetaKeyAndValue.META_VALUE_Success, "Warning: this sample has a ratio of the number of iSNVs at frequency 1-50% (minor iSNVs) " +\
+								"and 50-90% of '{}' (within the range 0.5-1-5) and a total number of iSNVs from the two categories of '{}' ".format(\
+								count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()) +\
+								"(i.e., above 20) suggesting that may represent a 'mixed infection'.")
 			elif (count_hits.total_grather_than_mixed_infection()):
 				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
-								MetaKeyAndValue.META_VALUE_Success, "Warning, this sample has a sum '{}' bigger than '{}'.\nSuggest mixed infection.".\
-								format(count_hits.get_total_50_50_90(), count_hits.TOTAL_GRATHER_THAN_MIXED))
+								MetaKeyAndValue.META_VALUE_Success, "Warning: this sample has a sum of the number of iSNVs at frequency 1-50% (minor iSNVs) " +\
+								"and 50-90% of '{}' (i.e., above {}) suggesting that may represent a 'mixed infection'.".format(\
+								count_hits.get_total_50_50_90(), count_hits.TOTAL_GRATHER_THAN_MIXED))
+			
+			### mixed infection by sample
+			if (meta_data_sample_mixed_infection != None):
+				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, meta_data_sample_mixed_infection.description)
+				
 		return mixed_infections
 		
 	

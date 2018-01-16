@@ -185,7 +185,35 @@ class VaccineStatus(models.Model):
 	class Meta:
 		ordering = ['creation_date', 'name', ]
 
+
+class MixedInfectionsTag(models.Model):
+	"""
+	Used to tag mixed infections
+	"""
+	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
+	def __str__(self):
+		return self.name
 	
+	class Meta:
+		ordering = ['name', ]
+
+class MixedInfections(models.Model):
+	"""
+	Used to identify mixed infections
+	"""
+	tag = models.ForeignKey(MixedInfectionsTag, related_name='mixed_infections', blank=True, null=True, on_delete=models.CASCADE)
+	average_value = models.FloatField(default=0.0)
+	description = models.TextField(default="")
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
+	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
+															## and is not used in projectSample,
+															## It can change across time
+															## to trace the change of tag is set a metaValue in ProjectSample
+	class Meta:
+		ordering = ['tag', ]
+
+
 class Sample(models.Model):
 	"""
 	Sample, each sample has one or two files...
@@ -218,8 +246,10 @@ class Sample(models.Model):
 	geo_manager = GeoManager()
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
-	number_alerts = models.IntegerField(blank=True, null=True)				## has the number of alerts
-	
+	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
+	mixed_infections_tag = models.ForeignKey(MixedInfectionsTag, verbose_name='Putative Mixed Infection', related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
+																			### has the tag of Yes/No mixed infection
+
 	## many to many relation	
 	tag_names = models.ManyToManyField(TagName, through='TagNames')
 
@@ -339,7 +369,42 @@ class Sample(models.Model):
 				vect_return.append(identify_virus.seq_virus.name)
 		if (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
 		return ''.join(sorted(vect_return))
+	
+	def __get_number_type__(self, vect_identify_virus, type_to_test):
+		"""
+		get a number for a specific type
+		"""
+		n_return = 0
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.seq_virus.kind_type.name == type_to_test): n_return += 1
+		return n_return
 				
+	def is_mixed_infection(self):
+		"""
+		Test if it is mixed infection
+		Type > 1
+		SubType > 2
+		Lineage > 1
+		"""
+		vect_identify_virus = self.identify_virus.all()
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE) > 1): return True
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE) > 2): return True
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE) > 1): return True
+		return False
+	
+	def get_message_mixed_infection(self):
+		"""
+		return the message
+		"""
+		vect_identify_virus = self.identify_virus.all()
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE) > 1):
+			return "Warning: more than one type were detected for this sample, suggesting that may represent a 'mixed infection'."
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE) > 2):
+			return "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'."
+		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE) > 1):
+			return "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'."
+		return None
+		
 	def get_is_ready_for_projects(self):
 		"""
 		need to be true to be ready for projects
@@ -524,32 +589,6 @@ class MetaKeyProject(models.Model):
 	def __str__(self):
 		return self.meta_tag.name + " " + self.value + " " + self.description
 
-class MixedInfectionsTag(models.Model):
-	"""
-	Used to tag mixed infections
-	"""
-	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
-	def __str__(self):
-		return self.name
-	
-	class Meta:
-		ordering = ['name', ]
-
-class MixedInfections(models.Model):
-	"""
-	Used to identify mixed infections
-	"""
-	tag = models.ForeignKey(MixedInfectionsTag, related_name='mixed_infections', blank=True, null=True, on_delete=models.CASCADE)
-	average_value = models.FloatField(default=0.0)
-	description = models.TextField(default="")
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
-	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
-															## and is not used in projectSample,
-															## It can change across time
-															## to trace the change of tag is set a metaValue in ProjectSample
-	class Meta:
-		ordering = ['tag', ]
 
 class CountVariations(models.Model):
 	"""

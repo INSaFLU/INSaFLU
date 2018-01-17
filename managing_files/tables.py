@@ -116,7 +116,7 @@ class SampleTable(tables.Table):
 	class Meta:
 		model = Sample
 		fields = ('name', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set',\
-				'mixed_infections_tag', 'number_alerts', 'number_quality_sequences', 'extra_info')
+				'number_alerts', 'number_quality_sequences', 'extra_info')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Samples to show..."
 		tooltips = ('Name for everyone', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set', 'number_quality_sequences', 'extra_info')

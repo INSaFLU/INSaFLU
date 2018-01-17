@@ -12,6 +12,9 @@ class Profile(models.Model):
 	institution = models.TextField(max_length=100, blank=True)
 	email_confirmed = models.BooleanField(default=False)
 	
+	## user only has a possibility to view a project 
+	only_view_project = models.BooleanField(default=False)
+	
 	## some limits by user
 	max_references = models.IntegerField(default=30)
 	max_samples = models.IntegerField(default=500)

@@ -32,16 +32,20 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.spl
 
 ## google recaptcha
 GOOGLE_RECAPTCHA_SECRET_KEY = config('GOOGLE_RECAPTCHA_SECRET_KEY')
+SITE_KEY = config('SITE_KEY')
 
 ### crispy template
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
 
 CSRF_COOKIE_AGE = None
-#CSRF_COOKIE_DOMAIN = '.ourapi.com'
+CSRF_COOKIE_DOMAIN = '.min-saude.pt'
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
+
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
 # Application definition
 INSTALLED_APPS = [

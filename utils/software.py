@@ -20,6 +20,7 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from django.db import transaction
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
+from BCBio import GFF
 
 class Software(object):
 	'''
@@ -537,34 +538,24 @@ class Software(object):
 
 	def run_genbank2gff3(self, genbank, out_file):
 		"""
-		bp_genbank2gff3 --filter gene --filter region --outdir stdout --quiet static/tests/managing_files/A_H3N2_A_Hong_Kong_4801_2014.gbk
-		"""
-		## IMPORTANT
-		## REMOVED by MIGUEL 11/01/2018 to be compatible to snippy
-		## Need to comment next line (1138) in bp_genbank2gff3 to be compatible with snippy
-		#$g->remove_tag('gene');
-		vect_filter = ['gene', 'region']
-		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
-		cmd = "%s --filter %s --outdir stdout %s > %s" %\
-				(self.software_names.get_genbank2gff3(), " --filter ".join(vect_filter), genbank, temp_file)
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run snippy-vcf-to-tab")
 		
+		"""
+		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
+		with open(temp_file, "w") as out_handle:
+			with open(genbank) as in_handle:
+				GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
+	
 		### filter file
-		handle = open(temp_file)
-		handle_write = open(out_file, 'w')
-		for line in handle:
-			sz_temp = line.strip()
-			if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
-			if (sz_temp.find('##FASTA') == 0): break
-			if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
-			elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_filter): continue
-			else: handle_write.write(sz_temp + "\n")
-		handle.close()
-		handle_write.close()
+		vect_filter = ['remark', 'source', 'gene']
+		with open(temp_file) as handle:
+			with open(out_file, "w") as handle_write:
+				for line in handle:
+					sz_temp = line.strip()
+					if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
+					if (sz_temp.find('##FASTA') == 0): break
+					if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
+					elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_filter): continue
+					else: handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file
 
@@ -624,7 +615,7 @@ class Software(object):
 						snpeff_config, temp_dir, fasta_file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
-			#os.unlink(snpeff_config)
+			os.unlink(snpeff_config)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create snpEff database")
@@ -634,7 +625,7 @@ class Software(object):
 						snpeff_config, temp_dir, fasta_file_name, temp_vcf_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
-			#os.unlink(snpeff_config)
+			os.unlink(snpeff_config)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run snpEff")

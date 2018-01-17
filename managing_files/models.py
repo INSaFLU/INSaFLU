@@ -352,20 +352,29 @@ class Sample(models.Model):
 
 	def get_type_sub_type(self):
 		vect_identify_virus = self.identify_virus.all()
-		sz_return = ""
 		if (vect_identify_virus.count() > 0):
-			sz_return = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE)
-			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE)
-			if (len(sz_type) > 0): sz_return += "" if len(sz_return) == 0 else "-" + sz_type
-			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE)
-			if (len(sz_type) > 0): sz_return += "" if len(sz_return) == 0 else "-" + sz_type
-			return sz_return
+			### Type A
+			sz_return_a = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE, 'A')
+			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE, 'A')
+			if (len(sz_type) > 0): sz_return_a += "" if len(sz_return_a) == 0 else "-" + sz_type
+			
+			### Type B
+			sz_return_b = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE, 'B')
+			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE, 'B')
+			if (len(sz_type) > 0): sz_return_b += "" if len(sz_return_b) == 0 else "-" + sz_type
+			if (len(sz_return_a) == 0): return sz_return_b
+			if (len(sz_return_b) == 0): return sz_return_a
+			return "{}; {}".format(sz_return_a, sz_return_b)
 		else: return Constants.EMPTY_VALUE_TABLE
 		
-	def __get_type__(self, vect_identify_virus, type_to_test):
+	def __get_type__(self, vect_identify_virus, type_to_test, virus_name):
 		vect_return = []
 		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_to_test):
+			if (identify_virus.seq_virus.kind_type.name == type_to_test and identify_virus.seq_virus.name == virus_name):
+				vect_return.append(identify_virus.seq_virus.name)
+			elif (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and 'A' == virus_name):
+				vect_return.append(identify_virus.seq_virus.name)
+			elif (type_to_test == Constants.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and 'B' == virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
 		if (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
 		return ''.join(sorted(vect_return))
@@ -806,8 +815,8 @@ class UploadFiles(models.Model):
 	
 	### need to create a random name for this file
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/tsv',\
-								'application/vnd.ms-excel'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
+								'application/vnd.ms-excel', 'text/plain'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 #	path_name = models.FileField(upload_to=user_directory_path, blank=True, null=True)
 
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs

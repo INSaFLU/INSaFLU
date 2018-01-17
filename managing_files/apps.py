@@ -1,9 +1,8 @@
 from django.apps import AppConfig
 # 
-from constants.constants import Constants, FileExtensions
+from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from django.db import transaction
-import os
 
 
 class ManagingFilesConfig(AppConfig):

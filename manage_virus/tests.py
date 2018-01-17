@@ -138,6 +138,48 @@ class Test(TestCase):
 		self.assertEquals("Victoria", vect_identify_virus[3].seq_virus.name)
 		self.assertEquals(Constants.SEQ_VIRUS_LINEAGE, vect_identify_virus[3].seq_virus.kind_type.name)
 		
+	def test_upload_file_and_results_2(self):
+		
+		uploadFiles = UploadFiles()
+		parseOutFiles = ParseOutFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		uploadFiles.upload_file(version, file)	## upload file
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		self.assertEquals('2', version)
+		
+		uploadFile = UploadFile.objects.order_by('-version')[0]
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE_2)
+		self.assertTrue(os.path.exists(txt_file))
+		vect_data = parseOutFiles.parse_abricate_file(txt_file)
+		
+		### create an IdentifyVirus instance
+		vect_identify_virus = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
+				
+		self.assertEquals(0, vect_identify_virus[0].rank)
+		self.assertEquals("100.00", vect_identify_virus[0].coverage)
+		self.assertEquals("99.59", vect_identify_virus[0].identity)
+		self.assertEquals("A", vect_identify_virus[0].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_TYPE, vect_identify_virus[0].seq_virus.kind_type.name)
+		self.assertEquals("47.26", vect_identify_virus[1].coverage)
+		self.assertEquals("95.47", vect_identify_virus[1].identity)
+		self.assertEquals("B", vect_identify_virus[1].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_TYPE, vect_identify_virus[1].seq_virus.kind_type.name)
+		
+		self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[2].seq_virus.kind_type.name)
+		self.assertEquals("100.00", vect_identify_virus[2].coverage)
+		self.assertEquals("98.82", vect_identify_virus[2].identity)
+		self.assertEquals("H3", vect_identify_virus[2].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[2].seq_virus.kind_type.name)
+		self.assertEquals("90.92", vect_identify_virus[3].coverage)
+		self.assertEquals("97.66", vect_identify_virus[3].identity)
+		self.assertEquals("N2", vect_identify_virus[3].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[3].seq_virus.kind_type.name)
+		self.assertEquals("12.75", vect_identify_virus[4].coverage)
+		self.assertEquals("92.34", vect_identify_virus[4].identity)
+		self.assertEquals("Yamagata", vect_identify_virus[4].seq_virus.name)
+		self.assertEquals(Constants.SEQ_VIRUS_LINEAGE, vect_identify_virus[4].seq_virus.kind_type.name)
+
 	
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_upload_references(self):

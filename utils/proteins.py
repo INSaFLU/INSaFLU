@@ -178,8 +178,9 @@ class Proteins(object):
 		type_file: project.PROJECT_FILE_NAME_MAFFT, project.PROJECT_FILE_NAME_FASTTREE, project.PROJECT_FILE_NAME_FASTTREE_tree
 		"""
 		for gene in genetic_element.get_genes(sequence_name):
+			if (type_file in project.vect_exclude_clean_file_from_proteins): continue
 			path_file = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, gene.name, type_file)
-			if (os.path.exists(path_file)): os.unlink(path_file)
+			if (path_file != None and os.path.exists(path_file)): os.unlink(path_file)
 
 	def save_protein_reference_cds(self, genbank_file, reference_name, sequence_name, gene,\
 							out_file, dict_out_sample_name):

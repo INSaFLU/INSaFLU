@@ -23,7 +23,7 @@ from manage_virus.models import UploadFile
 from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
 from utils.tree import CreateTree
-import os, filecmp
+import os, filecmp, csv
 from utils.parse_in_files import ParseInFiles
 from utils.result import DecodeObjects, MixedInfectionMainVector
 from managing_files.models import CountVariations, MixedInfections
@@ -46,6 +46,5 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 
-
-
+	
 

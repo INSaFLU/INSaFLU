@@ -2,7 +2,11 @@
 # ALTER ROLE fluwebvirus SET client_encoding TO 'utf8';
 # ALTER ROLE fluwebvirus SET default_transaction_isolation TO 'read committed';
 # ALTER ROLE fluwebvirus SET timezone TO 'utc';
-# GRANT ALL PRIVILEGES ON DATABASE fluwebvirus TO fluwebvirususer;
+## 
+# NOT THIS ONE GRANT ALL PRIVILEGES ON DATABASE fluwebvirus TO fluwebvirususer;
+
+# GRANT select, insert, update, delete on all tables in schema public to insafluuser;
+# GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO insafluuser;
 
 ## $ sudo apt-get install binutils libproj-dev gdal-bin
 ## $ sudo apt-get install postgis*

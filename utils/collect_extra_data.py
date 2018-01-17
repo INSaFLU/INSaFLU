@@ -288,7 +288,7 @@ class CollectExtraData(object):
 		out_file = self.utils.get_temp_file('variations_snippy', FileExtensions.FILE_TSV)
 		parse_out_files = ParseOutFiles()
 		n_count = 0
-		vect_type_out = ['snp', 'del', 'ins']
+		vect_type_out = []
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
@@ -310,14 +310,16 @@ class CollectExtraData(object):
 		out_file = self.utils.get_temp_file('variations_freebayes', FileExtensions.FILE_TSV)
 		parse_out_files = ParseOutFiles()
 		n_count = 0
-		vect_type_out = ['snp']
+		vect_type_out = []
+		vect_type_remove = ['ins', 'del']	### evan if it's in complex,ins or del,snp
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 				if (not os.path.exists(tab_file_to_process)): continue
-				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out, 50, True if n_count == 0 else False)
+				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out,\
+								vect_type_remove, 50, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
@@ -329,12 +331,16 @@ class CollectExtraData(object):
 		collect freebayes variations
 		"""
 		parse_out_files = ParseOutFiles()
-		vect_type_out = ['snp']
+		vect_type_out = []
+		vect_type_remove = ['ins', 'del']
+
 		with open(file_out, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
-			parse_out_files.parse_tab_files(None, file_in, csv_writer, vect_type_out, 50, True)
-		if (not os.path.exists(file_out)):
-			os.unlink(file_out)
+			count_print = parse_out_files.parse_tab_files(None, file_in, csv_writer, vect_type_out, vect_type_remove, 50, True)
+
+		### remove file if there's no out sequences
+		if (count_print == 0):
+			if (os.path.exists(file_out)): os.unlink(file_out)
 			return None
 		return file_out
 

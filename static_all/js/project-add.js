@@ -22,7 +22,6 @@ $("#id_project_name").on("change paste keyup", function () {
         
         // handle a non-successful response
         error : function(xhr,errmsg,err) {
-            alert(errmsg);
             console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
         }
    });

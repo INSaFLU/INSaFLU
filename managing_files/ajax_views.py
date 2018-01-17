@@ -134,16 +134,42 @@ def show_msa_nucleotide(request):
 			try:
 				manage_database = ManageDatabase()
 				project = Project.objects.get(id=project_id)
-				if (element_name == 'all_together'): 
-					file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT)
-					file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_nex)
-				else: 
-					file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_MAFFT)
-					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
+				if (element_name == 'all_together'):
+					file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_MAFFT)
+					if (os.path.exists(file_name_fasta)):
+						file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT)
+						data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+					else: 
+						url_file_name_fasta = 'File not available'
+						data['alignment_fasta_show_id'] = '#'
+					
+					file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_nex)
+					if (os.path.exists(file_name_fasta)):
+						file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+					else: 
+						url_file_name_nex = 'File not available'
+				else:
+					file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_MAFFT)
+					if (os.path.exists(file_name_fasta)):
+						file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_MAFFT)
+						data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+					else: 
+						url_file_name_fasta = 'File not available'
+						data['alignment_fasta_show_id'] = '#'
+					
+					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_nex)
+					if (os.path.exists(file_name_fasta)):
+						file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+					else: 
+						url_file_name_nex = 'File not available'
+						
 				data['is_ok'] = True
-				data['alignment_fasta_show_id'] = request.build_absolute_uri(file_name_fasta)
-				data['alignment_fasta_id'] = mark_safe("<strong>Alignment (.fasta):</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
-				data['alignment_nex_id'] = mark_safe("<strong>Alignment (.nex):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
+				data['alignment_fasta_id'] = mark_safe("<strong>Alignment (.fasta):</strong> {}".format(url_file_name_fasta))
+				data['alignment_nex_id'] = mark_safe("<strong>Alignment (.nex):</strong> {}".format(url_file_name_nex))
 				b_calculate_again = False
 				data['max_length_label'] = manage_database.get_max_length_label(project, request.user, b_calculate_again)
 			except Project.DoesNotExist:
@@ -170,12 +196,27 @@ def show_msa_protein(request):
 				try:
 					manage_database = ManageDatabase()
 					project = Project.objects.get(id=project_id)
+					file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
+					if (os.path.exists(file_name_fasta)):
+						file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
+						data['alignment_amino_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+					else: 
+						url_file_name_fasta = 'File not available'
+						data['alignment_amino_fasta_show_id'] = '#'
+					
+					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
+					if (os.path.exists(file_name_fasta)):
+						file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+					else: 
+						url_file_name_nex = 'File not available'
+						
 					file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
 					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
 					data['is_ok'] = True
-					data['alignment_amino_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
-					data['alignment_amino_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> <a href=\"{}\" download> {}</a>".format(file_name_fasta, os.path.basename(file_name_fasta)))
-					data['alignment_amino_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> <a href=\"{}\" download> {}</a>".format(file_name_nex, os.path.basename(file_name_nex)))
+					data['alignment_amino_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> {}".format(url_file_name_fasta))
+					data['alignment_amino_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> {}".format(url_file_name_nex))
 					b_calculate_again = False
 					data['max_length_label'] = manage_database.get_max_length_label(project, request.user, b_calculate_again)
 				except Project.DoesNotExist:

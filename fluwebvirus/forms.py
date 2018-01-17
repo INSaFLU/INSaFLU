@@ -8,7 +8,6 @@ from django.urls import reverse
 from django import forms
 from django.core.exceptions import ValidationError
 from django.conf import settings
-import urllib, json
 
 ## https://simpleisbetterthancomplex.com/tutorial/2016/06/13/how-to-send-email.html
 class RegistrationForm(UserCreationForm):
@@ -45,7 +44,7 @@ class RegistrationForm(UserCreationForm):
 				css_class='row'
 			),
 			Div(
-				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="6LcU1UAUAAAAANaQlLPE5WwVVlio0rTBLTdq_mbi"></div>'),
+				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="{}"></div>'.format(settings.SITE_KEY)),
 				css_class='row'
 			),
 			ButtonHolder(
@@ -101,7 +100,7 @@ class ResetPasswordForm(forms.ModelForm):
 				css_class='row'
 			),
 			Div(
-				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="6LcU1UAUAAAAANaQlLPE5WwVVlio0rTBLTdq_mbi"></div>'),
+				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="{}"></div>'.format(settings.SITE_KEY)),
 				css_class='row'
 			),
 			ButtonHolder(

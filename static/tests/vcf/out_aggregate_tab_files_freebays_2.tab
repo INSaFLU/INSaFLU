@@ -1,0 +1,5 @@
+"ID"	"CHROM"	"POS"	"TYPE"	"REF"	"ALT"	"FREQ"	"FTYPE"	"STRAND"	"NT_POS"	"AA_POS"	"EFFECT"	"NT CHANGE"	"AA CHANGE"	"LOCUS_TAG"	"GENE"	"PRODUCT"
+"sample_name"	"PB2"	"1632"	"complex"	"AGTC"	"GGTT"	"100"	"CDS"	"+"	"1602/2250"	"534/749"	"synonymous_variant"	"c.1602_1605delAGTCinsGGTT"	"p.SerVal534SerVal"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
+"sample_name"	"NA"	"84"	"mnp"	"TT"	"CC"	"100"	"CDS"	"+"	"84/1410"	"28/469"	"synonymous_variant"	"c.84_85delTTinsCC"	"p.IleLeu28IleLeu"	"locus_00006"	"NA"	"Neuraminidase"
+"sample_name"	"NA"	"204"	"complex"	"AACT"	"GACC"	"100"	"CDS"	"+"	"204/1410"	"68/469"	"synonymous_variant"	"c.204_207delAACTinsGACC"	"p.LeuThr68LeuThr"	"locus_00006"	"NA"	"Neuraminidase"
+"sample_name"	"NA"	"888"	"complex"	"GGGC"	"AGGA"	"99.3485"	"CDS"	"+"	"888/1410"	"296/469"	"synonymous_variant"	"c.888_891delGGGCinsAGGA"	"p.LysGly296LysGly"	"locus_00006"	"NA"	"Neuraminidase"

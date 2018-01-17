@@ -15,18 +15,19 @@ class SoftwareNames(object):
 
 	## dir with software
 	DIR_SOFTWARE = "/usr/local/software/insaflu"
-	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE, "snippy/bin/samtools")
+	DIR_SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy")
+	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
 	SOFTWARE_SAMTOOLS_VERSION = "1.3"
 	SOFTWARE_SAMTOOLS_PARAMETERS = ""
-	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE, "snippy/bin/bgzip")
+	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/bgzip")
 	SOFTWARE_BGZIP_name = "bgzip"
 	SOFTWARE_BGZIP_VERSION = "1.3"
 	SOFTWARE_BGZIP_PARAMETERS = ""
 	SOFTWARE_GZIP_name = "gzip"
 	SOFTWARE_GZIP_VERSION = "1.6"
 	SOFTWARE_GZIP_PARAMETERS = ""
-	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, "snippy/bin/tabix")
+	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/tabix")
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
@@ -37,8 +38,8 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
-	SOFTWARE_SPAdes_PARAMETERS = "--meta --only-assembler"
-	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"
+	SOFTWARE_SPAdes_PARAMETERS = "--cov-cutoff 3 --only-assembler"
+	SOFTWARE_SPAdes_PARAMETERS_single = "--cov-cutoff 3 --only-assembler"
 	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
 	SOFTWARE_ABYSS_name = "Abyss" 
 	SOFTWARE_ABYSS_VERSION = "2.0"
@@ -47,7 +48,7 @@ class SoftwareNames(object):
 	SOFTWARE_ABRICATE_name = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
-	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70"
+	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
 	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
 	SOFTWARE_FASTQ_name = "FastQC"
 	SOFTWARE_FASTQ_VERSION = "0.11.5"
@@ -56,35 +57,27 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
-	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy")
+	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
-	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, "snippy/bin/snippy-vcf_to_tab_add_freq")
+	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq")
 	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS = ""
-	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE, "snippy/bin/snpEff")
-	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE, "snippy/etc/snpeff.config")
+	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snpEff")
+	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "etc/snpeff.config")
 	SOFTWARE_SNP_EFF_name = "snpEff"
 	SOFTWARE_SNP_EFF_VERSION = "4.3p"
 	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
 	
-	## IMPORTANT
-	## REMOVED by MIGUEL 11/01/2018 to be compatible to snippy
-	## Need to comment next line (1138) in bp_genbank2gff3 to be compatible with snippy
-	#$g->remove_tag('gene');
-	SOFTWARE_GENBANK2GFF3 = os.path.join(DIR_SOFTWARE, 'genbank2gff3/insa_genbank2gff3')
-	SOFTWARE_GENBANK2GFF3_name = 'Genbank2gff3'
-	SOFTWARE_GENBANK2GFF3_VERSION = 'Unknown'
-	SOFTWARE_GENBANK2GFF3_PARAMETERS = ''
-	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes")
-	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE, "snippy/bin/freebayes-parallel")
+	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/freebayes")
+	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/freebayes-parallel")
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
 	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
 	
-	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE, "snippy/bin/fasta_generate_regions.py")
+	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/fasta_generate_regions.py")
 	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"
 	SOFTWARE_FASTA_GENERATE_REGIONS_VERSION = "1.0"
 	SOFTWARE_FASTA_GENERATE_REGIONS_PARAMETERS = ""
@@ -219,14 +212,6 @@ class SoftwareNames(object):
 	def get_snp_eff_config(self): return self.SOFTWARE_SNP_EFF_config
 	def get_snp_eff_version(self): return self.SOFTWARE_SNP_EFF_VERSION
 	def get_snp_eff_parameters(self): return self.SOFTWARE_SNP_EFF_PARAMETERS
-	
-	"""
-	return genbank2gff3 software
-	"""
-	def get_genbank2gff3(self): return self.SOFTWARE_GENBANK2GFF3
-	def get_genbank2gff3_name(self): return self.SOFTWARE_GENBANK2GFF3_name
-	def get_genbank2gff3_version(self): return self.SOFTWARE_GENBANK2GFF3_VERSION
-	def get_genbank2gff3_parameters(self): return self.SOFTWARE_GENBANK2GFF3_PARAMETERS
 	
 	
 	"""

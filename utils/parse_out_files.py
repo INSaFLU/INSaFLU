@@ -71,7 +71,7 @@ class ParseOutFiles(object):
 		return sorted(vect_out, reverse=True, key=lambda k: "%03d %03d" % (int(k[self.COVERAGE]) , int(k[self.IDENTITY])))
 
 
-	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, limit_freq, b_add_header):
+	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):
 		"""
 		limit_freq -> the tre max freq to accept the variation
 		process tab files
@@ -82,8 +82,10 @@ class ParseOutFiles(object):
 				del	Deletion	ACGG => ACG
 				complex	Combination of snp/mnp
 		vect_count_type = ['snp', 'ins']
+		vect_type_remove = ['ins', 'del'] , for example
 		"""
 		
+		count_print = 0
 		if (b_add_header): 
 			if (sample_name == None): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID.split('\t'))
 			else: csv_writer.writerow(self.HEADER_TAB_FILE_WRITE.split('\t'))
@@ -98,8 +100,16 @@ class ParseOutFiles(object):
 					if (len(lst_data) > 5):
 						lst_freq_data = lst_data[5].split(',')
 						lst_type_var = lst_data[2].split(',')
+						b_exist = False
 						for i in range(0, len(lst_type_var)):
-							if (lst_type_var[i] in vect_type_out and self.utils.is_float(lst_freq_data[i]) and float(lst_freq_data[i]) < limit_freq):
+							for value in vect_type_remove: 
+								if (value in lst_type_var):
+									b_exist = True
+									break
+							if (b_exist): break	### exist, don't print
+							
+							if ((lst_type_var[i] in vect_type_out or len(vect_type_out) == 0) and self.utils.is_float(lst_freq_data[i])\
+										and float(lst_freq_data[i]) < limit_freq):
 								vect_to_write = []
 								if (sample_name != None): vect_to_write = [sample_name]
 								if (len(lst_data) > 10):
@@ -108,9 +118,10 @@ class ParseOutFiles(object):
 									vect_to_write.extend(lst_data[11:])
 								else: vect_to_write.extend(lst_data)
 								csv_writer.writerow(vect_to_write)
+								count_print += 1
 								break
 
-		return True
+		return count_print
 
 	def parse_tab_files_snippy(self, sample_name, file_to_parse, csv_writer, vect_type_out, b_add_header):
 		"""
@@ -137,7 +148,7 @@ class ParseOutFiles(object):
 					if (len(lst_data) > 5):
 						lst_type_var = lst_data[2].split(',')
 						for i in range(0, len(lst_type_var)):
-							if (lst_type_var[i] in vect_type_out):
+							if (len(vect_type_out) == 0 or lst_type_var[i] in vect_type_out):
 								vect_to_write = [sample_name]
 								vect_to_write.extend(lst_data)
 								csv_writer.writerow(vect_to_write)

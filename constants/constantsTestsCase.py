@@ -28,6 +28,7 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_FASTA_2 = "temp_2.fasta"
 	MANAGING_FILES_GBK_2 = "temp_2.gbk"
 	MANAGING_TEST_ABRICATE = "abricate_out.txt"
+	MANAGING_TEST_ABRICATE_2 = "abricate_2.txt"
 	MANAGING_TWO_GENES_JOINED_GBK = "TwoGenesJoined.gbk"
 	MANAGING_TWO_GENES_JOINED_BED = "TwoGenesJoined.bed"
 	MANAGING_CONSENSUS_ALIGNMENT_PROTEIN = "concensus_alignment_protein.fasta"
@@ -86,6 +87,8 @@ class ConstantsTestsCase(object):
 	FASTQ4_2 = "EVA011_S54_L001_R2_001.fastq.gz"
 	FASTQ5_1 = "x_mix_H3N2_H1N1_1P.fastq.gz"
 	FASTQ5_2 = "x_mix_H3N2_H1N1_2P.fastq.gz"
+	FASTQ6_1 = "RL017_1P.fastq.gz"
+	FASTQ6_2 = "RL017_2P.fastq.gz"
 
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"

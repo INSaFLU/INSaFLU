@@ -821,14 +821,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
 	
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(AddSamplesProjectsView, self).get_form_kwargs()
-##		kw['request'] = self.request 	# get error
-		return kw
-
 	def get_context_data(self, **kwargs):
 		context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
 		
@@ -881,91 +873,92 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			context['project_sample'] = AddSampleProjectForm()
 		return context
 
-
+	
 	def form_valid(self, form):
 		"""
 		Validate the form
 		"""
-		metaKeyAndValue = MetaKeyAndValue()
-		manageDatabase = ManageDatabase()
-		software = Software()
-		collect_extra_data = CollectExtraData()
-		
-		### get project sample..
-		context = self.get_context_data()
-
-		### get project 		
-		project = Project.objects.get(pk=self.kwargs['pk'])
-		
-		vect_sample_id_add_temp = []
-		for sample in context['table'].data:
-			vect_sample_id_add_temp.append(sample.id)
-				
-		vect_sample_id_add = []
-		if ("submit_checked" in self.request.POST):
-			for key in self.request.session.keys():
-				if (self.request.session[key] and key.startswith(Constants.CHECK_BOX) and\
-					len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
-					### this is necessary because of the search. Can occur some checked box that are out of filter.
-					if (int(key.split('_')[2]) in vect_sample_id_add_temp):
-						vect_sample_id_add.append(int(key.split('_')[2]))
-		elif ("submit_all" in self.request.POST):
-			vect_sample_id_add = vect_sample_id_add_temp
-
-		### start adding...
-		project_sample_add = 0
-		vect_task_id_submited = []
-		for id_sample in vect_sample_id_add:
-			try:
-				sample = Sample.objects.get(pk=id_sample)
-			except Sample.DoesNotExist:
-				## log
-				self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-				self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-				continue
+		if form.is_valid():
+			metaKeyAndValue = MetaKeyAndValue()
+			manageDatabase = ManageDatabase()
+			software = Software()
+			collect_extra_data = CollectExtraData()
 			
-			## get project sample
-			try:
-				project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
+			### get project sample..
+			context = self.get_context_data()
+	
+			### get project 		
+			project = Project.objects.get(pk=self.kwargs['pk'])
+			
+			vect_sample_id_add_temp = []
+			for sample in context['table'].data:
+				vect_sample_id_add_temp.append(sample.id)
+					
+			vect_sample_id_add = []
+			if ("submit_checked" in self.request.POST):
+				for key in self.request.session.keys():
+					if (self.request.session[key] and key.startswith(Constants.CHECK_BOX) and\
+						len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
+						### this is necessary because of the search. Can occur some checked box that are out of filter.
+						if (int(key.split('_')[2]) in vect_sample_id_add_temp):
+							vect_sample_id_add.append(int(key.split('_')[2]))
+			elif ("submit_all" in self.request.POST):
+				vect_sample_id_add = vect_sample_id_add_temp
+	
+			### start adding...
+			project_sample_add = 0
+			vect_task_id_submited = []
+			for id_sample in vect_sample_id_add:
+				try:
+					sample = Sample.objects.get(pk=id_sample)
+				except Sample.DoesNotExist:
+					## log
+					self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+					self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+					continue
 				
-				### if exist can be deleted, active
-				if (project_sample.is_deleted and not project_sample.is_error):
-					project_sample.is_deleted = False
+				## get project sample
+				try:
+					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
+					
+					### if exist can be deleted, active
+					if (project_sample.is_deleted and not project_sample.is_error):
+						project_sample.is_deleted = False
+						project_sample.save()
+						project_sample_add += 1
+					
+				except ProjectSample.DoesNotExist:
+					project_sample = ProjectSample()
+					project_sample.project = project
+					project_sample.sample = sample
 					project_sample.save()
 					project_sample_add += 1
-				
-			except ProjectSample.DoesNotExist:
-				project_sample = ProjectSample()
-				project_sample.project = project
-				project_sample.sample = sample
-				project_sample.save()
-				project_sample_add += 1
-				
-				### create a task to perform the analysis of fastq and trimmomatic
-				taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
-				vect_task_id_submited.append(taskID)
-
-				### set project sample queue ID
-				manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
-									metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
-									MetaKeyAndValue.META_VALUE_Queue, taskID)
-
-		### necessary to calculate the global results again 
-		if (project_sample_add > 0):
-			taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
-			manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
-					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
-		
-		if (len(vect_task_id_submited) == 0):
-			messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
-		else:
-			if (len(vect_task_id_submited) > 1):
-				messages.success(self.request, _("'{}' samples were added to your project.".format(\
-							len(vect_task_id_submited))), fail_silently=True)
-			else:
-				messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
+					
+					### create a task to perform the analysis of fastq and trimmomatic
+					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+					vect_task_id_submited.append(taskID)
+	
+					### set project sample queue ID
+					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
+										metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+										MetaKeyAndValue.META_VALUE_Queue, taskID)
+	
+			### necessary to calculate the global results again 
+			if (project_sample_add > 0):
+				taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
+				manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 			
+			if (len(vect_task_id_submited) == 0):
+				messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
+			else:
+				if (len(vect_task_id_submited) > 1):
+					messages.success(self.request, _("'{}' samples were added to your project.".format(\
+								len(vect_task_id_submited))), fail_silently=True)
+				else:
+					messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
 		return super(AddSamplesProjectsView, self).form_valid(form)
+
 	form_valid_message = ""		## need to have this, even empty
 
 

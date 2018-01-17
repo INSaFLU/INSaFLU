@@ -33,14 +33,15 @@ class Test(unittest.TestCase):
 
 		temp_out_file = self.utils.get_temp_file('test_tab_out', '.tab')
 		vect_type_out = ['snp']
+		vect_type_remove = []
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
-			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 101, b_add_header)
+			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 101, b_add_header)
 			
 			vect_type_out = ['del']
 			b_add_header = False
-			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 101, b_add_header)
+			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 101, b_add_header)
 
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
@@ -56,10 +57,11 @@ class Test(unittest.TestCase):
 
 		temp_out_file = self.utils.get_temp_file('test_tab_out', '.tab')
 		vect_type_out = ['snp', 'del']
+		vect_type_remove = []
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
-			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 101, b_add_header)
+			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 101, b_add_header)
 			
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
@@ -76,15 +78,37 @@ class Test(unittest.TestCase):
 
 		temp_out_file = self.utils.get_temp_file('test_tab_out', '.tab')
 		vect_type_out = ['snp', 'del']
+		vect_type_remove = []
 		b_add_header = True
 		with open(temp_out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
-			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, 50, b_add_header)
+			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 50, b_add_header)
 			
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
 
+	def test_parse_freebays_tab_files_3(self):
+		"""
+		test ParseOutFiles for tab files
+		"""
+		parse_out_files = ParseOutFiles()
+		tab_file_to_process = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.tab")
+		expected_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "out_aggregate_tab_files_freebays_2.tab")
+
+		temp_out_file = self.utils.get_temp_file('test_tab_out', '.tab')
+		vect_type_out = []
+		vect_type_remove = ['snp']
+		b_add_header = True
+		n_out_lines = 0
+		with open(temp_out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
+			n_out_lines += parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 101, b_add_header)
+		
+		self.assertEquals(4, n_out_lines)
+		self.assertTrue(os.path.exists(temp_out_file))
+		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
+		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
 
 	def test_add_variants_in_incomplete_locus(self):
 		"""

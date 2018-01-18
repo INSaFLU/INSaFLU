@@ -35,6 +35,7 @@ function draw_phylo_canvas() {
 	    data : { 
 	    	project_id : $('#phylocanvas').attr("project_id"),
 	    	key_element_name : element_selected,
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
 	    url: $('#phylocanvas').attr("show-phylo-canvas-url"),
@@ -102,6 +103,7 @@ function draw_nucleotide_alignments() {
 	    data : { 
 	    	project_id : $('#msa_viewer_nucleote_id').attr("project_id"),
 	    	key_element_name : element_selected,
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
 	    url: $('#msa_viewer_nucleote_id').attr("show-msa-nucleotide-url"),
@@ -177,6 +179,7 @@ $("#combo_select_elements_amino_alignments_id").change(function () {
     	data : { 
 	    	project_id : $('#msa_viewer_amino_id').attr("project_id"),
 	    	key_element_name : element_selected,
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    },
     	url: $('#combo_select_elements_amino_alignments_id').attr("get-cds-from-element-url"),
     	success: function (data) {
@@ -221,6 +224,7 @@ function draw_protein_alignments() {
 	    	project_id : $('#msa_viewer_amino_id').attr("project_id"),
 	    	key_element_name : element_selected,
 	    	key_gene_name : gene_selected,
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
 	    url: $('#msa_viewer_amino_id').attr("show-msa-amino-url"),
@@ -295,6 +299,7 @@ function draw_count_variations_chart(){
     	
 	    data : { 
 	    	project_id : $('#canvas_count_variations_id').attr("project_id"),
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
 	    url: $('#canvas_count_variations_id').attr("show_count_variations-url"),
@@ -413,20 +418,23 @@ $(document).on("click", "a", function(){
 	
 	  	data : { 
 	  		project_sample_id : $(this).attr('project_sample_id'), // data sent with the get request 
-	  		element : $(this).attr('sequence') }, // data sent with the get request 
-	  		url: $('#modal-body-coverage').attr("show-coverage-modal-url"),
-	  		success: function (data) {
-	  			if (data['is_ok']) {
-	  				$('h4.modal-title').text(data['text']);
-	  				$('#modal-body-coverage').prepend(data['image'])
-	  			}
-	  		},
+	  		element : $(this).attr('sequence'),
+			csrfmiddlewaretoken: '{{ csrf_token }}'
+	  	}, // data sent with the get request 
+	  	
+	  	url: $('#modal-body-coverage').attr("show-coverage-modal-url"),
+  		success: function (data) {
+  			if (data['is_ok']) {
+  				$('h4.modal-title').text(data['text']);
+  				$('#modal-body-coverage').prepend(data['image'])
+  			}
+  		},
 	      
-	      // handle a non-successful response
-	      error : function(xhr,errmsg,err) {
-	          alert(errmsg);
-	          console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-	      }
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+        	alert(errmsg);
+        	console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
 	});
 });
 

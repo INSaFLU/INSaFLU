@@ -28,7 +28,7 @@ class Test(TestCase):
 		pass
 
 
-	def test_parse_abricate_file(self):
+	def test_parse_sample_files(self):
 		"""
 		Test input files
 		"""

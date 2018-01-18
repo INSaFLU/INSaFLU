@@ -201,7 +201,7 @@ class UploadFiles(object):
 			if (ParseOutFiles.TYPE in dt_data):
 				split_type = dt_data[ParseOutFiles.TYPE].split("_")
 				if (len(split_type) == 2 and split_type[1].lower() == Constants.SEQ_VIRUS_TYPE.lower() and\
-						dt_data[ParseOutFiles.GENE] not in vect_out_type):
+						not (dt_data[ParseOutFiles.GENE] in vect_out_type)):
 					vect_out_type.append(dt_data[ParseOutFiles.GENE])
 					vect_data_out.append(dt_data)
 		return vect_data_out
@@ -216,9 +216,9 @@ class UploadFiles(object):
 			if (ParseOutFiles.TYPE in dt_data):
 				type_result = self.__get_type__(dt_data[ParseOutFiles.TYPE])
 				if (type_result == Constants.SEQ_VIRUS_SUB_TYPE or type_result == Constants.SEQ_VIRUS_LINEAGE):
-					if (dt_data[ParseOutFiles.GENE] in vect_out_gene): continue
-					vect_data_out.append(dt_data)
-					vect_out_gene.append(dt_data[ParseOutFiles.GENE])
+					if (dt_data[ParseOutFiles.GENE] not in vect_out_gene):
+						vect_data_out.append(dt_data)
+						vect_out_gene.append(dt_data[ParseOutFiles.GENE])
 		return vect_data_out
 	
 	

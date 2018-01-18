@@ -7,6 +7,7 @@ Created on Nov 1, 2017
 from utils.utils import Utils
 from django.utils.translation import ugettext_lazy as _
 from constants.constants import Constants, FileExtensions
+from constants.software_names import SoftwareNames
 import csv, os
 
 class ParseOutFiles(object):
@@ -37,13 +38,17 @@ class ParseOutFiles(object):
 		'''
 		pass
 	
-	def parse_abricate_file(self, file_name):
+	def parse_abricate_file(self, file_name, clean_hits_below_value):
 		"""
 		#FILE	 SEQUENCE	 START   END	 GENE	 COVERAGE	 COVERAGE_MAP	 GAPS  %COVERAGE  %IDENTITY  DATABASE   ACCESSION  PRODUCT
 		6159.fna  NC_017338.1  39177   41186   mecA_15  1-2010/2010  ===============  0/0   100.00	 100.000	resfinder  AB505628   n/a
 		6159.fna  NC_017338.1  727191  728356  norA_1   1-1166/1167  ===============  0/0   99.91	  92.367	 resfinder  M97169	 n/a
 		6159.fna  NC_017339.1  10150   10995   blaZ_32  1-846/846	===============  0/0   100.00	 100.000	resfinder  AP004832   betalactamase
 		
+		#FILE	SEQUENCE	START	END	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT
+		/tmp/insaFlu/insa_flu_85008740/contigs.fasta	NODE_1_length_3374_cov_697.364266	2372	3353	A	1-982/982	===============	0/0	100.00	99.69	influenza_type	XXXX	N/A
+		/tmp/insaFlu/insa_flu_85008740/contigs.fasta	NODE_27_length_226_cov_1.035088	1	226	N2	41-266/1410	===............	0/0	16.03	96.46	influenza_subtype	XXXXXX	N/A
+
 		Parse out abricate files 
 		"""
 		handle = open(file_name)
@@ -56,6 +61,13 @@ class ParseOutFiles(object):
 			elif (b_fisrt_line_found):
 				lst_split = line.split('\t')
 				if (len(lst_split) != 13): continue
+				
+				### clean SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE
+				lst_coverage = lst_split[1].split('_')
+				if (len(lst_coverage) > 4 and self.utils.is_float(lst_coverage[-1]) and\
+						(float(lst_coverage[-1]) < clean_hits_below_value)):
+					continue
+				
 				dt_data = {}
 				dt_data[self.GENE] = lst_split[4]
 				if self.utils.is_float(lst_split[8]): dt_data[self.COVERAGE] = float(lst_split[8])

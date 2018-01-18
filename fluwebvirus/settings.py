@@ -45,7 +45,10 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
 #SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
+	SECURE_SSL_REDIRECT = True
+	SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 INSTALLED_APPS = [

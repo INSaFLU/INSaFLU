@@ -304,7 +304,7 @@ class Software(object):
 			return False
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate)
+		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		## copy the abricate output 
 		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
 		

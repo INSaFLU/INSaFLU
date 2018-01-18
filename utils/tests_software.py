@@ -150,7 +150,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(out_file))
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file)
+		vect_data = parseOutFiles.parse_abricate_file(out_file, 1)
 		self.assertEqual('A', vect_data[0][ParseOutFiles.GENE])
 		self.assertEqual(100.00, vect_data[0][ParseOutFiles.COVERAGE])
 		self.assertEqual(99.69, vect_data[0][ParseOutFiles.IDENTITY])
@@ -892,20 +892,18 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
-		self.assertEquals("A-H3N2; B-Yamagata", sample.type_subtype)
-		self.assertEquals("A-H3N2; B-Yamagata", sample.get_type_sub_type())
+		self.assertEquals("A-H3N2", sample.type_subtype)
+		self.assertEquals("A-H3N2", sample.get_type_sub_type())
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		
 		### mixed infections
-		self.assertEquals(1, sample.number_alerts)
-		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, sample.mixed_infections_tag.name)
+		self.assertEquals(0, sample.number_alerts)
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, sample.mixed_infections_tag.name)
 		
 		manage_database = ManageDatabase()
 		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
  								MetaKeyAndValue.META_VALUE_Success)
-		self.assertTrue(meta_data != None)
-		self.assertEquals("Warning: more than one type were detected for this sample, suggesting that may represent a 'mixed infection'.", meta_data.description)
-		
+		self.assertTrue(meta_data == None)
 				
 		## remove all files
 		self.utils.remove_dir(temp_dir)

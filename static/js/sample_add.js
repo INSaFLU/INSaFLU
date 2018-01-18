@@ -48,7 +48,7 @@ $('#id-save-button').on('click', function(){
         /// need to add crfs
         data : { type_data : $('h4.modal-title').attr('id'),
         		value : $('#id_name_to_insert').val(),
-        		csrfmiddlewaretoken : jQuery("[name=csrfmiddlewaretoken]").val(), 
+    			csrfmiddlewaretoken: '{{ csrf_token }}'
         }, // data sent with the post request
         		
         success: function (data) {
@@ -104,7 +104,7 @@ $(document).on("click", "a", function(){
 	        data : { type_data : attr,
 	        		is_to_test : true,
 	        		value : value_to_remove,
-	        		csrfmiddlewaretoken : jQuery("[name=csrfmiddlewaretoken]").val(), 
+	    			csrfmiddlewaretoken: '{{ csrf_token }}' 
 	        }, // data sent with the post request
 	        		
 	        success: function (data) {
@@ -146,7 +146,7 @@ $('#id-modal-footer-remove').on('click', '#id-remove-button', function(){
         data : { type_data : $('h4.modal-title-remove').attr('id'),
         		is_to_test : false,
         		value : value_to_remove,
-        		csrfmiddlewaretoken : jQuery("[name=csrfmiddlewaretoken]").val(), 
+    			csrfmiddlewaretoken: '{{ csrf_token }}' 
         }, // data sent with the guest request
         		
         success: function (data) {

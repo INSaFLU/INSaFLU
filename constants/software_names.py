@@ -38,8 +38,9 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"
-	SOFTWARE_SPAdes_PARAMETERS = "--cov-cutoff 3 --only-assembler"
-	SOFTWARE_SPAdes_PARAMETERS_single = "--cov-cutoff 3 --only-assembler"
+	SOFTWARE_SPAdes_PARAMETERS = "--only-assembler"
+	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"		## same at this point
+	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"
 	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
 	SOFTWARE_ABYSS_name = "Abyss" 
 	SOFTWARE_ABYSS_VERSION = "2.0"

@@ -783,8 +783,11 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		select_ref = None
 		if ('select_ref' in project_references.data ): select_ref = project_references.data['select_ref']
 		else:
-			self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference." 
-			b_error = True
+			### test if it's in the session 
+			select_ref = get_unique_pk_from_session(self.request)
+			if (select_ref == None):
+				self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference." 
+				b_error = True
 		if (name is None): name = ""
 		
 		if (select_ref != None):
@@ -1122,3 +1125,31 @@ def clean_check_box_in_session(request):
 			vect_keys_to_remove.append(key)
 	for key in vect_keys_to_remove:
 		del request.session[key] 
+
+
+def get_first_pk_from_session(request):
+	"""
+	return the first pk selected, if none, return none 
+	"""
+	utils = Utils()
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])\
+				and request.session[key]):
+			return key.split('_')[2]
+	return None
+
+def get_unique_pk_from_session(request):
+	"""
+	return the unique pk selected. If exists more than one return none 
+	"""
+	utils = Utils()
+	return_pk = None
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])\
+				and request.session[key]):
+			if (return_pk == None): return_pk = key.split('_')[2]
+			else: return None
+	return return_pk
+
+
+

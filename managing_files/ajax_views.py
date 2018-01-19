@@ -139,15 +139,15 @@ def show_msa_nucleotide(request):
 					if (os.path.exists(file_name_fasta)):
 						file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT)
 						data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
-						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta, os.path.basename(file_name_fasta))
 					else: 
 						url_file_name_fasta = 'File not available'
 						data['alignment_fasta_show_id'] = '#'
 					
 					file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_nex)
-					if (os.path.exists(file_name_fasta)):
+					if (os.path.exists(file_name_nex)):
 						file_name_nex = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_nex)
-						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex, os.path.basename(file_name_nex))
 					else: 
 						url_file_name_nex = 'File not available'
 				else:
@@ -155,15 +155,15 @@ def show_msa_nucleotide(request):
 					if (os.path.exists(file_name_fasta)):
 						file_name_fasta = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_MAFFT)
 						data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
-						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta, os.path.basename(file_name_fasta))
 					else: 
 						url_file_name_fasta = 'File not available'
 						data['alignment_fasta_show_id'] = '#'
 					
 					file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_nex)
-					if (os.path.exists(file_name_fasta)):
+					if (os.path.exists(file_name_nex)):
 						file_name_nex = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_nex)
-						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex, os.path.basename(file_name_nex))
 					else: 
 						url_file_name_nex = 'File not available'
 						
@@ -200,20 +200,18 @@ def show_msa_protein(request):
 					if (os.path.exists(file_name_fasta)):
 						file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
 						data['alignment_amino_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
-						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta)
+						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta, os.path.basename(file_name_fasta))
 					else: 
 						url_file_name_fasta = 'File not available'
 						data['alignment_amino_fasta_show_id'] = '#'
 					
 					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
-					if (os.path.exists(file_name_fasta)):
+					if (os.path.exists(file_name_nex)):
 						file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
-						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex)
+						url_file_name_nex = '<a href="{}" download> {}</a>'.format(file_name_nex, os.path.basename(file_name_nex))
 					else: 
 						url_file_name_nex = 'File not available'
 						
-					file_name_fasta = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_MAFFT)
-					file_name_nex = project.get_global_file_by_element_and_cds(TypePath.MEDIA_URL, element_name, gene_name, Project.PROJECT_FILE_NAME_nex)
 					data['is_ok'] = True
 					data['alignment_amino_fasta_id'] = mark_safe("<strong>Alignment 'fasta':</strong> {}".format(url_file_name_fasta))
 					data['alignment_amino_nex_id'] = mark_safe("<strong>Alignment 'nex':</strong> {}".format(url_file_name_nex))

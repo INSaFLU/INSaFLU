@@ -44,6 +44,8 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
+#https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
+#https://gist.github.com/bradmontgomery/6487319
 #SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
 	SECURE_SSL_REDIRECT = True

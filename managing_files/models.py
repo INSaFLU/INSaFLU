@@ -562,7 +562,7 @@ class Project(models.Model):
 		if (os.path.exists(out_file)):
 			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_global_file_by_project(\
 						TypePath.MEDIA_URL, file_name), file_name))
-		return _('File no available yet.')
+		return _('File not available yet.')
 		
 		
 	def __get_user_result_global_directory_path__(self, element):
@@ -620,6 +620,7 @@ class ProjectSample(models.Model):
 	PREFIX_FILE_COVERAGE = 'coverage'
 	FILE_CONSENSUS_FILE = "Consensus_"
 	FILE_SNIPPY_TAB = "validated_variants_sample_"
+	FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
 	
 	project = models.ForeignKey(Project, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
@@ -675,6 +676,8 @@ class ProjectSample(models.Model):
 		"""
 		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
+		if (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
+			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
 		return self.sample.name
 
 

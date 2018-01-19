@@ -1068,7 +1068,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			
 			context['consensus_file'] = project_sample.get_consensus_file_web()
 			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB ,SoftwareNames.SOFTWARE_SNIPPY_name)
-			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_CLEAN_FREEBAYES_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1

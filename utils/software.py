@@ -1137,7 +1137,7 @@ class Software(object):
 		### get a clean freebayes file
 		tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 		if (os.path.exists(tab_freebayes_file)):
-			file_out = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CLEAN_FREEBAYES_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 			collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
 			
 		### get clean consensus file

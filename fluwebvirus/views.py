@@ -127,7 +127,7 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 					user.is_active = False
 					user.save()
 					current_site = get_current_site(self.request)
-					subject = 'Reseting password  in your InsaFlu Account'
+					subject = 'Reseting password  in your INSaFlu Account'
 					message = render_to_string('accounts/account_reset_pass_email.html', {
 						'user': user,
 						'domain': current_site.domain,

@@ -156,7 +156,6 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF): return "{}.vcf".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
-		if (file_type == FileType.FILE_CLEAN_FREEBAYES_TAB): return "{}.freebayes.tab".format(file_name)
 		return ""
 
 	### complement
@@ -250,7 +249,6 @@ class FileType(Enum):
 	FILE_VCF_GZ = 9
 	FILE_VCF_GZ_TBI = 10
 	FILE_CSV = 11
-	FILE_CLEAN_FREEBAYES_TAB = 12	## has the clean freebayes data, 
 
 class TypeFile(object):
 	

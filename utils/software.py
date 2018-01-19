@@ -546,7 +546,8 @@ class Software(object):
 				GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
 	
 		### filter file
-		vect_filter = ['remark', 'source', 'gene']
+	#	vect_filter = ['remark', 'source', 'gene']
+		vect_pass = ['CDS']
 		with open(temp_file) as handle:
 			with open(out_file, "w") as handle_write:
 				for line in handle:
@@ -554,8 +555,7 @@ class Software(object):
 					if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
 					if (sz_temp.find('##FASTA') == 0): break
 					if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
-					elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_filter): continue
-					else: handle_write.write(sz_temp + "\n")
+					elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_pass): handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file
 
@@ -696,7 +696,7 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run freebayes")
-		
+
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s -f %s -b %s > %s" %\
  				(self.software_names.get_freebayes(), self.software_names.get_freebayes_parameters(),
@@ -794,19 +794,19 @@ class Software(object):
 			raise Exception("Fail to run freebayes")
 		
 		### run snpEff
-		temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-		self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+		if (os.path.exists(temp_file)):
+			temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+			self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
 		
-		self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			### add FREQ to vcf file
+			vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
+			### pass vcf to tab
+			self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
 		
-		### add FREQ to vcf file
-		vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
-		os.unlink(temp_file)
-		os.unlink(temp_file_2)
-		os.unlink(temp_file_regions)
-		
-		### pass vcf to tab
-		self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
+		if (os.path.exists(temp_file_2)): os.unlink(temp_file_2)
+		if (os.path.exists(temp_file_regions)): os.unlink(temp_file_regions)
 		return temp_dir
 	
 	"""
@@ -1190,3 +1190,15 @@ class Software(object):
 			raise Exception("Fail to create index") 
 
 
+	def dos_2_unix(self, file_name):
+		"""
+		convert dos 2 unix
+		"""
+		if (not os.path.exists(file_name)): return
+		cmd = "dos2unix {}".format(self.software_names.get_igvtools(), file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create index") 
+		

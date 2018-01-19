@@ -103,6 +103,7 @@
 						<li><a href="http://insaflu.readthedocs.io/en/latest/guide_pre_ngs.html#how-to-design-a-ngs-run" target="_blank">Find here how to design a NGS run</a></li>
 					</ol>
           		</div>
+          		
 				<div class="sidebar-module">
 					<h4 class="insa-h4">News</h4>
 					<div class="insa-post">
@@ -135,7 +136,80 @@
 					<p class="insa-authors">Pipeline developed by Vítor Borges and Miguel Pinheiro.</p>
 					<p class="insa-authors">Website by Miguel Pinheiro.</p>
 				</div>
+				
+				<div class="disclaimer_main_page">
+					<a href="#id_disclaimer_modal" id="id_data_set_add_modal" data-toggle="modal">Disclaimer</a>
+				</div>
 			</div><!-- /.blog-sidebar -->
 		</div> <!-- row -->
 	</div>
+	
+	
+	<!-- The Modal -->
+	<div class="modal fade" id="id_disclaimer_modal" >
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+   
+     					<!-- Modal Header -->
+     					<div class="modal-header">
+     						<img src="{% static 'insa/insaflu_logo.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'>
+       						<h4 class="modal-title">Disclaimer</h4>
+       						<button type="button" class="close" data-dismiss="modal">&times;</button>
+     					</div>
+     
+     					<!-- Modal body -->
+     					<div class="modal-body mx-auto mw-100">
+     						<p class="insa-description-read-more-header"><strong>General statement</strong></p>
+							<p class="insa-description-read-more">The INSaFLU portal and its associated resources and outputs are for research, 
+							educational and informational purposes only, not for commercial use. It is a non-profit service to the scientific community.</p>
+							<p class="insa-description-read-more">In any case, the name of INSaFLU and its logo shall not be associated with 
+							business promotion without prior written approval.</p>
+							
+							<p class="insa-description-read-more-header"><strong>Warranties</strong></p>
+							<p class="insa-description-read-more">INSaFLU makes no warranties of any kind regarding the accuracy of any data, 
+							software and/or database.</p>
+							<p class="insa-description-read-more">In no event is the access to this portal guaranteed.</p>
+							<p class="insa-description-read-more">This portal contains links to external third-party websites. INSaFLU team has not 
+							reviewed the contents of these third-party websites and makes no warranty of any kind, expressed or implied, 
+							regarding these websites. INSaFLU does not own, monitor, operate or moderate these third-party websites.</p>
+							<p class="insa-description-read-more">The User represents and warrants that he/she/it shall not violate or circumvent any 
+							safety program or introduce advertisements containing codes or malware, spyware, data corruption, viruses, data infections 
+							or other harmful codes, hacking mechanisms, data crash codes and the like.</p>
+							<p class="insa-description-read-more">INSaFLU team will not use any data submitted to INSaFLU for research, educational, 
+							informational, clinical, commercial or any other purpose. </p>
+							
+							<p class="insa-description-read-more-header"><strong>Liability</strong></p>
+							<p class="insa-description-read-more">The INSaFLU team is responsible for maintaining and updating the content of INSaFLU.
+							However,  INSaFLU team makes no representation or warranty regarding results obtained from using any information, tools or
+							services offered by INSaFLU.</p>
+							<p class="insa-description-read-more">In case of unexpected issues, unexpected disruption, force majeure and similar events,
+							such as: unauthorized or accidental destruction of data; accidental loss; technical faults; forgery, theft or unlawful 
+							use; unauthorized alteration, copying, access or other unauthorized processing and the like; violation or circumvention
+							of any safety program or the introduction of advertisements containing codes or malware, spyware, data corruption, 
+							viruses, data infections or other harmful codes, hacking mechanisms, data crash codes and the like, by any third 
+							party or by any user, the INSaFLU team shall not be held liable for, including but not limited to, any liabilities,
+							losses, loss of profits, data loss, damages, claims, costs and expenses (including legal fees) resulting from such
+							circumstances.</p>
+							
+							<p class="insa-description-read-more-header"><strong>Personal data</strong></p>
+							<p class="insa-description-read-more">The user is entirely responsible for maintaining the confidentiality of his/her 
+							password and account and for all activities that occur under your account. The user agrees to notify the INSaFLU team 
+							immediately of any unauthorized use of his/her personal data or of any other breach of security that she/he becomes aware of. 
+							The INSaFLU team is not be liable for any loss that you may incur as a result of someone else using your personal account, 
+							either with or without your knowledge. The INSaFLU team reserves the right, solely for security reasons to suspend or delete 
+							a user account.</p>
+							<p class="insa-description-read-more"><strong>The INSaFLU team will neither use any data submitted to INSaFLU for any purpose, 
+							nor claim ownership of any data stored by users in their personal space.</strong> The INSaFLU team will respect the privacy of the 
+							information stored in the private space of the users.</p>
+							<p class="insa-description-read-more">The INSaFLU reserves the right to disable a query if it causing technical problems 
+							to its computational infrastructure. Such disabled queries will be reported to the users.</p>
+     					</div>
+     					<!-- Modal footer -->
+     					<div class="modal-footer">
+       					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+     					</div>
+			</div>
+ 		</div>
+	</div>
+ 			
 {% endblock %}

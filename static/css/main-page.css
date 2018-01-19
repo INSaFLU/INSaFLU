@@ -3,6 +3,23 @@
  * Blog name and description
  */
 
+/* Important part */
+.disclaimer_main_page{
+	font-size: 1.0rem;
+	padding-left: 10px;
+	padding-top: 15px;
+}
+
+/* modal dialog scroll */
+.modal-dialog{
+    overflow-y: initial !important
+}
+.modal-body{
+    height: 350px;
+    overflow-y: auto;
+}
+/* END modal dialog scroll */
+
 .container {
   max-width: 60rem;
 }

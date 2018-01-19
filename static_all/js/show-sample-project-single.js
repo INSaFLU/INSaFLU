@@ -32,6 +32,7 @@ function show_igv() {
     	
 	    data : { 
 	    	project_sample_id : $('#show_igv_id').attr("project_sample_id"),
+			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
 	    url: $('#show_igv_id').attr("show-igv-url"),

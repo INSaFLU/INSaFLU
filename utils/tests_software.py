@@ -1466,6 +1466,20 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 
+	def test_run_genbank2gff3_2(self):
+		"""
+		test genbank2gff3 method
+		"""
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_RIM_sample_gbk)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_RIM_sample_gff)
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name_rim", ".txt")
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file)
+		self.assertEquals(out_file, out_file_2)
+		
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		os.unlink(out_file)
+
 	def test_run_get_snpeff_config(self):
 		"""
 		test get_snpeff_config method

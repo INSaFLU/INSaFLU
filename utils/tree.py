@@ -12,6 +12,7 @@ from constants.software_names import SoftwareNames
 from utils.result import SoftwareDesc
 from utils.software import Software
 from utils.proteins import Proteins
+from constants.constants import Constants
 import os
 
 class CreateTree(object):
@@ -87,7 +88,7 @@ class CreateTree(object):
 			n_count_samples_processed += 1
 		
 		### error, there's no enough files to create tree file
-		if (n_files_with_sequences < 2):
+		if (n_files_with_sequences < Constants.MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES):
 			manageDatabase.set_project_metakey(project, owner, meta_key,\
 					MetaKeyAndValue.META_VALUE_Error, "Error: there's no enough valid sequences to create a tree.")
 			self.utils.remove_dir(temp_dir)

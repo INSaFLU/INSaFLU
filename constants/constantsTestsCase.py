@@ -46,6 +46,9 @@ class ConstantsTestsCase(object):
 	MANAGING_TEMPLATE_INPUT_DATA_2_CSV = "template_input_data_2.csv"
 	MANAGING_TEMPLATE_INPUT_DATA_FAIL = "template_input_data_fail.csv"
 	MANAGING_TEMPLATE_INPUT_big_data_csv = "sample_data_season_2016_17_.csv"
+	MANAGING_FILES_RIM_sample = "Rim1_haplogroup_A1a1a1_Italy.fasta"
+	MANAGING_FILES_RIM_sample_gbk = "Rim1_haplogroup_A1a1a1_Italy.gbk"
+	MANAGING_FILES_RIM_sample_gff = "Rim1_haplogroup_A1a1a1_Italy.gff"
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"
@@ -89,7 +92,11 @@ class ConstantsTestsCase(object):
 	FASTQ5_2 = "x_mix_H3N2_H1N1_2P.fastq.gz"
 	FASTQ6_1 = "RL017_1P.fastq.gz"
 	FASTQ6_2 = "RL017_2P.fastq.gz"
-
+	FASTQ7_1 = "Ae-MIT-602_S25_L001_R1_001.fastq.gz"
+	FASTQ7_2 = "Ae-MIT-602_S25_L001_R2_001.fastq.gz"
+	FASTQ8_1 = "SU104_S10_L001_R1_001.fastq.gz"
+	FASTQ8_2 = "SU104_S10_L001_R2_001.fastq.gz"
+	
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"
 	VALUE_TEST_2 = "value_test_2"

@@ -139,8 +139,6 @@ class SampleTable(tables.Table):
 		get type and sub type
 		"""
 		return _('Not yet') if record.type_subtype == None else record.type_subtype
-# 		result = record.get_type_sub_type()
-# 		return _('Not yet') if result == Constants.EMPTY_VALUE_TABLE else record.get_type_sub_type()
 	
 	def render_data_set(self, record):
 		"""

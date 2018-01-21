@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from operator import itemgetter
 import os
 from constants.software_names import SoftwareNames
+from manage_virus.constants_virus import ConstantsVirus
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -351,34 +352,45 @@ class Sample(models.Model):
 		return path_to_find
 
 	def get_type_sub_type(self):
+		"""
+		return a string with Type/Subtpye
+		"""
 		vect_identify_virus = self.identify_virus.all()
 		if (vect_identify_virus.count() > 0):
 			### Type A
-			sz_return_a = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE, 'A')
-			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE, 'A')
-			if (len(sz_type) > 0): sz_return_a += "" if len(sz_return_a) == 0 else "-" + sz_type
+			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_A)
+			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.TYPE_A)
+			if (len(sz_subtype) > 0): sz_return_a += "" if len(sz_return_a) == 0 else "-" + sz_subtype
 			
 			### Type B
-			sz_return_b = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE, 'B')
-			sz_type = self.__get_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE, 'B')
-			if (len(sz_type) > 0): sz_return_b += "" if len(sz_return_b) == 0 else "-" + sz_type
+			sz_return_b = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_B)
+			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, ConstantsVirus.TYPE_B)
+			if (len(sz_subtype) > 0): sz_return_b += "" if len(sz_return_b) == 0 else "-" + sz_subtype
 			if (len(sz_return_a) == 0): return sz_return_b
 			if (len(sz_return_b) == 0): return sz_return_a
 			return "{}; {}".format(sz_return_a, sz_return_b)
-		else: return Constants.EMPTY_VALUE_TABLE
+		else: return Constants.EMPTY_VALUE_TYPE_SUBTYPE
 		
 	def __get_type__(self, vect_identify_virus, type_to_test, virus_name):
 		vect_return = []
 		for identify_virus in vect_identify_virus:
 			if (identify_virus.seq_virus.kind_type.name == type_to_test and identify_virus.seq_virus.name == virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and 'A' == virus_name):
+			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_A == virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == Constants.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and 'B' == virus_name):
+			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_B == virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
-		if (type_to_test == Constants.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
+		if (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
 		return ''.join(sorted(vect_return))
 	
+	def __exists_type(self, vect_identify_virus, virus_name):
+		"""
+		test if exist some specific type
+		"""
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.seq_virus.kind_type.name == ConstantsVirus.SEQ_VIRUS_TYPE and identify_virus.seq_virus.name == virus_name): return True
+		return False
+				
 	def __get_number_type__(self, vect_identify_virus, type_to_test):
 		"""
 		get a number for a specific type
@@ -396,22 +408,54 @@ class Sample(models.Model):
 		Lineage > 1
 		"""
 		vect_identify_virus = self.identify_virus.all()
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE) > 1): return True
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE) > 2): return True
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE) > 1): return True
+		if (vect_identify_virus.count() == 0): return False	## there's no results
+		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)): return True
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and \
+			self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) != 2): return True
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and \
+			self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) != 1): return True
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) > 1): return True
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2): return True
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1): return True
 		return False
+	
+	def has_types_and_subtypes(self):
+		"""
+		test if has values
+		""" 
+		vect_identify_virus = self.identify_virus.all()
+		if (vect_identify_virus.count() == 0): return False	## there's no results
+		return True
 	
 	def get_message_mixed_infection(self):
 		"""
 		return the message
 		"""
 		vect_identify_virus = self.identify_virus.all()
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_TYPE) > 1):
-			return "Warning: more than one type were detected for this sample, suggesting that may represent a 'mixed infection'."
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_SUB_TYPE) > 2):
+		if (vect_identify_virus.count() == 0): return "Warning: No type/subtype has been assigned.";
+		
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and
+				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2):
 			return "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'."
-		if (self.__get_number_type__(vect_identify_virus, Constants.SEQ_VIRUS_LINEAGE) > 1):
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and
+				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1):
 			return "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'."
+		
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) == 0):
+			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and \
+				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) != 2):
+			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and \
+				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) != 1): 
+			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) > 1):
+			return "Warning: more than ona type were detected for this sample, suggesting that may represent a 'mixed infection'."
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2):
+			return "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'."
+		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1):
+			return "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'."
+		
 		return None
 		
 	def get_is_ready_for_projects(self):

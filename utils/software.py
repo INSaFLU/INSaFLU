@@ -908,7 +908,15 @@ class Software(object):
 			sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
 			
 			tag_mixed_infection = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
-			if (sample_to_update.is_mixed_infection()):
+			if (not sample_to_update.has_types_and_subtypes()):
+				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
+				else: sample_to_update.number_alerts += 1
+
+				manage_database = ManageDatabase()
+				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, sample_to_update.get_message_mixed_infection())
+
+			elif (sample_to_update.is_mixed_infection()):
 				tag_mixed_infection = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
 				else: sample_to_update.number_alerts += 1

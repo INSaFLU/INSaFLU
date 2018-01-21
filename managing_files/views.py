@@ -689,6 +689,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				meta_data = manageDatabase.get_sample_metakey(sample, key, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data != None): alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
+			context['has_type_subtype'] = sample.identify_virus.all().count() > 0
 			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1

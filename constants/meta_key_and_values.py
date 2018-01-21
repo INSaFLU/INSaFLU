@@ -41,6 +41,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST = "AlertMixedInfectionRatioTest"
 	META_KEY_ALERT_MIXED_INFECTION_SUM_TEST = "AlertMixedInfectionSumTest"
 	META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE = "AlertMixedInfectionTypeSubtype"
+	META_KEY_ALERT_NOT_ASSIGNED_TYPE_SUBTYPE = "AlertNotAssignedTypeSubtype"
 	META_KEY_ALERT_COUNT_VAR = "Alert count variation percentile"	## obsolete
 	
 	## coverage about bam file
@@ -112,4 +113,4 @@ class MetaKeyAndValue(object):
 		"""
 		this show the alerts in SampleDetailsView
 		"""
-		return [MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
+		return [MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE, MetaKeyAndValue.META_KEY_ALERT_NOT_ASSIGNED_TYPE_SUBTYPE]

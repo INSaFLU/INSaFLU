@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 from constants.constantsTestsCase import ConstantsTestsCase
 from managing_files.models import Sample
 from constants.constants import Constants, TypePath
+from manage_virus.constants_virus import ConstantsVirus
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.utils import Utils
@@ -159,19 +160,19 @@ class Test(unittest.TestCase):
 				self.assertEquals("99.69", identify_virus.identity)
 				self.assertEquals("A", identify_virus.seq_virus.name)
 				self.assertEquals("XXXX", identify_virus.seq_virus.accession)
-				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 1):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.18", identify_virus.identity)
 				self.assertEquals("XXXXX", identify_virus.seq_virus.accession)
 				self.assertEquals("H3", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 2):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
 				self.assertEquals("XXXXXX", identify_virus.seq_virus.accession)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_abricate))
 		

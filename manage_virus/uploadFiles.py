@@ -5,6 +5,7 @@ Created on Oct 31, 2017
 '''
 from django.db import transaction
 from constants.constants import Constants, FileExtensions, TypePath
+from manage_virus.constants_virus import ConstantsVirus
 from utils.parse_out_files import ParseOutFiles
 from utils.utils import Utils
 from django.conf import settings
@@ -62,8 +63,8 @@ class UploadFiles(object):
 		split_name_2 = re.split("~+", split_name[0])
 		if (len(split_name_2) != 3): raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype|lineage~~~<value>~~~<accession> description'")
 		split_type = split_name_2[0].split("_")
-		if (len(split_type) != 2 and (split_type[1].lower() != Constants.SEQ_VIRUS_TYPE.lower() or split_type[1].lower() != Constants.SEQ_VIRUS_SUB_TYPE.lower()
-									 or split_type[1].lower() != Constants.SEQ_VIRUS_LINEAGE.lower()) ):
+		if (len(split_type) != 2 and (split_type[1].lower() != ConstantsVirus.SEQ_VIRUS_TYPE.lower() or split_type[1].lower() != ConstantsVirus.SEQ_VIRUS_SUB_TYPE.lower()
+									 or split_type[1].lower() != ConstantsVirus.SEQ_VIRUS_LINEAGE.lower()) ):
 			raise Exception("Error: this seq. name '" + split_name + "' has a wrong format. Must have 'influenza_type|subtype|lineage~~~<value>~~~<accession> description'")
 		dt_return[self.__get_type__(split_name_2[0])] = split_name_2[1]
 		dt_return[self.ACCESSION] = split_name_2[2]
@@ -71,10 +72,10 @@ class UploadFiles(object):
 
 	def __get_type__(self, split_type_name):
 		split_type = split_type_name.split("_")
-		if (len(split_type) < 2): return Constants.SEQ_VIRUS_SUB_TYPE
-		if (split_type[1].lower() == Constants.SEQ_VIRUS_TYPE.lower()): return Constants.SEQ_VIRUS_TYPE
-		elif (split_type[1].lower() == Constants.SEQ_VIRUS_LINEAGE.lower()): return Constants.SEQ_VIRUS_LINEAGE
-		return Constants.SEQ_VIRUS_SUB_TYPE
+		if (len(split_type) < 2): return ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+		if (split_type[1].lower() == ConstantsVirus.SEQ_VIRUS_TYPE.lower()): return ConstantsVirus.SEQ_VIRUS_TYPE
+		elif (split_type[1].lower() == ConstantsVirus.SEQ_VIRUS_LINEAGE.lower()): return ConstantsVirus.SEQ_VIRUS_LINEAGE
+		return ConstantsVirus.SEQ_VIRUS_SUB_TYPE
 		
 	@transaction.atomic
 	def upload_file(self, version, path):
@@ -97,26 +98,26 @@ class UploadFiles(object):
 
 		## type_tag
 		try:
-			tag_type = Tags.objects.get(name=Constants.SEQ_VIRUS_TYPE)
+			tag_type = Tags.objects.get(name=ConstantsVirus.SEQ_VIRUS_TYPE)
 		except Tags.DoesNotExist:	## not exist
 			tag_type = Tags()
-			tag_type.name = Constants.SEQ_VIRUS_TYPE
+			tag_type.name = ConstantsVirus.SEQ_VIRUS_TYPE
 			tag_type.save()
 		
 		## sub_type_tag
 		try:
-			tag_sub_type = Tags.objects.get(name=Constants.SEQ_VIRUS_SUB_TYPE)
+			tag_sub_type = Tags.objects.get(name=ConstantsVirus.SEQ_VIRUS_SUB_TYPE)
 		except Tags.DoesNotExist:	## not exist
 			tag_sub_type = Tags()
-			tag_sub_type.name = Constants.SEQ_VIRUS_SUB_TYPE
+			tag_sub_type.name = ConstantsVirus.SEQ_VIRUS_SUB_TYPE
 			tag_sub_type.save()
 			
 		## sub_lineage
 		try:
-			tag_leneage = Tags.objects.get(name=Constants.SEQ_VIRUS_LINEAGE)
+			tag_leneage = Tags.objects.get(name=ConstantsVirus.SEQ_VIRUS_LINEAGE)
 		except Tags.DoesNotExist:	## not exist
 			tag_leneage = Tags()
-			tag_leneage.name = Constants.SEQ_VIRUS_LINEAGE
+			tag_leneage.name = ConstantsVirus.SEQ_VIRUS_LINEAGE
 			tag_leneage.save()
 		
 		## load the file
@@ -124,15 +125,15 @@ class UploadFiles(object):
 		for seq in record_dict:
 			dt_data = self.parse_title_name(seq)
 			seqVirus = SeqVirus()
-			if (Constants.SEQ_VIRUS_TYPE in dt_data): 
+			if (ConstantsVirus.SEQ_VIRUS_TYPE in dt_data): 
 				seqVirus.kind_type = tag_type
-				seqVirus.name = dt_data[Constants.SEQ_VIRUS_TYPE]
-			elif (Constants.SEQ_VIRUS_SUB_TYPE in dt_data):
+				seqVirus.name = dt_data[ConstantsVirus.SEQ_VIRUS_TYPE]
+			elif (ConstantsVirus.SEQ_VIRUS_SUB_TYPE in dt_data):
 				seqVirus.kind_type = tag_sub_type
-				seqVirus.name = dt_data[Constants.SEQ_VIRUS_SUB_TYPE]
-			elif (Constants.SEQ_VIRUS_LINEAGE in dt_data):
+				seqVirus.name = dt_data[ConstantsVirus.SEQ_VIRUS_SUB_TYPE]
+			elif (ConstantsVirus.SEQ_VIRUS_LINEAGE in dt_data):
 				seqVirus.kind_type = tag_leneage
-				seqVirus.name = dt_data[Constants.SEQ_VIRUS_LINEAGE]
+				seqVirus.name = dt_data[ConstantsVirus.SEQ_VIRUS_LINEAGE]
 
 			seqVirus.accession = dt_data[self.ACCESSION]
 			seqVirus.file = uploadFile
@@ -160,7 +161,7 @@ class UploadFiles(object):
 					seqVirus = SeqVirus.objects.get(name=dt_type[ParseOutFiles.GENE], file__abricate_name=database_name)
 				except SeqVirus.DoesNotExist:
 					raise Exception(_("Gene '%s', Type '%s', Accession '%s' not found in database '%s'" % (dt_type[ParseOutFiles.GENE],\
-								Constants.SEQ_VIRUS_TYPE, dt_type[ParseOutFiles.ACCESSION], database_name)))
+								ConstantsVirus.SEQ_VIRUS_TYPE, dt_type[ParseOutFiles.ACCESSION], database_name)))
 				
 				identifyVirus = IdentifyVirus()
 				identifyVirus.coverage = "%.2f" % (dt_type[ParseOutFiles.COVERAGE])
@@ -200,7 +201,7 @@ class UploadFiles(object):
 		for dt_data in vect_data:
 			if (ParseOutFiles.TYPE in dt_data):
 				split_type = dt_data[ParseOutFiles.TYPE].split("_")
-				if (len(split_type) == 2 and split_type[1].lower() == Constants.SEQ_VIRUS_TYPE.lower() and\
+				if (len(split_type) == 2 and split_type[1].lower() == ConstantsVirus.SEQ_VIRUS_TYPE.lower() and\
 						not (dt_data[ParseOutFiles.GENE] in vect_out_type)):
 					vect_out_type.append(dt_data[ParseOutFiles.GENE])
 					vect_data_out.append(dt_data)
@@ -215,7 +216,7 @@ class UploadFiles(object):
 		for dt_data in vect_data:
 			if (ParseOutFiles.TYPE in dt_data):
 				type_result = self.__get_type__(dt_data[ParseOutFiles.TYPE])
-				if (type_result == Constants.SEQ_VIRUS_SUB_TYPE or type_result == Constants.SEQ_VIRUS_LINEAGE):
+				if (type_result == ConstantsVirus.SEQ_VIRUS_SUB_TYPE or type_result == ConstantsVirus.SEQ_VIRUS_LINEAGE):
 					if (dt_data[ParseOutFiles.GENE] not in vect_out_gene):
 						vect_data_out.append(dt_data)
 						vect_out_gene.append(dt_data[ParseOutFiles.GENE])

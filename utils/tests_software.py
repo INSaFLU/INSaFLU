@@ -21,6 +21,7 @@ from manage_virus.uploadFiles import UploadFiles
 from manage_virus.models import UploadFile
 from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
+from manage_virus.constants_virus import ConstantsVirus
 import os, filecmp
 
 class Test(TestCase):
@@ -523,17 +524,17 @@ class Test(TestCase):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.69", identify_virus.identity)
 				self.assertEquals("A", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 1):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.18", identify_virus.identity)
 				self.assertEquals("H3", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 2):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
 		
@@ -1763,17 +1764,17 @@ class Test(TestCase):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.69", identify_virus.identity)
 				self.assertEquals("A", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 1):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("99.18", identify_virus.identity)
 				self.assertEquals("H3", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 2):
 				self.assertEquals("100.00", identify_virus.coverage)
 				self.assertEquals("98.65", identify_virus.identity)
 				self.assertEquals("N2", identify_virus.seq_virus.name)
-				self.assertEquals(Constants.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_abricate))
 		

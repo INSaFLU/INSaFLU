@@ -111,17 +111,21 @@
 					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
 						<p class="title-box">Type and subtype/lineage</p>
 						
-						{% for identify_virus in sample.identify_virus.all %}
-							<div class="row">
-								<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
-				  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
-				  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
-				  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
-				  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
-				  			</div>
-				  			<hr>
-						{% endfor %}
-						<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
+						{% if has_type_subtype %}
+							{% for identify_virus in sample.identify_virus.all %}
+								<div class="row">
+									<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
+					  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
+					  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
+					  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+					  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
+					  			</div>
+					  			<hr>
+							{% endfor %}
+							<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
+						{% else %}
+							<p class="software">No type/subtype has been assigned.</p>
+						{% endif %}
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
 			    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>

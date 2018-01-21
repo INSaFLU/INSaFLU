@@ -89,11 +89,6 @@ class Constants(object):
 	### key for a session with project name
 	PROJECT_NAME_SESSION = 'project_name_session'
 	
-	####
-	SEQ_VIRUS_TYPE = "Type"
-	SEQ_VIRUS_SUB_TYPE = "Subtype"
-	SEQ_VIRUS_LINEAGE = "Lineage"
-	
 	#####
 	DIR_STATIC = "static"
 	DIR_ICONS = "icons"
@@ -125,6 +120,9 @@ class Constants(object):
 	
 	### empty value used in tables
 	EMPTY_VALUE_TABLE = "-"
+	
+	### 
+	EMPTY_VALUE_TYPE_SUBTYPE = "Not assigned"
 	
 	## session values
 	SESSION_KEY_USER_ID = 'session_key_user_id'

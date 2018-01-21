@@ -148,13 +148,24 @@ class ChangePasswordForm(forms.ModelForm):
 
 	
 class LoginForm(AuthenticationForm):
+	
+	login_anonymous = forms.BooleanField()
+	
 	def __init__(self, *args, **kwargs):
 		super(LoginForm, self).__init__(*args, **kwargs)
 
-		field_text= [
-			('username', 'User name/Email', 'A valid user name or email', True),
-			('password', 'Password', '', True),
-		]
+		if (settings.SHOW_LOGIN_ANONYMOUS):
+			field_text= [
+				('username', 'User name/Email', 'A valid user name or email', True),
+				('password', 'Password', '', True),
+				('login_anonymous', 'Anonymous login.', 'Make an anonymous login. Only can view demo data.', False),
+			]
+		else:
+			field_text= [
+				('username', 'User name/Email', 'A valid user name or email', True),
+				('password', 'Password', '', True),
+			]
+
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
 			self.fields[x[0]].help_text = x[2]
@@ -162,13 +173,26 @@ class LoginForm(AuthenticationForm):
 			
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
-		self.helper.layout = Layout(
-			'username',
-			'password',
-			ButtonHolder(
-				Submit('login', 'Login', css_class='btn-primary'),
-				Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
-				Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+		if (settings.SHOW_LOGIN_ANONYMOUS):
+			self.helper.layout = Layout(
+				'username',
+				'password',
+				'login_anonymous',
+				ButtonHolder(
+					Submit('login', 'Login', css_class='btn-primary'),
+					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
+					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
+					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+				)
 			)
-		)
+		else:
+			self.helper.layout = Layout(
+				'username',
+				'password',
+				ButtonHolder(
+					Submit('login', 'Login', css_class='btn-primary'),
+					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
+					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
+					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+				)
+			)

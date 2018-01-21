@@ -297,9 +297,9 @@ class Coverage(object):
 		return sz_return
 
 	def get_fault_message_9(self, element_name):
-		return "Fail, element '{}' has a ratio '{}%' under of 100% for a coverage of 10 or bigger.".format(element_name, self.ratio_value_9)
+		return "Fail, locus '{}': the % of locus size covered by at least 10-fold is '{}%' (below 100%)".format(element_name, self.ratio_value_9)
 	def get_fault_message_0(self, element_name):
-		return "Fail, element '{}' has a ratio '{}%' under of 100% for a coverage of 1 or bigger.".format(element_name, self.ratio_value_0)
+		return "Fail, locus '{}': the % of locus size covered by at least 1-fold is '{}%' (below 100%)".format(element_name, self.ratio_value_0)
 
 	def get_message_to_show_in_web_site(self, element):
 		"""

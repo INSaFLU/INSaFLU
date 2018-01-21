@@ -32,6 +32,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from operator import attrgetter
 from itertools import chain
+from extend_user.models import Profile
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -99,9 +100,18 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 	
 	@transaction.atomic
 	def form_valid(self, form):
+		
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add references.".format(self.request.user.username), fail_silently=True)
+				return super(ReferenceAddView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+		
 		software = Software()
 		utils = Utils()
-		
 		name = form.cleaned_data['name']
 		scentific_name = form.cleaned_data['isolate_name']
 		reference_fasta = form.cleaned_data['reference_fasta']
@@ -237,9 +247,18 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		"""
 		Validate the form
 		"""
+
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add samples.".format(self.request.user.username), fail_silently=True)
+				return super(SamplesAddView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+
 		software = Software()
 		utils = Utils()
-		
 		name = form.cleaned_data['name']
 		lat = form.cleaned_data['lat']
 		lng = form.cleaned_data['lng']
@@ -379,8 +398,17 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 		return context
 
 	def form_valid(self, form):
-		utils = Utils()
 		
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add file with samples.".format(self.request.user.username), fail_silently=True)
+				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+
+		utils = Utils()
 		path_name = form.cleaned_data['path_name']
 
 		## create a genbank file
@@ -449,6 +477,14 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 	def get_context_data(self, **kwargs):
 		context = super(SamplesAddFastQView, self).get_context_data(**kwargs)
 		
+		### test anonymous account
+		disable_upload_files = False
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project): disable_upload_files = True
+		except Profile.DoesNotExist:
+			pass
+		
 		### test to show only the processed or all
 		if ('show-not-only-checked' in self.request.GET):
 			b_show_all = self.request.GET.get('show-not-only-checked') != 'on'
@@ -471,6 +507,7 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['total_itens'] = query_set.count() 
 		context['nav_sample'] = True
+		context['disable_upload_files'] = disable_upload_files
 		context['check_box_not_show_processed_files'] = not b_show_all
 		return context
 
@@ -770,6 +807,16 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		"""
 		Validate the form
 		"""
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not create projects.".format(self.request.user.username), fail_silently=True)
+				return super(ProjectCreateView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+
+		
 		context = self.get_context_data()
 		project_references = context['project_references']
 		name = form.cleaned_data['name']
@@ -878,11 +925,21 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			context['project_sample'] = AddSampleProjectForm()
 		return context
 
-	
+
 	def form_valid(self, form):
 		"""
 		Validate the form
 		"""
+
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add samples to a project.".format(self.request.user.username), fail_silently=True)
+				return super(AddSamplesProjectsView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+		
 		if form.is_valid():
 			metaKeyAndValue = MetaKeyAndValue()
 			manageDatabase = ManageDatabase()

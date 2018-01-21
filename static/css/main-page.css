@@ -11,12 +11,13 @@
 }
 
 /* modal dialog scroll */
-.modal-dialog{
-    overflow-y: initial !important
+.modal-dialog-disclaimer {
+    overflow-y: initial !important;
 }
-.modal-body{
-    height: 350px;
-    overflow-y: auto;
+
+.modal-body-disclaimer{
+    height: 500px  !important;
+    overflow-y: auto !important;
 }
 /* END modal dialog scroll */
 

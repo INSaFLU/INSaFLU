@@ -26,3 +26,11 @@
 	{% crispy form %} 
 {% endblock %}
 
+
+{% block js %}
+	<script>
+ 		$("#id_path_name").click( function(){
+ 			$('#error_1_id_path_name').empty();
+ 		});
+	</script>
+{% endblock js %}

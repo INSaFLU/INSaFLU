@@ -51,6 +51,11 @@ if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
 	SECURE_SSL_REDIRECT = True
 	SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+## add google analytics
+ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
+
+## to show login anonymous
+SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 
 # Application definition
 INSTALLED_APPS = [

@@ -107,16 +107,28 @@ class ParseInFiles(object):
 			delimiter = dialect.delimiter
 			if (delimiter in dict_delimiter): dict_delimiter[delimiter] += 1
 			else: dict_delimiter[delimiter] = 1
-			if (n_lines > 15): break
+			if (n_lines > 20): break
 			n_lines += 1
 			
-		### get delimiter from the biggest one
+		### get delimiter
 		delimiter = ','
-		count_delimiter = 0
 		for key in dict_delimiter:
-			if (dict_delimiter[key] > count_delimiter):
-				count_delimiter = dict_delimiter[key]
-				delimiter = key
+			delimiter = key
+			f.seek(0)
+			n_lines = 0
+			reader = csv.reader(f, delimiter=delimiter)
+			for row in reader:
+				(count_column, n_columns_ok) = (0, 0)
+				for col in row:
+					if (count_column >= len(self.vect_header) or col.replace(' ', '').lower() != self.vect_header[count_column].replace(' ', '').lower()): break
+					n_columns_ok += 1
+					count_column += 1
+				if (n_columns_ok == len(self.vect_header)):
+					break
+
+				## after XX lines stop find				
+				if (n_lines > 40): break
+				n_lines += 1
 				
 		f.seek(0)
 		reader = csv.reader(f, delimiter=delimiter)
@@ -133,6 +145,7 @@ class ParseInFiles(object):
 				if (n_columns_ok == len(self.vect_header)):
 					header = row
 					for i in range(0, len(row)):	## test all header names
+						if (len(row[i].strip()) == 0): continue
 						if (row[i].strip() in self.dict_other_fields_repeated):
 							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Column name '{}' is repeated in the header. Line: {} Column: {}".\
 										format(row[i].strip(), count_row, i+1))))

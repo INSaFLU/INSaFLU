@@ -56,3 +56,15 @@
   	</div>
 	{% crispy form %}
 {% endblock %}
+
+
+{% block js %}
+	<script>
+ 		$("#id_reference_fasta").click( function(){
+ 			$('#error_1_id_reference_fasta').empty();
+ 		});
+ 		$("#id_reference_genbank").click( function(){
+ 			$('#error_1_id_reference_genbank').empty();
+ 		});
+	</script>
+{% endblock js %}

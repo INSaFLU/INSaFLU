@@ -13,6 +13,12 @@ class Constants(object):
 	### default user that has the default references to be used in mapping
 	DEFAULT_USER = "system"
 	DEFAULT_USER_PASS = "default_user_123_$%_2"
+	DEFAULT_USER_EMAIL = "insaflu@insa.min-saude.pt"
+	
+	### user anonymous
+	USER_ANONYMOUS = "anonymous"
+	USER_ANONYMOUS_PASS = "anonymous_user"
+	USER_ANONYMOUS_EMAIL = "insaflu@insa.min-saude.pt"
 	
 	META_KEY_VALUE_NOT_NEED = "value not needed"
 	
@@ -45,6 +51,11 @@ class Constants(object):
 	
 	DIR_PROCESSED_FILES_UPLOADS = "uploads"
 	DIR_PROCESSED_PROCESSED = 'processed'
+	
+	### queue names
+	QUEUE_SGE_NAMES = ['queue_1', 'queue_2']
+	QUEUE_SGE_NAME_GENERAL = 'general'
+	QUEUE_SGE_NAME_EMAIL = 'email'
 	
 	### separators
 	SEPARATOR_COMMA = ','

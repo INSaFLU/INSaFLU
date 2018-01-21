@@ -1,5 +1,12 @@
 
 
+$("#id_path_name_1").click( function(){
+	$('#error_1_id_path_name_1').empty();
+});
+$("#id_path_name_2").click( function(){
+	$('#error_1_id_path_name_2').empty();
+});
+
 // for data picker
 $('#id_date_of_onset').datepicker({
     uiLibrary: 'bootstrap4',

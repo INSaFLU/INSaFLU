@@ -235,6 +235,19 @@
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
      	
 	{% block js %}
+	
+		{% if add_google_analytis %}
+			<!-- Global site tag (gtag.js) - Google Analytics -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112815004-1"></script>
+			<script>
+			  window.dataLayer = window.dataLayer || [];
+			  function gtag(){dataLayer.push(arguments);}
+			  gtag('js', new Date());
+			
+			  gtag('config', 'UA-112815004-1');
+			</script>
+		{% endif %}
+	
 
     {% endblock js %}
   </div>

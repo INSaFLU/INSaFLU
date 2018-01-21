@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from utils.utils import Utils
 from utils.parse_in_files import ParseInFiles
+from utils.software import Software
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
 import os, re, logging
@@ -23,6 +24,7 @@ class ReferenceForm(forms.ModelForm):
 	Reference form, name, isolate_name and others
 	"""
 	utils = Utils()
+	software = Software()
 	error_css_class = 'error'
 	
 	class Meta:
@@ -97,6 +99,7 @@ class ReferenceForm(forms.ModelForm):
 		reference_fasta_temp_file_name.write(reference_fasta.read())
 		reference_fasta_temp_file_name.flush()
 		reference_fasta_temp_file_name.close()
+		self.software.dos_2_unix(reference_fasta_temp_file_name.name)
 		try:
 			number_locus = self.utils.is_fasta(reference_fasta_temp_file_name.name)
 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
@@ -113,13 +116,18 @@ class ReferenceForm(forms.ModelForm):
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True
 			self.add_error('reference_fasta', e.args[0])
-		
-		### test if it has degenerated bases
-		try:
-			self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
-		except Exception as e:
+		except: 
 			os.unlink(reference_fasta_temp_file_name.name)
-			self.add_error('reference_fasta', e.args[0])
+			some_error_in_files = True
+			self.add_error('reference_fasta', "Not a valid 'fasta' file.")
+			
+		### test if it has degenerated bases
+		if (os.path.exists(reference_fasta_temp_file_name.name)):
+			try:
+				self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
+			except Exception as e:
+				os.unlink(reference_fasta_temp_file_name.name)
+				self.add_error('reference_fasta', e.args[0])
 			
 		### testing genbank
 		reference_genbank_temp_file_name = NamedTemporaryFile(prefix='flu_gb_', delete=False)

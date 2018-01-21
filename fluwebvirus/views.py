@@ -31,6 +31,7 @@ class HomePageView(generic.TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super(HomePageView, self).get_context_data(**kwargs)
 		context['nav_dashboard'] = True			
+		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		return context
 
@@ -107,6 +108,12 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 		
 		if form.is_valid():
 			email_name = form.cleaned_data['email']
+			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
+					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
+				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
+				return redirect('dashboard')
+			
+			### 
 			try:
 				### Begin reCAPTCHA validation '''
 				recaptcha_response = self.request.POST.get('g-recaptcha-response')
@@ -122,7 +129,7 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 				### End reCAPTCHA validation
 				
 				if (result['success']):
-					user = User.objects.get(email__iexact=email_name)
+					user = User.objects.get(email__iexact=email_name, is_active=True)
 					## invalidate current account
 					user.is_active = False
 					user.save()
@@ -141,7 +148,7 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
 					
 			except User.DoesNotExist as e:
-				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
+				messages.warning(self.request, "The account '{}' does not exist in database or is disabled.".format(email_name), fail_silently=True)
 			
 			return redirect('dashboard')
 			
@@ -202,6 +209,12 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 	def form_valid(self, form):
 		username = form.cleaned_data['username']
 		password = form.cleaned_data['password']
+		
+		###
+		if ('login_anonymous' in form.cleaned_data and form.cleaned_data['login_anonymous']):
+			username = Constants.USER_ANONYMOUS
+			password = Constants.USER_ANONYMOUS_PASS
+			
 		user = authenticate(username=username, password=password)
 		### if none try it with email
 		if (user is None): user = authenticate(email=username, password=password)

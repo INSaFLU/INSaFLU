@@ -110,7 +110,7 @@ function draw_nucleotide_alignments() {
 	    success: function (data) {
 	      if (data['is_ok']) {
 	    	  var rootDiv = document.getElementById("msa_viewer_nucleote_id");
-	    	  var labelNameLength = data['max_length_label'] * 13 + 10;	// multiply by 13 because the labelFontsize is 13; https://github.com/wilzbach/msa in zoomer section
+	    	  var labelNameLength = data['max_length_label'] * 8 + 10;	// multiply by 13 because the labelFontsize is 13; https://github.com/wilzbach/msa in zoomer section
 	    	  var m = msa({
 	    			el: rootDiv,
 	    			vis: {
@@ -230,7 +230,7 @@ function draw_protein_alignments() {
 	      if (data['is_ok']) {
 	    	  
 	    	  var rootDiv = document.getElementById("msa_viewer_amino_id");
-	    	  var labelNameLength = data['max_length_label'] * 14 + 10;	// multiply by 14 because the labelFontsize is 13; https://github.com/wilzbach/msa in zoomer section
+	    	  var labelNameLength = data['max_length_label'] * 8 + 10;	// multiply by 14 because the labelFontsize is 13; https://github.com/wilzbach/msa in zoomer section
 	    	  var m = msa({
 	    		    el: rootDiv,
 	    		    vis: {

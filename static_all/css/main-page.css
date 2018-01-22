@@ -3,6 +3,24 @@
  * Blog name and description
  */
 
+/* Important part */
+.disclaimer_main_page{
+	font-size: 1.0rem;
+	padding-left: 10px;
+	padding-top: 15px;
+}
+
+/* modal dialog scroll */
+.modal-dialog-disclaimer {
+    overflow-y: initial !important;
+}
+
+.modal-body-disclaimer{
+    height: 500px  !important;
+    overflow-y: auto !important;
+}
+/* END modal dialog scroll */
+
 .container {
   max-width: 60rem;
 }
@@ -37,6 +55,12 @@
 .insa-description-read-more-header {
 	font-size: 1.3rem;
 	padding-left: 12px;
+	padding-top: 12px;
+	padding-bottom: 0px;
+}
+
+.login-demo-account {
+	font-size: 1.4rem;
 	padding-top: 12px;
 	padding-bottom: 0px;
 }

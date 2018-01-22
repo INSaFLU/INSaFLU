@@ -28,7 +28,7 @@ class Software(object):
 	'''
 	utils = Utils()
 	software_names = SoftwareNames()
-	CORES_TO_USE = 3
+	CORES_TO_USE = 6
 	
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -53,7 +53,7 @@ class Software(object):
 		"""
 		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
-				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
 		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
 
@@ -67,7 +67,7 @@ class Software(object):
 			if (type_file == FileType.FILE_CONSENSUS_FA):	## if .fa file pass to .fasta
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, software))
-			elif (type_file == FileType.FILE_VCF):	## vcf file
+			elif (type_file == FileType.FILE_VCF and software == SoftwareNames.SOFTWARE_FREEBAYES_name):	## vcf file
 				### create the bgzip file
 				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))))
 				### create the tabix
@@ -78,6 +78,10 @@ class Software(object):
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, software))
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ_TBI, software))
+				
+				### if snippy copy also the vcf
+				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+								project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
 			else:
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))

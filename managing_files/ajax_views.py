@@ -312,7 +312,6 @@ def show_igv(request):
 	get data for IGV
 	"""
 	if request.is_ajax():
-		utils = Utils()
 		data = { 'is_ok' : False }
 		key_with_project_sample_id = 'project_sample_id'
 		if (key_with_project_sample_id in request.GET):
@@ -320,7 +319,7 @@ def show_igv(request):
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
 				path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)
-				path_name_vcf_gz = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+				path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
 				path_bed = project_sample.project.reference.get_reference_bed(TypePath.MEDIA_URL)
@@ -339,8 +338,8 @@ def show_igv(request):
 								os.path.basename(path_name_bam), os.path.basename(path_name_bam)))
 				data['bai_file_id'] = mark_safe('<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
 								os.path.basename(path_name_bai), os.path.basename(path_name_bai)))
-				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf_gz,\
-								utils.clean_extension(os.path.basename(path_name_vcf_gz)), os.path.basename(path_name_vcf_gz)))
+				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf,\
+								os.path.basename(path_name_vcf), os.path.basename(path_name_vcf)))
 			except ProjectSample.DoesNotExist as e:
 				pass
 		return JsonResponse(data)

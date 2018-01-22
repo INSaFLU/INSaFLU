@@ -70,7 +70,7 @@ class ManagingFilesConfig(AppConfig):
 		### set true for anonymous user always
 		if (user_name == Constants.USER_ANONYMOUS):
 			try:
-				profile = Profile.objects.get(user=user)
+				profile = Profile.objects.get(user__username=user_name)
 				profile.only_view_project = True
 				profile.save()
 			except Profile.DoesNotExist:

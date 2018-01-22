@@ -33,6 +33,7 @@ class HomePageView(generic.TemplateView):
 		context['nav_dashboard'] = True			
 		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['is_authenticated'] = self.request.user.is_authenticated
 		return context
 
 class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
@@ -214,7 +215,7 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 		if ('login_anonymous' in form.cleaned_data and form.cleaned_data['login_anonymous']):
 			username = Constants.USER_ANONYMOUS
 			password = Constants.USER_ANONYMOUS_PASS
-			
+		
 		user = authenticate(username=username, password=password)
 		### if none try it with email
 		if (user is None): user = authenticate(email=username, password=password)

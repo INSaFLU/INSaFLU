@@ -116,6 +116,7 @@ class ParseInFiles(object):
 			delimiter = key
 			f.seek(0)
 			n_lines = 0
+			b_found = False
 			reader = csv.reader(f, delimiter=delimiter)
 			for row in reader:
 				(count_column, n_columns_ok) = (0, 0)
@@ -124,12 +125,16 @@ class ParseInFiles(object):
 					n_columns_ok += 1
 					count_column += 1
 				if (n_columns_ok == len(self.vect_header)):
+					b_found = True
 					break
 
 				## after XX lines stop find				
 				if (n_lines > 40): break
 				n_lines += 1
-				
+
+			## header was founded				
+			if (b_found): break
+
 		f.seek(0)
 		reader = csv.reader(f, delimiter=delimiter)
 		header = None

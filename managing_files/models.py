@@ -863,7 +863,7 @@ class UploadFiles(models.Model):
 	### need to create a random name for this file
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
-								'application/vnd.ms-excel', 'text/plain'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
 #	path_name = models.FileField(upload_to=user_directory_path, blank=True, null=True)
 
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs

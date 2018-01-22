@@ -16,8 +16,8 @@ class Constants(object):
 	DEFAULT_USER_EMAIL = "insaflu@insa.min-saude.pt"
 	
 	### user anonymous
-	USER_ANONYMOUS = "anonymous"
-	USER_ANONYMOUS_PASS = "anonymous_user"
+	USER_ANONYMOUS = "demo"
+	USER_ANONYMOUS_PASS = "demo_user"
 	USER_ANONYMOUS_EMAIL = "insaflu@insa.min-saude.pt"
 	
 	META_KEY_VALUE_NOT_NEED = "value not needed"

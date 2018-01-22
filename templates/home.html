@@ -60,6 +60,10 @@
 						</div>
 			    </div>
 			    
+			    {% if not is_authenticated %}
+			    	<a href="{% url 'login' %}"><p class="login-demo-account">Walkthrough INSaFLU by logging into the "demo" account</p></a>
+			    {% endif %}
+			    
 			    <div class="card">
 					<div class="card-block">
 						<h4 class="card-title">Future Directions</h4>
@@ -108,7 +112,7 @@
 					<h4 class="insa-h4">News</h4>
 					<div class="insa-post">
 		            	<h2 class="insa-post-title-news">INSaFLU 1.0.0 was launched.</h2>
-		            	<p class="insa-post-meta">January 15, 2018 by <a href="mailto:vitor.borges@insa.min-saude.pt?subject=InsaFlu" target="_blank">Vitor Borges</a></p>
+		            	<p class="insa-post-meta">January 19, 2018 by <a href="mailto:vitor.borges@insa.min-saude.pt?subject=InsaFlu" target="_blank">Vitor Borges</a></p>
 		            	<p class="insa-news">The first release of INSaFLU was available for the flu community. This platform supplies public health laboratories
 							and influenza researchers with an open “one size fits all” bioinformatics framework that potentiates a global WGS-based
 							flu surveillance.</p>
@@ -153,7 +157,7 @@
      					<!-- Modal Header -->
      					<div class="modal-header">
      						<img src="{% static 'insa/insaflu_logo.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'>
-       						<h4 class="modal-title">Disclaimer</h4>
+       						<h5 class="modal-title"><strong>Disclaimer</strong></h5>
        						<button type="button" class="close" data-dismiss="modal">&times;</button>
      					</div>
      
@@ -166,8 +170,6 @@
 							business promotion without prior written approval.</p>
 							
 							<p class="insa-description-read-more-header"><strong>Warranties</strong></p>
-							<p class="insa-description-read-more">INSaFLU makes no warranties of any kind regarding the accuracy of any data, 
-							software and/or database.</p>
 							<p class="insa-description-read-more">In no event is the access to this portal guaranteed.</p>
 							<p class="insa-description-read-more">This portal contains links to external third-party websites. INSaFLU team has not 
 							reviewed the contents of these third-party websites and makes no warranty of any kind, expressed or implied, 
@@ -176,7 +178,9 @@
 							safety program or introduce advertisements containing codes or malware, spyware, data corruption, viruses, data infections 
 							or other harmful codes, hacking mechanisms, data crash codes and the like.</p>
 							<p class="insa-description-read-more">INSaFLU team will not use any data submitted to INSaFLU for research, educational, 
-							informational, clinical, commercial or any other purpose. </p>
+							informational, clinical, commercial or any other purpose.</p>
+							<p class="insa-description-read-more">INSaFLU makes no warranties of any kind regarding the accuracy of any data, 
+							software and/or database.</p>
 							
 							<p class="insa-description-read-more-header"><strong>Liability</strong></p>
 							<p class="insa-description-read-more">The INSaFLU team is responsible for maintaining and updating the content of INSaFLU.

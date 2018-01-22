@@ -6,7 +6,14 @@ Created on Jan 21, 2018
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # /usr/share/gridengine/scripts/init_cluster
-class MyClass(object):
+#  => SGE_ROOT: /var/lib/gridengine
+# => SGE_CELL: default
+# => Spool directory: /var/spool/gridengine/spooldb
+# => Initial manager user: sgeadmin
+
+## default configuration
+# /etc/default/gridengine
+class SGE(object):
 	'''
 	classdocs
 	'''

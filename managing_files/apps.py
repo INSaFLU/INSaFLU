@@ -41,8 +41,8 @@ class ManagingFilesConfig(AppConfig):
 		from managing_files.models import DataSet
 		from extend_user.models	import Profile
 		try:
-			User.objects.get(username=user_name)
-			### great, the default user exist 
+			user = User.objects.get(username=user_name)
+			### great, the default user exist
 		except User.DoesNotExist:
 			
 			### need to create it

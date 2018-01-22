@@ -149,7 +149,8 @@ class ChangePasswordForm(forms.ModelForm):
 	
 class LoginForm(AuthenticationForm):
 	
-	login_anonymous = forms.BooleanField()
+	if (settings.SHOW_LOGIN_ANONYMOUS):
+		login_anonymous = forms.BooleanField()
 	
 	def __init__(self, *args, **kwargs):
 		super(LoginForm, self).__init__(*args, **kwargs)
@@ -158,7 +159,7 @@ class LoginForm(AuthenticationForm):
 			field_text= [
 				('username', 'User name/Email', 'A valid user name or email', True),
 				('password', 'Password', '', True),
-				('login_anonymous', 'Anonymous login.', 'Make an anonymous login. Only can view demo data.', False),
+				('login_anonymous', 'Demo login.', 'Make a demo login. Only can view predefined data.', False),
 			]
 		else:
 			field_text= [

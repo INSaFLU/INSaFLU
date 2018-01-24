@@ -16,6 +16,9 @@
 
 {% block content %}
 	
+	<!-- set the messages -->
+	<div id="id_messages_remove"></div>
+	
 	{% if table.page and show_paginatior %}
 	  <div class="table-container">
 	{% endif %}
@@ -55,7 +58,7 @@
 	            <tbody>
 	                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
 	                  {% block table.tbody.row %}
-	                  <tr class="{% cycle "odd" "even" %}">
+	                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
 	                      {% for column, cell in row.items %}
 	                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
 	                      {% endfor %}
@@ -79,11 +82,41 @@
 	
 	{% if table.page and show_paginatior %}
 	    {% block pagination %}
-	    	<label class="pull-right">Total samples: {{ total_itens }}</label>
+	    	<label id="id-total-list" class="pull-right">Total samples: {{ total_itens }}</label>
 	        {% bootstrap_pagination table.page url=request.get_full_path %}
 	    {% endblock pagination %}
 	  </div>
 	{% endif %}
 
+	<!-- The remove Modal -->
+	<div class="modal fade" id="id_remove_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header">
+    					<h4 class="modal-title-remove">Remove a sample</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_sample' %}">
+  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-remove">
+    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+	
 {% endblock content %} 
 
+{% block js %}
+	{% load static from staticfiles %}
+	    <script type="text/javascript" src="{% static 'js/remove_samples.js' %}"></script>
+{% endblock js %}

@@ -850,7 +850,7 @@ class UploadFiles(models.Model):
 	number_errors = models.IntegerField(default=0)			## if has errors don't do anything, need to remove and upload again.
 	number_files_processed = models.IntegerField(default=0)	## samples_list, has the number of files already processed
 															## in fastq files, if this file is associated to a sample or not
-	number_files_to_process = models.IntegerField(default=0)	## samples_list, has the number of files to process. At the end this number must be equal
+	number_files_to_process = models.IntegerField(default=0)	## samples_list, has the number of files to process. At the end this number must be equal to number_files_processed
 	
 	type_file = models.ForeignKey(MetaKey, related_name='upload_files', blank=True, null=True, on_delete=models.CASCADE)	## has the type of file
 															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
@@ -864,7 +864,6 @@ class UploadFiles(models.Model):
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
 								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
-#	path_name = models.FileField(upload_to=user_directory_path, blank=True, null=True)
 
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
 												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted

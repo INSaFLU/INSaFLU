@@ -7,13 +7,18 @@ Created on Dec 6, 2017
 import os
 from managing_files.models import Project, ProjectSample, DataSet, VaccineStatus
 from managing_files.manage_database import ManageDatabase
-from constants.constants import Constants, TypePath, FileExtensions, FileType
+from constants.constants import Constants, TypePath, FileExtensions, FileType, TypeFile
 from constants.software_names import SoftwareNames
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.utils import Utils
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.utils.translation import ugettext_lazy as _
+from extend_user.models import Profile
+from managing_files.models import Reference, Sample, UploadFiles
+from utils.collect_extra_data import CollectExtraData
+from django_q.tasks import async
 
 ######################################
 ###
@@ -371,6 +376,15 @@ def add_single_value_database(request):
 		key_type_data = 'type_data'
 		key_value = 'value'
 		value = request.GET[key_value].strip()
+		
+		## some pre-requisites
+		if (not request.user.is_active): return JsonResponse(data)
+		try:
+			profile = Profile.objects.get(user__pk=request.user.pk)
+		except Profile.DoesNotExist:
+			return JsonResponse(data)
+		if (profile.only_view_project): return JsonResponse(data)
+		
 		if (key_value in request.GET and key_type_data in request.GET and len(value) > 0):
 			## add to data_set
 			if (request.GET[key_type_data] == 'id_data_set_add_modal'):
@@ -414,6 +428,14 @@ def remove_single_value_database(request):
 		key_value = 'value'
 		key_is_to_test = 'is_to_test'
 		
+		## some pre-requisites
+		if (not request.user.is_active): return JsonResponse(data)
+		try:
+			profile = Profile.objects.get(user__pk=request.user.pk)
+		except Profile.DoesNotExist:
+			return JsonResponse(data)
+		if (profile.only_view_project): return JsonResponse(data)
+			
 		if (key_is_to_test in request.GET and key_value in request.GET and key_type_data in request.GET and len(request.GET[key_value].strip()) > 0):
 			utils = Utils()
 			value = request.GET[key_value].strip()
@@ -482,3 +504,201 @@ def remove_single_value_database(request):
 		return JsonResponse(data)
 
 
+@csrf_protect
+def remove_reference(request):
+	"""
+	remove a reference. It can only be removed if not belongs to any deleted project
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		reference_id_a = 'reference_id'
+		
+		if (reference_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			reference_id = request.GET[reference_id_a]
+			try:
+				reference = Reference.objects.get(pk=reference_id)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (reference.project.all().filter(is_deleted=False).count() == 0 or\
+				reference.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			reference.is_deleted = True
+			reference.save()
+			data = { 'is_ok' : True }
+		
+		return JsonResponse(data)
+
+@csrf_protect
+def remove_sample(request):
+	"""
+	remove a sample, It can only be removed if not belongs to any deleted project
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		sample_id_a = 'sample_id'
+		
+		if (sample_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			sample_id = request.GET[sample_id_a]
+			try:
+				sample = Sample.objects.get(pk=sample_id)
+			except Sample.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (sample.owner.pk != request.user.pk or sample.project_samples.all().filter(is_deleted=False).count() != 0): return JsonResponse(data)
+			
+			## it can have project samples not deleted but in projects deleted
+			for project in sample.project_samples.all().filter(is_deleted=False):
+				if (not project.is_deleted): return JsonResponse(data)
+			
+			### now you can remove
+			sample.is_deleted = True
+			sample.save()
+			
+			## if sample is not processed yet and is waiting for a fastq.gz it is necessary to decrease the value in
+			if (not sample.has_files):
+				for upload_file in sample.uploadfiles_set.all():
+					if (not upload_file.is_processed and upload_file.type_file.name == TypeFile.TYPE_FILE_sample_file):
+						upload_file.number_files_processed += 1
+						if (upload_file.number_files_to_process == upload_file.number_files_processed):
+							upload_file.is_processed = True
+						upload_file.save()
+						break
+
+			data = { 'is_ok' : True }
+		return JsonResponse(data)
+
+@csrf_protect
+def remove_project(request):
+	"""
+	remove a project.
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		project_id_a = 'project_id'
+		
+		if (project_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			project_id = request.GET[project_id_a]
+			try:
+				project = Project.objects.get(pk=project_id)
+			except Project.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (project.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			project.is_deleted = True
+			project.save()
+			data = { 'is_ok' : True }
+		
+		return JsonResponse(data)
+	
+@csrf_protect
+def remove_project_sample(request):
+	"""
+	remove a project sample.
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		project_sample_id_a = 'project_sample_id'
+		
+		if (project_sample_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			project_sample_id = request.GET[project_sample_id_a]
+			try:
+				project_sample = ProjectSample.objects.get(pk=project_sample_id)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (project_sample.project.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			project_sample.is_deleted = True
+			project_sample.save()
+			
+			### need to send a message to recalculate the global files
+			collect_extra_data = CollectExtraData()
+			metaKeyAndValue = MetaKeyAndValue()
+			manageDatabase = ManageDatabase()
+			taskID = async(collect_extra_data.collect_extra_data_for_project, project_sample.project, request.user, None)
+			manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+				
+			data = { 'is_ok' : True }
+		
+		return JsonResponse(data)
+
+@csrf_protect
+def remove_uploaded_file(request):
+	"""
+	remove a project.
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		uploaded_file_id_a = 'uploaded_file_id'
+		
+		if (uploaded_file_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			uploaded_file_id = request.GET[uploaded_file_id_a]
+			try:
+				uploaded_file = UploadFiles.objects.get(pk=uploaded_file_id)
+			except UploadFiles.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (uploaded_file.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			uploaded_file.is_deleted = True
+			uploaded_file.save()
+			data = { 'is_ok' : True }
+		
+		return JsonResponse(data)

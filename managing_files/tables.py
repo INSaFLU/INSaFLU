@@ -9,7 +9,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from django.conf import settings
 from django.db.models import F
-from utils.utils import Utils
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -35,9 +34,18 @@ class ReferenceTable(tables.Table):
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no References to show..."
 
-	def render_owner(self, **kwargs):
-		record = kwargs.pop("record")
+	def render_owner(self, record):
 		return record.owner.username
+	
+	def render_name(self, record):
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == record.owner.username and record.project.all().filter(is_deleted=False).count() == 0):	## it can't be in any active project
+			return mark_safe('<a href="#modal_remove_reference" id="id_remove_reference_modal" data-toggle="modal"' +\
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
+		return record.name;
 	
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
@@ -129,6 +137,21 @@ class SampleTable(tables.Table):
 			if (record.file_name_2 is None or len(record.file_name_2) == 0): return "1"
 			return "2"
 		return "0"
+
+	def render_name(self, record):
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == record.owner.username):	## it can't be in any active project
+			## it can have project samples not deleted but in projects deleted
+			for project in record.project_samples.all().filter(is_deleted=False):
+				if (not project.is_deleted): return record.name;
+				
+			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
+		return record.name;
+
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -215,6 +238,16 @@ class ProjectTable(tables.Table):
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Projects to show..."
 	
+	def render_name(self, record):
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == record.owner.username):
+			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
+		return record.name;
+	
 	def render_samples(self, record):
 		"""
 		return a reference name
@@ -272,6 +305,14 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return sample name
 		"""
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == record.project.owner.username):
+			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+					' ref_name="' + record.sample.name + '" pk="' + str(record.pk) + '" +\
+					" ref_project="' + record.project.name + '" ><i class="fa fa-trash"></i></span> </a>' + record.sample.name)
 		return record.sample.name
 	
 	def render_coverage(self, record):
@@ -415,8 +456,17 @@ class AddSamplesFromFastqFileTable(tables.Table):
 		return 'True' if record.is_processed else 'False'
 	
 	def render_file_name(self, value, record):
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		remove_str = ""
+		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == record.owner.username and not record.is_processed):
+			remove_str = mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+					' ref_name="' + record.file_name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a> ')
+			
 		href = record.get_path_to_file(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + record.file_name + '</a>')
+		return mark_safe(remove_str + ' <a href="' + href + '" download>' + record.file_name + '</a>')
 	
 	def order_is_completed(self, queryset, is_descending):
 		queryset = queryset.annotate(is_completed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')

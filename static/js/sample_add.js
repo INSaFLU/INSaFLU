@@ -28,23 +28,16 @@ $('#id_date_of_receipt_lab').datepicker({
 });
 
 
-/// 
+///
 $(document).on("click", "a", function(){
 	var attr = $(this).attr('id');
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-	if (attr === 'id_data_set_add_modal'){
+	if (attr === 'id_remove_reference_modal'){
 		$('h4.modal-title').text('Add a data set');
 		$('h4.modal-title').attr('id', 'id_data_set_add_modal');
 		$('#id_name_to_insert').attr('placeholder', 'Data set name');
 		$('#id-label-replace').text('Set a new Data set:');
 	}
-	else if (attr === 'id_vaccine_add_modal'){
-		$('h4.modal-title').text('Set a new vaccine status');
-		$('h4.modal-title').attr('id', 'id_vaccine_add_modal');
-		$('#id_name_to_insert').attr('placeholder', 'Vaccine status');
-		$('#id-label-replace').text('Vaccine status:');
-	}
-	$('#id_name_to_insert').val('');
 });
 
 

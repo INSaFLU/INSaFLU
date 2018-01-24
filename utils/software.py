@@ -21,6 +21,7 @@ from django.db import transaction
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
 from BCBio import GFF
+from django.conf import settings
 
 class Software(object):
 	'''
@@ -28,7 +29,6 @@ class Software(object):
 	'''
 	utils = Utils()
 	software_names = SoftwareNames()
-	CORES_TO_USE = 6
 	
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -104,9 +104,9 @@ class Software(object):
 		Run spades
 		"""
 		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
-					self.software_names.get_spades_parameters_single(), self.CORES_TO_USE, out_dir)
+					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2,\
-					self.software_names.get_spades_parameters(), self.CORES_TO_USE, out_dir)
+					self.software_names.get_spades_parameters(), settings.THREADS_TO_RUN, out_dir)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -344,10 +344,10 @@ class Software(object):
 		"""
 		temp_dir = self.utils.get_temp_dir()
 		if (not file_name_2 is None and len(file_name_2) > 0):
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, Software.CORES_TO_USE, 
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN, 
 										temp_dir, file_name_1, file_name_2)
 		else: 
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, Software.CORES_TO_USE, temp_dir, file_name_1)
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN, temp_dir, file_name_1)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -425,7 +425,7 @@ class Software(object):
 		out: out_file
 		"""
 		cmd = "{}; {} {} --thread {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
-							parameters, self.CORES_TO_USE, input_file, out_file)
+							parameters, settings.THREADS_TO_RUN, input_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -474,7 +474,7 @@ class Software(object):
 
 		temp_dir = self.utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
-			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, file_name_1, 
+			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN, file_name_1, 
 					os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		else:
 			### need to make links the files to trimmomatic identify the _R1_ and _R2_ 
@@ -483,7 +483,7 @@ class Software(object):
 			os.system(cmd)
 			cmd = "ln -s {} {}".format(file_name_2, os.path.join(temp_dir, 'name_R2_001.fastq.gz'))
 			os.system(cmd)
-			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), Software.CORES_TO_USE, 
+			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN, 
 										new_file_name, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -526,11 +526,11 @@ class Software(object):
 		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
-				(self.software_names.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				(self.software_names.get_snippy(), settings.THREADS_TO_RUN, temp_dir, sample_name,
 				path_reference, self.software_names.get_snippy_parameters(), file_name_1)
 		else:
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
-				(self.software_names.get_snippy(), Software.CORES_TO_USE, temp_dir, sample_name,
+				(self.software_names.get_snippy(), settings.THREADS_TO_RUN, temp_dir, sample_name,
 				path_reference, self.software_names.get_snippy_parameters(), file_name_1, file_name_2)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -787,7 +787,7 @@ class Software(object):
 		
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s %s %s -f %s -b %s > %s" %\
-				(self.software_names.get_freebayes_parallel(), temp_file_regions, self.CORES_TO_USE,
+				(self.software_names.get_freebayes_parallel(), temp_file_regions, settings.THREADS_TO_RUN,
 				self.software_names.get_freebayes_parameters(), reference_fasta_temp, file_to_process, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):

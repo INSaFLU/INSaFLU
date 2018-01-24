@@ -44,6 +44,9 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
+### threads to use in several software
+THREADS_TO_RUN = config('THREADS_TO_RUN', default=3, cast=int)
+
 #https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
 #https://gist.github.com/bradmontgomery/6487319
 #SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -78,6 +81,7 @@ INSTALLED_APPS = [
     'phylogeny.apps.PhylogenyConfig',
     'log_login.apps.LogLoginConfig',
     'extend_user.apps.ExtendUserConfig',
+    'crequest',
 ]
 
 MIDDLEWARE = [
@@ -89,6 +93,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
+    'crequest.middleware.CrequestMiddleware',
 ]
 
 ROOT_URLCONF = 'fluwebvirus.urls'

@@ -201,7 +201,7 @@ class SamplesView(LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super(SamplesView, self).get_context_data(**kwargs)
 		tag_search = 'search_samples'
-		query_set = Sample.objects.filter(owner__id=self.request.user.id).order_by('-creation_date')
+		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
@@ -1012,12 +1012,12 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 			
-			if (len(vect_task_id_submited) == 0):
-				messages.warning(self.request, _("None sample was added to the project '{}'".format(project.name)))
+			if (project_sample_add == 0):
+				messages.warning(self.request, _("No sample was added to the project '{}'".format(project.name)))
 			else:
-				if (len(vect_task_id_submited) > 1):
+				if (project_sample_add > 1):
 					messages.success(self.request, _("'{}' samples were added to your project.".format(\
-								len(vect_task_id_submited))), fail_silently=True)
+								project_sample_add)), fail_silently=True)
 				else:
 					messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
 		return super(AddSamplesProjectsView, self).form_valid(form)

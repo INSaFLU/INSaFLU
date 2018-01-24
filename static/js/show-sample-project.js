@@ -403,41 +403,94 @@ function draw_count_variations_chart(){
 
 
 // show coverage graphic 
-$(document).on("click", "a", function(){
-	$('#modal-body-coverage').empty();
+$(document).on("click", "a", function(e){
+	var attr = $(this).attr('id');
 	
-	$.ajax({
-	  	beforeSend: function() {
-	  		$('#loader_coverage_image').show();
-	  	},
-	  	complete: function(){
-	  		$('#loader_coverage_image').hide();
-	  	},
-	
-	  	data : { 
-	  		project_sample_id : $(this).attr('project_sample_id'), // data sent with the get request 
-	  		element : $(this).attr('sequence'),
-			csrfmiddlewaretoken: '{{ csrf_token }}'
-	  	}, // data sent with the get request 
-	  	
-	  	url: $('#modal-body-coverage').attr("show-coverage-modal-url"),
-  		success: function (data) {
-  			if (data['is_ok']) {
-  				$('h4.modal-title').text(data['text']);
-  				$('#modal-body-coverage').prepend(data['image'])
-  			}
-  		},
-	      
-        // handle a non-successful response
-        error : function(xhr,errmsg,err) {
-        	alert(errmsg);
-        	console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-        }
-	});
+	/// show coverage images
+	if (attr == 'showImageCoverage'){
+		$('#modal-body-coverage').empty();
+		
+		$.ajax({
+		  	beforeSend: function() {
+		  		$('#loader_coverage_image').show();
+		  	},
+		  	complete: function(){
+		  		$('#loader_coverage_image').hide();
+		  	},
+		
+		  	data : { 
+		  		project_sample_id : $(this).attr('project_sample_id'), // data sent with the get request 
+		  		element : $(this).attr('sequence'),
+				csrfmiddlewaretoken: '{{ csrf_token }}'
+		  	}, // data sent with the get request 
+		  	
+		  	url: $('#modal-body-coverage').attr("show-coverage-modal-url"),
+	  		success: function (data) {
+	  			if (data['is_ok']) {
+	  				$('h4.modal-title').text(data['text']);
+	  				$('#modal-body-coverage').prepend(data['image'])
+	  			}
+	  		},
+		      
+	        // handle a non-successful response
+	        error : function(xhr,errmsg,err) {
+	        	alert(errmsg);
+	        	console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+	        }
+		});
+	}
+	/// remove samples
+	else if (attr === 'id_remove_reference_modal'){
+		
+		var ref_name = $(this).attr('ref_name');
+		var ref_project = $(this).attr('ref_project');
+		var tr_to_remove = e.target.parentNode.parentNode.parentNode.id;
+		
+		$('#id-label-remove').text('Do you want to remove \'' + ref_name + '\'?');
+		$('#id-modal-body-remove-sample').attr('pk', $(this).attr('pk'));
+		$('#id-modal-body-remove-sample').attr('ref_name', ref_name);
+		$('#id-modal-body-remove-sample').attr('ref_project', ref_project);
+		$('#id-modal-body-remove-sample').attr('tr_to_remove', tr_to_remove);
+	}
 });
 
 
+$('#id-remove-button').on('click', function(){
 
-
+	$.ajax({
+        url: $('#id-modal-body-remove-sample').attr("remove-single-value-url"),
+        data : { 
+        	project_sample_id : $('#id-modal-body-remove-sample').attr('pk'),
+    		csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, // data sent with the post request
+        		
+        success: function (data) {
+          if (data['is_ok']) {
+        	  
+        	  /// remove line
+        	  document.getElementById($('#id-modal-body-remove-sample').attr('tr_to_remove')).remove();
+        	  
+        	  /// add message with informaton
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        		'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' in a project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was successfully removed.' +
+				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+          else{
+        	/// add message with informaton
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' in a project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was not removed.' +
+				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
+	});
+});
 
 

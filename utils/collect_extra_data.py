@@ -365,7 +365,7 @@ class CollectExtraData(object):
 			vect_out.extend(vect_tags)
 			csv_writer.writerow(vect_out)
 
-			vect_out = [project.reference.name]
+			vect_out = [project.reference.name] + [''] * (len(vect_out) - 1)
 			csv_writer.writerow(vect_out)
 			n_count = 0
 			for project_sample in project.project_samples.all():

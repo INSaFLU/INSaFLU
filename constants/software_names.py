@@ -62,6 +62,14 @@ class SoftwareNames(object):
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
+	
+	
+	#### VERY important, change in snippy-vcf
+	#	mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
+	# 57c57
+	# < print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
+	# ---
+	# > print join("\t", qw(CHROM POS TYPE REF ALT), @ANNO), "\n";
 	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq")
 	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"

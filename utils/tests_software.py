@@ -96,17 +96,17 @@ class Test(TestCase):
 		self.assertTrue(exist_status == 0)
 		self.assertFalse(self.software.is_exist_database_abricate(database_name))
 	
-	def test_run_abyss(self):
-		
-		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		self.assertTrue(os.path.isfile(fastq1_1))
-		
-		out_dir = self.utils.get_temp_dir()
-		self.assertTrue(os.path.isdir(out_dir))
-		result_file = self.software.run_abyss(fastq1_1, out_dir)
-		self.assertTrue(os.path.exists(result_file))
-		self.assertTrue(os.path.getsize(result_file) > 100)
-		self.utils.remove_dir(out_dir)
+# 	def test_run_abyss(self):
+# 		
+# 		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+# 		self.assertTrue(os.path.isfile(fastq1_1))
+# 		
+# 		out_dir = self.utils.get_temp_dir()
+# 		self.assertTrue(os.path.isdir(out_dir))
+# 		result_file = self.software.run_abyss(fastq1_1, out_dir)
+# 		self.assertTrue(os.path.exists(result_file))
+# 		self.assertTrue(os.path.getsize(result_file) > 100)
+# 		self.utils.remove_dir(out_dir)
 		
 	def test_run_spades_single(self):
 		

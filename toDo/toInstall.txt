@@ -39,7 +39,7 @@
 ## $ sudo apt-get install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
 ## $ sudo pip3 install portalocker
 ## $ sudo pip3 install python-decouple
-## $ sudo pip3 install  django-simple-captcha
+## $ sudo pip3 install django-crequest
 
 ## CentOS
 ## $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build

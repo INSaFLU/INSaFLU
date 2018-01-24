@@ -177,6 +177,7 @@ class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.
 				user = User.objects.get(pk=self.request.session[Constants.SESSION_KEY_USER_ID])
 				user.set_password(form.cleaned_data['password1'])
 				user.is_active = True
+				user.profile.email_confirmed = True
 				user.save()
 				
 				## clean value in session
@@ -219,7 +220,7 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 		user = authenticate(username=username, password=password)
 		### if none try it with email
 		if (user is None): user = authenticate(email=username, password=password)
-		if user is not None and user.is_active:
+		if user is not None and user.is_active and user.profile.email_confirmed:
 			login(self.request, user)
 			
 			## set login history

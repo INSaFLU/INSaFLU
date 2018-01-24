@@ -3,9 +3,9 @@
 <p>Welcome to INSaFLU website.</p>
 
 <p>Please, click on the link below to active your account:
-http://{{ domain }}{% url 'activate' uidb64=uid token=token %}</p>
+<a href="https://{{ domain }}{% url 'activate' uidb64=uid token=token %}">https://{{ domain }}{% url 'activate' uidb64=uid token=token %}</a></p>
 
 <p>All the best,</p>
 <p><strong>InsaFlu team.</strong></p>
-<p><a href="insaflu.insa.pt">insaflu.insa.pt</a></p>
+<p><a href="https://{{ domain }}">{{ domain }}</a></p>
 {% endautoescape %}

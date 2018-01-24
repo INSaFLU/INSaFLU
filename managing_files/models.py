@@ -14,6 +14,8 @@ from operator import itemgetter
 import os
 from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
+from constants.constants_mixed_infection import ConstantsMixedInfection
+
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -368,12 +370,12 @@ class Sample(models.Model):
 			### Type A
 			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_A)
 			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.TYPE_A)
-			if (len(sz_subtype) > 0): sz_return_a += "" if len(sz_return_a) == 0 else "-" + sz_subtype
+			if (len(sz_subtype) > 0): sz_return_a += sz_subtype if len(sz_return_a) == 0 else "-" + sz_subtype
 			
 			### Type B
 			sz_return_b = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_B)
 			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, ConstantsVirus.TYPE_B)
-			if (len(sz_subtype) > 0): sz_return_b += "" if len(sz_return_b) == 0 else "-" + sz_subtype
+			if (len(sz_subtype) > 0): sz_return_b += sz_subtype if len(sz_return_b) == 0 else "-" + sz_subtype
 			if (len(sz_return_a) == 0): return sz_return_b
 			if (len(sz_return_b) == 0): return sz_return_a
 			return "{}; {}".format(sz_return_a, sz_return_b)
@@ -407,65 +409,75 @@ class Sample(models.Model):
 		for identify_virus in vect_identify_virus:
 			if (identify_virus.seq_virus.kind_type.name == type_to_test): n_return += 1
 		return n_return
+	
+	def get_mixed_infection(self):
+		"""
+		mixed infection based on the table static/mixed_infections/mixed_infections.xls
+		return tuble (tag_mixed_infection, alert, message)
+		tag_mixed_infection: ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO or ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+		alert: positive number, or zero
+		message: None, empty or the string with the error message
+		"""
+		vect_identify_virus = self.identify_virus.all()
+		if (vect_identify_virus.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+					"Warning: no type/subtype has been assigned (possible reason: low number of influenza reads).")
+	
+		## Only A not B
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
+			#  A; #any subtype; > 0 lineage
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 0):
+				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+					"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
 				
-	def is_mixed_infection(self):
-		"""
-		Test if it is mixed infection
-		Type > 1
-		SubType > 2
-		Lineage > 1
-		"""
-		vect_identify_virus = self.identify_virus.all()
-		if (vect_identify_virus.count() == 0): return False	## there's no results
-		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)): return True
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and \
-			self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) != 2): return True
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and \
-			self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) != 1): return True
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) > 1): return True
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2): return True
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1): return True
-		return False
+			## A; = 2 subtype
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+			## A; > 2 subtype
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+					"Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.")
+			## A < 2 subtype
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) < 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+					"Warning: an incomplete subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
+		
+		## Only B not A
+		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
+			#  B; #any subtype; > 0 lineage
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 0):
+				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+					"Warning: more than one type/subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.")
+			
+			## B; == 1 lineage
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+			## B; > 1 lineage
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'.")
+			## B; < 1 lineage
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) < 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: an incomplete lineage has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
+			
+		## A and B
+		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
+			
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 0 and\
+					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 0):
+				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
+			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
+		
+		## not A and not B
+		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
+			if ((self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 1 and\
+					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 0) or\
+					(self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 1 and\
+					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 0)):
+				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
+			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
+		
+		## default	
+		return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
 	
-	def has_types_and_subtypes(self):
-		"""
-		test if has values
-		""" 
-		vect_identify_virus = self.identify_virus.all()
-		if (vect_identify_virus.count() == 0): return False	## there's no results
-		return True
-	
-	def get_message_mixed_infection(self):
-		"""
-		return the message
-		"""
-		vect_identify_virus = self.identify_virus.all()
-		if (vect_identify_virus.count() == 0): return "Warning: No type/subtype has been assigned.";
-		
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and
-				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2):
-			return "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'."
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and
-				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1):
-			return "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'."
-		
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) == 0):
-			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and \
-				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) != 2):
-			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B) and \
-				self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) != 1): 
-			return "Warning: an incomplete type/subtype has been assigned. This sample may have a low number of influenza reads or may represent a 'mixed infection'."
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE) > 1):
-			return "Warning: more than ona type were detected for this sample, suggesting that may represent a 'mixed infection'."
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2):
-			return "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'."
-		if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1):
-			return "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'."
-		
-		return None
-		
 	def get_is_ready_for_projects(self):
 		"""
 		need to be true to be ready for projects

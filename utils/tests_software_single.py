@@ -28,6 +28,8 @@ from utils.parse_in_files import ParseInFiles
 from utils.result import DecodeObjects, MixedInfectionMainVector
 from managing_files.models import CountVariations, MixedInfections
 from utils.mixed_infections_management import MixedInfectionsManagement
+from manage_virus.constants_virus import ConstantsVirus
+from manage_virus.models import Tags, SeqVirus, IdentifyVirus
 
 class Test(TestCase):
 

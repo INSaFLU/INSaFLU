@@ -74,6 +74,10 @@ class Reference(models.Model):
 	season = models.ManyToManyField(SeasonReference)		## can have the season
 	description = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name='Description')
 
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
+	
 	def __str__(self):
 		return self.name
 
@@ -273,6 +277,10 @@ class Sample(models.Model):
 	
 	###	has the flag indicating that the sample can be processed by projects
 	is_ready_for_projects = models.BooleanField(default=False)
+	
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')	## this date has the time of deleted by web page
 	
 	def __str__(self):
 		return self.name
@@ -552,6 +560,10 @@ class Project(models.Model):
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
 	is_deleted = models.BooleanField(default=False)
 	
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')	## this date has the time of deleted by web page
+	
 	def __str__(self):
 		return self.name
 	
@@ -677,6 +689,11 @@ class ProjectSample(models.Model):
 	alert_first_level = models.IntegerField(default=0)	## has the number of alerts for high errors
 	alert_second_level = models.IntegerField(default=0)	## has the number of alerts for low errors
 	
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
+
+
 	class Meta:
 		ordering = ['project__id', '-creation_date']
 	
@@ -843,10 +860,10 @@ class UploadFiles(models.Model):
 	this class has the files that the user can upload, has he want,
 	then the system make the relations with the samples
 	"""
-	is_valid = models.BooleanField(default=False)			## true if everything is OK with the file, without errors
-	is_processed = models.BooleanField(default=False)		## if samples file -> True when all files is attributed
-															## if fastq.gz -> True when the file is attributed
-	is_deleted = models.BooleanField(default=False)			## if this file is removed
+	is_valid = models.BooleanField(default=False)							## true if everything is OK with the file, without errors
+	is_processed = models.BooleanField(default=False)						## if samples file -> True when all files is attributed
+																			## if fastq.gz -> True when the file is attributed
+	is_deleted = models.BooleanField(default=False)							## if this file is removed
 	number_errors = models.IntegerField(default=0)			## if has errors don't do anything, need to remove and upload again.
 	number_files_processed = models.IntegerField(default=0)	## samples_list, has the number of files already processed
 															## in fastq files, if this file is associated to a sample or not
@@ -858,6 +875,11 @@ class UploadFiles(models.Model):
 	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	attached_date = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')		## only used in fastq.gz files
+	
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
+	
 	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
 	
 	### need to create a random name for this file

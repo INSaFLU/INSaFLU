@@ -847,7 +847,16 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 				self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference."
 				self.request.session[Constants.PROJECT_NAME] = name
 				return super(ProjectCreateView, self).form_invalid(form)
-		
+			
+			if (reference.is_deleted):
+				self.request.session[Constants.ERROR_REFERENCE] = "The reference '{}' was removed.".format(reference.name)
+				self.request.session[Constants.PROJECT_NAME] = name
+				return super(ProjectCreateView, self).form_invalid(form)
+		else:
+			self.request.session[Constants.ERROR_REFERENCE] = "You need to select a reference."
+			self.request.session[Constants.PROJECT_NAME] = name
+			return super(ProjectCreateView, self).form_invalid(form)
+			
 		### exists an error
 		if (b_error): return super(ProjectCreateView, self).form_invalid(form)
 		
@@ -980,12 +989,15 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
 					continue
 				
+				## the sample can be deleted by other session
+				if (sample.is_deleted): continue
+				
 				## get project sample
 				try:
 					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
 					
-					### if exist can be deleted, active
-					if (project_sample.is_deleted and not project_sample.is_error):
+					### if exist can be deleted, pass to active
+					if (project_sample.is_deleted and not project_sample.is_error and not project_sample.is_deleted_in_file_system):
 						project_sample.is_deleted = False
 						project_sample.save()
 						project_sample_add += 1

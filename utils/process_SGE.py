@@ -5,6 +5,7 @@ from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
+# http://biohpc.blogspot.pt/2016/10/sge-installation-of-son-of-grid-engine.html ## centos 7
 # /usr/share/gridengine/scripts/init_cluster
 #  => SGE_ROOT: /var/lib/gridengine
 # => SGE_CELL: default

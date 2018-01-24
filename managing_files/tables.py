@@ -308,7 +308,7 @@ class ShowProjectSamplesResults(tables.Table):
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
 		user = current_request.user
-		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == Constants.USER_ANONYMOUS): return record.sample.name;
 		if (user.username == record.project.owner.username):
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.sample.name + '" pk="' + str(record.pk) + '" +\
@@ -460,7 +460,7 @@ class AddSamplesFromFastqFileTable(tables.Table):
 		current_request = CrequestMiddleware.get_request()
 		user = current_request.user
 		remove_str = ""
-		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		if (user.username == Constants.USER_ANONYMOUS): return record.file_name;
 		if (user.username == record.owner.username and not record.is_processed):
 			remove_str = mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.file_name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a> ')

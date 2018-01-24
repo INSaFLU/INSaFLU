@@ -1138,6 +1138,8 @@ class Software(object):
 		project_sample = ProjectSample.objects.get(pk=project_sample.id)
 		project_sample.is_finished = True
 		project_sample.is_deleted = False
+		project_sample.is_deleted_in_file_system = False
+		project_sample.date_deleted = None
 		project_sample.is_error = False
 		project_sample.count_variations = manage_database.get_variation_count(count_hits)
 		project_sample.mixed_infections = mixed_infection

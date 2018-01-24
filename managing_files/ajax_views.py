@@ -19,6 +19,8 @@ from extend_user.models import Profile
 from managing_files.models import Reference, Sample, UploadFiles
 from utils.collect_extra_data import CollectExtraData
 from django_q.tasks import async
+from datetime import datetime
+from django.db import transaction
 
 ######################################
 ###
@@ -503,7 +505,7 @@ def remove_single_value_database(request):
 					
 		return JsonResponse(data)
 
-
+@transaction.atomic
 @csrf_protect
 def remove_reference(request):
 	"""
@@ -530,16 +532,19 @@ def remove_reference(request):
 				return JsonResponse(data)
 			
 			## different owner or belong to a project not deleted
-			if (reference.project.all().filter(is_deleted=False).count() == 0 or\
+			if (reference.project.all().filter(is_deleted=False).count() != 0 or\
 				reference.owner.pk != request.user.pk): return JsonResponse(data)
 			
 			### now you can remove
 			reference.is_deleted = True
+			reference.is_deleted_in_file_system = False
+			reference.date_deleted = datetime.now()
 			reference.save()
 			data = { 'is_ok' : True }
 		
 		return JsonResponse(data)
 
+@transaction.atomic
 @csrf_protect
 def remove_sample(request):
 	"""
@@ -574,6 +579,8 @@ def remove_sample(request):
 			
 			### now you can remove
 			sample.is_deleted = True
+			sample.is_deleted_in_file_system = False
+			sample.date_deleted = datetime.now()
 			sample.save()
 			
 			## if sample is not processed yet and is waiting for a fastq.gz it is necessary to decrease the value in
@@ -589,6 +596,7 @@ def remove_sample(request):
 			data = { 'is_ok' : True }
 		return JsonResponse(data)
 
+@transaction.atomic
 @csrf_protect
 def remove_project(request):
 	"""
@@ -619,11 +627,14 @@ def remove_project(request):
 			
 			### now you can remove
 			project.is_deleted = True
+			project.is_deleted_in_file_system = False
+			project.date_deleted = datetime.now()
 			project.save()
 			data = { 'is_ok' : True }
 		
 		return JsonResponse(data)
-	
+
+@transaction.atomic
 @csrf_protect
 def remove_project_sample(request):
 	"""
@@ -654,6 +665,8 @@ def remove_project_sample(request):
 			
 			### now you can remove
 			project_sample.is_deleted = True
+			project_sample.is_deleted_in_file_system = False
+			project_sample.date_deleted = datetime.now()
 			project_sample.save()
 			
 			### need to send a message to recalculate the global files
@@ -668,6 +681,7 @@ def remove_project_sample(request):
 		
 		return JsonResponse(data)
 
+@transaction.atomic
 @csrf_protect
 def remove_uploaded_file(request):
 	"""
@@ -694,10 +708,12 @@ def remove_uploaded_file(request):
 				return JsonResponse(data)
 			
 			## different owner or belong to a project not deleted
-			if (uploaded_file.owner.pk != request.user.pk): return JsonResponse(data)
+			if (uploaded_file.owner.pk != request.user.pk and not uploaded_file.is_processed): return JsonResponse(data)
 			
 			### now you can remove
 			uploaded_file.is_deleted = True
+			uploaded_file.is_deleted_in_file_system = False
+			uploaded_file.date_deleted = datetime.now()
 			uploaded_file.save()
 			data = { 'is_ok' : True }
 		

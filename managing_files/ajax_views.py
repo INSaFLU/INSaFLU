@@ -708,7 +708,12 @@ def remove_uploaded_file(request):
 				return JsonResponse(data)
 			
 			## different owner or belong to a project not deleted
-			if (uploaded_file.owner.pk != request.user.pk and not uploaded_file.is_processed): return JsonResponse(data)
+			if (uploaded_file.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			## if it's processed need to test samples deleted
+			if (uploaded_file.is_processed):
+				for sample in uploaded_file.samples.all():
+					if (not sample.is_deleted): return JsonResponse(data)
 			
 			### now you can remove
 			uploaded_file.is_deleted = True

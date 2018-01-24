@@ -461,10 +461,21 @@ class AddSamplesFromFastqFileTable(tables.Table):
 		user = current_request.user
 		remove_str = ""
 		if (user.username == Constants.USER_ANONYMOUS): return record.file_name;
-		if (user.username == record.owner.username and not record.is_processed):
-			remove_str = mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+		if (user.username == record.owner.username): 
+			if (not record.is_processed):
+				remove_str = mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.file_name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a> ')
-			
+			else:	## if the attached sample is deleted you can remove the fastq.gz
+				b_all_deleted = True
+				for sample in record.samples.all():
+					if (not sample.is_deleted):
+						b_all_deleted = False
+						break
+					
+				if (b_all_deleted):
+					remove_str = mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+						' ref_name="' + record.file_name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a> ')
+		
 		href = record.get_path_to_file(TypePath.MEDIA_URL)		
 		return mark_safe(remove_str + ' <a href="' + href + '" download>' + record.file_name + '</a>')
 	

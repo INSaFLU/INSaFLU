@@ -54,8 +54,8 @@ class Constants(object):
 	
 	### queue names
 	QUEUE_SGE_NAMES = ['queue_1.q', 'queue_2.q']
-	QUEUE_SGE_NAME_GENERAL = 'general'
-	QUEUE_SGE_NAME_EMAIL = 'email'
+	QUEUE_SGE_NAME_GLOBAL = 'all.q'
+##	QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
 	
 	### separators
 	SEPARATOR_COMMA = ','

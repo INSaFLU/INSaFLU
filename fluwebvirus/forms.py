@@ -49,7 +49,7 @@ class RegistrationForm(UserCreationForm):
 			),
 			ButtonHolder(
 				Submit('register', 'Register', css_class='btn-primary'),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
 	
@@ -105,7 +105,41 @@ class ResetPasswordForm(forms.ModelForm):
 			),
 			ButtonHolder(
 				Submit('send', 'Send', css_class='btn-primary'),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
+			)
+		)
+		
+class GetMessageConfirmEmailForm(forms.ModelForm):
+	"""
+	reset the password
+	"""
+	email = forms.EmailField(label=_("E-mail"), max_length=254, required=True, 
+			widget=forms.TextInput(attrs={
+				"type": "email",
+		 	   	"size": "30",
+			 	"placeholder": _("E-mail address"), }),
+			help_text='Required. Inform a valid email address.')
+	class Meta:
+		model = User
+		fields = ('email', )
+		
+	def __init__(self, *args, **kwargs):
+		super(GetMessageConfirmEmailForm, self).__init__(*args, **kwargs)
+		
+		self.helper = FormHelper()
+		self.helper.form_method = 'POST'
+		self.helper.layout = Layout(
+			Div(
+				Div('email', css_class="col-sm-4"),
+				css_class='row'
+			),
+			Div(
+				HTML('<div class="g-recaptcha insa-recaptcha" data-sitekey="{}"></div>'.format(settings.SITE_KEY)),
+				css_class='row'
+			),
+			ButtonHolder(
+				Submit('send', 'Send', css_class='btn-primary'),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
 	
@@ -128,7 +162,7 @@ class ChangePasswordForm(forms.ModelForm):
 			'password2',
 			ButtonHolder(
 				Submit('register', 'Change Password', css_class='btn-primary'),
-				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
+				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
 
@@ -148,7 +182,7 @@ class ChangePasswordForm(forms.ModelForm):
 
 	
 class LoginForm(AuthenticationForm):
-	
+
 	if (settings.SHOW_LOGIN_ANONYMOUS):
 		login_anonymous = forms.BooleanField()
 	
@@ -171,11 +205,12 @@ class LoginForm(AuthenticationForm):
 			self.fields[x[0]].label = x[1]
 			self.fields[x[0]].help_text = x[2]
 			self.fields[x[0]].required = x[3]
-			
+		
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		if (settings.SHOW_LOGIN_ANONYMOUS):
 			self.helper.layout = Layout(
+				HTML('<p><strong>Please use the browsers Firefox, Safari or Chrome.</strong></p>'),
 				'username',
 				'password',
 				'login_anonymous',
@@ -183,6 +218,8 @@ class LoginForm(AuthenticationForm):
 					Submit('login', 'Login', css_class='btn-primary'),
 					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
 					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
+					Button('get_message_confirm_email', 'Other message to confirm the email.', css_class='btn-secondary',\
+						onclick='window.location.href="{}"'.format(reverse('get_message_confirm_email'))),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
 				)
 			)
@@ -194,6 +231,11 @@ class LoginForm(AuthenticationForm):
 					Submit('login', 'Login', css_class='btn-primary'),
 					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
 					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
+					Button('get_message_confirm_email', 'Other message to confirm the email.', css_class='btn-secondary',\
+						onclick='window.location.href="{}"'.format(reverse('get_message_confirm_email'))),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
 				)
 			)
+
+
+

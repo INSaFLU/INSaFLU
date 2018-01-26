@@ -380,7 +380,7 @@ def add_single_value_database(request):
 		value = request.GET[key_value].strip()
 		
 		## some pre-requisites
-		if (not request.user.is_active): return JsonResponse(data)
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 		try:
 			profile = Profile.objects.get(user__pk=request.user.pk)
 		except Profile.DoesNotExist:
@@ -431,7 +431,7 @@ def remove_single_value_database(request):
 		key_is_to_test = 'is_to_test'
 		
 		## some pre-requisites
-		if (not request.user.is_active): return JsonResponse(data)
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 		try:
 			profile = Profile.objects.get(user__pk=request.user.pk)
 		except Profile.DoesNotExist:
@@ -518,7 +518,7 @@ def remove_reference(request):
 		if (reference_id_a in request.GET):
 			
 			## some pre-requisites
-			if (not request.user.is_active): return JsonResponse(data)
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:
@@ -557,7 +557,7 @@ def remove_sample(request):
 		if (sample_id_a in request.GET):
 			
 			## some pre-requisites
-			if (not request.user.is_active): return JsonResponse(data)
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:
@@ -609,7 +609,7 @@ def remove_project(request):
 		if (project_id_a in request.GET):
 			
 			## some pre-requisites
-			if (not request.user.is_active): return JsonResponse(data)
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:
@@ -647,7 +647,7 @@ def remove_project_sample(request):
 		if (project_sample_id_a in request.GET):
 			
 			## some pre-requisites
-			if (not request.user.is_active): return JsonResponse(data)
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:
@@ -694,7 +694,7 @@ def remove_uploaded_file(request):
 		if (uploaded_file_id_a in request.GET):
 			
 			## some pre-requisites
-			if (not request.user.is_active): return JsonResponse(data)
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:

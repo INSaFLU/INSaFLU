@@ -1,0 +1,22 @@
+{% extends '_layouts/base.html' %}
+
+{% block css %}
+
+{% endblock css %}
+
+{% block header %}
+	<div class="page-header rounded-header">
+    	<h2>Get other message to confirm your email.</h2>
+	</div>
+{% endblock  %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+<form class="form-horizontal" action="{% url 'get_message_confirm_email' %}" method="post">
+    {% crispy form %}
+</form>
+{% endblock %}
+
+{% block js %}
+	<script src='https://www.google.com/recaptcha/api.js'></script>
+{% endblock js %}

@@ -35,7 +35,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 			profile.email_confirmed = True
 			profile.only_view_project = True
 		elif (instance.username == Constants.DEFAULT_USER):
-			profile.email_confirmed = True
+			profile.email_confirmed = False
+			profile.only_view_project = True	## security reasons
 		
 		### get a queue name	give two different queue names to the user 
 		profile.queue_name_sge = Constants.QUEUE_SGE_NAMES[profile.pk & 0x01]

@@ -53,7 +53,7 @@ class Constants(object):
 	DIR_PROCESSED_PROCESSED = 'processed'
 	
 	### queue names
-	QUEUE_SGE_NAMES = ['queue_1', 'queue_2']
+	QUEUE_SGE_NAMES = ['queue_1.q', 'queue_2.q']
 	QUEUE_SGE_NAME_GENERAL = 'general'
 	QUEUE_SGE_NAME_EMAIL = 'email'
 	

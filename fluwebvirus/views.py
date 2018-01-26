@@ -9,7 +9,7 @@ from log_login.models import LoginHistory
 from managing_files.models import DataSet
 from constants.constants import Constants
 from django.contrib import messages
-from fluwebvirus.forms import RegistrationForm, LoginForm, ResetPasswordForm, ChangePasswordForm
+from fluwebvirus.forms import RegistrationForm, LoginForm, ResetPasswordForm, ChangePasswordForm, GetMessageConfirmEmailForm
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect
@@ -70,7 +70,7 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
 			else:
 				user = form.save(commit=False)
-				user.is_active = False
+				user.is_active = True		## need to pass the confirm email
 				user.save()
 				user.profile.institution = form.cleaned_data['institution']
 				user.profile.save()
@@ -91,7 +91,7 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 	form_valid_message = ""
 
 
-class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
+class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 	"""
 	Reset password
 	"""
@@ -130,10 +130,7 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 				### End reCAPTCHA validation
 				
 				if (result['success']):
-					user = User.objects.get(email__iexact=email_name, is_active=True)
-					## invalidate current account
-					user.is_active = False
-					user.save()
+					user = User.objects.get(email__iexact=email_name, is_active=True, profile__email_confirmed=True)
 					current_site = get_current_site(self.request)
 					subject = 'Reseting password  in your INSaFlu Account'
 					message = render_to_string('accounts/account_reset_pass_email.html', {
@@ -153,9 +150,72 @@ class ResetPasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.C
 			
 			return redirect('dashboard')
 			
-	## static method
-	form_valid_message = ""
+class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
+	"""
+	Reset password
+	"""
+	form_class = GetMessageConfirmEmailForm
+	model = User
+	template_name = 'accounts/other_confirm_email.html'
+
+	def get_context_data(self, **kwargs):
+		context = super(GetMessageConfirmEmailView, self).get_context_data(**kwargs)
+		context['nav_modal'] = True	## short the size of modal window
+		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		return context
 	
+	def form_valid(self, form):
+		
+		if form.is_valid():
+			email_name = form.cleaned_data['email']
+			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
+					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
+				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
+				return redirect('dashboard')
+			
+			### 
+			try:
+				### Begin reCAPTCHA validation '''
+				recaptcha_response = self.request.POST.get('g-recaptcha-response')
+				url = 'https://www.google.com/recaptcha/api/siteverify'
+				values = {
+					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+					'response': recaptcha_response
+				}
+				data = urllib.parse.urlencode(values).encode("utf-8")
+				req = urllib.request.Request(url, data)
+				response = urllib.request.urlopen(req).read()
+				result = json.loads(response.decode('utf-8'))
+				### End reCAPTCHA validation
+				
+				if (not result['success']):
+					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
+				else:
+					## don't change anything in the account.
+					user = User.objects.get(email__iexact=email_name, is_active=True)
+					
+					## email already confirmed
+					if (user.profile.email_confirmed):
+						messages.warning(self.request, "Warning, this email was confirmed.", fail_silently=True)
+						return self.form_invalid(form)
+					
+					current_site = get_current_site(self.request)
+					subject = 'Activate your InsaFlu Account'
+					message = render_to_string('accounts/account_activation_email.html', {
+						'user': user,
+						'domain': current_site.domain,
+						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+						'token': account_activation_token.make_token(user),
+					})
+					user.email_user(subject, message)
+					messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
+			except User.DoesNotExist as e:
+				messages.warning(self.request, "The account '{}' does not exist in database or is disabled.".format(email_name), fail_silently=True)
+			
+			return redirect('dashboard')
+
+
+
 class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
 	"""
 	Change the passwords
@@ -220,7 +280,11 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 		user = authenticate(username=username, password=password)
 		### if none try it with email
 		if (user is None): user = authenticate(email=username, password=password)
-		if user is not None and user.is_active and user.profile.email_confirmed:
+		if (user is not None and not user.profile.email_confirmed):
+			messages.warning(self.request, "Warning, your email is not confirmed.", fail_silently=True)
+			return self.form_invalid(form)
+		
+		if user is not None and user.is_active:
 			login(self.request, user)
 			
 			## set login history

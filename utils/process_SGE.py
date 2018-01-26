@@ -6,7 +6,10 @@ from utils.utils import Utils
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
 # http://biohpc.blogspot.pt/2016/10/sge-installation-of-son-of-grid-engine.html ## centos 7
+# http://star.mit.edu/cluster/docs/0.93.3/guides/sge.html		### explain who to use SGE
+
 # /usr/share/gridengine/scripts/init_cluster
+
 #  => SGE_ROOT: /var/lib/gridengine
 # => SGE_CELL: default
 # => Spool directory: /var/spool/gridengine/spooldb
@@ -153,6 +156,5 @@ class ProcessSGE(object):
 		if (str(n_SGE_id) in vectRunning): return self.SGE_JOB_ID_PROCESSING
 		if (str(n_SGE_id) in vectWait): return self.SGE_JOB_ID_QUEUE
 		return self.SGE_JOB_ID_FINISH
-	
 
-		
+

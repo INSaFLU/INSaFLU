@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from fluwebvirus.views import LoginView, HomePageView, LogOutView, SignUpView
-from fluwebvirus.views import ResetPasswordView, ChangePasswordView
+from fluwebvirus.views import ResetPasswordView, ChangePasswordView, GetMessageConfirmEmailView
 from django.conf import settings
 from django.conf.urls.static import static
 from fluwebvirus.views import activate, reset_password_key
@@ -25,6 +25,7 @@ urlpatterns = [
     url('^$', HomePageView.as_view(), name='home'),
     url(r'^accounts/register/$', SignUpView.as_view(), name='register'),
     url(r'^accounts/reset_password/$', ResetPasswordView.as_view(), name='reset_password'),
+    url(r'^accounts/get_message_confirm_email/$', GetMessageConfirmEmailView.as_view(), name='get_message_confirm_email'),
     url(r'^accounts/change_password/$', ChangePasswordView.as_view(), name='change_password'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', LogOutView.as_view(), name='logout'),

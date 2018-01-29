@@ -36,4 +36,4 @@ class Command(BaseCommand):
 			self.stdout.write(pk.ljust(10) + username.ljust(40) + number_projects.ljust(15) + last_login.ljust(20) + lst_login_ip.ljust(18) + is_superuser.ljust(15) + is_active.ljust(10) + is_email_active.ljust(20))
 	
 	def format_date(self, date_and_time):
-		return date_and_time.strftime("%d/%m/%y %H:%M")
+		return date_and_time.strftime("%d/%m/%Y %H:%M")

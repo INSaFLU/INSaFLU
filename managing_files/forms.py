@@ -142,7 +142,11 @@ class ReferenceForm(forms.ModelForm):
 				some_error_in_files = True
 				os.unlink(reference_genbank_temp_file_name.name)
 				self.add_error('reference_genbank', e.args[0])
-		
+			except: 
+				os.unlink(reference_fasta_temp_file_name.name)
+				some_error_in_files = True
+				self.add_error('reference_genbank', "Not a valid 'genbank' file.")
+			
 		## if some errors in the files, fasta or genBank, return
 		if (some_error_in_files): return cleaned_data
 		

@@ -196,7 +196,7 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 					
 					## email already confirmed
 					if (user.profile.email_confirmed):
-						messages.warning(self.request, "Warning, this email was confirmed.", fail_silently=True)
+						messages.warning(self.request, "Warning, this email was already confirmed.", fail_silently=True)
 						return self.form_invalid(form)
 					
 					current_site = get_current_site(self.request)

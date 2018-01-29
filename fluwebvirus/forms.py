@@ -210,7 +210,7 @@ class LoginForm(AuthenticationForm):
 		self.helper.form_method = 'POST'
 		if (settings.SHOW_LOGIN_ANONYMOUS):
 			self.helper.layout = Layout(
-				HTML('<p><strong>Please use the browsers Firefox, Safari or Chrome.</strong></p>'),
+				HTML('<p><strong>Please, use the browsers Firefox, Safari or Chrome for better view experience.</strong></p>'),
 				'username',
 				'password',
 				'login_anonymous',
@@ -218,8 +218,6 @@ class LoginForm(AuthenticationForm):
 					Submit('login', 'Login', css_class='btn-primary'),
 					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
 					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
-					Button('get_message_confirm_email', 'Other message to confirm the email.', css_class='btn-secondary',\
-						onclick='window.location.href="{}"'.format(reverse('get_message_confirm_email'))),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
 				)
 			)

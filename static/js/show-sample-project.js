@@ -284,7 +284,6 @@ $('#collapseFifth').on('hidden.bs.collapse', function () {
 /// get count variations from server and show in a graph
 function draw_count_variations_chart(){
 	
-	
 	$.ajax({
     	/// spin 
     	beforeSend: function() {
@@ -428,7 +427,9 @@ $(document).on("click", "a", function(e){
 	  		success: function (data) {
 	  			if (data['is_ok']) {
 	  				$('h4.modal-title').text(data['text']);
-	  				$('#modal-body-coverage').prepend(data['image'])
+	  				$('#modal-body-coverage').prepend(data['image']);
+	  				$('#downlod_image_id').attr('href', data['image_download']);
+	  				$('#downlod_image_id').attr('download', data['image_download_name']);
 	  			}
 	  		},
 		      

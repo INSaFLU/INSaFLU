@@ -205,14 +205,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
 ##        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config('DB_NAME'),
+        'NAME': 'fluwebvirus_test',
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST'),
         'PORT': '5432',
-        'TEST': {
-            'NAME': 'fluwebvirus_test',
-        },
     },
 }
 
@@ -273,7 +270,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static_all')	## is the absolute path to th
 STATIC_URL = '/static/' 		## is the URL to use when referring to static files located in STATIC_ROOT.
 
 MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, '/tmp/tests_insa_flu')
 MEDIA_URL = '/media/'
 
 

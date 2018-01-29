@@ -11,6 +11,8 @@
 <form class="form-horizontal" action="{% url 'login' %}" method="post">
     {% crispy form %}
 </form>
+<p></p>
+<a href='{% url "get_message_confirm_email" %}'>Get another confirmation e-mail (check your spam first)</a>
 {% endblock %}
 
 

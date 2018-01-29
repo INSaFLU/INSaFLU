@@ -17,6 +17,9 @@
 
 <!-- Main content-->
 {% block content %}
+	<!-- set the messages -->
+	<div id="id_messages_remove"></div>
+	
 	{% crispy form %} 
 	
 	<!-- The remove Modal -->
@@ -62,7 +65,7 @@
   							<div class="form-group row">
   								<label id="id-label-replace" class="col-6 col-form-label">Folder Name</label>
  								<div class="col-10">
-         							<input class="form-control" id="id_name_to_insert" type="text" autocomplete="off"/>
+         							<input class="form-control" id="id_name_to_insert" placeholder="" type="text" autocomplete="off"/>
        							</div>
        						</div>
   						</div>

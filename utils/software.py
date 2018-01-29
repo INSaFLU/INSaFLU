@@ -8,7 +8,6 @@ from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
 from constants.constants import Constants, TypePath, FileType, FileExtensions
-from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample, MixedInfectionsTag

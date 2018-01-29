@@ -2,6 +2,8 @@
 
 import os, subprocess, logging
 from utils.utils import Utils
+from constants.constants import Constants
+from django.conf import settings
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
@@ -26,9 +28,9 @@ from utils.utils import Utils
 # /etc/default/gridengine
 class ProcessSGE(object):
 	
-	szScriptSGEName = "launch_lvb.sh"
 	utils = Utils()
 	
+	FILE_NAME_SCRIPT_SGE = "launch_job_insa.sh"
 	SGE_JOB_ID_PROCESSING = 1
 	SGE_JOB_ID_QUEUE = 2
 	SGE_JOB_ID_FINISH = 3
@@ -41,30 +43,6 @@ class ProcessSGE(object):
 	def __init__(self):
 		pass
 
-	def submit_sge(self, sz_file, file_model, sz_path_directory):
-	
-		sz_out_dir = "%s/%s" % (sz_path_directory, file_model.key_id)
-		if (not os.path.exists(sz_out_dir)):
-			sz_cmd = "mkdir -p " + sz_out_dir
-			if (os.system(sz_cmd)): return (True, "Error: fail to create project")
-		
-		sz_cmd = "cp %s %s/infile" % (sz_file, sz_out_dir)
-		if (os.system(sz_cmd)): return (True, "Error: fail to copy fasta file")
-
-		### create bash
-		sz_cmd = "cd %s; %s -f fasta -s 509739986 -p %d > %s" % (sz_out_dir, self.constants.PATH_LVB_SOFTWARE, self.threadsHead, self.constants.FILE_NAME_OUT_REPORT_LVB)
-		self.setScriptRunSGE(sz_out_dir, sz_cmd)
-		n_job_id = int(self.submitteJob(sz_out_dir))
-		if (n_job_id == 0):
-			file_model.job_sge_id = 0 
-			return (True, "Error: fail to submit OGE job")
-		file_model.is_queue = True
-		file_model.is_processing = False
-		file_model.job_sge_id = n_job_id
-		file_model.path_job = file_model.key_id
-		return (False, "")
-
-
 	def submitte_job(self, file_name):
 		"""
 		job submission
@@ -72,7 +50,7 @@ class ProcessSGE(object):
 		"""
 		sz_temp = os.getcwd()
 		os.chdir(os.path.dirname(file_name))	## change dir
-		cmd = 'qsub %s/%s' % (file_name)
+		cmd = 'qsub ' + file_name
 		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 		(out, err) = proc.communicate()
 		os.chdir(sz_temp)		## change dir
@@ -83,16 +61,21 @@ class ProcessSGE(object):
 		out_str = out.decode("utf-8")
 		b_found = False
 		for line in out_str.split('\n'):
-			if (line.find("has been submitted") != -1): 
-				b_found = True
-				break
+			print(line)
+			if (line.find("has been submitted") != -1):
+				lst_line = line.split(' ')
+				if (len(lst_line) > 4 and self.utils.is_integer(lst_line[2])): return int(lst_line[2])
+				return None		## don't rise exception... 
 		if (not b_found): raise Exception(out_str)
 
 
-	def set_script_run_sge(self, file_name_out, queue_name, cline, nPriority = 0):
+	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, b_remove_out_dir = False, nPriority = 0):
 		"""
 		create the script to run SGE
 		"""
+		if (len(vect_cmd) == 0): return None
+		
+		file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
 		with open(file_name_out, 'w') as handleSGE:
 			handleSGE.write("#!/bin/bash\n")
 			handleSGE.write("#$ -V\n")	# Specifies  that  all  environment  variables active
@@ -102,8 +85,11 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
 			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
 			if (nPriority > 0): handleSGE.write("#$ -p %d\n" % (nPriority))	# execute the job for the current work directory
-			handleSGE.write("\n" + cline)
+			for cline in vect_cmd: handleSGE.write("\n" + cline)
+			if (b_remove_out_dir):
+				handleSGE.write("\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir))
 	
+		return file_name_out
 	
 	def __get_sge_process__(self):
 		"""
@@ -129,26 +115,24 @@ class ProcessSGE(object):
 		tagsSGERunning = ('r', 't')
 		tagsSGEWaiting = ('qw', 'w')
 		# test with qstat
-		szFileResultSGE = self.constants.get_file_name(self.constants.PATH_TEMP, "sge_stat")
-		cline = 'qstat > %s' % (szFileResultSGE)
+		file_result = self.utils.get_temp_file('sge_stat', '.txt')
+		cline = 'qstat > %s' % (file_result)
 		os.system(cline)
 			
 		## read the FILE
-		handleResult = open(szFileResultSGE)
-		vectRunning =[]
-		vectWait =[]
-		for line in handleResult:
-			# pass header and other things
-			if (line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0): continue
-			if (len(line.split()) > 0):
-				## jobid is running
-				if (line.split()[4] in tagsSGERunning): vectRunning.append(line.split()[0])
-				elif (line.split()[4] in tagsSGEWaiting): vectWait.append(line.split()[0])
-		handleResult.close()
+		with open(file_result) as handle_result:
+			vectRunning =[]
+			vectWait =[]
+			for line in handle_result:
+				# pass header and other things
+				if (line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0): continue
+				if (len(line.split()) > 0):
+					## jobid is running
+					if (line.split()[4] in tagsSGERunning): vectRunning.append(line.split()[0])
+					elif (line.split()[4] in tagsSGEWaiting): vectWait.append(line.split()[0])
 		
 		## remove file
-		cline = 'rm %s' % (szFileResultSGE)
-		os.system(cline)
+		if (os.path.exists(file_result)): os.unlink(file_result)
 		return (vectRunning, vectWait)
 
 	def get_status_process(self, n_SGE_id):
@@ -156,5 +140,56 @@ class ProcessSGE(object):
 		if (str(n_SGE_id) in vectRunning): return self.SGE_JOB_ID_PROCESSING
 		if (str(n_SGE_id) in vectWait): return self.SGE_JOB_ID_QUEUE
 		return self.SGE_JOB_ID_FINISH
+	
+	def is_finished(self, n_SGE_id):
+		"""
+		is it finished
+		"""
+		return self.get_status_process(n_SGE_id) == self.SGE_JOB_ID_FINISH
 
+	##### set different process
+	def set_collect_global_files(self, project, user):
+		
+		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		queue_name = user.profile.queue_name_sge
+		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+	
+	
+		##### set different process
+	def set_second_stage_snippy(self, project_sample, user):
+		
+		vect_command = ['python3 {} second_stage_snippy --project_sample_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), project_sample.pk, user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		queue_name = user.profile.queue_name_sge
+		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+
+
+	##### set different process
+	def set_run_trimmomatic_species(self, sample, user):
+		
+		vect_command = ['python3 {} run_trimmomatic_species --sample_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+		
 

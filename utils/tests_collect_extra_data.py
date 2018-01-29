@@ -203,21 +203,26 @@ class Test(unittest.TestCase):
 			self.utils.copy_file(vect_file[0], os.path.join(temp_dir, os.path.basename(vect_file[0])))
 			self.utils.copy_file(vect_file[1], os.path.join(temp_dir, os.path.basename(vect_file[1])))
 			
+			n_id = 5000 + count + 1
 			sample_name = "_".join(os.path.basename(vect_file[0]).split('_')[0:2])
-			sample = Sample()
-			sample.id = 5000 + count + 1
-			sample.name = sample_name
-			sample.is_valid_1 = True
-			sample.file_name_1 = os.path.basename(vect_file[0])
-			sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
-			sample.is_valid_2 = False
-			sample.file_name_2 = os.path.basename(vect_file[1])
-			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
-			sample.owner = user
-			sample.is_ready_for_projects = True
-			sample.is_obsolete = False
-			sample.type_subtype = 'xpto, zpto'
-			sample.save()
+			try:
+				
+				sample = Sample.objects.get(pk = n_id)
+			except Sample.DoesNotExist as e:
+				sample = Sample()
+				sample.id = n_id
+				sample.name = sample_name
+				sample.is_valid_1 = True
+				sample.file_name_1 = os.path.basename(vect_file[0])
+				sample.path_name_1.name = os.path.join(temp_dir, os.path.basename(vect_file[0]))
+				sample.is_valid_2 = False
+				sample.file_name_2 = os.path.basename(vect_file[1])
+				sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
+				sample.owner = user
+				sample.is_ready_for_projects = True
+				sample.is_obsolete = False
+				sample.type_subtype = 'xpto, zpto'
+				sample.save()
 
 			## add tag names to sample
 			tag_names = TagNames()
@@ -225,16 +230,20 @@ class Test(unittest.TestCase):
 			tag_names.tag_name = tag_name
 			tag_names.sample = sample
 			tag_names.save()
-					
-			## create project_sample
-			project_sample = ProjectSample()
-			project_sample.id = 5000 + count + 1
-			project_sample.sample = sample
-			project_sample.project = project
-			project_sample.is_finished = True
-			project_sample.is_deleted = False
-			project_sample.is_error = False
-			project_sample.save()
+			
+			n_id = 5000 + count + 1
+			try:
+				project_sample = ProjectSample.objects.get(pk = n_id)
+			except ProjectSample.DoesNotExist as e:
+				## create project_sample
+				project_sample = ProjectSample()
+				project_sample.id = n_id
+				project_sample.sample = sample
+				project_sample.project = project
+				project_sample.is_finished = True
+				project_sample.is_deleted = False
+				project_sample.is_error = False
+				project_sample.save()
 			
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 						software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))

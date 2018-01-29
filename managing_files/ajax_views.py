@@ -307,6 +307,8 @@ def get_image_coverage(request):
 				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
 				data['is_ok'] = True
 				data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
+				data['image_download'] = path_name
+				data['image_download_name'] = os.path.basename(path_name)
 				data['text'] = _("Coverage for locus '{}'".format(request.GET.get(key_element)))
 			except ProjectSample.DoesNotExist as e:
 				pass
@@ -385,7 +387,9 @@ def add_single_value_database(request):
 			profile = Profile.objects.get(user__pk=request.user.pk)
 		except Profile.DoesNotExist:
 			return JsonResponse(data)
-		if (profile.only_view_project): return JsonResponse(data)
+		if (profile.only_view_project): 
+			data['message'] = "'{}' can not add anything.".format(request.user.username);
+			return JsonResponse(data)
 		
 		if (key_value in request.GET and key_type_data in request.GET and len(value) > 0):
 			## add to data_set
@@ -402,6 +406,7 @@ def add_single_value_database(request):
 					data['is_ok'] = True
 					data['text'] = dataset.name
 					data['value'] = dataset.id
+					data['message'] = "'{}' is added.".format(value);
 			## add to vaccine status
 			elif (request.GET[key_type_data] == 'id_vaccine_add_modal'):
 				try:
@@ -416,6 +421,7 @@ def add_single_value_database(request):
 					data['is_ok'] = True
 					data['text'] = vacine_status.name
 					data['value'] = vacine_status.id
+					data['message'] = "'{}' is added.".format(value);
 		return JsonResponse(data)
 
 
@@ -434,9 +440,11 @@ def remove_single_value_database(request):
 		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
 		try:
 			profile = Profile.objects.get(user__pk=request.user.pk)
-		except Profile.DoesNotExist:
+		except Profile.DoesNotExist: 
 			return JsonResponse(data)
-		if (profile.only_view_project): return JsonResponse(data)
+		if (profile.only_view_project):
+			data['message'] = "'{}' can not remove anything.".format(request.user.username);
+			return JsonResponse(data)
 			
 		if (key_is_to_test in request.GET and key_value in request.GET and key_type_data in request.GET and len(request.GET[key_value].strip()) > 0):
 			utils = Utils()
@@ -446,7 +454,7 @@ def remove_single_value_database(request):
 			## add to data_set
 			if (request.GET[key_type_data] == 'id_data_set_remove_modal'):
 				if (value == Constants.DATA_SET_GENERIC):
-					data['is_ok'] = True;
+					data['is_ok'] = False;
 					data['is_can_remove'] = False;
 					data['message'] = "You can't remove 'Generic' data set";
 				else:
@@ -454,11 +462,11 @@ def remove_single_value_database(request):
 						data_set = DataSet.objects.get(name__iexact=value)
 						if (data_set.sample.count() > 0):
 							if (is_to_test):
-								data['is_ok'] = True;
+								data['is_ok'] = False;
 								data['is_can_remove'] = False;
 								data['message'] = "You can't remove '{}' name because as a relation in database.".format(value);
 							else:
-								data['is_ok'] = True;
+								data['is_ok'] = False;
 								data['is_remove'] = False;
 								data['message'] = "You can't remove '{}' name because as a relation in database.".format(value);
 						else:
@@ -480,11 +488,11 @@ def remove_single_value_database(request):
 					vacine_status = VaccineStatus.objects.get(name__iexact=value)
 					if (vacine_status.sample.count() > 0):
 						if (is_to_test):
-							data['is_ok'] = True;
+							data['is_ok'] = False;
 							data['is_can_remove'] = False;
 							data['message'] = "You can't remove '{}' name because has a relation in database.".format(value);
 						else:
-							data['is_ok'] = True;
+							data['is_ok'] = False;
 							data['is_remove'] = False;
 							data['message'] = "You can't remove '{}' name because has a relation in database.".format(value);
 					else:
@@ -498,7 +506,7 @@ def remove_single_value_database(request):
 							data['value_to_remove'] = vacine_status.id;
 							vacine_status.delete()
 				except VaccineStatus.DoesNotExist as e:
-					data['is_ok'] = True;
+					data['is_ok'] = False;
 					data['is_remove'] = False;
 					data['message'] = "You can't remove '{}'.".format(value);
 					pass

@@ -33,6 +33,7 @@ from django.http import JsonResponse
 from operator import attrgetter
 from itertools import chain
 from extend_user.models import Profile
+from django.http import HttpResponseRedirect
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -1032,7 +1033,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 								project_sample_add)), fail_silently=True)
 				else:
 					messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
-		return super(AddSamplesProjectsView, self).form_valid(form)
+			return HttpResponseRedirect(reverse_lazy('projects'))
+		else:
+			return super(AddSamplesProjectsView, self).form_invalid(form)
+
 
 	form_valid_message = ""		## need to have this, even empty
 

@@ -33,7 +33,7 @@
   	<div class="insa-image-left">
   		<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
   	<div class="insa-image-left">
-  		<a href="{% url 'dashboard' %}"><img src="{% static 'insa/insaflu_logo.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
+  		<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
     
     <!-- button of table, minimized -->
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,55 +81,57 @@
       </ul>
       <ul class="navbar-nav ml-auto">
       	<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank" class="main-page-documentation"><strong>Documentation</strong></a></li>
-        
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="fa fa-fw fa-envelope"></i>
-            <span class="d-lg-none">Messages 
-            	{% if num_reference %}
-            		<span class="indicator text-primary d-none d-lg-block">
-              			<i class="fa fa-fw fa-circle bg-insa-fixed-top"></i>
-            		</span>
-              		<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
-				{% else %}
-					<div class="dropdown-menu" aria-labelledby="messagesDropdown">
-			            <h6 class="dropdown-header"><strong>INSa</strong>Flu messages (0)</h6>
-			            <div class="dropdown-divider"></div>
-			            <a class="dropdown-item" href="#">
-			            	<span class="text-muted">No messages</span>
-			            </a>
-					</div>
-				{% endif %}
-            </span>
-            
-          </a>
-          <!--  MESSAGES -->
-	   {% if num_reference %}
-	   <div class="dropdown-menu bg-insa-fixed-top" aria-labelledby="messagesDropdown">
-            <h6 class="dropdown-header">New Messages:</h6>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#">
-              <strong>David Miller</strong>
-              <span class="small float-right text-muted">11:21 AM</span>
-              <div class="dropdown-message small">Hey there! This new version of SB Admin is pretty awesome! These messages clip off when they reach the end of the box so they don't overflow over to the sides!</div>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#">
-              <strong>Jane Smith</strong>
-              <span class="small float-right text-muted">11:21 AM</span>
-              <div class="dropdown-message small">I was wondering if you could meet for an appointment at 3:00 instead of 4:00. Thanks!</div>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#">
-              <strong>John Doe</strong>
-              <span class="small float-right text-muted">11:21 AM</span>
-              <div class="dropdown-message small">I've sent the final files over to you for review. When you're able to sign off of them let me know and we can discuss distribution.</div>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item small" href="#">View all messages</a>
-          </div>
+       
+       	{% if num_reference %} 
+	        <li class="nav-item dropdown">
+	          <a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	            <i class="fa fa-fw fa-envelope"></i>
+	            <span class="d-lg-none">Messages 
+	            	{% if num_reference %}
+	            		<span class="indicator text-primary d-none d-lg-block">
+	              			<i class="fa fa-fw fa-circle bg-insa-fixed-top"></i>
+	            		</span>
+	              		<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
+					{% else %}
+						<div class="dropdown-menu" aria-labelledby="messagesDropdown">
+				            <h6 class="dropdown-header"><strong>INSa</strong>Flu messages (0)</h6>
+				            <div class="dropdown-divider"></div>
+				            <a class="dropdown-item" href="#">
+				            	<span class="text-muted">No messages</span>
+				            </a>
+						</div>
+					{% endif %}
+	            </span>
+	            
+	          </a>
+	          <!--  MESSAGES -->
+	   
+		   <div class="dropdown-menu bg-insa-fixed-top" aria-labelledby="messagesDropdown">
+	            <h6 class="dropdown-header">New Messages:</h6>
+	            <div class="dropdown-divider"></div>
+	            <a class="dropdown-item" href="#">
+	              <strong>David Miller</strong>
+	              <span class="small float-right text-muted">11:21 AM</span>
+	              <div class="dropdown-message small">Hey there! This new version of SB Admin is pretty awesome! These messages clip off when they reach the end of the box so they don't overflow over to the sides!</div>
+	            </a>
+	            <div class="dropdown-divider"></div>
+	            <a class="dropdown-item" href="#">
+	              <strong>Jane Smith</strong>
+	              <span class="small float-right text-muted">11:21 AM</span>
+	              <div class="dropdown-message small">I was wondering if you could meet for an appointment at 3:00 instead of 4:00. Thanks!</div>
+	            </a>
+	            <div class="dropdown-divider"></div>
+	            <a class="dropdown-item" href="#">
+	              <strong>John Doe</strong>
+	              <span class="small float-right text-muted">11:21 AM</span>
+	              <div class="dropdown-message small">I've sent the final files over to you for review. When you're able to sign off of them let me know and we can discuss distribution.</div>
+	            </a>
+	            <div class="dropdown-divider"></div>
+	            <a class="dropdown-item small" href="#">View all messages</a>
+	          </div>
+	    </li>
 	{% endif %}
-        </li>
+     
 
 		<!-- SEARCH -->        
 <!--    <li class="nav-item">
@@ -191,10 +193,19 @@
    <!-- /.container-fluid-->
    <!-- /.content-wrapper-->
    <footer class="sticky-footer bg-insa-fixed-top">
-		<div class="container">
-				<div class="text-center">
+		<div class="container-flow">
+			<div class="row">
+				<div class="col-lg-3 text-center">
+				</div>
+				<div class="col-lg-5 text-center">
 					<small><a href="http://www.insa.pt/" target="_blank">Instituto Nacional de Saúde (INSA) Doutor Ricardo Jorge, I.P.</a></small>
 				</div>
+				<div class="col-lg-3 text-right">
+					<small id="info_pocess_id"></small>
+				</div>
+				<div class="col-ls-1 text-right">
+				</div>
+			</div>
 		</div>
    </footer>
 
@@ -233,9 +244,8 @@
 	    	<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/sb-admin.min.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
-     	
-	{% block js %}
-	
+     		<script type="text/javascript" src="{% static 'js/number_of_process.js' %}"></script>
+
 		{% if add_google_analytis %}
 			<!-- Global site tag (gtag.js) - Google Analytics -->
 			<script async src="https://www.googletagmanager.com/gtag/js?id=UA-113057806-1"></script>
@@ -247,6 +257,9 @@
 			  gtag('config', 'UA-113057806-1');
 			</script>
 		{% endif %}
+		     	
+	{% block js %}
+	
 	
     {% endblock js %}
   </div>

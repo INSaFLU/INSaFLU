@@ -923,3 +923,47 @@ class UploadFiles(models.Model):
 		return path_to_find
 
 
+class ProcessControler(models.Model):
+	"""
+	this class has the info about the process
+	"""
+	PREFIX_SAMPLE = "sample_"
+	PREFIX_PROJECT_SAMPLE = "project_sample_"
+	PREFIX_PROJECT = "project_"
+	PREFIX_UPLOAD_FILES = "upload_files_"
+	PREFIX_LINK_FILES_USER = "link_files_user_"
+	
+	### flags of status
+	FLAG_FINISHED = 'flag_finished'
+	FLAG_RUNNING = 'flag_running'
+	FLAG_ERROR = 'flag_error'
+	
+	owner = models.ForeignKey(User, related_name='process_controles', on_delete=models.CASCADE)
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Submit job')
+	close_date = models.DateTimeField(blank=True, null=True, verbose_name='Close date')
+	is_finished = models.BooleanField(default=False)
+	is_running = models.BooleanField(default=False)		## when is running
+	is_error = models.BooleanField(default=False)
+	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)  ## has the name of the process
+								## could be: sample_<pk>, project_sample_<pk>, project_<pk>
+	name_sge_id = models.CharField(max_length=20, db_index=True, blank=True, null=True) ## has the SGE id about this process
+	
+	class Meta:
+		ordering = ['creation_date']
+
+	### get names for samples, project and project samples
+	def get_name_sample(self, sample):
+		return "{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk)
+	def get_name_project_sample(self, project_sample):
+		return "{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk)
+	def get_name_project(self, project):
+		return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
+	def get_name_upload_files(self, upload_files):
+		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
+	def get_name_link_files_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk)
+
+	def __str__(self):
+		return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(self.pk, self.name, self.is_finished, self.is_running, self.is_error)
+
+

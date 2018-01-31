@@ -7,6 +7,18 @@
 {% endblock  %}
 
 {% block content %}
+<!-- <div class="card">
+		<div class="card-block">
+			<h4 class="card-title text-center">Important</h4>
+			<p class="card-text">Due to the unexpectedly massive number of INSaFLU runs during the first week of its “existence”, 
+				we will need to speed up the computational processing and queue management system.</p>
+			<p class="card-text">As such, we have to disable novel analyses during the next 24 hours. CURRENT RUNS WILL NOT BE INTERRUPTED.</p>
+			<p class="card-text">INSaFLU will be fully operational by tomorrow, 1st February, 10:00 (GMT).</p>
+			<p class="card-text">Sorry for the inconvenience.</p>
+		</div>
+	</div>
+	<p></p>  -->
+	
 {% load crispy_forms_tags %}
 <form class="form-horizontal" action="{% url 'login' %}" method="post">
     {% crispy form %}

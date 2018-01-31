@@ -120,14 +120,19 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(result_file))
 		self.assertTrue(os.path.getsize(result_file) > 100)
 		self.utils.remove_dir(out_dir)
-		
+	
+	##########################################################
+	##
+	##		Important, this only work from command line
+	##
+	## it only work from command line because of PYTHONPATH defined on the eclispe IDE 
 	def testRunSpadesAndAbricate(self):
 		"""
  		Test run spades and abricator
  		"""
-		b_run_this = getattr(settings, "RUN_TEST_IN_COMMAND_LINE", None)
-		
-		if (not b_run_this): return	## it only work from command line because of PYTHONPATH defined on the eclispe IDE 
+# 		b_run_this = getattr(settings, "RUN_TEST_IN_COMMAND_LINE", None)
+# 		
+# 		if (not b_run_this): return	## it only work from command line because of PYTHONPATH defined on the eclispe IDE 
 		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		fastq1_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
 		self.assertTrue(os.path.isfile(fastq1_1))
@@ -158,11 +163,11 @@ class Test(TestCase):
 		self.assertEqual('influenza_type', vect_data[0][ParseOutFiles.TYPE])
 		self.assertEqual('XXXX', vect_data[0][ParseOutFiles.ACCESSION])
 		
-		self.assertEqual('N2', vect_data[3][ParseOutFiles.GENE])
-		self.assertEqual(16.03, vect_data[3][ParseOutFiles.COVERAGE])
-		self.assertEqual(96.46, vect_data[3][ParseOutFiles.IDENTITY])
-		self.assertEqual('influenza_subtype', vect_data[3][ParseOutFiles.TYPE])
-		self.assertEqual('XXXXXX', vect_data[3][ParseOutFiles.ACCESSION])
+		self.assertEqual('N2', vect_data[2][ParseOutFiles.GENE])
+		self.assertEqual(100.0, vect_data[2][ParseOutFiles.COVERAGE])
+		self.assertEqual(98.65, vect_data[2][ParseOutFiles.IDENTITY])
+		self.assertEqual('influenza_subtype', vect_data[2][ParseOutFiles.TYPE])
+		self.assertEqual('XXXXXX', vect_data[2][ParseOutFiles.ACCESSION])
 
 		## remove file
 		os.unlink(out_file)

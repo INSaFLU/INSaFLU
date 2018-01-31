@@ -55,6 +55,8 @@ class Constants(object):
 	### queue names
 	QUEUE_SGE_NAMES = ['queue_1.q', 'queue_2.q']
 	QUEUE_SGE_NAME_GLOBAL = 'all.q'
+	QUEUE_SGE_NAME_FAST = 'fast.q'						## jobs that are fast to run
+	QUEUE_SGE_NAME_INSA = 'insa.q'						## insa queue
 ##	QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
 	
 	### separators
@@ -114,9 +116,6 @@ class Constants(object):
 	COUNT_CHECK_BOX = 'count_check_boxes'
 	CHECK_BOX_VALUE = 'value'
 	CHECK_BOX_not_show_processed_files = 'check_box_not_show_processed_files'
-	
-	### sleep time to test if all tasks are finished
-	WAIT_TIME_TASKS_FINISHED = 30		## one minute
 	
 	### empty value used in tables
 	EMPTY_VALUE_TABLE = "-"

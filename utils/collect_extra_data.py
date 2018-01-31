@@ -6,18 +6,20 @@ Created on Nov 27, 2017
 
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, TagNames
+from managing_files.models import Project, TagNames, ProcessControler
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
-import os, time, csv
+import os, csv, time
 import plotly.graph_objs as go
 from plotly.offline import plot
 from django.db import transaction
 from utils.result import Coverage
 from utils.parse_out_files import ParseOutFiles
+from utils.process_SGE import ProcessSGE
+from django.conf import settings
 
 class CollectExtraData(object):
 	'''
@@ -34,8 +36,23 @@ class CollectExtraData(object):
 		'''
 		pass
 	
+	def collect_extra_data_for_project(self, project, user):
+		"""
+		"""
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_RUNNING)
+		
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		## run collect data
+		self.__collect_extra_data_for_project(project, user)
+
+		
 	@transaction.atomic
-	def collect_extra_data_for_project(self, project, user, vect_taskID):
+	def __collect_extra_data_for_project(self, project, user):
 		"""
 		Everything that is necessary to do in the project
 		Collect all extra data after all samples are finished
@@ -44,11 +61,9 @@ class CollectExtraData(object):
 		### get the taskID and seal it
 		metaKeyAndValue = MetaKeyAndValue()
 		manage_database = ManageDatabase()
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
 		
-		if (vect_taskID != None and len(vect_taskID) > 0):
-			while not self.utils.is_all_tasks_finished(vect_taskID):
-				time.sleep(Constants.WAIT_TIME_TASKS_FINISHED)
-	
 		#### create variation graph, png and html
 		## Obsolete, is to make a html graph, now it is with chart.js
 # 		(out_file_html, out_file_png) = self.create_graph_minor_variants(project, user)
@@ -64,33 +79,41 @@ class CollectExtraData(object):
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 
 
-		## calculate the max sample label size of the samples that belong to this project
-		## used in MSA viewer 
-		b_calculate_again = True
-		manage_database.get_max_length_label(project, user, b_calculate_again)
+		try:
+			## calculate the max sample label size of the samples that belong to this project
+			## used in MSA viewer 
+			b_calculate_again = True
+			manage_database.get_max_length_label(project, user, b_calculate_again)
+			
+			### calculate global file
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
+			## collect tab variations snippy
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY, project, user)
+			## collect tab variations freebayes, <50%
+			## remove del or ins
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
+			## collect sample table with plus type and subtype, mixed infection, equal to upload table
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
+			
+			### create trees
+			createTree = CreateTree()
+			createTree.create_tree_and_alignments(project, user)
+			
+			meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_project != None):
+				manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+			return
 		
-		### calculate global file
-		self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
-		## collect tab variations snippy
-		self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY, project, user)
-		## collect tab variations freebayes, <50%
-		## remove del or ins
-		self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
-		## collect sample table with plus type and subtype, mixed infection, equal to upload table
-		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
-		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
-		
-		### create trees
-		createTree = CreateTree()
-		createTree.create_tree_and_alignments(project, user)
-		
-		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
-					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_project != None):
-			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
-					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
-
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 	
+
 	def create_graph_minor_variants(self, project, user):
 		"""
 		OBSOLETE

@@ -13,11 +13,11 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 from decouple import config
 
-RUN_TEST_IN_COMMAND_LINE = False
+### running tests in command line
+RUN_TEST_IN_COMMAND_LINE = True	## used in abricate
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -45,7 +45,8 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
 ### threads to use in several software
-THREADS_TO_RUN = config('THREADS_TO_RUN', default=3, cast=int)
+THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
+THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
 #https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
 #https://gist.github.com/bradmontgomery/6487319

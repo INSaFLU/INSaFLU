@@ -33,7 +33,7 @@ class Command(BaseCommand):
 			project = Project.objects.get(pk=project_id)
 			if (user_id == None): user = project.owner
 			else: user = User.objects.get(pk=user_id)
-			collect_extra_data.collect_extra_data_for_project(project, user, None)
+			collect_extra_data.collect_extra_data_for_project(project, user)
 			self.stdout.write("End")
 		except Project.DoesNotExist as e:
 			self.stdout.write("Project id '{}' does not exist.".format(project_id))

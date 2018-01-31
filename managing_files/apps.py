@@ -3,7 +3,7 @@ from django.apps import AppConfig
 from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from django.db import transaction
-
+from django.conf import settings
 
 class ManagingFilesConfig(AppConfig):
 	name = 'managing_files'
@@ -13,15 +13,16 @@ class ManagingFilesConfig(AppConfig):
 		
 		## create a default user
 		self.create_default_user()
+
+		if (not settings.RUN_TEST_IN_COMMAND_LINE):
+			#### Now upload the 
+			self.upload_default_files()
 			
-		#### Now upload the 
-		self.upload_default_files()
-		
-		#### set default fields
-		self.default_database_fields()
-		
-		#### set default references
-		self.upload_default_references()
+			#### set default fields
+			self.default_database_fields()
+			
+			#### set default references
+			self.upload_default_references()
 		
 		pass
 

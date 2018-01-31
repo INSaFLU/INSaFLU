@@ -34,8 +34,8 @@ class ContentTypeRestrictedFileField(FileField):
 
 	def clean(self, *args, **kwargs):
 		data = super(ContentTypeRestrictedFileField, self).clean(*args, **kwargs)
-		file = data.file
 		try:
+			file = data.file
 			content_type = file.content_type
 			
 			### Important to catch the content_type 
@@ -47,6 +47,5 @@ class ContentTypeRestrictedFileField(FileField):
 			else:
 				raise forms.ValidationError(_("File type '{}' not supported.".format(content_type)))
 		except AttributeError:
-			pass
-
+			raise forms.ValidationError(_("File not supported."))
 		return data

@@ -85,6 +85,11 @@ class ReferenceForm(forms.ModelForm):
 		except Reference.DoesNotExist:
 			pass
 		
+		## test reference_fasta
+		if ('reference_fasta' not in cleaned_data):
+			self.add_error('reference_fasta', _("Error: Must have a file."))
+			return cleaned_data
+		
 		### testing file names
 		reference_fasta = cleaned_data['reference_fasta']
 		reference_genbank = cleaned_data['reference_genbank']
@@ -351,6 +356,11 @@ class SampleForm(forms.ModelForm):
 			if (lat != None and (lat > 90 or lat < -90)): self.add_error('lat', _("Latitute must have values between +90 and -90."))
 			lng = self.cleaned_data.get('lng')
 			if (lng != None and (lng > 180 or lng < -180)): self.add_error('lng', _("Longitude must have values between +180 and -180."))
+			
+			### test file name
+			if ('path_name_1' not in self.cleaned_data):
+				self.add_error('path_name_1', _("Error: must have a file."))
+				return cleaned_data
 			
 			### testing file names
 			path_name_1 = self.cleaned_data.get('path_name_1')

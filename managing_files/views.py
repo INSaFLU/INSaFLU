@@ -20,6 +20,7 @@ from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
 from utils.parse_in_files import UploadFilesByDjangoQ, ParseInFiles
 from utils.result import DecodeObjects
+from utils.process_SGE import ProcessSGE
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -310,8 +311,14 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample.save()
 
 		### create a task to perform the analysis of fastq and trimmomatic
-		taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
-		
+		try:
+			if (settings.RUN_SGE):
+				process_SGE = ProcessSGE()
+				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+			else:
+				taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
+		except:
+			return super(SamplesAddView, self).form_invalid(form)
 		### 
 		manageDatabase = ManageDatabase()
 		manageDatabase.set_sample_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
@@ -447,8 +454,16 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			
 			### send message to upload samples in the system
 			upload_files_by_djangoq = UploadFilesByDjangoQ()
-			b_testing = False
-			taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
+			
+			try:
+				if (settings.RUN_SGE):
+					process_SGE = ProcessSGE()
+					taskID = process_SGE.set_read_sample_file(upload_files, self.request.user)
+				else:
+					b_testing = False
+					taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
+			except:
+				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
 			
 			messages.success(self.request, "File '" + upload_files.file_name + "' with samples was uploaded successfully", fail_silently=True)
 			return super(SamplesUploadDescriptionFileView, self).form_valid(form)
@@ -599,8 +614,17 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		## if is last file send a message to link files with sample csv file
 		if ('is_valid' in data and data['is_valid']): 
 			parse_in_files = ParseInFiles()
-			b_testing = False
-			taskID = async(parse_in_files.link_files, self.request.user, b_testing)
+			
+			try:
+				if (settings.RUN_SGE):
+					process_SGE = ProcessSGE()
+					taskID = process_SGE.set_link_files(self.request.user)
+				else:
+					b_testing = False
+					taskID = async(parse_in_files.link_files, self.request.user, b_testing)
+			except:
+				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Fail to submit SGE job.' }
+				return JsonResponse(data)
 		return JsonResponse(data)
 	
 	form_valid_message = ""		## need to have this, even empty
@@ -956,6 +980,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			manageDatabase = ManageDatabase()
 			software = Software()
 			collect_extra_data = CollectExtraData()
+			process_SGE = ProcessSGE()
 			
 			### get project sample..
 			context = self.get_context_data()
@@ -980,7 +1005,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	
 			### start adding...
 			project_sample_add = 0
-			vect_task_id_submited = []
 			for id_sample in vect_sample_id_add:
 				try:
 					sample = Sample.objects.get(pk=id_sample)
@@ -1011,19 +1035,32 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					project_sample_add += 1
 					
 					### create a task to perform the analysis of fastq and trimmomatic
-					taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
-					vect_task_id_submited.append(taskID)
-	
-					### set project sample queue ID
-					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
+					try:
+						if (settings.RUN_SGE):
+							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
+						else:
+							taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+							
+						### set project sample queue ID
+						manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
 										metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
 										MetaKeyAndValue.META_VALUE_Queue, taskID)
+					except:
+						pass
+					
 	
 			### necessary to calculate the global results again 
 			if (project_sample_add > 0):
-				taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user, vect_task_id_submited)
-				manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
-						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+				try:
+					if (settings.RUN_SGE):
+						taskID = process_SGE.set_collect_global_files(project, self.request.user)
+					else:
+						taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user)
+				
+					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
+							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+				except:
+						pass
 			
 			if (project_sample_add == 0):
 				messages.warning(self.request, _("No sample was added to the project '{}'".format(project.name)))

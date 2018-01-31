@@ -13,7 +13,12 @@ $(document).on("click", "a", function(e){
 		$('#id-modal-body-remove-sample').attr('ref_name', ref_name);
 		$('#id-modal-body-remove-sample').attr('tr_to_remove', tr_to_remove);
 	}
-	$('#id-label-remove').val('');
+	else if (attr === 'id_add_sample_message'){
+		$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		'It is not possible for now to add samples to the projects because there is a big backlog. We are solving this problem right now.' +
+				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+	}
 });
 
 

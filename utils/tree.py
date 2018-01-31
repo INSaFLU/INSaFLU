@@ -68,6 +68,8 @@ class CreateTree(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_value == None): continue
+			
 			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
 			

@@ -895,7 +895,6 @@ class Utils(object):
 		"""
 		send an email
 		"""
-	#	async('django.core.mail.send_mail', header, message, 'insaflu@insa.min-saude.pt', [address])
 		send_mail(header, message, 'insaflu@insa.min-saude.pt', [address])
 
 

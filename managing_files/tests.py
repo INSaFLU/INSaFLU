@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from constants.constants import FileType, TypePath, FileExtensions
 from django.core.exceptions import MultipleObjectsReturned
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject
+from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject, UploadFiles, ProcessControler
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
 from utils.result import CountHits, DecodeObjects
@@ -879,4 +879,46 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals(['HA'], utils.get_vect_cds_from_element_from_db('HA', reference, user))
 		self.assertEquals(['PB2'], utils.get_vect_cds_from_element_from_db('PB2', reference, user))
 		self.assertEquals(None, utils.get_vect_cds_from_element_from_db('xpto', reference, user))
+
+
+	def test_process_controller(self):
+		
+		process_controler = ProcessControler()
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+		
+		### sample
+		sample = Sample()
+		sample.pk = 10
+		self.assertEquals("{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk), process_controler.get_name_sample(sample))
+
+		### project sample
+		project_sample = ProjectSample()
+		project_sample.pk = 11
+		self.assertEquals("{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk), process_controler.get_name_project_sample(project_sample))
+
+		### project
+		project = Project()
+		project.pk = 12
+		self.assertEquals("{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk), process_controler.get_name_project(project))
+		
+		### upload files
+		upload_files = UploadFiles()
+		upload_files.pk = 13
+		self.assertEquals("{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk), process_controler.get_name_upload_files(upload_files))
+
+		### link_files_user
+		self.assertEquals("{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk), process_controler.get_name_link_files_user(user))
+
+
+
+
+
 

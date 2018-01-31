@@ -39,4 +39,5 @@ urlpatterns = [
 	url(r'^ajax/remove_project$', ajax_views.remove_project, name='remove_project'),			## remove a project
 	url(r'^ajax/remove_project_sample$', ajax_views.remove_project_sample, name='remove_project_sample'),	## remove a project sample
 	url(r'^ajax/remove_uploaded_file$', ajax_views.remove_uploaded_file, name='remove_uploaded_file'),	## remove remove_uploaded_file
+	url(r'^ajax/get_process_running$', ajax_views.get_process_running, name='get_process_running'),		## get process to run
 ] 

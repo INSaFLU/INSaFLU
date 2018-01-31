@@ -263,6 +263,7 @@ class ProjectTable(tables.Table):
 		n_processing = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
 		tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(n_processed, n_processing, n_error)
 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
+#		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
 						 '><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
 	def render_creation_date(self, **kwargs):

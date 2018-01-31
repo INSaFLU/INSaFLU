@@ -4,6 +4,8 @@ import os, subprocess, logging
 from utils.utils import Utils
 from constants.constants import Constants
 from django.conf import settings
+from managing_files.models import ProcessControler
+from datetime import datetime
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
@@ -147,9 +149,10 @@ class ProcessSGE(object):
 		"""
 		return self.get_status_process(n_SGE_id) == self.SGE_JOB_ID_FINISH
 
-	##### set different process
+	##### set collect global files
 	def set_collect_global_files(self, project, user):
 		
+		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
 		out_dir = self.utils.get_temp_dir()
@@ -158,14 +161,16 @@ class ProcessSGE(object):
 		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
 		try:
 			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project(project), sge_id)
 		except:
 			raise Exception('Fail to submit the job.')
 		return sge_id
 	
 	
-		##### set different process
+	##### set second stage
 	def set_second_stage_snippy(self, project_sample, user):
 		
+		process_controler = ProcessControler()
 		vect_command = ['python3 {} second_stage_snippy --project_sample_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project_sample.pk, user.pk)]
 		out_dir = self.utils.get_temp_dir()
@@ -174,22 +179,102 @@ class ProcessSGE(object):
 		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
 		try:
 			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project_sample(project_sample), sge_id)
 		except:
 			raise Exception('Fail to submit the job.')
 		return sge_id
 
 
-	##### set different process
+	##### set run trimmomatic
 	def set_run_trimmomatic_species(self, sample, user):
 		
+		process_controler = ProcessControler()
 		vect_command = ['python3 {} run_trimmomatic_species --sample_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk)]
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, True)
 		try:
 			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
 		except:
 			raise Exception('Fail to submit the job.')
 		return sge_id
 		
+	##### set link files	### ultra fast queue
+	def set_link_files(self, user):
+		
+		process_controler = ProcessControler()
+		vect_command = ['python3 {} link_files --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_link_files_user(user), sge_id)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+
+	##### set read sample file 	### ultra fast queue
+	def set_read_sample_file(self, upload_files, user):
+		
+		process_controler = ProcessControler()
+		vect_command = ['python3 {} read_sample_file --upload_files_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), upload_files.pk, user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_upload_files(upload_files), sge_id)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+
+
+	def set_process_controlers(self, user, name_of_process, name_sge_id):
+		"""
+		Add a record in ProcessControlers
+		"""
+		process_controler = ProcessControler()
+		process_controler.owner = user
+		process_controler.name = name_of_process
+		process_controler.name_sge_id = name_sge_id
+		process_controler.save()
+
+	
+	def set_process_controler(self, user, name_of_process, flags):
+		"""
+		name_of_process:
+			process_controler.get_name_upload_files(upload_files),
+			process_controler.get_name_link_files_user(user),
+			process_controler.get_name_sample(sample),
+			process_controler.get_name_project(project), sge_id)
+			process_controler.get_name_project_sample(project_sample)
+			
+		flags: ProcessControler.FLAG_FINISHED, ProcessControler.FLAG_RUNNING, ProcessControler.FLAG_ERROR
+		"""
+		
+		if (flags == ProcessControler.FLAG_FINISHED):
+			data_set = ProcessControler.objects.filter(owner__id=user.pk, name=name_of_process, is_running=True, is_finished=False, is_error=False)
+		elif (flags == ProcessControler.FLAG_ERROR):
+			data_set = ProcessControler.objects.filter(owner__id=user.pk, name=name_of_process, is_finished=False, is_error=False)
+		else:
+			data_set = ProcessControler.objects.filter(owner__id=user.pk, name=name_of_process, is_running=False, is_finished=False, is_error=False)
+		
+		if (data_set.count() > 0):
+			process_controler = ProcessControler.objects.get(pk=data_set[0].pk)
+			if (flags == ProcessControler.FLAG_FINISHED):
+				process_controler.is_finished = True
+				process_controler.is_running = False
+				process_controler.close_date = datetime.now()
+				process_controler.save()
+			elif (flags == ProcessControler.FLAG_ERROR):
+				process_controler.is_finished = True
+				process_controler.is_error = True
+				process_controler.is_running = False
+				process_controler.close_date = datetime.now()
+				process_controler.save()
+			elif (flags == ProcessControler.FLAG_RUNNING):
+				process_controler.is_running = True
+				process_controler.save()
 

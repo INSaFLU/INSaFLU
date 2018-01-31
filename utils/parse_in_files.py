@@ -8,17 +8,18 @@ from django.db import transaction
 from utils.utils import Utils
 from utils.result import ProcessResults, SingleResult
 from constants.constants import Constants, TypeFile, TypePath
-from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNames, UploadFiles
+from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNames, UploadFiles, ProcessControler
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.gis.geos import Point
 from constants.constants import FileExtensions
-import chardet, csv, os, re
+import chardet, csv, os, re, time
 from django.conf import settings
 from django_q.tasks import async
 from utils.software import Software
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from datetime import datetime
+from utils.process_SGE import ProcessSGE
 
 class ParseInFiles(object):
 	'''
@@ -417,8 +418,28 @@ class ParseInFiles(object):
 		if (upload_files.count() == 0): return None
 		return upload_files[0]
 
+	def link_files(self, user, b_testing = False):
+		
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_link_files_user(user), ProcessControler.FLAG_RUNNING)
+		
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		try:
+			self._link_files(user, b_testing)
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_link_files_user(user), ProcessControler.FLAG_ERROR)
+			return
+		
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_link_files_user(user), ProcessControler.FLAG_FINISHED)
+		
 	@transaction.atomic
-	def link_files(self, user, b_testing):
+	def _link_files(self, user, b_testing = False):
 		"""
 		after a fastq.gz is uploaded you can run this to link the fastq files to samples.
 		"""
@@ -494,16 +515,24 @@ class ParseInFiles(object):
 				if (not b_testing):
 					### send signal to process the type and sub type
 					### create a task to perform the analysis of fastq and trimmomatic
-					taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, user)
+					try:
+						if (settings.RUN_SGE):
+							process_SGE = ProcessSGE()
+							taskID = process_SGE.set_run_trimmomatic_species(sample, user)
+						else:
+							taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, user)
+						
+						### 
+						manageDatabase = ManageDatabase()
+						manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+					except:
+						pass
 					
-					### 
-					manageDatabase = ManageDatabase()
-					manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
-		
 		### set the files already processed
 		upload_files.number_files_processed = n_files_processed
 		if (upload_files.number_files_processed == upload_files.number_files_to_process): upload_files.is_processed = True
 		upload_files.save()
+		
 			
 	
 class UploadFilesByDjangoQ(object):
@@ -511,16 +540,32 @@ class UploadFilesByDjangoQ(object):
 	def __init__(self):
 		pass
 	
-	def read_sample_file(self, user, upload_files, b_testing):
+	def read_sample_file(self, user, upload_files, b_testing = False):
 		"""
 		read samples csv file, and link files if they exists		
 		"""
-		parse_in_files = ParseInFiles()
-		b_test_char_encoding = True
-		parse_in_files.parse_sample_files(upload_files.get_path_to_file(TypePath.MEDIA_ROOT), user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
-		if (parse_in_files.get_errors().has_errors()): return False
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_RUNNING)
 		
-		parse_in_files.create_samples(upload_files, user)
-		parse_in_files.link_files(user, b_testing)
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		try:
+			parse_in_files = ParseInFiles()
+			b_test_char_encoding = True
+			parse_in_files.parse_sample_files(upload_files.get_path_to_file(TypePath.MEDIA_ROOT), user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+			if (parse_in_files.get_errors().has_errors()): return False
+			
+			parse_in_files.create_samples(upload_files, user)
+			parse_in_files._link_files(user, b_testing)	### without passing the messages 
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_ERROR)
+			return
+		
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_FINISHED)
 		return True
 

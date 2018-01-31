@@ -10,7 +10,7 @@ from utils.parse_out_files import ParseOutFiles
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
-from managing_files.models import Sample, ProjectSample, MixedInfectionsTag
+from managing_files.models import Sample, ProjectSample, MixedInfectionsTag, ProcessControler
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
@@ -21,6 +21,8 @@ from constants.software_names import SoftwareNames
 from Bio import SeqIO
 from BCBio import GFF
 from django.conf import settings
+from utils.process_SGE import ProcessSGE
+
 
 class Software(object):
 	'''
@@ -103,9 +105,9 @@ class Software(object):
 		Run spades
 		"""
 		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
-					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN, out_dir)
+					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN_FAST, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2,\
-					self.software_names.get_spades_parameters(), settings.THREADS_TO_RUN, out_dir)
+					self.software_names.get_spades_parameters(), settings.THREADS_TO_RUN_FAST, out_dir)
 		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -343,10 +345,10 @@ class Software(object):
 		"""
 		temp_dir = self.utils.get_temp_dir()
 		if (not file_name_2 is None and len(file_name_2) > 0):
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN, 
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FAST, 
 										temp_dir, file_name_1, file_name_2)
 		else: 
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN, temp_dir, file_name_1)
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FAST, temp_dir, file_name_1)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -424,7 +426,7 @@ class Software(object):
 		out: out_file
 		"""
 		cmd = "{}; {} {} --thread {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
-							parameters, settings.THREADS_TO_RUN, input_file, out_file)
+							parameters, settings.THREADS_TO_RUN_SLOW, input_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -473,7 +475,7 @@ class Software(object):
 
 		temp_dir = self.utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
-			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN, file_name_1, 
+			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, file_name_1, 
 					os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		else:
 			### need to make links the files to trimmomatic identify the _R1_ and _R2_ 
@@ -482,7 +484,7 @@ class Software(object):
 			os.system(cmd)
 			cmd = "ln -s {} {}".format(file_name_2, os.path.join(temp_dir, 'name_R2_001.fastq.gz'))
 			os.system(cmd)
-			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN, 
+			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, 
 										new_file_name, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -525,11 +527,11 @@ class Software(object):
 		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
-				(self.software_names.get_snippy(), settings.THREADS_TO_RUN, temp_dir, sample_name,
+				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
 				path_reference, self.software_names.get_snippy_parameters(), file_name_1)
 		else:
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
-				(self.software_names.get_snippy(), settings.THREADS_TO_RUN, temp_dir, sample_name,
+				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
 				path_reference, self.software_names.get_snippy_parameters(), file_name_1, file_name_2)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -786,7 +788,7 @@ class Software(object):
 		
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s %s %s -f %s -b %s > %s" %\
-				(self.software_names.get_freebayes_parallel(), temp_file_regions, settings.THREADS_TO_RUN,
+				(self.software_names.get_freebayes_parallel(), temp_file_regions, settings.THREADS_TO_RUN_SLOW,
 				self.software_names.get_freebayes_parameters(), reference_fasta_temp, file_to_process, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -896,269 +898,306 @@ class Software(object):
 	"""
 	def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
 
-		### run trimmomatics
-		b_return = self.run_fastq_and_trimmomatic(sample, user)
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_RUNNING)
 		
-		### queue the quality check and
-		if (b_return):	## don't run for single file because spades doesn't work for one single file
-			self.identify_type_and_sub_type(sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
-				sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), user)
-
-		## set the flag that is ready for process
-		if (b_return):
-			sample_to_update = Sample.objects.get(pk=sample.id)
-			sample_to_update.is_ready_for_projects = True
-			sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
+		try:
+			### run trimmomatics
+			b_return = self.run_fastq_and_trimmomatic(sample, user)
 			
-			(tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
-			if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
-			else: sample_to_update.number_alerts += alert
+			### queue the quality check and
+			if (b_return):	## don't run for single file because spades doesn't work for one single file
+				self.identify_type_and_sub_type(sample, sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
+					sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), user)
+	
+			## set the flag that is ready for process
+			if (b_return):
+				sample_to_update = Sample.objects.get(pk=sample.id)
+				sample_to_update.is_ready_for_projects = True
+				sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
 				
-			if (message != None and len(message) > 0):
-				manage_database = ManageDatabase()
-				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-									MetaKeyAndValue.META_VALUE_Success, message)
-
-			try:
-				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
-			except MixedInfectionsTag.DoesNotExist as e:
-				mixed_infections_tag = MixedInfectionsTag()
-				mixed_infections_tag.name = tag_mixed_infection
-				mixed_infections_tag.save()
-			
-			sample_to_update.mixed_infections_tag = mixed_infections_tag
-			sample_to_update.save()
-			
+				(tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
+				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
+				else: sample_to_update.number_alerts += alert
+					
+				if (message != None and len(message) > 0):
+					manage_database = ManageDatabase()
+					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+										MetaKeyAndValue.META_VALUE_Success, message)
+	
+				try:
+					mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+				except MixedInfectionsTag.DoesNotExist as e:
+					mixed_infections_tag = MixedInfectionsTag()
+					mixed_infections_tag.name = tag_mixed_infection
+					mixed_infections_tag.save()
+				
+				sample_to_update.mixed_infections_tag = mixed_infections_tag
+				sample_to_update.save()
+				
+		except:
+			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_ERROR)
+			return
+		
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
 		return b_return
 
-
+	def process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
+		"""
+		"""
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_RUNNING)
+		
+		## run collect data
+		return self.__process_second_stage_snippy_coverage_freebayes(project_sample, user)
+		
 	"""
 	Global processing, Snippy, Coverage, Freebayes and MixedInfections
 	"""
 	@transaction.atomic
-	def process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
+	def __process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
 		"""
 		Global processing, snippy, coverage, 
 		"""
 		
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
 		manageDatabase = ManageDatabase()
 		result_all = Result()
 		### metakey for this process
 		metaKeyAndValue = MetaKeyAndValue()
-		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
-
-		### Test if this sample already run		
-		meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_sample != None and meta_sample.value == MetaKeyAndValue.META_VALUE_Success): return 
-
-		## process snippy
-		try:
-			out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
-					project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
-					project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
-					project_sample.sample.name)
-			result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
-		except Exception as e:
-			result = Result()
-			result.set_error(e.args[0])
-			result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			
-			### get again and set error
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
-			project_sample.save()
-			
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-			return False
-
-		## copy the files to the project sample directories
-		self.copy_files_to_project(project_sample, self.software_names.get_snippy_name(), out_put_path)
-		remove_path = os.path.dirname(out_put_path)
-		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
-		else: self.utils.remove_dir(out_put_path)
-
-		### make the link for the new tab file name
-		path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
-		if (os.path.exists(path_snippy_tab)):
-			sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
-			self.utils.link_file(path_snippy_tab, sz_file_to)
-		
-		## get coverage from deep file
-		get_coverage = GetCoverage()
-		try:
-			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-						self.software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-			
-			################################
-			##################################
-			### set the alerts in the coverage
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			for element in coverage.get_dict_data():
-				if (not coverage.is_100_more_9(element)):
-					project_sample.alert_second_level += 1
-					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_9(element))
-				elif (not coverage.is_100_more_0(element)):
-					project_sample.alert_first_level += 1
-					meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_0(element))
-			project_sample.save()
-		
-			## set the coverage in database
-			meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
-								MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
-		except Exception as e:
-			result = Result()
-			result.set_error("Fail to get coverage: " + e.args[0])
-			result.add_software(SoftwareDesc(self.software_names.get_coverage_name(), self.software_names.get_coverage_version(), self.software_names.get_coverage_parameters()))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			
-			### get again and set error
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
-			project_sample.save()
-			
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-			return False
-		
-		## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in ares with coverage problems
-		parse_out_files = ParseOutFiles()
-		parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
-									self.software_names.get_snippy_name()), coverage)
-		
-		## run freebayes
-		try:
-			out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
-						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
+	
+		try:	
+			meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+	
+			### Test if this sample already run		
+			meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None and meta_sample.value == MetaKeyAndValue.META_VALUE_Success): return 
+	
+			## process snippy
+			try:
+				out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
+						project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
+						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name)
-			result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
-		except Exception as e:
-			result = Result()
-			result.set_error(e.args[0])
-			result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
+			except Exception as e:
+				result = Result()
+				result.set_error(e.args[0])
+				result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+	
+			## copy the files to the project sample directories
+			self.copy_files_to_project(project_sample, self.software_names.get_snippy_name(), out_put_path)
+			remove_path = os.path.dirname(out_put_path)
+			if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
+			else: self.utils.remove_dir(out_put_path)
+	
+			### make the link for the new tab file name
+			path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+			if (os.path.exists(path_snippy_tab)):
+				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+				self.utils.link_file(path_snippy_tab, sz_file_to)
 			
-			### get again and set error
+			## get coverage from deep file
+			get_coverage = GetCoverage()
+			try:
+				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
+							self.software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+				
+				################################
+				##################################
+				### set the alerts in the coverage
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				for element in coverage.get_dict_data():
+					if (not coverage.is_100_more_9(element)):
+						project_sample.alert_second_level += 1
+						meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
+						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_9(element))
+					elif (not coverage.is_100_more_0(element)):
+						project_sample.alert_first_level += 1
+						meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
+						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_0(element))
+				project_sample.save()
+			
+				## set the coverage in database
+				meta_sample = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,\
+									MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
+			except Exception as e:
+				result = Result()
+				result.set_error("Fail to get coverage: " + e.args[0])
+				result.add_software(SoftwareDesc(self.software_names.get_coverage_name(), self.software_names.get_coverage_version(), self.software_names.get_coverage_parameters()))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+			
+			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in ares with coverage problems
+			parse_out_files = ParseOutFiles()
+			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
+										self.software_names.get_snippy_name()), coverage)
+			
+			## run freebayes
+			try:
+				out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
+							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
+							project_sample.sample.name)
+				result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+			except Exception as e:
+				result = Result()
+				result.set_error(e.args[0])
+				result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+			
+			## count hits from tab file
+			file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
+			if (os.path.exists(file_tab)):
+				vect_count_type = ['snp']	## only detects snp
+				count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
+				### set flag that is finished
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
+			else:
+				result = Result()
+				result.set_error("Fail to collect tab file from freebayes")
+				result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+			
+			self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
+			self.utils.remove_dir(out_put_path)
+			
+			### draw coverage
+			try:
+				### make the coverage images
+				draw_all_coverage = DrawAllCoverage()
+				draw_all_coverage.draw_all_coverages(project_sample)
+			except:
+				result = Result()
+				result.set_error("Fail to draw coverage images")
+				result.add_software(SoftwareDesc('In house software', '1.0', ''))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+			
+			### mixed infection
+			try:
+				## get instances
+				manage_database = ManageDatabase()
+				mixed_infections_management = MixedInfectionsManagement()
+				
+				## set the alert also
+				mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
+			except:
+				result = Result()
+				result.set_error("Fail to calculate mixed infextion")
+				result.add_software(SoftwareDesc('In house software', '1.0', ''))
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Mixed_Infection, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				
+				### get again and set error
+				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.is_error = True
+				project_sample.save()
+				
+				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				if (meta_sample != None):
+					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+				return False
+			
+			### get again
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
+			project_sample.is_finished = True
+			project_sample.is_deleted = False
+			project_sample.is_deleted_in_file_system = False
+			project_sample.date_deleted = None
+			project_sample.is_error = False
+			project_sample.count_variations = manage_database.get_variation_count(count_hits)
+			project_sample.mixed_infections = mixed_infection
 			project_sample.save()
 			
+			from utils.collect_extra_data import CollectExtraData
+			collect_extra_data = CollectExtraData()
+			
+			### get a clean freebayes file
+			tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			if (os.path.exists(tab_freebayes_file)):
+				file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
+				
+			### get clean consensus file
+			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+			if (os.path.exists(consensus_fasta)):
+				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, False)
+				
+			### set the tag of result OK 
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+			
+			### set the flag of the end of the task		
 			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-			return False
-		
-		## count hits from tab file
-		file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
-		if (os.path.exists(file_tab)):
-			vect_count_type = ['snp']	## only detects snp
-			count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
-			### set flag that is finished
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
-		else:
-			result = Result()
-			result.set_error("Fail to collect tab file from freebayes")
-			result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			
-			### get again and set error
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
-			project_sample.save()
-			
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-			return False
-		
-		self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
-		self.utils.remove_dir(out_put_path)
-		
-		### draw coverage
-		try:
-			### make the coverage images
-			draw_all_coverage = DrawAllCoverage()
-			draw_all_coverage.draw_all_coverages(project_sample)
+				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		except:
-			result = Result()
-			result.set_error("Fail to draw coverage images")
-			result.add_software(SoftwareDesc('In house software', '1.0', ''))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			
-			### get again and set error
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
-			project_sample.save()
-			
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 			return False
 		
-		### mixed infection
-		try:
-			## get instances
-			manage_database = ManageDatabase()
-			mixed_infections_management = MixedInfectionsManagement()
-			
-			## set the alert also
-			mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
-		except:
-			result = Result()
-			result.set_error("Fail to calculate mixed infextion")
-			result.add_software(SoftwareDesc('In house software', '1.0', ''))
-			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Mixed_Infection, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			
-			### get again and set error
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-			project_sample.is_error = True
-			project_sample.save()
-			
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-			if (meta_sample != None):
-				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-			return False
-		
-		### get again
-		project_sample = ProjectSample.objects.get(pk=project_sample.id)
-		project_sample.is_finished = True
-		project_sample.is_deleted = False
-		project_sample.is_deleted_in_file_system = False
-		project_sample.date_deleted = None
-		project_sample.is_error = False
-		project_sample.count_variations = manage_database.get_variation_count(count_hits)
-		project_sample.mixed_infections = mixed_infection
-		project_sample.save()
-		
-		from utils.collect_extra_data import CollectExtraData
-		collect_extra_data = CollectExtraData()
-		
-		### get a clean freebayes file
-		tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-		if (os.path.exists(tab_freebayes_file)):
-			file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-			collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
-			
-		### get clean consensus file
-		consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
-		if (os.path.exists(consensus_fasta)):
-			file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-			self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, False)
-			
-		### set the tag of result OK 
-		manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		
-		### set the flag of the end of the task		
-		meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_sample != None):
-			manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_FINISHED)
 		return True
-
 
 	def create_index_files(self, file_name):
 		"""

@@ -6,19 +6,19 @@ Created on Jan 23, 2018
 import unittest, os, time, filecmp
 from utils.utils import Utils
 from utils.process_SGE import ProcessSGE
-from constants.constants import Constants, TypePath, FileType, FileExtensions
+from constants.constants import Constants, TypePath, FileType, FileExtensions, TypeFile
 from django.conf import settings 
 from django.test.utils import override_settings
 from constants.constantsTestsCase import ConstantsTestsCase
 from django.contrib.auth.models import User
-from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames
+from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames, ProcessControler, MetaKey
 from utils.collect_extra_data import CollectExtraData
 from managing_files.manage_database import ManageDatabase
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Coverage
-from manage_virus.uploadFiles import UploadFiles
 from constants.constants_mixed_infection import ConstantsMixedInfection
+from utils.parse_in_files import ParseInFiles, UploadFilesByDjangoQ
 
 class Test(unittest.TestCase):
 
@@ -152,6 +152,16 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.getsize(temp_file) > 80 and os.path.getsize(temp_file) < 100)
 		self.utils.remove_dir(out_dir)
 
+	def get_status_running(self, user):
+		"""
+		get the status of the number of runs
+		"""
+		data = {}
+		data['process_running'] = ProcessControler.objects.filter(owner__id=user.pk, is_finished=False, is_error=False, is_running=True).count()
+		data['process_to_run'] = ProcessControler.objects.filter(owner__id=user.pk, is_finished=False, is_error=False, is_running=False).count()
+		data['process_to_run_total'] = ProcessControler.objects.filter(is_finished=False, is_error=False).count()
+		return data
+
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_create_tree_and_alignments(self):
 		"""
@@ -270,28 +280,51 @@ class Test(unittest.TestCase):
 		self.assertEquals(1, project_sample.sample.get_tag_names().count()) 
 		
 		## launch the process
+		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		out_dir = self.utils.get_temp_dir()
 		temp_file = self.utils.get_temp_file_from_dir(out_dir, 'test_sge', '.txt')
 		if os.path.exists(temp_file): os.unlink(temp_file)
 
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
+		
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {} --settings fluwebvirus.settings_test'.format(\
 			os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
 		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command)
 		try:
 			sge_id = process_SGE.submitte_job(path_file)
+			if (sge_id != None): process_SGE.set_process_controlers(user, process_controler.get_name_project(project), sge_id)
 		except:
 			self.fail('Fail to submit the task')
 		self.assertTrue(sge_id != None)
 		
+		to_run = 0
+		running = 0
 		n_count = 0
 		while True:
 			if (process_SGE.is_finished(sge_id)): break
-			time.sleep(5)
+			time.sleep(1)
+			dt_running = self.get_status_running(user)
+			if (dt_running['process_to_run'] == 1 and dt_running['process_running'] == 0 and dt_running['process_to_run_total'] == 1):
+				to_run += 1
+			elif (dt_running['process_to_run'] == 0 and dt_running['process_running'] == 1 and dt_running['process_to_run_total'] == 1):
+				running += 1
+				
 			n_count += 1
 			if (n_count == 100):
 				self.fail('Wait to much time until end of the SGE process')
 
+		self.assertTrue(to_run > 0)
+		self.assertTrue(running > 0)
+		
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
+		
 		### instance 
 		collect_extra_data = CollectExtraData();
 		
@@ -409,6 +442,7 @@ class Test(unittest.TestCase):
 		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
 		
 		## launch the process
+		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		out_dir = self.utils.get_temp_dir()
 		temp_file = self.utils.get_temp_file_from_dir(out_dir, 'test_sge', '.txt')
@@ -419,17 +453,33 @@ class Test(unittest.TestCase):
 		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command)
 		try:
 			sge_id = process_SGE.submitte_job(path_file)
+			if (sge_id != None): process_SGE.set_process_controlers(user, process_controler.get_name_project_sample(project_sample), sge_id)
 		except:
 			self.fail('Fail to submit the task')
 		self.assertTrue(sge_id != None)
 		
+		running = 0
+		to_run = 0
 		n_count = 0
 		while True:
 			if (process_SGE.is_finished(sge_id)): break
-			time.sleep(5)
+			time.sleep(2)
+			dt_running = self.get_status_running(user)
+			if (dt_running['process_to_run'] == 1 and dt_running['process_running'] == 0 and dt_running['process_to_run_total'] == 1):
+				to_run += 1
+			elif (dt_running['process_to_run'] == 0 and dt_running['process_running'] == 1 and dt_running['process_to_run_total'] == 1):
+				running += 1
 			n_count += 1
 			if (n_count == 200):
 				self.fail('Wait to much time until end of the SGE process')
+
+		self.assertTrue(to_run > 0)
+		self.assertTrue(running > 0)
+
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
 
 		### start testing				
 		try:
@@ -439,7 +489,6 @@ class Test(unittest.TestCase):
 		self.assertTrue(project_sample.is_finished)
 		
 		### test the files
-		print(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name).index(SoftwareNames.SOFTWARE_SNIPPY_name.lower()) != -1)
@@ -539,9 +588,9 @@ class Test(unittest.TestCase):
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_run_fastq_and_trimmomatic_and_identify_species(self):
 		"""
-		Test run fastq and trimmomatic all together
-		"""
-
+  		Test run fastq and trimmomatic all together
+  		"""
+		from manage_virus.uploadFiles import UploadFiles
 		uploadFiles = UploadFiles()
 		to_test = True
 		(version, file) = uploadFiles.get_file_to_upload(to_test)
@@ -584,6 +633,7 @@ class Test(unittest.TestCase):
 		
 		### set the job
 		taskID = "xpto_task" 
+		process_controler = ProcessControler()
 		manageDatabase = ManageDatabase()
 		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 
@@ -594,22 +644,38 @@ class Test(unittest.TestCase):
 		if os.path.exists(temp_file): os.unlink(temp_file)
 
 		vect_command = ['python3 {} run_trimmomatic_species --sample_id {} --user_id {} --settings fluwebvirus.settings_test'.format(\
-			os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk)]
+ 			os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk)]
 		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command)
 		try:
 			sge_id = process_SGE.submitte_job(path_file)
+			if (sge_id != None): process_SGE.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
 		except:
 			self.fail('Fail to submit the task')
 		self.assertTrue(sge_id != None)
 		
+		running = 0
+		to_run = 0
 		n_count = 0
 		while True:
 			if (process_SGE.is_finished(sge_id)): break
-			time.sleep(5)
+			time.sleep(2)
+			dt_running = self.get_status_running(user)
+			if (dt_running['process_to_run'] == 1 and dt_running['process_running'] == 0 and dt_running['process_to_run_total'] == 1):
+				to_run += 1
+			elif (dt_running['process_to_run'] == 0 and dt_running['process_running'] == 1 and dt_running['process_to_run_total'] == 1):
+				running += 1
 			n_count += 1
 			if (n_count == 200):
 				self.fail('Wait to much time until end of the SGE process')
 
+		self.assertTrue(to_run > 0)
+		self.assertTrue(running > 0)
+
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
+		
 		### start testing				
 		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_sample != None)
@@ -674,3 +740,385 @@ class Test(unittest.TestCase):
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(out_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
+	
+	def temp_upload_files(self, user, type_file_fastq, file_name):
+		from managing_files.models import UploadFiles
+		try:
+			upload_files = UploadFiles.objects.get(owner=user, type_file__name=type_file_fastq.name, file_name=os.path.basename(file_name), is_processed=False)
+		except UploadFiles.DoesNotExist as e:
+			upload_files = UploadFiles()
+			upload_files.file_name = os.path.basename(file_name)
+			upload_files.owner = user
+			upload_files.is_processed = False
+			upload_files.is_valid = True
+			upload_files.type_file = type_file_fastq
+			upload_files.path_name.name = file_name
+			upload_files.save()
+		return upload_files
+	
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_link_files(self):
+		"""
+		link the files from samples
+		"""
+		from managing_files.models import UploadFiles
+		
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+		
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_2_CSV)
+		file_1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_1_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+		file_2_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_1)
+		file_2_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_2)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+		
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		
+		try:
+			type_file_sample_files = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+		except MetaKey.DoesNotExist:
+			type_file_sample_files = MetaKey()
+			type_file_sample_files.name = TypeFile.TYPE_FILE_sample_file
+			type_file_sample_files.save()
+
+		try:
+			type_file_fastaq = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
+		except MetaKey.DoesNotExist:
+			type_file_fastaq = MetaKey()
+			type_file_fastaq.name = TypeFile.TYPE_FILE_fastq_gz
+			type_file_fastaq.save()
+		
+		UploadFiles.objects.all().delete()
+		Sample.objects.all().delete()	
+		upload_files_1_1 = self.temp_upload_files(user, type_file_fastaq, file_1_1)
+		upload_files_1_2 = self.temp_upload_files(user, type_file_fastaq, file_1_2)
+		upload_files_2_1 = self.temp_upload_files(user, type_file_fastaq, file_2_1)
+		upload_files_2_2 = self.temp_upload_files(user, type_file_fastaq, file_2_2)
+		self.assertFalse(upload_files_2_2.is_processed)
+		self.assertEquals(0, upload_files_2_2.number_files_processed)
+			
+		## sample files
+		upload_files = UploadFiles()
+		upload_files.file_name = os.path.basename(txt_file)
+		upload_files.owner = user
+		upload_files.is_processed = False
+		upload_files.is_valid = True
+		upload_files.type_file = type_file_sample_files
+		upload_files.save()
+
+		self.assertTrue(parse_in_files.has_samples_files_to_process(user))
+		self.assertEquals(upload_files.id, parse_in_files.get_upload_samples_file(user).id)
+		### after read you can create samples
+		parse_in_files.create_samples(upload_files, user)
+
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		vect_command = ['python3 {} link_files --user_id {} --settings fluwebvirus.settings_test'.format(\
+  			os.path.join(settings.BASE_DIR, 'manage.py'), user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command)
+		try:
+			sge_id = process_SGE.submitte_job(path_file)
+			if (sge_id != None): process_SGE.set_process_controlers(user, process_controler.get_name_link_files_user(user), sge_id)
+		except:
+			self.fail('Fail to submit the task')
+		self.assertTrue(sge_id != None)
+		
+		running = 0
+		to_run = 0
+		n_count = 0
+		while True:
+			if (process_SGE.is_finished(sge_id)): break
+			time.sleep(1)
+			dt_running = self.get_status_running(user)
+			if (dt_running['process_to_run'] == 1 and dt_running['process_running'] == 0 and dt_running['process_to_run_total'] == 1):
+				to_run += 1
+			elif (dt_running['process_to_run'] == 0 and dt_running['process_running'] == 1 and dt_running['process_to_run_total'] == 1):
+				running += 1
+			n_count += 1
+			if (n_count == 200):
+				self.fail('Wait to much time until end of the SGE process')
+
+		self.assertTrue(to_run > 0)
+		self.assertTrue(running > 0)
+
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
+		
+		###
+		try:
+			upload_files = UploadFiles.objects.get(id=upload_files.id)
+			self.assertTrue(upload_files.is_processed)
+			self.assertEquals(2, upload_files.number_files_processed)
+			self.assertEquals(2, upload_files.number_files_to_process)
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_1_1.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_1_2.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+		
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_2_1.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+		
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_2_2.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertTrue(upload_files_temp.is_valid)
+			self.assertEquals('fastq.gz', upload_files_temp.type_file.name)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+				
+		try:
+			sample = Sample.objects.get(name='xpto12', owner=user)
+			self.assertEquals(2, sample.tag_names.all().count())
+			self.assertEquals(12, sample.week)
+			self.assertEquals("EVA001_S66_L001_R1_001.fastq.gz", sample.candidate_file_name_1)
+			self.assertEquals("EVA001_S66_L001_R2_001.fastq.gz", sample.candidate_file_name_2)
+			self.assertEquals("vaccine status", sample.vaccine_status.name)
+			self.assertEquals("Generic", sample.data_set.name)
+			self.assertEquals(True, sample.has_files)
+			sample.delete()
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+
+		try:
+			sample = Sample.objects.get(name='xpto23', owner=user)
+			self.assertEquals(11, sample.week)
+			self.assertEquals("EVA002_S52_L001_R1_001.fastq.gz", sample.candidate_file_name_1)
+			self.assertEquals("EVA002_S52_L001_R2_001.fastq.gz", sample.candidate_file_name_2)
+			self.assertEquals(None, sample.vaccine_status)
+			self.assertEquals("data set", sample.data_set.name)
+			self.assertEquals(True, sample.has_files)
+			sample.delete()
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+			
+		self.utils.remove_dir(out_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_read_sample_and_link_files(self):
+		"""
+		link the files from samples
+		"""
+		from managing_files.models import UploadFiles
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+		
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_2_CSV)
+		file_1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_1_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+		file_2_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_1)
+		file_2_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ2_2)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+		
+		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
+													TypeFile.TYPE_FILE_sample_file), os.path.basename(txt_file))
+		sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		self.utils.copy_file(txt_file, sz_file_to)
+		
+		try:
+			type_file_sample_files = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+		except MetaKey.DoesNotExist:
+			type_file_sample_files = MetaKey()
+			type_file_sample_files.name = TypeFile.TYPE_FILE_sample_file
+			type_file_sample_files.save()
+
+		try:
+			type_file_fastaq = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
+		except MetaKey.DoesNotExist:
+			type_file_fastaq = MetaKey()
+			type_file_fastaq.name = TypeFile.TYPE_FILE_fastq_gz
+			type_file_fastaq.save()
+		
+		UploadFiles.objects.all().delete()
+		Sample.objects.all().delete()
+		upload_files_1_1 = self.temp_upload_files(user, type_file_fastaq, file_1_1)
+		upload_files_1_2 = self.temp_upload_files(user, type_file_fastaq, file_1_2)
+		upload_files_2_1 = self.temp_upload_files(user, type_file_fastaq, file_2_1)
+		upload_files_2_2 = self.temp_upload_files(user, type_file_fastaq, file_2_2)
+		self.assertFalse(upload_files_2_2.is_processed)
+		self.assertEquals(0, upload_files_2_2.number_files_processed)
+			
+		## sample files
+		upload_files = UploadFiles()
+		upload_files.file_name = os.path.basename(txt_file)
+		upload_files.owner = user
+		upload_files.is_processed = False
+		upload_files.is_valid = True
+		upload_files.type_file = type_file_sample_files
+		upload_files.path_name.name = sz_file_to
+		upload_files.save()
+
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		vect_command = ['python3 {} read_sample_file --upload_files_id {} --user_id {} --settings fluwebvirus.settings_test'.format(\
+  			os.path.join(settings.BASE_DIR, 'manage.py'), upload_files.pk, user.pk)]
+		out_dir = self.utils.get_temp_dir()
+		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command)
+		try:
+			sge_id = process_SGE.submitte_job(path_file)
+			if (sge_id != None): process_SGE.set_process_controlers(user, process_controler.get_name_upload_files(upload_files), sge_id)
+		except:
+			self.fail('Fail to submit the task')
+		self.assertTrue(sge_id != None)
+		
+		running = 0
+		to_run = 0
+		n_count = 0
+		while True:
+			if (process_SGE.is_finished(sge_id)): break
+			time.sleep(1)
+			dt_running = self.get_status_running(user)
+			if (dt_running['process_to_run'] == 1 and dt_running['process_running'] == 0 and dt_running['process_to_run_total'] == 1):
+				to_run += 1
+			elif (dt_running['process_to_run'] == 0 and dt_running['process_running'] == 1 and dt_running['process_to_run_total'] == 1):
+				running += 1
+			n_count += 1
+			if (n_count == 200):
+				self.fail('Wait to much time until end of the SGE process')
+
+		self.assertTrue(to_run > 0)
+		self.assertTrue(running > 0)
+
+		dt_running = self.get_status_running(user)
+		self.assertEqual(0, dt_running['process_running'])
+		self.assertEqual(0, dt_running['process_to_run'])
+		self.assertEqual(0, dt_running['process_to_run_total'])
+		
+		###
+		try:
+			upload_files = UploadFiles.objects.get(id=upload_files.id)
+			self.assertTrue(upload_files.is_processed)
+			self.assertEquals(2, upload_files.number_files_processed)
+			self.assertEquals(2, upload_files.number_files_to_process)
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_1_1.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_1_2.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+		
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_2_1.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+		
+		###
+		try:
+			upload_files_temp = UploadFiles.objects.get(id=upload_files_2_2.id)
+			self.assertTrue(upload_files_temp.is_processed)
+			self.assertTrue(upload_files_temp.is_valid)
+			self.assertEquals('fastq.gz', upload_files_temp.type_file.name)
+			self.assertEquals(1, upload_files_temp.number_files_processed)
+			self.assertEquals(upload_files_temp.upload_file.id, upload_files.id)
+			self.assertEquals(1, upload_files_temp.samples.all().count())
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+				
+		try:
+			sample = Sample.objects.get(name='xpto12', owner=user)
+			self.assertEquals(2, sample.tag_names.all().count())
+			self.assertEquals(12, sample.week)
+			self.assertEquals("EVA001_S66_L001_R1_001.fastq.gz", sample.candidate_file_name_1)
+			self.assertEquals("EVA001_S66_L001_R2_001.fastq.gz", sample.candidate_file_name_2)
+			self.assertEquals("vaccine status", sample.vaccine_status.name)
+			self.assertEquals("Generic", sample.data_set.name)
+			self.assertEquals(True, sample.has_files)
+			sample.delete()
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+
+		try:
+			sample = Sample.objects.get(name='xpto23', owner=user)
+			self.assertEquals(11, sample.week)
+			self.assertEquals("EVA002_S52_L001_R1_001.fastq.gz", sample.candidate_file_name_1)
+			self.assertEquals("EVA002_S52_L001_R2_001.fastq.gz", sample.candidate_file_name_2)
+			self.assertEquals(None, sample.vaccine_status)
+			self.assertEquals("data set", sample.data_set.name)
+			self.assertEquals(True, sample.has_files)
+			sample.delete()
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+
+		self.utils.remove_dir(out_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+

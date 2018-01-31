@@ -715,6 +715,8 @@ class Test(TestCase):
 		except Sample.DoesNotExist as e:
 			self.fail("must exist")
 
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_read_sample_and_link_files(self):
 		"""
@@ -859,6 +861,7 @@ class Test(TestCase):
 		except Sample.DoesNotExist as e:
 			self.fail("must exist")
 
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	def temp_upload_files(self, user, type_file_fastq, file_name):
 		try:

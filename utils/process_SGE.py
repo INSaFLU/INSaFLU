@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import os, subprocess, logging
+import os, logging
 from utils.utils import Utils
-from constants.constants import Constants
+from constants.constants import Constants, FileExtensions
 from django.conf import settings
 from managing_files.models import ProcessControler
 from datetime import datetime
@@ -45,30 +45,34 @@ class ProcessSGE(object):
 	def __init__(self):
 		pass
 
+	###########################################
+	###
+	###		IMPORTANT
+	###			Put qsub in /usr/bin/qsub
+	###
 	def submitte_job(self, file_name):
 		"""
 		job submission
 		raise exception if something wrong
 		"""
-		sz_temp = os.getcwd()
-		os.chdir(os.path.dirname(file_name))	## change dir
-		cmd = 'qsub ' + file_name
-		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-		(out, err) = proc.communicate()
-		os.chdir(sz_temp)		## change dir
-		if (err != None):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
+		temp_file = self.utils.get_temp_file('qsub_out', FileExtensions.FILE_TXT)
+		cmd = 'export SGE_ROOT={}; qsub {} > {}'.format(settings.SGE_ROOT, file_name, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			if (os.path.exists(temp_file)): os.unlink(temp_file)
+			self.logger_production.error('Fail to run: ' + cmd + " - exit code: " + str(exist_status))
+			self.logger_debug.error('Fail to run: ' + cmd + " - exit code: " + str(exist_status))
 			raise Exception("Fail to submit qsub")
-		out_str = out.decode("utf-8")
+		## read output
+		vect_out = self.utils.read_text_file(temp_file)
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
 		b_found = False
-		for line in out_str.split('\n'):
-			print(line)
+		for line in vect_out:
 			if (line.find("has been submitted") != -1):
 				lst_line = line.split(' ')
 				if (len(lst_line) > 4 and self.utils.is_integer(lst_line[2])): return int(lst_line[2])
 				return None		## don't rise exception... 
-		if (not b_found): raise Exception(out_str)
+		if (not b_found): raise Exception("\n".join(vect_out))
 
 
 	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, b_remove_out_dir = False, nPriority = 0):
@@ -86,11 +90,11 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -j y\n")  # merge the standard error with standard output
 			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
 			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
+			handleSGE.write("#$ -o {}\n".format(out_dir))		# out path file
 			if (nPriority > 0): handleSGE.write("#$ -p %d\n" % (nPriority))	# execute the job for the current work directory
 			for cline in vect_cmd: handleSGE.write("\n" + cline)
 			if (b_remove_out_dir):
 				handleSGE.write("\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir))
-	
 		return file_name_out
 	
 	def __get_sge_process__(self):
@@ -230,7 +234,22 @@ class ProcessSGE(object):
 			raise Exception('Fail to submit the job.')
 		return sge_id
 
-
+	### only for tests
+	def submit_dummy_sge(self):
+		"""
+		only for tests
+		"""
+		vect_command = ['echo $HOSTNAME > /tmp/sge.out', 'echo "start waiting" >> /tmp/sge.out',\
+					'date >> /tmp/sge.out', 'sleep 2m', 'date >> /tmp/sge.out',\
+					'echo "end" >> /tmp/sge.out']
+		out_dir = self.utils.get_temp_dir()
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, False)
+		try:
+			sge_id = self.submitte_job(path_file)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+	
 	def set_process_controlers(self, user, name_of_process, name_sge_id):
 		"""
 		Add a record in ProcessControlers

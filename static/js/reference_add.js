@@ -13,3 +13,23 @@ $().ready(function(){
 	}
 });
 
+/// only for test sge in my account
+$('#id-submit-sge').on('click', function(){
+
+	$.ajax({
+        url: $('#id-submit-sge').attr("remove-single-value-url"),
+        data : { 
+    		csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, // data sent with the post request
+        		
+        success: function (data) {
+          
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
+	});
+});

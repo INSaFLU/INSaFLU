@@ -63,6 +63,8 @@ SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 
 ## run process in SGE, otherwise run in qcluster
 RUN_SGE  = config('RUN_SGE', default=False, cast=bool)
+RUN_SGE_INTO_DJANGOQ  = config('RUN_SGE_INTO_DJANGOQ', default=False, cast=bool)
+SGE_ROOT = config('SGE_ROOT')
 
 # Application definition
 INSTALLED_APPS = [

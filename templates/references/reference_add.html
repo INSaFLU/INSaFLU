@@ -54,6 +54,11 @@
 	  	</ul>
 	  	
   	</div>
+  	
+  	{% if user_mmp %}
+  		<button id="id-submit-sge" type="button" class="btn btn-primary" remove-single-value-url="{% url 'submit-sge' %}">Send SGE</button>
+  	{% endif %}
+  	
 	{% crispy form %}
 {% endblock %}
 

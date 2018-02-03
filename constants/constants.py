@@ -269,6 +269,7 @@ class FileExtensions(object):
 	file extensions
 	"""
 	FILE_TSV = '.tsv'
+	FILE_TXT = '.txt'
 	FILE_TAB = '.tab'
 	FILE_VCF = '.vcf'
 	FILE_VCF_BGZ = 'vcf.bgz'

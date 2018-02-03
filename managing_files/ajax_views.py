@@ -687,7 +687,10 @@ def remove_project_sample(request):
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
+					if (settings.RUN_SGE_INTO_DJANGOQ):
+						taskID = async(process_SGE.set_collect_global_files, project_sample.project, request.user)
+					else:
+						taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
 				else:
 					taskID = async(collect_extra_data.collect_extra_data_for_project, project_sample.project, request.user)
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
@@ -758,4 +761,17 @@ def get_process_running(request):
 		data['process_to_run_total'] = str(ProcessControler.objects.filter(is_finished=False, is_error=False).count())
 		data['is_ok'] = True
 		return JsonResponse(data)
+
+@csrf_protect
+def submit_sge(request):
+	"""
+	get process running and to run for a specific user
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		process_SGE = ProcessSGE()
+		process_SGE.submit_dummy_sge()
+		return JsonResponse(data)
+
+
 

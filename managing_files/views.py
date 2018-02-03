@@ -98,6 +98,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		context = super(ReferenceAddView, self).get_context_data(**kwargs)
 		context['nav_reference'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		context['user_mmp'] = (self.request.user.username == "mmp")	## short the size of modal window
 		return context
 	
 	@transaction.atomic
@@ -227,6 +228,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 	success_url = reverse_lazy('samples')
 	template_name = 'samples/sample_add.html'
 
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
 
 	def get_form_kwargs(self):
 		"""
@@ -314,10 +317,15 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		try:
 			if (settings.RUN_SGE):
 				process_SGE = ProcessSGE()
-				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+				if (settings.RUN_SGE_INTO_DJANGOQ):
+					taskID = async(process_SGE.set_run_trimmomatic_species, sample, self.request.user)
+				else:
+					taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
 			else:
 				taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
-		except:
+		except Exception as e:
+			self.logger_production.error('Fail to run: ProcessSGE - ' + str(e))
+			self.logger_debug.error('Fail to run: ProcessSGE - ' + str(e))
 			return super(SamplesAddView, self).form_invalid(form)
 		### 
 		manageDatabase = ManageDatabase()
@@ -458,7 +466,10 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					taskID = process_SGE.set_read_sample_file(upload_files, self.request.user)
+					if (settings.RUN_SGE_INTO_DJANGOQ):
+						taskID = async(process_SGE.set_read_sample_file, upload_files, self.request.user)
+					else:
+						taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
 				else:
 					b_testing = False
 					taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
@@ -618,7 +629,10 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					taskID = process_SGE.set_link_files(self.request.user)
+					if (settings.RUN_SGE_INTO_DJANGOQ):
+						taskID = async(process_SGE.set_link_files, self.request.user)
+					else:
+						taskID = process_SGE.set_link_files(self.request.user)
 				else:
 					b_testing = False
 					taskID = async(parse_in_files.link_files, self.request.user, b_testing)
@@ -1037,7 +1051,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
 						if (settings.RUN_SGE):
-							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
+							if (settings.RUN_SGE_INTO_DJANGOQ):
+								taskID = async(process_SGE.set_second_stage_snippy, project_sample, self.request.user)
+							else:
+								taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
 						else:
 							taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
 							
@@ -1053,7 +1070,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			if (project_sample_add > 0):
 				try:
 					if (settings.RUN_SGE):
-						taskID = process_SGE.set_collect_global_files(project, self.request.user)
+						if (settings.RUN_SGE_INTO_DJANGOQ):
+							taskID = async(process_SGE.set_collect_global_files, project, self.request.user)
+						else:
+							taskID = process_SGE.set_collect_global_files(project, self.request.user)
 					else:
 						taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user)
 				

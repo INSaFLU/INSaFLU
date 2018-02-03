@@ -18,7 +18,7 @@ from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Coverage
 from constants.constants_mixed_infection import ConstantsMixedInfection
-from utils.parse_in_files import ParseInFiles, UploadFilesByDjangoQ
+from utils.parse_in_files import ParseInFiles
 
 class Test(unittest.TestCase):
 

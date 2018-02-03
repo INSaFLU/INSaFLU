@@ -144,15 +144,16 @@ class Software(object):
 		argannot	1749	2017-Oct-30
 		card	2158	2017-Oct-30
 		"""
-		cmd = "%s --list" % (self.software_names.get_abricate())
-		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-		(out, err) = proc.communicate()
-		if (err != None):
+		temp_file = self.utils.get_temp_file('list_abricate', FileExtensions.FILE_TXT)
+		cmd = "{} --list > {}".format(self.software_names.get_abricate(), temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run abricate")
-		out_str = out.decode("utf-8")
-		for line in out_str.split('\n'):
+		vect_out = self.utils.read_text_file(temp_file)
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
+		for line in vect_out:
 			for field in line.split('\t'):
 				if (field.lower() == database.lower()): return True
 		return False

@@ -457,12 +457,11 @@ class Utils(object):
 			raise IOError(_("Error: file '" + file_name + "' doens't exist."))
 		
 		vect_out = []
-		handle = open(file_name)
-		for line in handle:
-			sz_temp = line.strip()
-			if (len(sz_temp) == 0): continue
-			vect_out.append(sz_temp)
-		handle.close()
+		with open(file_name) as handle: 
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0): continue
+				vect_out.append(sz_temp)
 		return vect_out
 	
 	def compare_locus_fasta_gb(self, fasta_file, gb_file):

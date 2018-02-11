@@ -278,8 +278,6 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 			password = Constants.USER_ANONYMOUS_PASS
 		
 		user = authenticate(username=username, password=password)
-		### if none try it with email
-		if (user is None): user = authenticate(email=username, password=password)
 		if (user is not None and not user.profile.email_confirmed):
 			messages.warning(self.request, "Warning, your email is not confirmed.", fail_silently=True)
 			return self.form_invalid(form)

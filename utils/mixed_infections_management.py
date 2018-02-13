@@ -33,9 +33,14 @@ class MixedInfectionsManagement(object):
 		#constants_mixed_infection = ConstantsMixedInfection()
 		#tag = constants_mixed_infection.get_tag_by_value(value)
 		
+		## get mixed infection from sample
+		manage_database = ManageDatabase()
+		meta_data_sample_mixed_infection = manage_database.get_sample_metakey(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		
 		tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
 		## test ratio method
-		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
+		if (meta_data_sample_mixed_infection != None or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 			
 		### get tag
@@ -52,11 +57,6 @@ class MixedInfectionsManagement(object):
 		mixed_infections.description = self.get_mixed_infection_main_vector().to_json()
 		mixed_infections.save()
 		
-		## get mixed infection from sample
-		manage_database = ManageDatabase()
-		meta_data_sample_mixed_infection = manage_database.get_sample_metakey(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-								MetaKeyAndValue.META_VALUE_Success)
-
 		##  set the alert
 		if (meta_data_sample_mixed_infection != None or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)

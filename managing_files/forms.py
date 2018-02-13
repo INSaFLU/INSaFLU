@@ -141,6 +141,7 @@ class ReferenceForm(forms.ModelForm):
 			reference_genbank_temp_file_name.write(reference_genbank.read())
 			reference_genbank_temp_file_name.flush()
 			reference_genbank_temp_file_name.close()
+			self.software.dos_2_unix(reference_genbank_temp_file_name.name)
 			try:
 				self.utils.is_genbank(reference_genbank_temp_file_name.name)
 			except IOError as e:

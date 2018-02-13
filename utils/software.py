@@ -1239,7 +1239,7 @@ class Software(object):
 		convert dos 2 unix
 		"""
 		if (not os.path.exists(file_name)): return
-		cmd = "dos2unix {}".format(self.software_names.get_igvtools(), file_name)
+		cmd = "dos2unix {}".format(file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

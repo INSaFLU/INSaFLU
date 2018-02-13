@@ -129,16 +129,18 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 			reference_fasta_temp_file_name.write(reference_fasta.read())
 			reference_fasta_temp_file_name.flush()
 			reference_fasta_temp_file_name.close()
+			software.dos_2_unix(reference_fasta_temp_file_name.name)
 			
+			file_name_cleaned = utils.clean_name(ntpath.basename(reference_fasta.name), { ' ' : '_', '(' : '' , ')' : '' })
 			try:
-				temp_genbank_dir = software.run_prokka(reference_fasta_temp_file_name.name, ntpath.basename(reference_fasta.name))
+				temp_genbank_dir = software.run_prokka(reference_fasta_temp_file_name.name, file_name_cleaned)
 			except Exception as e:
 				os.unlink(reference_fasta_temp_file_name.name)
 				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
 				return super(ReferenceAddView, self).form_invalid(form)
 			os.unlink(reference_fasta_temp_file_name.name)
 		
-			temp_genbank_file = os.path.join(temp_genbank_dir, utils.clean_extension(ntpath.basename(reference_fasta.name)) + FileExtensions.FILE_GBK)
+			temp_genbank_file = os.path.join(temp_genbank_dir, utils.clean_extension(file_name_cleaned) + FileExtensions.FILE_GBK)
 			if (not os.path.exists(temp_genbank_file)):
 				utils.remove_dir(temp_genbank_dir)
 				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
@@ -155,11 +157,11 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.is_obsolete = False
 		reference.number_of_locus = self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE]
 		reference.hash_reference_fasta = hash_value_fasta
-		reference.reference_fasta_name = ntpath.basename(reference_fasta.name)
+		reference.reference_fasta_name = utils.clean_name(ntpath.basename(reference_fasta.name), { ' ' : '_', '(' : '' , ')' : '' })
 		reference.scentific_name = scentific_name
 		reference.hash_reference_genbank = hash_value_genbank
 		if (reference_genbank == None): reference.reference_genbank_name = ntpath.basename(temp_genbank_file)
-		else: reference.reference_genbank_name = ntpath.basename(reference_genbank.name)
+		else: reference.reference_genbank_name = utils.clean_name(ntpath.basename(reference_genbank.name), { ' ' : '_', '(' : '' , ')' : '' })
 		reference.save()
 
 		## move the files to the right place

@@ -903,3 +903,13 @@ class Utils(object):
 		"""
 		for i in range(0, len(l), n):
 			yield l[i:i+n]
+
+	def clean_name(self, name_to_clean, dict_to_clean):
+		"""
+		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
+		
+		"""
+		for key in dict_to_clean:
+			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
+		return name_to_clean
+	

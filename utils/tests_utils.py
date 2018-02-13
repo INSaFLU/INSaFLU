@@ -677,3 +677,10 @@ class Test(unittest.TestCase):
 			self.fail("must raise error")
 		except Exception as e:
 			self.assertEquals(e.args[0], "Error: sequence 'EVA011_S54' must have only 'A', 'C', 'T' and 'G' bases.")
+
+	def test_clean_name(self):
+		"""
+		clean name
+		"""
+		self.assertEquals('cpto_', self.utils.clean_name('cpto ()', { ' ' : '_', '(' : '' , ')' : '' }))
+		

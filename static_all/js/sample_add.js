@@ -32,11 +32,20 @@ $('#id_date_of_receipt_lab').datepicker({
 $(document).on("click", "a", function(){
 	var attr = $(this).attr('id');
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
-	if (attr === 'id_remove_reference_modal'){
-		$('h4.modal-title').text('Add a data set');
+	$('#id_name_to_insert').val('');
+	if (attr === 'id_data_set_add_modal'){
+		$('h4.modal-title').text('Add a dataset');
 		$('h4.modal-title').attr('id', 'id_data_set_add_modal');
-		$('#id_name_to_insert').attr('placeholder', 'Data set name');
-		$('#id-label-replace').text('Set a new Data set:');
+		$('#id_name_to_insert').attr('placeholder', 'Dataset name');
+		$('#id-label-replace').text('Set a new Dataset:');
+		$('#id_name_to_insert').attr('placeholder', 'New dataset')
+	}
+	else if (attr === 'id_vaccine_add_modal'){
+		$('h4.modal-title').text('Add a Vaccine status');
+		$('h4.modal-title').attr('id', 'id_vaccine_add_modal');
+		$('#id_name_to_insert').attr('placeholder', 'Vaccine status');
+		$('#id-label-replace').text('Set a new Vaccine status:');
+		$('#id_name_to_insert').attr('placeholder', 'New vaccine status')
 	}
 });
 
@@ -68,6 +77,16 @@ $('#id-save-button').on('click', function(){
         			    text: data['text'],
         		  }));
         	  }
+        	  /// add message with information
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+          else{
+        	  /// add message with information
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
           }
         },
         
@@ -137,7 +156,7 @@ $('#id-modal-footer-remove').on('click', '#id-remove-button', function(){
 		value_to_remove = $( "#id_data_set option:selected" ).text();
 	}
 	else if ($('h4.modal-title-remove').attr('id') == 'id_vaccine_remove_modal'){
-		value_to_remove = $( "#id_data_set option:selected" ).text();
+		value_to_remove = $( "#id_vaccine_status option:selected" ).text();
 	}
 	
 	$.ajax({
@@ -160,6 +179,16 @@ $('#id-modal-footer-remove').on('click', '#id-remove-button', function(){
         		  // remove to vaccine
         		  $("#id_vaccine_status option[value='" + data['value_to_remove'] + "']").remove();
         	  }
+        	  /// add message with information
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+          else{
+        	  /// add message with information
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
           }
         },
         
@@ -171,6 +200,17 @@ $('#id-modal-footer-remove').on('click', '#id-remove-button', function(){
 	});
 });
 
-
-
+/// 
+$().ready(function(){
+	var name = $("#id_user_name").text().replace(/^\s+|\s+$/g, '');
+	var lst_split = name.split(" ");
+	if (lst_split.length == 3 & lst_split[0] == 'demo' & lst_split[1] == '-' & lst_split[2] == 'Logout'){
+		$("#id_path_name_1").attr("disabled", "disabled");
+		$("#id_path_name_2").attr("disabled", "disabled");
+	}
+	else{
+		$("#id_path_name_1").removeAttr("disabled");
+		$("#id_path_name_2").removeAttr("disabled");
+	}
+});
 

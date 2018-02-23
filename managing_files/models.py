@@ -63,7 +63,8 @@ class Reference(models.Model):
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
+	## application/x-gameboy-rom because of 'gb' extension file of gbk
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/x-gameboy-rom'],\
 									max_upload_size=Constants.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)

@@ -49,6 +49,10 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_RIM_sample = "Rim1_haplogroup_A1a1a1_Italy.fasta"
 	MANAGING_FILES_RIM_sample_gbk = "Rim1_haplogroup_A1a1a1_Italy.gbk"
 	MANAGING_FILES_RIM_sample_gff = "Rim1_haplogroup_A1a1a1_Italy.gff"
+	MANAGING_FILES_PV1_KX162693_fasta = "PV1_KX162693.fasta"
+	MANAGING_FILES_PV1_KX162693_gbk = "PV1_KX162693.gb"
+	MANAGING_FILES_PV1_KX162693_bed = "PV1_KX162693.bed"
+	
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"

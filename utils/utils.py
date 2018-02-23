@@ -870,15 +870,11 @@ class Utils(object):
 						if feature.type == 'gene' or feature.type == 'CDS':
 							start = feature.location.start.position
 							stop = feature.location.end.position
-							try:
-								name = feature.qualifiers['gene'][0]
-							except:
-								try:
-									name = feature.qualifiers['CDS'][0]
-								except:
-									# some features only have a locus tag
-									name = feature.qualifiers['locus_tag'][0]
-							if (name in dt_out): continue
+							name = self.__get_feature_from_seq_record(feature, 'gene')
+							if (name == None): name = self.__get_feature_from_seq_record(feature, 'CDS')
+							if (name == None): name = self.__get_feature_from_seq_record(feature, 'locus_tag')
+							if (name == None): name = self.__get_feature_from_seq_record(feature, 'protein_id')
+							if (name == None or name in dt_out): continue
 							dt_out[name] = 1
 							if feature.strand < 0:
 								strand = "-"
@@ -889,6 +885,17 @@ class Utils(object):
 							outh.write(bed_line)
 						
 			outh.close()
+
+	def __get_feature_from_seq_record(self, feature, tag_name):
+		"""
+		get feature from seq_record
+		return None if not exist
+		"""
+		try:
+			return feature.qualifiers[tag_name][0]
+		except:
+			return None
+
 
 	def send_email(self, address, header, message):
 		"""

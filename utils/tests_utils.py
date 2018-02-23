@@ -651,6 +651,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(file_expected, file_out))
 		os.unlink(file_out)
 	
+		file_in =  os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_gbk)
+		file_expected = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_bed)
+		self.utils.from_genbank_to_bed(file_in, file_out)
+		self.assertTrue(os.path.exists(file_out))
+		self.assertTrue(os.path.getsize(file_out) > 10)
+		self.assertTrue(filecmp.cmp(file_expected, file_out))
+		os.unlink(file_out)
+
+
 	def test_fasta_files(self):
 		"""
 		test fasta files to degenerated bases

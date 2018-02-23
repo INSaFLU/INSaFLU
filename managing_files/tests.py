@@ -116,6 +116,15 @@ class testsReferenceFiles(TestCase):
 		except:
 			self.fail("throw other exception")
 
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_fasta)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_gbk)
+		try:
+			utils.compare_locus_fasta_gb(fasta_file, gb_file)
+		except ValueError as e:
+			self.assertEqual("This locus 'locus_1' is not in fasta file.", e.args[0])
+		except:
+			self.fail("throw other exception")
+
 	def test_sample_meta_key(self):
 		"""
 		test the metakey system

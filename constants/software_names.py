@@ -50,6 +50,7 @@ class SoftwareNames(object):
 	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
+	SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
 	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
 	SOFTWARE_FASTQ_name = "FastQC"
 	SOFTWARE_FASTQ_VERSION = "0.11.5"
@@ -62,7 +63,6 @@ class SoftwareNames(object):
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
-	
 	
 	#### VERY important, change in snippy-vcf
 	#	mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -180,6 +180,7 @@ class SoftwareNames(object):
 	def get_abricate_name(self): return self.SOFTWARE_ABRICATE_name
 	def get_abricate_version(self): return self.SOFTWARE_ABRICATE_VERSION
 	def get_abricate_parameters(self): return self.SOFTWARE_ABRICATE_PARAMETERS
+	def get_abricate_parameters_mincov_30(self): return self.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
 
 	"""
 	return FASTq software
@@ -347,5 +348,6 @@ class SoftwareNames(object):
 	def get_fasttree_version(self): return self.SOFTWARE_FASTTREE_VERSION
 	def get_fasttree_parameters(self): return self.SOFTWARE_FASTTREE_PARAMETERS
 	def get_fasttree_parameters_protein(self): return self.SOFTWARE_FASTTREE_PARAMETERS_PROTEIN
+
 
 

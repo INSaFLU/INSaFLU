@@ -692,4 +692,22 @@ class Test(unittest.TestCase):
 		clean name
 		"""
 		self.assertEquals('cpto_', self.utils.clean_name('cpto ()', { ' ' : '_', '(' : '' , ')' : '' }))
+	
+	
+	def test_clean_genbank_version_name(self):
+		"""
+		clean genbank
+		"""
+		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_gbk)
+		expect_genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_clean_version_gbk)
+		out_file = self.utils.get_temp_file("file_name", ".gb")
+		self.utils.clean_genbank_version_name(genbank_file, out_file)
+		self.assertTrue(filecmp.cmp(out_file, expect_genbank_file))
+		os.unlink(out_file)
+		
+		
+		
+		
+		
+		
 		

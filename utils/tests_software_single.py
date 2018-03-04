@@ -11,7 +11,7 @@ from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.tag_names_constants import TagNamesConstants
-from utils.software import Software
+from utils.software import Software, Contigs2Sequences
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -47,4 +47,5 @@ class Test(TestCase):
 
 	def tearDown(self):
 		pass
+
 

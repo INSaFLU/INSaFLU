@@ -227,6 +227,7 @@ class Sample(models.Model):
 	Sample, each sample has one or two files...
 	"""
 	OUT_FILE_ABRICATE = "abricate.txt"
+	DRAFT_CONTIGS = "_draft_contigs.fasta"
 	
 	### consensus file
 	OUT_CONSENSUS_FILE = "consensus.fasta"
@@ -308,6 +309,14 @@ class Sample(models.Model):
 		path it's a FileField instance, or a string
 		"""
 		return os.path.join(self.__get_path__(type_path, True), self.OUT_FILE_ABRICATE)
+	
+	def get_draft_contigs_output(self, type_path):
+		"""
+		type_path = [MEDIA_ROOT, MEDIA_URL]
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.DRAFT_CONTIGS))
 	
 	def get_trimmomatic_file(self, type_path, b_first_file):
 		"""
@@ -411,6 +420,18 @@ class Sample(models.Model):
 			if (identify_virus.seq_virus.kind_type.name == type_to_test): n_return += 1
 		return n_return
 	
+	def __get_number_type_and_start_sub_type(self, vect_identify_virus, type_to_test, starts_sub_type):
+		"""
+		get a number for a specific type and name starts with a specific sub_type
+		if (starts_sub_type == None) get all of a specific 
+		"""
+		n_return = 0
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.seq_virus.kind_type.name == type_to_test and \
+					(starts_sub_type == None or identify_virus.seq_virus.name.startswith(starts_sub_type))): 
+				n_return += 1
+		return n_return
+
 	def get_mixed_infection(self):
 		"""
 		mixed infection based on the table static/mixed_infections/mixed_infections.xls
@@ -473,6 +494,17 @@ class Sample(models.Model):
 					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 0)):
 				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 						"Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
+			else:
+				count_type_N = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.SUB_TYPE_STARTS_N)
+				count_type_H = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.SUB_TYPE_STARTS_H)
+				count_type_other = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, None)
+				
+				if (count_type_N == 1 and count_type_H == 1 and count_type_other == 0):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
+				elif (count_type_N > 1 or count_type_H > 1 or count_type_other > 0):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
 			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
 						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
 		

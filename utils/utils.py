@@ -379,12 +379,11 @@ class Utils(object):
 				if (features.type == 'source'):
 					length = abs(features.location.end - features.location.start)
 				elif (features.type == 'CDS'):
-					if ('gene' in features.qualifiers):
-						geneticElement.add_gene(record.name, length, Gene(features.qualifiers['gene'][0],
-							int(features.location.start), int(features.location.end), features.location.strand))
-					elif ('locus_tag' in features.qualifiers): 
-						geneticElement.add_gene(record.name, length, Gene(features.qualifiers['locus_tag'][0],
-							int(features.location.start), int(features.location.end), features.location.strand))
+					for key_name in Constants.VECT_GENBANK_TAG_NAME:
+						if (key_name in features.qualifiers):
+							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
+								int(features.location.start), int(features.location.end), features.location.strand))
+							break
 		handle.close()
 		return geneticElement
 	
@@ -689,12 +688,10 @@ class Utils(object):
 			if (record.name != sequence_name): continue
 			for features in record.features:
 				if (features.type == 'CDS'):
-					if ('gene' in features.qualifiers and features.qualifiers['gene'][0] == gene.name):
-						handle_gb.close()
-						return features.location.extract(record).seq
-					elif ('locus_tag' in features.qualifiers and features.qualifiers['locus_tag'][0] == gene.name):
-						handle_gb.close()
-						return features.location.extract(record).seq
+					for key_name in Constants.VECT_GENBANK_TAG_NAME:
+						if (key_name in features.qualifiers and features.qualifiers[key_name][0] == gene.name):
+							handle_gb.close()
+							return features.location.extract(record).seq
 		handle_gb.close()
 		return None
 
@@ -721,9 +718,12 @@ class Utils(object):
 		
 		### need to have all with 100 more 9
 		if (test_all_locus_good_coverage):
-			for key in coverage.get_dict_data(): 
+			for key in coverage.get_dict_data():
 				if (not coverage.is_100_more_9(key)): return None
-					
+		
+		### test if the out directory exists
+		self.make_path(os.path.dirname(file_out))
+		
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
 			with open(file_out, 'w') as handle_write:
@@ -870,10 +870,10 @@ class Utils(object):
 						if feature.type == 'gene' or feature.type == 'CDS':
 							start = feature.location.start.position
 							stop = feature.location.end.position
-							name = self.__get_feature_from_seq_record(feature, 'gene')
-							if (name == None): name = self.__get_feature_from_seq_record(feature, 'CDS')
-							if (name == None): name = self.__get_feature_from_seq_record(feature, 'locus_tag')
-							if (name == None): name = self.__get_feature_from_seq_record(feature, 'protein_id')
+							for key_name in Constants.VECT_GENBANK_TAG_NAME:
+								name = self.__get_feature_from_seq_record(feature, key_name)
+								if (name != None): break
+							
 							if (name == None or name in dt_out): continue
 							dt_out[name] = 1
 							if feature.strand < 0:
@@ -920,3 +920,36 @@ class Utils(object):
 			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
 		return name_to_clean
 	
+	def clean_genbank_version_name(self, file_name_in, file_name_out):
+		"""
+		clean version name and set it equal to ACESSION
+		Equal: VERSION to ACCESSION
+			ACCESSION   KX162693
+			VERSION     KX162693
+		THIS is important in snpEFF
+		param	in: file_name_in
+				out: file_name_out
+		"""
+		ACCESSION = "ACCESSION"
+		VERSION = "VERSION"
+		sub_accession = ""
+		with open(file_name_in) as handle_in, open(file_name_out, 'w') as handle_out:
+			for line in handle_in:
+				sz_temp = line.strip()
+				if (line.startswith(ACCESSION)):
+					lst_data = sz_temp.split()
+					if (len(lst_data) == 2): sub_accession = lst_data[1]
+					handle_out.write(line)
+					continue
+				### now test version
+				elif (line.startswith(VERSION) and len(sub_accession) > 0):
+					handle_out.write("{}     {}\n".format(VERSION, sub_accession))
+					sub_accession = ""
+					continue
+				else: sub_accession = ""
+				handle_out.write(line)
+		
+		
+		
+		
+		

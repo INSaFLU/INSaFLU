@@ -51,6 +51,8 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_RIM_sample_gff = "Rim1_haplogroup_A1a1a1_Italy.gff"
 	MANAGING_FILES_PV1_KX162693_fasta = "PV1_KX162693.fasta"
 	MANAGING_FILES_PV1_KX162693_gbk = "PV1_KX162693.gb"
+	MANAGING_FILES_PV1_KX162693_clean_version_gbk = "PV1_KX162694_clean_version.gb"
+	MANAGING_FILES_PV1_KX162693_spades_out_fasta = "PV1_KX162693_spades_out.fasta"
 	MANAGING_FILES_PV1_KX162693_bed = "PV1_KX162693.bed"
 	
 	

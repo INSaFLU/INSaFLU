@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip, logging, cmd, subprocess
+import os, gzip, logging, cmd, re
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -22,7 +22,8 @@ from Bio import SeqIO
 from BCBio import GFF
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
-
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 class Software(object):
 	'''
@@ -182,12 +183,12 @@ class Software(object):
 			raise Exception("Fail to run abricate --setupdb")
 		
 
-	def run_abricate(self, database, file_name, out_file):
+	def run_abricate(self, database, file_name, parameters, out_file):
 		"""
 		Run abricator
 		"""
 		cmd = "%s --db %s %s --quiet %s > %s" % (self.software_names.get_abricate(), database,\
-				self.software_names.get_abricate_parameters(), file_name, out_file)
+				parameters, file_name, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -231,7 +232,7 @@ class Software(object):
 	Global processing
 	"""
 	@transaction.atomic
-	def identify_type_and_sub_type(self, sample, fastq1_1, fastq1_2, owner):
+	def identify_type_and_sub_type(self, sample, fastq1_1, fastq1_2, owner, b_run_tests = False):
 		"""
 		Identify type and sub_type
 		Because of the tests need to pass the files also as parameters
@@ -290,7 +291,7 @@ class Software(object):
 		## run abricate
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
-			cmd = self.run_abricate(uploadFile.abricate_name, file_out, out_file_abricate)
+			cmd = self.run_abricate(uploadFile.abricate_name, file_out, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 		except Exception:
 			result = Result()
@@ -314,6 +315,11 @@ class Software(object):
 		## copy the abricate output 
 		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
 		
+		contigs_2_sequences = Contigs2Sequences(b_run_tests)
+		out_file_clean = contigs_2_sequences.identify_contigs(file_out)
+		## copy the contigs from spades
+		self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+		
 		uploadFiles = UploadFiles()
 		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
 		if (len(vect_data) == 0):
@@ -336,6 +342,7 @@ class Software(object):
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
+		self.utils.remove_file(out_file_clean)
 		return True
 
 
@@ -546,11 +553,19 @@ class Software(object):
 		"""
 		
 		"""
-		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt") 
+		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt")
+		
+		## set VERSION ID equal to ACCESSION
+		out_file_gb = self.utils.get_temp_file("file_name", ".gb")
+		self.utils.clean_genbank_version_name(genbank, out_file_gb)
+		
 		with open(temp_file, "w") as out_handle:
-			with open(genbank) as in_handle:
+			with open(out_file_gb) as in_handle:
 				GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
-	
+
+		### remove clean version gb file
+		os.unlink(out_file_gb)
+		
 		### filter file
 	#	vect_filter = ['remark', 'source', 'gene']
 		vect_pass = ['CDS']
@@ -713,19 +728,20 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run freebayes")
 		
-		### run snpEff
-		temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-		self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
-		
-		self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
-		
-		### add FREQ to vcf file
-		vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
-		os.unlink(temp_file)
-		os.unlink(temp_file_2)
-		
-		### pass vcf to tab
-		self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
+		if (os.path.getsize(temp_file) > 0):
+			### run snpEff
+			temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
+			self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			
+			self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			
+			### add FREQ to vcf file
+			vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
+			os.unlink(temp_file)
+			os.unlink(temp_file_2)
+			
+			### pass vcf to tab
+			self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
 		return temp_dir
 
 	def run_freebayes_parallel(self, bam_file, reference_fasta, genbank_file, sample_name):
@@ -743,14 +759,14 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 
 		cmd = "ln -s {} {}.bai".format(bam_file + ".bai", file_to_process)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 
 		reference_fasta_temp = os.path.join(temp_dir, os.path.basename(reference_fasta))
 		cmd = "ln -s {} {}".format(reference_fasta, reference_fasta_temp)
@@ -758,13 +774,13 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 
 		reference_fasta_fai = reference_fasta + FileExtensions.FILE_FAI
 		if (not os.path.exists(reference_fasta_fai)):
 			self.logger_production.error('Files doesnt exist: ' + reference_fasta_fai)
 			self.logger_debug.error('Files doesnt exist: ' + reference_fasta_fai)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 		
 		reference_fasta_temp_fai = os.path.join(temp_dir, os.path.basename(reference_fasta) + FileExtensions.FILE_FAI)
 		cmd = "ln -s {} {}".format(reference_fasta_fai, reference_fasta_temp_fai)
@@ -772,7 +788,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 		
 		### create regions
 		temp_file_regions = self.utils.get_temp_file('freebayes_regions', '.txt')
@@ -780,12 +796,13 @@ class Software(object):
 		cmd = "%s coverage -in %s | %s %s 500 > %s" %\
 				(self.software_names.get_bamtools(), bam_file, self.software_names.get_coverage_to_regions(),
 				reference_fasta_temp_fai, temp_file_regions)
+
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			os.unlink(temp_file_regions)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 		
 		temp_file = self.utils.get_temp_file('freebayes_temp', '.vcf')
 		cmd = "%s %s %s %s -f %s -b %s > %s" %\
@@ -797,7 +814,7 @@ class Software(object):
 			os.unlink(temp_file)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run freebayes")
+			raise Exception("Fail to run freebayes parallel")
 		
 		### run snpEff
 		if (os.path.exists(temp_file)):
@@ -1068,21 +1085,29 @@ class Software(object):
 							project_sample.sample.name)
 				result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
 			except Exception as e:
-				result = Result()
-				result.set_error(e.args[0])
-				result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
-				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				
-				### get again and set error
-				project_sample = ProjectSample.objects.get(pk=project_sample.id)
-				project_sample.is_error = True
-				project_sample.save()
-				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-				if (meta_sample != None):
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
-				return False
+				### can fail the freebayes parallel and try the regular one
+				try:
+					out_put_path = self.run_freebayes(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
+								project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
+								project_sample.sample.name)
+					result_all.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+				except Exception as e:
+					result = Result()
+					result.set_error(e.args[0])
+					result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+					manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+					
+					### get again and set error
+					project_sample = ProjectSample.objects.get(pk=project_sample.id)
+					project_sample.is_error = True
+					project_sample.save()
+					
+					meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+					if (meta_sample != None):
+						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+					process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+					return False
 			
 			## count hits from tab file
 			file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
@@ -1177,13 +1202,13 @@ class Software(object):
 			if (os.path.exists(tab_freebayes_file)):
 				file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
-				
+			
 			### get clean consensus file
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
 			if (os.path.exists(consensus_fasta)):
 				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
 				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, False)
-				
+			
 			### set the tag of result OK 
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 			
@@ -1245,4 +1270,87 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index") 
+	
+
+
+class Contigs2Sequences(object):
+	'''
+	classdocs
+	'''
+	DATABASE_NAME = "influenza_assign_segments2contigs"
+	
+	utils = Utils()
+
+	def __init__(self, b_testing):
+		'''
+		Constructor
+		'''
+		self.b_testing = b_testing
+		self.root_path = os.path.join(getattr(settings, "STATIC_ROOT", None), "tests" if b_testing else "")
+
+	def get_most_recent_database(self):
+		"""
 		
+		"""
+		version = 0
+		path_to_return = None
+		path_to_find = os.path.join(self.root_path, Constants.DIR_TYPE_CONTIGS_2_SEQUENCES)
+		for file in self.utils.get_all_files(path_to_find):
+			base_name = os.path.basename(file)
+			match = re.search('\w+(_[v|V]\d+)\.\w+', base_name)
+			if (match == None): continue
+			if (len(match.regs) == 2):
+				try:
+					self.utils.is_fasta(os.path.join(path_to_find, file))
+				except IOError as e:
+					continue
+				
+				(temp, path) = (int(match.group(1).lower().replace("_v", "")), os.path.join(path_to_find, file))
+				if (temp > version):
+					version = temp
+					path_to_return = path
+		return (str(version), path_to_return)
+
+	def get_database_name(self):
+		### get database file name
+		(version, database_file_name) = self.get_most_recent_database()
+		return self.utils.clean_extension(os.path.basename(database_file_name))
+
+
+	def identify_contigs(self, file_name):
+		"""
+		identify contigs
+		params in: fasta file from spades
+		out: fasta file with low coverage removed and Elements ID in description
+		"""
+		software = Software()
+		
+		### get database file name
+		(version, database_file_name) = self.get_most_recent_database()
+		dabasename = self.get_database_name()
+		
+		### first create database
+		if (not software.is_exist_database_abricate(dabasename)):
+			software.create_database_abricate(dabasename, database_file_name)
+		
+		out_file = self.utils.get_temp_file('abricate_contig2seq', FileExtensions.FILE_TXT)
+		### run abricate
+		software.run_abricate(dabasename, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
+
+		parseOutFiles = ParseOutFiles()
+		vect_data = parseOutFiles.parse_abricate_file(out_file, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		
+		vect_out_fasta = []
+		out_file_fasta = self.utils.get_temp_file('spades_out_identified', FileExtensions.FILE_FASTA)
+		with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
+			for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
+				vect_possible_id = []
+				for dict_data in vect_data:
+					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
+				if (len(vect_possible_id) > 0): vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=";".join(vect_possible_id)))
+			if (len(vect_out_fasta) > 0): SeqIO.write(vect_out_fasta, handle_out, "fasta")
+		
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		return out_file_fasta
+
+

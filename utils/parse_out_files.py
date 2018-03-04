@@ -29,6 +29,7 @@ class ParseOutFiles(object):
 	IDENTITY = 'Identity'
 	TYPE = 'Type'
 	ACCESSION = 'Accession'
+	SEQ_NAME = 'Seq_Name'
 
 	utils = Utils()
 	
@@ -76,6 +77,7 @@ class ParseOutFiles(object):
 				else: raise ValueError(_("Value must be float '" + lst_split[9] + "'"))
 				dt_data[self.TYPE] = lst_split[10]
 				dt_data[self.ACCESSION] = lst_split[11]
+				dt_data[self.SEQ_NAME] = lst_split[1]
 				vect_out.append(dt_data)
 		handle.close()
 		

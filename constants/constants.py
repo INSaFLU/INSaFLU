@@ -82,7 +82,11 @@ class Constants(object):
 	FORMAT_FASTQ = "fastq"
 	EXTENSION_ZIP = ".gz"
 	
+	## vect with keys to get the ID
+	VECT_GENBANK_TAG_NAME = ['gene', 'CDS', 'locus_tag', 'protein_id']
+	
 	## Has all the versions of type influenza typing
+	DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 	DIR_TYPE_REFERENCES = "db/references/"
 	

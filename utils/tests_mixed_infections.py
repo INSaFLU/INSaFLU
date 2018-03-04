@@ -664,6 +664,15 @@ class Test(unittest.TestCase):
 		self.assertEquals(1, data_result[1])
 		self.assertEquals("Warning: an incomplete subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).", data_result[2])
 		
+		### test  A-N1
+		sample = self.get_sample("run_snippytest_get_mixed_infections_16b", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_TYPE : [ConstantsVirus.TYPE_A], ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['N1']})
+		self.assertEquals('A-N1', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: an incomplete subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).", data_result[2])
+		
 		### test  A
 		sample = self.get_sample("run_snippytest_get_mixed_infections_16a", user, temp_dir)
 		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_TYPE : [ConstantsVirus.TYPE_A]})
@@ -775,6 +784,33 @@ class Test(unittest.TestCase):
 		self.assertEquals(1, data_result[1])
 		self.assertEquals("Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).", data_result[2])
 	
+		### test  H1N2 
+		sample = self.get_sample("run_snippytest_get_mixed_infections_28", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['H1', 'N2'] })
+		self.assertEquals('H1N2', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).", data_result[2])
+
+		### test  N1N2 
+		sample = self.get_sample("run_snippytest_get_mixed_infections_29", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['N1', 'N2'] })
+		self.assertEquals('N1N2', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.", data_result[2])
+
+		### test  N1Yamagata
+		sample = self.get_sample("run_snippytest_get_mixed_infections_30", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_LINEAGE : ['Yamagata'], ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['N1'] })
+		self.assertEquals('N1; Yamagata', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.", data_result[2])
+
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 

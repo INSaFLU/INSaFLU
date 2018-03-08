@@ -938,7 +938,7 @@ class Utils(object):
 				sz_temp = line.strip()
 				if (line.startswith(ACCESSION)):
 					lst_data = sz_temp.split()
-					if (len(lst_data) == 2): sub_accession = lst_data[1]
+					if (len(lst_data) > 1): sub_accession = lst_data[1]
 					handle_out.write(line)
 					continue
 				### now test version

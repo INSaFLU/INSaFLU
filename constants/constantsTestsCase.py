@@ -55,6 +55,12 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_PV1_KX162693_spades_out_fasta = "PV1_KX162693_spades_out.fasta"
 	MANAGING_FILES_PV1_KX162693_bed = "PV1_KX162693.bed"
 	
+	MANAGING_FILES_PV_Sabin1_V01150_fasta = "PV_Sabin1_V01150.fasta"
+	MANAGING_FILES_PV_Sabin1_V01150_gbk = "PV_Sabin1_V01150.gb"
+	MANAGING_FILES_PV_Sabin1_V01150_clean_version_gbk = "PV_Sabin1_V01150_clean_version.gb"
+	MANAGING_FILES_PV_Sabin1_V01150_spades_out_fasta = "PV1_KX162693_spades_out.fasta"
+	MANAGING_FILES_PV_Sabin1_V01150_bed = "PV1_KX162693.bed"
+	
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"
@@ -102,6 +108,9 @@ class ConstantsTestsCase(object):
 	FASTQ7_2 = "Ae-MIT-602_S25_L001_R2_001.fastq.gz"
 	FASTQ8_1 = "SU104_S10_L001_R1_001.fastq.gz"
 	FASTQ8_2 = "SU104_S10_L001_R2_001.fastq.gz"
+	
+	FASTQ9_1 = "CLEVB-1_S2_L001_R1_001.fastq.gz"
+	FASTQ9_2 = "CLEVB-1_S2_L001_R2_001.fastq.gz"
 	
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"

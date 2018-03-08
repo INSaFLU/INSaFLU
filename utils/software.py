@@ -314,11 +314,12 @@ class Software(object):
 		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		## copy the abricate output 
 		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
-		
-		contigs_2_sequences = Contigs2Sequences(b_run_tests)
-		out_file_clean = contigs_2_sequences.identify_contigs(file_out)
+
+##		MIGUEL
+#		contigs_2_sequences = Contigs2Sequences(b_run_tests)
+#		out_file_clean = contigs_2_sequences.identify_contigs(file_out)
 		## copy the contigs from spades
-		self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+#		self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
 		
 		uploadFiles = UploadFiles()
 		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
@@ -342,7 +343,7 @@ class Software(object):
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
-		self.utils.remove_file(out_file_clean)
+#		self.utils.remove_file(out_file_clean)
 		return True
 
 
@@ -939,11 +940,15 @@ class Software(object):
 				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
 				else: sample_to_update.number_alerts += alert
 					
+				manage_database = ManageDatabase()
 				if (message != None and len(message) > 0):
-					manage_database = ManageDatabase()
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 										MetaKeyAndValue.META_VALUE_Success, message)
 	
+				### save tag mixed_infecion
+				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+							MetaKeyAndValue.META_VALUE_Success, tag_mixed_infection)
+
 				try:
 					mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
 				except MixedInfectionsTag.DoesNotExist as e:

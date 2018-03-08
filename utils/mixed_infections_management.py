@@ -35,12 +35,19 @@ class MixedInfectionsManagement(object):
 		
 		## get mixed infection from sample
 		manage_database = ManageDatabase()
-		meta_data_sample_mixed_infection = manage_database.get_sample_metakey(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+		meta_data_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success)
+		meta_data_tag_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		if (meta_data_tag_sample_mixed_infection != None): tag = meta_data_tag_sample_mixed_infection.description
+		else: (tag, alert, message) = project_sample.sample.get_mixed_infection()
 		
-		tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
+		## to be sure that is NO or YES
+		if (tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES and tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO):
+			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
+			
 		## test ratio method
-		if (meta_data_sample_mixed_infection != None or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
+		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 			
 		### get tag
@@ -58,7 +65,7 @@ class MixedInfectionsManagement(object):
 		mixed_infections.save()
 		
 		##  set the alert
-		if (meta_data_sample_mixed_infection != None or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
+		if (tag == ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()

@@ -677,6 +677,16 @@ class Test(TestCase):
 		self.assertEquals(0, sample.number_alerts)
 		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, sample.mixed_infections_tag.name)
 		
+		manage_database = ManageDatabase()
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data == None)
+		
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertTrue(meta_data.description == ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO)
+		
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
@@ -801,7 +811,11 @@ class Test(TestCase):
 		self.assertTrue(meta_data != None)
 		self.assertEquals("Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.", meta_data.description)
 		
-				
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertTrue(meta_data.description == ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES)
+		
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
@@ -923,7 +937,12 @@ class Test(TestCase):
 		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
  								MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_data == None)
-				
+		
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertTrue(meta_data.description == ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO)
+		
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
@@ -1054,6 +1073,11 @@ class Test(TestCase):
 		self.assertEquals("Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, " +\
 						"same-subtype mixed infection, etc.).", meta_data.description)
 
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertTrue(meta_data.description == ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO)
+		
 		## remove all files
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))

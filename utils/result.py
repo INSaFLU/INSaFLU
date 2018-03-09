@@ -109,11 +109,13 @@ class Softwares(object):
 		self.list_software.append(software)
 
 	def get_software(self, sz_name):
+		list_return = []
 		for software_desc in self.list_software:
 			if (software_desc.name == sz_name):
 				if (software_desc.parameters != None and len(software_desc.parameters) > 0):
-					return "{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters)
-				return "{}-{}".format(software_desc.name, software_desc.version)
+					list_return.append("{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters))
+				else: list_return.append("{}-{}".format(software_desc.name, software_desc.version))
+		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
 	
 	def get_number_softwares(self):

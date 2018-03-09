@@ -50,39 +50,45 @@ class ParseOutFiles(object):
 		/tmp/insaFlu/insa_flu_85008740/contigs.fasta	NODE_1_length_3374_cov_697.364266	2372	3353	A	1-982/982	===============	0/0	100.00	99.69	influenza_type	XXXX	N/A
 		/tmp/insaFlu/insa_flu_85008740/contigs.fasta	NODE_27_length_226_cov_1.035088	1	226	N2	41-266/1410	===............	0/0	16.03	96.46	influenza_subtype	XXXXXX	N/A
 
-		Parse out abricate files 
+		Parse out abricate files
+		return also a file with coverage below clean_hits_below_value removed
 		"""
-		handle = open(file_name)
-		b_fisrt_line_found = False 
-		vect_out = []
-		for line in handle:
-			sz_temp = line.strip()
-			if (len(sz_temp) == 0): continue
-			if (sz_temp.find('#FILE') == 0): b_fisrt_line_found = True
-			elif (b_fisrt_line_found):
-				lst_split = line.split('\t')
-				if (len(lst_split) != 13): continue
-				
-				### clean SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE
-				lst_coverage = lst_split[1].split('_')
-				if (len(lst_coverage) > 4 and self.utils.is_float(lst_coverage[-1]) and\
-						(float(lst_coverage[-1]) < clean_hits_below_value)):
-					continue
-				
-				dt_data = {}
-				dt_data[self.GENE] = lst_split[4]
-				if self.utils.is_float(lst_split[8]): dt_data[self.COVERAGE] = float(lst_split[8])
-				else: raise ValueError(_("Value must be float '" + lst_split[8] + "'"))
-				if self.utils.is_float(lst_split[8]): dt_data[self.IDENTITY] = float(lst_split[9])
-				else: raise ValueError(_("Value must be float '" + lst_split[9] + "'"))
-				dt_data[self.TYPE] = lst_split[10]
-				dt_data[self.ACCESSION] = lst_split[11]
-				dt_data[self.SEQ_NAME] = lst_split[1]
-				vect_out.append(dt_data)
-		handle.close()
+		clean_abricate_file = self.utils.get_temp_file('clean_abricate', FileExtensions.FILE_TXT)
+		with open(file_name) as handle, open(clean_abricate_file, 'w') as handle_new:
+			b_fisrt_line_found = False 
+			vect_out = []
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0): continue
+				if (sz_temp.find('#FILE') == 0):
+					handle_new.write(line) 
+					b_fisrt_line_found = True
+				elif (b_fisrt_line_found):
+					lst_split = line.split('\t')
+					if (len(lst_split) != 13): continue
+					
+					### clean SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE
+					lst_coverage = lst_split[1].split('_')
+					if (len(lst_coverage) > 4 and self.utils.is_float(lst_coverage[-1]) and\
+							(float(lst_coverage[-1]) < clean_hits_below_value)):
+						continue
+					
+					## create new file without the coverage below clean_hits_below_value
+					handle_new.write(line)
+					
+					dt_data = {}
+					dt_data[self.GENE] = lst_split[4]
+					if self.utils.is_float(lst_split[8]): dt_data[self.COVERAGE] = float(lst_split[8])
+					else: raise ValueError(_("Value must be float '" + lst_split[8] + "'"))
+					if self.utils.is_float(lst_split[8]): dt_data[self.IDENTITY] = float(lst_split[9])
+					else: raise ValueError(_("Value must be float '" + lst_split[9] + "'"))
+					dt_data[self.TYPE] = lst_split[10]
+					dt_data[self.ACCESSION] = lst_split[11]
+					dt_data[self.SEQ_NAME] = lst_split[1]
+					vect_out.append(dt_data)
 		
 		## order by coverage and identity
-		return sorted(vect_out, reverse=True, key=lambda k: "%03d %03d" % (int(k[self.COVERAGE]) , int(k[self.IDENTITY])))
+		return sorted(vect_out, reverse=True, key=lambda k: "%03d %03d" % (int(k[self.COVERAGE]) , int(k[self.IDENTITY]))), clean_abricate_file
 
 
 	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):

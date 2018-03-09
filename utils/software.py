@@ -292,11 +292,13 @@ class Software(object):
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
 			cmd = self.run_abricate(uploadFile.abricate_name, file_out, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
-			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
+			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+						self.software_names.get_abricate_parameters() + " for type/subtype identification"))
 		except Exception:
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+							self.software_names.get_abricate_parameters() + " for type/subtype identification"))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
 			return False
@@ -311,15 +313,25 @@ class Software(object):
 			return False
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file_abricate, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		## copy the abricate output 
 		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
 
-##		MIGUEL
-#		contigs_2_sequences = Contigs2Sequences(b_run_tests)
-#		out_file_clean = contigs_2_sequences.identify_contigs(file_out)
-		## copy the contigs from spades
-#		self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+		try:
+			contigs_2_sequences = Contigs2Sequences(b_run_tests)
+			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out)
+			## copy the contigs from spades
+			self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+			self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
+			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
+		except Exception:
+			result = Result()
+			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+							self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			return False
 		
 		uploadFiles = UploadFiles()
 		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
@@ -343,7 +355,8 @@ class Software(object):
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
-#		self.utils.remove_file(out_file_clean)
+		self.utils.remove_file(out_file_clean)
+		self.utils.remove_file(clean_abricate_file)
 		return True
 
 
@@ -1343,7 +1356,7 @@ class Contigs2Sequences(object):
 		software.run_abricate(dabasename, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
 		vect_out_fasta = []
 		out_file_fasta = self.utils.get_temp_file('spades_out_identified', FileExtensions.FILE_FASTA)
@@ -1352,10 +1365,11 @@ class Contigs2Sequences(object):
 				vect_possible_id = []
 				for dict_data in vect_data:
 					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
-				if (len(vect_possible_id) > 0): vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=";".join(vect_possible_id)))
+				if (len(vect_possible_id) > 0): vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
+												description=";".join(vect_possible_id)))
 			if (len(vect_out_fasta) > 0): SeqIO.write(vect_out_fasta, handle_out, "fasta")
 		
 		if (os.path.exists(out_file)): os.unlink(out_file)
-		return out_file_fasta
+		return (out_file_fasta, clean_abricate_file)
 
 

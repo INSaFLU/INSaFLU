@@ -156,7 +156,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(out_file))
 
 		parseOutFiles = ParseOutFiles()
-		vect_data = parseOutFiles.parse_abricate_file(out_file, 1)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, 1)
 		self.assertEqual('A', vect_data[0][ParseOutFiles.GENE])
 		self.assertEqual(100.00, vect_data[0][ParseOutFiles.COVERAGE])
 		self.assertEqual(99.69, vect_data[0][ParseOutFiles.IDENTITY])
@@ -171,8 +171,12 @@ class Test(TestCase):
 		self.assertEqual('XXXXXX', vect_data[2][ParseOutFiles.ACCESSION])
 		self.assertEqual('NODE_7_length_1478_cov_488.215560', vect_data[2][ParseOutFiles.SEQ_NAME])
 
+		## test abricate
+		self.assertTrue(filecmp.cmp(out_file, clean_abricate_file))
+		
 		## remove file
 		os.unlink(out_file)
+		os.unlink(clean_abricate_file)
 		
 		## remove abricate db
 		cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, database_name)
@@ -548,6 +552,8 @@ class Test(TestCase):
 		
 		file_spades_contigs = sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_spades_contigs))
+		file_abricate_contigs = sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(file_abricate_contigs))
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
@@ -557,6 +563,7 @@ class Test(TestCase):
 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		if (os.path.exists(file_spades_contigs)): os.unlink(file_spades_contigs)
+		if (os.path.exists(file_abricate_contigs)): os.unlink(file_abricate_contigs)
 
 		contigs_2_sequences = Contigs2Sequences(True)
 		## remove abricate db

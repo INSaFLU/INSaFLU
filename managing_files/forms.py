@@ -117,6 +117,18 @@ class ReferenceForm(forms.ModelForm):
 			if (not some_error_in_files and total_length_fasta > Constants.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA):
 				some_error_in_files = True
 				self.add_error('reference_fasta', _('The length sum of the sequences in fasta: {}'.format(Constants.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)))
+			
+			n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(reference_fasta_temp_file_name.name, Constants.MAX_LENGTH_SEQ_NAME)
+			if (not some_error_in_files and n_seq_name_bigger_than > 0):
+				some_error_in_files = True
+				if (n_seq_name_bigger_than == 1):
+					self.add_error('reference_fasta', _('There is one sequence length name bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_SEQ_NAME)))
+				else:
+					self.add_error('reference_fasta', _('There are {0} with sequences length name bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_SEQ_NAME)))
+					
+				## if some errors in the files, fasta or genBank, return
+				if (some_error_in_files): return cleaned_data
+		
 		except IOError as e:	## (e.errno, e.strerror)
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True

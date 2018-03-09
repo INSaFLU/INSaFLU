@@ -285,6 +285,17 @@ class Utils(object):
 		if (len(record_dict) > 0): return len(record_dict)
 		raise IOError(_("Error: file is not in FASTA format."))
 	
+	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length):
+		"""
+		Test Fata file
+		"""
+		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
+		record_dict = SeqIO.index(sz_file_name, "fasta")
+		n_count = 0
+		for key in record_dict:
+			if (len(key) > size_limit_length): n_count += 1
+		return n_count
+	
 	def has_degenerated_bases(self, sz_file_name):
 		"""
 		Test Fata file

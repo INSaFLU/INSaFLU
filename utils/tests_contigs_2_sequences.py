@@ -46,10 +46,13 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(file_out))
 		self.assertTrue(os.path.getsize(file_out) > 100)
 		
-		out_file = contigs_2_sequences.identify_contigs(file_out)
+		(out_file, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out)
 
 		expect_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
 		self.assertTrue(filecmp.cmp(out_file, expect_fasta))
+
+		expected_abricate = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "expected_abricate_clean_2.txt")
+		self.assertTrue(os.path.getsize(expected_abricate) == os.path.getsize(clean_abricate_file))
 
 		## remove abricate db
 		cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, contigs_2_sequences.get_database_name())
@@ -57,4 +60,5 @@ class Test(unittest.TestCase):
 		self.assertTrue(exist_status == 0)
 		self.utils.remove_dir(out_dir)
 		os.unlink(out_file)
+		os.unlink(clean_abricate_file)
 

@@ -228,6 +228,7 @@ class Sample(models.Model):
 	"""
 	OUT_FILE_ABRICATE = "abricate.txt"
 	DRAFT_CONTIGS = "_draft_contigs.fasta"
+	SEGMENTS_CONTIGS = "_segments_to_contigs.tsv"
 	
 	### consensus file
 	OUT_CONSENSUS_FILE = "consensus.fasta"
@@ -317,6 +318,14 @@ class Sample(models.Model):
 		path it's a FileField instance, or a string
 		"""
 		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.DRAFT_CONTIGS))
+	
+	def get_draft_contigs_abricate_output(self, type_path):
+		"""
+		type_path = [MEDIA_ROOT, MEDIA_URL]
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.SEGMENTS_CONTIGS))
 	
 	def get_trimmomatic_file(self, type_path, b_first_file):
 		"""

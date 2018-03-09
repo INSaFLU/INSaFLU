@@ -2,8 +2,12 @@
 
 {% load crispy_forms_tags %}
 {% load django_bootstrap_breadcrumbs %}
+{% load static from staticfiles %}
 
 {% block css %}
+	{% load static from staticfiles %}
+		<!-- pre-define in-house css for main page-->
+		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
 {% endblock css %}
 
 <!-- Breadcrumbs-->
@@ -122,9 +126,38 @@
 					  			</div>
 					  			<hr>
 							{% endfor %}
+							{% if has_draft_contigs %}
+								<div class="row draft_assembly">
+									<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
+									<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+								</div>
+								<p></p>
+								<div class="container h-100">
+  									<div class="row h-100 justify-content-center">
+										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to make advantage of draft assemblies</a></p>
+									</div>
+								</div>
+								<hr>
+							{% endif %}
+							
 							<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 						{% else %}
 							<p class="software">No type/subtype has been assigned.</p>
+							
+							{% if has_draft_contigs %}
+								<hr>
+								<div class="row draft_assembly">
+									<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
+									<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+								</div>
+								<p></p>
+								<div class="container h-100">
+  									<div class="row h-100 justify-content-center">
+										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to make advantage of draft assemblies</a></p>
+									</div>
+								</div>
+								<hr>
+							{% endif %}
 						{% endif %}
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
@@ -145,6 +178,49 @@
 		</div>
 		  
 		<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		
+		
+		<!-- The Modal -->
+		<div class="modal fade" id="id_assemblies_modal" >
+			<div class="modal-dialog modal-dialog-disclaimer modal-lg">
+				<div class="modal-content">
+   
+     					<!-- Modal Header -->
+     					<div class="modal-header">
+     						<img src="{% static 'insa/logo_insaflu_new.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'>
+       						<h5 class="modal-title"><strong>How to take advantage of draft assemblies</strong></h5>
+       						<button type="button" class="close" data-dismiss="modal">&times;</button>
+     					</div>
+     
+     					<!-- Modal body -->
+     					<div class="modal-body modal-body-disclaimer mx-auto mw-100">
+							<p class="insa-description-read-more">INSaFLU now provides a draft de novo assembly of the influenza virus genome (FASTA format). 
+							Assembled contigs are assigned both to the corresponding viral segments and to a close related reference influenza virus (table in .tsv format).</p>
+							<p class="insa-description-read-more">Users may now use these outputs at their description, using more refined tools, such as BLAST.</p>
+							
+							<p class="insa-description-read-more-header"><strong>This new feature reinforces the application of INSaFLU to:</strong></p>
+							<p class="insa-description-read-more"><strong>i)</strong> build up consensus sequences for viruses for which a close related sequence is not known 
+							or not available at the INSaFLU or other databases (NICBI, GISAID, etc).</p>
+							<p class="insa-description-read-more"><strong>ii)</strong> fine-tune the detection of intra-host minor variants.</p>
+							<p class="insa-description-read-more">A brief guide: <strong>1)</strong> modify the draft assembly by filtering out some contigs (small and/or 
+							not influenza specific  contigs) and adjust theirs ends to capture the target sequence; <strong>2)</strong> upload the modified file as a Reference; 
+							<strong>3)</strong> create a project to map the quality processed reads of a sample against its own modified assembly; 
+							<strong>4)</strong> explore the refined consensus sequences and the intra-host minor variants.</p>
+							<p class="insa-description-read-more"><strong>iii)</strong> investigate reassortments;</p>
+							<p class="insa-description-read-more"><strong>iv)</strong> disclose mixed infections enrolling distinct type/subtype/lineage viruses;</p>
+							
+							<p class="insa-description-read-more">A brief guide: inspect the table to find if:</p>
+							<p class="insa-description-read-more">-more than one reference is assigned to the same segment, which may indicate mixed infection</p>
+							<p class="insa-description-read-more">-more than one reference is assigned to different segments, which may indicate reassortments</p>
+							
+     					</div>
+     					<!-- Modal footer -->
+     					<div class="modal-footer">
+       					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+     					</div>
+				</div>
+	 		</div>
+		</div>
 	{% endif %}
 	
 {% endblock %}

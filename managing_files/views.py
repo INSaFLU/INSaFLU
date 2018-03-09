@@ -732,6 +732,17 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['alerts'] = alert_out
 			context['has_type_subtype'] = sample.identify_virus.all().count() > 0
 			
+			## files with contigs
+			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and 
+				os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
+				context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['has_draft_contigs'] = True
+			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
 			if (sample.candidate_file_name_2 != None and len(sample.candidate_file_name_2) > 0):

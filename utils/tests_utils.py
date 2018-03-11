@@ -79,7 +79,7 @@ class Test(unittest.TestCase):
 		self.assertEquals(6, len(vect_out))
 		self.assertEquals(0, vect_out[0].find("#FILE"))
 		self.assertEquals(-1, vect_out[0].find("Victoria"))
-		self.assertEquals(87, vect_out[5].find("Victoria"))
+		self.assertEquals(51, vect_out[5].find("Victoria"))
 		
 	def test_gzip_and_tabix(self):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp.vcf")

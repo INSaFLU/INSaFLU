@@ -156,7 +156,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(out_file))
 
 		parseOutFiles = ParseOutFiles()
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, 1)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, 'temp_2.txt', 1)
 		self.assertEqual('A', vect_data[0][ParseOutFiles.GENE])
 		self.assertEqual(100.00, vect_data[0][ParseOutFiles.COVERAGE])
 		self.assertEqual(99.69, vect_data[0][ParseOutFiles.IDENTITY])
@@ -172,7 +172,7 @@ class Test(TestCase):
 		self.assertEqual('NODE_7_length_1478_cov_488.215560', vect_data[2][ParseOutFiles.SEQ_NAME])
 
 		## test abricate
-		self.assertTrue(filecmp.cmp(out_file, clean_abricate_file))
+		self.assertFalse(filecmp.cmp(out_file, clean_abricate_file))
 		
 		## remove file
 		os.unlink(out_file)

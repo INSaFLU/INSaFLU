@@ -313,13 +313,15 @@ class Software(object):
 			return False
 
 		parseOutFiles = ParseOutFiles()
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate, os.path.basename(sample.get_abricate_output(TypePath.MEDIA_ROOT)),\
+											SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		## copy the abricate output 
-		self.utils.copy_file(out_file_abricate, sample.get_abricate_output(TypePath.MEDIA_ROOT))
+		self.utils.copy_file(clean_abricate_file, sample.get_abricate_output(TypePath.MEDIA_ROOT))
 
 		try:
 			contigs_2_sequences = Contigs2Sequences(b_run_tests)
-			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out)
+			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out,\
+					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)))
 			## copy the contigs from spades
 			self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
 			self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
@@ -1335,7 +1337,7 @@ class Contigs2Sequences(object):
 		return self.utils.clean_extension(os.path.basename(database_file_name))
 
 
-	def identify_contigs(self, file_name):
+	def identify_contigs(self, file_name, file_name_out):
 		"""
 		identify contigs
 		params in: fasta file from spades
@@ -1356,7 +1358,7 @@ class Contigs2Sequences(object):
 		software.run_abricate(dabasename, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
 
 		parseOutFiles = ParseOutFiles()
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
 		vect_out_fasta = []
 		out_file_fasta = self.utils.get_temp_file('spades_out_identified', FileExtensions.FILE_FASTA)

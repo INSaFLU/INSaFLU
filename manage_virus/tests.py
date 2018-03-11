@@ -116,7 +116,7 @@ class Test(TestCase):
 		uploadFile = UploadFile.objects.order_by('-version')[0]
 		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		self.assertTrue(os.path.exists(txt_file))
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 1)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 'test.txt', 1)
 		
 		self.assertTrue(filecmp.cmp(txt_file, clean_abricate_file))
 		os.unlink(clean_abricate_file)
@@ -155,7 +155,7 @@ class Test(TestCase):
 		uploadFile = UploadFile.objects.order_by('-version')[0]
 		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE_2)
 		self.assertTrue(os.path.exists(txt_file))
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 1)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 'test.txt', 1)
 		
 		self.assertTrue(filecmp.cmp(txt_file, clean_abricate_file))
 		os.unlink(clean_abricate_file)
@@ -200,10 +200,11 @@ class Test(TestCase):
 		uploadFile = UploadFile.objects.order_by('-version')[0]
 		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE_2)
 		self.assertTrue(os.path.exists(txt_file))
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 10)
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 'test.txt', 10)
 		
 		## clean abricate
 		expected_abricate = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "expected_abricate_clean.txt")
+		
 		self.assertTrue(filecmp.cmp(expected_abricate, clean_abricate_file))
 		os.unlink(clean_abricate_file)
 		

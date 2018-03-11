@@ -1,9 +1,9 @@
 #FILE	SEQUENCE	START	END	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_1_length_3445_cov_491.652019	95	2374	segment_1_PB2	1-2280/2280	===============	0/0	100.00	99.56	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_1_length_3445_cov_491.652019	2438	3419	segment_7_MP	1-982/982	===============	0/0	100.00	99.90	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_2_length_2361_cov_273.153240	26	2302	segment_2_PB1	1-2277/2277	===============	0/0	100.00	99.87	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_3_length_2234_cov_235.162726	59	2209	segment_3_PA	1-2151/2151	===============	0/0	100.00	99.35	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_4_length_1857_cov_617.802247	49	1749	segment_4_HA	1-1701/1701	===============	0/0	100.00	99.65	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_6_length_1570_cov_194.987944	28	1524	segment_5_NP	1-1497/1497	===============	0/0	100.00	99.87	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_7_length_1478_cov_488.215560	13	1422	segment_6_NA	1-1410/1410	===============	0/0	100.00	99.72	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
-/tmp/insaFlu/insa_flu_69084480/contigs.fasta	NODE_8_length_910_cov_546.653061	46	883	segment_8_NS	1-838/838	===============	0/0	100.00	99.52	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_1_length_3445_cov_491.652019	95	2374	segment_1_PB2	1-2280/2280	===============	0/0	100.00	99.56	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_1_length_3445_cov_491.652019	2438	3419	segment_7_MP	1-982/982	===============	0/0	100.00	99.90	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_2_length_2361_cov_273.153240	26	2302	segment_2_PB1	1-2277/2277	===============	0/0	100.00	99.87	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_3_length_2234_cov_235.162726	59	2209	segment_3_PA	1-2151/2151	===============	0/0	100.00	99.35	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_4_length_1857_cov_617.802247	49	1749	segment_4_HA	1-1701/1701	===============	0/0	100.00	99.65	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_6_length_1570_cov_194.987944	28	1524	segment_5_NP	1-1497/1497	===============	0/0	100.00	99.87	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_7_length_1478_cov_488.215560	13	1422	segment_6_NA	1-1410/1410	===============	0/0	100.00	99.72	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A
+temp3.txt	NODE_8_length_910_cov_546.653061	46	883	segment_8_NS	1-838/838	===============	0/0	100.00	99.52	influenza_assign_segments2contigs	A_Singapore_Infimh-16-0019_2016_A_H3N2	N/A

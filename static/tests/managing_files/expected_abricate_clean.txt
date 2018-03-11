@@ -1,5 +1,5 @@
 #FILE	SEQUENCE	START	END	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT
-/tmp/insaFlu/insa_flu_73621560/contigs.fasta	NODE_21_length_1770_cov_372.489796	38	1738	H3	1-1701/1701	===============	0/0	100.00	98.82	influenza_subtype	XXXXX	N/A
-/tmp/insaFlu/insa_flu_73621560/contigs.fasta	NODE_44_length_1322_cov_768.213891	41	1322	N2	129-1410/1410	.==============	0/0	90.92	97.66	influenza_subtype	XXXXXX	N/A
-/tmp/insaFlu/insa_flu_73621560/contigs.fasta	NODE_533_length_145_cov_366.055000	18	145	N2	1-128/1410	==.............	0/0	9.08	99.22	influenza_subtype	XXXXXX	N/A
-/tmp/insaFlu/insa_flu_73621560/contigs.fasta	NODE_63_length_1039_cov_2160.909553	40	1021	A	1-982/982	===============	0/0	100.00	99.59	influenza_type	XXXX	N/A
+test.txt	NODE_21_length_1770_cov_372.489796	38	1738	H3	1-1701/1701	===============	0/0	100.00	98.82	influenza_subtype	XXXXX	N/A
+test.txt	NODE_44_length_1322_cov_768.213891	41	1322	N2	129-1410/1410	.==============	0/0	90.92	97.66	influenza_subtype	XXXXXX	N/A
+test.txt	NODE_533_length_145_cov_366.055000	18	145	N2	1-128/1410	==.............	0/0	9.08	99.22	influenza_subtype	XXXXXX	N/A
+test.txt	NODE_63_length_1039_cov_2160.909553	40	1021	A	1-982/982	===============	0/0	100.00	99.59	influenza_type	XXXX	N/A

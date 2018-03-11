@@ -5,9 +5,12 @@ Created on Jan 5, 2018
 '''
 from django.core.management import BaseCommand
 from managing_files.models import Sample
-from utils.software import Software, Contigs2Sequences
+from utils.software import Software, Contigs2Sequences, SoftwareNames
 from constants.constants import TypePath
 from utils.utils import Utils
+from managing_files.manage_database import ManageDatabase
+from constants.meta_key_and_values import MetaKeyAndValue
+from utils.result import DecodeObjects, SoftwareDesc
 import os
 
 class Command(BaseCommand):
@@ -25,12 +28,30 @@ class Command(BaseCommand):
 		
 		utils = Utils()
 		software = Software()
+		software_names = SoftwareNames()
 		for sample in Sample.objects.all():
 			if (sample.is_deleted): continue
 			if (not sample.is_ready_for_projects): continue
-			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))): continue
 			
-			if (not os.path.exists(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))): continue
+			if (not os.path.exists(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))): 
+				print("Trimmomatic files does not exist: " + sample.name) 
+				continue
+			
+			manageDatabase = ManageDatabase()
+			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+			decodeResult = DecodeObjects()
+			result_all = decodeResult.decode_result(meta_sample.description)
+			
+			if (meta_sample != None):
+				if (result_all.get_number_softwares() == 2):
+					result_all.add_software(SoftwareDesc(software_names.get_abricate_name(), software_names.get_abricate_version(),\
+	 						software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
+					manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+				if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))):
+					print("Contigs already exists for this sample: " + sample.name) 
+					continue
+			else:
+				print("There's no meta_sample for sample: " + sample.name)
 			
 			out_dir = utils.get_temp_dir()
 			cmd = software.run_spades(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\

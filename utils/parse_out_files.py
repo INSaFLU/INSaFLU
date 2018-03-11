@@ -39,7 +39,7 @@ class ParseOutFiles(object):
 		'''
 		pass
 	
-	def parse_abricate_file(self, file_name, clean_hits_below_value):
+	def parse_abricate_file(self, file_name, file_name_out, clean_hits_below_value):
 		"""
 		#FILE	 SEQUENCE	 START   END	 GENE	 COVERAGE	 COVERAGE_MAP	 GAPS  %COVERAGE  %IDENTITY  DATABASE   ACCESSION  PRODUCT
 		6159.fna  NC_017338.1  39177   41186   mecA_15  1-2010/2010  ===============  0/0   100.00	 100.000	resfinder  AB505628   n/a
@@ -74,7 +74,7 @@ class ParseOutFiles(object):
 						continue
 					
 					## create new file without the coverage below clean_hits_below_value
-					handle_new.write(line)
+					handle_new.write('{}\t{}'.format(file_name_out, "\t".join(lst_split[1:])))
 					
 					dt_data = {}
 					dt_data[self.GENE] = lst_split[4]

@@ -530,6 +530,20 @@ class Utils(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to compress file") 
+		
+	def uncompress_files(self, software, file_name_in, file_name_out):
+		"""
+		compress files
+		"""
+		## test if the file exists
+		if (not os.path.exists(file_name_in)): return
+		
+		cmd = "{} -cd {} > {}".format(software, file_name_in, file_name_out)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to compress file") 
 
 	def str2bool(self, v):
 		"""

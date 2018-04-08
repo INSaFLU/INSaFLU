@@ -270,12 +270,16 @@ class Sample(models.Model):
 	
 	## 30M
 	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
+					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
+					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_length=500)
 
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -939,7 +943,9 @@ class UploadFiles(models.Model):
 	### need to create a random name for this file
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
-								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'], max_upload_size=Constants.MAX_FASTQ_FILE, max_length=500)
+								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'],\
+					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_length=500)
 
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
 												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted

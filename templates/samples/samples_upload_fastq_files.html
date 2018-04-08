@@ -15,13 +15,18 @@
 
 {% block content %}
 
-    <div class="well text-muted text-center" style="padding-top: 4rem; padding-bottom: 4rem;">
-	  	<span class="fa fa-arrow-down" style="font-size: 4rem;"></span>
+    <div class="well text-muted text-center" style="padding-top: 2rem; padding-bottom: 2rem;">
+	  	<span class="fa fa-arrow-down" style="font-size: 3rem;"></span>
  			<h3>Drop fastq.gz here...</h3>
 	</div>
 	
-	<a href="#" data-title="Open a multi-select dialog to upload files" class="btn btn-small btn-primary dark js-upload-files"><span class="hidden-phone"><i class="fa fa-upload"></i> Or Upload fastq.gz files from here</span></a>
+	<a href="#" data-title="Open a multi-select dialog to upload files" class="btn btn-small btn-primary dark js-upload-files"><span class="hidden-phone"><i class="fa fa-upload"></i> Or upload fastq.gz files from here</span></a>
 
+	<p> </p>
+	Maximum size per fastq.gz file is 300 MB. 
+	<strong>NOTE:</strong> Files between 50 - 300 MB will be downsized to 50 MB before analysis by randomly sampling reads. 
+	<p> </p>
+	
 	{# 2. FILE INPUT TO BE USED BY THE PLUG-IN #}
 	<input id="fileupload" type="file" name="path_name" multiple
 	       style="display: none;"

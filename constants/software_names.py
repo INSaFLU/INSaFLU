@@ -13,21 +13,24 @@ class SoftwareNames(object):
 	classdocs
 	'''
 
-	## dir with software
+	## directory with software, all the software is on based on this path
 	DIR_SOFTWARE = "/usr/local/software/insaflu"
+	
+	
 	DIR_SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy")
-	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/samtools")
+	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
 	SOFTWARE_SAMTOOLS_VERSION = "1.3"
 	SOFTWARE_SAMTOOLS_PARAMETERS = ""
-	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/bgzip")
+	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/bgzip")
 	SOFTWARE_BGZIP_name = "bgzip"
 	SOFTWARE_BGZIP_VERSION = "1.3"
 	SOFTWARE_BGZIP_PARAMETERS = ""
+	SOFTWARE_GZIP = "gzip"
 	SOFTWARE_GZIP_name = "gzip"
 	SOFTWARE_GZIP_VERSION = "1.6"
 	SOFTWARE_GZIP_PARAMETERS = ""
-	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/tabix")
+	SOFTWARE_TABIX = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/tabix")
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
@@ -59,7 +62,7 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
-	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snippy")
+	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
@@ -70,23 +73,23 @@ class SoftwareNames(object):
 	# < print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 	# ---
 	# > print join("\t", qw(CHROM POS TYPE REF ALT), @ANNO), "\n";
-	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq")
+	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq")
 	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS = ""
-	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/snpEff")
-	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "etc/snpeff.config")
+	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snpEff")
+	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE_SNIPPY, "etc/snpeff.config")
 	SOFTWARE_SNP_EFF_name = "snpEff"
 	SOFTWARE_SNP_EFF_VERSION = "4.3p"
 	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
 	
-	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/freebayes")
-	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/freebayes-parallel")
+	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/freebayes")
+	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/freebayes-parallel")
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
 	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
 	
-	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE, DIR_SOFTWARE_SNIPPY, "bin/fasta_generate_regions.py")
+	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/fasta_generate_regions.py")
 	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"
 	SOFTWARE_FASTA_GENERATE_REGIONS_VERSION = "1.0"
 	SOFTWARE_FASTA_GENERATE_REGIONS_PARAMETERS = ""
@@ -100,10 +103,10 @@ class SoftwareNames(object):
 	SOFTWARE_BAMTOOLS_VERSION = "2.5"
 	SOFTWARE_BAMTOOLS_PARAMETERS = ""
 	
-	SOFTWARE_COVERAGE = "Coverage, in-house script"
-	SOFTWARE_COVERAGE_name = "Coverage"
-	SOFTWARE_COVERAGE_VERSION = "v1.1"
-	SOFTWARE_COVERAGE_PARAMETERS = ""
+# 	SOFTWARE_COVERAGE = "Coverage, in-house script"
+# 	SOFTWARE_COVERAGE_name = "Coverage"
+# 	SOFTWARE_COVERAGE_VERSION = "v1.1"
+# 	SOFTWARE_COVERAGE_PARAMETERS = ""
 	
 	SOFTWARE_PROKKA = os.path.join(DIR_SOFTWARE, "prokka/bin/prokka")
 	SOFTWARE_PROKKA_name = "Prokka"
@@ -142,6 +145,12 @@ class SoftwareNames(object):
 	SOFTWARE_FASTTREE_VERSION = "2.1.10 Double precision"
 	SOFTWARE_FASTTREE_PARAMETERS = "-gtr -boot 1000 -nt"
 	SOFTWARE_FASTTREE_PARAMETERS_PROTEIN = "-gtr -boot 1000"
+	
+	SOFTWARE_FASTQ_TOOLS_SAMPLE = os.path.join(DIR_SOFTWARE, "fastq-tools/src/fastq-sample")
+	SOFTWARE_FASTQ_TOOLS_SAMPLE_name = "fastq-tools"
+	SOFTWARE_FASTQ_TOOLS_SAMPLE_VERSION = "0.8"
+	SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS = ""
+	
 	
 	def __init__(self):
 		'''
@@ -292,10 +301,10 @@ class SoftwareNames(object):
 	"""
 	return Coverage software
 	"""
-	def get_coverage(self): return self.SOFTWARE_COVERAGE
-	def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
-	def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
-	def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
+# 	def get_coverage(self): return self.SOFTWARE_COVERAGE
+# 	def get_coverage_name(self): return self.SOFTWARE_COVERAGE_name
+# 	def get_coverage_version(self): return self.SOFTWARE_COVERAGEVERSION
+# 	def get_coverage_parameters(self): return self.SOFTWARE_COVERAGE_PARAMETERS
 	
 	"""
 	return Prokka software
@@ -349,5 +358,11 @@ class SoftwareNames(object):
 	def get_fasttree_parameters(self): return self.SOFTWARE_FASTTREE_PARAMETERS
 	def get_fasttree_parameters_protein(self): return self.SOFTWARE_FASTTREE_PARAMETERS_PROTEIN
 
-
+	"""
+	return FastqTools sample software
+	"""
+	def get_fastqtools_sample(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE
+	def get_fastqtools_sample_name(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_name
+	def get_fastqtools_sample_version(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_VERSION
+	def get_fastqtools_sample_parameters(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS
 

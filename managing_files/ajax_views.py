@@ -687,10 +687,7 @@ def remove_project_sample(request):
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					if (settings.RUN_SGE_INTO_DJANGOQ):
-						taskID = async(process_SGE.set_collect_global_files, project_sample.project, request.user)
-					else:
-						taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
+					taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
 				else:
 					taskID = async(collect_extra_data.collect_extra_data_for_project, project_sample.project, request.user)
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\

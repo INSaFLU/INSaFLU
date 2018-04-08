@@ -33,7 +33,8 @@ class Command(BaseCommand):
 			sample = Sample.objects.get(pk=sample_id)
 			if (user_id == None): user = sample.owner
 			else: user = User.objects.get(pk=user_id)
-			software.run_fastq_and_trimmomatic_and_identify_species(sample, user)
+			b_return = software.run_fastq_and_trimmomatic_and_identify_species(sample, user)
+			self.stdout.write("Resulting: " + str(b_return))
 			self.stdout.write("End")
 		except Sample.DoesNotExist as e:
 			self.stdout.write("Error: Sample id '{}' does not exist.".format(sample_id))

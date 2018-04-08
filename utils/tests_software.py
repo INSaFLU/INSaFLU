@@ -2171,3 +2171,33 @@ class Test(TestCase):
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 
+
+	def test_make_downsize(self):
+		
+		fastq1_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		fastq1_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+		self.assertTrue(os.path.isfile(fastq1_1))
+		self.assertTrue(os.path.isfile(fastq1_2))
+		
+		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 2000000)	## downsize to 2M
+		
+		self.assertEquals(is_downsized, True)
+		self.assertTrue(os.path.exists(file_name_1))
+		self.assertTrue(os.path.exists(file_name_2))
+		
+		self.assertEquals(os.path.getsize(file_name_1), 233201)
+		self.assertEquals(os.path.getsize(file_name_2), 255802)
+		self.utils.remove_dir(os.path.dirname(file_name_1))
+
+		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, None, 2000000)	## downsize to 2M
+		
+		self.assertEquals(is_downsized, True)
+		self.assertTrue(os.path.exists(file_name_1))
+		self.assertTrue(file_name_2 == None)
+		
+		self.assertEquals(os.path.getsize(file_name_1), 248769)
+		self.utils.remove_dir(os.path.dirname(file_name_1))
+		
+		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 20000000)	## downsize to 2M
+		self.assertEquals(is_downsized, False)
+

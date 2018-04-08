@@ -519,10 +519,7 @@ class ParseInFiles(object):
 						## here can be direct because came from a djangoq
 						if (settings.RUN_SGE):
 							process_SGE = ProcessSGE()
-							if (settings.RUN_SGE_INTO_DJANGOQ):
-								taskID = async(process_SGE.set_run_trimmomatic_species, sample, user)
-							else:
-								taskID = process_SGE.set_run_trimmomatic_species(sample, user)
+							taskID = process_SGE.set_run_trimmomatic_species(sample, user)
 						else:
 							taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, user)
 						

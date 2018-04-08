@@ -319,10 +319,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		try:
 			if (settings.RUN_SGE):
 				process_SGE = ProcessSGE()
-				if (settings.RUN_SGE_INTO_DJANGOQ):
-					taskID = async(process_SGE.set_run_trimmomatic_species, sample, self.request.user)
-				else:
-					taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
 			else:
 				taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
 		except Exception as e:
@@ -468,10 +465,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					if (settings.RUN_SGE_INTO_DJANGOQ):
-						taskID = async(process_SGE.set_read_sample_file, upload_files, self.request.user)
-					else:
-						taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
+					taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
 				else:
 					b_testing = False
 					taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
@@ -631,10 +625,7 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			try:
 				if (settings.RUN_SGE):
 					process_SGE = ProcessSGE()
-					if (settings.RUN_SGE_INTO_DJANGOQ):
-						taskID = async(process_SGE.set_link_files, self.request.user)
-					else:
-						taskID = process_SGE.set_link_files(self.request.user)
+					taskID = process_SGE.set_link_files(self.request.user)
 				else:
 					b_testing = False
 					taskID = async(parse_in_files.link_files, self.request.user, b_testing)
@@ -1064,10 +1055,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
 						if (settings.RUN_SGE):
-							if (settings.RUN_SGE_INTO_DJANGOQ):
-								taskID = async(process_SGE.set_second_stage_snippy, project_sample, self.request.user)
-							else:
-								taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
+							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
 						else:
 							taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
 							
@@ -1083,10 +1071,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			if (project_sample_add > 0):
 				try:
 					if (settings.RUN_SGE):
-						if (settings.RUN_SGE_INTO_DJANGOQ):
-							taskID = async(process_SGE.set_collect_global_files, project, self.request.user)
-						else:
-							taskID = process_SGE.set_collect_global_files(project, self.request.user)
+						taskID = process_SGE.set_collect_global_files(project, self.request.user)
 					else:
 						taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user)
 				

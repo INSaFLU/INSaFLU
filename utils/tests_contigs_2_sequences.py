@@ -49,6 +49,7 @@ class Test(unittest.TestCase):
 		(out_file, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out, 'temp3.txt')
 
 		expect_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
+		print(out_file, expect_fasta)
 		self.assertTrue(filecmp.cmp(out_file, expect_fasta))
 
 		expected_abricate = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "expected_abricate_clean_2.txt")

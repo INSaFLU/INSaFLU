@@ -271,8 +271,8 @@ class SampleForm(forms.ModelForm):
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
 			('lat', 'Latitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
 			('lng', 'Longitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
-			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 50MB)', True),
-			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 50MB)', False),
+			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 300MB). Files between 50 - 300 MB will be downsized to ~50 MB before analysis', True),
+			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 300MB). Files between 50 - 300 MB will be downsized to ~50 MB before analysis', False),
 			('like_dates', 'Choose a date', 'Choose the option you want to be used to calculate the calendar week number.', False),
 		]
 		for x in field_text:
@@ -628,7 +628,12 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 			self.add_error('path_name', e.args[0])
 			return cleaned_data
 
-		if (path_name.size > Constants.MAX_FASTQ_FILE):
+		if (settings.DOWN_SIZE_FASTQ_FILES):
+			if (path_name.size > Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE):
+				os.unlink(temp_file_name.name)
+				self.add_error('path_name', "Max file size is: {}".format(Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE))
+				return cleaned_data
+		elif (path_name.size > Constants.MAX_FASTQ_FILE):
 			os.unlink(temp_file_name.name)
 			self.add_error('path_name', "Max file size is: {}".format(Constants.MAX_FASTQ_FILE))
 			return cleaned_data

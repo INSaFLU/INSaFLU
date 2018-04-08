@@ -47,12 +47,13 @@ class Command(BaseCommand):
 					result_all.add_software(SoftwareDesc(software_names.get_abricate_name(), software_names.get_abricate_version(),\
 	 						software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
 					manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-				if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))):
-					print("Contigs already exists for this sample: " + sample.name) 
-					continue
 			else:
 				print("There's no meta_sample for sample: " + sample.name)
 			
+			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))):
+				print("Contigs already exists for this sample: " + sample.name) 
+				continue
+				
 			out_dir = utils.get_temp_dir()
 			cmd = software.run_spades(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 					sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False), out_dir)

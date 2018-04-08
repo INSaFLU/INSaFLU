@@ -726,13 +726,13 @@ class Test(unittest.TestCase):
 		self.assertEquals(0, n_count)
 		
 		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, 10)
-		self.assertEquals(7, n_count)
+		self.assertEquals(9, n_count)
 		
 		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, 15)
-		self.assertEquals(7, n_count)
+		self.assertEquals(9, n_count)
 		
 		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, 17)
-		self.assertEquals(6, n_count)
+		self.assertEquals(8, n_count)
 
 
 

@@ -859,6 +859,18 @@ class Software(object):
 		"""
 		manageDatabase = ManageDatabase()
 		result_all = Result()
+		
+		### first try run downsize if necessary
+		(is_downsized, file_name_1, file_name_2) = self.make_downsize(sample.get_fastq(TypePath.MEDIA_ROOT, True),\
+					sample.get_fastq(TypePath.MEDIA_ROOT, False), Constants.MAX_FASTQ_FILE)
+		if (is_downsized):
+			if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100): 
+				self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
+			if (os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
+				self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
+			self.utils.remove_dir(os.path.dirname(file_name_1))
+		
+		
 		### first run fastq
 		try:
 			temp_dir = self.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
@@ -932,13 +944,17 @@ class Software(object):
 	"""
 	def run_fastq_and_trimmomatic_and_identify_species(self, sample, user):
 
+		print("Start ProcessControler")
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_RUNNING)
 		
 		try:
+			print("Start run_fastq_and_trimmomatic")
 			### run trimmomatics
 			b_return = self.run_fastq_and_trimmomatic(sample, user)
+			
+			print("Result run_fastq_and_trimmomatic: " + str(b_return))
 			
 			### queue the quality check and
 			if (b_return):	## don't run for single file because spades doesn't work for one single file
@@ -981,6 +997,7 @@ class Software(object):
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
 		return b_return
+
 
 	def process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
 		"""
@@ -1292,6 +1309,54 @@ class Software(object):
 			raise Exception("Fail to create index") 
 	
 
+	def make_downsize(self, path_1, path_2, max_fastq_file):
+		"""
+		Reduce file size from X to Constants.MAX_FASTQ_FILE
+		return (TRUE|FALSE if was reduce or not, new_path_1_reduced, new_path_2_reduced)
+		"""
+		file_size_max = 0
+		if (os.path.exists(path_1)):
+			file_size_max = os.path.getsize(path_1)
+		if (path_2 != None and os.path.exists(path_2) and file_size_max < os.path.getsize(path_2)): 
+			file_size_max = os.path.getsize(path_2)
+			
+		### need to make the down size
+		if (file_size_max > max_fastq_file):
+			ratio = max_fastq_file / file_size_max
+		
+			## smmall correction
+			if (ratio < 0.8): ratio += 0.1
+
+			path_to_work = self.utils.get_temp_dir()
+			path_1_temp = self.utils.get_temp_file_from_dir(path_to_work, 'fastq_1', '.fastq')
+			path_2_temp = self.utils.get_temp_file_from_dir(path_to_work, 'fastq_2', '.fastq')
+			
+			self.utils.uncompress_files(self.software_names.get_bgzip(), path_1, path_1_temp)
+			file_names = path_1_temp
+			if (path_2 != None and os.path.exists(path_2)):
+				self.utils.uncompress_files(self.software_names.get_bgzip(), path_2, path_2_temp)
+				file_names += " " + path_2_temp
+
+			cmd = "{} -p {:.2f} -o {}/sample {}".format(self.software_names.get_fastqtools_sample(), ratio, path_to_work, file_names)
+			print(cmd)
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to downsize") 
+		
+			if (path_2 != None and os.path.exists(path_2)):
+				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.1.fastq'))
+				path_1_temp = os.path.join(path_to_work, 'sample.1.fastq' + FileExtensions.FILE_GZ)
+				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.2.fastq'))
+				path_2_temp = os.path.join(path_to_work, 'sample.2.fastq' + FileExtensions.FILE_GZ)
+			else:
+				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.fastq'))
+				path_1_temp = os.path.join(path_to_work, 'sample.fastq' + FileExtensions.FILE_GZ)
+				
+			return(True, path_1_temp, path_2_temp if (path_2 != None and os.path.exists(path_2)) else None)
+		return(False, path_1, path_2)
+
 
 class Contigs2Sequences(object):
 	'''
@@ -1361,17 +1426,25 @@ class Contigs2Sequences(object):
 		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
 		vect_out_fasta = []
+		vect_out_fasta_without_id = []
 		out_file_fasta = self.utils.get_temp_file('spades_out_identified', FileExtensions.FILE_FASTA)
 		with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
 			for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
 				vect_possible_id = []
 				for dict_data in vect_data:
 					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
-				if (len(vect_possible_id) > 0): vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
+				if (len(vect_possible_id)):
+					vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
 												description=";".join(vect_possible_id)))
-			if (len(vect_out_fasta) > 0): SeqIO.write(vect_out_fasta, handle_out, "fasta")
+				elif (float(record.id.split('_')[-1]) > SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
+					vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
+												description=""))
+			if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
+				vect_out_fasta.extend(vect_out_fasta_without_id)
+				SeqIO.write(vect_out_fasta, handle_out, "fasta")
 		
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		return (out_file_fasta, clean_abricate_file)
 
-
+	
+			

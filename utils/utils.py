@@ -287,7 +287,7 @@ class Utils(object):
 	
 	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length):
 		"""
-		Test Fata file
+		Test Fasta file
 		"""
 		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
 		record_dict = SeqIO.index(sz_file_name, "fasta")
@@ -298,7 +298,7 @@ class Utils(object):
 	
 	def has_degenerated_bases(self, sz_file_name):
 		"""
-		Test Fata file
+		Test Fasta file for degenerated bases
 		"""
 		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
 		handle = open(sz_file_name)

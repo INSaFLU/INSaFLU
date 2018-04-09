@@ -722,8 +722,11 @@ class Test(unittest.TestCase):
 		
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
 		
-		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, Constants.MAX_LENGTH_SEQ_NAME)
+		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, Constants.MAX_LENGTH_SEQ_NAME + 12)
 		self.assertEquals(0, n_count)
+		
+		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, Constants.MAX_LENGTH_SEQ_NAME)
+		self.assertEquals(2, n_count)
 		
 		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, 10)
 		self.assertEquals(9, n_count)

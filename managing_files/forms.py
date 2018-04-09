@@ -122,9 +122,9 @@ class ReferenceForm(forms.ModelForm):
 			if (not some_error_in_files and n_seq_name_bigger_than > 0):
 				some_error_in_files = True
 				if (n_seq_name_bigger_than == 1):
-					self.add_error('reference_fasta', _('There is one sequence length name bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_SEQ_NAME)))
+					self.add_error('reference_fasta', _('There is one sequence name length bigger than {0}. The max. length name is {0}. Prokka constrainments.'.format(Constants.MAX_LENGTH_SEQ_NAME)))
 				else:
-					self.add_error('reference_fasta', _('There are {0} with sequences length name bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_SEQ_NAME)))
+					self.add_error('reference_fasta', _('There are {0} sequences with name length bigger than {1}. The max. length name is {1}. Prokka constrainments.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_SEQ_NAME)))
 					
 				## if some errors in the files, fasta or genBank, return
 				if (some_error_in_files): return cleaned_data

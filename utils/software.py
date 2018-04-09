@@ -105,7 +105,7 @@ class Software(object):
 		"""
 		Run spades
 		"""
-		if (fastq_2 is None or len(fastq_2) == 0): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
+		if (fastq_2 is None or len(fastq_2) == 0 or not os.path.exists(fastq_2)): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
 					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN_FAST, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2,\
 					self.software_names.get_spades_parameters(), settings.THREADS_TO_RUN_FAST, out_dir)
@@ -259,7 +259,7 @@ class Software(object):
 		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+			result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
@@ -323,8 +323,8 @@ class Software(object):
 			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out,\
 					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)))
 			## copy the contigs from spades
-			self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
-			self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
+			if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+			if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
 		except Exception:
@@ -866,7 +866,7 @@ class Software(object):
 		if (is_downsized):
 			if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100): 
 				self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
-			if (os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
+			if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
 				self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
 			self.utils.remove_dir(os.path.dirname(file_name_1))
 		
@@ -1437,8 +1437,8 @@ class Contigs2Sequences(object):
 					vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
 												description=";".join(vect_possible_id)))
 				elif (float(record.id.split('_')[-1]) > SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
-					vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
-												description=""))
+					vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
+
 			if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
 				vect_out_fasta.extend(vect_out_fasta_without_id)
 				SeqIO.write(vect_out_fasta, handle_out, "fasta")

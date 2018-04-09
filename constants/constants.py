@@ -24,7 +24,7 @@ class Constants(object):
 	
 	## MAX LOCUS FROM FASTA
 	MAX_SEQUENCES_FROM_FASTA = 20
-	MAX_LENGTH_SEQ_NAME = 20
+	MAX_LENGTH_SEQ_NAME = 20		###  it must be less than 20 because of prokka constrainments 
 	
 	## MAX LENGTH_SEQUENCE_FROM_FASTA
 	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 

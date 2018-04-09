@@ -105,7 +105,8 @@ class Software(object):
 		"""
 		Run spades
 		"""
-		if (fastq_2 is None or len(fastq_2) == 0 or not os.path.exists(fastq_2)): cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
+		if (fastq_2 is None or len(fastq_2) == 0 or not os.path.exists(fastq_2)): 
+			cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
 					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN_FAST, out_dir)
 		else: cmd = "%s --pe1-1 %s --pe1-2 %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1, fastq_2,\
 					self.software_names.get_spades_parameters(), settings.THREADS_TO_RUN_FAST, out_dir)

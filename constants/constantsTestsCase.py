@@ -108,9 +108,16 @@ class ConstantsTestsCase(object):
 	FASTQ7_2 = "Ae-MIT-602_S25_L001_R2_001.fastq.gz"
 	FASTQ8_1 = "SU104_S10_L001_R1_001.fastq.gz"
 	FASTQ8_2 = "SU104_S10_L001_R2_001.fastq.gz"
-	
 	FASTQ9_1 = "CLEVB-1_S2_L001_R1_001.fastq.gz"
 	FASTQ9_2 = "CLEVB-1_S2_L001_R2_001.fastq.gz"
+	FASTQ10_1 = "EVA082_S12_L001_R1_001.fastq.gz"
+	FASTQ10_2 = "EVA082_S12_L001_R2_001.fastq.gz"
+	FASTQ10_1_test = "EVA082_S12_L001_R2_001_test.fastq.gz"
+	
+	FASTQ11_1 = "EVA174_S64_L001_R1_001.fastq.gz"
+	FASTQ11_2 = "EVA174_S64_L001_R2_001.fastq.gz"
+	
+	
 	
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"

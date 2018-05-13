@@ -858,7 +858,7 @@ class Software(object):
 		run fastq and trimmomatic
 		Upload average and sequence numbers
 		"""
-		manageDatabase = ManageDatabase()
+		manage_database = ManageDatabase()
 		result_all = Result()
 		
 		### first try run downsize if necessary
@@ -870,7 +870,11 @@ class Software(object):
 			if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
 				self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
 			self.utils.remove_dir(os.path.dirname(file_name_1))
-		
+			
+			### set the downsize message
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
+										MetaKeyAndValue.META_VALUE_Success,\
+										"Fastq files were down sized to values ~50MB.")
 		
 		### first run fastq
 		try:
@@ -884,7 +888,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -900,7 +904,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -917,7 +921,7 @@ class Software(object):
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
 		self.utils.remove_dir(temp_dir)
@@ -927,17 +931,17 @@ class Software(object):
 		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 		else: (lines_2, average_2) = (None, None)
 		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 
 		## save everything OK
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
+		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
 							(self.software_names.get_fastq_version(), self.software_names.get_trimmomatic_version()))
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 
 		### set the flag of the end of the task		
-		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return True
 
 	"""

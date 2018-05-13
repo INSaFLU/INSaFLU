@@ -619,7 +619,10 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 		utils = Utils()
 		## testing fastq
 		temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
-		utils.link_file(path_name.file.name, temp_file_name.name)
+		if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
+			with open(temp_file_name.name, 'wb') as out: ## Open temporary file as bytes
+				out.write(path_name.file.read())                ## Read bytes into file
+		else: utils.link_file(path_name.file.name, temp_file_name.name)
 
 		try:
 			utils.is_fastq_gz(temp_file_name.name)

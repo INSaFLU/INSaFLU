@@ -574,12 +574,15 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		data = {}	## return data
 		try:
 			if form.is_valid():
+				
 				## doesn't work like that
 				#upload_files = form.save()
 							
 				### get the temporary variable
 				path_name = form.cleaned_data['path_name']
-				
+				self.logger_debug.error("Starting for project_id: " + str(type(path_name.file)))
+				self.logger_production.error("Starting for project_id: " + str(type(path_name.file)))
+
 				if (path_name == None):
 					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, path not found.' }
 					return JsonResponse(data)
@@ -590,7 +593,21 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
 														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
 				sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-				self.utils.copy_file(path_name.file.name, sz_file_to)
+				
+				## because sometimes has 
+				if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
+					temp_file = self.utils.get_temp_file("upload_file", ".dat")
+					with open(temp_file, 'wb') as out: ## Open temporary file as bytes
+						path_name.file.seek(0)
+						out.write(path_name.file.read())                ## Read bytes into file
+					self.utils.move_file(temp_file, sz_file_to)
+				else: self.utils.copy_file(path_name.file.name, sz_file_to)
+				
+				## test if file exist
+				if (not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10):
+					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, fail to copy file.' }
+					return JsonResponse(data)
+				
 				upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
 										TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
 				try:

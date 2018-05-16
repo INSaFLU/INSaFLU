@@ -322,7 +322,7 @@ class Test(unittest.TestCase):
 								MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_data != None)
 		self.assertEquals("Warning: this sample has a ratio of the number of iSNVs at frequency 1-50% (minor iSNVs) and 50-90% of '1.4' " +\
-						"(within the range 0.5-1-5) and a total number of iSNVs from the two categories of '120' (i.e., above 20) suggesting " +\
+						"(within the range 0.5-2.0) and a total number of iSNVs from the two categories of '120' (i.e., above 20) suggesting " +\
 						"that may represent a 'mixed infection'.", meta_data.description)
 
 		meta_data = manage_database.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\

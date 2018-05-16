@@ -152,7 +152,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run abricate")
+			raise Exception("Fail to collect list from abricate")
 		vect_out = self.utils.read_text_file(temp_file)
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
 		for line in vect_out:
@@ -876,7 +876,7 @@ class Software(object):
 										MetaKeyAndValue.META_VALUE_Success,\
 										"Fastq files were down sized to values ~50MB.")
 		
-		### first run fastq
+		### first run fastqc
 		try:
 			temp_dir = self.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
 			result_all.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq_version(), self.software_names.get_fastq_parameters()))
@@ -942,6 +942,7 @@ class Software(object):
 		meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+			
 		return True
 
 	"""
@@ -1419,6 +1420,7 @@ class Contigs2Sequences(object):
 		(version, database_file_name) = self.get_most_recent_database()
 		dabasename = self.get_database_name()
 		
+		print(dabasename, database_file_name)
 		### first create database
 		if (not software.is_exist_database_abricate(dabasename)):
 			software.create_database_abricate(dabasename, database_file_name)

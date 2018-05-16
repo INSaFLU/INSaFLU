@@ -379,7 +379,7 @@ class CountHits(object):
 		mixed infection positive
 		0.5 < ratio < 1.5 and total > 20
 		"""
-		if (self.get_mixed_infection_ratio() > 0.5 and self.get_mixed_infection_ratio() < 1.5 and self.get_total_50_50_90() > 20): return True
+		if (self.get_mixed_infection_ratio() > 0.5 and self.get_mixed_infection_ratio() < 2.0 and self.get_total_50_50_90() > 20): return True
 		return False
 
 	def total_grather_than_mixed_infection(self):

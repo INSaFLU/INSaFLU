@@ -96,6 +96,9 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			
+			## calculate global variations for a project
+			self.calculate_count_variations(project)
+			
 			### create trees
 			createTree = CreateTree()
 			createTree.create_tree_and_alignments(project, user)
@@ -451,5 +454,31 @@ class CollectExtraData(object):
 				vect_tags_out.append(tag_name.name)
 		return vect_tags_out
 			
+	def calculate_count_variations(self, project):
+		"""
+		calculate global variations for a project
+		"""
+		data_out = []		## [[#<50, 50<var<90, sample name], [#<50, 50<var<90, sample name], ....]
+		for project_sample in project.project_samples.all():
+			if (project_sample.is_deleted): continue
+			if (project_sample.is_error): continue
+			if (not project_sample.is_finished): continue
+			data_out.append([project_sample.count_variations.var_less_50, project_sample.count_variations.var_bigger_50_90, project_sample.sample.name])
+
+		destination_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
+		if (len(data_out) > 0):
+			data_out = sorted(data_out, key=lambda data_temp: data_temp[0] + data_temp[1], reverse=True)
 			
-			
+			out_file = self.utils.get_temp_file('count_variations', FileExtensions.FILE_TSV)
+			with open(out_file, 'w', newline='') as handle_out:
+				csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_MINIMAL)
+				vect_out = ['Sample', 'Less 50', 'Between 90 and 50']
+				csv_writer.writerow(vect_out)
+				for data_temp in data_out:
+					csv_writer.writerow([data_temp[2], data_temp[0], data_temp[1]])
+			### move file
+			self.utils.copy_file(out_file, destination_file)
+			return destination_file
+		else: os.unlink(destination_file)
+		return None
+

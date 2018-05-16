@@ -675,7 +675,11 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		## main info
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			context['virus_identify'] = sample.get_type_sub_type()
-			context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
+			
+			file_name = sample.get_fastq(TypePath.MEDIA_ROOT, True)
+			if os.path.exists(file_name):
+				context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
+			else: context['href_fastq_1'] = _("Not available")
 			context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
 			context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
 				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
@@ -687,7 +691,11 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
 					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
 				context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
-				context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+				
+				file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
+				if os.path.exists(file_name):
+					context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+				else: context['href_fastq_2'] = _("Not available")
 				context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
 					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
 			else:	## there's no second file
@@ -1158,6 +1166,13 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
 		context['sample_file_result_csv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
 		context['sample_file_result_tsv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)
+		
+		### need to test becaus in the past this file was not created
+		file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
+		if (not os.path.exists(file_name)):
+			collect_extra_data = CollectExtraData()
+			collect_extra_data.calculate_count_variations(project)
+		context['variations_statistics_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
 		
 		## tODO , set this in database 
 		utils = Utils()

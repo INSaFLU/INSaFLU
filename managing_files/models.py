@@ -353,7 +353,7 @@ class Sample(models.Model):
 
 	def get_fastq(self, type_path, b_first_file):
 		"""
-		return fastq output first step
+		return fastq output first step, from MEDIA_URL or MEDIA_ROOT
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
@@ -589,6 +589,7 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
 	PROJECT_FILE_NAME_nex = "Alignment_nt_All.nex"
 	PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
+	PROJECT_FILE_NAME_TOTAL_VARIATIONS = "proportions_iSNVs_graph.tsv"
 	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv" 
 	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact

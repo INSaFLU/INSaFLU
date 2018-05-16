@@ -78,7 +78,7 @@ class MixedInfectionsManagement(object):
 			if (count_hits.is_mixed_infection_ratio_test()):
 				manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
 								MetaKeyAndValue.META_VALUE_Success, "Warning: this sample has a ratio of the number of iSNVs at frequency 1-50% (minor iSNVs) " +\
-								"and 50-90% of '{}' (within the range 0.5-1-5) and a total number of iSNVs from the two categories of '{}' ".format(\
+								"and 50-90% of '{}' (within the range 0.5-2.0) and a total number of iSNVs from the two categories of '{}' ".format(\
 								count_hits.get_mixed_infection_ratio_str(), count_hits.get_total_50_50_90()) +\
 								"(i.e., above 20) suggesting that may represent a 'mixed infection'.")
 			elif (count_hits.total_grather_than_mixed_infection()):

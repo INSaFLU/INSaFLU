@@ -10,7 +10,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from utils.result import CountHits 
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
-from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames
+from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames, CountVariations
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
 from django.test.utils import override_settings
@@ -243,8 +243,16 @@ class Test(unittest.TestCase):
 				project_sample.is_finished = True
 				project_sample.is_deleted = False
 				project_sample.is_error = False
-				project_sample.save()
 			
+				count_variations = CountVariations()
+				count_variations.var_bigger_50_90 = n_id + 1
+				count_variations.var_bigger_90 = n_id + 12
+				count_variations.var_less_50 = 12 + count
+				count_variations.total = n_id + 1 + n_id + 12
+				count_variations.save()
+				project_sample.count_variations = count_variations
+				project_sample.save()
+				
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 						software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 			meta_value = manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
@@ -283,6 +291,12 @@ class Test(unittest.TestCase):
 		### collect variations from freebayes
 		out_file = collect_extra_data.collect_variations_freebayes(project)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes.tsv")
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		### count variations in project
+		out_file = collect_extra_data.calculate_count_variations(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_total.tsv")
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		

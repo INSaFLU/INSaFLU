@@ -40,6 +40,7 @@
 ## $ sudo pip3 install portalocker
 ## $ sudo pip3 install python-decouple
 ## $ sudo pip3 install django-crequest
+## $ sudo pip3 install django-embed-video
 
 ## CentOS
 ## $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
@@ -72,11 +73,7 @@ LoadModule wsgi_module modules/mod_wsgi-py34.cpython-34m.so
     $ ./abricate --setupdb
     $ ./abricate --list
     
-    
-## run DjangoQ
-$ python3 manage.py qcluster
-$ python3 manage.py qmonitor
-$ python3 manage.py qinfo
+
 
 
 ##########################

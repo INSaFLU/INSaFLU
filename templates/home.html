@@ -1,6 +1,7 @@
 {% extends '_layouts/base.html' %}
 
 {% load static from staticfiles %}
+{% load embed_video_tags %}
 
 {% block css %}
 	{% load static from staticfiles %}
@@ -65,7 +66,22 @@
 			    {% if not is_authenticated %}
 			    	<a href="{% url 'login' %}"><p class="login-demo-account">Walkthrough INSaFLU by logging into the "demo" account</p></a>
 			    {% endif %}
-			    
+
+				<!-- Video Tutorial -->
+				{% if video_tutorial %}
+				    <div class="card">
+						<div class="card-block">
+							<h4 class="card-title">Video Tutorial</h4>
+							<div class="card-block">
+							    {% video video_tutorial as my_video %}
+								    {% video my_video 'small' %}
+								{% endvideo %}
+							</div>
+						</div>
+					</div>
+					<p> </p>
+				{% endif %}
+												
 			    <div class="card">
 					<div class="card-block">
 						<h4 class="card-title">Future Directions</h4>

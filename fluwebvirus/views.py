@@ -20,6 +20,7 @@ from fluwebvirus.tokens import account_activation_token
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.conf import settings
+from embed_video.backends import detect_backend
 import urllib, json
 
 class HomePageView(generic.TemplateView):
@@ -34,6 +35,8 @@ class HomePageView(generic.TemplateView):
 		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		context['is_authenticated'] = self.request.user.is_authenticated
+		if (settings.SHOW_VIDEO_TUTORIAL):
+			context['video_tutorial'] = detect_backend('https://www.youtube.com/watch?v=8AGaNrCGmtI')
 		return context
 
 class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):

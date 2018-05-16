@@ -61,6 +61,9 @@ if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
 ## add google analytics
 ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
 
+## True to show video tutorial
+SHOW_VIDEO_TUTORIAL = config('SHOW_VIDEO_TUTORIAL', default=False, cast=bool)
+
 ## to show login anonymous
 SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 
@@ -95,6 +98,7 @@ INSTALLED_APPS = [
     'log_login.apps.LogLoginConfig',
     'extend_user.apps.ExtendUserConfig',
     'crequest',
+    'embed_video',
 ]
 
 MIDDLEWARE = [

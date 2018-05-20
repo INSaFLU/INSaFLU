@@ -53,6 +53,8 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_PV1_KX162693_gbk = "PV1_KX162693.gb"
 	MANAGING_FILES_PV1_KX162693_clean_version_gbk = "PV1_KX162694_clean_version.gb"
 	MANAGING_FILES_PV1_KX162693_spades_out_fasta = "PV1_KX162693_spades_out.fasta"
+	MANAGING_FILES_TEST_LENGTH_fasta_1 = "test_length_fasta_1.fasta"
+	MANAGING_FILES_TEST_LENGTH_fasta_2 = "test_length_fasta_2.fasta"
 	MANAGING_FILES_PV1_KX162693_bed = "PV1_KX162693.bed"
 	
 	MANAGING_FILES_PV_Sabin1_V01150_fasta = "PV_Sabin1_V01150.fasta"

@@ -21,6 +21,7 @@ from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.conf import settings
 from embed_video.backends import detect_backend
+from utils.utils import ShowInfoMainPage
 import urllib, json
 
 class HomePageView(generic.TemplateView):
@@ -35,8 +36,9 @@ class HomePageView(generic.TemplateView):
 		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		context['is_authenticated'] = self.request.user.is_authenticated
-		if (settings.SHOW_VIDEO_TUTORIAL):
-			context['video_tutorial'] = detect_backend('https://www.youtube.com/watch?v=8AGaNrCGmtI')
+		if (settings.SHOW_VIDEO_TUTORIAL): context['video_tutorial'] = detect_backend('https://www.youtube.com/watch?v=8AGaNrCGmtI')
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		
 		return context
 
 class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
@@ -51,6 +53,7 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 		context = super(SignUpView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
@@ -106,6 +109,7 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 		context = super(ResetPasswordView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
@@ -165,6 +169,7 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 		context = super(GetMessageConfirmEmailView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
@@ -231,6 +236,7 @@ class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.
 		context = super(ChangePasswordView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
@@ -269,6 +275,7 @@ class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView)
 		context = super(LoginView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):

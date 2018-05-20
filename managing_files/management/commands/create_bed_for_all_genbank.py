@@ -8,7 +8,7 @@ from managing_files.models import Reference
 from constants.constants import TypePath
 from utils.utils import Utils
 from utils.software import Software
-import os
+import os, logging
 
 class Command(BaseCommand):
 	'''
@@ -17,6 +17,10 @@ class Command(BaseCommand):
 	## args = '<poll_id poll_id ...>'
 	help = "Create a bed file for all genbank."
 
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	
@@ -30,7 +34,9 @@ class Command(BaseCommand):
 		for reference in Reference.objects.all():
 			count += 1
 			bed_path = reference.get_reference_bed(TypePath.MEDIA_ROOT)
-			self.stdout.write("{}) {}: ".format(count, reference.reference_genbank_name))
+			self.stdout.write("{} {}: ".format(count, reference.reference_genbank_name))
+			self.logger_production.info("{} {}: ".format(count, reference.reference_genbank_name))
+			self.logger_debug.info("{} {}: ".format(count, reference.reference_genbank_name))
 			if os.path.exists(bed_path):
 				self.stdout.write("already exist\n")
 				continue

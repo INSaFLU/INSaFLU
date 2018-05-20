@@ -743,5 +743,20 @@ class Test(unittest.TestCase):
 		n_count = self.utils.get_number_seqs_names_bigger_than(fasta_file, 17)
 		self.assertEquals(8, n_count)
 
+	def test_sequences_same_length(self):
+		
+		utils = Utils()
+
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
+		self.assertTrue(utils.test_sequences_same_length(fasta_file))
+		
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_TEST_LENGTH_fasta_1)
+		self.assertTrue(utils.test_sequences_same_length(fasta_file))
+
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_TEST_LENGTH_fasta_2)
+		self.assertFalse(utils.test_sequences_same_length(fasta_file))
+		
+		
+
 
 

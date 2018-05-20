@@ -108,13 +108,15 @@
 					 	<a href="mailto:j.paulo.gomes@insa.min-saude.pt?subject=InsaFlu" class="card-link">j.paulo.gomes at insa.min-saude.pt</a>
 					</div>
 				</div>
-				
-				<p> </p>
-				<div class="row">
-					<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:180px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
-					<img src="{% static 'insa/SNS_logo.svg' %}" style="width:180px; padding-right:10px" id='sns_logo_id'>
-					<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:220px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
-				</div>
+				<!-- Show or not the log image in the main page -->
+  				{% if show_info_main_page and show_info_main_page.show_images_main_page%}
+					<p> </p>
+					<div class="row">
+						<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:180px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
+						<img src="{% static 'insa/SNS_logo.svg' %}" style="width:180px; padding-right:10px" id='sns_logo_id'>
+						<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:220px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
+					</div>
+				{% endif %}
 			</div>
 			
 			<div class="col-sm-3 offset-sm-1 insa-sidebar">

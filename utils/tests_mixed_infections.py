@@ -620,7 +620,7 @@ class Test(unittest.TestCase):
 
 		### test normal A-H1N1
 		sample = self.get_sample("run_snippytest_get_mixed_infections_12", user, temp_dir)
-		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_TYPE : [ConstantsVirus.TYPE_A], ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['H1', 'N1']})
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_TYPE : [ConstantsVirus.TYPE_A, ConstantsVirus.TYPE_A], ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['H1', 'N1']})
 		self.assertEquals('A-H1N1', sample.get_type_sub_type())
 		data_result = sample.get_mixed_infection()
 		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])

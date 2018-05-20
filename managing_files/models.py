@@ -388,8 +388,15 @@ class Sample(models.Model):
 		"""
 		return a string with Type/Subtpye
 		"""
-		vect_identify_virus = self.identify_virus.all()
-		if (vect_identify_virus.count() > 0):
+		vect_identify_virus_temp = self.identify_virus.all()
+		
+		### clean some possible repeated
+		vect_identify_virus = []
+		for identify_virus in vect_identify_virus_temp:
+			if (not identify_virus in vect_identify_virus):
+				vect_identify_virus.append(identify_virus)
+
+		if (len(vect_identify_virus) > 0):
 			### Type A
 			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_A)
 			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.TYPE_A)
@@ -453,10 +460,15 @@ class Sample(models.Model):
 		alert: positive number, or zero
 		message: None, empty or the string with the error message
 		"""
-		vect_identify_virus = self.identify_virus.all()
-		if (vect_identify_virus.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+		vect_identify_virus_temp = self.identify_virus.all()
+		if (vect_identify_virus_temp.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 					"Warning: no type/subtype has been assigned (possible reason: low number of influenza reads).")
 	
+		vect_identify_virus = []
+		for identify_virus in vect_identify_virus_temp:
+			if (not identify_virus in vect_identify_virus):
+				vect_identify_virus.append(identify_virus)
+		
 		## Only A not B
 		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
 			#  A; #any subtype; > 0 lineage

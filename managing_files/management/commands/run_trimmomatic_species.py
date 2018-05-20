@@ -7,13 +7,17 @@ from django.core.management import BaseCommand
 from managing_files.models import Sample
 from utils.software import Software
 from django.contrib.auth.models import User
+import logging
 
 class Command(BaseCommand):
 	'''
 	classdocs
 	'''
 	help = "Run trimmomatic and identify species."
-
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	
@@ -29,6 +33,8 @@ class Command(BaseCommand):
 		sample_id = options['sample_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for sample_id: " + str(sample_id))
+		self.logger_production.info("Starting for sample_id: " + str(sample_id))
+		self.logger_debug.info("Starting for sample_id: " + str(sample_id))
 		try:
 			sample = Sample.objects.get(pk=sample_id)
 			if (user_id == None): user = sample.owner

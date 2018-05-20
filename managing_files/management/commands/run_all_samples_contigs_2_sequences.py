@@ -11,7 +11,7 @@ from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, SoftwareDesc
-import os
+import os, logging
 
 class Command(BaseCommand):
 	'''
@@ -19,6 +19,10 @@ class Command(BaseCommand):
 	'''
 	help = "Run all samples to collect contigs and copy to sequences."
 
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	

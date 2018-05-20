@@ -69,7 +69,11 @@ SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 
 ## make the doen size of the fastq files to 50MB
 ## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 50MB
-DOWN_SIZE_FASTQ_FILES  = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+
+SHOW_IMAGES_MAIN_PAGE = config('SHOW_IMAGES_MAIN_PAGE', default=False, cast=bool)
+INSTITUTION_NAME = config('INSTITUTION_NAME', default="")
+INSTITUTION_WEB_SITE = config('INSTITUTION_WEB_SITE', default="")
 
 ## run process in SGE, otherwise run in qcluster
 RUN_SGE  = config('RUN_SGE', default=False, cast=bool)

@@ -7,13 +7,18 @@ from django.core.management import BaseCommand
 from utils.parse_in_files import ParseInFiles
 from django.contrib.auth.models import User
 from django.conf import settings
+import logging
 
 class Command(BaseCommand):
 	'''
 	classdocs
 	'''
 	help = "Run link files from fastq to samples."
-
+	
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	
@@ -27,6 +32,8 @@ class Command(BaseCommand):
 		parse_in_files = ParseInFiles()
 		user_id = options['user_id']
 		self.stdout.write("Starting for user_id: " + str(user_id))
+		self.logger_production.info("Starting for user_id: " + str(user_id))
+		self.logger_debug.info("Starting for user_id: " + str(user_id))
 		try:
 			user = User.objects.get(pk=user_id)
 			parse_in_files.link_files(user, settings.RUN_TEST_IN_COMMAND_LINE)

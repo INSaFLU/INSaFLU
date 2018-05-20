@@ -1200,7 +1200,7 @@ class Test(TestCase):
 		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
 			
-		sample_name = "run_snippy1"
+		sample_name = "run_snippy1_sdfs"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -1215,7 +1215,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		project_name = "file_name_3"
+		project_name = "file_name_3_dsf"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:
@@ -1229,8 +1229,7 @@ class Test(TestCase):
 		project_sample.project = project
 		project_sample.save()
 		
-		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False),\
- 											gb_file, sample.name)
+		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), gb_file, sample.name)
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, "")))))
 		file_size = os.path.getsize(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, ""))))
 		self.assertTrue(file_size > 1000 )

@@ -16,7 +16,7 @@ class SoftwareNames(object):
 	## directory with software, all the software is on based on this path
 	DIR_SOFTWARE = "/usr/local/software/insaflu"
 	
-	
+	## some software is distributed by snippy
 	DIR_SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy")
 	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
@@ -103,11 +103,6 @@ class SoftwareNames(object):
 	SOFTWARE_BAMTOOLS_VERSION = "2.5"
 	SOFTWARE_BAMTOOLS_PARAMETERS = ""
 	
-# 	SOFTWARE_COVERAGE = "Coverage, in-house script"
-# 	SOFTWARE_COVERAGE_name = "Coverage"
-# 	SOFTWARE_COVERAGE_VERSION = "v1.1"
-# 	SOFTWARE_COVERAGE_PARAMETERS = ""
-	
 	SOFTWARE_PROKKA = os.path.join(DIR_SOFTWARE, "prokka/bin/prokka")
 	SOFTWARE_PROKKA_name = "Prokka"
 	SOFTWARE_PROKKA_VERSION = "1.2"
@@ -119,7 +114,7 @@ class SoftwareNames(object):
 	SOFTWARE_MAUVE_VERSION = "2.4.0, Feb 13 2015"
 	SOFTWARE_MAUVE_PARAMETERS = ""
 	
-	SOFTWARE_CONVERT = os.path.join(DIR_SOFTWARE, "scripts/convert.pl")
+	SOFTWARE_CONVERT = os.path.join(DIR_SOFTWARE, "scripts/convertAlignment.pl")
 	SOFTWARE_CONVERT_name = "Convert"
 	SOFTWARE_CONVERT_VERSION = ""
 	SOFTWARE_CONVERT_PARAMETERS = ""
@@ -132,7 +127,7 @@ class SoftwareNames(object):
 	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino"
 	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"
 	
-	SOFTWARE_SEQRET = "seqret"
+	SOFTWARE_SEQRET = "/usr/bin/seqret"
 	SOFTWARE_SEQRET_name = "seqret (EMBOSS)"
 	SOFTWARE_SEQRET_VERSION = "6.6.0.0"
 	SOFTWARE_SEQRET_NEX_PARAMETERS = "-sformat fasta -osformat2 nexusnon"
@@ -162,6 +157,7 @@ class SoftwareNames(object):
 	return samtools software
 	"""
 	def get_samtools(self): return self.SOFTWARE_SAMTOOLS
+	def get_samtools_name(self): return self.SOFTWARE_SAMTOOLS_name
 	def get_samtools_version(self): return self.SOFTWARE_SAMTOOLS_VERSION
 
 	"""

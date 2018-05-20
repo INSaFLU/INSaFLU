@@ -7,6 +7,7 @@ from django.core.management import BaseCommand
 from managing_files.models import Project
 from utils.collect_extra_data import CollectExtraData
 from django.contrib.auth.models import User
+import logging
 
 class Command(BaseCommand):
 	'''
@@ -14,6 +15,10 @@ class Command(BaseCommand):
 	'''
 	help = "Create global files by project sample."
 
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	
@@ -29,6 +34,8 @@ class Command(BaseCommand):
 		project_id = options['project_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for project_id: " + str(project_id))
+		self.logger_production.info("Starting for project_id: " + str(project_id))
+		self.logger_debug.info("Starting for project_id: " + str(project_id))
 		try:
 			project = Project.objects.get(pk=project_id)
 			if (user_id == None): user = project.owner

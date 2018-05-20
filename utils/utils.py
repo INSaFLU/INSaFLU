@@ -18,7 +18,7 @@ from utils.result import CountHits, DecodeObjects
 from datetime import datetime
 import os, random, gzip, hashlib, logging, ntpath, stat, re
 from pysam import pysam
-
+from django.conf import settings
 
 class Utils(object):
 	'''
@@ -285,6 +285,32 @@ class Utils(object):
 		if (len(record_dict) > 0): return len(record_dict)
 		raise IOError(_("Error: file is not in FASTA format."))
 	
+	def test_sequences_same_length(self, sz_file_name):
+		"""
+		Test Fasta file if the sequences has the same length
+		because of samtools faidx 
+		"""
+		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
+		handle = open(sz_file_name)
+		vect_pos = []
+		for line in handle:
+			sz_temp = line.strip()
+			if (len(sz_temp) == 0): continue
+			if (sz_temp[0] == ">"):
+				if (len(vect_pos) > 2):
+					for i in range(1, len(vect_pos) - 1):
+						if (vect_pos[0] != vect_pos[i]): return False
+				vect_pos = [] 
+			else:
+				vect_pos.append(len(sz_temp))
+
+		handle.close()
+		if (len(vect_pos) > 2):
+			for i in range(1, len(vect_pos) - 1):
+				if (vect_pos[0] != vect_pos[i]): return False
+		return True		
+
+
 	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length):
 		"""
 		Test Fasta file
@@ -975,6 +1001,15 @@ class Utils(object):
 				handle_out.write(line)
 		
 		
-		
+class ShowInfoMainPage(object):
+	"""
+	only a help class
+	"""	
+	def __init__(self):
+		self.show_images_main_page = settings.SHOW_IMAGES_MAIN_PAGE
+		if (len(settings.INSTITUTION_NAME) > 0):
+			self.instutution_name = settings.INSTITUTION_NAME
+			self.instutution_web_site = settings.INSTITUTION_WEB_SITE
+
 		
 		

@@ -85,7 +85,8 @@ var/
 .Rhistory
 media/
 .env
-
+copyToInsa.sh
+copyToLocal.sh
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

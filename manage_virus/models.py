@@ -48,5 +48,10 @@ class IdentifyVirus(models.Model):
 	identity = models.CharField(max_length=10, blank=True, null=True)
 	
 	def __str__(self):
-		return self.name
+		return "name:{}     type:{}    rank:{}".format(self.seq_virus.name, self.seq_virus.kind_type, self.rank)
 	
+	def __eq__(self, other):
+		return self.seq_virus.name == other.seq_virus.name and self.seq_virus.kind_type == other.seq_virus.kind_type
+
+
+

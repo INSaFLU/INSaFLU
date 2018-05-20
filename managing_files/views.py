@@ -35,6 +35,7 @@ from operator import attrgetter
 from itertools import chain
 from extend_user.models import Profile
 from django.http import HttpResponseRedirect
+from utils.utils import ShowInfoMainPage
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -72,6 +73,7 @@ class ReferenceView(LoginRequiredMixin, ListView):
 		context['table'] = table
 		context['nav_reference'] = True
 		context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -99,6 +101,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		context['nav_reference'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		context['user_mmp'] = (self.request.user.username == "mmp")	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	@transaction.atomic
@@ -219,6 +222,7 @@ class SamplesView(LoginRequiredMixin, ListView):
 		context['nav_sample'] = True
 		context['total_itens'] = query_set.count()
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -246,6 +250,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		context = super(SamplesAddView, self).get_context_data(**kwargs)
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -376,7 +381,8 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
 		if (count_not_complete > 0): context['can_add_other_file'] = "You can't add other file because there's a file not completed." 
-		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file." 
+		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
 		return context
 
 	def form_valid(self, form):
@@ -410,6 +416,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 	def form_valid(self, form):
@@ -532,6 +539,7 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 		context['nav_sample'] = True
 		context['disable_upload_files'] = disable_upload_files
 		context['check_box_not_show_processed_files'] = not b_show_all
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -566,6 +574,7 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 	def post(self, request):
@@ -747,7 +756,13 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				if (meta_data != None): alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
 			context['has_type_subtype'] = sample.identify_virus.all().count() > 0
-			
+			if (sample.identify_virus.all().count() > 0):
+				vect_identify_virus = []
+				for identify_virus in sample.identify_virus.all():
+					if (not identify_virus in vect_identify_virus):
+						vect_identify_virus.append(identify_virus)
+				context['vect_identify_virus'] = vect_identify_virus
+
 			## files with contigs
 			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and 
 				os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
@@ -763,6 +778,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
 			if (sample.candidate_file_name_2 != None and len(sample.candidate_file_name_2) > 0):
 				context['candidate_file_name_2'] = sample.candidate_file_name_2
+				
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -793,6 +810,7 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		context['table'] = table
 		context['nav_project'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
 
@@ -865,6 +883,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		context['table'] = table
 		context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
 		context['nav_project'] = True
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		if self.request.POST: 
 			context['project_references'] = ReferenceProjectFormSet(self.request.POST)
 		else: 
@@ -997,6 +1016,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context['project_name'] = project.name
 		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		if self.request.POST: 
 			context['project_sample'] = AddSampleProjectForm(self.request.POST)
 		else: 
@@ -1150,6 +1170,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['project_id'] = project.id
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['nav_project'] = True
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		
 		context['project_name'] = project.name
 		context['reference_name'] = project.reference.name
@@ -1200,6 +1221,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['project_sample'] = project_sample
 			context['num_alerts'] = project_sample.alert_first_level + project_sample.alert_second_level
 			context['nav_project'] = True
+			context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 			
 			## collect alerts
 			alert_out = []

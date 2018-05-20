@@ -128,6 +128,10 @@ class ReferenceForm(forms.ModelForm):
 					
 				## if some errors in the files, fasta or genBank, return
 				if (some_error_in_files): return cleaned_data
+			
+			if (not self.utils.test_sequences_same_length(reference_fasta_temp_file_name.name)):
+				self.add_error('reference_fasta', _('There are sequences that have not the same length. This produce errors for samtools faidx.'))
+				return cleaned_data
 		
 		except IOError as e:	## (e.errno, e.strerror)
 			os.unlink(reference_fasta_temp_file_name.name)

@@ -30,8 +30,12 @@
 <body class="fixed-nav sticky-footer" id="page-top">
   <!-- Navigation-->
   <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
-  	<div class="insa-image-left">
-  		<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
+    <!-- Show or not the log image in the main page -->
+  	{% if show_info_main_page and show_info_main_page.show_images_main_page%}
+	  	<div class="insa-image-left">
+	  		<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
+	{% endif %}
+	
   	<div class="insa-image-left">
   		<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
     
@@ -198,9 +202,11 @@
 			<div class="row">
 				<div class="col-lg-3 text-center">
 				</div>
-				<div class="col-lg-5 text-center">
-					<small><a href="http://www.insa.pt/" target="_blank">Instituto Nacional de Saúde (INSA) Doutor Ricardo Jorge, I.P.</a></small>
-				</div>
+				{% if show_info_main_page and show_info_main_page.instutution_name%}
+					<div class="col-lg-5 text-center">
+						<small><a href="{{ show_info_main_page.instutution_web_site }}" target="_blank">{{ show_info_main_page.instutution_name }}</a></small>
+					</div>
+				{% endif %}
 				<div class="col-lg-3 text-right">
 					<small id="info_pocess_id"></small>
 				</div>

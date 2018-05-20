@@ -8,12 +8,17 @@ from utils.parse_in_files import UploadFilesByDjangoQ
 from managing_files.models import UploadFiles
 from django.contrib.auth.models import User
 from django.conf import settings
+import logging
 
 class Command(BaseCommand):
 	'''
 	classdocs
 	'''
 	help = "Run second stage snippy and freebayes."
+	
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
 
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
@@ -30,6 +35,8 @@ class Command(BaseCommand):
 		upload_files_id = options['upload_files_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for upload_files_id: " + str(upload_files_id))
+		self.logger_production.info("Starting for upload_files_id: " + str(upload_files_id))
+		self.logger_debug.info("Starting for upload_files_id: " + str(upload_files_id))
 		try:
 			upload_files = UploadFiles.objects.get(pk=upload_files_id)
 			if (user_id == None): user = upload_files.owner

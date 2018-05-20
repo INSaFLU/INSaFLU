@@ -7,6 +7,7 @@ from django.core.management import BaseCommand
 from managing_files.models import ProjectSample
 from utils.software import Software
 from django.contrib.auth.models import User
+import logging
 
 class Command(BaseCommand):
 	'''
@@ -14,6 +15,10 @@ class Command(BaseCommand):
 	'''
 	help = "Run second stage snippy and freebayes."
 
+	## logging
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
+	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
 	
@@ -29,6 +34,8 @@ class Command(BaseCommand):
 		project_sample_id = options['project_sample_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for project_sample_id: " + str(project_sample_id))
+		self.logger_production.info("Starting for project_sample_id: " + str(project_sample_id))
+		self.logger_debug.info("Starting for project_sample_id: " + str(project_sample_id))
 		try:
 			project_sample = ProjectSample.objects.get(pk=project_sample_id)
 			if (user_id == None): user = project_sample.project.owner

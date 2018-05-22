@@ -176,7 +176,7 @@ $ cat /etc/hosts
 ```
 
 
-## INSaFlu website
+## INSaFlU website
 		
 
 ```
@@ -199,7 +199,7 @@ To create the database
 $ python3 manage.py migrate
 ```
 
-To create a super user, it's is going to be the administrator user account
+To create a super user, it is going to be the administrator user account
 
 ```
 $ python3 manage.py createsuperuser
@@ -232,7 +232,7 @@ $ python3 manage.py test
 
 :warning: All tests must pass otherwise something is not working properly.
 
-If all tests passed you can test immediately is is working:
+If all tests passed you can test immediately it is working:
 
 ```
 $ cd /usr/local/web_site

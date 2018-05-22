@@ -44,10 +44,6 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes_PARAMETERS = "--only-assembler"
 	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"		## same at this point
 	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"
-	SOFTWARE_ABYSS = os.path.join(DIR_SOFTWARE, "abyss/bin/abyss-pe")
-	SOFTWARE_ABYSS_name = "Abyss" 
-	SOFTWARE_ABYSS_VERSION = "2.0"
-	SOFTWARE_ABYSS_PARAMETERS = 'k=63'
 	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
 	SOFTWARE_ABRICATE_name = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
@@ -168,15 +164,6 @@ class SoftwareNames(object):
 	def get_spades_version(self): return self.SOFTWARE_SPAdes_VERSION
 	def get_spades_parameters(self): return self.SOFTWARE_SPAdes_PARAMETERS
 	def get_spades_parameters_single(self): return self.SOFTWARE_SPAdes_PARAMETERS_single
-
-
-	"""
-	return abyss software
-	"""
-	def get_abyss(self): return self.SOFTWARE_ABYSS
-	def get_abyss_name(self): return self.SOFTWARE_ABYSS_name
-	def get_abyss_version(self): return self.SOFTWARE_ABYSS_VERSION
-	def get_abyss_parameters(self): return self.SOFTWARE_ABYSS_PARAMETERS
 
 	"""
 	return abricate software

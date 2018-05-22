@@ -118,28 +118,6 @@ class Software(object):
 			raise Exception("Fail to run spades")
 		return cmd
 	
-	def run_abyss(self, fastq_1, out_dir):
-		"""
-		Run spades,
-		return out file
-		"""
-		
-		new_file_name = self.utils.get_temp_file_from_dir(out_dir, 'in_file', fastq_1[fastq_1.rfind('.'):])
-		if (os.path.exists(new_file_name)): os.unlink(new_file_name)
-		cmd = "ln -s {} {}".format(fastq_1, new_file_name)
-		os.system(cmd)
-		
-		prefix = "prefix"
-		unitigs = "unitigs"
-		cmd = '{} {} se={} name="{}" "{}" -C {}'.format(self.software_names.get_abyss(), 
-				self.software_names.get_abyss_parameters(), new_file_name, prefix, unitigs, out_dir)
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run abyss")
-		return os.path.join(out_dir, prefix + '-unitigs.fa')
-
 	def is_exist_database_abricate(self, database):
 		"""
 		DATABASE	SEQUENCES	DATE

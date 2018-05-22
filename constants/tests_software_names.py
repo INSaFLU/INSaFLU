@@ -27,7 +27,6 @@ class Test(unittest.TestCase):
 		
 		self.assertTrue(os.path.exists(software_names.get_samtools()), "Fail to test - " + software_names.get_samtools_name())
 		self.assertTrue(os.path.exists(software_names.get_spades()), "Fail to test - " + software_names.get_spades_name())
-		self.assertTrue(os.path.exists(software_names.get_abyss()), "Fail to test - " + software_names.get_abyss_name())
 		self.assertTrue(os.path.exists(software_names.get_abricate()), "Fail to test - " + software_names.get_abricate_name())
 		self.assertTrue(os.path.exists(software_names.get_fastq()), "Fail to test - " + software_names.get_fastq_name())
 		self.assertTrue(os.path.exists(software_names.get_trimmomatic()), "Fail to test - " + software_names.get_trimmomatic_name())

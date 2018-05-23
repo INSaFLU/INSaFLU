@@ -79,7 +79,6 @@ Software to install:
 
 * [IGVTools](https://software.broadinstitute.org/software/igv/igvtools) 2.3.98
 * [SPAdes](http://cab.spbu.ru/software/spades/) 3.11.1
-* [Abyss](http://www.bcgsc.ca/platform/bioinfo/software/abyss) 2.0
 * [Abricate](https://github.com/tseemann/abricate) 0.8-dev
 * [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 0.11.5
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) 0.27
@@ -94,7 +93,7 @@ Software to install:
 	* samtools 1.3
 	* bgzip 1.3
 	* tabix 1.3
-	* snpEff 4.1l - Important, it's necessary to use this version. Recent versions has a problem when variants has involve more than one base.
+	* snpEff 4.1l - Important, it's necessary to use this version. Recent versions have a problem when variants involve more than one base.
 	* freebayes v1.1.0-54-g49413aa
 		
 Some scripts to install:
@@ -104,13 +103,18 @@ Some scripts to install:
 * [Fastq-tools](https://github.com/dcjones/fastq-tools) 0.8	
 
 
-:warning: Important, edit the file "bin/snippy-vcf_to_tab_add_freq" and do this change:
+:warning: Important, copy the file `bin/snippy-vcf_to_tab` to `bin/snippy-vcf_to_tab_add_freq` and do this change:
 
-	#xpto@brazil:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
-	#57c57
-	#< print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
-	#---
-	#> print join("\t", qw(CHROM POS TYPE REF ALT), @ANNO), "\n";
+```
+$ cd /usr/local/software/insaflu/snippy/bin
+$ cp snippy-vcf_to_tab snippy-vcf_to_tab_add_freq
+$ vi snippy-vcf_to_tab_add_freq
+
+and change the line 57 from:
+print join("\t", qw(CHROM POS TYPE REF ALT EVIDENCE), @ANNO), "\n";
+to
+print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
+```
 
 :warning: Important, change snippy script to allow snpEff 4.1 version
 
@@ -279,7 +283,7 @@ $ sudo a2ensite insaflu
 $ sudo systemctl apache2 reload
 ```
 
-## Create users without access to INSaFLU
+## Create users without access to INSaFLU web page
 
 Go to your internet explorer and put this address `http://127.0.0.1:8000/admin/`
 Make the authentication with your superuser credentials and in `AUTHENTICATION AND AUTHORIZATION` you can create new accounts. 

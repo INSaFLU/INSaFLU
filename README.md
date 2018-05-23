@@ -1,4 +1,4 @@
-<p align="center"><img src="static/insa/logo_insaflu_new.png" alt="INSaFLU" width="400"></p>
+<p align="center"><img src="static/insa/logo_insaflu_new.png" alt="INSaFLU" width="300"></p>
 
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -180,7 +180,7 @@ $ cat /etc/hosts
 ```
 
 
-## INSaFlU website
+## INSaFLU website
 		
 
 ```
@@ -190,7 +190,7 @@ $ sudo mkdir -p /var/log/insaflu
 $ sudo chown flu_user:flu_user /usr/local/web_site
 $ sudo chown flu_user:flu_user /var/log/insaflu
 $ cd /usr/local/web_site
-$ git clone insaflu_master
+$ git clone https://github.com/INSaFLU/INSaFLU.git
 $ sudo pip3 install -r requirements.txt
 $ cp .env_model .env
 ```
@@ -249,7 +249,7 @@ If it is working let's go to install in a Apache web server. If you prefer, can 
 
 ## Apache web server
 
-Add `flu_user` to the `apache` group and add `insaflu.conf` to apach2.
+Add `flu_user` to the `apache` group and add `insaflu.conf` to apache2.
 
 ```
 $ sudo usermod -a -G flu_user apache

@@ -50,20 +50,31 @@ Vitor Borges
 
 # Installation
 
-This installation is oriented for Ubuntu Server 16.04.
+This installation is oriented for Ubuntu Server 16.04 and Centos 7.X.
 There are several steps and packages to install, so, please, be patient. First, it is necessary to install and configure all bioinformatics software, then the database, batch-queuing system and, finally, the web site.
 
 The user "flu_user" is used in all operations and it is going to be the user to run the apache web server.
 
 ## General packages
 
-Some general packages to install: 
+###Some general packages to install in Ubuntu 16.X: 
 
 ```
 $ sudo apt install binutils libproj-dev gdal-bin
 $ sudo apt install postgis*
 $ sudo apt install bioperl
+$ sudo apt install python3
 $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
+```
+
+###Some general packages to install in Centos 7.X: 
+
+```
+$ sudo yum install gdal gdal-devel 
+$ sudo yum install postgis
+$ sudo yum install python3
+$ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
+$ sudo cpan -i Bio::Perl
 ```
 
 ## Bioinformatics software
@@ -152,9 +163,9 @@ $ scripts/distinst -all -local -noexit
 % ./install_execd
 ```
 
-Configure queues with this [help](https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/)
+Configure queues with this [help.](https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/)
 
-After the SGE configuration you need to have these queues in your system.
+After the SGE configuration you need to have these queue names in your system.
 
 ```
 queuename                      qtype resv/used/tot. load_avg arch          states
@@ -168,7 +179,7 @@ queue_1.q@brazil           BIP   0/0/1          1.19     lx26-amd64
 queue_2.q@brazil           BIP   0/0/1          1.19     lx26-amd64 
 ```
 
-:warning: `brazil` is the name of the computer where the installation is. You have other certainly. The computer name need to be in `/etc/hosts` with the ip address and not with `localhost` to SGE work properly.
+:warning: `brazil` is the name of the computer where the installation is. You have other certainly. The computer name need to be in `/etc/hosts` with the IP address and not with `localhost` to SGE work properly.
 Example:
 
 ```
@@ -179,9 +190,10 @@ $ cat /etc/hosts
 192.168.1.14	brazil
 ```
 
+Of course you have a different IP address from '192.168.1.14'
 
 ## INSaFLU website
-		
+
 
 ```
 
@@ -249,38 +261,115 @@ If it is working let's go to install in a Apache web server. If you prefer, can 
 
 ## Apache web server
 
+###Config apache2 in Centos 7.X:
+
+
 Add `flu_user` to the `apache` group and add `insaflu.conf` to apache2.
 
 ```
 $ sudo usermod -a -G flu_user apache
+## From IUS repo
+$ sudo yum install python3<minor version of your python>u-mod_wsgi
 $ sudo vi /etc/httpd/conf.d/insaflu.conf
 
-Alias /media /usr/local/web_site/media
-Alias /static /usr/local/web_site/static_all
-<Directory "/usr/local/web_site/static_all">
-    Require all granted
-</Directory>
-<Directory "/usr/local/web_site/media">
-    Require all granted
-</Directory>
+<VirtualHost *:80>
 
-<Directory "/var/log/insaFlu">
-        Require all granted
-</Directory>
+	# General setup for the virtual host, inherited from global configuration
 
-<Directory "/usr/local/web_site/fluwebvirus">
-    <Files wsgi.py>
-        Require all granted
-    </Files>
-</Directory>
+	ServerName insaflu.pt
 
-WSGISocketPrefix /var/run/wsgi
-WSGIDaemonProcess flu_user python-path=/usr/local/web_site/fluwebvirus;/usr/lib/python3.4/site-packages
-WSGIProcessGroup flu_user
-WSGIScriptAlias / /usr/local/web_site/fluwebvirus/wsgi.py
+        Alias /media /usr/local/web_site/media
+        Alias /static /usr/local/web_site/static_all
+        <Directory "/usr/local/web_site/static_all">
+                Require all granted
+        </Directory>
+        <Directory "/usr/local/web_site/media">
+                Options FollowSymLinks
+                AllowOverride None
+                Require all granted
+        </Directory>
+
+        #### for log files
+        <Directory "/var/log/insaFlu">
+                Require all granted
+        </Directory>
+
+        <Directory "/usr/local/web_site/insaflu">
+            <Files "wsgi.py">
+                Require all granted
+            </Files>
+        </Directory>
+	
+	WSGIDaemonProcess flu_user.insa.pt user=flu_user group=flu_user python-path=/usr/local/web_site/insaflu;/usr/lib/python3.<minor version of your python>/site-packages
+        WSGIProcessGroup flu_user.insa.pt
+        WSGIScriptAlias / /usr/local/web_site/insaflu/wsgi.py
+
+# Use separate log files for the SSL virtual host; note that LogLevel
+# is not inherited from httpd.conf.
+ErrorLog /var/log/apache2/insaflu_error.log
+TransferLog /var/log/apache2/insaflu_transfer.log
+LogLevel warn
+
+</VirtualHost> 
 
 $ sudo a2ensite insaflu
-$ sudo systemctl apache2 reload
+$ sudo systemctl restart apache2
+$ sudo systemctl status apache2
+```
+
+###Config apache2 in Ubuntu 16.X:
+
+Add `flu_user` to the `apache` group and add `insaflu.conf` to apache2.
+
+```
+$ sudo usermod -a -G flu_user apache
+$ sudo apt install libapache2-mod-wsgi-py3
+$ sudo vi /etc/apache2/sites-available/insaflu.conf
+
+<VirtualHost *:80>
+
+	# General setup for the virtual host, inherited from global configuration
+
+	ServerName insaflu.pt
+
+        Alias /media /usr/local/web_site/media
+        Alias /static /usr/local/web_site/static_all
+        <Directory "/usr/local/web_site/static_all">
+                Require all granted
+        </Directory>
+        <Directory "/usr/local/web_site/media">
+                Options FollowSymLinks
+                AllowOverride None
+                Require all granted
+        </Directory>
+
+        #### for log files
+        <Directory "/var/log/insaFlu">
+                Require all granted
+        </Directory>
+
+        <Directory "/usr/local/web_site/insaflu">
+            <Files "wsgi.py">
+                Require all granted
+            </Files>
+        </Directory>
+	
+	WSGIDaemonProcess flu_user.insa.pt user=flu_user group=flu_user python-path=/usr/local/web_site/insaflu;/usr/lib/python3.<minor version of your python>/site-packages
+	WSGIProcessGroup flu_user.insa.pt
+	WSGIScriptAlias / /usr/local/web_site/insaflu/wsgi.py
+
+# Use separate log files for the SSL virtual host; note that LogLevel
+# is not inherited from httpd.conf.
+ErrorLog /var/log/apache2/insaflu_error.log
+TransferLog /var/log/apache2/insaflu_transfer.log
+LogLevel warn
+
+
+</VirtualHost> 
+
+$ sudo a2ensite insaflu.conf
+$ sudo systemctl restart apache2
+$ sudo systemctl status apache2
 ```
 
 ## Create users without access to INSaFLU web page

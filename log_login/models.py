@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
-## in fluwebvirus database
+## in INSaFLU database
 ## select * from log_login_loginhistory order by creation_date desc limit 50;
 class LoginHistory(models.Model):
 	"""

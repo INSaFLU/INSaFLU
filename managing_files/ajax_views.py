@@ -352,6 +352,10 @@ def show_igv(request):
 								os.path.basename(path_name_bai), os.path.basename(path_name_bai)))
 				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf,\
 								os.path.basename(path_name_vcf), os.path.basename(path_name_vcf)))
+				data['reference_id'] = mark_safe('<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_reference,\
+								os.path.basename(path_name_reference), os.path.basename(path_name_reference)))
+				data['reference_index_id'] = mark_safe('<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_reference_index,\
+								os.path.basename(path_name_reference_index), os.path.basename(path_name_reference_index)))
 			except ProjectSample.DoesNotExist as e:
 				pass
 		return JsonResponse(data)

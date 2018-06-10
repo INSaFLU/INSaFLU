@@ -1,0 +1,229 @@
+LOCUS       PVC_M_L3_L5             2575 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2575
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+     CDS             112..1635
+                     /gene="P/V"
+                     /locus_tag="locus_00001"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P03422"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Phosphoprotein"
+                     /translation="MAEEQARHVKNGLECIRALKAEPIGPLAIEEAMAAWSEISDNPG
+                     QERATCKKEKAGSSGLSKPCLSAIGSTEGSAPRIRGQGSGESDDDAETLGAPSGNLQA
+                     SSAGLQRYYVYDHSGEAIKGIQDADSIMVQSGLEGDSTLSGGDNESENSDVDIGEPDT
+                     EGHAITDRGSAPISMGFRASDVETAEGGEIHELLRLQSRGNNFLKPGKTLNVPPPPDP
+                     GRANTSETPIKKGTDARLASFGTEIASLLTGGATQCARKSPSEPSGPGAPVGNVPECV
+                     SNAALIPEWTPESGTTISPRSQNNEEGGEYYDDELFSDVQDIKTALAKIHEDNQKIIS
+                     KLESLLLLKGEVESIKKQINKQNISISTLEGHLSSIMIAIPGFGKDPNDPTADVEINP
+                     DLKPIISRDSGRALAEVLKKPVASRQLQGMTNGRTSSRGQLLKEFQLKPIGKKMSSAV
+                     GFVPDTGPASRSVIRSIIKSSRLEEDRKRYLMTLLDDIKGANDLAKFHQMLMKIIMK"
+ORIGIN      
+        1 ccgaagacca gaacaacatc tgcctaccct ccattattgt tataaaaaac ttaggaacca
+       61 ggtccacaca gccgccagcc catcaaccat ccactcccac gatcggagcc gatggcagag
+      121 gagcaggcac gccatgtcaa gaacggactg gaatgcatcc gggctctcaa agccgagccc
+      181 atcggcccac tggccatcga ggaagccatg gcagcatggt cagaaatatc agacaaccca
+      241 ggacaggagc gagccacctg caagaaagag aaggcaggca gttcgggtct cagcaaacca
+      301 tgcctctcag caattggatc aactgaaggc agtgcacctc gcatccgcgg tcagggatct
+      361 ggagagagcg atgacgacgc tgaaactttg ggagccccct caggaaatct ccaggcatca
+      421 agcgctgggt tacagcgtta ttatgtttat gatcacagcg gtgaagcgat taagggaatc
+      481 caagatgctg actctatcat ggttcaatca ggccttgaag gtgatagcac cctctcagga
+      541 ggagacaatg aatctgaaaa cagcgatgtg gatattggcg aacctgatac cgagggacat
+      601 gctatcactg accggggatc tgctcccatc tctatggggt tcagagcttc tgatgttgaa
+      661 actgcagaag gaggggagat ccacgagctc ctgagactcc aatccagagg caacaacttt
+      721 ctgaagcctg ggaagactct caatgtcccc ccgcccccgg accccggtag agccaacact
+      781 tctgagacac ccattaaaaa gggcacagac gcgagattag cctcatttgg aacggagatc
+      841 gcgtctttat tgacaggtgg tgcaacccaa tgtgctcgaa agtcgccctc ggaaccatca
+      901 gggccaggtg cacctgtggg gaatgtcccc gagtgtgtga gcaatgccgc actgataccg
+      961 gagtggacac ccgaatctgg taccacaatc tccccgagat cccagaataa tgaagaaggg
+     1021 ggagaatatt atgatgatga gctgttctct gatgtccaag atatcaaaac agccctggcc
+     1081 aaaatacacg aggacaacca gaagataatc tccaagctag aatcactgct gttattgaaa
+     1141 ggagaagttg agtcaatcaa gaagcagatc aacaagcaaa atatcagcat atccaccctg
+     1201 gaaggacacc tctcaagcat catgatagcc attcctggat ttgggaagga tcccaacgac
+     1261 cctactgcag atgtcgaaat caatcccgac ttgaaaccta tcataagtag agattcaggc
+     1321 cgagcactgg ccgaagttct caagaaaccc gttgccagcc gacaactcca aggaatgaca
+     1381 aatggacgga ccagttccag aggacagctg cttaaggaat ttcagctaaa gccgatcggg
+     1441 aaaaagatga gctcagccgt cgggtttgtt cctgacaccg gccctgcatc acgcagtgta
+     1501 atccgctcca ttataaaatc tagccggcta gaggaggatc ggaagcgtta cctgatgact
+     1561 ctccttgatg atatcaaagg agccaacgat cttgccaagt tccaccagat gctgatgaaa
+     1621 ataataatga aatagctaca actcaactta cctgccaacc ccatgccagt cgacccaacc
+     1681 agcacaacct aagtccatta taaaaaactt aggagcaaag tgactgcctc ccaagctcca
+     1741 caatgacaga gatctacgat ttcgacaagt cagcatggga catcaaaggg tcgatcgctc
+     1801 cgattcaacc caccacctac agtgatggga ggctggtgcc ccaggtcaga gtcatagacc
+     1861 ctggtctagg cgacaggaag gatgaatgct tcatgtacat gtttctgctg ggggttgttg
+     1921 aggacagcga tcccttaggg cccccaatcg ggcgagcatt tgggtccctg cccctaggtg
+     1981 ttggcagatc cacagcaaaa cccgaagaac tcctcaagga ggccactgag cttgacatag
+     2041 ttgttagacg tacagcaggg ctcaatgaaa aactggtgtt ctacaacaac actccactaa
+     2101 ctctcctcac accttggaga aaggtcctga caacagggag tgtcttcaac gcaaatcaag
+     2161 tgtgcaatgc ggttaatctg ataccgctgg ataccccgca gaggttccgt gttgtttata
+     2221 tgagcatcac ccgtctttca gataacgggt attacactgt tcctagaaga atgctggaat
+     2281 tcagatcagt caatgcagtg gccttcaacc tgctggtgac ccttaggatt gataaggcaa
+     2341 ttggccctgg gaggatcatc gacaatgcag agcaacttcc tgaggcaaca tttatggttc
+     2401 acatcgggaa cttcaggaga aagaagagtg aagtctactc tgctgattat tgcaaaatga
+     2461 agatcgaaaa gatgggtcta gtttttgcac ttggtgggat agggggcacc agtcttcaca
+     2521 ttagaagcac aggcaaaatg agcaagaccc tccatgcaca actcgggttc aagaa
+//
+LOCUS       M_L6                     400 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..400
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+ORIGIN      
+        1 gaccttatgt tacccactga tggatatcaa tgaagacctt aatcgattac tctggaggag
+       61 cagatgcaag atagtaagaa tccaggcagt cttgcagcca tcagttcctc aagaattccg
+      121 catttacgat gacgtgatca taaatgatga ccaaggactc ttcaaagttt tgtaaaccgt
+      181 agtgctcagc agtgcccaaa aacaaccccc ctcataatga cagccagaat gcccggacaa
+      241 aaaagccccc tccgagagac tccacggacc aagcgagagg ccagctagca gccgacggca
+      301 agcgcgaaca ccaggtggcc ccagcatagg acagtcccga cccagggcca ccaccagccg
+      361 tcccaatccg catcatcctc gtgtgacccc cgaggaccag
+//
+LOCUS       M_L7_1                   649 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..649
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+     CDS             complement(78..416)
+                     /locus_tag="locus_00002"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="hypothetical protein"
+                     /translation="MAVPFRRAVAGSGSWWPRVVWVLVWLPWWCVVWVGSLAVLVVGP
+                     WGPFFGGAPPSWIVGGWVLSLFGGWCACLWAPGGPEGLVGDSLWLSGVGGEVPWAGVW
+                     VLLGVCVPWP"
+ORIGIN      
+        1 caagcgaccg aggtgaccca accacaggca cccgattccc caggcagatc ctctcccccc
+       61 ggcaaactaa acaaaactta gggccaagga acacacacgc ccaacagaac ccagaccccg
+      121 gcccacggca cctcgccccc aacccccgac aaccagaggg agtccccaac caatccctcc
+      181 ggcccccccg gtgcccacag gcaggcacac caacccccaa acaggctcag cacccagcca
+      241 ccgacaatcc aagacggggg ggccccccca aaaaagggcc cccaggggcc gacaaccagg
+      301 acagcgaggg agcccaccca caccacacac caccacggca accagaccag aacccagacc
+      361 accctgggcc accaactccc agacccggcc accgccctgc ggaaagggac ggccacaacc
+      421 cgcacacccc agccccgatc cggcgggcag ccacctaacc cgaaccagca cccaagagcg
+      481 acccccgaag gacccccaaa ccgcaaagga catcagcatc ccacagcctc tctaagtccg
+      541 ccggtctcct ccccttctcg aagggaccaa aagatcaacc cactataccc gacgtcactc
+      601 aactccccat ccctaaagga gacaccaggg atcccagaat caagactca
+//
+LOCUS       MF_L7_2                  370 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..370
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+ORIGIN      
+        1 tccaatatcc atcatgggtc tcaaggtgaa catctctgcc gtattcatgg cagtactgtt
+       61 aactctccaa acacccgccg gtcaaattca ttggggcaat ctctctaaga taggggtggt
+      121 aggaatagga agtgcaagct acaaagttat gactcgttcc agccatcaat cattagtcat
+      181 aaaattaatg cccaatataa ctctcctcaa taactgcacg agggtagaga ttgcagaata
+      241 caggagacta ctaaggacag ttttggaacc aattagagat gcacttaatg caatgaccca
+      301 gaacataagg ccggttcaga gcgtagcttc aagtaggaga cacaagagat ttgcgggagt
+      361 agtcctggca
+//
+LOCUS       H_L10                    849 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..849
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+ORIGIN      
+        1 cttctacaaa gataaccctt atcccaaggg aagtaggata gttattaaca gagaacatct
+       61 tatgattgac agaccctatg ttctgctggc tgttctgttc gtcatgtttc tgagcttgat
+      121 cggattgctg gcaattgcag gcattagact tcatcgggca gccatctaca ccgcggagat
+      181 ccataaaagc ctcagtacca atctagatgt gactaactca atcgagcatc aggtcaagga
+      241 cgtgctgaca ccactcttta aaatcatcgg ggatgaagtg ggccttagaa cacctcagag
+      301 attcactgac ctagtgaaat tcatctcgga caagattaaa ttccttaatc cggataggga
+      361 gtacgacttc agagatctca cttggtgcat caacccgcca gagaggatca aactagatta
+      421 tgatcaatac tgtgcagatg tggctgctga agagctcatg aatgcattgg tgaactcaac
+      481 tctactggag accagaacaa ccactcagtt cctagctgtc tcaaaaggaa actgttcagg
+      541 gcccactaca atcagaggtc aattctcaaa catgtcgctg tccttgttgg acttgtactt
+      601 aggtcgaggt tacaatgtgt catctatagt cactatgaca tcccagggaa tgtatggggg
+      661 aacctaccta gttgaaaagc ctaatctgaa cagcaaaggg tcagagttgt cacaactgag
+      721 catgtaccga gtgtttgaag taggtgtgat cagaaacccg ggtttggggg ctccggtgtt
+      781 ccatatgaca aactattttg agcaaccagt cagtaatggt ctcggcaact gtatggtggc
+      841 tttggggga
+//
+LOCUS       H_L11                    855 bp    DNA     linear       05-JUN-2018
+DEFINITION  Influenzavirus influenzavirus strain Measles_final.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..855
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="Measles_final"
+     CDS             complement(205..660)
+                     /locus_tag="locus_00003"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="hypothetical protein"
+                     /translation="MELSFTSPSTSAGRYVGAWQSSPASLIGTVKRLGLTLNLGIHSN
+                     VLITPKARFLIGGIVSQYTLLRLDLYRSIPEPCVINGPNPEAILILSSTVRLRSTDRT
+                     PYEGILLSFKGTHSGFSQSAWILPLHACWKHVSIRNLSSVRVVGTAHFA"
+ORIGIN      
+        1 gctcaaactc gcagcccttt gtcacgggga cgattctatc ataattccct atcagggatc
+       61 agggaaaggt gtcagcttcc agctcgtcaa gctgggtgtc tggaaatccc caaccgacat
+      121 gcaatcctgg gtccccttat caacggatga tccagtggta gacaggcttt acctctcatc
+      181 tcacagaggt gtcatcgctg acaatcaagc aaaatgggct gtcccgacaa cacgaacaga
+      241 tgacaagttg cgaatggaga catgcttcca gcaggcgtgt aaaggtaaaa tccaagcact
+      301 ctgcgagaat cccgagtggg tacctttgaa ggataacagg attccttcat acggggtcct
+      361 gtctgttgat ctgagtctga cagttgagct taaaatcaaa attgcttcgg gattcgggcc
+      421 attgatcaca cacggctcag ggatggacct atacaaatcc aaccgcaaca atgtgtattg
+      481 gctgactatt ccgccaatga gaaatctagc cttaggcgta atcaacacat tggagtggat
+      541 accgagattc aaggttagtc ccaacctctt cactgtccca attaaggaag caggcgaaga
+      601 ctgccatgcc ccaacatacc tacctgcgga ggtggacggt gatgtaaaac tcagttccaa
+      661 cctggtgatt ctacctggtc aagatctcca atatgttttg gcaacctacg atacctccag
+      721 ggttgagcat gctgtggttt attacgttta cagcccaagc cgctcatttt cttactttta
+      781 tccttttagg ttgcctataa agggggtccc aatcgaacta caagtggaat gcttcacatg
+      841 ggaccaaaaa ctctg
+//

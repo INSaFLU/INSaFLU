@@ -148,6 +148,7 @@ class ReferenceForm(forms.ModelForm):
 				self.utils.has_degenerated_bases(reference_fasta_temp_file_name.name)
 			except Exception as e:
 				os.unlink(reference_fasta_temp_file_name.name)
+				some_error_in_files = True
 				self.add_error('reference_fasta', e.args[0])
 			
 		### testing genbank

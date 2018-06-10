@@ -434,8 +434,12 @@ class Gene(object):
 		return self.strand == 1
 		
 	def __eq__(self, other):
+		if (other == None): return False 
 		return self.name == other.name
 		
+	def __str__(self):
+		return "{} {}/{} {}".format(self.name, self.start, self.end, self.strand)
+
 class GeneticElement(object):
 	
 	def __init__(self):
@@ -444,11 +448,13 @@ class GeneticElement(object):
 		self.dt_elements_size = {}
 		
 	def add_gene(self, element_name, length, gene):
-		if (element_name in self.dt_elements): 
+		if (element_name in self.dt_elements):
+			if (gene == None): return False
 			if (gene not in self.dt_elements[element_name]): self.dt_elements[element_name].append(gene)
 			else: return False
 		else: 
-			self.dt_elements[element_name] = [gene]
+			if (gene == None): self.dt_elements[element_name] = []
+			else: self.dt_elements[element_name] = [gene]
 			self.dt_elements_size[element_name] = length
 		return True
 
@@ -477,6 +483,13 @@ class GeneticElement(object):
 			if (value_ not in other.dt_elements or other.dt_elements[value_] != self.dt_elements[value_]): return False
 		return True
 		
+	def __str__(self):
+		sz_out = ""
+		for element_name in self.dt_elements:
+			if (len(self.dt_elements[element_name]) == 0): sz_out += "-- E.Name: {} ".format(element_name)
+			else: sz_out += ";; Name: {}; Gene: {}; ".format(element_name, "" if len(self.dt_elements[element_name]) == 0 \
+									else "-".join([str(gene) for gene in self.dt_elements[element_name]]))
+		return sz_out
 
 class MixedInfectionMainVector(object):
 	

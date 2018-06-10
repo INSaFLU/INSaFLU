@@ -412,6 +412,7 @@ class Utils(object):
 		handle = open(genbank_name)
 		for record in SeqIO.parse(handle, "genbank"):
 			length = 0
+			gene_add = False
 			for features in record.features:
 				if (features.type == 'source'):
 					length = abs(features.location.end - features.location.start)
@@ -420,7 +421,13 @@ class Utils(object):
 						if (key_name in features.qualifiers):
 							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
 								int(features.location.start), int(features.location.end), features.location.strand))
+							gene_add = True
 							break
+						
+			### element without gene
+			if (not gene_add and length > 0):
+				geneticElement.add_gene(record.name, length, None)
+				
 		handle.close()
 		return geneticElement
 	

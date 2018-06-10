@@ -1,0 +1,58 @@
+CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS
+PVC_M_L3_L5	5	snp	A	G	G:50 A:2
+PVC_M_L3_L5	16	snp	A	G	G:3324 A:9
+PVC_M_L3_L5	35	snp	T	C	C:5018 T:7
+PVC_M_L3_L5	83	complex	TCA	CCG	CCG:6940 TCA:0
+PVC_M_L3_L5	143	snp	A	G	G:9073 A:3	CDS	+	32/1524	11/507	missense_variant	c.32A>G	p.Asn11Ser	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	598	snp	C	T	T:13280 C:12	CDS	+	487/1524	163/507	missense_variant	c.487C>T	p.His163Tyr	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	816	snp	A	G	G:12627 A:8	CDS	+	705/1524	235/507	synonymous_variant	c.705A>G	p.Arg235Arg	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	1299	snp	T	C	C:27820 T:24	CDS	+	1188/1524	396/507	synonymous_variant	c.1188T>C	p.Pro396Pro	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	1455	snp	A	G	G:25895 A:37	CDS	+	1344/1524	448/507	synonymous_variant	c.1344A>G	p.Ser448Ser	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	1464	snp	G	A	A:25824 G:80	CDS	+	1353/1524	451/507	synonymous_variant	c.1353G>A	p.Gly451Gly	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	1632	snp	A	G	G:22245 A:17	CDS	+	1521/1524	507/507	synonymous_variant	c.1521A>G	p.Lys507Lys	locus_00001	P/V	Phosphoprotein
+PVC_M_L3_L5	1641	snp	A	G	G:21937 A:10
+PVC_M_L3_L5	1724	snp	C	T	T:15486 C:50
+PVC_M_L3_L5	1760	snp	T	C	C:13280 T:3
+PVC_M_L3_L5	1772	snp	A	G	G:12947 A:20
+PVC_M_L3_L5	1781	snp	C	T	T:13903 C:30
+PVC_M_L3_L5	1811	snp	C	T	T:13758 C:109
+PVC_M_L3_L5	1820	snp	C	T	T:16003 C:45
+PVC_M_L3_L5	1892	snp	C	T	T:17506 C:24
+PVC_M_L3_L5	2003	snp	C	T	T:19142 C:50
+PVC_M_L3_L5	2219	snp	T	C	C:21255 T:23
+PVC_M_L3_L5	2333	snp	T	C	C:15059 T:14
+PVC_M_L3_L5	2367	snp	G	A	A:15232 G:17
+PVC_M_L3_L5	2381	snp	T	C	C:14868 T:28
+PVC_M_L3_L5	2483	snp	T	C	C:12313 T:19
+M_L6	5	snp	T	C	C:112 T:3
+M_L6	37	snp	C	T	T:731 C:1
+M_L6	58	snp	G	A	A:876 G:1
+M_L6	175	snp	A	G	G:778 A:1
+M_L6	215	snp	T	C	C:956 T:0
+M_L6	360	snp	G	A	A:369 G:0
+M_L7_1	52	snp	T	C	C:1547 T:5
+M_L7_1	133	snp	T	G	G:1051 T:0	CDS	-	284/339	95/112	missense_variant	c.284A>C	p.Glu95Ala	locus_00002		hypothetical protein
+M_L7_1	143	snp	C	T	T:939 C:6	CDS	-	274/339	92/112	missense_variant	c.274G>A	p.Val92Ile	locus_00002		hypothetical protein
+M_L7_1	227	snp	T	C	C:1557 T:4	CDS	-	190/339	64/112	missense_variant	c.190A>G	p.Ser64Gly	locus_00002		hypothetical protein
+M_L7_1	310	snp	G	A	A:3104 G:9	CDS	-	107/339	36/112	missense_variant	c.107C>T	p.Ser36Phe	locus_00002		hypothetical protein
+M_L7_1	398	snp	T	C	C:3920 T:14	CDS	-	19/339	7/112	missense_variant	c.19A>G	p.Arg7Gly	locus_00002		hypothetical protein
+M_L7_1	439	snp	T	C	C:5160 T:11
+M_L7_1	452	complex	CACCT	AACCC	AACCC:5189 CACCT:0
+M_L7_1	468	snp	G	T	T:9781 G:6
+M_L7_1	533	snp	T	C	C:23296 T:52
+M_L7_1	588	snp	C	T	T:25454 C:109
+M_L7_1	610	snp	T	C	C:22284 T:25
+MF_L7_2	53	complex	GTA	TTG	TTG:25394 GTA:2
+MF_L7_2	62	mnp	AC	GT	GT:25605 AC:2
+MF_L7_2	118	snp	G	A	A:34073 G:89
+MF_L7_2	256	snp	G	A	A:24179 G:91
+H_L10	175	snp	G	A	A:29708 G:75
+H_L10	286	snp	T	G	G:41093 T:3
+H_L10	526	snp	A	G	G:43741 A:60
+H_L10	535	snp	T	C	C:42511 T:35
+H_L11	160	snp	A	G	G:23662 A:37
+H_L11	325	snp	T	A	A:31944 T:8	CDS	-	336/456	112/151	missense_variant	c.336A>T	p.Lys112Asn	locus_00003		hypothetical protein
+H_L11	391	snp	T	C	C:30474 T:49	CDS	-	270/456	90/151	synonymous_variant	c.270A>G	p.Leu90Leu	locus_00003		hypothetical protein
+H_L11	646	snp	A	C	C:22847 A:1	CDS	-	15/456	5/151	missense_variant	c.15T>G	p.Phe5Leu	locus_00003		hypothetical protein
+H_L11	667	snp	G	T	T:23611 G:3
+H_L11	845	snp	C	A	A:2583 C:21

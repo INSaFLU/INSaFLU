@@ -82,7 +82,7 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 				user.profile.save()
 				
 				current_site = get_current_site(self.request)
-				subject = 'Activate your InsaFlu Account'
+				subject = 'Activate your INSaFLU Account'
 				message = render_to_string('accounts/account_activation_email.html', {
 					'user': user,
 					'domain': current_site.domain,
@@ -139,7 +139,7 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 				if (result['success']):
 					user = User.objects.get(email__iexact=email_name, is_active=True, profile__email_confirmed=True)
 					current_site = get_current_site(self.request)
-					subject = 'Reseting password  in your INSaFlu Account'
+					subject = 'Reseting password  in your INSaFLU Account'
 					message = render_to_string('accounts/account_reset_pass_email.html', {
 						'user': user,
 						'domain': current_site.domain,
@@ -208,7 +208,7 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 						return self.form_invalid(form)
 					
 					current_site = get_current_site(self.request)
-					subject = 'Activate your InsaFlu Account'
+					subject = 'Activate your INSaFLU Account'
 					message = render_to_string('accounts/account_activation_email.html', {
 						'user': user,
 						'domain': current_site.domain,

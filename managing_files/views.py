@@ -738,7 +738,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				decodeResult = DecodeObjects()
 				result = decodeResult.decode_result(meta_sample.description)
 				context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-				if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_ABYSS_name)
+				if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
 				context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
 				
 			##### extra data sample, columns added by the user

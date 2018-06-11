@@ -568,7 +568,6 @@ def remove_sample(request):
 	if request.is_ajax():
 		data = { 'is_ok' : False }
 		sample_id_a = 'sample_id'
-		
 		if (sample_id_a in request.GET):
 			
 			## some pre-requisites
@@ -586,11 +585,13 @@ def remove_sample(request):
 				return JsonResponse(data)
 			
 			## different owner or belong to a project not deleted
-			if (sample.owner.pk != request.user.pk or sample.project_samples.all().filter(is_deleted=False).count() != 0): return JsonResponse(data)
+			if (sample.owner.pk != request.user.pk or sample.project_samples.all().filter(is_deleted=False, \
+								is_error=False, project__is_deleted=False).count() != 0):
+				return JsonResponse(data)
 			
 			## it can have project samples not deleted but in projects deleted
-			for project in sample.project_samples.all().filter(is_deleted=False):
-				if (not project.is_deleted): return JsonResponse(data)
+			for project_samples in sample.project_samples.all().filter(is_deleted=False):
+				if (not project_samples.is_deleted and not project_samples.project.is_deleted): return JsonResponse(data);
 			
 			### now you can remove
 			sample.is_deleted = True

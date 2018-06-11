@@ -145,8 +145,8 @@ class SampleTable(tables.Table):
 		if (user.username == Constants.USER_ANONYMOUS): return record.name;
 		if (user.username == record.owner.username):	## it can't be in any active project
 			## it can have project samples not deleted but in projects deleted
-			for project in record.project_samples.all().filter(is_deleted=False, is_error=False):
-				if (not project.is_deleted): return record.name;
+			for project_samples in record.project_samples.all().filter(is_deleted=False, is_error=False):
+				if (not project_samples.is_deleted and not project_samples.project.is_deleted): return record.name;
 				
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)

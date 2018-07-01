@@ -1230,6 +1230,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
+		self.assertTrue(os.path.exists(os.path.join(out_put_path, "reference", os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, "")))))
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
@@ -1247,6 +1248,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
+		self.assertTrue(os.path.exists(os.path.join(out_put_path, "reference", os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, "")))))
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
@@ -1415,6 +1417,10 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		
 		## freebayes
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
@@ -2095,7 +2101,7 @@ class Test(TestCase):
 			user.password = ConstantsTestsCase.TEST_USER_NAME
 			user.save()
 
-		ref_name = "second_stagis_single_file1_pk"
+		ref_name = "second_stagis_single_file3_pk"
 		try:
 			reference = Reference.objects.get(name=ref_name)
 		except Reference.DoesNotExist:
@@ -2112,7 +2118,7 @@ class Test(TestCase):
 		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
 			
-		sample_name = "run_snippyis_single_file1_pk"
+		sample_name = "run_snippyis_single_file3_pk"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -2127,7 +2133,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		project_name = "file_naais_single_filee_3_pk"
+		project_name = "file_naais_single_filee_4_pk"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:

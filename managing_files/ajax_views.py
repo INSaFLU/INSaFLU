@@ -332,8 +332,11 @@ def show_igv(request):
 				path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)
-				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
-				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
+#				old version where reference was 
+# 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
+# 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
+				path_name_reference = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+				path_name_reference_index = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)
 				path_bed = project_sample.project.reference.get_reference_bed(TypePath.MEDIA_URL)
 				path_bed_idx = project_sample.project.reference.get_reference_bed_index(TypePath.MEDIA_URL)
 				data['is_ok'] = True

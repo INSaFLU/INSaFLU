@@ -40,7 +40,7 @@ INSaFLU also automatically provides:
 
 ## How to cite
 
-If you use INSaFLU in your work, please cite Borges V, Pinheiro M et al, 2018, [bioRxiv](https://www.biorxiv.org/content/early/2018/01/24/253161)
+If you use INSaFLU in your work, please cite Borges V, Pinheiro M et al. Genome Medicine (2018) 10:46, [https://doi.org/10.1186/s13073-018-0555-0](https://doi.org/10.1186/s13073-018-0555-0)
 
 # Bioinformatics pipeline
 

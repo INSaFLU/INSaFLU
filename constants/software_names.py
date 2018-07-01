@@ -142,6 +142,11 @@ class SoftwareNames(object):
 	SOFTWARE_FASTQ_TOOLS_SAMPLE_VERSION = "0.8"
 	SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS = ""
 	
+	### not necessary to install, it's a caveat for older versions, before 1/07/2018
+	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY = os.path.join(DIR_SOFTWARE, "scripts/create_new_reference_to_snippy.pl")
+	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_name = "create_new_reference_to_snippy"
+	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
+	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
 	def __init__(self):
 		'''
@@ -348,4 +353,14 @@ class SoftwareNames(object):
 	def get_fastqtools_sample_name(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_name
 	def get_fastqtools_sample_version(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_VERSION
 	def get_fastqtools_sample_parameters(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS
+
+	"""
+	return 
+	### not necessary to install, it's a caveat for older versions, before 1/07/2018
+	"""
+	def get_create_new_reference_to_snippy(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY
+	def get_create_new_reference_to_snippy_name(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_name
+	def get_create_new_reference_to_snippy_version(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion
+	def get_create_new_reference_to_snippy_parameters(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters
+
 

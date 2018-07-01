@@ -55,7 +55,7 @@ class Software(object):
 		"""
 		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
-				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV]
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV, FileType.FILE_REF_FASTA]
 		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
 
@@ -84,6 +84,11 @@ class Software(object):
 				### if snippy copy also the vcf
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 								project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
+			elif (type_file == FileType.FILE_REF_FASTA):
+				self.utils.copy_file(os.path.join(path_from, 'reference', os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
+					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
+				## create the FAI index
+				self.create_fai_fasta(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
 			else:
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
@@ -100,6 +105,24 @@ class Software(object):
 			raise Exception("Fail to run samtools")
 		return cmd
 
+	def creat_new_reference_to_snippy(self, project_sample):
+		
+		### get temp file
+		temp_file = self.utils.get_temp_file("new_reference", FileExtensions.FILE_FASTA)
+		cmd = "perl %s %s %s" % (self.software_names.get_create_new_reference_to_snippy(), \
+				project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT), temp_file)
+		print(cmd)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			if (os.path.exists(temp_file)): os.unlink(temp_file)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run create_new_reference_to_snippy")
+		path_dest = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, self.software_names.get_snippy_name())
+		print("Copy {} to {}".format(temp_file, path_dest))
+		self.utils.copy_file(temp_file, path_dest)
+		self.create_fai_fasta(path_dest)
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
 
 	def run_spades(self, fastq_1, fastq_2, out_dir):
 		"""

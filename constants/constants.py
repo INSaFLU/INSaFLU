@@ -170,6 +170,8 @@ class Constants(object):
 		if (file_type == FileType.FILE_VCF): return "{}.vcf".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ): return "{}.vcf.gz".format(file_name)
 		if (file_type == FileType.FILE_VCF_GZ_TBI): return "{}.vcf.gz.tbi".format(file_name)
+		if (file_type == FileType.FILE_REF_FASTA): return "ref.fa"
+		if (file_type == FileType.FILE_REF_FASTA_FAI): return "ref.fa.fai"
 		return ""
 
 	### complement
@@ -250,6 +252,7 @@ class FileType(Enum):
 	[06:29:16] * /tmp/insafli/xpto/xpto.vcf
 	[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz
 	[06:29:16] * /tmp/insafli/xpto/xpto.vcf.gz.tbi
+				/tmp/insafli/xpto/ref/ref.fa
 	"""
 	FILE_BAM = 0
 	FILE_BAM_BAI = 1
@@ -263,6 +266,8 @@ class FileType(Enum):
 	FILE_VCF_GZ = 9
 	FILE_VCF_GZ_TBI = 10
 	FILE_CSV = 11
+	FILE_REF_FASTA = 12		## ref/ref.fa
+	FILE_REF_FASTA_FAI = 13		## ref/ref.fa.fai
 
 class TypeFile(object):
 	

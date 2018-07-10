@@ -45,7 +45,7 @@ If you use INSaFLU in your work, please cite Borges V, Pinheiro M et al. Genome 
 # Bioinformatics pipeline
 
 ## Authors
-Miguel Pinheiro
+Miguel Pinheiro,
 Vitor Borges 
 
 # Installation

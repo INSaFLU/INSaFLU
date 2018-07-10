@@ -21,7 +21,6 @@ from utils.collect_extra_data import CollectExtraData
 from django_q.tasks import async
 from datetime import datetime
 from django.db import transaction
-from django.contrib.auth.models import User
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
 
@@ -351,7 +350,7 @@ def show_igv(request):
 				#### other files
 				data['bam_file_id'] = mark_safe('<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
 								os.path.basename(path_name_bam), os.path.basename(path_name_bam)))
-				data['bai_file_id'] = mark_safe('<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bam,\
+				data['bai_file_id'] = mark_safe('<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_bai,\
 								os.path.basename(path_name_bai), os.path.basename(path_name_bai)))
 				data['vcf_file_id'] = mark_safe('<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(path_name_vcf,\
 								os.path.basename(path_name_vcf), os.path.basename(path_name_vcf)))

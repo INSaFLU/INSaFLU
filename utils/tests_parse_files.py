@@ -878,3 +878,46 @@ class Test(TestCase):
 		return upload_files
 
 
+	def test_parse_input_file_7(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
+	
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_3_CSV)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		self.assertEquals(0, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals(7, len(parse_in_files.get_vect_samples()))
+		self.assertEquals('pH1N1_20102207cleaned', parse_in_files.get_vect_samples()[0][0].name)
+		self.assertEquals('pH1N1_20102207cleaned.fastq.gz', parse_in_files.get_vect_samples()[0][0].candidate_file_name_1)
+		self.assertEquals('', parse_in_files.get_vect_samples()[0][0].candidate_file_name_2)
+		self.assertEquals('Cyril_test1', parse_in_files.get_vect_samples()[0][0].data_set.name)
+		self.assertEquals(None, parse_in_files.get_vect_samples()[0][0].vaccine_status)
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()[0][1]))
+		self.assertEquals('sH1N1_20090224_A_CGTACG_L002', parse_in_files.get_vect_samples()[1][0].name)
+		self.assertEquals('sH1N1_20090224_A_CGTACG_L002_R1_002.fastq.gz', parse_in_files.get_vect_samples()[1][0].candidate_file_name_1)
+		self.assertEquals('', parse_in_files.get_vect_samples()[1][0].candidate_file_name_2)
+		self.assertEquals('Cyril_test1', parse_in_files.get_vect_samples()[1][0].data_set.name)
+		self.assertEquals(None, parse_in_files.get_vect_samples()[1][0].vaccine_status)
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()[1][1]))
+		self.assertEquals('sH3N2_20121026_B_ATTCCT_L006', parse_in_files.get_vect_samples()[6][0].name)
+		self.assertEquals('sH3N2_20121026_B_ATTCCT_L006_R1_001.fastq.gz', parse_in_files.get_vect_samples()[6][0].candidate_file_name_1)
+		self.assertEquals('', parse_in_files.get_vect_samples()[6][0].candidate_file_name_2)
+		self.assertEquals('Cyril_test1', parse_in_files.get_vect_samples()[6][0].data_set.name)
+		self.assertEquals(None, parse_in_files.get_vect_samples()[6][0].vaccine_status)

@@ -140,32 +140,55 @@ print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 	* postgresql 9.X
 		* create a database and a user. Then reflect these names in ".env" file in root path of web site.
 
-## Operation System
+## Sun Grid Engine/Open Grid Engine
 
-	Software necessary:
+	Software:
 	* gzip
-	* [Sun grid engine/Open Grid Engine](http://gridscheduler.sourceforge.net/)
-		* [download 6.2 version](https://sourceforge.net/projects/gridscheduler/files/SGE6.2u5p2/)
-		* create the queues:
+	* [Sun Grid Engine/Open Grid Engine](https://arc.liv.ac.uk/downloads/SGE/releases)
+		* [download 8.1.9 version](https://arc.liv.ac.uk/downloads/SGE/releases/8.1.9/sge_8.1.9.tar.xz)
+		* queues that will be created:
 			* all.q - generic queue
-			* fast.q - run quick process
-			* queue_1.q and queue_2.q - run slow process
+			* fast.q - to run quick process
+			* queue_1.q and queue_2.q - to run slow process
 
 
-Install SGE tips
+Install SGE/OGE tips
  
 ```
-$ SGE_ROOT=/home/software/sge
+$ sudo mkdir /opt/sge
+$ sudo groupadd -g 58 gridware
+$ sudo useradd -u 63 -g 58 -d /opt/sge sgeadmin
+$ cd ~
+$ mkdir sge; cd sge
+$ wget https://arc.liv.ac.uk/downloads/SGE/releases/8.1.9/sge_8.1.9.tar.xz
+$ tar -xJvf sge_8.1.9.tar.xz
+$ cd sge-8.1.9/source
+$ scripts/bootstrap.sh
+
+### centos version
+$ sudo yum install hwloc-devel openssl-devel
+### ubuntu
+$ sudo apt-get install libhwloc-dev libssl-dev
+
 $ ./aimk -no-java -no-jni
-$ scripts/distinst -all -local -noexit
-% cd $SGE_ROOT
-% ./install_qmaster
-% ./install_execd
+$ sudo su
+# export SGE_ROOT=/opt/sge
+# scripts/distinst -local -allall -noexit
+# chown -R sgeadmin:gridware /opt/sge
+# cd $SGE_ROOT
+# ./install_qmaster
+# . /opt/sge/default/common/settings.sh
+# ./install_execd
+
+### create a file to set the environment variables to SGE
+$ sudo vi /etc/profile.d/sun-grid-engine.sh
+## add the follow line to the file
+ . /opt/sge/default/common/settings.sh
 ```
 
 Configure queues with this [help.](https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/)
 
-After the SGE configuration you need to have these queue names in your system.
+After the OGE/SGE configuration you need to have these queue names in your system.
 
 ```
 queuename                      qtype resv/used/tot. load_avg arch          states

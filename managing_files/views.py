@@ -589,8 +589,8 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 							
 				### get the temporary variable
 				path_name = form.cleaned_data['path_name']
-				self.logger_debug.error("Starting for project_id: " + str(type(path_name.file)))
-				self.logger_production.error("Starting for project_id: " + str(type(path_name.file)))
+				self.logger_debug.info("Starting for file: " + str(path_name.file.name))
+				self.logger_production.info("Starting file: " + str(path_name.file.name))
 
 				if (path_name == None):
 					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, path not found.' }

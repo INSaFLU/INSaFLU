@@ -1,0 +1,17 @@
+#Mandatory columns to fulfill: 'sample name', 'fastq1','fastq2' ('fastq2' is exceptionally not fulfilled only for single-end data)										
+#Other mandatory columns that may not be fulfilled: 'data set', 'vaccine status', 'week', 'onset date', 'collection date', 'lab reception date', 'latitude', 'longitude'										
+#You may include any other columns with metadata variables.										
+#Date format: dd/mm/yyyy										
+#Fastq file names must be complete and match the ones from the files that you are going to upload later										
+#Sample names must be unique in your account										
+#Latitude and Longitude are in Decimal Degrees (DD)										
+#Sample name: only numbers, letters and underscores are allowed										
+#The aforementioned instructions do not need to be deleted before submission										
+sample name	fastq1	fastq2	data set	vaccine status	week	onset date	collection date	lab reception date	latitude	longitude
+pH1N1_20102207cleaned	pH1N1_20102207cleaned.fastq.gz		Cyril_test1							
+sH1N1_20090224_A_CGTACG_L002	sH1N1_20090224_A_CGTACG_L002_R1_002.fastq.gz		Cyril_test1							
+sH1N1_20090224_B_GAGTGG_L002	sH1N1_20090224_B_GAGTGG_L002_R1_001.fastq.gz		Cyril_test1							
+sH3N2_20090711_A_ACTTGA_L005	sH3N2_20090711_A_ACTTGA_L005_R1_001.fastq.gz		Cyril_test1							
+sH3N2_20090711cleaned	sH3N2_20090711cleaned.fastq.gz		Cyril_test1							
+sH3N2_20121026_A_ACTGAT_L006	sH3N2_20121026_A_ACTGAT_L006_R1_001.fastq.gz		Cyril_test1							
+sH3N2_20121026_B_ATTCCT_L006	sH3N2_20121026_B_ATTCCT_L006_R1_001.fastq.gz		Cyril_test1							

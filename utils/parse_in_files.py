@@ -477,7 +477,7 @@ class ParseInFiles(object):
 			
 			## can set the data
 			if ((len(sample.candidate_file_name_2) > 0 and upload_files_1 != None and upload_files_2 != None) or\
-				(len(sample.candidate_file_name_2) == 0 and upload_files_1 == None)):
+				(len(sample.candidate_file_name_2) == 0 and upload_files_1 != None)):
 				
 				## link the files to the right place
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_1)

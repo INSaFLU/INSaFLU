@@ -43,6 +43,7 @@ class ConstantsTestsCase(object):
 	MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_TSV = "template_input_data.tsv"
 	MANAGING_TEMPLATE_INPUT_DATA_CSV = "template_input_data.csv"
+	MANAGING_TEMPLATE_INPUT_DATA_3_CSV = "Cyril_input_test1_minus_heavy_files.txt"
 	MANAGING_TEMPLATE_INPUT_DATA_2_CSV = "template_input_data_2.csv"
 	MANAGING_TEMPLATE_INPUT_DATA_FAIL = "template_input_data_fail.csv"
 	MANAGING_TEMPLATE_INPUT_big_data_csv = "sample_data_season_2016_17_.csv"
@@ -118,8 +119,6 @@ class ConstantsTestsCase(object):
 	
 	FASTQ11_1 = "EVA174_S64_L001_R1_001.fastq.gz"
 	FASTQ11_2 = "EVA174_S64_L001_R2_001.fastq.gz"
-	
-	
 	
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"

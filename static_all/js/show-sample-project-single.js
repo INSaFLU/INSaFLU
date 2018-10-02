@@ -46,6 +46,10 @@ function show_igv() {
 			  $('#bai_file_id').append(data['bai_file_id'])
 			  $('#vcf_file_id').empty()
 			  $('#vcf_file_id').append(data['vcf_file_id'])
+			  $('#reference_id').empty()
+			  $('#reference_id').append(data['reference_id'])
+			  $('#reference_index_id').empty()
+			  $('#reference_index_id').append(data['reference_index_id'])
 			  
 			  /// set options
 	    	  options = {

@@ -323,14 +323,14 @@ class Command(BaseCommand):
 			
 			## can be removed already
 			try:
+				files_to_remove.append(upload_file.get_path_to_file(TypePath.MEDIA_ROOT))
+				
 				## test the days removed
 				if (upload_file.date_deleted != None): removed_days = int(divmod((datetime.datetime.now() - upload_file.date_deleted).total_seconds(), 86400)[0])
 				else: removed_days = 100000	## big number, older versions doesn't have this table field
 				if (removed_days < self.REMOVE_FILES_AFTER_DAYS):
 					self.out_message("Not remove physically: {}; Deleted in web site {} days ago.".format(files_to_remove[0], removed_days), False)
 					continue
-				
-				files_to_remove.append(upload_file.get_path_to_file(TypePath.MEDIA_ROOT))
 
 				if (only_identify_files):
 					files_removed = files_to_remove.copy()

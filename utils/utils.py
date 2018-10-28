@@ -139,9 +139,10 @@ class Utils(object):
 
 	def remove_file(self, sz_file_name):
 		"""
-		prevent to remove files outside of temp directory
+		Remove files
+		return True if the file exists and was removed
 		"""
-		if (sz_file_name == None): return
+		if (sz_file_name == None): return False
 		
 		if os.path.exists(sz_file_name) and len(sz_file_name) > 0:
 			cmd = "rm " + sz_file_name
@@ -149,7 +150,9 @@ class Utils(object):
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
 				self.logger_debug.error('Fail to run: ' + cmd)
-				raise Exception("Fail to remove a file") 
+				raise Exception("Fail to remove a file")
+			return True
+		return False
 
 	def remove_dir(self, path_name):
 		if (path_name != None and os.path.isdir(path_name)):

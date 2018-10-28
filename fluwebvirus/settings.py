@@ -337,6 +337,12 @@ LOGGING = {
             'filename': '/var/log/insaFlu/warning.log',
             'formatter': 'verbose',
         },
+		'file_remove_files': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/insaFlu/remove_files.log',
+            'formatter': 'verbose',
+        },
 		'console':{
             'level':'DEBUG',
             'class':'logging.StreamHandler',
@@ -361,6 +367,10 @@ LOGGING = {
             'filters': ['require_debug_false'],
             'level': 'WARNING',		## third level of log
             'propagate': True,
+        },
+		'fluWebVirus.remove_files': {
+            'handlers': ['file_remove_files'],
+            'level': 'INFO',
         },
     }
 }

@@ -45,6 +45,10 @@ class Command(BaseCommand):
 			self.stdout.write("End")
 		except UploadFiles.DoesNotExist as e:
 			self.stdout.write("Error: UploadFiles id '{}' does not exist.".format(upload_files_id))
+			self.logger_production.info("Error: UploadFiles id '{}' does not exist.".format(upload_files_id))
+			self.logger_debug.info("Error: UploadFiles id '{}' does not exist.".format(upload_files_id))
 		except User.DoesNotExist as e:
 			self.stdout.write("Error: User id '{}' does not exist.".format(user_id))
+			self.logger_production.info("Error: User id '{}' does not exist.".format(user_id))
+			self.logger_debug.info("Error: User id '{}' does not exist.".format(user_id))
 		

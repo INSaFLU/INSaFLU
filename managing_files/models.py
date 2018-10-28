@@ -358,9 +358,15 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
 
+	def is_original_fastq_removed(self):
+		"""
+		Test if original fastq were removed already
+		"""
+		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
+	
 	def get_fastq_output(self, type_path, b_first_file):
 		"""
-		return fastq output first step
+		return fastq output second step
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))

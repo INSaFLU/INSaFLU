@@ -695,6 +695,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
 				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
 			
+			### testing second file
 			trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
 			if (trimmomatic_file_name != None):
 				context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\

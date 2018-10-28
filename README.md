@@ -400,4 +400,31 @@ $ sudo systemctl status apache2
 Go to your internet explorer and put this address `http://127.0.0.1:8000/admin/`
 Make the authentication with your superuser credentials and in `AUTHENTICATION AND AUTHORIZATION` you can create new accounts. 
 
+## Remove files from file system removed by the user on web site
 
+You can remove the original fastq.gz files from system because they are not used anymore. The Trimmomatic result fastq files are the ones that are going to be used. 
+You can can also remove files that belong to the samples, references, uploaded in batch and project samples that were deleted in web site by the users.
+This operation will save several GB in your hard drives. 
+
+:warning:By default, only files with 10 days after been removed in web site will be removed in file system. 
+:warning:The original fastq.gz files will be removed after 10 days of being processed by Trimmomatic. 
+
+To identify the files that can be removed:
+
+```
+$ cd <where your INSaFLU is installed>
+$ python3 manage.py run_remove_files --only_identify_files true
+```
+A log file will be created with this information in `/var/log/insaflu/remove_files.log`
+
+To remove the files permanently from file system:
+:warning: The files can't be recovered.
+
+```
+$ cd <where your INSaFLU is installed>
+$ python3 manage.py run_remove_files --only_identify_files false
+```
+
+Tip:
+
+You can create a cron job to run this task every week.

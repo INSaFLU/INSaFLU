@@ -956,6 +956,11 @@ class Software(object):
 		process_SGE = ProcessSGE()
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_RUNNING)
 		
+		### it can be deleted
+		if (sample.is_deleted):
+			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
+			return True
+
 		try:
 			print("Start run_fastq_and_trimmomatic")
 			### run trimmomatics
@@ -999,7 +1004,7 @@ class Software(object):
 				
 		except:
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_ERROR)
-			return
+			return False
 		
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)

@@ -1,9 +1,8 @@
-django==1.11
+django==1.11.18
 django-ipware
 django-crequest
 django-embed-video
 django-bootstrap-breadcrumbs
-django-extensions
 django-user-agents
 django-crispy-forms
 django-braces

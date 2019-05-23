@@ -191,7 +191,7 @@ $ sudo vi /etc/profile.d/sun-grid-engine.sh
 
 Configure queues
 
-Go to the folder `example_script_sge_add_queue` and change second line in the files "grid_add_host_fast.txt", "grid_add_host_queue_1.txt" and "grid_add_host_queue_2.txt" and replace 'brazil' to your computer name. Mine is 'brazil'
+Go to the folder `example_script_sge_add_queue` and change second line in the files `"grid_add_host_fast.txt"`, `"grid_add_host_queue_1.txt"` and `"grid_add_host_queue_2.txt"` and replace 'brazil' to your computer name. Mine is 'brazil'
 
 Get your computer name:
 
@@ -207,7 +207,7 @@ Add your name to manage list:
 $ sudo qconf -am <your name>
 ```
 
-:warning: If you get an error about `qconf not found` no found or `SGE_ROOT not set`, do something like this:
+:warning: If you get an error about `qconf not found` or `SGE_ROOT not set`, do something like this:
 
 ```
 ### this need to be improved

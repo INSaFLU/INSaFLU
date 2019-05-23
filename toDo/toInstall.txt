@@ -33,9 +33,7 @@
 ## $ sudo pip3 install crispy-forms-foundation
 ## $ sudo pip3 install NumPy
 ## $ sudo pip3 install biopython
-## $ sudo pip3 install django-q
 ## $ sudo pip3 install django-nose
-## $ sudo pip3 install django-modalview
 ## $ sudo pip3 install django-bootstrap-datepicker
 ## $ sudo pip3 install plotly
 ## $ sudo pip3 install Pillow

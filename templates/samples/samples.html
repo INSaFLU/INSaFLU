@@ -59,9 +59,9 @@
 	                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
 	                  {% block table.tbody.row %}
 	                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-	                      {% for column, cell in row.items %}
-	                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-	                      {% endfor %}
+	                    {% for column, cell in row.items %}
+	                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+	                    {% endfor %}
 	                  </tr>
 	                  {% endblock table.tbody.row %}
 	                {% empty %}

@@ -3,7 +3,7 @@
 import hashlib, ntpath, os, logging, sys
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample, Project, ProjectSample, UploadFiles, MetaKey
@@ -18,13 +18,12 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
-from utils.parse_in_files import UploadFilesByDjangoQ, ParseInFiles
+from utils.parse_in_files import ParseInFiles
 from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
-from django_q.tasks import async
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
@@ -134,7 +133,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 			reference_fasta_temp_file_name.close()
 			software.dos_2_unix(reference_fasta_temp_file_name.name)
 			
-			file_name_cleaned = utils.clean_name(ntpath.basename(reference_fasta.name), { ' ' : '_', '(' : '' , ')' : '' })
+			file_name_cleaned = utils.clean_name(ntpath.basename(reference_fasta.name))
 			try:
 				temp_genbank_dir = software.run_prokka(reference_fasta_temp_file_name.name, file_name_cleaned)
 			except Exception as e:
@@ -160,11 +159,11 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		reference.is_obsolete = False
 		reference.number_of_locus = self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE]
 		reference.hash_reference_fasta = hash_value_fasta
-		reference.reference_fasta_name = utils.clean_name(ntpath.basename(reference_fasta.name), { ' ' : '_', '(' : '' , ')' : '' })
+		reference.reference_fasta_name = utils.clean_name(ntpath.basename(reference_fasta.name))
 		reference.scentific_name = scentific_name
 		reference.hash_reference_genbank = hash_value_genbank
 		if (reference_genbank == None): reference.reference_genbank_name = ntpath.basename(temp_genbank_file)
-		else: reference.reference_genbank_name = utils.clean_name(ntpath.basename(reference_genbank.name), { ' ' : '_', '(' : '' , ')' : '' })
+		else: reference.reference_genbank_name = utils.clean_name(ntpath.basename(reference_genbank.name))
 		reference.save()
 
 		## move the files to the right place
@@ -281,10 +280,10 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		sample.owner = self.request.user
 		sample.is_deleted = False
 		sample.is_obsolete = False
-		sample.file_name_1 = os.path.basename(sample.path_name_1.name)
+		sample.file_name_1 = utils.clean_name(os.path.basename(sample.path_name_1.name))
 		sample.is_valid_1 = True
 		if (sample.exist_file_2()):
-			sample.file_name_2 = os.path.basename(sample.path_name_2.name)
+			sample.file_name_2 = utils.clean_name(os.path.basename(sample.path_name_2.name))
 			sample.is_valid_2 = True 
 		else: sample.is_valid_2 = False
 		sample.has_files = True
@@ -322,11 +321,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 
 		### create a task to perform the analysis of fastq and trimmomatic
 		try:
-			if (settings.RUN_SGE):
-				process_SGE = ProcessSGE()
-				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
-			else:
-				taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, self.request.user)
+			process_SGE = ProcessSGE()
+			taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
 		except Exception as e:
 			self.logger_production.error('Fail to run: ProcessSGE - ' + str(e))
 			self.logger_debug.error('Fail to run: ProcessSGE - ' + str(e))
@@ -434,7 +430,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 		path_name = form.cleaned_data['path_name']
 
 		## create a genbank file
-		if (path_name != None):
+		if (not path_name is None):
 			upload_files = form.save(commit=False)
 			upload_files.is_valid = True
 			upload_files.is_processed = False
@@ -451,11 +447,11 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 				type_file.save()
 			
 			upload_files.type_file = type_file
-			upload_files.file_name = ntpath.basename(path_name.name)
+			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
 			upload_files.owner = self.request.user
 			
 			upload_files.description = ""
-			upload_files.save()
+#			upload_files.save()
 		
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
@@ -463,19 +459,12 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
 			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file),  ntpath.basename(sz_file_to))
+									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
 			upload_files.save()
 			
-			### send message to upload samples in the system
-			upload_files_by_djangoq = UploadFilesByDjangoQ()
-			
 			try:
-				if (settings.RUN_SGE):
-					process_SGE = ProcessSGE()
-					taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
-				else:
-					b_testing = False
-					taskID = async(upload_files_by_djangoq.read_sample_file, self.request.user, upload_files, b_testing)
+				process_SGE = ProcessSGE()
+				taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
 			except:
 				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
 			
@@ -584,20 +573,18 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		try:
 			if form.is_valid():
 				
+				utils = Utils()
 				## doesn't work like that
 				#upload_files = form.save()
-							
+				
 				### get the temporary variable
 				path_name = form.cleaned_data['path_name']
-				self.logger_debug.info("Starting for file: " + str(path_name.file.name))
-				self.logger_production.info("Starting file: " + str(path_name.file.name))
-
-				if (path_name == None):
+				if (path_name is None):
 					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, path not found.' }
 					return JsonResponse(data)
-				
+
 				upload_files = UploadFiles()
-				upload_files.file_name = path_name.name
+				upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
 				## move the files to the right place
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
 														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
@@ -611,7 +598,9 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 						out.write(path_name.file.read())                ## Read bytes into file
 					self.utils.move_file(temp_file, sz_file_to)
 				else: self.utils.copy_file(path_name.file.name, sz_file_to)
-				
+				self.logger_debug.info("Starting for file: " + str(upload_files.file_name))
+				self.logger_production.info("Starting file: " + str(upload_files.file_name))
+			
 				## test if file exist
 				if (not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10):
 					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, fail to copy file.' }
@@ -649,12 +638,8 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			parse_in_files = ParseInFiles()
 			
 			try:
-				if (settings.RUN_SGE):
-					process_SGE = ProcessSGE()
-					taskID = process_SGE.set_link_files(self.request.user)
-				else:
-					b_testing = False
-					taskID = async(parse_in_files.link_files, self.request.user, b_testing)
+				process_SGE = ProcessSGE()
+				taskID = process_SGE.set_link_files(self.request.user)
 			except:
 				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Fail to submit SGE job.' }
 				return JsonResponse(data)
@@ -1100,10 +1085,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
-						if (settings.RUN_SGE):
-							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
-						else:
-							taskID = async(software.process_second_stage_snippy_coverage_freebayes, project_sample, self.request.user)
+						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
 							
 						### set project sample queue ID
 						manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
@@ -1112,14 +1094,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					except:
 						pass
 					
-	
 			### necessary to calculate the global results again 
 			if (project_sample_add > 0):
 				try:
-					if (settings.RUN_SGE):
-						taskID = process_SGE.set_collect_global_files(project, self.request.user)
-					else:
-						taskID = async(collect_extra_data.collect_extra_data_for_project, project, self.request.user)
+					taskID = process_SGE.set_collect_global_files(project, self.request.user)
 				
 					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)

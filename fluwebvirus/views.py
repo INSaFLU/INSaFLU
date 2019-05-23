@@ -2,7 +2,8 @@ from __future__ import absolute_import
 
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
-from django.core.urlresolvers import reverse_lazy
+#from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from braces.views import AnonymousRequiredMixin, FormValidMessageMixin, LoginRequiredMixin, MessageMixin
 from ipware.ip import get_ip
 from log_login.models import LoginHistory

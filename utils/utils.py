@@ -72,7 +72,7 @@ class Utils(object):
 		while 1:
 			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
 			temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
-		return os.path.join(main_path, temp_file_name)
+		return os.path.join(main_path, temp_file_name.replace(" ", "_"))
 
 	def get_temp_file(self, file_name, sz_type):
 		"""
@@ -972,7 +972,7 @@ class Utils(object):
 		for i in range(0, len(l), n):
 			yield l[i:i+n]
 
-	def clean_name(self, name_to_clean, dict_to_clean):
+	def clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '' }):
 		"""
 		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
 		

@@ -23,7 +23,6 @@ class ManagingFilesConfig(AppConfig):
 			
 			#### set default references
 			self.upload_default_references()
-		
 		pass
 
 	def create_default_user(self):

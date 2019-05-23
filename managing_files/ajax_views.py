@@ -17,11 +17,8 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.translation import ugettext_lazy as _
 from extend_user.models import Profile
 from managing_files.models import Reference, Sample, UploadFiles, ProcessControler
-from utils.collect_extra_data import CollectExtraData
-from django_q.tasks import async
 from datetime import datetime
 from django.db import transaction
-from django.conf import settings
 from utils.process_SGE import ProcessSGE
 
 ######################################
@@ -688,15 +685,11 @@ def remove_project_sample(request):
 			project_sample.save()
 			
 			### need to send a message to recalculate the global files
-			collect_extra_data = CollectExtraData()
 			metaKeyAndValue = MetaKeyAndValue()
 			manageDatabase = ManageDatabase()
 			try:
-				if (settings.RUN_SGE):
-					process_SGE = ProcessSGE()
-					taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
-				else:
-					taskID = async(collect_extra_data.collect_extra_data_for_project, project_sample.project, request.user)
+				process_SGE = ProcessSGE()
+				taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 				data = { 'is_ok' : True }

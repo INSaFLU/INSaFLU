@@ -61,12 +61,12 @@
                 {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
                   {% block table.tbody.row %}
                   <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-                      {% for column, cell in row.items %}
-                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-                      {% endfor %}
+                    {% for column, cell in row.items %}
+                        <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                    {% endfor %}
                   </tr>
                   {% endblock table.tbody.row %}
-                {% empty %}
+                  {% empty %}
                   {% if table.empty_text %}
                   {% block table.tbody.empty_text %}
                   <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>

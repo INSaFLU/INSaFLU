@@ -159,6 +159,8 @@ class ProcessSGE(object):
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
@@ -177,6 +179,8 @@ class ProcessSGE(object):
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} second_stage_snippy --project_sample_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project_sample.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
@@ -195,6 +199,8 @@ class ProcessSGE(object):
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} run_trimmomatic_species --sample_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, True)
 		try:
@@ -210,6 +216,8 @@ class ProcessSGE(object):
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} link_files --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
 		try:
@@ -225,6 +233,8 @@ class ProcessSGE(object):
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} read_sample_file --upload_files_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), upload_files.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
 		try:

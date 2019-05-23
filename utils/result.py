@@ -268,6 +268,12 @@ class Coverage(object):
 	def get_result_number(self):
 		return ""
 	
+	def is_all_segments_almost_zero(self):
+		""" test if all segmentes are below 0.1, if so it's not necessary to run freebayes"""
+		for key in self.dt_data:
+			if (self.get_coverage(key, Coverage.COVERAGE_ALL) > 0.1): return False
+		return True
+
 	def is_100_total(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_ALL)
 		return self.__is_100__(value_coverage)

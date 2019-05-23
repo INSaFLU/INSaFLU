@@ -2,7 +2,8 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.gis.db.models import PointField
-from django.contrib.gis.db.models import GeoManager
+from django.contrib.gis.db.models import GeoManager    ##  change to django  2.x
+#from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
 from constants.constants import Constants, TypePath, FileExtensions, FileType
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
@@ -969,7 +970,7 @@ class UploadFiles(models.Model):
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
 												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted
 												##   to add other samples file
-	upload_file = models.ForeignKey('self', blank=True, null=True) 			## in fastq file has the sample list where it belongs
+	upload_file = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE) 			## in fastq file has the sample list where it belongs
 	description = models.TextField(default="")				## has a json result.ProcessResults instance with errors or successes
 	
 	class Meta:

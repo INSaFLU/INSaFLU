@@ -14,7 +14,6 @@ from django.contrib.gis.geos import Point
 from constants.constants import FileExtensions
 import chardet, csv, os, re, time
 from django.conf import settings
-from django_q.tasks import async
 from utils.software import Software
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
@@ -276,25 +275,25 @@ class ParseInFiles(object):
 			if (len(row[2].strip()) > 0): sample.candidate_file_name_2 = row[2].strip()
 			sample.data_set = DataSet()
 			sample.data_set.owner = user
-			if (len(row[3].strip()) > 0): sample.data_set.name = row[3].strip()
+			if (len(row) > 3 and len(row[3].strip()) > 0): sample.data_set.name = row[3].strip()
 			else: sample.data_set.name = Constants.DATA_SET_GENERIC	
-			if (len(row[4].strip()) > 0):
+			if (len(row) > 4 and len(row[4].strip()) > 0):
 				sample.vaccine_status = VaccineStatus()
 				sample.vaccine_status.name = row[4].strip()
 				sample.vaccine_status.owner = user
-			if (len(row[5].strip()) > 0): sample.week = int(row[5].strip())
+			if (len(row) > 5 and len(row[5].strip()) > 0): sample.week = int(row[5].strip())
 			
 			## dates
-			if (len(row[6].strip()) > 0): sample.date_of_onset = self.utils.validate_date(row[6].strip())
-			if (len(row[7].strip()) > 0): sample.date_of_collection = self.utils.validate_date(row[7].strip())
-			if (len(row[8].strip()) > 0): sample.date_of_receipt_lab = self.utils.validate_date(row[8].strip())
+			if (len(row) > 6 and len(row[6].strip()) > 0): sample.date_of_onset = self.utils.validate_date(row[6].strip())
+			if (len(row) > 7 and len(row[7].strip()) > 0): sample.date_of_collection = self.utils.validate_date(row[7].strip())
+			if (len(row) > 8 and len(row[8].strip()) > 0): sample.date_of_receipt_lab = self.utils.validate_date(row[8].strip())
 			
-			if len(row[9].strip()) > 0:
+			if len(row) > 9 and len(row[9].strip()) > 0:
 				sample.geo_local = Point(float(row[9].strip()), float(row[10].strip()))
 			
 			vect_tag_names = []	## this trick need to be done because 'Extra fields on many-to-many'
 			for i in range(11, len(header)):
-				if len(row[i].strip()) > 0:
+				if len(row) > i and len(row[i].strip()) > 0:
 					tag_name = TagName()
 					tag_name.id = count_row
 					tag_name.owner = user
@@ -517,11 +516,8 @@ class ParseInFiles(object):
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
 						## here can be direct because came from a djangoq
-						if (settings.RUN_SGE):
-							process_SGE = ProcessSGE()
-							taskID = process_SGE.set_run_trimmomatic_species(sample, user)
-						else:
-							taskID = async(software.run_fastq_and_trimmomatic_and_identify_species, sample, user)
+						process_SGE = ProcessSGE()
+						taskID = process_SGE.set_run_trimmomatic_species(sample, user)
 						
 						### 
 						manageDatabase = ManageDatabase()

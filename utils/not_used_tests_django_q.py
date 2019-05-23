@@ -3,10 +3,8 @@ Created on Nov 5, 2017
 
 @author: mmp
 '''
-import unittest, math, time, os 
-from django_q.tasks import async, result, fetch
+import unittest, os 
 from django.conf import settings 
-from django_q.humanhash import humanize
 from django_q.cluster import Cluster
 from manage_virus.uploadFiles import UploadFiles
 from manage_virus.models import UploadFile
@@ -17,7 +15,6 @@ from constants.constants import Constants, TypePath
 from manage_virus.constants_virus import ConstantsVirus
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
-from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 
 class Test(unittest.TestCase):
@@ -33,78 +30,6 @@ class Test(unittest.TestCase):
 	def tearDown(self):
 		self.c.stop()
 	
-	def testDjangoQ(self):
-		task_id = async(math.copysign, 2, -2)
-		## print(humanize(task_id))
-		while True:
-			task_result = result(task_id)
-			if (task_result is None):
-				time.sleep(7)
-			else: 
-				self.assertTrue('-2.0', str(task_result))
-				break
-		
-			
-	def testDjangoSyncQ(self):
-		# create a synchronous task
-		task_id = async(math.copysign, 2, -2, sync=True)
-		# the task will then be available immediately
-		task = fetch(task_id)
-		self.assertTrue(task.success)	### if the task is finished
-		
-		# and can be examined
-		if not task.success: self.fail('An error occurred: {}'.format(task.result))
-		
-		task_result = result(task_id)
-		self.assertTrue('-2.0', str(task_result))
-		
-		utils = Utils()
-		self.assertTrue(utils.is_all_tasks_finished([task_id]))
-		task_id = async(math.copysign, 2, -2)
-		task = fetch(task_id)
-		self.assertTrue(task == None)
-		n_count = 0
-		while True:
-			time.sleep(.20)
-			task = fetch(task_id)
-			if (task != None): break
-			if (n_count > 10): break
-			n_count += 1
-		self.assertTrue(utils.is_all_tasks_finished([task_id]))
-		self.assertTrue(utils.is_all_tasks_finished_success([task_id]))
-	
-		task_id = async(math.copysign, 2, '-2')
-		task = fetch(task_id)
-		self.assertTrue(task == None)
-		n_count = 0
-		while True:
-			time.sleep(.20)
-			task = fetch(task_id)
-			if (task != None): break
-			if (n_count > 10): break
-			n_count += 1
-		self.assertTrue(utils.is_all_tasks_finished([task_id]))
-		self.assertFalse(utils.is_all_tasks_finished_success([task_id]))
-
-		task_id = async(time.sleep, 3)
-		task = fetch(task_id)
-		self.assertTrue(task == None)
-		n_count = 0
-		while True:
-			if (n_count == 0):
-				(count_finished, count_not_finished) = utils.count_tasks_finished_and_not([task_id])
-				self.assertEquals(1, count_not_finished)
-				self.assertEquals(0, count_finished)
-			time.sleep(.20)
-			task = fetch(task_id)
-			if (task != None): break
-			n_count += 1
-		
-		(count_finished, count_not_finished) = utils.count_tasks_finished_and_not([task_id])
-		self.assertEquals(0, count_not_finished)
-		self.assertEquals(1, count_finished)
-
-
 	def test_identify_type_and_sub_type(self):
 		"""
 		get type and sub_type
@@ -147,7 +72,7 @@ class Test(unittest.TestCase):
 			sample.owner = user
 			sample.save()
 		
-		task_id = async(self.software.identify_type_and_sub_type, sample, sample.path_name_1.name, sample.path_name_2.name, user, sync=True)
+		task_id = async_task(self.software.identify_type_and_sub_type, sample, sample.path_name_1.name, sample.path_name_2.name, user, sync=True)
 		# the task will then be available immediately
 		return_value = fetch(task_id)
 		self.assertTrue(return_value)

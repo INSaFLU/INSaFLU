@@ -41,9 +41,6 @@ class Constants(object):
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
 	
-	## main path for all paths
-	MAIN_PATH = "/usr/local/insaflu"
-	
 	## https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 	## translate table number
 	TRANSLATE_TABLE_NUMBER = 11

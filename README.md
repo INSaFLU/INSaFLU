@@ -60,8 +60,10 @@ The user "flu_user" is used in all operations and it is going to be the user to 
 ###Some general packages to install in Ubuntu 16.X: 
 
 ```
-$ sudo apt install binutils libproj-dev gdal-bin
-$ sudo apt install postgis*
+$ sudo apt install binutils libproj-dev gdal-bin dos2unix
+$ sudo apt install postgresql-10
+$ sudo apt install postgresql-10-postgis-2.4
+$ sudo apt install postgresql-10-postgis-scripts
 $ sudo apt install bioperl
 $ sudo apt install python3
 $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
@@ -70,8 +72,8 @@ $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git de
 ###Some general packages to install in Centos 7.X: 
 
 ```
-$ sudo yum install gdal gdal-devel 
-$ sudo yum install postgis
+$ sudo yum install gdal gdal-devel dos2unix
+$ sudo yum install postgis-10
 $ sudo yum install python3
 $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
 $ sudo cpan -i Bio::Perl
@@ -137,7 +139,7 @@ print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 	
 ## Database PostgreSQL
 
-	* postgresql 9.X
+	* postgresql 10.X
 		* create a database and a user. Then reflect these names in ".env" file in root path of web site.
 
 ## Sun Grid Engine/Open Grid Engine
@@ -186,11 +188,75 @@ $ sudo vi /etc/profile.d/sun-grid-engine.sh
  . /opt/sge/default/common/settings.sh
 ```
 
-Configure queues with this [help.](https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/)
+
+Configure queues
+
+Go to the folder `example_script_sge_add_queue` and change second line in the files "grid_add_host_fast.txt", "grid_add_host_queue_1.txt" and "grid_add_host_queue_2.txt" and replace 'brazil' to your computer name. Mine is 'brazil'
+
+Get your computer name:
+
+```
+$ uname -a
+Linux brazil 4.15.0-50-generic #54-Ubuntu SMP Mon May 6 18:46:08 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+```
+
+
+Add your name to manage list:
+
+```
+$ sudo qconf -am <your name>
+```
+
+:warning: If you get an error about `qconf not found` no found or `SGE_ROOT not set`, do something like this:
+
+```
+### this need to be improved
+$ sudo locate settings.sh
+$ sudo chmod a+x /opt/sge/default/common/settings.sh
+$ /opt/sge/default/common/settings.sh
+$ env | grep sge
+$ sudo su
+# PATH=   ##### /opt/sge/bin:/opt/sge/bin/lx-amd64:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin ### the path from last env
+# SGE_ROOT=  ### /opt/sge   ### the path from last env
+# export SGE_ROOT;
+# qconf -am <your name>
+```
+
+
+Then run:
+
+```
+$ cd example_script_sge_add_queue
+$ qconf -Ahgrp grid_add_host_fast.txt
+$ qconf -Ahgrp grid_add_host_queue_1.txt
+$ qconf -Ahgrp grid_add_host_queue_2.txt
+```
+
+Show all groups:
+
+```
+$ qconf -shgrpl
+```
+
+If you want to delete a group name:
+
+```
+$ qconf -dhgrp <a group name>
+```
+
+To add the queues:
+
+```
+$ qconf -Aq grid_add_queue_fast.txt
+$ qconf -Aq grid_add_queue_queue_1.txt
+$ qconf -Aq grid_add_queue_queue_2.txt
+```
+
 
 After the OGE/SGE configuration you need to have these queue names in your system.
 
 ```
+$ qstat -f
 queuename                      qtype resv/used/tot. load_avg arch          states
 ---------------------------------------------------------------------------------
 all.q@brazil               BIP   0/0/2          1.19     lx26-amd64    
@@ -215,15 +281,17 @@ $ cat /etc/hosts
 
 Of course you have a different IP address from '192.168.1.14'
 
+More [help to configure queues](https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/). 
+
 ## INSaFLU website
 
 
 ```
 
 $ sudo mkdir -p /usr/local/web_site
-$ sudo mkdir -p /var/log/insaflu
+$ sudo mkdir -p /var/log/insaFlu
 $ sudo chown flu_user:flu_user /usr/local/web_site
-$ sudo chown flu_user:flu_user /var/log/insaflu
+$ sudo chown flu_user:flu_user /var/log/insaFlu
 $ cd /usr/local/web_site
 $ git clone https://github.com/INSaFLU/INSaFLU.git
 $ sudo pip3 install -r requirements.txt

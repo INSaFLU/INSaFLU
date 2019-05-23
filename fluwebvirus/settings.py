@@ -93,7 +93,6 @@ INSTALLED_APPS = [
     'crispy_forms_foundation',
     'django_tables2',
     'bootstrap4',
-    'django_q',
     'django_user_agents',
     'django_bootstrap_breadcrumbs',
     'managing_files.apps.ManagingFilesConfig',
@@ -117,6 +116,11 @@ MIDDLEWARE = [
     'crequest.middleware.CrequestMiddleware',
 ]
 
+FILE_UPLOAD_HANDLERS = [
+#   'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
 ROOT_URLCONF = 'fluwebvirus.urls'
 
 TEMPLATES = [
@@ -135,47 +139,6 @@ TEMPLATES = [
         },
     },
 ]
-
-## $ python3 manage.py qcluster
-## $ python3 manage.py qmonitor
-## $ python3 manage.py qinfo
-## this configuraton doesn't work
-# Q_CLUSTER = {
-#     'name': 'insaFlu',
-#     'workers': 1,	## number of queues, some problems with database, need to bee always at one
-#     'recycle': 500,
-#     'compress': True,
-#     'cached': False,
-#     'save_limit': 250,
-#     'queue_limit': 1,
-#     'cpu_affinity': 2,	## number of processors by queue
-#     'catch_up': False,	# Ignore un-run scheduled tasks
-#     'label': 'Django Q',
-#     'orm': 'default'
-# }
-
-#redis defaults
-Q_CLUSTER = {
-	'name': 'insaFlu',
-	'workers': 1,	## number of queues, some problems with database, need to bee always at one
-	'recycle': 500,
-	'compress': True,
-	'save_limit': 250,
-    'cpu_affinity': 2,	## number of processors by queue
-    'catch_up': False,	# Ignore un-run scheduled tasks
-    'label': 'Django Q',
-
-    'redis': {
-        'host': 'localhost',
-        'port': 6379,
-        'db': 0,
-        'password': None,
-        'socket_timeout': None,
-        'charset': 'utf-8',
-        'errors': 'strict',
-        'unix_socket_path': None
-    }
-}
 
 CACHES = {
     'default': {

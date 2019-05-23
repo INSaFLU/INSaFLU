@@ -1127,7 +1127,8 @@ class Software(object):
 			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
 										self.software_names.get_snippy_name()), coverage)
 			
-			## run freebayes
+			## run freebayes if at least one segment has some coverage
+			#if (not coverage.is_all_segments_almost_zero()):
 			try:
 				out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
@@ -1183,6 +1184,7 @@ class Software(object):
 				return False
 			
 			self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
+			## remove path dir if exist
 			self.utils.remove_dir(out_put_path)
 			
 			### draw coverage

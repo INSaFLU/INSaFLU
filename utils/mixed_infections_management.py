@@ -39,7 +39,7 @@ class MixedInfectionsManagement(object):
 								MetaKeyAndValue.META_VALUE_Success)
 		meta_data_tag_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success)
-		if (meta_data_tag_sample_mixed_infection != None): tag = meta_data_tag_sample_mixed_infection.description
+		if (not meta_data_tag_sample_mixed_infection is None): tag = meta_data_tag_sample_mixed_infection.description
 		else: (tag, alert, message) = project_sample.sample.get_mixed_infection()
 		
 		## to be sure that is NO or YES
@@ -100,6 +100,7 @@ class MixedInfectionsManagement(object):
 		in: count_hits
 		return float with cosine distance
 		"""
+		if (count_hits is None): return 0.0
 		
 		## return main vector
 		mixed_infections_main_vector = self.get_mixed_infection_main_vector()

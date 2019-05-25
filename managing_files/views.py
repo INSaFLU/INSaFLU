@@ -1213,7 +1213,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				if (meta_data != None):
 					alert_out.append(meta_data.description)
 				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element_temp)
-				meta_data = manageDatabase.get_project_sample_metakey(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
+				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data != None):
 					alert_out.append(meta_data.description)
 			

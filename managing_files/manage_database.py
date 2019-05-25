@@ -222,13 +222,12 @@ class ManageDatabase(object):
 		"""
 		Add values in project_sample
 		"""
-		if (count_hits == None): return None
-		
 		count_variations = CountVariations()
-		count_variations.var_bigger_50_90 = count_hits.get_hits_50_90()
-		count_variations.var_bigger_90 = count_hits.get_hits_more_90()
-		count_variations.var_less_50 = count_hits.get_hits_less_50()
-		count_variations.total = count_hits.get_total()
+		if (not count_hits is None):
+			count_variations.var_bigger_50_90 = count_hits.get_hits_50_90()
+			count_variations.var_bigger_90 = count_hits.get_hits_more_90()
+			count_variations.var_less_50 = count_hits.get_hits_less_50()
+			count_variations.total = count_hits.get_total()
 		count_variations.save()
 		return count_variations
 

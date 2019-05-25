@@ -49,17 +49,15 @@ class DrawAllCoverage(object):
 		geneticElement = utils.get_elements_and_genes(project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		
 		### get positions of variations
+		(dict_less_50, dict_more_50, dict_more_90) = ({}, {}, {})
 		vect_count_type = ['snp']
 		tab_file_from_freebayes = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-		if (not os.path.exists(tab_file_from_freebayes)):
-			self.logger_production.error("File doesn't exist: " + tab_file_from_freebayes)
-			self.logger_debug.error("File doesn't exist: " + tab_file_from_freebayes)
-			raise IOError("File doesn't exist: " + tab_file_from_freebayes)
-		(dict_less_50, dict_more_50, dict_more_90) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
+		if (os.path.exists(tab_file_from_freebayes)):
+			(dict_less_50, dict_more_50, dict_more_90) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
 		
 		### get coverage
 		manageDatabase = ManageDatabase()
-		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		
@@ -74,7 +72,6 @@ class DrawAllCoverage(object):
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_0),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_9),\
 					project_sample.sample.name, sequence_name)
-
 
 class DrawCoverage(object):
 	'''
@@ -387,8 +384,8 @@ class DrawCoverage(object):
 		nLength_X = endDraw - startDraw
 		draw.line((startDraw - smallOffset, pointY, endDraw + smallOffset, pointY), fill=self.COLOR_RGBGrey_64_64_64, width=1)
 		step = int(nLength_X / 170)
-		slice_ = nLength_X / step;
 		if (step > 1):
+			slice_ = nLength_X / step;
 			for i in range(0, step - 1):
 				draw.text((self.get_start_x() + (i + 1) * slice_, pointY + smallOffset_y), value, fill=DrawCoverage.COLOR_RGBGrey_32_32_32, font = font_)
 		else:

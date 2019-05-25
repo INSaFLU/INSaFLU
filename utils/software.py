@@ -13,7 +13,7 @@ from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample, MixedInfectionsTag, ProcessControler
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads
+from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from django.db import transaction
@@ -809,14 +809,31 @@ class Software(object):
 			raise Exception("Fail to run freebayes parallel")
 		
 		### create regions
-		temp_file_regions = self.utils.get_temp_file('freebayes_regions', '.txt')
+		temp_file_bam_coverage = self.utils.get_temp_file('bamtools_coverage', '.txt')
+		
 		# bamtools coverage -in aln.bam | coverage_to_regions.py ref.fa 500 >ref.fa.500.regions
-		cmd = "%s coverage -in %s | %s %s 500 > %s" %\
-				(self.software_names.get_bamtools(), bam_file, self.software_names.get_coverage_to_regions(),
+		cmd = "%s coverage -in %s > %s" % (self.software_names.get_bamtools(), bam_file, temp_file_bam_coverage)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(temp_file_bam_coverage)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run bamtools coverage")
+	
+		#### test if it has some data, if all zero does not have data
+		if (os.path.getsize(temp_file_bam_coverage)) == 0:
+			if (os.path.exists(temp_file_bam_coverage)): os.unlink(temp_file_bam_coverage)
+			self.utils.remove_dir(temp_dir)
+			return None
+	
+		temp_file_regions = self.utils.get_temp_file('freebayes_regions', '.txt')
+		cmd = "cat %s | %s %s 500 > %s" %\
+				(temp_file_bam_coverage, self.software_names.get_coverage_to_regions(),
 				reference_fasta_temp_fai, temp_file_regions)
 
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
+			os.unlink(temp_file_bam_coverage)
 			os.unlink(temp_file_regions)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
@@ -829,6 +846,7 @@ class Software(object):
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			os.unlink(temp_file_regions)
+			os.unlink(temp_file_bam_coverage)
 			os.unlink(temp_file)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
@@ -848,8 +866,10 @@ class Software(object):
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
 		if (os.path.exists(temp_file_2)): os.unlink(temp_file_2)
 		if (os.path.exists(temp_file_regions)): os.unlink(temp_file_regions)
+		if (os.path.exists(temp_file_bam_coverage)): os.unlink(temp_file_bam_coverage)
 		return temp_dir
-	
+
+
 	"""
 	Global processing
 	"""
@@ -1037,7 +1057,6 @@ class Software(object):
 		result_all = Result()
 		### metakey for this process
 		metaKeyAndValue = MetaKeyAndValue()
-	
 		try:	
 			meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
 	
@@ -1128,7 +1147,6 @@ class Software(object):
 										self.software_names.get_snippy_name()), coverage)
 			
 			## run freebayes if at least one segment has some coverage
-			#if (not coverage.is_all_segments_almost_zero()):
 			try:
 				out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
@@ -1160,32 +1178,37 @@ class Software(object):
 					return False
 			
 			## count hits from tab file
-			file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
-			if (os.path.exists(file_tab)):
-				vect_count_type = ['snp']	## only detects snp
-				count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
-				### set flag that is finished
-				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
+			count_hits = CountHits()
+			if (not out_put_path is None):
+				file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
+				if (os.path.exists(file_tab)):
+					vect_count_type = ['snp']	## only detects snp
+					count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
+					### set flag that is finished
+					manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
+				else:
+					result = Result()
+					result.set_error("Fail to collect tab file from freebayes")
+					result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
+					manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+					
+					### get again and set error
+					project_sample = ProjectSample.objects.get(pk=project_sample.id)
+					project_sample.is_error = True
+					project_sample.save()
+					
+					meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+					if (meta_sample != None):
+						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
+					process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
+					return False
+				
+				self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
+				## remove path dir if exist
+				self.utils.remove_dir(out_put_path)
 			else:
-				result = Result()
-				result.set_error("Fail to collect tab file from freebayes")
-				result.add_software(SoftwareDesc(self.software_names.get_freebayes_name(), self.software_names.get_freebayes_version(), self.software_names.get_freebayes_parameters()))
-				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Freebayes, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				
-				### get again and set error
-				project_sample = ProjectSample.objects.get(pk=project_sample.id)
-				project_sample.is_error = True
-				project_sample.save()
-				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
-				if (meta_sample != None):
-					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
-				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
-				return False
-			
-			self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
-			## remove path dir if exist
-			self.utils.remove_dir(out_put_path)
+				### set count hits to zero
+				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
 			
 			### draw coverage
 			try:
@@ -1208,11 +1231,10 @@ class Software(object):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
-			
+
 			### mixed infection
 			try:
 				## get instances
-				manage_database = ManageDatabase()
 				mixed_infections_management = MixedInfectionsManagement()
 				
 				## set the alert also
@@ -1235,6 +1257,7 @@ class Software(object):
 				return False
 			
 			### get again
+			manage_database = ManageDatabase()
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample.is_finished = True
 			project_sample.is_deleted = False
@@ -1264,7 +1287,7 @@ class Software(object):
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 			
 			### set the flag of the end of the task		
-			meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+			meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 			if (meta_sample != None):
 				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		except:

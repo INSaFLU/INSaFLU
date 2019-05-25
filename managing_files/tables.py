@@ -321,7 +321,7 @@ class ShowProjectSamplesResults(tables.Table):
 		return icons about coverage
 		"""
 		manageDatabase = ManageDatabase()
-		meta_value = manageDatabase.get_project_sample_metakey(record, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		meta_value = manageDatabase.get_project_sample_metakey_last(record, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		return_html = ""

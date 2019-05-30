@@ -1009,6 +1009,17 @@ class Utils(object):
 					continue
 				else: sub_accession = ""
 				handle_out.write(line)
+	
+	def get_number_sequeces_in_gff_file(self, sz_file_name):
+		""" count the number of lines with sequences """
+		if not os.path.exists(sz_file_name): return 0
+		count = 0
+		with open(sz_file_name) as handle_in:
+			for line in handle_in:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
+				count += 1
+		return count
 		
 		
 class ShowInfoMainPage(object):

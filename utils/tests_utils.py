@@ -722,8 +722,6 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expect_genbank_file))
 		os.unlink(out_file)
 		
-		
-		
 	def test_get_number_seqs_names_bigger_than(self):
 		
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
@@ -756,7 +754,20 @@ class Test(unittest.TestCase):
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_TEST_LENGTH_fasta_2)
 		self.assertFalse(utils.test_sequences_same_length(fasta_file))
 		
+	def test_count_gff_seq(self):
+
+		utils = Utils()
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR_GFF, "insa_flu_temp_empty.gff")
+		self.assertTrue(os.path.exists(gff_file))
+		self.assertEqual(0, utils.get_number_sequeces_in_gff_file(gff_file))
 		
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR_GFF, "insa_flu_temp_2.gff")
+		self.assertTrue(os.path.exists(gff_file))
+		self.assertEqual(2, utils.get_number_sequeces_in_gff_file(gff_file))
 
 
+
+
+
+		
 

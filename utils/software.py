@@ -640,6 +640,14 @@ class Software(object):
 		## create the database
 		out_gff_file = self.utils.get_temp_file('temp_gff', '.gff')
 		self.run_genbank2gff3(genbank, out_gff_file)
+		
+		### count sequences, if none return None
+		if (self.utils.get_number_sequeces_in_gff_file(out_gff_file) == 0):
+			os.unlink(out_gff_file)
+			os.unlink(snpeff_config)
+			self.utils.remove_dir(temp_dir)
+			return None
+
 		datase_dir = "{}".format(fasta_file_name)
 		cmd = "mkdir -p {}".format(os.path.join(temp_dir, datase_dir)); os.system(cmd)
 		cmd = "mkdir -p {}".format(os.path.join(temp_dir, 'genomes')); os.system(cmd)
@@ -749,14 +757,17 @@ class Software(object):
 		if (os.path.getsize(temp_file) > 0):
 			### run snpEff
 			temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-			self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			output_file = self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
 			
+			if output_file is None:	## sometimes the gff does not have amino sequences
+				self.utils.copy_file(temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+				
 			self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
 			
 			### add FREQ to vcf file
 			vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
 			os.unlink(temp_file)
-			os.unlink(temp_file_2)
+			if (os.path.exists(temp_file_2)): os.unlink(temp_file_2)
 			
 			### pass vcf to tab
 			self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
@@ -855,7 +866,10 @@ class Software(object):
 		### run snpEff
 		if (os.path.exists(temp_file)):
 			temp_file_2 = self.utils.get_temp_file("vcf_file", ".vcf")
-			self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			output_file = self.run_snpEff(reference_fasta, genbank_file, temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+			if output_file is None:	## sometimes the gff does not have amino sequences
+				self.utils.copy_file(temp_file, os.path.join(temp_dir, os.path.basename(temp_file_2)))
+				
 			self.test_bgzip_and_tbi_in_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)))
 		
 			### add FREQ to vcf file

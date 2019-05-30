@@ -60,7 +60,7 @@ The user "flu_user" is used in all operations and it is going to be the user to 
 ###Some general packages to install in Ubuntu 16.X: 
 
 ```
-$ sudo apt install binutils libproj-dev gdal-bin dos2unix
+$ sudo apt install binutils libproj-dev gdal-bin dos2unix parallel
 $ sudo apt install postgresql-10
 $ sudo apt install postgresql-10-postgis-2.4
 $ sudo apt install postgresql-10-postgis-scripts
@@ -72,7 +72,7 @@ $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git de
 ###Some general packages to install in Centos 7.X: 
 
 ```
-$ sudo yum install gdal gdal-devel dos2unix
+$ sudo yum install gdal gdal-devel dos2unix parallel
 $ sudo yum install postgis-10
 $ sudo yum install python3
 $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build

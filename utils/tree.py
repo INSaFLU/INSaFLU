@@ -58,7 +58,7 @@ class CreateTree(object):
 		
 		### get meta_key
 		meta_key = MetaKeyAndValue.META_KEY_Run_Tree_All_Sequences\
-				if sequence_name == None else metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
+				if sequence_name is None else metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
 				
 		n_files_with_sequences = 0
 		n_count_samples_processed = 0
@@ -67,8 +67,8 @@ class CreateTree(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
-			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_value == None): continue
+			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_value is None): continue
 			
 			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
@@ -80,11 +80,11 @@ class CreateTree(object):
 						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)
 				self.utils.remove_dir(temp_dir)
 				return False
-			if (sequence_name == None):
+			if (sequence_name is None):
 				if (self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name] = 1
 					n_files_with_sequences += 1
-			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, temp_dir)):
+			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, None, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
 					n_files_with_sequences += 1
 			n_count_samples_processed += 1
@@ -102,9 +102,9 @@ class CreateTree(object):
 		sample_name = project.reference.display_name.replace(' ', '_')
 		if (sequence_name != None):
 			## test if exist a sample that is equal
-			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
+			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name
 			self.utils.filter_fasta_by_sequence_names(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
-						sample_name, sequence_name, None, temp_dir)
+						sample_name, sequence_name, coverage, None, temp_dir)
 		else:
 			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
 			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))

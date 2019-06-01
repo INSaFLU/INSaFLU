@@ -408,7 +408,7 @@ class Test(unittest.TestCase):
 		sample_name = 'xpto' 
 		utils = Utils()
 		temp_dir = utils.get_temp_dir()
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NP', coverage, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NP', coverage, None, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
@@ -416,20 +416,20 @@ class Test(unittest.TestCase):
 		
 		
 		coverage.add_coverage('NA', Coverage.COVERAGE_MORE_9, '99.9')
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NA', coverage, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NA', coverage, None, temp_dir)
 		self.assertTrue(result_fasta == None)
 		
 		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_9, '19.9')
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PB2', coverage, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PB2', coverage, None, temp_dir)
 		self.assertTrue(result_fasta == None)
 		
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', coverage, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', coverage, None, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
 		self.assertEquals(1, locus_fasta)
 
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', None, None, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)

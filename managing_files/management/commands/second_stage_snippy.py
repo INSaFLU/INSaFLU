@@ -12,6 +12,8 @@ import logging
 class Command(BaseCommand):
 	'''
 	classdocs
+	Ex: python3 manage.py second_stage_snippy --project_sample_id 19 --user_id 1
+	
 	'''
 	help = "Run second stage snippy and freebayes."
 

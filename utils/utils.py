@@ -797,7 +797,7 @@ class Utils(object):
 		return file_out if len(records) > 0 else None
 
 
-	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, out_dir):
+	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, gene, out_dir):
 		"""
 		filter fasta file
 		write a file for each element 
@@ -818,11 +818,15 @@ class Utils(object):
 			with open(file_name, 'w') as handle:
 				if (coverage == None):
 					if sequence_name in record_dict:
-						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
+						seq_ref = record_dict[sequence_name]
+						if not gene is None and not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
+						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(seq_ref.seq).upper()))
 						b_saved = True
 				else:
 					if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
-						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(record_dict[sequence_name].seq).upper()))
+						seq_ref = record_dict[sequence_name]
+						if not gene is None and not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
+						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(seq_ref.seq).upper()))
 						b_saved = True
 		if (not b_saved and os.path.exists(file_name)): os.unlink(file_name)
 		return file_name if b_saved else None
@@ -972,7 +976,7 @@ class Utils(object):
 		for i in range(0, len(l), n):
 			yield l[i:i+n]
 
-	def clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '' }):
+	def clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
 		"""
 		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
 		

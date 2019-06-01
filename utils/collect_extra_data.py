@@ -253,7 +253,6 @@ class CollectExtraData(object):
 		n_count = 0
 		with open(out_file, "w", newline='') as output_file_handle_csv:
 			csv_writer = csv.writer(output_file_handle_csv, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
-
 			
 			### write headers
 			csv_writer.writerow([])
@@ -282,7 +281,7 @@ class CollectExtraData(object):
 				if (not project_sample.get_is_ready_to_proccess()): continue
 				vect_out = [project_sample.sample.name]
 				
-				meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data == None): continue
 				coverage = decode_coverage.decode_result(meta_data.description)
 				

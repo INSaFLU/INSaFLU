@@ -12,6 +12,8 @@ import logging
 class Command(BaseCommand):
 	'''
 	classdocs
+	Ex: python3 manage.py collect_global_files --project_id 11 --user_id 1
+	
 	'''
 	help = "Create global files by project sample."
 

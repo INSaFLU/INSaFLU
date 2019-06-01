@@ -52,8 +52,8 @@ class Proteins(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### get coverage
-			meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_value == None): continue
+			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+			if (meta_value is None): continue
 			
 			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
@@ -74,12 +74,12 @@ class Proteins(object):
 				## get file name
 				if (gene.name not in dt_out_files): 
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
-							"{}_{}".format(sequence_name, gene.name), FileExtensions.FILE_FAA)
+							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
 				if (self.save_protein_by_sequence_name_and_cds(consensus_fasta, project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
 							project_sample.sample.name, sequence_name, gene, coverage, temp_dir, dt_out_files[gene.name])):
 					if (b_first): n_files_with_sequences += 1
-					dict_out_sample_name["{}_{}_{}".format(project_sample.sample.name, sequence_name, gene.name)] = 1
+					dict_out_sample_name["{}_{}_{}".format(project_sample.sample.name, sequence_name, self.utils.clean_name(gene.name))] = 1
 					b_first = False
 			n_count_samples_processed += 1
 
@@ -182,7 +182,7 @@ class Proteins(object):
 		for gene in genetic_element.get_genes(sequence_name):
 			if (type_file in project.vect_exclude_clean_file_from_proteins): continue
 			path_file = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, gene.name, type_file)
-			if (path_file != None and os.path.exists(path_file)): os.unlink(path_file)
+			if (not path_file is None and os.path.exists(path_file)): os.unlink(path_file)
 
 	def save_protein_reference_cds(self, genbank_file, reference_name, sequence_name, gene,\
 							out_file, dict_out_sample_name):
@@ -195,7 +195,7 @@ class Proteins(object):
 		## if not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
 		coding_protein = seq_ref.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 		with open(out_file, 'a') as handle:
-			out_name = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, gene.name)
+			out_name = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
 			if (out_name in dict_out_sample_name): out_name += 'Ref_' + out_name
 			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
 
@@ -209,11 +209,11 @@ class Proteins(object):
 		seq_ref = self.utils.get_sequence_from_genbank(sequence_name, gene, genbank_file)
 
 		## there's no sequences...
-		if (seq_ref == None): return False
+		if (seq_ref is None): return False
 		
 		### get consensus sequence
-		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage, out_dir)
-		if (file_name == None): return False
+		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage, gene, out_dir)
+		if (file_name is None): return False
 		
 		ref_seq_name = 'ref_seq_name__'
 		with open(file_name, 'a') as handle:
@@ -263,6 +263,24 @@ class Proteins(object):
 			## this is not necessary because if seq is reversed the Bio.Seq is returned in forward always  
 			## if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
 			coding_protein = coding_dna.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
+			count_stop = str(coding_protein)[:-1].count('*')
+			
+			### sometimes it's necessary to star in other frame to get the best translation
+			count_stop_1 = 1000
+			if (count_stop > 0):
+				coding_dna_1 = Seq(sz_out[1:], generic_dna)
+				coding_protein_1 = coding_dna_1.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
+				count_stop_1 = str(coding_protein_1)[:-1].count('*')
+				if (count_stop_1 < count_stop):
+					coding_protein = coding_protein_1 
+
+			if (count_stop > 0 and count_stop_1 > 0):
+				coding_dna_2 = Seq(sz_out[2:], generic_dna)
+				coding_protein_2 = coding_dna_2.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
+				count_stop_2 = str(coding_protein_2)[:-1].count('*')
+				if (count_stop > count_stop_2 and count_stop_1 > count_stop_2):
+					coding_protein = coding_protein_2
+
 			with open(out_file, 'a') as handle:
 				handle.write('>{}\n{}\n'.format(sample_name.replace(' ', '_'), str(coding_protein)))
 			return True

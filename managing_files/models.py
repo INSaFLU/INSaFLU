@@ -17,7 +17,6 @@ from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
 from constants.constants_mixed_infection import ConstantsMixedInfection
 
-
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
 	return 'uploads/generic_data/user_{0}/{1}'.format(instance.owner.id, filename)
@@ -673,6 +672,7 @@ class Project(models.Model):
 		element: element name or None
 		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....   
 		"""
+		CDS = self._clean_name(CDS)
 		if (self.PROJECT_FILE_NAME_MAFFT == file_name):		## protein alignement
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.fasta".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
 		if (self.PROJECT_FILE_NAME_FASTTREE == file_name):
@@ -683,6 +683,15 @@ class Project(models.Model):
 			return os.path.join(self.__get_global_path__(type_path, element), "{}_{}_{}.nex".format(self.PROJECT_FILE_NAME_MAFFT_element_aa, element, CDS))
 		return None
 
+	def _clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
+		"""
+		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
+		
+		"""
+		for key in dict_to_clean:
+			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
+		return name_to_clean
+	
 	def get_global_file_by_project(self, type_path, file_name):
 		"""
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
@@ -795,7 +804,7 @@ class ProjectSample(models.Model):
 		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
 		"""
 		constants = Constants()
-		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
+		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
 
 	def get_file_output_human(self, type_path, file_type, software):
 		"""

@@ -19,333 +19,339 @@
 
 {% block content %}
 
-	<!-- set the messages -->
-	<div id="id_messages_remove"></div>
+	{% if error_cant_see %}
+		<hr>
+		<p><strong>Project sample not available</strong></p>
+	{% else %}
 	
-	<div id="accordion" role="tablist" aria-multiselectable="true">
-		<!-- Card overall project-->
-		<div class="card">
-			<div class="card-header" role="tab" id="headingOne">
-				<h5 class="mb-0">
-					<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-						<strong>Project</strong> '{{ project_name }}'
-        			</a>
-      			</h5>
-    		</div>
-
-    		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
-      			<div class="card-block">
-      				<div style="padding: 20px">
-						<div class="row">
-							<div class="col-lg-4"><strong>Project Name:</strong> {{ project_name }}</div>
-						  	<div class="col-lg-4"><strong>Reference Name:</strong> {{ reference_name }}</div>
-						  	<div class="col-lg-4"><strong>#Samples:</strong> {{ number_of_samples }}</div>
-						</div>
-						<hr>
-						<div class="row">
-						  	<div class="col-lg-4"><strong>#Samples with Alerts:</strong> {{ number_of_alerts }}</div>
-						  	<div class="col-lg-4"><strong>#Samples in process:</strong> {{ samples_in_process }}</div>
-						  	<div class="col-lg-4"><strong>#Samples with error:</strong> {{ samples_error }}</div>
-						</div>
-						<hr>
-						<div class="row">
-						  	<div class="col-lg-4"><strong>Coverage:</strong> {{ coverage_file }}</div>
-						  	<div class="col-lg-4"><strong>Variants:</strong> {{ main_variations_snippy_file }}</div>
-						  	<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebays_variations_50_file }}</div>
-						</div>
-						<hr>
-					</div>
-      			</div>
-    		</div>
-  		</div>
-
-  
-		<!-- Card Phylogenetic trees by PhyloCanvas -->
-		<div class="card">
-			<div class="card-header" role="tab" id="headingTwo">
-				<h5 class="mb-0">
-					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-						<strong>Phylogenetic trees</strong> by PhyloCanvas
-        			</a>
-      			</h5>
-    		</div>
-
-    		<div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo">
-      			<div class="card-block">
-      				<div class="container-fluid">
-      					<br>
-						<form class="form-inline regular_info_box">
-							<div class="form-group">
-								<label for="selectElement">Select a locus</label>
-						  		<select id="combo_select_elements_phylocanvas_id" class="custom-select mx-sm-3">
-		      						<option selected value="all_together">All</option>
-		      						{% for element in elements %}
-		      							<option value="{{ element }}">{{ element }}</option>
-		      						{% endfor %}
-		      					</select>
-							</div>
-      					</form>
-      					<br>
-      					<div class="regular_info_box form-inline">
-					  		<div id="tree_nwk_id" class="col-lg-5"></div>
-					  		<div id="tree_tree_id" class="col-lg-5"></div>
-      					</div>
-      					
-      					
-      					<!-- Show files to download, trees -->
-      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
-        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
-        			</div>
-      			</div>
-    		</div>
-  		</div>
-  		
-  		<!-- Card Nucleotide alignments by MSAViewer -->
-		<div class="card">
-			<div class="card-header" role="tab" id="headingThree">
-				<h5 class="mb-0">
-					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-						<strong>Nucleotide alignments</strong> by MSAViewer
-        			</a>
-      			</h5>
-    		</div>
-
-    		<div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
-      			<div class="card-block">
-      				<div class="container-fluid">
-      					<br>
-						<form class="form-inline regular_info_box">
-							<div class="form-group">
-								<label for="selectElement">Select a locus</label>
-						  		<select id="combo_select_elements_nucleotids_alignments_id" class="custom-select mx-sm-3">
-		      						<option selected value="all_together">All</option>
-		      						{% for element in elements %}
-		      							<option value="{{ element }}">{{ element }}</option>
-		      						{% endfor %}
-		      					</select>
-							</div>
-      					</form>
-      					<br>
-      					<div class="regular_info_box form-inline">
-					  		<div id="alignment_fasta_id" class="col-lg-5"></div>
-					  		<div id="alignment_nex_id" class="col-lg-5"></div>
-      					</div>
-      					<br>
-      					<!-- Show files to download -->
-      					<div id='loader_msa_viewer_nucleote_id'><img src="{{ spinner_url }}"/></div>
-        				<div id="msa_viewer_nucleote_id" project_id="{{ project_id }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide' %}"></div>
-        			</div>
-      			</div>
-    		</div>
-  		</div>
-  		
-  		<!-- Card Amino acid alignments by MSAViewer-->
-		<div class="card">
-			<div class="card-header" role="tab" id="headingFourth">
-				<h5 class="mb-0">
-					<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFourth" aria-expanded="false" aria-controls="collapseFourth">
-						<strong>Amino acid alignments</strong> by MSAViewer
-        			</a>
-      			</h5>
-    		</div>
-
-    		<div id="collapseFourth" class="collapse" role="tabpanel" aria-labelledby="headingFourth">
-      			<div class="card-block">
-      				<div class="container-fluid">
-      					<br>
-						<form class="form-inline regular_info_box">
-							<div class="form-group">
-								<label for="selectElement">Select a locus</label>
-						  		<select id="combo_select_elements_amino_alignments_id" get-cds-from-element-url="{% url 'get-cds-from-element' %}" class="custom-select mx-sm-3">
-		      						{% for element in elements %}
-		      							{% if forloop.first %}
-		      								<option selected value="{{ element }}">{{ element }}</option>
-		      							{% else %}
-		      								<option value="{{ element }}">{{ element }}</option>
-		      							{% endif %}
-		      						{% endfor %}
-		      					</select>
-		      					
-		      					<label for="selectElement">Select a gene</label>
-						  		<select id="combo_select_gene_amino_alignments_id" class="custom-select mx-sm-3">
-		      						{% for gene in genes %}
-		      							{% if forloop.first %}
-		      								<option selected value="{{ gene }}">{{ gene }}</option>
-		      							{% else %}
-		      								<option value="{{ gene }}">{{ gene }}</option>
-		      							{% endif %}
-		      						{% endfor %}
-		      					</select>
-							</div>
-      					</form>
-      					<br>
-      					<div class="regular_info_box form-inline">
-					  		<div id="alignment_amino_fasta_id" class="col-lg-5"></div>
-					  		<div id="alignment_amino_nex_id" class="col-lg-5"></div>
-      					</div>
-      					<br>
-      					<!-- Show files to download -->
-      					<div id='loader_msa_viewer_amino_id'><img src="{{ spinner_url }}"/></div>
-        				<div id="msa_viewer_amino_id" project_id="{{ project_id }}" show-msa-amino-url="{% url 'show-msa-protein' %}"></div>
-        			</div>
-      			</div>
-    		</div>
-    	</div>
-    		
-   		<!-- Card Coverage overview-->
-   		<div class="card">
-				<div class="card-header" role="tab" id="headingFifth">
+		<!-- set the messages -->
+		<div id="id_messages_remove"></div>
+		
+		<div id="accordion" role="tablist" aria-multiselectable="true">
+			<!-- Card overall project-->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingOne">
 					<h5 class="mb-0">
-						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFifth" aria-expanded="false" aria-controls="collapseFifth">
-							<strong>Intra-host minor variants annotation</strong> and uncovering of mixed infections
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+							<strong>Project</strong> '{{ project_name }}'
 	        			</a>
 	      			</h5>
 	    		</div>
 	
-	    		<div id="collapseFifth" class="collapse" role="tabpanel" aria-labelledby="headingFifth">
+	    		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
 	      			<div class="card-block">
-		      			<div class="container-fluid">
-		      				<br>
-	      					<div class="regular_info_box form-inline">
-						  		<div class="col-lg-5"><strong>Minor intra-host SNVs (iSNVs):</strong> {{ freebays_variations_50_file }}</div>
-						  		<div class="col-lg-5"><strong>Statistics variations:</strong> {{ variations_statistics_file }}</div>
-	      					</div>
-		      				<br>
-	      					<div id='loader_count_variations_id'><img src="{{ spinner_url }}"/></div>
-	        				<div id="show_count_variations_id"></div>
-		      				<canvas id="canvas_count_variations_id" height="300" project_id="{{ project_id }}" show_count_variations-url="{% url 'show-count-variations' %}"></canvas>
-		      				<br>
-		      			</div>
-		      		</div>
+	      				<div style="padding: 20px">
+							<div class="row">
+								<div class="col-lg-4"><strong>Project Name:</strong> {{ project_name }}</div>
+							  	<div class="col-lg-4"><strong>Reference Name:</strong> {{ reference_name }}</div>
+							  	<div class="col-lg-4"><strong>#Samples:</strong> {{ number_of_samples }}</div>
+							</div>
+							<hr>
+							<div class="row">
+							  	<div class="col-lg-4"><strong>#Samples with Alerts:</strong> {{ number_of_alerts }}</div>
+							  	<div class="col-lg-4"><strong>#Samples in process:</strong> {{ samples_in_process }}</div>
+							  	<div class="col-lg-4"><strong>#Samples with error:</strong> {{ samples_error }}</div>
+							</div>
+							<hr>
+							<div class="row">
+							  	<div class="col-lg-4"><strong>Coverage:</strong> {{ coverage_file }}</div>
+							  	<div class="col-lg-4"><strong>Variants:</strong> {{ main_variations_snippy_file }}</div>
+							  	<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebays_variations_50_file }}</div>
+							</div>
+							<hr>
+						</div>
+	      			</div>
 	    		</div>
-	    		
-	    		
-	  	</div>
-  		
-	</div>
-
-	<hr>
-	{% if table.page and show_paginatior %}
-	  <div class="table-container">
-	{% endif %}
-	       	{% block table %}
-			    <div class="table-responsive">
-			        <table id="table_to_show_samples_from_project_id" class="table table-hover table-bordered table-striped" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
-			            {% block table.thead %}
-			            <thead>                 
-			      			<tr>
-			                    <th colspan="8">
-			                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
-									<strong style="padding-left:20px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
-			                        <form method="get" action="" class="form-inline form-search pull-right">
-			                        	{% csrf_token %}
-			                            <div class="pull-right form-search">
-			                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Mixed, Type and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
-			                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
-			                            </div>              
-			                        </form>
-			                    </th>                  
-			                </tr>
-			             
-			              <tr>
-			                {% for column in table.columns %}
-			                   {% if column.orderable %}
-			                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-			                    {% else %}
-			                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-			                    {% endif %}
-			                {% endfor %}
-			              </tr>
-			            </thead>
-			            {% endblock table.thead %}
-			            {% block table.tbody %}
-			            <tbody>
-			                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
-			                  {% block table.tbody.row %}
-			                  <tr id="row_{{ row.record.id }}" class="{% cycle 'odd' 'even' %}">
-			                      {% for column, cell in row.items %}
-			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-			                      {% endfor %}
-			                  </tr>
-			                  {% endblock table.tbody.row %}
-			                {% empty %}
-			                  {% if table.empty_text %}
-			                  {% block table.tbody.empty_text %}
-			                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
-			                  {% endblock table.tbody.empty_text %}
-			                  {% endif %}
-			                {% endfor %}
-			            </tbody>
-			            {% endblock table.tbody %}
-			            {% block table.tfoot %}
-			            	<tfoot></tfoot>
-			            {% endblock table.tfoot %}
-			        </table>
-			    </div>
-			{% endblock table %}
-			
-			{% if table.page and show_paginatior %}
-			    {% block pagination %}
-			        {% bootstrap_pagination table.page url=request.get_full_path %}
-			    {% endblock pagination %}
-			  </div>
-			{% endif %}
+	  		</div>
 	
-			<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-			
-			
-			<!-- The Modal -->
-			<div class="modal fade" id="coverageModal">
-				<div class="modal-dialog modal-lg">
-					<div class="modal-content">
-     
-       					<!-- Modal Header -->
-       					<div class="modal-header">
-         					<h4 class="modal-title">Coverage</h4>
-         					<button type="button" class="close" data-dismiss="modal">&times;</button>
-       					</div>
-       
-       					<!-- Modal body -->
-       					<div class="modal-body mx-auto mw-100">
-       						<!-- <div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div> -->
-       						<div id="modal-body-coverage" show-coverage-modal-url="{% url 'get_image_coverage' %}">
-       						</div>
-       					</div>
-       					<!-- Modal footer -->
-       					<div class="modal-footer">
-       						<a id="downlod_image_id" href="" class="btn btn-primary" download=""><i class="fa fa-download"></i> Download</a>
-         					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-       					</div>
-					</div>
-   				</div>
- 			</div>
- 			
-			<!-- The remove Modal -->
-			<div class="modal fade" id="id_remove_modal">
-				<div class="modal-dialog">
-					<div class="modal-content">
-		   
-		  					<!-- Modal Header -->
-		  					<div class="modal-header">
-		    					<h4 class="modal-title-remove">Remove a sample in a project</h4>
-		    					<button type="button" class="close" data-dismiss="modal">&times;</button>
-		  					</div>
-		  
-		  					<!-- Modal body -->
-		  					<div class="modal-body mx-auto mw-100">
-		  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project_sample' %}">
-		  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
-		   						</div>
-		  					</div>
-		  					<!-- Modal footer -->
-		  					<div class="modal-footer" id="id-modal-footer-remove">
-		    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
-		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
-		  					</div>
-					</div>
-		 		</div>
-			</div>
- {% endblock %}s
+	  
+			<!-- Card Phylogenetic trees by PhyloCanvas -->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingTwo">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+							<strong>Phylogenetic trees</strong> by PhyloCanvas
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo">
+	      			<div class="card-block">
+	      				<div class="container-fluid">
+	      					<br>
+							<form class="form-inline regular_info_box">
+								<div class="form-group">
+									<label for="selectElement">Select a locus</label>
+							  		<select id="combo_select_elements_phylocanvas_id" class="custom-select mx-sm-3">
+			      						<option selected value="all_together">All</option>
+			      						{% for element in elements %}
+			      							<option value="{{ element }}">{{ element }}</option>
+			      						{% endfor %}
+			      					</select>
+								</div>
+	      					</form>
+	      					<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div id="tree_nwk_id" class="col-lg-5"></div>
+						  		<div id="tree_tree_id" class="col-lg-5"></div>
+	      					</div>
+	      					
+	      					
+	      					<!-- Show files to download, trees -->
+	      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
+	        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
+	        			</div>
+	      			</div>
+	    		</div>
+	  		</div>
+	  		
+	  		<!-- Card Nucleotide alignments by MSAViewer -->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingThree">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+							<strong>Nucleotide alignments</strong> by MSAViewer
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
+	      			<div class="card-block">
+	      				<div class="container-fluid">
+	      					<br>
+							<form class="form-inline regular_info_box">
+								<div class="form-group">
+									<label for="selectElement">Select a locus</label>
+							  		<select id="combo_select_elements_nucleotids_alignments_id" class="custom-select mx-sm-3">
+			      						<option selected value="all_together">All</option>
+			      						{% for element in elements %}
+			      							<option value="{{ element }}">{{ element }}</option>
+			      						{% endfor %}
+			      					</select>
+								</div>
+	      					</form>
+	      					<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div id="alignment_fasta_id" class="col-lg-5"></div>
+						  		<div id="alignment_nex_id" class="col-lg-5"></div>
+	      					</div>
+	      					<br>
+	      					<!-- Show files to download -->
+	      					<div id='loader_msa_viewer_nucleote_id'><img src="{{ spinner_url }}"/></div>
+	        				<div id="msa_viewer_nucleote_id" project_id="{{ project_id }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide' %}"></div>
+	        			</div>
+	      			</div>
+	    		</div>
+	  		</div>
+	  		
+	  		<!-- Card Amino acid alignments by MSAViewer-->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingFourth">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFourth" aria-expanded="false" aria-controls="collapseFourth">
+							<strong>Amino acid alignments</strong> by MSAViewer
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseFourth" class="collapse" role="tabpanel" aria-labelledby="headingFourth">
+	      			<div class="card-block">
+	      				<div class="container-fluid">
+	      					<br>
+							<form class="form-inline regular_info_box">
+								<div class="form-group">
+									<label for="selectElement">Select a locus</label>
+							  		<select id="combo_select_elements_amino_alignments_id" get-cds-from-element-url="{% url 'get-cds-from-element' %}" class="custom-select mx-sm-3">
+			      						{% for element in elements %}
+			      							{% if forloop.first %}
+			      								<option selected value="{{ element }}">{{ element }}</option>
+			      							{% else %}
+			      								<option value="{{ element }}">{{ element }}</option>
+			      							{% endif %}
+			      						{% endfor %}
+			      					</select>
+			      					
+			      					<label for="selectElement">Select a gene</label>
+							  		<select id="combo_select_gene_amino_alignments_id" class="custom-select mx-sm-3">
+			      						{% for gene in genes %}
+			      							{% if forloop.first %}
+			      								<option selected value="{{ gene }}">{{ gene }}</option>
+			      							{% else %}
+			      								<option value="{{ gene }}">{{ gene }}</option>
+			      							{% endif %}
+			      						{% endfor %}
+			      					</select>
+								</div>
+	      					</form>
+	      					<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div id="alignment_amino_fasta_id" class="col-lg-5"></div>
+						  		<div id="alignment_amino_nex_id" class="col-lg-5"></div>
+	      					</div>
+	      					<br>
+	      					<!-- Show files to download -->
+	      					<div id='loader_msa_viewer_amino_id'><img src="{{ spinner_url }}"/></div>
+	        				<div id="msa_viewer_amino_id" project_id="{{ project_id }}" show-msa-amino-url="{% url 'show-msa-protein' %}"></div>
+	        			</div>
+	      			</div>
+	    		</div>
+	    	</div>
+	    		
+	   		<!-- Card Coverage overview-->
+	   		<div class="card">
+					<div class="card-header" role="tab" id="headingFifth">
+						<h5 class="mb-0">
+							<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFifth" aria-expanded="false" aria-controls="collapseFifth">
+								<strong>Intra-host minor variants annotation</strong> and uncovering of mixed infections
+		        			</a>
+		      			</h5>
+		    		</div>
+		
+		    		<div id="collapseFifth" class="collapse" role="tabpanel" aria-labelledby="headingFifth">
+		      			<div class="card-block">
+			      			<div class="container-fluid">
+			      				<br>
+		      					<div class="regular_info_box form-inline">
+							  		<div class="col-lg-5"><strong>Minor intra-host SNVs (iSNVs):</strong> {{ freebays_variations_50_file }}</div>
+							  		<div class="col-lg-5"><strong>Statistics variations:</strong> {{ variations_statistics_file }}</div>
+		      					</div>
+			      				<br>
+		      					<div id='loader_count_variations_id'><img src="{{ spinner_url }}"/></div>
+		        				<div id="show_count_variations_id"></div>
+			      				<canvas id="canvas_count_variations_id" height="300" project_id="{{ project_id }}" show_count_variations-url="{% url 'show-count-variations' %}"></canvas>
+			      				<br>
+			      			</div>
+			      		</div>
+		    		</div>
+		    		
+		    		
+		  	</div>
+	  		
+		</div>
+	
+		<hr>
+		{% if table.page and show_paginatior %}
+		  <div class="table-container">
+		{% endif %}
+		       	{% block table %}
+				    <div class="table-responsive">
+				        <table id="table_to_show_samples_from_project_id" class="table table-hover table-bordered table-striped" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+				            {% block table.thead %}
+				            <thead>                 
+				      			<tr>
+				                    <th colspan="8">
+				                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
+										<strong style="padding-left:20px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
+				                        <form method="get" action="" class="form-inline form-search pull-right">
+				                        	{% csrf_token %}
+				                            <div class="pull-right form-search">
+				                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name, Mixed, Type and Data set"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+				                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+				                            </div>              
+				                        </form>
+				                    </th>                  
+				                </tr>
+				             
+				              <tr>
+				                {% for column in table.columns %}
+				                   {% if column.orderable %}
+				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+				                    {% else %}
+				                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+				                    {% endif %}
+				                {% endfor %}
+				              </tr>
+				            </thead>
+				            {% endblock table.thead %}
+				            {% block table.tbody %}
+				            <tbody>
+				                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+				                  {% block table.tbody.row %}
+				                  <tr id="row_{{ row.record.id }}" class="{% cycle 'odd' 'even' %}">
+				                      {% for column, cell in row.items %}
+				                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+				                      {% endfor %}
+				                  </tr>
+				                  {% endblock table.tbody.row %}
+				                {% empty %}
+				                  {% if table.empty_text %}
+				                  {% block table.tbody.empty_text %}
+				                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+				                  {% endblock table.tbody.empty_text %}
+				                  {% endif %}
+				                {% endfor %}
+				            </tbody>
+				            {% endblock table.tbody %}
+				            {% block table.tfoot %}
+				            	<tfoot></tfoot>
+				            {% endblock table.tfoot %}
+				        </table>
+				    </div>
+				{% endblock table %}
+				
+				{% if table.page and show_paginatior %}
+				    {% block pagination %}
+				        {% bootstrap_pagination table.page url=request.get_full_path %}
+				    {% endblock pagination %}
+				  </div>
+				{% endif %}
+		
+				<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				
+				
+				<!-- The Modal -->
+				<div class="modal fade" id="coverageModal">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+	     
+	       					<!-- Modal Header -->
+	       					<div class="modal-header">
+	         					<h4 class="modal-title">Coverage</h4>
+	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	       					</div>
+	       
+	       					<!-- Modal body -->
+	       					<div class="modal-body mx-auto mw-100">
+	       						<!-- <div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div> -->
+	       						<div id="modal-body-coverage" show-coverage-modal-url="{% url 'get_image_coverage' %}">
+	       						</div>
+	       					</div>
+	       					<!-- Modal footer -->
+	       					<div class="modal-footer">
+	       						<a id="downlod_image_id" href="" class="btn btn-primary" download=""><i class="fa fa-download"></i> Download</a>
+	         					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+	       					</div>
+						</div>
+	   				</div>
+	 			</div>
+	 			
+				<!-- The remove Modal -->
+				<div class="modal fade" id="id_remove_modal">
+					<div class="modal-dialog">
+						<div class="modal-content">
+			   
+			  					<!-- Modal Header -->
+			  					<div class="modal-header">
+			    					<h4 class="modal-title-remove">Remove a sample in a project</h4>
+			    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+			  					</div>
+			  
+			  					<!-- Modal body -->
+			  					<div class="modal-body mx-auto mw-100">
+			  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project_sample' %}">
+			  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+			   						</div>
+			  					</div>
+			  					<!-- Modal footer -->
+			  					<div class="modal-footer" id="id-modal-footer-remove">
+			    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+			    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+			  					</div>
+						</div>
+			 		</div>
+				</div>
+	{% endif %}
+ {% endblock content%}
 
  {% block js %}
  	 {% load static from staticfiles %}

@@ -660,8 +660,10 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 	def get_context_data(self, **kwargs):
 		context = super(SamplesDetailView, self).get_context_data(**kwargs)
 		sample = kwargs['object']
-		if (sample.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 		context['nav_sample'] = True
+		if (sample.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
 		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
@@ -961,7 +963,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		
 		### test if the user is the same of the page
 		project = Project.objects.get(pk=self.kwargs['pk'])
-		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
+		context['nav_project'] = True
+		if (project.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
 
 		## catch everything that is not in connection with project 
 		samples_out = ProjectSample.objects.filter(Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)).values('sample__pk')
@@ -1000,7 +1005,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['project_name'] = project.name
-		context['nav_project'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		if self.request.POST: 
@@ -1128,8 +1132,14 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
 		project = Project.objects.get(pk=self.kwargs['pk'])
-		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False, is_error=False).order_by('-creation_date')
 		
+		### can't see this project
+		context['nav_project'] = True
+		if (project.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
+		
+		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False, is_error=False).order_by('-creation_date')
 		tag_search = 'search_add_project_sample'
 		### filter the search
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
@@ -1139,9 +1149,6 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 										Q(sample__type_subtype__icontains=self.request.GET.get(tag_search)))
 		table = ShowProjectSamplesResults(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-
-		### can't see this project
-		if (project.owner.id != self.request.user.id): context['error_cant_see'] = "1"
 
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')		
 		context['table'] = table
@@ -1194,7 +1201,12 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super(ShowSampleProjectsDetailsView, self).get_context_data(**kwargs)
 		try:
+			### can't see this project
 			project_sample = ProjectSample.objects.get(pk=self.kwargs['pk'])
+			context['nav_project'] = True
+			if (project_sample.project.owner.id != self.request.user.id): 
+				context['error_cant_see'] = "1"
+				return context
 			
 			## several data to show
 			context['project_sample'] = project_sample

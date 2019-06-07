@@ -38,6 +38,7 @@ class Command(BaseCommand):
 		self.stdout.write("Starting for project_id: " + str(project_id))
 		self.logger_production.info("Starting for project_id: " + str(project_id))
 		self.logger_debug.info("Starting for project_id: " + str(project_id))
+
 		try:
 			project = Project.objects.get(pk=project_id)
 			if (user_id == None): user = project.owner

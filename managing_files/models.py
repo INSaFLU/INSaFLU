@@ -237,7 +237,7 @@ class Sample(models.Model):
 	## to remove in future
 	objects = models.Manager()	## need to check this
 	
-	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Sample Name')  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
 																	##	prefix_R2_001.fastq.gz),
 	date_of_onset = models.DateField('date of onset', blank=True, null=True)
 	date_of_collection = models.DateField('date of collection', blank=True, null=True)
@@ -631,7 +631,7 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_MAFFT_element_aa = "Alignment_aa"
 	PROJECT_FILE_NAME_FASTA_element = "Sequences_nt"
 	
-	name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
+	name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Project name')
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	reference = models.ForeignKey(Reference, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
@@ -779,7 +779,6 @@ class ProjectSample(models.Model):
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
 	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
-
 
 	class Meta:
 		ordering = ['project__id', '-creation_date']

@@ -23,7 +23,7 @@
 {% block content %}
 	{% if error_cant_see %}
 		<hr>
-		<p><strong>Sample not available</strong></p>
+		<p><strong>Project sample not available</strong></p>
 	{% else %}
 		<div class="container-fluid">
 			<hr>
@@ -147,7 +147,7 @@
 		<a href="{% url 'show-sample-project-results' pk=project_sample.project.id %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 	{% endif %}
 	
-{% endblock %}
+{% endblock content %}
 
 {% block js %}
  	 {% load static from staticfiles %}

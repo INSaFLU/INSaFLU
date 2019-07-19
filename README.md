@@ -57,14 +57,13 @@ The user "flu_user" is used in all operations and it is going to be the user to 
 
 ## General packages
 
-###Some general packages to install in Ubuntu 16.X: 
+###Some general packages to install in Ubuntu 18.04: 
 
 ```
 $ sudo apt install binutils libproj-dev gdal-bin dos2unix parallel
 $ sudo apt install postgresql-10
 $ sudo apt install postgresql-10-postgis-2.4
 $ sudo apt install postgresql-10-postgis-scripts
-$ sudo apt install bioperl
 $ sudo apt install python3
 $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git default-jre bioperl
 ```
@@ -74,9 +73,13 @@ $ sudo apt install libdatetime-perl libxml-simple-perl libdigest-md5-perl git de
 ```
 $ sudo yum install gdal gdal-devel dos2unix parallel
 $ sudo yum install postgis-10
+$ sudo yum install postgresql-devel
 $ sudo yum install python3
 $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
 $ sudo cpan -i Bio::Perl
+$ cd; mkdir software; cd software;
+$ wget wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.9.0+-1.x86_64.rpm
+# sudo yum install ncbi-blast-2.9.0+-1.x86_64.rpm
 ```
 
 ## Bioinformatics software
@@ -168,11 +171,19 @@ $ cd sge-8.1.9/source
 $ scripts/bootstrap.sh
 
 ### centos version
-$ sudo yum install hwloc-devel openssl-devel
+$ sudo yum install hwloc-devel openssl-devel pam-devel libXt-devel motif motif-devel readline-devel
 ### ubuntu
 $ sudo apt-get install libhwloc-dev libssl-dev
 
 $ ./aimk -no-java -no-jni
+
+### caveat in last command if something like this `ed.screen.c:(.text+0x247c): undefined reference to `tputs'` appears in the screen
+$ cd 3rdparty/qtcsh/LINUXAMD64
+    Add  "-lreadline -lncurses" to the end of command that fails
+$ cd ../../..
+$ ./aimk -no-java -no-jni
+### end caveat
+
 $ sudo su
 # export SGE_ROOT=/opt/sge
 # scripts/distinst -local -allall -noexit
@@ -228,8 +239,6 @@ Then run:
 ```
 $ cd example_script_sge_add_queue
 $ qconf -Ahgrp grid_add_host_fast.txt
-$ qconf -Ahgrp grid_add_host_queue_1.txt
-$ qconf -Ahgrp grid_add_host_queue_2.txt
 ```
 
 Show all groups:
@@ -252,6 +261,29 @@ $ qconf -Aq grid_add_queue_queue_1.txt
 $ qconf -Aq grid_add_queue_queue_2.txt
 ```
 
+If you want to delete a queue:
+
+```
+$ qconf -dq <a queue name>
+```
+
+Show all info
+
+```
+$ qconf -sq <queue name>
+```
+
+Edit queues
+
+```
+$ qconf -mq <queue name> 
+```
+
+Change the default `schedule_interval` from `0:0:15` to `0:0:5`. This setting specifies how often the scheduler checks for new jobs.
+
+```
+$ qconf -msconf
+```
 
 After the OGE/SGE configuration you need to have these queue names in your system.
 
@@ -294,6 +326,7 @@ $ sudo chown flu_user:flu_user /usr/local/web_site
 $ sudo chown flu_user:flu_user /var/log/insaFlu
 $ cd /usr/local/web_site
 $ git clone https://github.com/INSaFLU/INSaFLU.git
+$ cd INSaFLU
 $ sudo pip3 install -r requirements.txt
 $ cp .env_model .env
 ```
@@ -359,8 +392,6 @@ Add `flu_user` to the `apache` group and add `insaflu.conf` to apache2.
 
 ```
 $ sudo usermod -a -G flu_user apache
-## From IUS repo
-$ sudo yum install python3<minor version of your python>u-mod_wsgi
 $ sudo vi /etc/httpd/conf.d/insaflu.conf
 
 <VirtualHost *:80>
@@ -369,9 +400,9 @@ $ sudo vi /etc/httpd/conf.d/insaflu.conf
 
 	ServerName insaflu.pt
 
-        Alias /media /usr/local/web_site/media
-        Alias /static /usr/local/web_site/static_all
-        <Directory "/usr/local/web_site/static_all">
+        Alias /media /usr/local/web_site/INSaFLU/media
+        Alias /static /usr/local/web_site/INSaFLU/static_all
+        <Directory "/usr/local/web_site/INSaFLU/static_all">
                 Require all granted
         </Directory>
         <Directory "/usr/local/web_site/media">
@@ -385,27 +416,35 @@ $ sudo vi /etc/httpd/conf.d/insaflu.conf
                 Require all granted
         </Directory>
 
-        <Directory "/usr/local/web_site/insaflu">
+        <Directory "/usr/local/web_site/INSaFLU/fluwebvirus">
             <Files "wsgi.py">
                 Require all granted
             </Files>
         </Directory>
 	
-	WSGIDaemonProcess flu_user.insa.pt user=flu_user group=flu_user python-path=/usr/local/web_site/insaflu;/usr/lib/python3.<minor version of your python>/site-packages
+	WSGIDaemonProcess flu_user.insa.pt user=flu_user group=flu_user python-path=/usr/local/web_site/INSaFLU/fluwebvirus;/usr/lib/python3.<minor version of your python>/site-packages
         WSGIProcessGroup flu_user.insa.pt
-        WSGIScriptAlias / /usr/local/web_site/insaflu/wsgi.py
+        WSGIScriptAlias / /usr/local/web_site/INSaFLU/fluwebvirus/wsgi.py
 
 # Use separate log files for the SSL virtual host; note that LogLevel
 # is not inherited from httpd.conf.
-ErrorLog /var/log/apache2/insaflu_error.log
-TransferLog /var/log/apache2/insaflu_transfer.log
+ErrorLog /var/log/httpd/insaflu_error.log
+TransferLog /var/log/httpd/insaflu_transfer.log
 LogLevel warn
 
 </VirtualHost> 
 
-$ sudo a2ensite insaflu
-$ sudo systemctl restart apache2
-$ sudo systemctl status apache2
+$ sudo yum install httpd-devel
+$ sudo pip3 install mod_wsgi
+$ sudo updatedb
+$ locate mod_wsgi-py
+
+$ sudo yum install mod_wsgi
+## small caveat...
+$ mv /etc/httpd/modules/mod_wsgi.so /etc/httpd/ 
+$ sudo ln -s <last hit for the locate> /etc/httpd/modules/mod_wsgi.so
+$ sudo systemctl restart httpd
+$ sudo systemctl status httpd
 ```
 
 ###Config apache2 in Ubuntu 16.X:
@@ -465,7 +504,7 @@ $ sudo systemctl status apache2
 
 ## Create users without access to INSaFLU web page
 
-Go to your internet explorer and put this address `http://127.0.0.1:8000/admin/`
+Go to your internet explorer and put this address `http://127.0.0.1:80/admin/`
 Make the authentication with your superuser credentials and in `AUTHENTICATION AND AUTHORIZATION` you can create new accounts. 
 
 ## Remove files from file system removed by the user on web site

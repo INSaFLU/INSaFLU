@@ -1,4 +1,4 @@
-qname                 queue_2.q
+qname                 all.q
 hostlist              @allhosts
 seq_no                0
 load_thresholds       NONE
@@ -12,7 +12,7 @@ qtype                 BATCH INTERACTIVE
 ckpt_list             NONE
 pe_list               make
 rerun                 FALSE
-slots                 1
+slots                 4
 tmpdir                /tmp
 shell                 /bin/bash
 prolog                NONE

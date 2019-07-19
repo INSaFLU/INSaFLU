@@ -1,2 +1,0 @@
-group_name @queue_2
-hostlist brazil

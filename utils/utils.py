@@ -11,7 +11,6 @@ from utils.result import GeneticElement, Gene
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from django_q.tasks import fetch
 from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
@@ -587,14 +586,14 @@ class Utils(object):
 		"""
 		return v.lower() in ("yes", "true", "t", "1", "y")
 		
-	def is_all_tasks_finished(self, vect_tasks_id):
-		"""
-		return true if all tasks finished
-		"""
-		for task_id in vect_tasks_id:
-			task = fetch(task_id)
-			if (task == None): return False
-		return True
+# 	def is_all_tasks_finished(self, vect_tasks_id):
+# 		"""
+# 		return true if all tasks finished
+# 		"""
+# 		for task_id in vect_tasks_id:
+# 			task = fetch(task_id)
+# 			if (task == None): return False
+# 		return True
 	
 	def is_all_tasks_finished_by_result(self, vect_tasks_id):
 		"""
@@ -604,26 +603,26 @@ class Utils(object):
 			task_id.result(wait=-1)
 		return True
 
-	def count_tasks_finished_and_not(self, vect_tasks_id):
-		"""
-		return (count_finished, count_not_finished)
-		"""
-		(count_finished, count_not_finished) = (0, 0)
-		for task_id in vect_tasks_id:
-			task = fetch(task_id)
-			if (task == None): count_not_finished += 1
-			else: count_finished += 1
-		return (count_finished, count_not_finished)
+# 	def count_tasks_finished_and_not(self, vect_tasks_id):
+# 		"""
+# 		return (count_finished, count_not_finished)
+# 		"""
+# 		(count_finished, count_not_finished) = (0, 0)
+# 		for task_id in vect_tasks_id:
+# 			task = fetch(task_id)
+# 			if (task == None): count_not_finished += 1
+# 			else: count_finished += 1
+# 		return (count_finished, count_not_finished)
 
-	def is_all_tasks_finished_success(self, vect_tasks_id):
-		"""
-		return true if all tasks finished
-		"""
-		for task_id in vect_tasks_id:
-			task = fetch(task_id)
-			if (task == None): continue
-			if (not task.success): return False
-		return True
+# 	def is_all_tasks_finished_success(self, vect_tasks_id):
+# 		"""
+# 		return true if all tasks finished
+# 		"""
+# 		for task_id in vect_tasks_id:
+# 			task = fetch(task_id)
+# 			if (task == None): continue
+# 			if (not task.success): return False
+# 		return True
 
 
 	def add_freq_to_vcf(self, vcf_file, vcf_file_out):
@@ -976,7 +975,7 @@ class Utils(object):
 		for i in range(0, len(l), n):
 			yield l[i:i+n]
 
-	def clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
+	def clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '' }):
 		"""
 		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
 		

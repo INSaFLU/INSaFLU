@@ -13,7 +13,7 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fluwebvirus.settings")
 
-path = '/usr/local/web_site'
+path = '/usr/local/web_site/INSaFLU'
 if path not in sys.path:
 	sys.path.append(path)
 	

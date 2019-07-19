@@ -1,5 +1,5 @@
 qname                 queue_1.q
-hostlist              @queue_1
+hostlist              @allhosts
 seq_no                0
 load_thresholds       NONE
 suspend_thresholds    NONE

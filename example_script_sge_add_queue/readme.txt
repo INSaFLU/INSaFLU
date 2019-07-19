@@ -27,9 +27,7 @@ $ sudo su
 
 Then run:
 
-$ qconf -Ahgrp grid_add_host_fast.txt
-$ qconf -Ahgrp grid_add_host_queue_1.txt
-$ qconf -Ahgrp grid_add_host_queue_2.txt
+$ qconf -Ahgrp grid_add_all_hosts.txt
 
 ### show all groups
 $ qconf -shgrpl
@@ -37,9 +35,19 @@ $ qconf -shgrpl
 ### if you want to delete a group namem
 $ qconf -dhgrp <a group name>
 
-
+$ qconf -Aq grid_add_queue_all.txt
 $ qconf -Aq grid_add_queue_fast.txt
 $ qconf -Aq grid_add_queue_queue_1.txt
 $ qconf -Aq grid_add_queue_queue_2.txt
 
+### if you want remove a queue
+$ qconf -dq <a queue name>
+
+### show all queues
 $ qstat -f
+
+### show all info
+$ qconf -sq <queue name>
+
+### edit queues
+$ qconf -mq <queue name>  

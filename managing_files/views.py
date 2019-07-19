@@ -268,7 +268,6 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		except Profile.DoesNotExist:
 			pass
 
-		software = Software()
 		utils = Utils()
 		name = form.cleaned_data['name']
 		lat = form.cleaned_data['lat']

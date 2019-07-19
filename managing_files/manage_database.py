@@ -244,7 +244,7 @@ class ManageDatabase(object):
 		"""
 		
 		if (not b_calculate_again):
-			meta_data = self.get_project_metakey(project, MetaKeyAndValue.META_KEY_Project_max_sample_length,\
+			meta_data = self.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Project_max_sample_length,\
 										MetaKeyAndValue.META_VALUE_Success)
 			if (meta_data != None):
 				return int(meta_data.description)

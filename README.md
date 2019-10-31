@@ -99,7 +99,7 @@ Software to install:
 * [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 0.11.5
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) 0.27
 * [Bamtools](https://github.com/pezmaster31/bamtools) 2.5
-* [Prokka](https://github.com/tseemann/prokka) 1.2
+* [Prokka](https://github.com/tseemann/prokka) 1.12
 * [Mauve](http://darlinglab.org/mauve/mauve.html) 2.4.0, Feb 13 2015
 * [Mafft](https://mafft.cbrc.jp/alignment/software/) 7.313
 * [seqret](http://emboss.sourceforge.net/download/) (EMBOSS) 6.6.0.0

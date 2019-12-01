@@ -300,6 +300,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
+		### json file
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.json")
+		out_file = collect_extra_data.create_json_file_from_sample_csv(project)
+		
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))

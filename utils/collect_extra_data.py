@@ -12,7 +12,7 @@ from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
-import os, csv, time
+import os, csv, time, json, logging
 import plotly.graph_objs as go
 from plotly.offline import plot
 from django.db import transaction
@@ -29,6 +29,8 @@ class CollectExtraData(object):
 	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 
 	utils = Utils()
+	logger_debug = logging.getLogger("fluWebVirus.debug")
+	logger_production = logging.getLogger("fluWebVirus.production")
 	
 	def __init__(self):
 		'''
@@ -95,6 +97,8 @@ class CollectExtraData(object):
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
+			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
 			
 			## calculate global variations for a project
 			self.calculate_count_variations(project)
@@ -231,11 +235,47 @@ class CollectExtraData(object):
 			## samples tsv
 			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+			
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json):
+			## tree json
+			out_file = self.create_json_file_from_sample_csv(project)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		if (out_file != None):
 			self.utils.copy_file(out_file, out_file_file_system)
 			os.unlink(out_file)
 		elif (out_file_file_system != None and os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+
+
+	def create_json_file_from_sample_csv(self, project):
+		"""
+		Create JSON file to insaPhylo
+		"""
+		
+		file_name_root_sample = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
+		if (os.path.exists(file_name_root_sample)):
+			out_file = self.utils.get_temp_file('json_sample_file', FileExtensions.FILE_JSON)
+			with open(out_file, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
+				reader = csv.DictReader(handle_in_csv)
+				all_data = json.loads(json.dumps(list(reader)))
+				dt_result = {}
+				for dict_data in all_data:
+					if ('id' in dict_data):
+						dt_out = dict_data.copy()
+						del dt_out['id']
+						dt_result[dict_data['id']] = dt_out
+				if len(dt_result) == len(all_data):
+					handle_write.write(json.dumps(dt_result))
+				else:
+					os.unlink(out_file)
+					self.logger_production.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project.id, len(dt_result), len(all_data)))
+					self.logger_debug.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project.id, len(dt_result), len(all_data)))
+					return None
+			return out_file
+		else:
+			self.logger_production.error('Sample csv file does not exist: {}'.format(file_name_root_sample))
+			self.logger_debug.error('Sample csv file does not exist {}'.format(file_name_root_sample))
+		return None
 
 
 	def create_coverage_file(self, project, user):
@@ -421,7 +461,7 @@ class CollectExtraData(object):
 				### mixedinfection
 				vect_out.append(project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
 
-				### print extra informatios
+				### print extra informations
 				query_set = TagNames.objects.filter(sample=project_sample.sample)
 				for tag_name_to_test in vect_tags:
 					b_print = False

@@ -9,6 +9,7 @@
 {% block css %}
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 {% endblock css %}
 
 {% block breadcrumbs %}
@@ -356,15 +357,20 @@
  {% block js %}
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/show-sample-project.js' %}"></script>
-	    	<!-- <script type="text/javascript" src="{% static 'js/phylocanvas-quickstart-2.8.1.js' %}"></script> -->
-	    	<script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'Chart.js/2.7.1/Chart.min.js' %}"></script> -->
 	    	
-	    	<!-- <script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script> -->
-	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
+	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/show-sample-project.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'Chart.js/2.7.1/Chart.min.js' %}"></script>
+	    	
+	    	<!-- <script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script>
+	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>  -->
+	    	
+	    	<!--  JS to insaphylo -->
+	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/aux.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/tree.js' %}" defer></script>
+	    	<!--  END JS to insaphylo -->
  {% endblock %}
 
 

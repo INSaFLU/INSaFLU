@@ -74,7 +74,7 @@ class Test(TestCase):
 		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION, SoftwareNames.SOFTWARE_TRIMMOMATIC_PARAMETERS))
 		
 		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
-		self.assertEqual("SPAdes-3.11.1; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertEqual("SPAdes-3.13.0; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
 		
 		
 	def test_Coverage(self):

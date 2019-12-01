@@ -299,5 +299,6 @@ class FileExtensions(object):
 	FILE_BED = '.bed'
 	FILE_TBI = '.tbi'	### create with tabix
 	FILE_IDX = '.idx'	### created from igvtools
+	FILE_JSON = '.json'
 
 

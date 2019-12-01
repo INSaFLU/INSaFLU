@@ -5,6 +5,8 @@ Created on Dec 6, 2017
 '''
 
 import os
+import csv, json, logging
+
 from managing_files.models import Project, ProjectSample, DataSet, VaccineStatus
 from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath, FileExtensions, FileType, TypeFile
@@ -21,6 +23,12 @@ from datetime import datetime
 from django.db import transaction
 from utils.process_SGE import ProcessSGE
 
+
+### Logger
+logger_debug = logging.getLogger("fluWebVirus.debug")
+logger_production = logging.getLogger("fluWebVirus.production")
+	
+	
 ######################################
 ###
 ###		AJAX methods for check box in session
@@ -94,6 +102,7 @@ def show_phylo_canvas(request):
 	"""
 	manage check boxes through ajax
 	"""
+	
 	if request.is_ajax():
 		data = { 'is_ok' : False }
 		utils = Utils()
@@ -105,19 +114,43 @@ def show_phylo_canvas(request):
 			if (key_element_name in request.GET): element_name = request.GET.get(key_element_name)
 			try:
 				project = Project.objects.get(id=project_id)
+				file_name_root_json = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json)
+				file_name_url_json = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json)
+				file_name_root_sample = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
+				
 				if (element_name == 'all_together'): 
-					file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+					file_name_root_nwk = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 					file_name_nwk = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE)
 					file_name_tree = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 				else: 
-					file_name = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
+					file_name_root_nwk = project.get_global_file_by_element(TypePath.MEDIA_ROOT, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 					file_name_nwk = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_FASTTREE)
 					file_name_tree = project.get_global_file_by_element(TypePath.MEDIA_URL, element_name, Project.PROJECT_FILE_NAME_FASTTREE_tree)
-				if (os.path.exists(file_name)):
-					string_file_content = utils.read_file_to_string(file_name).strip()
+
+				if (os.path.exists(file_name_root_nwk) and os.path.exists(file_name_root_sample)):
+					string_file_content = utils.read_file_to_string(file_name_root_nwk).strip()
+					
+					if not os.path.exists(file_name_root_json):
+						with open(file_name_root_json, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
+							reader = csv.DictReader(handle_in_csv)
+							all_data = json.loads(json.dumps(list(reader)))
+							dt_result = {}
+							for dict_data in all_data:
+								if ('id' in dict_data):
+									dt_out = dict_data.copy()
+									del dt_out['id']
+									dt_result[dict_data['id']] = dt_out
+							if len(dt_result) == len(all_data):
+								handle_write.write(json.dumps(dt_result))
+							else:
+								logger_production.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project_id, len(dt_result), len(all_data)))
+								logger_debug.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project_id, len(dt_result), len(all_data)))
+								string_file_content = None	## return error
+								
 					if (string_file_content != None and len(string_file_content) > 0):
 						data['is_ok'] = True
 						data['tree'] = string_file_content
+						data['url_sample'] = file_name_url_json
 						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
 						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name_tree, os.path.basename(file_name_tree)))
 			except Project.DoesNotExist:

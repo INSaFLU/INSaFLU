@@ -39,8 +39,10 @@ class SoftwareNames(object):
 	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
 	SOFTWARE_IGVTOOLS_PARAMETERS = ""
 	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
+#	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
-	SOFTWARE_SPAdes_VERSION = "3.11.1"
+	SOFTWARE_SPAdes_VERSION = "3.11.1"			### older version change at 25/11/2109 to 3. 
+#	SOFTWARE_SPAdes_VERSION = "3.13.0"
 	SOFTWARE_SPAdes_PARAMETERS = "--only-assembler"
 	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"		## same at this point
 	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"

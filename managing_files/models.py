@@ -612,11 +612,12 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
-					PROJECT_FILE_NAME_FASTTREE_tree, PROJECT_FILE_NAME_nex,\
-					PROJECT_FILE_NAME_FASTA]
+					PROJECT_FILE_NAME_FASTTREE_tree,\
+					PROJECT_FILE_NAME_nex, PROJECT_FILE_NAME_FASTA]
 	
 	vect_exclude_clean_file_from_proteins = [PROJECT_FILE_NAME_FASTA]
 

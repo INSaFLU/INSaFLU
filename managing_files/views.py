@@ -8,9 +8,9 @@ from django.views.generic import ListView, DetailView
 from django_tables2 import RequestConfig
 from managing_files.models import Reference, Sample, Project, ProjectSample, UploadFiles, MetaKey
 from managing_files.tables import ReferenceTable, SampleTable, ProjectTable, ReferenceProjectTable, SampleToProjectsTable
-from managing_files.tables import ShowProjectSamplesResults, AddSamplesFromCvsFileTable, AddSamplesFromFastqFileTable
+from managing_files.tables import ShowProjectSamplesResults, AddSamplesFromCvsFileTable, AddSamplesFromCvsFileTableMetadata, AddSamplesFromFastqFileTable
 from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectFormSet, AddSampleProjectForm, SamplesUploadMultipleFastqForm
-from managing_files.forms import SamplesUploadDescriptionForm
+from managing_files.forms import SamplesUploadDescriptionForm, SamplesUploadDescriptionMetadataForm
 from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath, FileExtensions, TypeFile, FileType
 from constants.software_names import SoftwareNames
@@ -375,7 +375,6 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		### test if can add other csv file
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
-		if (count_not_complete > 0): context['can_add_other_file'] = "You can't add other file because there's a file not completed." 
 		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
 		return context
@@ -389,9 +388,62 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 	form_valid_message = ""		## need to have this, even empty
 
 
+
+class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
+	"""
+	Update metadata
+	"""
+	utils = Utils()
+	success_url = reverse_lazy('samples')
+	template_name = 'samples/sample_update_metadata.html'
+	model = UploadFiles
+	fields = ['file_name']
+	
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesUpdateMetadata, self).get_form_kwargs()
+		return kw
+	
+	def get_context_data(self, **kwargs):
+		context = super(SamplesUpdateMetadata, self).get_context_data(**kwargs)
+		tag_search = 'search_samples'
+		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date')
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
+										Q(owner__username__icontains=self.request.GET.get(tag_search)))
+		table = AddSamplesFromCvsFileTableMetadata(query_set)
+		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		context['table'] = table
+		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['nav_sample'] = True
+		
+		### test if exists files to process to match with (csv/tsv) file
+		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date').count() == 0
+				
+		### test if can add other csv file
+		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False).count()
+		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline." 
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
+		return context
+
+	def form_valid(self, form):
+		"""
+		Validate the form
+		"""
+		return super(SamplesUpdateMetadata, self).form_valid(form)
+
+	form_valid_message = ""		## need to have this, even empty
+
+
 class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""
-	Create a new reference
+	Set new samples
 	"""
 	form_class = SamplesUploadDescriptionForm
 	success_url = reverse_lazy('sample-add-file')
@@ -473,6 +525,93 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 
 	## static method, not need for now.
 	form_valid_message = ""		## need to have this
+
+
+class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
+	"""
+	Create a new reference
+	"""
+	form_class = SamplesUploadDescriptionMetadataForm
+	success_url = reverse_lazy('sample-update-metadata')
+	template_name = 'samples/samples_upload_description_file_metadata.html'
+
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(SamplesUploadDescriptionFileViewMetadata, self).get_form_kwargs()
+		kw['request'] = self.request 	# get error
+		return kw
+	
+	def get_context_data(self, **kwargs):
+		context = super(SamplesUploadDescriptionFileViewMetadata, self).get_context_data(**kwargs)
+		if ('form' in kwargs and hasattr(kwargs['form'], 'error_in_file')):
+			context['error_in_file'] = mark_safe(kwargs['form'].error_in_file.replace('\n', "<br>")) ## pass a list
+		context['nav_sample'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		return context
+
+	def form_valid(self, form):
+		
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add file with samples.".format(self.request.user.username), fail_silently=True)
+				return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+
+		utils = Utils()
+		path_name = form.cleaned_data['path_name']
+
+		## create a genbank file
+		if (not path_name is None):
+			upload_files = form.save(commit=False)
+			upload_files.is_valid = True
+			upload_files.is_processed = False
+			upload_files.is_deleted = False
+			upload_files.number_errors = 0
+			upload_files.number_files_processed = 0
+			upload_files.number_files_to_process = form.number_files_to_process
+			
+			try:
+				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file_metadata)
+			except MetaKey.DoesNotExist:
+				type_file = MetaKey()
+				type_file.name = TypeFile.TYPE_FILE_sample_file_metadata
+				type_file.save()
+			
+			upload_files.type_file = type_file
+			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+			upload_files.owner = self.request.user
+			
+			upload_files.description = ""
+#			upload_files.save()
+		
+			## move the files to the right place
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
+													TypeFile.TYPE_FILE_sample_file_metadata), upload_files.file_name)
+			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
+			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file_metadata), ntpath.basename(sz_file_to))
+			upload_files.save()
+			
+			try:
+				process_SGE = ProcessSGE()
+				taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
+			except:
+				return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+			
+			messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully", fail_silently=True)
+			return super(SamplesUploadDescriptionFileViewMetadata, self).form_valid(form)
+		return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+
 
 class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""

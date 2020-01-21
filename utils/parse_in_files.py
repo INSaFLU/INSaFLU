@@ -8,7 +8,7 @@ from django.db import transaction
 from utils.utils import Utils
 from utils.result import ProcessResults, SingleResult
 from constants.constants import Constants, TypeFile, TypePath
-from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNames, UploadFiles, ProcessControler
+from managing_files.models import Sample, DataSet, VaccineStatus, TagName, TagNames, UploadFiles, ProcessControler, ProjectSample
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.gis.geos import Point
 from constants.constants import FileExtensions
@@ -27,10 +27,36 @@ class ParseInFiles(object):
 	STATE_READ_only_detect_errors = 'only_detect_errors'
 	STATE_READ_dont_detect_errors = 'dont_detect_errors'
 	STATE_READ_all = 'all'
+	STATE_READ_metadata_only_detect_errors_and_chech_samples = 'metadata_only_detect_errors_check_samples'
+	STATE_READ_metadata_dont_detect_errors_and_chech_samples = 'metadata_dont_detect_errors_check_samples'
+	
+	## only for metadata
+	vect_only_read_metadata = [STATE_READ_metadata_only_detect_errors_and_chech_samples, STATE_READ_metadata_dont_detect_errors_and_chech_samples]
 	
 	## this header must be present
-	vect_header = ['sample name', 'fastq1', 'fastq2', 'data set', 'vaccine status', 'week', 'onset date', 'collection date', 'lab reception date', 'latitude', 'longitude']
+	
+	TAG_SAMPLE_NAME_fastq1 = 'fastq1'
+	TAG_SAMPLE_NAME_fastq2 = 'fastq2'
+	TAG_SAMPLE_NAME_data_set = 'data set'
+	TAG_SAMPLE_NAME_vaccine_status = 'vaccine status'
+	TAG_SAMPLE_NAME_week = 'week'
+	TAG_SAMPLE_NAME_onset_date = 'onset date'
+	TAG_SAMPLE_NAME_collection_date = 'collection date'
+	TAG_SAMPLE_NAME_lab_reception_date = 'lab reception date'
+	TAG_SAMPLE_NAME_latitude = 'latitude'
+	TAG_SAMPLE_NAME_longitude = 'longitude'
+	
+	vect_header = ['sample name', TAG_SAMPLE_NAME_fastq1, TAG_SAMPLE_NAME_fastq2, \
+				TAG_SAMPLE_NAME_data_set, TAG_SAMPLE_NAME_vaccine_status, \
+				TAG_SAMPLE_NAME_week, TAG_SAMPLE_NAME_onset_date, \
+				TAG_SAMPLE_NAME_collection_date, TAG_SAMPLE_NAME_lab_reception_date, \
+				TAG_SAMPLE_NAME_latitude, TAG_SAMPLE_NAME_longitude]
 	vect_madatory_header = ['sample name', 'fastq1']
+	
+	### only used in metadata 
+	vect_madatory_header_metadata = ['sample name']
+	vect_fields_not_allow_to_change = ['fastq1', 'fastq2']
+	
 	utils = Utils()
 	
 	def __init__(self):
@@ -103,6 +129,7 @@ class ParseInFiles(object):
 		dict_delimiter = {}
 		## get biggest delimiter
 		for line in f:
+			if (line.startswith("#") or line.startswith("\"#")): continue
 			dialect = sniffer.sniff(line)
 			delimiter = dialect.delimiter
 			if (delimiter in dict_delimiter): dict_delimiter[delimiter] += 1
@@ -119,6 +146,7 @@ class ParseInFiles(object):
 			b_found = False
 			reader = csv.reader(f, delimiter=delimiter)
 			for row in reader:
+				if (line.startswith("#") or line.startswith("\"#")): continue
 				(count_column, n_columns_ok) = (0, 0)
 				for col in row:
 					if (count_column >= len(self.vect_header) or col.replace(' ', '').lower() != self.vect_header[count_column].replace(' ', '').lower()): break
@@ -141,29 +169,54 @@ class ParseInFiles(object):
 		(count_row, count_column) = (1, 1)
 		for row in reader:
 			if (header == None):
-				count_column = 0
-				n_columns_ok = 0
-				for col in row:
-					if (count_column >= len(self.vect_header) or col.replace(' ', '').lower() != self.vect_header[count_column].replace(' ', '').lower()): break
-					n_columns_ok += 1
-					count_column += 1
-				if (n_columns_ok == len(self.vect_header)):
-					header = row
-					for i in range(0, len(row)):	## test all header names
-						if (len(row[i].strip()) == 0): continue
-						if (row[i].strip() in self.dict_other_fields_repeated):
-							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Column name '{}' is repeated in the header. Line: {} Column: {}".\
-										format(row[i].strip(), count_row, i+1))))
-						else:
-							self.dict_other_fields_repeated[row[i].strip()] = 1
+				if (read_state in ParseInFiles.vect_only_read_metadata):	## only for metadata
+					count_column = 0
+					n_columns_ok = 0
+					for col in row:
+						if (count_column >= len(ParseInFiles.vect_madatory_header_metadata) or \
+								col.replace(' ', '').lower() != ParseInFiles.vect_madatory_header_metadata[count_column].replace(' ', '').lower()): break
+						n_columns_ok += 1
+						count_column += 1
+						
+					if (n_columns_ok == len(ParseInFiles.vect_madatory_header_metadata)):
+						header = row
+						for i in range(0, len(row)):	## test all header names
+							if (len(row[i].strip()) == 0): continue
+							if (row[i].strip() in self.dict_other_fields_repeated):
+								self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Column name '{}' is repeated in the header. Line: {} Column: {}".\
+											format(row[i].strip(), count_row, i+1))))
+							else:
+								self.dict_other_fields_repeated[row[i].strip()] = 1
+				else:	### read normal samples
+					count_column = 0
+					n_columns_ok = 0
+					for col in row:
+						if (count_column >= len(self.vect_header) or col.replace(' ', '').lower() != self.vect_header[count_column].replace(' ', '').lower()): break
+						n_columns_ok += 1
+						count_column += 1
+					if (n_columns_ok == len(self.vect_header)):
+						header = row
+						for i in range(0, len(row)):	## test all header names
+							if (len(row[i].strip()) == 0): continue
+							if (row[i].strip() in self.dict_other_fields_repeated):
+								self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Column name '{}' is repeated in the header. Line: {} Column: {}".\
+											format(row[i].strip(), count_row, i+1))))
+							else:
+								self.dict_other_fields_repeated[row[i].strip()] = 1
 
-			elif (header != None): ## line with data
-				self.process_row(row, count_row, header, user, read_state)
+			elif (not header is None): ## line with data
+				if read_state in ParseInFiles.vect_only_read_metadata:	### read metadata to update
+					self.process_row_metadata(row, count_row, header, user, read_state)
+				else:		## read upload new samples
+					self.process_row(row, count_row, header, user, read_state)
 			count_row += 1
-		if (header == None):
+		if (header is None):
 			self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Header not found in the file. Please, check the names in the header, must be equal and have the same order of the template file.")))
 		elif (self.number_samples == 0 and not self.errors.has_errors()):
-			self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no samples to process.")))
+			if (read_state in ParseInFiles.vect_only_read_metadata):
+				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no samples to update.")))
+			else:
+				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no samples to process.")))
 
 	def process_row(self, row, count_row, header, user, read_state):
 		"""
@@ -243,21 +296,21 @@ class ParseInFiles(object):
 				if (len(week) > 0 and not self.utils.is_integer(week)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'week' must be integer. Line: {} Column: {}".format(count_row, 3))))
 	
-			self.validate_date(row, 6, count_row)	## validate onset date
-			self.validate_date(row, 7, count_row)	## validate collection date
-			self.validate_date(row, 8, count_row)	## validate lab reception date
+			self.validate_date(row, 6, count_row, self.vect_header)	## validate onset date
+			self.validate_date(row, 7, count_row, self.vect_header)	## validate collection date
+			self.validate_date(row, 8, count_row, self.vect_header)	## validate lab reception date
 			
 			### latitude
 			if len(row) > 9 and len(row[9].strip()) > 0:
 				latitude = row[9].strip()
 				if (not self.utils.is_float(latitude) or float(latitude) > 90 or float(latitude) < -90):
-					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'latitude' must have values between -90<lat<90. Line: {} Column: {}".format(count_row, 3))))
+					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'latitude' must have values between -90&ltlat&lt90. Line: {} Column: {}".format(count_row, 3))))
 	
 			### longitude
 			if len(row) > 10 and len(row[10].strip()) > 0:
 				longitude = row[10].strip()
-				if (not self.utils.is_float(longitude) or float(longitude) > 100 or float(longitude) < -100):
-					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'longitude' must have values between -180<long<180. Line: {} Column: {}".format(count_row, 3))))
+				if (not self.utils.is_float(longitude) or float(longitude) > 180 or float(longitude) < -180):
+					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'longitude' must have values between -180&ltlong&lt180. Line: {} Column: {}".format(count_row, 3))))
 
 		self.number_samples += 1
 		### there's no errors, process this sample
@@ -288,7 +341,7 @@ class ParseInFiles(object):
 			if (len(row) > 7 and len(row[7].strip()) > 0): sample.date_of_collection = self.utils.validate_date(row[7].strip())
 			if (len(row) > 8 and len(row[8].strip()) > 0): sample.date_of_receipt_lab = self.utils.validate_date(row[8].strip())
 			
-			if len(row) > 9 and len(row[9].strip()) > 0:
+			if len(row) > 10 and len(row[9].strip()) > 0 and len(row[10].strip()) > 0:
 				sample.geo_local = Point(float(row[9].strip()), float(row[10].strip()))
 			
 			vect_tag_names = []	## this trick need to be done because 'Extra fields on many-to-many'
@@ -308,8 +361,148 @@ class ParseInFiles(object):
 					vect_tag_names.append(tag_names) ## this trick need to be done because 'Extra fields on many-to-many'
 			self.vect_samples.append([sample, vect_tag_names])	## add samples
 
+	def process_row_metadata(self, row, count_row, header, user, read_state):
+		"""
+		process the lines for update metadata
+		in: read_state -> metadata_only_detect_errors_check_samples; metadata_dont_detect_errors_check_samples;
+		in: only_detect_errors -> only to detect errors, not to add samples
+		
+				# 	STATE_READ_metadata_only_detect_errors_and_chech_samples = 'metadata_only_detect_errors_check_samples'
+				# 	STATE_READ_metadata_dont_detect_errors_and_chech_samples = 'metadata_dont_detect_errors_check_samples'
+				
+		process header
+		"""
+		### check sample name
+		n_errors = len(self.errors.get_vect_results())
 
-	def validate_date(self, row, column, count_row):
+		### to chech the errors
+		if (read_state == ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples):
+			if len(row) > 0 and len(row[0].strip()) > 0:
+				sample_name = row[0].strip()
+				
+				## test clean name
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				if (len(result_filer_sample_name) != len(sample_name)):
+					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
+				else:
+					try:
+						sample = Sample.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
+					except Sample.DoesNotExist as e:
+						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' doesn't exists in database. Line: {} Column: {}".format(sample_name, count_row, 1))))
+						pass
+					
+					## test repeated samples
+					if (sample_name in self.dict_samples_out):
+						self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' is repeated in the file. Line: {} Column: {}".\
+												format(sample_name, count_row, 1))))
+					else:
+						self.dict_samples_out[sample_name] = 1
+			else:
+				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no sample name Line: {} Column: {}".format(count_row, 1))))
+
+			### check if fastq1 file as gz
+			if len(row) > 1:
+				for i in range(1, len(header)):
+					if (header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_fastq1 or header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_fastq2):
+						continue		## don't change the file names
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_data_set):
+						continue		## don't test this field
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_vaccine_status):
+						continue		## don't test this field
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_week):
+						week = row[i]
+						if (len(week) > 0 and not self.utils.is_integer(week)):
+							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'week' must be integer. Line: {} Column: {}".format(count_row, i+1))))
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_onset_date):
+						self.validate_date(row, i, count_row, header)	## validate onset date
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_collection_date):
+						self.validate_date(row, i, count_row, header)	## validate onset date
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_lab_reception_date):
+						self.validate_date(row, i, count_row, header)	## validate onset date
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_latitude):
+						latitude = row[i].strip()
+						if (len(latitude) > 0 and (not self.utils.is_float(latitude) or float(latitude) > 90 or float(latitude) < -90)):
+							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'latitude' must have values between -90&ltlat&lt90. Line: {} Column: {}".format(count_row, i+1))))
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_longitude):
+						longitude = row[i].strip()
+						if (len(longitude) > 0 and (not self.utils.is_float(longitude) or float(longitude) > 180 or float(longitude) < -180)):
+							self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("'longitude' must have values between -180&ltlong&lt180. Line: {} Column: {}".format(count_row, i+1))))
+
+
+			else:	## there's no data
+				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("There's no data to process Line: {} Column: {}".format(count_row, 1))))
+			
+		self.number_samples += 1
+		### there's no errors, process this sample, creating an object
+		if (n_errors == len(self.errors.get_vect_results()) and read_state == ParseInFiles.STATE_READ_metadata_dont_detect_errors_and_chech_samples):
+			
+			### add samples
+			sample = Sample()
+			sample.id = count_row
+			sample.owner = user
+			sample.name = row[0]
+			sample.candidate_file_name_1 = ""
+			sample.candidate_file_name_2 = ""
+			sample.data_set = DataSet()
+			sample.data_set.owner = user
+			sample.data_set.name = Constants.DATA_SET_GENERIC	## default value
+			
+			vect_tag_names = []	## this trick need to be done because 'Extra fields on many-to-many'
+			if len(row) > 1:
+				latitude = None
+				longitude = None
+				for i in range(1, len(header)):
+					### don't process this data
+					if len(row) <= i: continue
+					
+					### start processing the fields
+					if (header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_fastq1 or header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_fastq2):
+						continue		## don't change the file names
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_data_set):
+						if (len(row[i].strip()) > 0): sample.data_set.name = row[3].strip()
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_vaccine_status):
+						if (len(row[i].strip()) > 0):
+							sample.vaccine_status = VaccineStatus()
+							sample.vaccine_status.name = row[i].strip()
+							sample.vaccine_status.owner = user
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_week):
+						if (len(row[i].strip()) > 0):
+							sample.week = int(row[i].strip())
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_onset_date):
+						if (len(row[i].strip()) > 0):
+							sample.date_of_onset = self.utils.validate_date(row[i].strip())
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_collection_date):
+						if (len(row[i].strip()) > 0):
+							sample.date_of_collection = self.utils.validate_date(row[i].strip())
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_lab_reception_date):
+						if (len(row[i].strip()) > 0):
+							sample.date_of_receipt_lab = self.utils.validate_date(row[i].strip())
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_latitude):
+						if (len(row[i].strip()) > 0):
+							latitude = row[i].strip()
+					elif(header[i].strip().lower() == ParseInFiles.TAG_SAMPLE_NAME_longitude):
+						if (len(row[i].strip()) > 0):
+							longitude = row[i].strip()
+					else:		### other field
+						tag_name = TagName()
+						tag_name.id = count_row
+						tag_name.owner = user
+						tag_name.name = header[i].strip()
+						tag_name.is_meta_data = False
+						
+						tag_names = TagNames()
+						tag_names.id = count_row
+						tag_names.value = row[i].strip()
+						tag_names.tag_name = tag_name
+						tag_names.sample = sample
+						vect_tag_names.append(tag_names) ## this trick need to be done because 'Extra fields on many-to-many'
+					
+			if (not latitude is None and not longitude is None):
+				sample.geo_local = Point(float(latitude), float(longitude))
+			self.vect_samples.append([sample, vect_tag_names])	## add samples
+
+
+	def validate_date(self, row, column, count_row, vect_header):
 		"""
 		validate date
 		"""
@@ -318,7 +511,7 @@ class ParseInFiles(object):
 				return self.utils.validate_date(row[column].strip())
 			except ValueError as e:
 				self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("The '{}' must have this format DD/MM/YYYY. Line: {} Column: {}".\
-						format(self.vect_header[column], count_row, column + 1))))
+						format(vect_header[column], count_row, column + 1))))
 
 
 	@transaction.atomic
@@ -401,19 +594,115 @@ class ParseInFiles(object):
 		upload_files.number_files_processed = 0		## has the number of files linked 
 		upload_files.save()
 
-	def has_samples_files_to_process(self, user):
+	@transaction.atomic
+	def update_samples(self, upload_files, user):
+		"""
+		update metadata samples in database
+		run this after the file sample_files is uploaded
+		Only run if there's no errors
+		"""
+		## you can do anything with errors
+		if (self.errors.get_len_vect_results() > 0): return
+		
+		### projects affected with this sample
+		vect_project_id_affected = []
+		
+		for vect_sample in self.vect_samples:
+			
+			try:
+				sample = Sample.objects.get(name__iexact=vect_sample[0].name, owner=user, is_deleted=False)
+			except Sample.DoesNotExist as e:
+				continue 	## if does not exist continue, don't do anything
+			
+			## data set
+			data_set = None
+			if (not vect_sample[0].data_set is None):
+				try:
+					data_set = DataSet.objects.get(name__iexact=vect_sample[0].data_set.name, owner=user)
+					if (data_set.name != vect_sample[0].data_set.name):
+						data_set.name = vect_sample[0].data_set.name
+						data_set.save()
+				except DataSet.DoesNotExist as e:
+					data_set = DataSet()
+					data_set.name = vect_sample[0].data_set.name
+					data_set.owner = user
+					data_set.save()
+			
+			vaccine_status = None
+			if (vect_sample[0].vaccine_status != None):
+				try:
+					vaccine_status = VaccineStatus.objects.get(name__iexact=vect_sample[0].vaccine_status.name, owner=user)
+					if (vaccine_status.name != vect_sample[0].data_set.name):
+						vaccine_status.name = vect_sample[0].vaccine_status.name
+						vaccine_status.save()
+				except VaccineStatus.DoesNotExist as e:
+					vaccine_status = VaccineStatus()
+					vaccine_status.name = vect_sample[0].vaccine_status.name
+					vaccine_status.owner = user
+					vaccine_status.save()
+					
+			## first set sample
+			sample.data_set = data_set
+			sample.vaccine_status = vaccine_status
+			if (not vect_sample[0].week is None): sample.week = vect_sample[0].week
+			if (not vect_sample[0].date_of_onset is None): sample.date_of_onset = vect_sample[0].date_of_onset
+			if (not vect_sample[0].date_of_collection is None): sample.date_of_collection = vect_sample[0].date_of_collection
+			if (not vect_sample[0].date_of_receipt_lab is None): sample.date_of_receipt_lab = vect_sample[0].date_of_receipt_lab
+			if (not vect_sample[0].geo_local is None): sample.geo_local = vect_sample[0].geo_local
+			sample.save()
+
+			### now save the tag names
+			for tag_samples_temp in vect_sample[1]:
+				try:
+					tag_name = TagName.objects.get(name__iexact=tag_samples_temp.tag_name.name, owner=user)
+				except TagName.DoesNotExist as e:
+					tag_name = TagName()
+					tag_name.owner = user
+					tag_name.name = tag_samples_temp.tag_name.name
+					tag_name.is_meta_data = False
+					tag_name.save()
+				
+				try:
+					tag_names = TagNames.objects.get(sample=sample, tag_name=tag_name)
+					tag_names.value=tag_samples_temp.value
+					tag_names.save()
+				except TagNames.DoesNotExist as e:
+					tag_names = TagNames(tag_name=tag_name, sample=sample, value=tag_samples_temp.value)
+					tag_names.save()
+
+			upload_files.samples.add(sample)
+			
+			## check the project_ids related with this sample
+			query_set = ProjectSample.objects.filter(sample=sample, is_deleted=False, is_error=False)
+			for project_sample in query_set:
+				if (project_sample.project not in vect_project_id_affected):
+					vect_project_id_affected.append(project_sample.project)
+			##  to return
+			
+		## save uplaod files
+		upload_files.is_valid = True
+		upload_files.is_processed = True			## True when all samples are set
+		upload_files.number_files_to_process = len(self.vect_samples)
+		upload_files.number_files_processed = len(self.vect_samples)	## has the number of samples changed
+		upload_files.attached_date=datetime.now() 
+		upload_files.save()
+
+		## return project_id affected by these samples		
+		return vect_project_id_affected
+
+	def has_samples_files_to_process(self, user, type_sample=TypeFile.TYPE_FILE_sample_file):
 		"""
 		Test if there are any files to process
 		"""
-		upload_files = self.get_upload_samples_file(user)
+		upload_files = self.get_upload_samples_file(user, type_sample)
 		return not (upload_files == None)
 
-	def get_upload_samples_file(self, user):
+	def get_upload_samples_file(self, user, type_sample=TypeFile.TYPE_FILE_sample_file):
 		"""
 		test if there are any samples files to process
 		"""
 		upload_files = UploadFiles.objects.filter(owner=user, is_valid=True, is_deleted=False, is_processed=False,\
-						type_file__name=TypeFile.TYPE_FILE_sample_file)
+						type_file__name=type_sample)
 		if (upload_files.count() == 0): return None
 		return upload_files[0]
 
@@ -564,5 +853,46 @@ class UploadFilesByDjangoQ(object):
 		
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_FINISHED)
+		return True
+	
+class UpdateMetadataFileByDjangoQ(object):
+	
+	def __init__(self):
+		pass
+	
+	def update_sample_file(self, user, upload_files):
+		"""
+		read samples csv file, and link files if they exists		
+		"""
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_RUNNING)
+		
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		try:
+			parse_in_files = ParseInFiles()
+			b_test_char_encoding = True
+			parse_in_files.parse_sample_files(upload_files.get_path_to_file(TypePath.MEDIA_ROOT), user, b_test_char_encoding,\
+								ParseInFiles.STATE_READ_metadata_dont_detect_errors_and_chech_samples)
+			if (parse_in_files.get_errors().has_errors()): return False
+			vect_project_affected = parse_in_files.update_samples(upload_files, user)
+			
+			## if some project is affected need to recalculate
+			if (len(vect_project_affected) > 0):
+				for project in vect_project_affected:
+					process_SGE.set_collect_global_files_for_update_metadata(project, user)
+				
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_ERROR)
+			return
+		
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_upload_files(upload_files), ProcessControler.FLAG_FINISHED)
+		
+		
 		return True
 

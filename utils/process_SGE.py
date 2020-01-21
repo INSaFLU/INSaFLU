@@ -87,11 +87,12 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -V\n")	# Specifies  that  all  environment  variables active
 										# within the qsub utility be exported to the context of the job.
 			handleSGE.write("#$ -S /bin/bash\n") 	# interpreting shell
-			handleSGE.write("#$ -j y\n")  # merge the standard error with standard output
+			handleSGE.write("#$ -j y\n")	# merge the standard error with standard output
+			handleSGE.write("#$ -N {}\n".format("job_name"))	# merge the standard error with standard output
 			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
 			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
 			handleSGE.write("#$ -o {}\n".format(out_dir))		# out path file
-			if (nPriority > 0): handleSGE.write("#$ -p %d\n" % (nPriority))	# execute the job for the current work directory
+			if (nPriority > 0): handleSGE.write("#$ -p {}\n".format(nPriority))	# execute the job for the current work directory
 			for cline in vect_cmd: handleSGE.write("\n" + cline)
 			if (b_remove_out_dir):
 				handleSGE.write("\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir))
@@ -158,6 +159,25 @@ class ProcessSGE(object):
 		
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
+		out_dir = self.utils.get_temp_dir()
+		queue_name = user.profile.queue_name_sge
+		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project(project), sge_id)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+	
+	##### set collect global files
+	def set_collect_global_files_for_update_metadata(self, project, user):
+		
+		process_controler = ProcessControler()
+		vect_command = ['python3 {} collect_global_files_for_update_metadata --project_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
 		self.logger_production.info('Processing: ' + ";".join(vect_command))
 		self.logger_debug.info('Processing: ' + ";".join(vect_command))
@@ -244,6 +264,26 @@ class ProcessSGE(object):
 			raise Exception('Fail to submit the job.')
 		return sge_id
 
+	def set_read_sample_file_with_metadata(self, upload_files, user):
+		"""
+		update metadata, normal queue, wait for all of other data
+		"""
+		process_controler = ProcessControler()
+		vect_command = ['python3 {} update_metadata_sample_file --upload_files_id {} --user_id {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), upload_files.pk, user.pk)]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
+		out_dir = self.utils.get_temp_dir()
+		queue_name = user.profile.queue_name_sge
+		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_upload_files(upload_files), sge_id)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id
+	
 	### only for tests
 	def submit_dummy_sge(self):
 		"""

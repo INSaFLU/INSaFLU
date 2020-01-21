@@ -1,0 +1,9 @@
+#Mandatory columns to fulfill: 'sample name'
+#Other mandatory columns that may not be fulfilled: 'data set', 'vaccine status', 'week', 'onset date', 'collection date', 'lab reception date', 'latitude', 'longitude'
+#You may include any other columns with metadata variables.
+#Date format: dd/mm/yyyy
+#Sample names must exist in your account
+#Latitude and Longitude are in Decimal Degrees (DD)
+#Sample name: only numbers, letters and underscores are allowed
+#The aforementioned instructions do not need to be deleted before submission,,,,,,,,,,
+sample name,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude

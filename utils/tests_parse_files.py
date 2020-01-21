@@ -87,6 +87,36 @@ class Test(TestCase):
 		self.assertEquals("csv or tsv file. Could not determine delimiter", parse_in_files.get_errors().get_error(0).message)
 		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
+	
+	def test_parse_input_file_error_metadata(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
+		
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
+	
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_error)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = False
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples)
+		self.assertEquals(1, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals("csv or tsv file. Could not determine delimiter", parse_in_files.get_errors().get_error(0).message)
+		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		
 	def test_parse_input_file_1(self):
 		"""
@@ -118,7 +148,36 @@ class Test(TestCase):
 		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		
+	def test_parse_input_file_1_metadata(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
+		
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
 	
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples)
+		self.assertEquals(1, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals("There's no samples to update.", parse_in_files.get_errors().get_error(0).message)
+		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
+			
 	def test_parse_input_file_big(self):
 		"""
 		"""
@@ -172,6 +231,36 @@ class Test(TestCase):
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 		self.assertEquals(0, parse_in_files.get_number_samples())
 
+	def test_parse_input_file_2_metadata(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
+	
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_FAIL_HEADER)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples)
+		self.assertEquals(1, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals("There's no samples to update.", parse_in_files.get_errors().get_error(0).message)
+		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
+		self.assertEquals(0, parse_in_files.get_number_samples())
+		
 	def test_parse_input_file_3(self):
 		"""
 		Test input files
@@ -311,12 +400,12 @@ class Test(TestCase):
 		b_test_char_encoding = True
 		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
 		self.assertEquals(7, parse_in_files.get_errors().get_len_vect_results())
-		self.assertEquals("Error - 'longitude' must have values between -180<long<180. Line: 7 Column: 3\n" +\
+		self.assertEquals("Error - 'longitude' must have values between -180&ltlong&lt180. Line: 7 Column: 3\n" +\
 						"Error - Sample name 'xpto1' is repeated in the file. Line: 8 Column: 1\n" +\
 						"Error - File 'asdws.fastq.gz' is repeated in the samples file. Line: 8 Column: 2\n" +\
 						"Error - 'week' must be integer. Line: 8 Column: 3\n" +\
 						"Error - The 'onset date' must have this format DD/MM/YYYY. Line: 8 Column: 7\n" +\
-						"Error - 'latitude' must have values between -90<lat<90. Line: 8 Column: 3\n" +\
+						"Error - 'latitude' must have values between -90&ltlat&lt90. Line: 8 Column: 3\n" +\
 						"Error - Sample name 'xpto1 sd $ 23!”!”' only letters, numbers and underscores are allowed. Line: 9 Column: 1",\
 						str(parse_in_files.get_errors()))
 		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
@@ -488,6 +577,155 @@ class Test(TestCase):
 			self.fail("must not exist")
 		except Sample.DoesNotExist as e:
 			pass
+		
+	def test_parse_input_file_6_update(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
+	
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_TSV)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		self.assertEquals(0, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals(2, len(parse_in_files.get_vect_samples()))
+		
+		try:
+			type_file_sample_files = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+		except MetaKey.DoesNotExist:
+			type_file_sample_files = MetaKey()
+			type_file_sample_files.name = TypeFile.TYPE_FILE_sample_file
+			type_file_sample_files.save()
+			
+		### delete some upload files that can exist
+		for upload_file in UploadFiles.objects.filter(owner=user):
+			upload_file.delete()
+			
+		self.assertFalse(parse_in_files.has_samples_files_to_process(user))
+		self.assertEquals(None, parse_in_files.get_upload_samples_file(user))
+		upload_files = UploadFiles()
+		upload_files.file_name = os.path.basename(txt_file)
+		upload_files.owner = user
+		upload_files.is_processed = False
+		upload_files.is_valid = True
+		upload_files.type_file = type_file_sample_files
+		upload_files.save()
+
+		self.assertTrue(parse_in_files.has_samples_files_to_process(user))
+		
+		### after read you can create samples
+		parse_in_files.create_samples(upload_files, user)
+		
+		## start testing
+		try:
+			upload_files = UploadFiles.objects.get(file_name=os.path.basename(txt_file))
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+		## count all samples
+		self.assertEquals(2, upload_files.samples.all().count())
+		self.assertFalse(False, upload_files.is_processed)
+		self.assertEquals(2, upload_files.number_files_to_process)
+		self.assertEquals(0, upload_files.number_files_processed)
+		self.assertTrue(True, upload_files.is_valid)
+
+		try:
+			sample = Sample.objects.get(name='assasaxpto2', owner=user)
+			self.fail("must not exist")
+		except Sample.DoesNotExist as e:
+			pass
+		
+		#### update metadata
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_UPDATE_TSV)
+		self.assertTrue(os.path.exists(txt_file))
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_metadata_dont_detect_errors_and_chech_samples)
+		self.assertEquals(0, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals(2, len(parse_in_files.get_vect_samples()))
+		
+		try:
+			type_file_sample_files = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file_metadata)
+		except MetaKey.DoesNotExist:
+			type_file_sample_files = MetaKey()
+			type_file_sample_files.name = TypeFile.TYPE_FILE_sample_file_metadata
+			type_file_sample_files.save()
+			
+		self.assertFalse(parse_in_files.has_samples_files_to_process(user, TypeFile.TYPE_FILE_sample_file_metadata))
+		self.assertEquals(None, parse_in_files.get_upload_samples_file(user, TypeFile.TYPE_FILE_sample_file_metadata))
+		upload_files = UploadFiles()
+		upload_files.file_name = os.path.basename(txt_file)
+		upload_files.owner = user
+		upload_files.is_processed = False
+		upload_files.is_valid = True
+		upload_files.type_file = type_file_sample_files
+		upload_files.save()
+
+		self.assertTrue(parse_in_files.has_samples_files_to_process(user, TypeFile.TYPE_FILE_sample_file_metadata))
+		
+		### after read you can create samples
+		parse_in_files.update_samples(upload_files, user)
+		
+		## start testing
+		try:
+			upload_files = UploadFiles.objects.get(file_name=os.path.basename(txt_file))
+		except UploadFiles.DoesNotExist as e:
+			self.fail("must exist")
+			
+		## count all samples
+		self.assertEquals(2, upload_files.samples.all().count())
+		self.assertTrue(upload_files.is_processed)
+		self.assertEquals(2, upload_files.number_files_to_process)
+		self.assertEquals(2, upload_files.number_files_processed)
+		self.assertTrue(True, upload_files.is_valid)
+		
+		### test the update data
+		try:
+			sample = Sample.objects.get(name__iexact="xpto2", owner=user, is_deleted=False)
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+			
+		self.assertEqual("ok", sample.vaccine_status.name)
+		b_exist_test_2 = False
+		for tag_name in sample.get_tag_names():
+			if (tag_name.tag_name.name == "favourite host"):
+				self.assertEqual("perro", tag_name.value)
+			if (tag_name.tag_name.name == "Test_2"):
+				b_exist_test_2 = True
+				self.assertEqual("2", tag_name.value)
+		self.assertTrue(b_exist_test_2)
+		
+		### test the update data
+		try:
+			sample = Sample.objects.get(name__iexact="xpto1", owner=user, is_deleted=False)
+		except Sample.DoesNotExist as e:
+			self.fail("must exist")
+			
+		self.assertEqual("ok", sample.vaccine_status.name)
+		b_exist_test_2 = False
+		for tag_name in sample.get_tag_names():
+			if (tag_name.tag_name.name == "favourite host"):
+				self.assertEqual("dog", tag_name.value)
+			if (tag_name.tag_name.name == "test"):
+				b_exist_test_2 = True
+				self.assertEqual("10", tag_name.value)
+		self.assertTrue(b_exist_test_2)
 		
 	def test_create_samples(self):
 		"""

@@ -140,17 +140,11 @@ function phylTree(metaData, data_input) {
     collapse.id = "collapse";
     collapse.className = "insaphylo_style_buttons_top_menu";
     collapse.src = insaphylogeo_source_images + "triangle_down.png";
-
     block.id = "block";
-    block.style.display = "inline-block";
-    block.style.paddingLeft = "10px";
-    block.style.paddingRight = "10px";
-    block.style.cursor = "pointer";
-    block.style.width = "10px";
+    block.className = "insaphylo_style_buttons_top_menu";
     block.src = insaphylogeo_source_images + "non_block.png";
 
     document.getElementById("treeLegendDivInside").appendChild(legendSwitchLabel);
-
     document.getElementById("legendSwitchLabel" + "test").appendChild(triangle);
     document.getElementById("legendSwitchLabel" + "test").appendChild(collapse);
     document.getElementById("legendSwitchLabel" + "test").appendChild(block);

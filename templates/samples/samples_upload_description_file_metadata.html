@@ -1,0 +1,36 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/gijgo_1.6.1.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Samples" "samples" %}
+	{% breadcrumb "Update metadata" "sample_update_metadata" %}
+	{% breadcrumb "Upload metadata (csv/tsv) file" "sample_add_single_csv_file_metadata" %}
+{% endblock %}
+
+{% block content %}
+
+	{% if error_in_file %}
+		<div class="alert alert-warning alert-dismissable">
+			<a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
+		 	{{ error_in_file }} 
+		</div>
+	{% endif %}	
+	{% crispy form %} 
+{% endblock %}
+
+
+{% block js %}
+	<script>
+ 		$("#id_path_name").click( function(){
+ 			$('#error_1_id_path_name').empty();
+ 		});
+	</script>
+{% endblock js %}

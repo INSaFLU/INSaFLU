@@ -66,6 +66,11 @@
 			{% endif %}
 			<hr>
 			
+			<!--
+				<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_edit_sample_modal" aria-expanded="false" aria-controls="id_edit_sample_modal">Edit sample data</a></p>
+				<hr>
+			-->
+			
 			<!-- NAV tabs -->
 			<div class="container">
 				<ul class="nav nav-tabs" role="tablist">
@@ -180,7 +185,7 @@
 		<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		
-		<!-- The Modal -->
+		<!-- The Modal Message  -->
 		<div class="modal fade" id="id_assemblies_modal" >
 			<div class="modal-dialog modal-dialog-disclaimer modal-lg">
 				<div class="modal-content">
@@ -224,6 +229,8 @@
 				</div>
 	 		</div>
 		</div>
+		
+		<!-- The Modal to edit samples  -->
 	{% endif %}
 	
 {% endblock %}

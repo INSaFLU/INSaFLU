@@ -4,17 +4,16 @@ Created on Jan 5, 2018
 @author: mmp
 '''
 from django.core.management import BaseCommand
-from utils.parse_in_files import UploadFilesByDjangoQ
+from utils.parse_in_files import UpdateMetadataFileByDjangoQ
 from managing_files.models import UploadFiles
 from django.contrib.auth.models import User
-from django.conf import settings
 import logging
 
 class Command(BaseCommand):
 	'''
 	classdocs
 	'''
-	help = "Upload samples in database."
+	help = "Update samples in database."
 	
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -31,7 +30,7 @@ class Command(BaseCommand):
 	# A command must define handle()
 	def handle(self, *args, **options):
 		
-		upload_files_by_djangoq = UploadFilesByDjangoQ()
+		upload_files_by_djangoq = UpdateMetadataFileByDjangoQ()
 		upload_files_id = options['upload_files_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for upload_files_id: " + str(upload_files_id))
@@ -41,7 +40,7 @@ class Command(BaseCommand):
 			upload_files = UploadFiles.objects.get(pk=upload_files_id)
 			if (user_id == None): user = upload_files.owner
 			else: user = User.objects.get(pk=user_id)
-			upload_files_by_djangoq.read_sample_file(user, upload_files, settings.RUN_TEST_IN_COMMAND_LINE)
+			upload_files_by_djangoq.update_sample_file(user, upload_files)
 			self.stdout.write("End")
 		except UploadFiles.DoesNotExist as e:
 			self.stdout.write("Error: UploadFiles id '{}' does not exist.".format(upload_files_id))

@@ -11,6 +11,8 @@ urlpatterns = [
 	url(r'samples/sample_add_single_csv_file$', views.SamplesUploadDescriptionFileView.as_view(), name='sample-add-single-csv-file'),	## upload xls file with several samples 
 	url(r'samples/(?P<pk>\d+)/sample_description$', views.SamplesDetailView.as_view(), name='sample-description'),
 	url(r'samples/sample_add_fastq$', views.SamplesAddFastQView.as_view(), name='sample-add-fastq'),			## add several fastq.gz
+	url(r'samples/sample_update_metadata$', views.SamplesUpdateMetadata.as_view(), name='sample-update-metadata'),				## upload new matadata to replace the exist one
+	url(r'samples/sample_add_single_csv_file_metadata$', views.SamplesUploadDescriptionFileViewMetadata.as_view(), name='sample-add-single-csv-file-metadata'),	## upload xls file with new metadata for several samples
 	url(r'samples/sample_upload_fastq$', views.SamplesUploadFastQView.as_view(), name='sample-upload-fastq'),		## upload several fastq.gz
 	
 	url(r'project/projects$', views.ProjectsView.as_view(), name='projects'),

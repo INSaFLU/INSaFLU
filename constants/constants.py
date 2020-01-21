@@ -77,6 +77,12 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_tsv = "template_input.tsv"
 	FILE_TEMPLATE_INPUT_data_csv = "template_input_data.csv"
 	FILE_TEMPLATE_INPUT_data_tsv = "template_input_data.tsv"
+
+	FILE_TEMPLATE_INPUT_METADATA_csv = "template_metadata_input.csv"
+	FILE_TEMPLATE_INPUT_METADATA_tsv = "template_metadata_input.tsv"
+	FILE_TEMPLATE_INPUT_METADATA_data_csv = "template_input_metadata_data.csv"
+	FILE_TEMPLATE_INPUT_METADATA_data_tsv = "template_input_metadata_data.tsv"
+	
 	FORMAT_FASTA = "fasta"
 	FORMAT_FASTQ = "fastq"
 	EXTENSION_ZIP = ".gz"
@@ -268,9 +274,10 @@ class FileType(Enum):
 
 class TypeFile(object):
 	
-	TYPE_FILE_fastq_gz = "fastq.gz"
-	TYPE_FILE_sample_file = "sample-file imported" 	## file that the user import with sample descriptions
-	
+	TYPE_FILE_fastq_gz = "fastq.gz"								## fastq.fz files
+	TYPE_FILE_sample_file = "sample-file imported" 				## file that the user import with sample descriptions
+	TYPE_FILE_sample_file_metadata = "sample-file metadata" 	## file that the user import with new metadata
+
 	
 class FileExtensions(object):
 	"""

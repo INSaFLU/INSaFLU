@@ -390,7 +390,7 @@ class AddSamplesFromCvsFileTable(tables.Table):
 	"""
 	To add samples to projects
 	"""
-	samples_processed = tables.Column('Samples processed', empty_values=())
+	samples_processed = tables.Column('#Samples processed', empty_values=())
 	number_samples = tables.Column('#Samples', empty_values=())
 	is_completed = tables.Column('Load completed', empty_values=())
 	
@@ -427,7 +427,49 @@ class AddSamplesFromCvsFileTable(tables.Table):
 	def order_number_samples(self, queryset, is_descending):
 		queryset = queryset.annotate(number_samples = F('number_files_to_process')).order_by(('-' if is_descending else '') + 'number_files_to_process')
 		return (queryset, True)
+
+class AddSamplesFromCvsFileTableMetadata(tables.Table):
+	"""
+	To add samples to projects
+	"""
+	samples_processed = tables.Column('#Samples updated', empty_values=())
+	number_samples = tables.Column('#Samples', empty_values=())
+	is_completed = tables.Column('Load completed', empty_values=())
 	
+	class Meta:
+		model = Sample
+		fields = ('file_name', 'creation_date', 'owner', 'number_samples', 'samples_processed', 'is_completed')
+		attrs = {"class": "table-striped table-bordered"}
+		empty_text = "There are no (csv) or (tsv) files with samples to add..."
+	
+	def render_creation_date(self, value, record):
+		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+
+	def render_number_samples(self, value, record):
+		return record.number_files_to_process
+	
+	def render_samples_processed(self, value, record):
+		return record.number_files_processed
+
+	def render_is_completed(self, value, record):
+		return 'True' if record.is_processed else 'False'
+	
+	def render_file_name(self, value, record):
+		href = record.get_path_to_file(TypePath.MEDIA_URL)		
+		return mark_safe('<a href="' + href + '" download>' + record.file_name + '</a>')
+	
+	def order_is_completed(self, queryset, is_descending):
+		queryset = queryset.annotate(is_completed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')
+		return (queryset, True)
+	
+	def order_samples_processed(self, queryset, is_descending):
+		queryset = queryset.annotate(samples_processed = F('number_files_processed')).order_by(('-' if is_descending else '') + 'number_files_processed')
+		return (queryset, True)
+	
+	def order_number_samples(self, queryset, is_descending):
+		queryset = queryset.annotate(number_samples = F('number_files_to_process')).order_by(('-' if is_descending else '') + 'number_files_to_process')
+		return (queryset, True)
+
 class AddSamplesFromFastqFileTable(tables.Table):
 	"""
 	To add samples to projects

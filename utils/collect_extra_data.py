@@ -52,6 +52,43 @@ class CollectExtraData(object):
 		## run collect data
 		self.__collect_extra_data_for_project(project, user)
 
+	def collect_update_extra_metadata_for_project(self, project, user):
+		"""
+		Only for update metadata
+		"""
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_RUNNING)
+		
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		## run collect data
+		self.__collect_update_extra_metadata_for_project(project, user)
+		
+	@transaction.atomic
+	def __collect_update_extra_metadata_for_project(self, project, user):
+		"""
+		Only for update metadata
+		"""
+		### get the taskID and seal it
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		try:
+			
+			## collect sample table with plus type and subtype, mixed infection, equal to upload table
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
+			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+			return
+		
+		### finished
+		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 		
 	@transaction.atomic
 	def __collect_extra_data_for_project(self, project, user):

@@ -233,7 +233,6 @@ class Sample(models.Model):
 	### consensus file
 	OUT_CONSENSUS_FILE = "consensus.fasta"
 	
-	
 	## to remove in future
 	objects = models.Manager()	## need to check this
 	
@@ -959,6 +958,7 @@ class UploadFiles(models.Model):
 	type_file = models.ForeignKey(MetaKey, related_name='upload_files', blank=True, null=True, on_delete=models.CASCADE)	## has the type of file
 															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
 															## constants.TYPE_FILE.TYPE_FILE_sample_file
+															## constants.TYPE_FILE.TYPE_FILE_sample_file_metadata
 	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	attached_date = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')		## only used in fastq.gz files

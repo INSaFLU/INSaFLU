@@ -54,28 +54,30 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 		context = super(SignUpView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
 		
 		if form.is_valid():
-			### Begin reCAPTCHA validation '''
-			recaptcha_response = self.request.POST.get('g-recaptcha-response')
-			url = 'https://www.google.com/recaptcha/api/siteverify'
-			values = {
-				'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-				'response': recaptcha_response
-			}
-			data = urllib.parse.urlencode(values).encode("utf-8")
-			req = urllib.request.Request(url, data)
-			response = urllib.request.urlopen(req).read()
-			result = json.loads(response.decode('utf-8'))
-			### End reCAPTCHA validation
+			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 			
-			if (not result['success']):
-				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
-			else:
+			if (use_recaptcha):
+				### Begin reCAPTCHA validation '''
+				recaptcha_response = self.request.POST.get('g-recaptcha-response')
+				url = 'https://www.google.com/recaptcha/api/siteverify'
+				values = {
+					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+					'response': recaptcha_response
+				}
+				data = urllib.parse.urlencode(values).encode("utf-8")
+				req = urllib.request.Request(url, data)
+				response = urllib.request.urlopen(req).read()
+				result = json.loads(response.decode('utf-8'))
+				### End reCAPTCHA validation
+			
+			if (not use_recaptcha or result['success']):
 				user = form.save(commit=False)
 				user.is_active = True		## need to pass the confirm email
 				user.save()
@@ -92,6 +94,8 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 				})
 				user.email_user(subject, message)
 				messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
+			else:
+				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
 			return redirect('dashboard')
 			
 	## static method
@@ -110,12 +114,14 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 		context = super(ResetPasswordView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
 		
 		if form.is_valid():
+			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 			email_name = form.cleaned_data['email']
 			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
 					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
@@ -124,20 +130,22 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 			
 			### 
 			try:
-				### Begin reCAPTCHA validation '''
-				recaptcha_response = self.request.POST.get('g-recaptcha-response')
-				url = 'https://www.google.com/recaptcha/api/siteverify'
-				values = {
-					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-					'response': recaptcha_response
-				}
-				data = urllib.parse.urlencode(values).encode("utf-8")
-				req = urllib.request.Request(url, data)
-				response = urllib.request.urlopen(req).read()
-				result = json.loads(response.decode('utf-8'))
-				### End reCAPTCHA validation
+				if (use_recaptcha):
+					### Begin reCAPTCHA validation '''
+					recaptcha_response = self.request.POST.get('g-recaptcha-response')
 				
-				if (result['success']):
+					url = 'https://www.google.com/recaptcha/api/siteverify'
+					values = {
+						'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+						'response': recaptcha_response
+					}
+					data = urllib.parse.urlencode(values).encode("utf-8")
+					req = urllib.request.Request(url, data)
+					response = urllib.request.urlopen(req).read()
+					result = json.loads(response.decode('utf-8'))
+					### End reCAPTCHA validation
+				
+				if (not use_recaptcha or result['success']):
 					user = User.objects.get(email__iexact=email_name, is_active=True, profile__email_confirmed=True)
 					current_site = get_current_site(self.request)
 					subject = 'Reseting password  in your INSaFLU Account'
@@ -170,12 +178,14 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 		context = super(GetMessageConfirmEmailView, self).get_context_data(**kwargs)
 		context['nav_modal'] = True	## short the size of modal window
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
+		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 	def form_valid(self, form):
 		
 		if form.is_valid():
+			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 			email_name = form.cleaned_data['email']
 			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
 					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
@@ -184,22 +194,21 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 			
 			### 
 			try:
-				### Begin reCAPTCHA validation '''
-				recaptcha_response = self.request.POST.get('g-recaptcha-response')
-				url = 'https://www.google.com/recaptcha/api/siteverify'
-				values = {
-					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-					'response': recaptcha_response
-				}
-				data = urllib.parse.urlencode(values).encode("utf-8")
-				req = urllib.request.Request(url, data)
-				response = urllib.request.urlopen(req).read()
-				result = json.loads(response.decode('utf-8'))
-				### End reCAPTCHA validation
+				if (use_recaptcha):
+					### Begin reCAPTCHA validation '''
+					recaptcha_response = self.request.POST.get('g-recaptcha-response')
+					url = 'https://www.google.com/recaptcha/api/siteverify'
+					values = {
+						'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+						'response': recaptcha_response
+					}
+					data = urllib.parse.urlencode(values).encode("utf-8")
+					req = urllib.request.Request(url, data)
+					response = urllib.request.urlopen(req).read()
+					result = json.loads(response.decode('utf-8'))
+					### End reCAPTCHA validation
 				
-				if (not result['success']):
-					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
-				else:
+				if (not use_recaptcha or result['success']):
 					## don't change anything in the account.
 					user = User.objects.get(email__iexact=email_name, is_active=True)
 					
@@ -218,6 +227,9 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 					})
 					user.email_user(subject, message)
 					messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
+				else:
+					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
+					
 			except User.DoesNotExist as e:
 				messages.warning(self.request, "The account '{}' does not exist in database or is disabled.".format(email_name), fail_silently=True)
 			

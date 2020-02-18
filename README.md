@@ -77,10 +77,11 @@ $ sudo yum install postgresql-devel
 $ sudo yum install python3
 $ sudo yum install perl-Time-Piece perl-XML-Simple perl-Digest-MD5 git java perl-CPAN perl-Module-Build
 $ sudo cpan -i Bio::Perl
-$ cd; mkdir software; cd software;
-$ wget wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.9.0+-1.x86_64.rpm
-# sudo yum install ncbi-blast-2.9.0+-1.x86_64.rpm
+# sudo yum install https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-1.x86_64.rpm
+
 ```
+
+:warning: Important, must be blast 2.7.1 version because of Abricate. Newer versions fails on database creation.
 
 ## Bioinformatics software
 
@@ -121,6 +122,7 @@ Some scripts to install:
 
 :warning: Important, copy the file `bin/snippy-vcf_to_tab` to `bin/snippy-vcf_to_tab_add_freq` and do this change:
 
+
 ```
 $ cd /usr/local/software/insaflu/snippy/bin
 $ cp snippy-vcf_to_tab snippy-vcf_to_tab_add_freq
@@ -131,6 +133,8 @@ print join("\t", qw(CHROM POS TYPE REF ALT EVIDENCE), @ANNO), "\n";
 to
 print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 ```
+
+:warning: Important, change shebang in spades.py file from `#!/usr/bin/env python` to `#!/usr/bin/env python3`. 
 
 :warning: Important, change snippy script to allow snpEff 4.1 version
 
@@ -434,15 +438,17 @@ LogLevel warn
 
 </VirtualHost> 
 
-$ sudo yum install httpd-devel
-$ sudo pip3 install mod_wsgi
+$ sudo yum install httpd-devel mod_wsgi
 $ sudo updatedb
-$ locate mod_wsgi-py
 
-$ sudo yum install mod_wsgi
-## small caveat...
-$ mv /etc/httpd/modules/mod_wsgi.so /etc/httpd/ 
+## START small caveat...
+$ mv /etc/httpd/modules/mod_wsgi.so /etc/httpd/
+
+OR
+$ locate mod_wsgi.so 
 $ sudo ln -s <last hit for the locate> /etc/httpd/modules/mod_wsgi.so
+## END small caveat...
+
 $ sudo systemctl restart httpd
 $ sudo systemctl status httpd
 ```

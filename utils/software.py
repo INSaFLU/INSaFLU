@@ -127,7 +127,16 @@ class Software(object):
 	def run_spades(self, fastq_1, fastq_2, out_dir):
 		"""
 		Run spades
+		IF you have problems running spades.py change the spades.py file from:
+		#!/usr/bin/env python
+		to
+		#!/usr/bin/env python3
 		"""
+		if (not os.path.exists(fastq_1)):
+			self.logger_production.error('Fastq 1 not found: ' + fastq_1)
+			self.logger_debug.error('Fastq 1 not found: ' + fastq_1)
+			raise Exception('Fastq 1 not found: ' + fastq_1)
+		
 		if (fastq_2 is None or len(fastq_2) == 0 or not os.path.exists(fastq_2)): 
 			cmd = "%s -s %s %s -t %d -o %s" % (self.software_names.get_spades(), fastq_1,
 					self.software_names.get_spades_parameters_single(), settings.THREADS_TO_RUN_FAST, out_dir)
@@ -164,7 +173,7 @@ class Software(object):
 
 	def create_database_abricate(self, database, file_name):
 		"""
-		create a database
+		create a database on abricate
 		"""
 		if (not os.path.isfile(file_name)): raise IOError("File not found: " + file_name) 
 		cmd = "mkdir -p %s/%s" % (self.software_names.SOFTWARE_ABRICATE_DB, database)
@@ -1465,7 +1474,6 @@ class Contigs2Sequences(object):
 		(version, database_file_name) = self.get_most_recent_database()
 		dabasename = self.get_database_name()
 		
-		print(dabasename, database_file_name)
 		### first create database
 		if (not software.is_exist_database_abricate(dabasename)):
 			software.create_database_abricate(dabasename, database_file_name)

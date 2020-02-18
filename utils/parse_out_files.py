@@ -52,6 +52,7 @@ class ParseOutFiles(object):
 
 		Parse out abricate files
 		return also a file with coverage below clean_hits_below_value removed
+		Can be empty
 		"""
 		clean_abricate_file = self.utils.get_temp_file('clean_abricate', FileExtensions.FILE_TXT)
 		with open(file_name) as handle, open(clean_abricate_file, 'w') as handle_new:

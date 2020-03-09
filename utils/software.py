@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip, logging, cmd, re
+import os, gzip, logging, cmd, re, humanfriendly
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -24,6 +24,7 @@ from django.conf import settings
 from utils.process_SGE import ProcessSGE
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
 
 class Software(object):
 	'''
@@ -111,7 +112,7 @@ class Software(object):
 		temp_file = self.utils.get_temp_file("new_reference", FileExtensions.FILE_FASTA)
 		cmd = "perl %s %s %s" % (self.software_names.get_create_new_reference_to_snippy(), \
 				project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT), temp_file)
-		print(cmd)
+#		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			if (os.path.exists(temp_file)): os.unlink(temp_file)
@@ -119,7 +120,7 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run create_new_reference_to_snippy")
 		path_dest = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, self.software_names.get_snippy_name())
-		print("Copy {} to {}".format(temp_file, path_dest))
+#		print("Copy {} to {}".format(temp_file, path_dest))
 		self.utils.copy_file(temp_file, path_dest)
 		self.create_fai_fasta(path_dest)
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
@@ -906,19 +907,20 @@ class Software(object):
 		result_all = Result()
 		
 		### first try run downsize if necessary
-		(is_downsized, file_name_1, file_name_2) = self.make_downsize(sample.get_fastq(TypePath.MEDIA_ROOT, True),\
-					sample.get_fastq(TypePath.MEDIA_ROOT, False), Constants.MAX_FASTQ_FILE)
-		if (is_downsized):
-			if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100): 
-				self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
-			if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
-				self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
-			self.utils.remove_dir(os.path.dirname(file_name_1))
-			
-			### set the downsize message
-			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
-										MetaKeyAndValue.META_VALUE_Success,\
-										"Fastq files were down sized to values ~50MB.")
+		if (settings.DOWN_SIZE_FASTQ_FILES):
+			(is_downsized, file_name_1, file_name_2) = self.make_downsize(sample.get_fastq(TypePath.MEDIA_ROOT, True),\
+						sample.get_fastq(TypePath.MEDIA_ROOT, False), settings.MAX_FASTQ_FILE_UPLOAD)
+			if (is_downsized):
+				if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100): 
+					self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
+				if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
+					self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
+				self.utils.remove_dir(os.path.dirname(file_name_1))
+				
+				### set the downsize message
+				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
+											MetaKeyAndValue.META_VALUE_Success,\
+											"Fastq files were down sized to values ~{}.".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 		
 		### first run fastqc
 		try:
@@ -1398,7 +1400,7 @@ class Software(object):
 				file_names += " " + path_2_temp
 
 			cmd = "{} -p {:.2f} -o {}/sample {}".format(self.software_names.get_fastqtools_sample(), ratio, path_to_work, file_names)
-			print(cmd)
+#			print(cmd)
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)

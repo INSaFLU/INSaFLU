@@ -23,8 +23,12 @@
 	<a href="#" data-title="Open a multi-select dialog to upload files" class="btn btn-small btn-primary dark js-upload-files"><span class="hidden-phone"><i class="fa fa-upload"></i> Or upload fastq.gz files from here</span></a>
 
 	<p> </p>
-	Maximum size per fastq.gz file is 300 MB. 
-	<strong>NOTE:</strong> Files between 50 - 300 MB will be downsized to ~50 MB before analysis by randomly sampling reads. 
+	{{ message_note_1 }}
+	{% if show_note_message_down_size %}
+		<p> 
+			<strong>NOTE:</strong> {{ message_note_2 }}
+		</p>
+	{% endif %}
 	<p> </p>
 	
 	{# 2. FILE INPUT TO BE USED BY THE PLUG-IN #}

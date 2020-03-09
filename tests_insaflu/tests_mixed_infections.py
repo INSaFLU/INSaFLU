@@ -616,7 +616,7 @@ class Test(unittest.TestCase):
 		data_result = sample.get_mixed_infection()
 		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
 		self.assertEquals(1, data_result[1])
-		self.assertEquals("Warning: no type/subtype has been assigned (possible reason: low number of influenza reads).", data_result[2])
+		self.assertEquals("Warning: no typing data was obtained (possible reason: low number of influenza reads).", data_result[2])
 
 		### test normal A-H1N1
 		sample = self.get_sample("run_snippytest_get_mixed_infections_12", user, temp_dir)
@@ -802,14 +802,66 @@ class Test(unittest.TestCase):
 		self.assertEquals(1, data_result[1])
 		self.assertEquals("Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.", data_result[2])
 
-		### test  N1Yamagata
+		### test  N1N2  H1H2 
 		sample = self.get_sample("run_snippytest_get_mixed_infections_30", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['N1', 'N2', 'H1', 'H2'] })
+		self.assertEquals('H1|H2|N1|N2', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.", data_result[2])
+
+		### test  N1Yamagata
+		sample = self.get_sample("run_snippytest_get_mixed_infections_31", user, temp_dir)
 		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_LINEAGE : ['Yamagata'], ConstantsVirus.SEQ_VIRUS_SUB_TYPE : ['N1'] })
 		self.assertEquals('N1; Yamagata', sample.get_type_sub_type())
 		data_result = sample.get_mixed_infection()
 		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
 		self.assertEquals(1, data_result[1])
 		self.assertEquals("Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.", data_result[2])
+
+
+		#### corona virus
+		sample = self.get_sample("run_snippytest_get_mixed_infections_32", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_GENUS : ['BetaCoV'], ConstantsVirus.SEQ_VIRUS_HUMAN : ['SARS_CoV_2'] })
+		self.assertEquals('BetaCoV-SARS_CoV_2', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
+		self.assertEquals(0, data_result[1])
+		self.assertEquals(None, data_result[2])
+		
+		sample = self.get_sample("run_snippytest_get_mixed_infections_33", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_GENUS : ['BetaCoV'], ConstantsVirus.SEQ_VIRUS_HUMAN : ['SARS_CoV_2', 'SARS_CoV_24'] })
+		self.assertEquals('BetaCoV-SARS_CoV_2|SARS_CoV_24', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'", data_result[2])
+
+		sample = self.get_sample("run_snippytest_get_mixed_infections_34", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_GENUS : ['BetaCoV'] })
+		self.assertEquals('BetaCoV', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)", data_result[2])
+
+		sample = self.get_sample("run_snippytest_get_mixed_infections_35", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_HUMAN : ['SARS_CoV_2'] })
+		self.assertEquals('SARS_CoV_2', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)", data_result[2])
+
+		sample = self.get_sample("run_snippytest_get_mixed_infections_36", user, temp_dir)
+		self.add_type_sub_type(sample, { ConstantsVirus.SEQ_VIRUS_HUMAN : ['SARS_CoV_2', 'SARS_CoV_24'] })
+		self.assertEquals('SARS_CoV_2|SARS_CoV_24', sample.get_type_sub_type())
+		data_result = sample.get_mixed_infection()
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, data_result[0])
+		self.assertEquals(1, data_result[1])
+		self.assertEquals("Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'", data_result[2])
+
 
 		## remove all files
 		self.utils.remove_dir(temp_dir)

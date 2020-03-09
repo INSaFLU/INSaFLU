@@ -117,7 +117,7 @@ class SampleTable(tables.Table):
 	number_quality_sequences = tables.Column('#Quality Seq. (Fastq1)-(Fastq2)', footer = '#original number sequence', orderable=False, empty_values=())
 #	extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
 	extra_info = tables.LinkColumn('Extra Information', orderable=False, empty_values=())
-	type_and_subtype = tables.Column('Type and SubType', empty_values=())
+	type_and_subtype = tables.Column('Classification', empty_values=())
 	fastq_files = tables.Column('#Fastq Files', empty_values=())
 	data_set = tables.Column('Data set', empty_values=())
 	
@@ -290,7 +290,7 @@ class ShowProjectSamplesResults(tables.Table):
 	coverage = tables.Column('Coverage', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())
-	type_and_subtype = tables.LinkColumn('Type and Subtype', empty_values=())
+	type_and_subtype = tables.LinkColumn('Classification', empty_values=())
 	putative_mixed_infection = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Results', orderable=False, empty_values=())

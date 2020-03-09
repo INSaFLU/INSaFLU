@@ -13,25 +13,24 @@ class Constants(object):
 	### default user that has the default references to be used in mapping
 	DEFAULT_USER = "system"
 	DEFAULT_USER_PASS = "default_user_123_$%_2"
-	DEFAULT_USER_EMAIL = "insaflu@insa.min-saude.pt"
+	## DEFAULT_USER_EMAIL = "insaflu@insa.min-saude.pt"		### it's defined in .env
 	
 	### user anonymous
 	USER_ANONYMOUS = "demo"
 	USER_ANONYMOUS_PASS = "demo_user"
-	USER_ANONYMOUS_EMAIL = "insaflu@insa.min-saude.pt"
+	## USER_ANONYMOUS_EMAIL = "insaflu@insa.min-saude.pt"		### it's defined in .env
 	
 	META_KEY_VALUE_NOT_NEED = "value not needed"
 	
 	## MAX LOCUS FROM FASTA
-	MAX_SEQUENCES_FROM_FASTA = 20
-	MAX_LENGTH_SEQ_NAME = 20		###  it must be less than 20 because of prokka constrainments 
+	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
+	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
 	
 	## MAX LENGTH_SEQUENCE_FROM_FASTA
 	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
 	MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = 50000
-	MAX_NUMBER_REFS_BY_USER = 30		## toDo
-	MAX_FASTQ_FILE = 50971520			## 50M
-	MAX_FASTQ_FILE_WITH_DOWNSIZE = 250971520			## 250M
+# 	MAX_FASTQ_FILE = 50971520			## 50M
+# 	MAX_FASTQ_FILE_WITH_DOWNSIZE = 250971520			## 250M
 	MAX_REF_FASTA_FILE = 100000			## 100k
 	MAX_REF_GENBANK_FILE = 150000		## 150k
 	
@@ -94,6 +93,7 @@ class Constants(object):
 	DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 	DIR_TYPE_REFERENCES = "db/references/"
+	DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
 	
 	INSAFLU_NAME = 'insaflu'
 	
@@ -293,6 +293,7 @@ class FileExtensions(object):
 	FILE_CSV = '.csv'
 	FILE_PNG = '.png'
 	FILE_GBK = '.gbk'
+	FILE_GB = '.gb'
 	FILE_FASTA = '.fasta'
 	FILE_FASTQ = '.fastq'
 	FILE_FNA = '.fna'
@@ -308,4 +309,5 @@ class FileExtensions(object):
 	FILE_IDX = '.idx'	### created from igvtools
 	FILE_JSON = '.json'
 
-
+	### all GBK
+	VECT_ALL_GBK_EXTENSIONS = [FILE_GBK, FILE_GB] 

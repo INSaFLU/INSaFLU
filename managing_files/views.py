@@ -1,6 +1,6 @@
 # Create your views here.
 
-import hashlib, ntpath, os, logging, sys
+import hashlib, ntpath, os, logging, sys, humanfriendly
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.urls import reverse_lazy
@@ -702,6 +702,20 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context['nav_sample'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['show_note_message_down_size'] = False
+		if (settings.DOWN_SIZE_FASTQ_FILES):
+			context['show_note_message_down_size'] = True
+			context['message_note_2'] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+				)		## show main information about the institute
+
+			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
+				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)))		## show main information about the institute
+		else:
+			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
+				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)))		## show main information about the institute
 		return context
 
 	def post(self, request):

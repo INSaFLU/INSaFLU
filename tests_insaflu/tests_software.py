@@ -881,8 +881,8 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
-		self.assertEquals("A-H1pdm09|H3|N1pdm09|N2", sample.type_subtype)
-		self.assertEquals("A-H1pdm09|H3|N1pdm09|N2", sample.get_type_sub_type())
+		self.assertEquals("A-H1|H3|N1|N2", sample.type_subtype)
+		self.assertEquals("A-H1|H3|N1|N2", sample.get_type_sub_type())
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		
 		### mixed infections
@@ -2252,7 +2252,94 @@ class Test(TestCase):
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_identify_type_and_sub_type_corona(self):
+		"""
+ 		get type and sub_type
+ 		"""
+		
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		try:
+			uploadFile = UploadFile.objects.order_by('-version')[0]
+			self.assertEqual("test_db_influenza_typing_v2", uploadFile.abricate_name)
+		except UploadFile.DoesNotExist:
+			self.fail("must have values")
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+			
+		sample_name = "identify_type_and_sub_type"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = "WHU02_SRR10903401_1.fastq.gz"
+			sample.path_name_1.name = os.path.join("/home/mmp/insa/corona", "WHU02_SRR10903401_1.fastq.gz")
+			sample.is_valid_2 = True
+			sample.file_name_2 = "WHU02_SRR10903401_2.fastq.gz"
+			sample.path_name_2.name = os.path.join("/home/mmp/insa/corona", "WHU02_SRR10903401_2.fastq.gz")
+			sample.owner = user
+			sample.save()
+			
+		return_value = self.software.identify_type_and_sub_type(sample, sample.path_name_1.name, sample.path_name_2.name, user, True)
+		self.assertTrue(return_value)
+		
+		vect_identify_virus = sample.identify_virus.all()
+		self.assertEqual(2, len(vect_identify_virus))
+		for identify_virus in vect_identify_virus:
+			if (identify_virus.rank == 0):
+				self.assertEquals("100.00", identify_virus.coverage)
+				self.assertEquals("100.00", identify_virus.identity)
+				self.assertEquals("BetaCoV", identify_virus.seq_virus.name)
+				self.assertEquals("M_gene_MN908947", identify_virus.seq_virus.accession)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_GENUS, identify_virus.seq_virus.kind_type.name)
+			elif (identify_virus.rank == 1):
+				self.assertEquals("100.00", identify_virus.coverage)
+				self.assertEquals("100.00", identify_virus.identity)
+				self.assertEquals("2019_nCoV", identify_virus.seq_virus.name)
+				self.assertEquals("S_gene_MN908947", identify_virus.seq_virus.accession)
+				self.assertEquals(ConstantsVirus.SEQ_VIRUS_HUMAN, identify_virus.seq_virus.kind_type.name)
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
+		
+		file_spades_contigs = sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(file_spades_contigs))
+		file_abricate_contigs = sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(file_abricate_contigs))
 
+		##### get type and subtype
+		self.assertEquals("BetaCoV-2019_nCoV", sample.get_type_sub_type())
+		
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
+		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
+		if (os.path.exists(file_spades_contigs)): os.unlink(file_spades_contigs)
+		if (os.path.exists(file_abricate_contigs)): os.unlink(file_abricate_contigs)
+
+		contigs_2_sequences = Contigs2Sequences(True)
+		## remove abricate db
+		cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, contigs_2_sequences.get_database_name())
+		exist_status = os.system(cmd)
+		self.assertTrue(exist_status == 0)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	def test_make_downsize(self):
 		

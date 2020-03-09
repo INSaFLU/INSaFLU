@@ -249,17 +249,21 @@ class Utils(object):
 		"""
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')	## need to be opened in text mode, default it's in binary mode
 		else: handle = open(file_name)
-		for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
-			handle.close() 
-			return Constants.FORMAT_FASTQ
-		handle.close()
+		try:
+			for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
+				handle.close() 
+				return Constants.FORMAT_FASTQ
+		except:
+			handle.close()
 		
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')
 		else: handle = open(file_name)
-		for record in SeqIO.parse(handle, Constants.FORMAT_FASTA):
-			handle.close() 
-			return Constants.FORMAT_FASTA
-		handle.close()
+		try:
+			for record in SeqIO.parse(handle, Constants.FORMAT_FASTA):
+				handle.close() 
+				return Constants.FORMAT_FASTA
+		except:
+			handle.close()
 		
 		raise Exception("Can't detect file format for the file '" + file_name + "'")
 	
@@ -379,28 +383,24 @@ class Utils(object):
 		"""
 		Test GenBank file
 		"""
-		handle = open(sz_file_name)
-		b_pass = False
-		for line in handle:
-			sz_temp = line.strip()
-			if (len(sz_temp) == 0): continue
-			if (sz_temp.startswith("LOCUS", 0)): 
-				b_pass = True
-				break
-			else: 
-				handle.close()
-				raise IOError(_("Error: the file is not in GenBank format."))
-		handle.close()
-		if (not b_pass): raise IOError(_("Error: the file is not in GenBank format."))
+		with open(sz_file_name) as handle:
+			b_pass = False
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0): continue
+				if (sz_temp.startswith("LOCUS", 0)): 
+					b_pass = True
+					break
+				else: 
+					raise IOError(_("Error: the file is not in GenBank format."))
+			if (not b_pass): raise IOError(_("Error: the file is not in GenBank format."))
 
 		n_number_locus = 0
-		handle = open(sz_file_name)
-		for record in SeqIO.parse(handle, "genbank"):
-			n_number_locus += 1
-		if (n_number_locus > 0): 
-			handle.close()
-			return n_number_locus
-		handle.close()
+		with open(sz_file_name) as handle:
+			for record in SeqIO.parse(handle, "genbank"):
+				n_number_locus += 1
+			if (n_number_locus > 0): 
+				return n_number_locus
 		raise IOError(_("Error: the file is not in GenBank format."))
 
 

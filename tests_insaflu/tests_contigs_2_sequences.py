@@ -25,8 +25,8 @@ class Test(unittest.TestCase):
 
 		contigs_2_sequences = Contigs2Sequences(True)
 		(version, file) = contigs_2_sequences.get_most_recent_database()
-		self.assertEqual("22", version)
-		self.assertEqual(os.path.join(self.baseDirectory, "db/contigs2sequences/sequences_v22.fasta"), file)
+		self.assertEqual("23", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/contigs2sequences/sequences_v23.fasta"), file)
 		
 		
 	def test_identify_contigs(self):
@@ -49,7 +49,6 @@ class Test(unittest.TestCase):
 		(out_file, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out, 'temp3.txt')
 
 		expect_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_spades_out_fasta)
-		print(out_file, expect_fasta)
 		self.assertTrue(filecmp.cmp(out_file, expect_fasta))
 
 		expected_abricate = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "expected_abricate_clean_2.txt")

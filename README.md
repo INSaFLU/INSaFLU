@@ -164,7 +164,6 @@ print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 Install SGE/OGE tips
  
 ```
-$ sudo mkdir /opt/sge
 $ sudo groupadd -g 58 gridware
 $ sudo useradd -u 63 -g 58 -d /opt/sge sgeadmin
 $ cd ~
@@ -349,10 +348,11 @@ To create a super user, it is going to be the administrator user account
 $ python3 manage.py createsuperuser
 ```
 
-To join all files, in "static_all" path, that is necessary to run the web site
+To join all files, in "static_all" path, that is necessary to run the web site and then read default databases. All data that belong to databases are in "<insaflu path>/static_all/db/..."
 
 ```
 $ python3 manage.py collectstatic
+$ python3 manage.py load_default_files
 
 ```
 

@@ -16,7 +16,7 @@ from utils.parse_in_files import ParseInFiles
 from utils.software import Software
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
-import os, re, logging
+import os, re, logging, humanfriendly
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -265,6 +265,28 @@ class SampleForm(forms.ModelForm):
 		
 		## can exclude explicitly
 		## exclude = ('md5',)
+		
+		#### mesages
+		if (settings.DOWN_SIZE_FASTQ_FILES):
+			message_r1 = "Max raw file R1 with fastq gzip file (< {}). Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					)
+			message_r2 = "Max raw file R2 with fastq gzip file (< {}). Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					)
+		else:
+			message_r1 = "Max raw file R1 with fastq gzip file (< {}).".format(
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					)
+			message_r2 = "Max raw file R2 with fastq gzip file (< {}).".format(
+					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Unique identifier for this sample. Only letters, numbers and underscores are allowed.', True),
@@ -276,8 +298,8 @@ class SampleForm(forms.ModelForm):
 		##	('geo_local', 'Global position', 'Geo position where the sample was collected', False),
 			('lat', 'Latitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
 			('lng', 'Longitude', 'Geolocation where the sample was collected. Decimal Degrees (DD) format.', False),
-			('path_name_1', 'Raw fastq.gz (R1)', 'Raw file R1 with fastq gzip file (< 300MB). Files between 50 - 300 MB will be downsized to ~50 MB before analysis', True),
-			('path_name_2', 'Raw fastq.gz (R2)', 'Raw file R2 with fastq gzip file (< 300MB). Files between 50 - 300 MB will be downsized to ~50 MB before analysis', False),
+			('path_name_1', 'Raw fastq.gz (R1)', message_r1, True),
+			('path_name_2', 'Raw fastq.gz (R2)', message_r2, False),
 			('like_dates', 'Choose a date', 'Choose the option you want to be used to calculate the calendar week number.', False),
 		]
 		for x in field_text:
@@ -714,13 +736,13 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 			return cleaned_data
 
 		if (settings.DOWN_SIZE_FASTQ_FILES):
-			if (path_name.size > Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE):
+			if (path_name.size > settings.MAX_FASTQ_FILE_WITH_DOWNSIZE):
 				os.unlink(temp_file_name.name)
-				self.add_error('path_name', "Max file size is: {}".format(Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE))
+				self.add_error('path_name', "Max file size is: {}".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)) ))
 				return cleaned_data
-		elif (path_name.size > Constants.MAX_FASTQ_FILE):
+		elif (path_name.size > settings.MAX_FASTQ_FILE_UPLOAD):
 			os.unlink(temp_file_name.name)
-			self.add_error('path_name', "Max file size is: {}".format(Constants.MAX_FASTQ_FILE))
+			self.add_error('path_name', "Max file size is: {}".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 			return cleaned_data
 		
 		os.unlink(temp_file_name.name)

@@ -123,8 +123,8 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 		if form.is_valid():
 			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 			email_name = form.cleaned_data['email']
-			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
-					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
+			if (len(email_name.strip()) == 0 or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower() or\
+					email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()):
 				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
 				return redirect('dashboard')
 			
@@ -187,8 +187,8 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 		if form.is_valid():
 			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
 			email_name = form.cleaned_data['email']
-			if (len(email_name.strip()) == 0 or email_name.lower() == Constants.DEFAULT_USER_EMAIL.lower() or\
-					email_name.lower() == Constants.USER_ANONYMOUS_EMAIL.lower()):
+			if (len(email_name.strip()) == 0 or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower() or\
+					email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()):
 				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
 				return redirect('dashboard')
 			

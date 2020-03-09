@@ -5,6 +5,11 @@ Created on Jan 5, 2018
 '''
 from django.core.management import BaseCommand
 from constants.constants import Constants
+from constants.constants_mixed_infection import ConstantsMixedInfection
+from managing_files.models import MixedInfectionsTag
+from manage_virus.uploadFiles import UploadFiles
+from django.contrib.auth.models import User
+from utils.software import Software
 from django.db import transaction
 import logging
 
@@ -24,19 +29,17 @@ class Command(BaseCommand):
 		"""
 		Upload default files
 		"""
-		## only runs once, wen start ans test if the file was uploaded with virus hypothesis
-		from manage_virus.uploadFiles import UploadFiles
-		from utils.software import Software
+		## only runs once, when it start and test if the file was uploaded with virus hypothesis
 		uploadFiles = UploadFiles()
-		## get version and pah
+		## get version and path
 		b_test = False
 		(version, path) = uploadFiles.get_file_to_upload(b_test)
 		
-		## uplaod
+		## upload
 		uploadFile = uploadFiles.upload_file(version, path)
 
 		# create the abricate database
-		if (uploadFile != None):
+		if (not uploadFile is None):
 			software= Software()
 			if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
 				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
@@ -46,9 +49,7 @@ class Command(BaseCommand):
 		"""
 		upload default files for reference
 		"""
-		from manage_virus.uploadFiles import UploadFiles
-		from django.contrib.auth.models import User
-		
+
 		try:
 			User.objects.get(username=Constants.DEFAULT_USER)
 			### great, the default user exist 
@@ -60,13 +61,31 @@ class Command(BaseCommand):
 		uploadFiles = UploadFiles()
 		b_test = False
 		uploadFiles.upload_default_references(User.objects.get(username=Constants.DEFAULT_USER), b_test) 
-			
+	
+	
+	def default_database_fields(self):
+		"""
+		set default fields in database
+		"""
+		### MixedInfectionsTag
+		constants_mixed_infection = ConstantsMixedInfection()
+		for tag in constants_mixed_infection.vect_upload_to_database:
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
+			except MixedInfectionsTag.DoesNotExist as e:
+				mixed_infections_tag = MixedInfectionsTag()
+				mixed_infections_tag.name = tag
+				mixed_infections_tag.save()
+				
 	# A command must define handle()
 	def handle(self, *args, **options):
 		
 		#### set default fields
 		self.stdout.write("Upload abricate files")
 		self.upload_default_files()
+		
+		self.stdout.write("Define default database fields")
+		self.default_database_fields()
 		
 		#### set default references
 		self.stdout.write("Upload References")

@@ -270,14 +270,14 @@ class Sample(models.Model):
 	## 30M
 	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
-					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
 					max_length=500)
 	is_valid_2 = models.BooleanField(default=False)
 	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
 	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
-					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
 					max_length=500)
 
 	## has files, the user can upload the files after
@@ -402,38 +402,51 @@ class Sample(models.Model):
 				vect_identify_virus.append(identify_virus)
 
 		if (len(vect_identify_virus) > 0):
+
+			### Corona
+			sz_return_c = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS, [ConstantsVirus.TYPE_BetaCoV])
+			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN, [])
+			if (len(sz_subtype) > 0): sz_return_c += sz_subtype if len(sz_return_c) == 0 else "-" + sz_subtype
+						
 			### Type A
-			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_A)
-			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.TYPE_A)
+			## the second flag is for corona
+			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, [ConstantsVirus.TYPE_A, \
+												ConstantsVirus.TYPE_BetaCoV])
+			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, [ConstantsVirus.TYPE_A])
 			if (len(sz_subtype) > 0): sz_return_a += sz_subtype if len(sz_return_a) == 0 else "-" + sz_subtype
 			
 			### Type B
-			sz_return_b = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, ConstantsVirus.TYPE_B)
-			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, ConstantsVirus.TYPE_B)
+			sz_return_b = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, [ConstantsVirus.TYPE_B])
+			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, [ConstantsVirus.TYPE_B])
 			if (len(sz_subtype) > 0): sz_return_b += sz_subtype if len(sz_return_b) == 0 else "-" + sz_subtype
-			if (len(sz_return_a) == 0): return sz_return_b
-			if (len(sz_return_b) == 0): return sz_return_a
-			return "{}; {}".format(sz_return_a, sz_return_b)
+			
+			sz_return = sz_return_c
+			if (len(sz_return_a) > 0): sz_return = sz_return_a if len(sz_return) == 0 else "{}; {}".format(sz_return, sz_return_a)
+			if (len(sz_return_b) > 0): sz_return = sz_return_b if len(sz_return) == 0 else "{}; {}".format(sz_return, sz_return_b)
+			return sz_return
 		else: return Constants.EMPTY_VALUE_TYPE_SUBTYPE
 		
-	def __get_type__(self, vect_identify_virus, type_to_test, virus_name):
+	def __get_type__(self, vect_identify_virus, type_to_test, vect_virus_name):
 		vect_return = []
 		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_to_test and identify_virus.seq_virus.name == virus_name):
+			if (identify_virus.seq_virus.kind_type.name == type_to_test and (identify_virus.seq_virus.name in vect_virus_name \
+							or len(vect_virus_name) == 0)):
 				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_A == virus_name):
+			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_A in vect_virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_B == virus_name):
+			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_B in vect_virus_name):
 				vect_return.append(identify_virus.seq_virus.name)
 		if (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
+		if (type_to_test == ConstantsVirus.SEQ_VIRUS_HUMAN and len(vect_return) > 1): return '|'.join(sorted(vect_return))
 		return ''.join(sorted(vect_return))
 	
-	def __exists_type(self, vect_identify_virus, virus_name):
+	def __exists_type(self, vect_identify_virus, virus_name, type_virus = ConstantsVirus.SEQ_VIRUS_TYPE):
 		"""
 		test if exist some specific type
 		"""
 		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == ConstantsVirus.SEQ_VIRUS_TYPE and identify_virus.seq_virus.name == virus_name): return True
+			if (identify_virus.seq_virus.kind_type.name == type_virus and \
+				( identify_virus.seq_virus.name == virus_name or len(virus_name) == 0)): return True
 		return False
 				
 	def __get_number_type__(self, vect_identify_virus, type_to_test):
@@ -467,7 +480,7 @@ class Sample(models.Model):
 		"""
 		vect_identify_virus_temp = self.identify_virus.all()
 		if (vect_identify_virus_temp.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-					"Warning: no type/subtype has been assigned (possible reason: low number of influenza reads).")
+					"Warning: no typing data was obtained (possible reason: low number of influenza reads).")
 	
 		vect_identify_virus = []
 		for identify_virus in vect_identify_virus_temp:
@@ -516,6 +529,27 @@ class Sample(models.Model):
 			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
 						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
 		
+		## BEGIN corona
+		if (self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_GENUS) or self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_HUMAN)):
+			
+			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS) == 1):
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 1):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) > 1):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'")
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 0):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
+			else:
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 1):
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
+						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
+				else:
+					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
+						"Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'")
+		### END corona
+					
 		## not A and not B
 		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
 			if ((self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 1 and\
@@ -973,7 +1007,7 @@ class UploadFiles(models.Model):
 	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
 					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
 								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'],\
-					max_upload_size=Constants.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else Constants.MAX_FASTQ_FILE,\
+					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
 					max_length=500)
 
 	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs

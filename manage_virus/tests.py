@@ -256,7 +256,7 @@ class Test(TestCase):
 		b_test = True
 		uploadFiles.upload_default_references(user, b_test)
 		
-		path_to_find = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_REFERENCES)
+		path_to_find = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TEST_TYPE_REFERENCES)
 		n_files = 0
 		for file in self.utils.get_all_files(path_to_find):
 			n_files += 1
@@ -270,8 +270,7 @@ class Test(TestCase):
 			self.assertTrue(os.path.exists(reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)))
 			self.assertTrue(os.path.exists(reference.get_reference_fasta(TypePath.MEDIA_ROOT)))
 			self.assertTrue(os.path.exists(reference.get_reference_gbk(TypePath.MEDIA_ROOT)))
-			if (n_files > 1): break
-		self.assertTrue(n_files > 1)
+		self.assertEqual(4, n_files)	## it has a gbk file
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	

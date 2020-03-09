@@ -51,6 +51,17 @@ CSRF_USE_SESSIONS = True
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
+### Files sizes   https://pypi.org/project/humanfriendly/
+MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
+
+## make the down size of the fastq files to 50MB
+## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
+##   you can change the value in .env file
+DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
+MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
+
+
 #https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
 #https://gist.github.com/bradmontgomery/6487319
 #SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -66,10 +77,6 @@ SHOW_VIDEO_TUTORIAL = config('SHOW_VIDEO_TUTORIAL', default=False, cast=bool)
 
 ## to show login anonymous
 SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
-
-## make the doen size of the fastq files to 50MB
-## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 50MB
-DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
 
 SHOW_IMAGES_MAIN_PAGE = config('SHOW_IMAGES_MAIN_PAGE', default=False, cast=bool)
 INSTITUTION_NAME = config('INSTITUTION_NAME', default="")
@@ -147,10 +154,13 @@ CACHES = {
     }
 }
 
+### default emails accounts
+DEFAULT_USER_EMAIL = config('DEFAULT_USER_EMAIL', "insaflu@insa.min-saude.pt")
+USER_ANONYMOUS_EMAIL = config('USER_ANONYMOUS_EMAIL', "insaflu@insa.min-saude.pt")
+
 #### EMAIL
 #EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ## NTLM in  preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN] 
-# sudo ssh -p 2023 -L 25:192.168.32.99:25 insa@193.137.95.75
 
 # http://www.techspacekh.com/configuring-postfix-to-relay-mail-to-local-exchange-mail-server-in-rhel-centos-7/
 # http://www.postfix.org/SASL_README.html#saslauthd

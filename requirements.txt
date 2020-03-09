@@ -1,4 +1,4 @@
-django==1.11.20
+django==1.11.28
 django-ipware
 django-crequest
 django-embed-video

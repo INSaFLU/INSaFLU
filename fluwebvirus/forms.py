@@ -210,7 +210,7 @@ class LoginForm(AuthenticationForm):
 		self.helper.form_method = 'POST'
 		if (settings.SHOW_LOGIN_ANONYMOUS):
 			self.helper.layout = Layout(
-				HTML('<p><strong>Please, use the browsers Firefox, Safari or Chrome for better view experience.</strong></p>'),
+				HTML('<p><strong>Please, use Firefox, Safari or Chrome browsers for better view experience.</strong></p>'),
 				'username',
 				'password',
 				'login_anonymous',

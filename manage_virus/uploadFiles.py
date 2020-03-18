@@ -281,6 +281,8 @@ class UploadFiles(object):
 				## create the index before commit in database, throw exception if something goes wrong
 				software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
 		
+				self.stdout.write("Upload reference: {}".format(name))
 				n_upload += 1
 			
 			if (b_test and n_upload > 2): break
+			self.stdout.write("#Upload references: {}".format(n_upload))

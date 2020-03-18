@@ -21,6 +21,7 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_GFF = "A_H3N2_A_Hong_Kong_4801_2014.gff"
 	MANAGING_FILES_FREEBAYES_VCF = "freebayes.vcf"
 	MANAGING_FILES_FREEBAYES_ANNOTATED_VCF = "freebayes_annotated.vcf"
+	MANAGING_FILES_FREEBAYES_ANNOTATED_VCF_2 = "freebayes_annotated_2.vcf"
 	MANAGING_FILES_GBK_MISS_ONE = "A_H3N2_A_Hong_Kong_4801_2014_miss_one.gbk"
 	MANAGING_FILES_GBK_DIFF_LENGTH = "A_H3N2_A_Hong_Kong_4801_2014_diff_length.gbk"
 	MANAGING_FILES_FASTA_FAKE_GZ = "test.fasta.gz"

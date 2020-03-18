@@ -168,16 +168,16 @@
 
     	<div class="container-fluid">
 		    <!-- MESSAGES -->
-		    <div class="container">
-				{% if messages %}
+		    {% if messages %}
+		    	<div class="container">
 					{% for message in messages %}
 						<div class="alert alert-dismissible {% if message.tags == 'error' %} alert-danger {% else %} alert-{{ message.tags }} {% endif %}">
 							{{ message }}
 							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
 						</div>
 					{% endfor %}
-				{% endif %}
-			</div>
+				</div>
+			{% endif %}
 	
  			{% if nav_modal %} <div class="container"> {% endif %}
 				{% if not not_show_breadcrumbs %}
@@ -192,7 +192,7 @@
 				{% block header %}{% endblock header %}
 				{% block content %}{% endblock content %}
 				<p> </p>
-			{% if nav_modal %} <div> {% endif %}
+			{% if nav_modal %} </div> {% endif %}
      	</div>
 	</div>
    <!-- /.container-fluid-->

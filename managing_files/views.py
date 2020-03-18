@@ -787,8 +787,6 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	
 		## if is last file send a message to link files with sample csv file
 		if ('is_valid' in data and data['is_valid']): 
-			parse_in_files = ParseInFiles()
-			
 			try:
 				process_SGE = ProcessSGE()
 				taskID = process_SGE.set_link_files(self.request.user)
@@ -1183,8 +1181,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if form.is_valid():
 			metaKeyAndValue = MetaKeyAndValue()
 			manageDatabase = ManageDatabase()
-			software = Software()
-			collect_extra_data = CollectExtraData()
 			process_SGE = ProcessSGE()
 			
 			### get project sample..

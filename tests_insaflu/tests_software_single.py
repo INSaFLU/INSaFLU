@@ -56,6 +56,7 @@ class Test(TestCase):
 		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_VCF)
 		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF)
+		freebayes_expect_vcf_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF_2)
 		
 		out_file = self.utils.get_temp_file("file_name", ".vcf")
 		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
@@ -66,6 +67,6 @@ class Test(TestCase):
 		os.system(cmd)
 		print(out_file_clean)
 		print(freebayes_expect_vcf)
-		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf))
+		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf) or filecmp.cmp(out_file_clean, freebayes_expect_vcf_2))
 		os.unlink(out_file_clean)
 		os.unlink(out_file)

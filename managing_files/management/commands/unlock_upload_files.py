@@ -7,6 +7,7 @@ from django.core.management import BaseCommand
 from constants.constants import Constants, TypeFile
 from django.contrib.auth.models import User
 from managing_files.models import UploadFiles, MetaKey
+from datetime import datetime
 import logging
 
 class Command(BaseCommand):
@@ -26,9 +27,15 @@ class Command(BaseCommand):
 		"""
 		unlock upload file
 		"""
-		### only change the value "is_processed" 
-		upload_file.is_processed = True
+		for sample in upload_file.samples.all():
+			if (not sample.is_ready_for_projects and not sample.is_deleted):
+				self.stdout.write("\t\tSample name/id: {}/{} is deleted...".format(sample.name, sample.id))
+				sample.is_deleted = True
+				sample.date_deleted = datetime.now()
+				sample.save()
+		upload_file.is_processed = True	
 		upload_file.save()
+
 
 	# A command must define handle()
 	def handle(self, *args, **options):
@@ -52,11 +59,13 @@ class Command(BaseCommand):
 			
 			lst_files = UploadFiles.objects.all().filter(is_deleted=False, is_processed=False, owner=user, type_file=metaKey)
 			for uploadfile in lst_files:
+				
+				## to remove
+				if uploadfile.number_files_processed == uploadfile.number_files_to_process: continue
 				self.stdout.write("File to locked: '{}'   date: '{}'".format(uploadfile.file_name, uploadfile.creation_date))
 				
 				b_unlock = False
 				while 1:
-					#self.stdout.write("\t\tDo you want to unlock [yes/no] (no):")
 					input_anwser = input("\tDo you want to unlock [yes/no] (no): ")
 					input_anwser = input_anwser.lower().strip()
 					if len(input_anwser) == 0:

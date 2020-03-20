@@ -200,6 +200,32 @@ class Test(TestCase):
 		self.assertTrue(parse_in_files.get_errors().get_error(0) == None)
 		self.assertEquals(192, len(parse_in_files.get_vect_samples()))
 
+	def test_parse_input_file_2_1(self):
+		"""
+		"""
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_TEMPLATE_INPUT_DATA_ASSIGN2CONTIGS_TSV)
+		self.assertTrue(os.path.exists(txt_file))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = True
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		self.assertEquals(0, parse_in_files.get_errors().get_len_vect_results())
+		self.assertTrue(parse_in_files.get_errors().get_error(0) == None)
+		self.assertEquals(1, len(parse_in_files.get_vect_samples()))
+		self.assertEquals('teste', parse_in_files.get_vect_samples()[0][0].name)
+		self.assertEquals(None, parse_in_files.get_vect_samples()[0][0].file_name_1)
+		self.assertEquals('18_19_EVA299_1P.fastq.gz', parse_in_files.get_vect_samples()[0][0].candidate_file_name_1)
+		self.assertEquals(None, parse_in_files.get_vect_samples()[0][0].file_name_2)
+		self.assertEquals('18_19_EVA299_2P.fastq.gz', parse_in_files.get_vect_samples()[0][0].candidate_file_name_2)
 
 	def test_parse_input_file_2(self):
 		"""

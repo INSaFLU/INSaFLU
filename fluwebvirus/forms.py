@@ -48,7 +48,7 @@ class RegistrationForm(UserCreationForm):
 				css_class='row'
 			),
 			ButtonHolder(
-				Submit('register', 'Register', css_class='btn-primary'),
+				Submit('register', 'Register', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
@@ -104,7 +104,7 @@ class ResetPasswordForm(forms.ModelForm):
 				css_class='row'
 			),
 			ButtonHolder(
-				Submit('send', 'Send', css_class='btn-primary'),
+				Submit('send', 'Send', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
@@ -138,7 +138,7 @@ class GetMessageConfirmEmailForm(forms.ModelForm):
 				css_class='row'
 			),
 			ButtonHolder(
-				Submit('send', 'Send', css_class='btn-primary'),
+				Submit('send', 'Send', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
@@ -161,7 +161,7 @@ class ChangePasswordForm(forms.ModelForm):
 			'password1',
 			'password2',
 			ButtonHolder(
-				Submit('register', 'Change Password', css_class='btn-primary'),
+				Submit('register', 'Change Password', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('login'))),
 			)
 		)
@@ -215,7 +215,7 @@ class LoginForm(AuthenticationForm):
 				'password',
 				'login_anonymous',
 				ButtonHolder(
-					Submit('login', 'Login', css_class='btn-primary'),
+					Submit('login', 'Login', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
 					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('dashboard'))),
@@ -226,7 +226,7 @@ class LoginForm(AuthenticationForm):
 				'username',
 				'password',
 				ButtonHolder(
-					Submit('login', 'Login', css_class='btn-primary'),
+					Submit('login', 'Login', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 					Button('register', 'Register', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('register'))),
 					Button('reset_password', 'Reset password', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('reset_password'))),
 					Button('get_message_confirm_email', 'Other message to confirm the email.', css_class='btn-secondary',\

@@ -68,7 +68,7 @@ class ReferenceForm(forms.ModelForm):
 			Div('reference_fasta', css_class = 'show-for-sr'),
 			Div('reference_genbank', css_class = 'show-for-sr'),
 			ButtonHolder(
-				Submit('save', 'Save', css_class='btn-primary'),
+				Submit('save', 'Save', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('references')))
 			)
 		)
@@ -367,7 +367,7 @@ class SampleForm(forms.ModelForm):
 # 				css_class = 'row'
 # 			),
 			ButtonHolder(
-				Submit('save', 'Save', css_class='btn-primary'),
+				Submit('save', 'Save', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('samples'))),
 			),
 		)
@@ -578,7 +578,7 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
 			Div('path_name', css_class="col-lm-3"),
 			HTML('<p> </p>'),
 			ButtonHolder(
-				Submit('save', 'Upload', css_class='btn-primary'),
+				Submit('save', 'Upload', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('sample-add-file')))
 			),
 		)
@@ -653,7 +653,7 @@ class SamplesUploadDescriptionMetadataForm(forms.ModelForm):
 			Div('path_name', css_class="col-lm-3"),
 			HTML('<p> </p>'),
 			ButtonHolder(
-				Submit('save', 'Upload', css_class='btn-primary'),
+				Submit('save', 'Upload', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
 				Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(reverse('sample-update-metadata')))
 			),
 		)

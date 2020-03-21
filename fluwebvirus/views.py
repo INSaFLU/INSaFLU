@@ -86,13 +86,19 @@ class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateVi
 				
 				current_site = get_current_site(self.request)
 				subject = 'Activate your INSaFLU Account'
-				message = render_to_string('accounts/account_activation_email.html', {
+				messageHTML = render_to_string('accounts/account_activation_email.html', {
 					'user': user,
 					'domain': current_site.domain,
 					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
 					'token': account_activation_token.make_token(user),
 				})
-				user.email_user(subject, message)
+				message = render_to_string('accounts/account_activation_email.txt', {
+					'user': user,
+					'domain': current_site.domain,
+					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+					'token': account_activation_token.make_token(user),
+				})
+				user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
 				messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
 			else:
 				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
@@ -149,14 +155,19 @@ class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
 					user = User.objects.get(email__iexact=email_name, is_active=True, profile__email_confirmed=True)
 					current_site = get_current_site(self.request)
 					subject = 'Reseting password  in your INSaFLU Account'
-					message = render_to_string('accounts/account_reset_pass_email.html', {
+					messageHTML = render_to_string('accounts/account_reset_pass_email.html', {
 						'user': user,
 						'domain': current_site.domain,
 						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
 						'token': account_activation_token.make_token(user),
 					})
-					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, auth_user=settings.EMAIL_HOST_USER,\
-							auth_password=settings.EMAIL_HOST_PASSWORD, html_message=message)
+					message = render_to_string('accounts/account_reset_pass_email.txt', {
+						'user': user,
+						'domain': current_site.domain,
+						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+						'token': account_activation_token.make_token(user),
+					})
+					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
 					messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
 				else:
 					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
@@ -219,13 +230,19 @@ class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
 					
 					current_site = get_current_site(self.request)
 					subject = 'Activate your INSaFLU Account'
-					message = render_to_string('accounts/account_activation_email.html', {
+					messageHTML = render_to_string('accounts/account_activation_email.html', {
 						'user': user,
 						'domain': current_site.domain,
 						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
 						'token': account_activation_token.make_token(user),
 					})
-					user.email_user(subject, message)
+					message = render_to_string('accounts/account_activation_email.txt', {
+						'user': user,
+						'domain': current_site.domain,
+						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+						'token': account_activation_token.make_token(user),
+					})
+					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
 					messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
 				else:
 					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)

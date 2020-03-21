@@ -145,7 +145,7 @@ class GetMessageConfirmEmailForm(forms.ModelForm):
 	
 class ChangePasswordForm(forms.ModelForm):
 
-	password1 = forms.CharField(label=_("Password"), required=True, widget=forms.PasswordInput)
+	password1 = forms.CharField(label=_("New Password"), required=True, widget=forms.PasswordInput)
 	password2 = forms.CharField(label=_("Retype Password"), required=True, widget=forms.PasswordInput)
 	
 	class Meta:

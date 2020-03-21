@@ -18,7 +18,6 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software import Software
 from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
-from utils.parse_in_files import ParseInFiles
 from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
 from django.contrib import messages

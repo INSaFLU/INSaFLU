@@ -1,0 +1,8 @@
+Dear {{ user.first_name }} {{ user.last_name }},
+Welcome to INSaFLU website.
+
+Please, copy and paste the follow link to change your password:
+https://{{ domain }}{% url 'reset_password_key' uidb64=uid token=token %}
+
+All the best,
+InsaFlu team.

@@ -1,0 +1,8 @@
+Dear {{ user.first_name }} {{ user.last_name }},
+Welcome to INSaFLU website.
+
+Please, copy and paste the follow link to active your account:
+https://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+All the best,
+InsaFlu team.

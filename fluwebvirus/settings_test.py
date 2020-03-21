@@ -61,9 +61,12 @@ ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
 ## to show login anonymous
 SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 
-## make the doen size of the fastq files to 50MB
-## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 50MB
-DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=False, cast=bool)
+## make the down size of the fastq files to 50MB
+## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
+##   you can change the value in .env file
+DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
+MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
 
 ## run process in SGE, otherwise run in qcluster
 RUN_SGE  = config('RUN_SGE', default=False, cast=bool)
@@ -124,58 +127,9 @@ TEMPLATES = [
     },
 ]
 
-## $ python3 manage.py qcluster
-## $ python3 manage.py qmonitor
-## $ python3 manage.py qinfo
-## this configuraton doesn't work
-# Q_CLUSTER = {
-#     'name': 'insaFlu',
-#     'workers': 1,	## number of queues, some problems with database, need to bee always at one
-#     'recycle': 500,
-#     'compress': True,
-#     'cached': False,
-#     'save_limit': 250,
-#     'queue_limit': 1,
-#     'cpu_affinity': 2,	## number of processors by queue
-#     'catch_up': False,	# Ignore un-run scheduled tasks
-#     'label': 'Django Q',
-#     'orm': 'default'
-# }
-
-#redis defaults
-Q_CLUSTER = {
-	'name': 'insaFlu',
-	'workers': 1,	## number of queues, some problems with database, need to bee always at one
-	'recycle': 500,
-	'compress': True,
-	'save_limit': 250,
-    'cpu_affinity': 2,	## number of processors by queue
-    'catch_up': False,	# Ignore un-run scheduled tasks
-    'label': 'Django Q',
-
-    'redis': {
-        'host': 'localhost',
-        'port': 6379,
-        'db': 0,
-        'password': None,
-        'socket_timeout': None,
-        'charset': 'utf-8',
-        'errors': 'strict',
-        'unix_socket_path': None
-    }
-}
-
-CACHES = {
-    'default': {
-		'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'djangoq-localmem',
-    }
-}
-
-#### EMAIL
-#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-## NTLM in  preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN] 
-# sudo ssh -p 2023 -L 25:192.168.32.99:25 insa@193.137.95.75
+### default emails accounts
+DEFAULT_USER_EMAIL = config('DEFAULT_USER_EMAIL', "insaflu@insa.min-saude.pt")
+USER_ANONYMOUS_EMAIL = config('USER_ANONYMOUS_EMAIL', "insaflu@insa.min-saude.pt")
 
 # http://www.techspacekh.com/configuring-postfix-to-relay-mail-to-local-exchange-mail-server-in-rhel-centos-7/
 # http://www.postfix.org/SASL_README.html#saslauthd
@@ -187,23 +141,13 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int)
 EMAIL_HOST_USER = ''   		### config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = '' 	### config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
+EMAIL_DESTINATION_TO_SEND_A_TEST = config('EMAIL_DESTINATION_TO_SEND_A_TEST')
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 
 # Name of cache backend to cache user agents. If it not specified default
 # cache alias will be used. Set to `None` to disable caching.
 USER_AGENTS_CACHE = 'default'
-
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-# https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
 
 ## to reuse DB 
 # os.environ['REUSE_DB'] = "1"

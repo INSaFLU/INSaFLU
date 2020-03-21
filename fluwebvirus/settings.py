@@ -169,9 +169,10 @@ EMAIL_BACKEND = config('EMAIL_BACKEND')
 EMAIL_HOST = '127.0.0.1' ###config('EMAIL_HOST')
 DEFAULT_FROM_EMAIL = config('EMAIL_NAME')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
-EMAIL_HOST_USER = ''   		### config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = '' 	### config('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default = '')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default = '')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
+EMAIL_DESTINATION_TO_SEND_A_TEST = config('EMAIL_DESTINATION_TO_SEND_A_TEST')
 
 WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 

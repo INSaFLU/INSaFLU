@@ -85,6 +85,7 @@ class Constants(object):
 	FORMAT_FASTA = "fasta"
 	FORMAT_FASTQ = "fastq"
 	EXTENSION_ZIP = ".gz"
+	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 301
 	
 	## vect with keys to get the ID
 	VECT_GENBANK_TAG_NAME = ['gene', 'CDS', 'locus_tag', 'protein_id']

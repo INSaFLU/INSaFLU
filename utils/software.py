@@ -381,10 +381,10 @@ class Software(object):
 		"""
 		temp_dir = self.utils.get_temp_dir()
 		if (not file_name_2 is None and len(file_name_2) > 0):
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FAST, 
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FASTQC, 
 										temp_dir, file_name_1, file_name_2)
 		else: 
-			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FAST, temp_dir, file_name_1)
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FASTQC, temp_dir, file_name_1)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

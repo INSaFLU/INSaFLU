@@ -18,6 +18,7 @@ from datetime import datetime
 import os, random, gzip, hashlib, logging, ntpath, stat, re
 from pysam import pysam
 from django.conf import settings
+from statistics import mean, stdev
 
 class Utils(object):
 	'''
@@ -240,8 +241,9 @@ class Utils(object):
 		except Exception as e:
 			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
 			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
+			raise e
 		raise Exception("File is not in fastq.gz format.")
-		
+
 	def get_type_file(self, file_name):
 		"""
 		return 'fasta' or 'fastq' 
@@ -249,12 +251,21 @@ class Utils(object):
 		"""
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')	## need to be opened in text mode, default it's in binary mode
 		else: handle = open(file_name)
+		vect_length = []
 		try:
+			count = 0
 			for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
-				handle.close() 
-				return Constants.FORMAT_FASTQ
+				vect_length.append(len(str(record.seq)))
+				if (count > 100): break
+			handle.close()
+#			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:
 			handle.close()
+		
+		### if read something in last SeqIO.parse
+		if (len(vect_length) > 1):
+			if (mean(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ
+			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')
 		else: handle = open(file_name)
@@ -265,7 +276,7 @@ class Utils(object):
 		except:
 			handle.close()
 		
-		raise Exception("Can't detect file format for the file '" + file_name + "'")
+		raise Exception("File is not in fastq.gz format.")
 	
 
 	def is_fasta(self, sz_file_name):

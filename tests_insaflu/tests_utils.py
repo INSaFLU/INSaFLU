@@ -66,6 +66,12 @@ class Test(unittest.TestCase):
 			self.assertTrue(self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+		
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
+		try:
+			self.assertFalse(self.utils.is_fastq_gz(path_file))
+		except Exception as e:
+			self.assertEqual("Can not detect file format. Ensure Illumina fastq file.", e.args[0])
 	
 	def test_read_text_file(self):
 		"""

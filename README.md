@@ -97,7 +97,7 @@ Software to install:
 * [IGVTools](https://software.broadinstitute.org/software/igv/igvtools) 2.3.98
 * [SPAdes](http://cab.spbu.ru/software/spades/) 3.11.1
 * [Abricate](https://github.com/tseemann/abricate) 0.8-dev
-* [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 0.11.5
+* [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 0.11.9
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) 0.27
 * [Bamtools](https://github.com/pezmaster31/bamtools) 2.5
 * [Prokka](https://github.com/tseemann/prokka) 1.12
@@ -119,9 +119,8 @@ Some scripts to install:
 	* this script need to be installed in <SoftwareNames.DIR_SOFTWARE>/scripts/convertAlignment.pl
 * [Fastq-tools](https://github.com/dcjones/fastq-tools) 0.8	
 
-
+:warning: Important, edit fastqc file `$ vi <install software path>/FastQC/0.11.9/FastQC/fastqc` and change the line `my $memory = 250 * $threads;` to `my $memory = 1000 * $threads;`
 :warning: Important, copy the file `bin/snippy-vcf_to_tab` to `bin/snippy-vcf_to_tab_add_freq` and do this change:
-
 
 ```
 $ cd /usr/local/software/insaflu/snippy/bin

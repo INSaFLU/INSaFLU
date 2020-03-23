@@ -48,6 +48,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
 ### threads to use in several software
+THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=2, cast=int)		## don't increase this because of the heap memory
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
@@ -169,8 +170,8 @@ EMAIL_BACKEND = config('EMAIL_BACKEND')
 EMAIL_HOST = '127.0.0.1' ###config('EMAIL_HOST')
 DEFAULT_FROM_EMAIL = config('EMAIL_NAME')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default = '')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default = '')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 EMAIL_DESTINATION_TO_SEND_A_TEST = config('EMAIL_DESTINATION_TO_SEND_A_TEST')
 

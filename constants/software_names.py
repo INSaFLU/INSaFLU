@@ -52,10 +52,10 @@ class SoftwareNames(object):
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
 	SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
-	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/fastqc")
 	SOFTWARE_FASTQ_name = "FastQC"
-	SOFTWARE_FASTQ_VERSION = "0.11.5"
+	SOFTWARE_FASTQ_VERSION = "0.11.9"
 	SOFTWARE_FASTQ_PARAMETERS = ""
+	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/{}/FastQC/fastqc".format(SOFTWARE_FASTQ_VERSION))
 	SOFTWARE_TRIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"

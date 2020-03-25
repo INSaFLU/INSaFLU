@@ -25,6 +25,20 @@ class Profile(models.Model):
 	max_file_size_fastq = models.IntegerField(default=50000000)
 	max_length_reference_fasta = models.IntegerField(default=20000)
 	max_sequence_reference = models.IntegerField(default=20)
+	sge_seq_id = models.IntegerField(default=0)
+
+	def add_sge_seq_id(self):
+		self.sge_seq_id += 1
+		self.save()
+		
+	def get_name_sge_seq(self):
+		"""
+		job_name = "job_name_<user_id>_<seq_id>"
+		return, (current name, next name)
+		"""
+		self.add_sge_seq_id()
+		return ("job_name_{}_{}".format(self.user.pk, self.sge_seq_id - 1), "job_name_{}_{}".format(self.user.pk, self.sge_seq_id))
+
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

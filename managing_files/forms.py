@@ -78,7 +78,11 @@ class ReferenceForm(forms.ModelForm):
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
 		cleaned_data = super(ReferenceForm, self).clean()
-		name = cleaned_data['name']
+		name = self.cleaned_data.get('name', '').strip()
+		if (len(name) == 0):
+			self.add_error('name', _("Error: You must give a unique name."))
+			return cleaned_data
+
 		try:
 			Reference.objects.get(name__iexact=name, owner=self.request.user, is_obsolete=False, is_deleted=False)
 			self.add_error('name', _("This name '" + name +"' already exist in database, please choose other."))
@@ -377,8 +381,11 @@ class SampleForm(forms.ModelForm):
 		Clean all together because it's necessary to compare the genbank and fasta files
 		"""
 		cleaned_data = super(SampleForm, self).clean()
-		name = self.cleaned_data['name'].strip()
-		
+		name = self.cleaned_data.get('name', '').strip()
+		if (len(name) == 0):
+			self.add_error('name', _("Error: You must give a unique name."))
+			return cleaned_data
+
 		try:
 			result_filer_name = re.sub('[^A-Za-z0-9_]+', '', name)
 			if (len(result_filer_name) != len(name)):
@@ -446,7 +453,7 @@ class SampleForm(forms.ModelForm):
 				self.utils.is_fastq_gz(fastaq_temp_file_name.name)
 			except Exception as e:	## (e.errno, e.strerror)
 				os.unlink(fastaq_temp_file_name.name)
-				self.add_error('path_name_1', e.args[0])
+				self.add_error('path_name_1', _(e.args[0]))
 				return cleaned_data
 			
 			## verbose log...
@@ -464,7 +471,7 @@ class SampleForm(forms.ModelForm):
 					self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
 				except Exception as e:	## (e.errno, e.strerror)
 					os.unlink(fastaq_temp_file_name_2.name)
-					self.add_error('path_name_1', e.args[0])
+					self.add_error('path_name_2', _(e.args[0]))
 					return cleaned_data
 			
 			## verbose log...

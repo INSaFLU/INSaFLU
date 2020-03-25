@@ -9,8 +9,11 @@ from constants.constants_mixed_infection import ConstantsMixedInfection
 from managing_files.models import MixedInfectionsTag
 from manage_virus.uploadFiles import UploadFiles
 from django.contrib.auth.models import User
+from managing_files.models import DataSet
+from extend_user.models	import Profile
 from utils.software import Software
 from django.db import transaction
+from django.conf import settings
 import logging
 
 class Command(BaseCommand):
@@ -77,7 +80,56 @@ class Command(BaseCommand):
 				mixed_infections_tag = MixedInfectionsTag()
 				mixed_infections_tag.name = tag
 				mixed_infections_tag.save()
-				
+
+	def create_default_user(self):
+		"""
+		create a default user to link the default references...
+		"""
+		self.__create_account(Constants.DEFAULT_USER, Constants.DEFAULT_USER_PASS, settings.DEFAULT_USER_EMAIL, False)
+		self.__create_account(Constants.USER_ANONYMOUS, Constants.USER_ANONYMOUS_PASS, settings.USER_ANONYMOUS_EMAIL, True)
+
+
+	def __create_account(self, user_name, password, email, b_active):
+		"""
+		try to create a default accounts
+		"""
+		try:
+			user = User.objects.get(username=user_name)
+			### great, the default user exist
+		except User.DoesNotExist:
+			
+			### need to create it
+			self.stdout.write("Add user: {}".format(user_name))
+			user = User()
+			user.username = user_name
+			user.set_password(password)
+			user.first_name = user_name
+			user.email = email
+			user.is_active = b_active
+			user.is_staff = False
+			user.is_superuser = False
+			user.save()
+	
+		### create generic dataset
+		for user in User.objects.all():
+			result = DataSet.objects.filter(owner__id=user.id)
+			if (len(result) == 0):
+				### need to create it
+				dataSet = DataSet()
+				dataSet.name = Constants.DATA_SET_GENERIC
+				dataSet.owner = user
+				dataSet.save()
+		
+		### for security reasons
+		### set true for anonymous user always
+		if (user_name == Constants.USER_ANONYMOUS):
+			try:
+				profile = Profile.objects.get(user__username=user_name)
+				profile.only_view_project = True
+				profile.save()
+			except Profile.DoesNotExist:
+				pass
+			
 	# A command must define handle()
 	def handle(self, *args, **options):
 		
@@ -87,6 +139,9 @@ class Command(BaseCommand):
 		
 		self.stdout.write("Define default database fields")
 		self.default_database_fields()
+		
+		self.stdout.write("Set default users...")
+		self.create_default_user()
 		
 		#### set default references
 		self.stdout.write("Upload References")

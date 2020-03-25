@@ -31,7 +31,7 @@
 	                <tr>
 	                    <th colspan="7">
 	                    	<a href="{% url "sample-add-single-csv-file-metadata" %}" data-title="Load new metadata to replace the exist one from a (csv/tsv) file" 
-	                    		class="btn btn-small btn-primary dark {% if can_add_other_file %} disabled {% endif %}"><span class="hidden-phone"><i class="fa fa-upload"></i> Load new file</span></a>
+	                    		class="btn btn-small btn-primary dark {% if disable_upload_files %} disabled {% endif %}"><span class="hidden-phone"><i class="fa fa-upload"></i> Load new file</span></a>
 	                    	{% if can_add_other_file %} <label> {{ can_add_other_file }} </label>{% endif %}
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}

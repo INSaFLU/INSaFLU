@@ -75,7 +75,7 @@ class ProcessSGE(object):
 		if (not b_found): raise Exception("\n".join(vect_out))
 
 
-	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, b_remove_out_dir = False, nPriority = 0):
+	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, job_name, b_remove_out_dir = False, job_name_wait = "", nPriority = 0):
 		"""
 		create the script to run SGE
 		"""
@@ -87,8 +87,9 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -V\n")	# Specifies  that  all  environment  variables active
 										# within the qsub utility be exported to the context of the job.
 			handleSGE.write("#$ -S /bin/bash\n") 	# interpreting shell
+			if len(job_name_wait) > 0: handleSGE.write("#$ -hold_jid {}\n".format(job_name_wait))	# need to wait until all this jobs names finished
 			handleSGE.write("#$ -j y\n")	# merge the standard error with standard output
-			handleSGE.write("#$ -N {}\n".format("job_name"))	# merge the standard error with standard output
+			handleSGE.write("#$ -N {}\n".format(job_name))	# job name
 			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
 			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
 			handleSGE.write("#$ -o {}\n".format(out_dir))		# out path file
@@ -156,7 +157,10 @@ class ProcessSGE(object):
 
 	##### set collect global files
 	def set_collect_global_files(self, project, user):
-		
+		"""
+		job_name = "job_name_<user_id>_<seq_id>"
+		only run this task after all second_stage_snippy
+		"""
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
@@ -165,7 +169,9 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		
+		(job_name_wait, job_name) = user.profile.get_name_sge_seq()
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, job_name_wait)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project(project), sge_id)
@@ -175,7 +181,10 @@ class ProcessSGE(object):
 	
 	##### set collect global files
 	def set_collect_global_files_for_update_metadata(self, project, user):
-		
+		"""
+		job_name = "job_name_<user_id>_<seq_id>"
+		only run this task after all second_stage_snippy
+		"""
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_files_for_update_metadata --project_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
@@ -184,7 +193,8 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		(job_name_wait, job_name) = user.profile.get_name_sge_seq()
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, job_name_wait)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project(project), sge_id)
@@ -194,8 +204,10 @@ class ProcessSGE(object):
 	
 	
 	##### set second stage
-	def set_second_stage_snippy(self, project_sample, user):
-		
+	def set_second_stage_snippy(self, project_sample, user, job_name, job_name_wait):
+		"""
+		can make several in parallel but only after last collect_global_files
+		"""
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} second_stage_snippy --project_sample_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), project_sample.pk, user.pk)]
@@ -204,7 +216,7 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, job_name_wait)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_project_sample(project_sample), sge_id)
@@ -214,7 +226,7 @@ class ProcessSGE(object):
 
 
 	##### set run trimmomatic
-	def set_run_trimmomatic_species(self, sample, user):
+	def set_run_trimmomatic_species(self, sample, user, job_name = "job_name_to_run"):
 		
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} run_trimmomatic_species --sample_id {} --user_id {}'.format(\
@@ -222,7 +234,7 @@ class ProcessSGE(object):
 		self.logger_production.info('Processing: ' + ";".join(vect_command))
 		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
-		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, True)
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
@@ -231,7 +243,7 @@ class ProcessSGE(object):
 		return sge_id
 		
 	##### set link files	### ultra fast queue
-	def set_link_files(self, user):
+	def set_link_files(self, user, job_name = "job_name_to_run"):
 		
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} link_files --user_id {}'.format(\
@@ -239,7 +251,7 @@ class ProcessSGE(object):
 		self.logger_production.info('Processing: ' + ";".join(vect_command))
 		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
-		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, True)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_link_files_user(user), sge_id)
@@ -248,7 +260,7 @@ class ProcessSGE(object):
 		return sge_id
 
 	##### set read sample file 	### ultra fast queue
-	def set_read_sample_file(self, upload_files, user):
+	def set_read_sample_file(self, upload_files, user, job_name = "job_name"):
 		
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} read_sample_file --upload_files_id {} --user_id {}'.format(\
@@ -256,7 +268,7 @@ class ProcessSGE(object):
 		self.logger_production.info('Processing: ' + ";".join(vect_command))
 		self.logger_debug.info('Processing: ' + ";".join(vect_command))
 		out_dir = self.utils.get_temp_dir()
-		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, True)
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, True)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_upload_files(upload_files), sge_id)
@@ -264,7 +276,7 @@ class ProcessSGE(object):
 			raise Exception('Fail to submit the job.')
 		return sge_id
 
-	def set_read_sample_file_with_metadata(self, upload_files, user):
+	def set_read_sample_file_with_metadata(self, upload_files, user, job_name = "job_name"):
 		"""
 		update metadata, normal queue, wait for all of other data
 		"""
@@ -276,7 +288,7 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, True)
+		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True)
 		try:
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_upload_files(upload_files), sge_id)
@@ -285,7 +297,7 @@ class ProcessSGE(object):
 		return sge_id
 	
 	### only for tests
-	def submit_dummy_sge(self):
+	def submit_dummy_sge(self, job_name = "job_name"):
 		"""
 		only for tests
 		"""
@@ -293,7 +305,7 @@ class ProcessSGE(object):
 					'date >> /tmp/sge.out', 'sleep 2m', 'date >> /tmp/sge.out',\
 					'echo "end" >> /tmp/sge.out']
 		out_dir = self.utils.get_temp_dir()
-		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, False)
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, False)
 		try:
 			sge_id = self.submitte_job(path_file)
 		except:

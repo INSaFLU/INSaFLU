@@ -354,6 +354,15 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesAddDescriptionFileView, self).get_context_data(**kwargs)
+		
+		### test anonymous account
+		disable_upload_files = False
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project): disable_upload_files = True
+		except Profile.DoesNotExist:
+			disable_upload_files = True
+		
 		tag_search = 'search_samples'
 		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file).order_by('-creation_date')
@@ -366,6 +375,7 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['nav_sample'] = True
+		context['disable_upload_files'] = disable_upload_files
 		
 		### test if exists files to process to match with (csv/tsv) file
 		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
@@ -374,7 +384,9 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		### test if can add other csv file
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file, is_processed=False).count()
-		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
+		if (count_not_complete > 0): 
+			context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
+			context['disable_upload_files'] = True
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
 		return context
 
@@ -382,6 +394,15 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		"""
 		Validate the form
 		"""
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add description files.".format(self.request.user.username), fail_silently=True)
+				return super(SamplesAddDescriptionFileView, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+		
 		return super(SamplesAddDescriptionFileView, self).form_valid(form)
 
 	form_valid_message = ""		## need to have this, even empty
@@ -407,6 +428,15 @@ class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.C
 	
 	def get_context_data(self, **kwargs):
 		context = super(SamplesUpdateMetadata, self).get_context_data(**kwargs)
+		
+		### test anonymous account
+		disable_upload_files = False
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project): disable_upload_files = True
+		except Profile.DoesNotExist:
+			pass
+		
 		tag_search = 'search_samples'
 		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date')
@@ -419,6 +449,7 @@ class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.C
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['nav_sample'] = True
+		context['disable_upload_files'] = disable_upload_files
 		
 		### test if exists files to process to match with (csv/tsv) file
 		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
@@ -427,7 +458,10 @@ class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.C
 		### test if can add other csv file
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
 				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False).count()
-		if (count_not_complete > 0): context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline." 
+		if (count_not_complete > 0): 
+			context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline."
+			context['disable_upload_files'] = True
+			
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
 		return context
 
@@ -435,6 +469,15 @@ class SamplesUpdateMetadata(LoginRequiredMixin, FormValidMessageMixin, generic.C
 		"""
 		Validate the form
 		"""
+		### test anonymous account
+		try:
+			profile = Profile.objects.get(user=self.request.user)
+			if (profile.only_view_project):
+				messages.warning(self.request, "'{}' account can not add metadata.".format(self.request.user.username), fail_silently=True)
+				return super(SamplesUpdateMetadata, self).form_invalid(form)
+		except Profile.DoesNotExist:
+			pass
+		
 		return super(SamplesUpdateMetadata, self).form_valid(form)
 
 	form_valid_message = ""		## need to have this, even empty
@@ -1204,6 +1247,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				vect_sample_id_add = vect_sample_id_add_temp
 	
 			### start adding...
+			(job_name_wait, job_name) = ("", "")
 			project_sample_add = 0
 			for id_sample in vect_sample_id_add:
 				try:
@@ -1236,7 +1280,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
-						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user)
+						if len(job_name_wait) == 0: (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq()
+						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
 							
 						### set project sample queue ID
 						manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\

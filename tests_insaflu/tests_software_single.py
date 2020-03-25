@@ -48,25 +48,75 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 
-	def test_run_snpEff(self):
+	
+	@override_settings(DOWN_SIZE_FASTQ_FILES="False")
+	def test_run_fastq_and_trimmomatic_single_file(self):
 		"""
-		test snpEff method
-		"""
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_VCF)
-		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF)
-		freebayes_expect_vcf_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF_2)
+		Test run fastq and trimmomatic all together
+ 		"""
+		file_1 = os.path.join("/home/insa", "2460_51.fastq.gz")
+#		file_1 = os.path.join("/home/centos", "2460_51.fastq.gz")
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+			
+		sample_name = "run_fastq_and_trimmomatic"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.owner = user
+			sample.save()
 		
-		out_file = self.utils.get_temp_file("file_name", ".vcf")
-		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
-		self.assertEquals(out_file, out_file_2)
+		### run software
+		print("DOWN_SIZE_FASTQ_FILES: {}".format(settings.DOWN_SIZE_FASTQ_FILES))
+		print("FASTQc: {}".format(SoftwareNames.SOFTWARE_FASTQ))
+		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
-		out_file_clean = self.utils.get_temp_file("file_name", ".vcf")
-		cmd = "grep -v '{}' {} > {}".format(os.path.dirname(out_file), out_file, out_file_clean)
-		os.system(cmd)
-		print(out_file_clean)
-		print(freebayes_expect_vcf)
-		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf) or filecmp.cmp(out_file_clean, freebayes_expect_vcf_2))
-		os.unlink(out_file_clean)
-		os.unlink(out_file)
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
+		
+		### number of sequences
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
+
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		self.assertEqual('43560', result_average.number_file_1)
+		self.assertEqual('141.0', result_average.average_file_1)
+		self.assertEqual(None, result_average.number_file_2)
+		self.assertEqual(None, result_average.average_file_2)
+
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Fastq(0.11.5), Trimmomatic(0.27)", list_meta[0].description)
+		
+		## remove all files
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)

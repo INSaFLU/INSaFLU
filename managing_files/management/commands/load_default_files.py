@@ -44,10 +44,16 @@ class Command(BaseCommand):
 		# create the Abricate database
 		if (not uploadFile is None):
 			software= Software()
-			if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
-				self.stdout.write("Create new Abricate database: {}".format(uploadFile.abricate_name))
+			try:
+				if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
+					self.stdout.write("Create new Abricate database: {}".format(uploadFile.abricate_name))
+					software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+			except Exception as e:
+				## try to create this database
 				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
-	
+
+
+
 	@transaction.atomic
 	def upload_default_references(self):
 		"""

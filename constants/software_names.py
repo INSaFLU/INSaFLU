@@ -6,18 +6,15 @@ Created on Nov 26, 2017
 
 import os
 from constants.constants import Constants
-
+from django.conf import settings
 
 class SoftwareNames(object):
 	'''
 	classdocs
 	'''
 
-	## directory with software, all the software is on based on this path
-	DIR_SOFTWARE = "/usr/local/software/insaflu"
-	
 	## some software is distributed by snippy
-	DIR_SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE, "snippy")
+	DIR_SOFTWARE_SNIPPY = os.path.join(settings.DIR_SOFTWARE, "snippy")
 	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
 	SOFTWARE_SAMTOOLS_VERSION = "1.3"
@@ -34,29 +31,29 @@ class SoftwareNames(object):
 	SOFTWARE_TABIX_name = "tabix"
 	SOFTWARE_TABIX_VERSION = "1.3"
 	SOFTWARE_TABIX_PARAMETERS = ""
-	SOFTWARE_IGVTOOLS = os.path.join(DIR_SOFTWARE, "IGVTools/igvtools.jar")
+	SOFTWARE_IGVTOOLS = os.path.join(settings.DIR_SOFTWARE, "IGVTools/igvtools.jar")
 	SOFTWARE_IGVTOOLS_name = "igvtools"
 	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
 	SOFTWARE_IGVTOOLS_PARAMETERS = ""
-	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
-#	SOFTWARE_SPAdes = os.path.join(DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
+	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
+#	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
 	SOFTWARE_SPAdes_VERSION = "3.11.1"			### older version change at 25/11/2109 to 3. 
 #	SOFTWARE_SPAdes_VERSION = "3.13.0"
 	SOFTWARE_SPAdes_PARAMETERS = "--only-assembler"
 	SOFTWARE_SPAdes_PARAMETERS_single = "--only-assembler"		## same at this point
 	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"
-	SOFTWARE_ABRICATE = os.path.join(DIR_SOFTWARE, "abricate/bin/abricate")
+	SOFTWARE_ABRICATE = os.path.join(settings.DIR_SOFTWARE, "abricate/bin/abricate")
 	SOFTWARE_ABRICATE_name = "Abricate"
-	SOFTWARE_ABRICATE_DB = os.path.join(DIR_SOFTWARE, "abricate/db")
+	SOFTWARE_ABRICATE_DB = os.path.join(settings.DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
 	SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
 	SOFTWARE_FASTQ_name = "FastQC"
 	SOFTWARE_FASTQ_VERSION = "0.11.9"
 	SOFTWARE_FASTQ_PARAMETERS = ""
-	SOFTWARE_FASTQ = os.path.join(DIR_SOFTWARE, "FastQC/{}/FastQC/fastqc".format(SOFTWARE_FASTQ_VERSION))
-	SOFTWARE_TRIMMOMATIC = os.path.join(DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
+	SOFTWARE_FASTQ = os.path.join(settings.DIR_SOFTWARE, "FastQC/{}/FastQC/fastqc".format(SOFTWARE_FASTQ_VERSION))
+	SOFTWARE_TRIMMOMATIC = os.path.join(settings.DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
@@ -91,34 +88,34 @@ class SoftwareNames(object):
 	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"
 	SOFTWARE_FASTA_GENERATE_REGIONS_VERSION = "1.0"
 	SOFTWARE_FASTA_GENERATE_REGIONS_PARAMETERS = ""
-	SOFTWARE_COVERAGE_TO_REGIONS = os.path.join(DIR_SOFTWARE, "freebayes/scripts/coverage_to_regions.py")
+	SOFTWARE_COVERAGE_TO_REGIONS = os.path.join(settings.DIR_SOFTWARE, "freebayes/scripts/coverage_to_regions.py")
 	SOFTWARE_COVERAGE_TO_REGIONS_name = "Coverage to Regions"
 	SOFTWARE_COVERAGE_TO_REGIONS_VERSION = "1.0"
 	SOFTWARE_COVERAGE_TO_REGIONS_PARAMETERS = ""
 	
-	SOFTWARE_BAMTOOLS = os.path.join(DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools")
+	SOFTWARE_BAMTOOLS = os.path.join(settings.DIR_SOFTWARE, "bamtools/build/src/toolkit/bamtools")
 	SOFTWARE_BAMTOOLS_name = "Bamtools"
 	SOFTWARE_BAMTOOLS_VERSION = "2.5"
 	SOFTWARE_BAMTOOLS_PARAMETERS = ""
 	
-	SOFTWARE_PROKKA = os.path.join(DIR_SOFTWARE, "prokka/bin/prokka")
+	SOFTWARE_PROKKA = os.path.join(settings.DIR_SOFTWARE, "prokka/bin/prokka")
 	SOFTWARE_PROKKA_name = "Prokka"
 	SOFTWARE_PROKKA_VERSION = "1.2"
 	SOFTWARE_PROKKA_PARAMETERS = "--kingdom Viruses --locustag locus --genus Influenzavirus --species Influenzavirus --strain "\
 					"ref_PREFIX_FILES_OUT --gcode " + str(Constants.TRANSLATE_TABLE_NUMBER)
 	
-	SOFTWARE_MAUVE = os.path.join(DIR_SOFTWARE, "mauve/progressiveMauve")
+	SOFTWARE_MAUVE = os.path.join(settings.DIR_SOFTWARE, "mauve/progressiveMauve")
 	SOFTWARE_MAUVE_name = "Mauve"
 	SOFTWARE_MAUVE_VERSION = "2.4.0, Feb 13 2015"
 	SOFTWARE_MAUVE_PARAMETERS = ""
 	
-	SOFTWARE_CONVERT = os.path.join(DIR_SOFTWARE, "scripts/convertAlignment.pl")
+	SOFTWARE_CONVERT = os.path.join(settings.DIR_SOFTWARE, "scripts/convertAlignment.pl")
 	SOFTWARE_CONVERT_name = "Convert"
 	SOFTWARE_CONVERT_VERSION = ""
 	SOFTWARE_CONVERT_PARAMETERS = ""
 
-	SOFTWARE_MAFFT = os.path.join(DIR_SOFTWARE, "mafft-7.313-without-extensions/scripts/mafft")
-	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(DIR_SOFTWARE, "mafft-7.313-without-extensions/binaries"))
+	SOFTWARE_MAFFT = os.path.join(settings.DIR_SOFTWARE, "mafft-7.313-without-extensions/scripts/mafft")
+	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(settings.DIR_SOFTWARE, "mafft-7.313-without-extensions/binaries"))
 	SOFTWARE_MAFFT_name = "Mafft"
 	SOFTWARE_MAFFT_VERSION = "7.313"
 	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion"
@@ -133,19 +130,19 @@ class SoftwareNames(object):
 #	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTree")
 #	SOFTWARE_FASTTREE_name = "FastTree"
 #	SOFTWARE_FASTTREE_VERSION = "2.1.10 SSE3"
-	SOFTWARE_FASTTREE = os.path.join(DIR_SOFTWARE, "fasttree/FastTreeDbl")
+	SOFTWARE_FASTTREE = os.path.join(settings.DIR_SOFTWARE, "fasttree/FastTreeDbl")
 	SOFTWARE_FASTTREE_name = "FastTreeDbl"
 	SOFTWARE_FASTTREE_VERSION = "2.1.10 Double precision"
 	SOFTWARE_FASTTREE_PARAMETERS = "-gtr -boot 1000 -nt"
 	SOFTWARE_FASTTREE_PARAMETERS_PROTEIN = "-gtr -boot 1000"
 	
-	SOFTWARE_FASTQ_TOOLS_SAMPLE = os.path.join(DIR_SOFTWARE, "fastq-tools/src/fastq-sample")
+	SOFTWARE_FASTQ_TOOLS_SAMPLE = os.path.join(settings.DIR_SOFTWARE, "fastq-tools/src/fastq-sample")
 	SOFTWARE_FASTQ_TOOLS_SAMPLE_name = "fastq-tools"
 	SOFTWARE_FASTQ_TOOLS_SAMPLE_VERSION = "0.8"
 	SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS = ""
 	
 	### not necessary to install, it's a caveat for older versions, before 1/07/2018
-	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY = os.path.join(DIR_SOFTWARE, "scripts/create_new_reference_to_snippy.pl")
+	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY = os.path.join(settings.DIR_SOFTWARE, "scripts/create_new_reference_to_snippy.pl")
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_name = "create_new_reference_to_snippy"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""

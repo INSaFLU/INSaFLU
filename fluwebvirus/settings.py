@@ -181,16 +181,8 @@ WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
 # cache alias will be used. Set to `None` to disable caching.
 USER_AGENTS_CACHE = 'default'
 
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-# https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
+### software directory
+DIR_SOFTWARE = config('DIR_SOFTWARE', default="/usr/local/software/insaflu")
 
 ## to reuse DB 
 # os.environ['REUSE_DB'] = "1"

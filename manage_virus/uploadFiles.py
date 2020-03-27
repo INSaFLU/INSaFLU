@@ -285,4 +285,4 @@ class UploadFiles(object):
 				n_upload += 1
 			
 			if (b_test and n_upload > 2): break
-			print.write("#Upload references: {}".format(n_upload))
+			print("#Upload references: {}".format(n_upload))

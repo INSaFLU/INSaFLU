@@ -24,7 +24,6 @@ $ sudo su
 # qconf -am <your name>
 
 
-
 Then run:
 
 $ qconf -Ahgrp grid_add_all_hosts.txt
@@ -51,3 +50,10 @@ $ qconf -sq <queue name>
 
 ### edit queues
 $ qconf -mq <queue name>  
+
+
+### change the default schedule_interval from 0:0:15 to 0:0:5. This setting specifies how often the scheduler checks for new jobs.
+$ qconf -msconf
+
+
+

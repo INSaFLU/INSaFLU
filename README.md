@@ -120,6 +120,7 @@ Some scripts to install:
 * [Fastq-tools](https://github.com/dcjones/fastq-tools) 0.8	
 
 :warning: Important, edit fastqc file `$ vi <install software path>/FastQC/0.11.9/FastQC/fastqc` and change the line `my $memory = 250 * $threads;` to `my $memory = 1000 * $threads;`
+
 :warning: Important, copy the file `bin/snippy-vcf_to_tab` to `bin/snippy-vcf_to_tab_add_freq` and do this change:
 
 ```

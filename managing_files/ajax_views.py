@@ -415,10 +415,15 @@ def add_single_value_database(request):
 	possible tables to add: TagName, DataSet, VaccineStatus
 	"""
 	if request.is_ajax():
-		data = { 'is_ok' : False }
+		data = { 'is_ok' : False, 'message' : 'Fail in the system...'}
 		key_type_data = 'type_data'
 		key_value = 'value'
 		value = request.GET[key_value].strip()
+		
+		### test empty values...
+		if (len(value) == 0):
+			data['message'] = "Empty values are not accepted..."
+			return JsonResponse(data) 
 		
 		## some pre-requisites
 		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
@@ -470,7 +475,7 @@ def remove_single_value_database(request):
 	test if is prossible to remove
 	"""
 	if request.is_ajax():
-		data = { 'is_ok' : False }
+		data = { 'is_ok' : False, 'message' : 'Fail in the system...'}
 		key_type_data = 'type_data'
 		key_value = 'value'
 		key_is_to_test = 'is_to_test'
@@ -490,6 +495,10 @@ def remove_single_value_database(request):
 			value = request.GET[key_value].strip()
 			is_to_test = utils.str2bool(request.GET[key_is_to_test])
 			
+			if (len(value) == 0):
+				data['message'] = "Empty values are not accepted..."
+				return JsonResponse(data) 
+		
 			## add to data_set
 			if (request.GET[key_type_data] == 'id_data_set_remove_modal'):
 				if (value == Constants.DATA_SET_GENERIC):

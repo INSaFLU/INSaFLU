@@ -67,7 +67,7 @@ class SoftwareNames(object):
 	# 57c57
 	# < print join("\t", qw(CHROM POS TYPE REF ALT FREQ), @ANNO), "\n";
 	# ---
-	# > print join("\t", qw(CHROM POS TYPE REF ALT), @ANNO), "\n";
+	# > print join("\t", qw(CHROM POS TYPE REF ALT EVIDENCE), @ANNO), "\n";
 	SOFTWARE_SNIPPY_VCF_TO_TAB = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq")
 	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
@@ -114,10 +114,15 @@ class SoftwareNames(object):
 	SOFTWARE_CONVERT_VERSION = ""
 	SOFTWARE_CONVERT_PARAMETERS = ""
 
-	SOFTWARE_MAFFT = os.path.join(settings.DIR_SOFTWARE, "mafft-7.313-without-extensions/scripts/mafft")
-	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(settings.DIR_SOFTWARE, "mafft-7.313-without-extensions/binaries"))
+	vect_versions_available = ['7.313', '7.453']
+	for version in vect_versions_available:
+		SOFTWARE_MAFFT_VERSION = version
+		SOFTWARE_MAFFT = os.path.join(settings.DIR_SOFTWARE, "mafft-{}-without-extensions/scripts/mafft".format(version))
+		if (os.path.exists(SOFTWARE_MAFFT)): break
+
+	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(settings.DIR_SOFTWARE, "mafft-{}-without-extensions/binaries".format(version)))
 	SOFTWARE_MAFFT_name = "Mafft"
-	SOFTWARE_MAFFT_VERSION = "7.313"
+	
 	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion"
 	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino"
 	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"

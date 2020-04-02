@@ -323,16 +323,8 @@ class SampleForm(forms.ModelForm):
 				'General data',
 				Div(
 					Div('name', css_class="col-sm-4"),
-					Div( 
-						HTML('<a href="#modal_add_data_database" id="id_data_set_add_modal" data-toggle="modal"> <span> <i class="fa fa-plus-square"></i></span> </a>'),
-						HTML('<a href="#modal_remove_data_database" id="id_data_set_remove_modal" data-toggle="modal"> <span> <i class="fa fa-minus-square"></i></span> </a>'),
-						Div('data_set'), 
-						css_class = "row col-sm-4"),
-					Div( 
-						HTML('<a href="#modal_add_data_database" id="id_vaccine_add_modal" data-toggle="modal"> <span> <i class="fa fa-plus-square"></i></span> </a>'),
-						HTML('<a href="#modal_remove_data_database" id="id_vaccine_remove_modal" data-toggle="modal"> <span> <i class="fa fa-minus-square"></i></span> </a>'),
-						Div('vaccine_status'), 
-						css_class = "row col-sm-4"),
+					Div('data_set', css_class="col-sm-4"), 
+					Div('vaccine_status', css_class="col-sm-4"), 
 					css_class = 'row'
 				),
 				css_class = 'article-content'

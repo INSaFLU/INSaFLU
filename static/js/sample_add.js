@@ -142,10 +142,10 @@ $(document).on("click", "a", function(){
 	        },
 	        
 	        // handle a non-successful response
-	        error : function(xhr,errmsg,err) {
-	            alert(errmsg);
-	            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-	        }
+//	        error : function(xhr,errmsg,err) {
+//	            alert(errmsg);
+//	            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+//	        }
 		});
 	}
 });
@@ -193,10 +193,10 @@ $('#id-modal-footer-remove').on('click', '#id-remove-button', function(){
         },
         
         // handle a non-successful response
-        error : function(xhr,errmsg,err) {
-            alert(errmsg);
-            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-        }
+//        error : function(xhr,errmsg,err) {
+//            alert(errmsg);
+//            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+//        }
 	});
 });
 
@@ -214,3 +214,21 @@ $().ready(function(){
 	}
 });
 
+/// Add buttons to several itens, where is possible to add remove itens in combo-box
+$().ready(function(){
+
+	// research
+	add_buttons('div_id_data_set', 'modal_remove_data_database', 'id_data_set_remove_modal', 'fa-minus-square');
+	add_buttons('div_id_data_set', 'modal_add_data_database', 'id_data_set_add_modal', 'fa-plus-square');
+	
+	// specie
+	add_buttons('div_id_vaccine_status', 'modal_remove_data_database', 'id_vaccine_remove_modal', 'fa-minus-square');
+	add_buttons('div_id_vaccine_status', 'modal_add_data_database', 'id_vaccine_add_modal', 'fa-plus-square');
+	
+});
+
+function add_buttons(div_id, modal_id, link_id, icon_) {
+	$('#' + div_id).append('<a href="#' + modal_id + '" id="' + link_id + '" data-toggle="modal"> <span> <i class="fa ' +
+		icon_ + ' fa-2x padding-button-add-remove"></i></span> </a>' );
+	$('#' + link_id).prependTo('#' + div_id);
+}

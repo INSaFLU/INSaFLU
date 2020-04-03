@@ -10,7 +10,7 @@ class Command(BaseCommand):
 	'''
 	classdocs
 	'''
-	help = "Confirm a account by user name."
+	help = "Confirm a account by user name. If you want activate last account pass the argument 'last_account_created'"
 
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
@@ -22,11 +22,17 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		
 		username = options['username']
-		try:
-			user = User.objects.get(username__iexact=username.strip())
-		except User.DoesNotExist as e:
-			self.stdout.write("Error: User login '{}' does not exist.".format(username))
-			return
+		
+		### activate last account created
+		if username == 'last_account_created':
+			user = User.objects.all().order_by('-id')[0]
+			username = user.username
+		else:
+			try:
+				user = User.objects.get(username__iexact=username.strip())
+			except User.DoesNotExist as e:
+				self.stdout.write("Error: User login '{}' does not exist.".format(username))
+				return
 		
 		is_email_active = user.profile.email_confirmed
 		if (is_email_active): self.stdout.write("User name email '{}' is already confirmed.".format(username))

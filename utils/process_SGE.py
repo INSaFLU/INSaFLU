@@ -301,11 +301,13 @@ class ProcessSGE(object):
 		"""
 		only for tests
 		"""
-		vect_command = ['echo $HOSTNAME > /tmp/sge.out', 'echo "start waiting" >> /tmp/sge.out',\
-					'date >> /tmp/sge.out', 'sleep 2m', 'date >> /tmp/sge.out',\
+		vect_command = ['echo "#####start" >> /tmp/sge.out', 'echo $HOSTNAME >> /tmp/sge.out', 'echo "start waiting" >> /tmp/sge.out',\
+					'echo $PATH >> /tmp/sge.out', 'echo $SGE_ROOT >> /tmp/sge.out', 
+					'date >> /tmp/sge.out', 'sleep 2s', 'date >> /tmp/sge.out',\
 					'echo "end" >> /tmp/sge.out']
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_FAST, vect_command, job_name, False)
+		os.system("/bin/sh {}".format(path_file))
 		try:
 			sge_id = self.submitte_job(path_file)
 		except:

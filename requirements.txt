@@ -4,7 +4,7 @@ django-crequest
 django-embed-video
 django-bootstrap-breadcrumbs
 django-user-agents
-django-crispy-forms
+django-crispy-forms==1.7.2
 django-braces
 django-tables2==1.16
 django-nose

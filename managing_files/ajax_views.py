@@ -512,11 +512,11 @@ def remove_single_value_database(request):
 							if (is_to_test):
 								data['is_ok'] = False;
 								data['is_can_remove'] = False;
-								data['message'] = "You can't remove '{}' name because as a relation in database.".format(value);
+								data['message'] = "You can't remove '{}' name because has a relation in database.".format(value);
 							else:
 								data['is_ok'] = False;
 								data['is_remove'] = False;
-								data['message'] = "You can't remove '{}' name because as a relation in database.".format(value);
+								data['message'] = "You can't remove '{}' name because has a relation in database.".format(value);
 						else:
 							if (is_to_test):
 								data['is_ok'] = True;

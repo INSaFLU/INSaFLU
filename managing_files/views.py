@@ -257,7 +257,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		Validate the form
 		"""
 
-		with transaction.atomic:
+		with transaction.atomic():
 			### test anonymous account
 			try:
 				profile = Profile.objects.get(user=self.request.user)

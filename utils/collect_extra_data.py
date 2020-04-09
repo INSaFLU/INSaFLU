@@ -67,7 +67,6 @@ class CollectExtraData(object):
 		## run collect data
 		self.__collect_update_extra_metadata_for_project(project, user)
 		
-	@transaction.atomic
 	def __collect_update_extra_metadata_for_project(self, project, user):
 		"""
 		Only for update metadata
@@ -90,7 +89,7 @@ class CollectExtraData(object):
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 		
-	@transaction.atomic
+#	@transaction.atomic
 	def __collect_extra_data_for_project(self, project, user):
 		"""
 		Everything that is necessary to do in the project

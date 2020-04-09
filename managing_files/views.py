@@ -252,70 +252,70 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		return context
 
 
-	@transaction.atomic
 	def form_valid(self, form):
 		"""
 		Validate the form
 		"""
 
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add samples.".format(self.request.user.username), fail_silently=True)
-				return super(SamplesAddView, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			pass
-
-		utils = Utils()
-		name = form.cleaned_data['name']
-		lat = form.cleaned_data['lat']
-		lng = form.cleaned_data['lng']
-		like_dates = form.cleaned_data['like_dates']
+		with transaction.atomic:
+			### test anonymous account
+			try:
+				profile = Profile.objects.get(user=self.request.user)
+				if (profile.only_view_project):
+					messages.warning(self.request, "'{}' account can not add samples.".format(self.request.user.username), fail_silently=True)
+					return super(SamplesAddView, self).form_invalid(form)
+			except Profile.DoesNotExist:
+				pass
+	
+			utils = Utils()
+			name = form.cleaned_data['name']
+			lat = form.cleaned_data['lat']
+			lng = form.cleaned_data['lng']
+			like_dates = form.cleaned_data['like_dates']
+				
+			sample = form.save(commit=False)
+			## set other data
+			sample.owner = self.request.user
+			sample.is_deleted = False
+			sample.is_obsolete = False
+			sample.file_name_1 = utils.clean_name(os.path.basename(sample.path_name_1.name))
+			sample.is_valid_1 = True
+			if (sample.exist_file_2()):
+				sample.file_name_2 = utils.clean_name(os.path.basename(sample.path_name_2.name))
+				sample.is_valid_2 = True 
+			else: sample.is_valid_2 = False
+			sample.has_files = True
 			
-		sample = form.save(commit=False)
-		## set other data
-		sample.owner = self.request.user
-		sample.is_deleted = False
-		sample.is_obsolete = False
-		sample.file_name_1 = utils.clean_name(os.path.basename(sample.path_name_1.name))
-		sample.is_valid_1 = True
-		if (sample.exist_file_2()):
-			sample.file_name_2 = utils.clean_name(os.path.basename(sample.path_name_2.name))
-			sample.is_valid_2 = True 
-		else: sample.is_valid_2 = False
-		sample.has_files = True
-		
-		if (like_dates == 'date_of_onset'):
-			sample.day = int(sample.date_of_onset.strftime("%d"))
-			sample.week = int(sample.date_of_onset.strftime("%W")) + 1
-			sample.year = int(sample.date_of_onset.strftime("%Y"))
-			sample.month = int(sample.date_of_onset.strftime("%m"))
-		elif (like_dates == 'date_of_collection'):
-			sample.day = int(sample.date_of_collection.strftime("%d"))
-			sample.week = int(sample.date_of_collection.strftime("%W")) + 1
-			sample.year = int(sample.date_of_collection.strftime("%Y"))
-			sample.month = int(sample.date_of_collection.strftime("%m"))
-		elif (like_dates == 'date_of_receipt_lab'):
-			sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
-			sample.week = int(sample.date_of_receipt_lab.strftime("%W")) + 1
-			sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
-			sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
-		
-		### test geo spacing
-		if (lat != None and lng != None): sample.geo_local = Point(lat, lng)
-		sample.save()
-
-		## move the files to the right place
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
-		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
-		sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
-		
-		if (sample.exist_file_2()):
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
-			sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
-		sample.save()
+			if (like_dates == 'date_of_onset'):
+				sample.day = int(sample.date_of_onset.strftime("%d"))
+				sample.week = int(sample.date_of_onset.strftime("%W")) + 1
+				sample.year = int(sample.date_of_onset.strftime("%Y"))
+				sample.month = int(sample.date_of_onset.strftime("%m"))
+			elif (like_dates == 'date_of_collection'):
+				sample.day = int(sample.date_of_collection.strftime("%d"))
+				sample.week = int(sample.date_of_collection.strftime("%W")) + 1
+				sample.year = int(sample.date_of_collection.strftime("%Y"))
+				sample.month = int(sample.date_of_collection.strftime("%m"))
+			elif (like_dates == 'date_of_receipt_lab'):
+				sample.day = int(sample.date_of_receipt_lab.strftime("%d"))
+				sample.week = int(sample.date_of_receipt_lab.strftime("%W")) + 1
+				sample.year = int(sample.date_of_receipt_lab.strftime("%Y"))
+				sample.month = int(sample.date_of_receipt_lab.strftime("%m"))
+			
+			### test geo spacing
+			if (lat != None and lng != None): sample.geo_local = Point(lat, lng)
+			sample.save()
+	
+			## move the files to the right place
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
+			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_1.name), sz_file_to)
+			sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_1)
+			
+			if (sample.exist_file_2()):
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
+				utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), sample.path_name_2.name), sz_file_to)
+				sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(self.request.user.id, sample.id), sample.file_name_2)
+			sample.save()
 
 		### create a task to perform the analysis of fastq and trimmomatic
 		try:

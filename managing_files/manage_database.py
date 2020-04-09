@@ -7,6 +7,7 @@ from managing_files.models import MetaKeySample, MetaKey, MetaKeyProject, MetaKe
 from managing_files.models import CountVariations, Statistics, TagName, ProjectSample
 from constants.tag_names_constants import TagNamesConstants
 from constants.meta_key_and_values import MetaKeyAndValue
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 from django.db import connection
 
 class ManageDatabase(object):
@@ -18,16 +19,26 @@ class ManageDatabase(object):
 		Constructor
 		'''
 		pass
+	
+	def _get_metakey(self, meta_key_name):
+		"""
+		get metakey with lobk table
+		"""
+		with LockedAtomicTransaction(MetaKey):
+			try:
+				metaKey = MetaKey.objects.get(name=meta_key_name)
+			except MetaKey.DoesNotExist:
+				metaKey = MetaKey()
+				metaKey.name = meta_key_name
+				metaKey.save()
+		return metaKey
+	
+	
 	def set_reference_metakey(self, reference, owner, meta_key_name, value, description):
 		"""
 		save a meta key
 		"""
-		try:
-			metaKey = MetaKey.objects.get(name=meta_key_name)
-		except MetaKey.DoesNotExist:
-			metaKey = MetaKey()
-			metaKey.name = meta_key_name
-			metaKey.save()
+		metaKey = self._get_metakey(meta_key_name)
 		
 		metaKeyReference = MetaKeyReference()
 		metaKeyReference.reference = reference
@@ -37,7 +48,7 @@ class ManageDatabase(object):
 		metaKeyReference.description = description
 		metaKeyReference.save()
 		return metaKeyReference
-	
+
 	def get_reference_metakey(self, reference, meta_key_name, value):
 		"""
 		value = None, return a list
@@ -65,12 +76,7 @@ class ManageDatabase(object):
 		"""
 		save a meta key
 		"""
-		try:
-			metaKey = MetaKey.objects.get(name=meta_key_name)
-		except MetaKey.DoesNotExist:
-			metaKey = MetaKey()
-			metaKey.name = meta_key_name
-			metaKey.save()
+		metaKey = self._get_metakey(meta_key_name)
 		
 		metaKeySample = MetaKeySample()
 		metaKeySample.sample = sample
@@ -107,12 +113,7 @@ class ManageDatabase(object):
 		"""
 		save a meta key
 		"""
-		try:
-			metaKey = MetaKey.objects.get(name=meta_key_name)
-		except MetaKey.DoesNotExist:
-			metaKey = MetaKey()
-			metaKey.name = meta_key_name
-			metaKey.save()
+		metaKey = self._get_metakey(meta_key_name)
 		
 		metaKeyProject = MetaKeyProject()
 		metaKeyProject.project = project
@@ -127,10 +128,7 @@ class ManageDatabase(object):
 		"""
 		update the meta_key, if not exist create other
 		"""
-		try:
-			metaKey = MetaKey.objects.get(name=meta_key_name)
-		except MetaKey.DoesNotExist:	## doesn't have, create new
-			return self.set_project_metakey(project, owner, meta_key_name, value, description)
+		metaKey = self._get_metakey(meta_key_name)
 		
 		metaKeyProject_list = MetaKeyProject.objects.filter(project=project, meta_tag=metaKey, owner=owner)
 		if (metaKeyProject_list.count() == 0):
@@ -165,16 +163,12 @@ class ManageDatabase(object):
 		except MetaKeyProject.DoesNotExist:
 			return None	
 
+
 	def set_project_sample_metakey(self, project_sample, owner, meta_key_name, value, description):
 		"""
 		save a meta key
 		"""
-		try:
-			metaKey = MetaKey.objects.get(name=meta_key_name)
-		except MetaKey.DoesNotExist:
-			metaKey = MetaKey()
-			metaKey.name = meta_key_name
-			metaKey.save()
+		metaKey = self._get_metakey(meta_key_name)
 		
 		metaKeyProjectSample = MetaKeyProjectSample()
 		metaKeyProjectSample.project_sample = project_sample
@@ -269,7 +263,7 @@ class ManageDatabase(object):
 	
 	#######################################
 	###
-	###		deal with percentils
+	###		deal with percentils, not used now
 	###
 
 	
@@ -286,14 +280,15 @@ class ManageDatabase(object):
 				statistics = Statistics.objects.get(tag__name=percentil_tag)
 			except Statistics.DoesNotExist:
 				
-				try:
-					tag_name = TagName.objects.get(name=percentil_tag, owner__id=user.id)
-				except TagName.DoesNotExist:
-					tag_name = TagName()
-					tag_name.name = percentil_tag
-					tag_name.owner = user
-					tag_name.is_meta_data = tagNamesConstants.is_meta_tag_name(percentil_tag)
-					tag_name.save()
+				with LockedAtomicTransaction(TagName):
+					try:
+						tag_name = TagName.objects.get(name=percentil_tag, owner__id=user.id)
+					except TagName.DoesNotExist:
+						tag_name = TagName()
+						tag_name.name = percentil_tag
+						tag_name.owner = user
+						tag_name.is_meta_data = tagNamesConstants.is_meta_tag_name(percentil_tag)
+						tag_name.save()
 				
 				statistics = Statistics()
 				statistics.tag = tag_name

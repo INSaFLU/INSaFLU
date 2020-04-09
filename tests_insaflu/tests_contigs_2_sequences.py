@@ -25,8 +25,8 @@ class Test(unittest.TestCase):
 
 		contigs_2_sequences = Contigs2Sequences(True)
 		(version, file) = contigs_2_sequences.get_most_recent_database()
-		self.assertEqual("23", version)
-		self.assertEqual(os.path.join(self.baseDirectory, "db/contigs2sequences/sequences_v23.fasta"), file)
+		self.assertEqual("22", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/contigs2sequences/sequences_v22.fasta"), file)
 		
 		
 	def test_identify_contigs(self):

@@ -508,6 +508,9 @@ $ sudo systemctl restart apache2
 $ sudo systemctl status apache2
 ```
 
+
+:warning:  Add "AddType application/octet-stream .bam" to httpd.conf in "IfModule mime_module" element, for the IGV viewer.
+
 ## Create users without access to INSaFLU web page
 
 Go to your internet explorer and put this address `http://127.0.0.1:80/admin/`

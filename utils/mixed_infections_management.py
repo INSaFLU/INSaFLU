@@ -8,6 +8,7 @@ from constants.constants_mixed_infection import ConstantsMixedInfection
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample, MixedInfections, MixedInfectionsTag
 from utils.result import DecodeObjects, MixedInfectionMainVector
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 from scipy import spatial
 
 class MixedInfectionsManagement(object):
@@ -51,12 +52,13 @@ class MixedInfectionsManagement(object):
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 			
 		### get tag
-		try:
-			mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
-		except MixedInfectionsTag.DoesNotExist as e:
-			mixed_infections_tag = MixedInfectionsTag()
-			mixed_infections_tag.name = tag
-			mixed_infections_tag.save()
+		with LockedAtomicTransaction(MixedInfectionsTag):
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
+			except MixedInfectionsTag.DoesNotExist as e:
+				mixed_infections_tag = MixedInfectionsTag()
+				mixed_infections_tag.name = tag
+				mixed_infections_tag.save()
 		
 		mixed_infections = MixedInfections()
 		mixed_infections.tag = mixed_infections_tag

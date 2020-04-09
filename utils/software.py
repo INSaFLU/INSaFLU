@@ -243,7 +243,7 @@ class Software(object):
 	"""
 	Global processing
 	"""
-	@transaction.atomic
+#	@transaction.atomic
 	def identify_type_and_sub_type(self, sample, fastq1_1, fastq1_2, owner, b_run_tests = False):
 		"""
 		Identify type and sub_type
@@ -897,7 +897,7 @@ class Software(object):
 	"""
 	Global processing
 	"""
-	@transaction.atomic
+#	@transaction.atomic
 	def run_fastq_and_trimmomatic(self, sample, owner):
 		"""
 		run fastq and trimmomatic
@@ -1070,7 +1070,7 @@ class Software(object):
 	"""
 	Global processing, Snippy, Coverage, Freebayes and MixedInfections
 	"""
-	@transaction.atomic
+#	@transaction.atomic
 	def __process_second_stage_snippy_coverage_freebayes(self, project_sample, user):
 		"""
 		Global processing, snippy, coverage, 
@@ -1130,7 +1130,7 @@ class Software(object):
 			try:
 				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 							self.software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-				
+
 				################################
 				##################################
 				### set the alerts in the coverage

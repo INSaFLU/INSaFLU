@@ -18,7 +18,7 @@ from datetime import datetime
 import os, random, gzip, hashlib, logging, ntpath, stat, re
 from pysam import pysam
 from django.conf import settings
-from statistics import mean, stdev
+from statistics import mean
 
 class Utils(object):
 	'''

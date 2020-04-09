@@ -350,14 +350,12 @@ class ProcessSGE(object):
 				process_controler.is_finished = True
 				process_controler.is_running = False
 				process_controler.close_date = datetime.now()
-				process_controler.save()
 			elif (flags == ProcessControler.FLAG_ERROR):
 				process_controler.is_finished = True
 				process_controler.is_error = True
 				process_controler.is_running = False
 				process_controler.close_date = datetime.now()
-				process_controler.save()
 			elif (flags == ProcessControler.FLAG_RUNNING):
 				process_controler.is_running = True
-				process_controler.save()
+			process_controler.save()
 

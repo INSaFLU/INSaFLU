@@ -50,6 +50,8 @@ Vitor Borges
 
 # Installation
 
+For an easy and rapid installation using docker see here [https://github.com/INSaFLU/docker](https://github.com/INSaFLU/docker).
+
 This installation is oriented for Ubuntu Server 16.04 and Centos 7.X.
 There are several steps and packages to install, so, please, be patient. First, it is necessary to install and configure all bioinformatics software, then the database, batch-queuing system and, finally, the web site.
 

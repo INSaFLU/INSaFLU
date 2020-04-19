@@ -9,6 +9,10 @@ class Profile(models.Model):
 	"""
 	has the name of the institution of the account
 	"""
+	SGE_GLOBAL = "g"
+	SGE_LINK = "l"
+	SGE_REGULAR = "r"
+	
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	institution = models.TextField(max_length=100, blank=True)
 	email_confirmed = models.BooleanField(default=False)
@@ -25,19 +29,31 @@ class Profile(models.Model):
 	max_file_size_fastq = models.IntegerField(default=50000000)
 	max_length_reference_fasta = models.IntegerField(default=20000)
 	max_sequence_reference = models.IntegerField(default=20)
-	sge_seq_id = models.IntegerField(default=0)
-
-	def add_sge_seq_id(self):
-		self.sge_seq_id += 1
-		self.save()
+	sge_seq_id_g = models.IntegerField(default=1)	### global
+	sge_seq_id_l = models.IntegerField(default=1)	### link
+	sge_seq_id_r = models.IntegerField(default=1)	### regular
+	
+	def add_sge_seq_id(self, key_):
+		if (key_ == self.SGE_GLOBAL):
+			self.sge_seq_id_g += 1
+			self.save()
+			return self.sge_seq_id_g
+		elif (key_ == self.SGE_LINK):
+			self.sge_seq_id_l += 1
+			self.save()
+			return self.sge_seq_id_l
 		
-	def get_name_sge_seq(self):
+		self.sge_seq_id_r += 1
+		self.save()
+		return self.sge_seq_id_r
+		
+	def get_name_sge_seq(self, key_ = "name"):
 		"""
 		job_name = "job_name_<user_id>_<seq_id>"
 		return, (current name, next name)
 		"""
-		self.add_sge_seq_id()
-		return ("job_name_{}_{}".format(self.user.pk, self.sge_seq_id - 1), "job_name_{}_{}".format(self.user.pk, self.sge_seq_id))
+		progression_number = self.add_sge_seq_id()
+		return ("job_{}_{}_{}".format(key_, self.user.pk, progression_number - 1), "job_{}_{}_{}".format(key_, self.user.pk, progression_number))
 
 
 @receiver(post_save, sender=User)

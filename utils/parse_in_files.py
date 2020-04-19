@@ -732,7 +732,6 @@ class ParseInFiles(object):
 		after a fastq.gz is uploaded you can run this to link the fastq files to samples.
 		"""
 		
-		software = Software()
 		utils = Utils()
 		upload_files = self.get_upload_samples_file(user)
 		if (upload_files == None): return	## there's no files to match

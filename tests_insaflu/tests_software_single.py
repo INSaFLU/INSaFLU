@@ -49,29 +49,35 @@ class Test(TestCase):
 		pass
 
 	
-	def test_create_database_abricate(self):
+	def test_parse_sample_files(self):
+		"""
+		Test input files
+		"""
+		## create an index file from 
 		
-		database_name = "xpto"
-		if (self.software.is_exist_database_abricate(database_name)):
-			cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, database_name)
-			exist_status = os.system(cmd)
-			self.assertTrue(exist_status == 0)
-		self.assertFalse(self.software.is_exist_database_abricate(database_name))
-		temp_file_file = os.path.join(self.baseDirectory, Constants.DIR_TYPE_IDENTIFICATION, ConstantsTestsCase.MANAGING_TEST_INFLUENZA_FILE)
-		self.assertTrue(os.path.exists(temp_file_file))
+		#MANAGING_TEMPLATE_INPUT = "template_input.tsv"
+		#MANAGING_TEMPLATE_INPUT_FAIL_HEADER = "template_input_fail_header.tsv"
+		#MANAGING_TEMPLATE_INPUT_DATA
+	
+		txt_file = os.path.join("/home/mmp/insa/import_cov/77053920_SARS_CoV_2_run_004_20200410_reads_headcrop30_.txt")
+		self.assertTrue(os.path.exists(txt_file))
 		
 		try:
-			self.software.create_database_abricate(database_name, "fdssfd")
-			self.fail("must throw error")
-		except IOError:
-			pass
-		
-		self.software.create_database_abricate(database_name, temp_file_file)
-		self.assertTrue(self.software.is_exist_database_abricate(database_name))
-		cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, database_name)
-		exist_status = os.system(cmd)
-		self.assertTrue(exist_status == 0)
-		self.assertFalse(self.software.is_exist_database_abricate(database_name))
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.set_password(ConstantsTestsCase.TEST_USER_NAME)
+			user.save()
+			
+		parse_in_files = ParseInFiles()
+		b_test_char_encoding = False
+		parse_in_files.parse_sample_files(txt_file, user, b_test_char_encoding, ParseInFiles.STATE_READ_all)
+		self.assertEquals(1, parse_in_files.get_errors().get_len_vect_results())
+		self.assertEquals("'utf-8' codec can't decode byte 0xff in position 0: invalid start byte", parse_in_files.get_errors().get_error(0).message)
+		self.assertFalse(parse_in_files.get_errors().get_error(0).is_success())
+		self.assertEquals(0, len(parse_in_files.get_vect_samples()))
 
 
 

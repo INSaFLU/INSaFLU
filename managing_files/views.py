@@ -1280,7 +1280,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
-						if len(job_name_wait) == 0: (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq()
+						if len(job_name_wait) == 0: (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
 						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
 							
 						### set project sample queue ID

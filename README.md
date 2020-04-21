@@ -5,7 +5,7 @@
 
 
 # INSaFLU
-INSaFLU (“INSide the FLU”) is an influenza-oriented bioinformatics free web-based platform for an effective and timely whole-genome-sequencing-based influenza laboratory surveillance.
+INSaFLU (“INSide the FLU”) is an influenza-oriented bioinformatics free web-based platform for an effective and timely whole-genome-sequencing-based laboratory surveillance.
 
 INSaFLU is freely available at [https://insaflu.insa.pt](https://insaflu.insa.pt)
 Documentation (latest) for each INSaFLU module is provided at [http://insaflu.readthedocs.io/](http://insaflu.readthedocs.io/)

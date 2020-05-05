@@ -430,7 +430,7 @@ class Utils(object):
 				if (features.type == 'source'):
 					length = abs(features.location.end - features.location.start)
 				elif (features.type == 'CDS'):
-					for key_name in Constants.VECT_GENBANK_TAG_NAME:
+					for key_name in 'CDS':
 						if (key_name in features.qualifiers):
 							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
 								int(features.location.start), int(features.location.end), features.location.strand))

@@ -732,12 +732,12 @@ class ParseInFiles(object):
 		after a fastq.gz is uploaded you can run this to link the fastq files to samples.
 		"""
 		
-		software = Software()
 		utils = Utils()
 		upload_files = self.get_upload_samples_file(user)
 		if (upload_files == None): return	## there's no files to match
 
 		n_files_processed = 0
+		vect_sample_to_trimmomatic = []
 		for sample in upload_files.samples.all():
 			if (sample.has_files):
 				n_files_processed += 1
@@ -803,16 +803,22 @@ class ParseInFiles(object):
 				if (not b_testing):
 					### send signal to process the type and sub type
 					### create a task to perform the analysis of fastq and trimmomatic
-					try:
-						## here can be direct because came from a djangoq
-						process_SGE = ProcessSGE()
-						taskID = process_SGE.set_run_trimmomatic_species(sample, user)
-						
-						### 
-						manageDatabase = ManageDatabase()
-						manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
-					except:
-						pass
+					### it doesn't work if runs immediately
+					vect_sample_to_trimmomatic.append(sample)
+					
+		
+		## samples that can proceed to trimmomatic
+		for sample in vect_sample_to_trimmomatic:
+			try:
+				## here can be direct because came from a djangoq
+				process_SGE = ProcessSGE()
+				taskID = process_SGE.set_run_trimmomatic_species(sample, user)
+				
+				### 
+				manageDatabase = ManageDatabase()
+				manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+			except:
+				pass
 					
 		### set the files already processed
 		upload_files.number_files_processed = n_files_processed

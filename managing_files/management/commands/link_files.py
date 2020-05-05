@@ -6,7 +6,6 @@ Created on Jan 5, 2018
 from django.core.management import BaseCommand
 from utils.parse_in_files import ParseInFiles
 from django.contrib.auth.models import User
-from django.conf import settings
 import logging
 
 class Command(BaseCommand):
@@ -36,7 +35,7 @@ class Command(BaseCommand):
 		self.logger_debug.info("Starting for user_id: " + str(user_id))
 		try:
 			user = User.objects.get(pk=user_id)
-			parse_in_files.link_files(user, settings.RUN_TEST_IN_COMMAND_LINE)
+			parse_in_files.link_files(user)
 			self.stdout.write("End")
 		except User.DoesNotExist as e:
 			self.stdout.write("Error: User id '{}' does not exist.".format(user_id))

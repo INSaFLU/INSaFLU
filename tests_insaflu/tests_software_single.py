@@ -49,29 +49,12 @@ class Test(TestCase):
 		pass
 
 	
-	def test_create_database_abricate(self):
+	def test_parse_sample_files(self):
+		"""
+		Test input files
+		"""
+		pass
 		
-		database_name = "xpto"
-		if (self.software.is_exist_database_abricate(database_name)):
-			cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, database_name)
-			exist_status = os.system(cmd)
-			self.assertTrue(exist_status == 0)
-		self.assertFalse(self.software.is_exist_database_abricate(database_name))
-		temp_file_file = os.path.join(self.baseDirectory, Constants.DIR_TYPE_IDENTIFICATION, ConstantsTestsCase.MANAGING_TEST_INFLUENZA_FILE)
-		self.assertTrue(os.path.exists(temp_file_file))
-		
-		try:
-			self.software.create_database_abricate(database_name, "fdssfd")
-			self.fail("must throw error")
-		except IOError:
-			pass
-		
-		self.software.create_database_abricate(database_name, temp_file_file)
-		self.assertTrue(self.software.is_exist_database_abricate(database_name))
-		cmd = "rm -r %s/%s*" % (SoftwareNames.SOFTWARE_ABRICATE_DB, database_name)
-		exist_status = os.system(cmd)
-		self.assertTrue(exist_status == 0)
-		self.assertFalse(self.software.is_exist_database_abricate(database_name))
 
 
 

@@ -46,7 +46,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_COUNT_VAR = "Alert count variation percentile"				## obsolete
 	META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES = "Downsize fastq files"
 	META_KEY_ALERT_REMOVE_ORIGINAL_FASTQ_FILES = "Remove Original Fastq Files"	### remove original fastq files
-	
+	META_KEY_ALERT_NO_READS_AFTER_FILTERING = "No reads after filtering."
 	
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
@@ -118,4 +118,5 @@ class MetaKeyAndValue(object):
 		this show the alerts in SampleDetailsView
 		"""
 		return [MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE, MetaKeyAndValue.META_KEY_ALERT_NOT_ASSIGNED_TYPE_SUBTYPE,\
-				MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES, MetaKeyAndValue.META_KEY_ALERT_REMOVE_ORIGINAL_FASTQ_FILES]
+				MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES, MetaKeyAndValue.META_KEY_ALERT_REMOVE_ORIGINAL_FASTQ_FILES,\
+				MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING]

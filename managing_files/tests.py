@@ -6,10 +6,9 @@ from django.contrib.auth.models import User
 from constants.constants import FileType, TypePath, FileExtensions
 from django.core.exceptions import MultipleObjectsReturned
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, Statistics, CountVariations, MetaKeyProject, UploadFiles, ProcessControler
+from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, MetaKeyProject, UploadFiles, ProcessControler
 from constants.meta_key_and_values import MetaKeyAndValue
-from constants.tag_names_constants import TagNamesConstants
-from utils.result import CountHits, DecodeObjects
+from utils.result import DecodeObjects
 import os, time
 
 class testsReferenceFiles(TestCase):

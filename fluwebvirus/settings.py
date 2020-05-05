@@ -48,7 +48,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
 ### threads to use in several software
-THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=2, cast=int)		## don't increase this because of the heap memory
+THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## don't increase this because of the heap memory
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
@@ -106,6 +106,7 @@ INSTALLED_APPS = [
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
     'phylogeny.apps.PhylogenyConfig',
+    'settings.apps.SettingsConfig',
     'log_login.apps.LogLoginConfig',
     'extend_user.apps.ExtendUserConfig',
     'crequest',

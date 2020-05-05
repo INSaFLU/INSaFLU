@@ -37,6 +37,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),
     url(r'^phylogeny/', include('phylogeny.urls')),
+    url(r'^settings/', include('settings.urls')),
 ]
 
 if settings.DEBUG is True:

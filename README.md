@@ -5,14 +5,14 @@
 
 
 # INSaFLU
-INSaFLU (“INSide the FLU”) is an influenza-oriented bioinformatics free web-based platform for an effective and timely whole-genome-sequencing-based influenza laboratory surveillance.
+INSaFLU (“INSide the FLU”) is an influenza-oriented bioinformatics free web-based platform for an effective and timely whole-genome-sequencing-based laboratory surveillance.
 
 INSaFLU is freely available at [https://insaflu.insa.pt](https://insaflu.insa.pt)
 Documentation (latest) for each INSaFLU module is provided at [http://insaflu.readthedocs.io/](http://insaflu.readthedocs.io/)
 
 ## Synopsis
 
-INSaFLU (“INSide the FLU”) is a bioinformatics free web-based suite that deals with primary NGS data (reads) towards the automatic generation of the output data that are actually the core first-line “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees).
+INSaFLU (“INSide the FLU”) is a bioinformatics free web-based suite that deals with primary NGS data (reads) towards the automatic generation of the output data that are actually the core first-line “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). This platform is influenza-oriented, but can be applicable to amplicon-derived NGS data of other pathogens, such as the novel coronavirus SARS-CoV-2.
 
 ## Main features
 
@@ -37,6 +37,9 @@ INSaFLU also automatically provides:
 * a rapid snapshot of whole-genome backbone of each virus (draft assembled contigs are assigned to each viral segment and to close related reference influenza viruses). 
 * coverage statistics
 * detection of putative mixed infections
+
+NOTE: As of March 2020, INSaFLU also performs rapid classification and contigs assignment of five Human Betacoronavirus - BetaCoV, including the novel coronavirus SARS-CoV-2. The publicly available SARS-CoV-2 reference genome sequence (MN908947) is available for Mapping in the default INSaFLU reference database.
+
 
 ## How to cite
 

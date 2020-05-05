@@ -1,0 +1,39 @@
+{% extends '_layouts/base.html' %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+	{% load static %}
+		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/project-add.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Settings" "settings" %}
+	{% breadcrumb "Update parameters" "software-update" %}
+{% endblock %}
+
+<!-- set the messages -->
+{% block messages %}  
+	<div id="id_messages_remove"></div>
+{% endblock messages %}
+
+{% block content %}
+	
+	{% if error_cant_see %}
+		<div id="id_messages_remove"></div>
+		<div class="alert alert-danger ">Your credentials don't allow you to access this page.</div>
+	{% else %}
+		{% crispy form %} 
+	{% endif %}
+
+{% endblock content%}
+
+
+{% block js %}
+{% endblock %}
+
+
+

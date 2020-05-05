@@ -42,18 +42,18 @@ class testsDefaultSoftwares(TestCase):
 		self.assertTrue(9, len(parameters))
 		
 		### test set default
-		self.assertEqual("5", parameters[0].parameter)
-		parameter = parameters[0]
+		self.assertEqual("5", parameters[2].parameter)
+		parameter = parameters[2]
 		parameter.parameter = "42334"
 		parameter.save()
 		
 		parameters = Parameter.objects.filter(software=software)
-		self.assertEqual("42334", parameters[0].parameter)
+		self.assertEqual("42334", parameters[2].parameter)
 		
 		default_software.set_default_software(software, user)
 		parameters = Parameter.objects.filter(software=software)
-		self.assertEqual("5", parameters[0].parameter)
-		self.assertNotEqual("42334", parameters[0].parameter)
+		self.assertEqual("5", parameters[2].parameter)
+		self.assertNotEqual("42334", parameters[2].parameter)
 		
 
 

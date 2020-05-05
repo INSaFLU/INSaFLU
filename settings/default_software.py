@@ -120,6 +120,37 @@ class DefaultSoftware(object):
 		software.owner = user
 		
 		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "HEADCROP"
+		parameter.parameter = "0"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "CROP"
+		parameter.parameter = "0"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 2
+		parameter.range_available = "[0:400]"
+		parameter.range_max = "400"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "CROP:<length> Cut the read to a specified length."
+		vect_parameters.append(parameter)
+		
 		parameter = Parameter()
 		parameter.name = "SLIDINGWINDOW"
 		parameter.parameter = "5"
@@ -127,13 +158,12 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ":"
 		parameter.can_change = True
-		parameter.sequence_out = 1
+		parameter.sequence_out = 3
 		parameter.range_available = "[3:50]"
 		parameter.range_max = "50"
 		parameter.range_min = "3"
 		parameter.description = "SLIDINGWINDOW:<windowSize> specifies the number of bases to average across"
 		vect_parameters.append(parameter)
-		
 		
 		parameter = Parameter()
 		parameter.name = "SLIDINGWINDOW"
@@ -142,7 +172,7 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ":"
 		parameter.can_change = True
-		parameter.sequence_out = 2
+		parameter.sequence_out = 4
 		parameter.range_available = "[10:100]"
 		parameter.range_max = "100"
 		parameter.range_min = "10"
@@ -156,7 +186,7 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ":"
 		parameter.can_change = True
-		parameter.sequence_out = 3
+		parameter.sequence_out = 5
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"
 		parameter.range_min = "0"
@@ -171,7 +201,7 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ":"
 		parameter.can_change = True
-		parameter.sequence_out = 4
+		parameter.sequence_out = 6
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"
 		parameter.range_min = "0"
@@ -186,41 +216,11 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ":"
 		parameter.can_change = True
-		parameter.sequence_out = 5
+		parameter.sequence_out = 7
 		parameter.range_available = "[5:500]"
 		parameter.range_max = "500"
 		parameter.range_min = "5"
 		parameter.description = "SMINLEN:<length> This module removes reads that fall below the specified minimal length."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "CROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 6
-		parameter.range_available = "[0:400]"
-		parameter.range_max = "400"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "CROP:<length> Cut the read to a specified length."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "HEADCROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 7
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
 		vect_parameters.append(parameter)
 		
 		parameter = Parameter()
@@ -237,7 +237,6 @@ class DefaultSoftware(object):
 		parameter.not_set_value = "0"
 		parameter.description = "AVGQUAL:<length> Drop the read if the average quality is below the specified level."
 		vect_parameters.append(parameter)
-		
 		
 		parameter = Parameter()
 		parameter.name = "TOPHRED33"

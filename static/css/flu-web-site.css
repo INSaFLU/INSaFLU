@@ -36,6 +36,16 @@
 	font-weight: 700;
 }
 
+.padding-button-table{
+	padding-right:10px;
+}
+
+.header-software-settings {
+	padding-top:12px;
+	padding-bottom:12px;
+	text-align: center;
+	font-size: 1.7rem;
+}
 
 .bg-insa-fixed-top{
    background-color: #F6F6FF !important;

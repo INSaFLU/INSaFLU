@@ -52,7 +52,7 @@ class Profile(models.Model):
 		job_name = "job_name_<user_id>_<seq_id>"
 		return, (current name, next name)
 		"""
-		progression_number = self.add_sge_seq_id()
+		progression_number = self.add_sge_seq_id(key_)
 		return ("job_{}_{}_{}".format(key_, self.user.pk, progression_number - 1), "job_{}_{}_{}".format(key_, self.user.pk, progression_number))
 
 

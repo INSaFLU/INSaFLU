@@ -76,6 +76,12 @@
             <span class="nav-link-text active">Extra Alignment/Phylogeny</span>
           </a>
         </li>  -->
+        <li class="nav-item {% if nav_settings %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Settings">
+          <a class="nav-link" href="{% url 'settings' %}">
+            <i class="fa fa-fw fa-magic"></i>
+            <span class="nav-link-text active">Settings</span>
+          </a>
+        </li>
       </ul>
       <ul class="navbar-nav sidenav-toggler">
         <li class="nav-item">

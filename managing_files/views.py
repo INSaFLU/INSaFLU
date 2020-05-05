@@ -932,7 +932,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			metaKeyAndValue = MetaKeyAndValue()
 			alert_out = []
 			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_details_view():
-				meta_data = manageDatabase.get_sample_metakey(sample, key, MetaKeyAndValue.META_VALUE_Success)
+				meta_data = manageDatabase.get_sample_metakey_last(sample, key, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data != None): alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
 			context['has_type_subtype'] = sample.identify_virus.all().count() > 0
@@ -1280,7 +1280,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					
 					### create a task to perform the analysis of fastq and trimmomatic
 					try:
-						if len(job_name_wait) == 0: (job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+						if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
 						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
 							
 						### set project sample queue ID
@@ -1294,7 +1294,6 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			if (project_sample_add > 0):
 				try:
 					taskID = process_SGE.set_collect_global_files(project, self.request.user)
-				
 					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 				except:

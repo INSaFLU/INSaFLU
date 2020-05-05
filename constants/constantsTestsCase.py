@@ -68,6 +68,8 @@ class ConstantsTestsCase(object):
 	MANAGING_FILES_PV_Sabin1_V01150_spades_out_fasta = "PV1_KX162693_spades_out.fasta"
 	MANAGING_FILES_PV_Sabin1_V01150_bed = "PV1_KX162693.bed"
 	
+	MANAGING_FILES_TEMPLATE_MULTIPLE_FILES_data_csv = "test_multiple_files.csv"
+
 	
 	### consensus files
 	FILES_EVA001_S66_consensus = "EVA001_S66.consensus.fasta"

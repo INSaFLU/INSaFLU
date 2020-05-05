@@ -214,6 +214,14 @@ class ResultAverageAndNumberReads(object):
 		return other != None and other.number_file_1 == self.number_file_1 and other.average_file_1 == self.average_file_1 and\
 			other.number_file_2 == self.number_file_2 and other.average_file_2 == self.average_file_2
 
+	def has_reads(self):
+		"""
+		Test if has reads
+		"""
+		if ((self.number_file_1 == 0 and self.average_file_1 == 0) and
+			((self.number_file_2 == 0 and self.average_file_2 == 0) or 
+			(self.number_file_2 is None and self.average_file_2 is None))): return False
+		return True
 
 class CoverageElement(object):
 	"""

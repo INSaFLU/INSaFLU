@@ -161,7 +161,7 @@ class SampleTable(tables.Table):
 		"""
 		get type and sub type
 		"""
-		return _('Not yet') if record.type_subtype == None else record.type_subtype
+		return _('Not yet') if record.type_subtype is None else record.type_subtype
 	
 	def render_data_set(self, record):
 		"""

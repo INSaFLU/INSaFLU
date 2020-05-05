@@ -16,7 +16,7 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
-from django.db import transaction
+from settings.default_software import DefaultSoftware
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
 from BCBio import GFF
@@ -216,6 +216,18 @@ class Software(object):
 		raise Exception
 		"""
 		temp_file =  self.utils.get_temp_file("lines_and_average_", ".txt")
+		cmd = "gzip -cd " + file_name + " | wc -l > " + temp_file
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run get_lines_and_average_reads")
+		
+		###
+		vect_out = self.utils.read_text_file(temp_file)
+		if (len(vect_out) == 0): return (0, 0)
+		if (int(vect_out[0]) == 0): return (0, 0)
+		
 		cmd = "gzip -cd " + file_name + " | awk '{ s++; if ((s % 4) == 0) { count ++; size += length($0); }  } END { print \"sequences: \", count,  \"average: \", size/count }' > " + temp_file
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
@@ -497,7 +509,7 @@ class Software(object):
 			raise Exception("Fail to run fasttree")
 		return out_file
 	
-	def run_trimmomatic(self, file_name_1, file_name_2, sample_name):
+	def run_trimmomatic(self, file_name_1, file_name_2, sample_name, user = None):
 		"""
 		run trimmomatic
 		return output directory
@@ -509,10 +521,18 @@ class Software(object):
 		SE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] <inputFile> <outputFile> <trimmer1>
 		"""
 
+		## get dynamic parameters
+		if (user is None):
+			parameters = self.software_names.get_trimmomatic_parameters()
+		else:
+			default_software = DefaultSoftware()
+			parameters = default_software.get_parameters(self.software_names.get_trimmomatic_name(), user)
+
+		### run software
 		temp_dir = self.utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, file_name_1, 
-					os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
+					os.path.join(temp_dir, sample_name), parameters)
 		else:
 			### need to make links the files to trimmomatic identify the _R1_ and _R2_ 
 			new_file_name = os.path.join(temp_dir, 'name_R1_001.fastq.gz')
@@ -521,13 +541,13 @@ class Software(object):
 			cmd = "ln -s {} {}".format(file_name_2, os.path.join(temp_dir, 'name_R2_001.fastq.gz'))
 			os.system(cmd)
 			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, 
-										new_file_name, os.path.join(temp_dir, sample_name), self.software_names.get_trimmomatic_parameters())
+										new_file_name, os.path.join(temp_dir, sample_name), parameters)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run trimmomatic")
-		return temp_dir
+		return (temp_dir, parameters)
 
 	def run_snippy(self, file_name_1, file_name_2, path_reference, sample_name):
 		"""
@@ -911,7 +931,7 @@ class Software(object):
 			(is_downsized, file_name_1, file_name_2) = self.make_downsize(sample.get_fastq(TypePath.MEDIA_ROOT, True),\
 						sample.get_fastq(TypePath.MEDIA_ROOT, False), settings.MAX_FASTQ_FILE_UPLOAD)
 			if (is_downsized):
-				if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100): 
+				if (os.path.exists(file_name_1) and os.path.getsize(file_name_1) > 100):
 					self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
 				if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
 					self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
@@ -941,8 +961,8 @@ class Software(object):
 		
 		### run trimmomatic
 		try:
-			temp_dir = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name)
-			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), self.software_names.get_trimmomatic_parameters()))
+			(temp_dir, parameters) = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name, owner)
+			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), parameters))
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
@@ -988,8 +1008,7 @@ class Software(object):
 		meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
 		if (meta_sample != None):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
-			
-		return True
+		return result_average.has_reads()
 
 	"""
 	Global processing, fastQ, trimmomatic and GetSpecies
@@ -1045,6 +1064,16 @@ class Software(object):
 					mixed_infections_tag.save()
 				
 				sample_to_update.mixed_infections_tag = mixed_infections_tag
+				sample_to_update.save()
+			else:
+				sample_to_update = Sample.objects.get(pk=sample.id)
+				manage_database = ManageDatabase()
+				manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
+										MetaKeyAndValue.META_VALUE_Success, "Warning: no reads left after filtering.")
+				
+				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
+				else: sample_to_update.number_alerts += 1
+				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 				sample_to_update.save()
 				
 		except:

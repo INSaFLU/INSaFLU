@@ -270,7 +270,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		out_put_path_trimmomatic = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path_trimmomatic, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
 		out_file_1 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		out_file_2 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
@@ -308,7 +308,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 		
-		out_put_path = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
 		self.assertTrue(sample.get_fastq(TypePath.MEDIA_ROOT, False) == None)
 		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		self.assertTrue(os.path.exists(out_file_1))

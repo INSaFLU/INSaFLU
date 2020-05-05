@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ### running tests in command line
-RUN_TEST_IN_COMMAND_LINE = True	## used in abricate
+RUN_TEST_IN_COMMAND_LINE = True
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -45,6 +45,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
 ### threads to use in several software
+THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## don't increase this because of the heap memory
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
@@ -60,6 +61,9 @@ ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
 
 ## to show login anonymous
 SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
+
+### Files sizes   https://pypi.org/project/humanfriendly/
+MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
 ## make the down size of the fastq files to 50MB
 ## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
@@ -201,8 +205,6 @@ USE_L10N = False
 
 USE_TZ = False	## enable time zone
 
-
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
@@ -223,6 +225,8 @@ MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
 MEDIA_ROOT = os.path.join(BASE_DIR, '/tmp/tests_insa_flu')
 MEDIA_URL = '/media/'
 
+### software directory
+DIR_SOFTWARE = config('DIR_SOFTWARE', default="/usr/local/software/insaflu")
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

@@ -97,7 +97,9 @@ class DefaultSoftware(object):
 	def get_parameters(self, software_name, user):
 		"""
 		"""
-		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): return self.get_trimmomatic_parameters(user)
+		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
+			self.test_default_trimmomatic_db(user) 
+			return self.get_trimmomatic_parameters(user)
 		return ""
 
 

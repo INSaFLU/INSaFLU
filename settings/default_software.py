@@ -224,21 +224,23 @@ class DefaultSoftware(object):
 		parameter.range_min = "5"
 		parameter.description = "SMINLEN:<length> This module removes reads that fall below the specified minimal length."
 		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "AVGQUAL"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 8
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "AVGQUAL:<length> Drop the read if the average quality is below the specified level."
-		vect_parameters.append(parameter)
+
+##		Only available in 0.30 version		
+#
+# 		parameter = Parameter()
+# 		parameter.name = "AVGQUAL"
+# 		parameter.parameter = "0"
+# 		parameter.type_data = Parameter.PARAMETER_int
+# 		parameter.software = software
+# 		parameter.union_char = ":"
+# 		parameter.can_change = True
+# 		parameter.sequence_out = 8
+# 		parameter.range_available = "[0:100]"
+# 		parameter.range_max = "100"
+# 		parameter.range_min = "0"
+# 		parameter.not_set_value = "0"
+# 		parameter.description = "AVGQUAL:<quality> Drop the read if the average quality is below the specified level."
+# 		vect_parameters.append(parameter)
 		
 		parameter = Parameter()
 		parameter.name = "TOPHRED33"
@@ -247,7 +249,7 @@ class DefaultSoftware(object):
 		parameter.software = software
 		parameter.union_char = ""
 		parameter.can_change = False
-		parameter.sequence_out = 9
+		parameter.sequence_out = 8
 		parameter.description = "This (re)encodes the quality part of the FASTQ file to base 33."
 		vect_parameters.append(parameter)
 		return vect_parameters

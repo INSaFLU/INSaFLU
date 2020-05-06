@@ -6,8 +6,9 @@ Created on 04/05/2020
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, Fieldset
 from django.urls import reverse
-from settings.models import Software, Parameter
 from django import forms
+from settings.models import Software, Parameter
+from django.utils.html import escape
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class SoftwareForm(forms.ModelForm):
@@ -32,22 +33,24 @@ class SoftwareForm(forms.ModelForm):
 			if (parameter.is_integer()):
 				dt_fields[parameter.get_unique_id()] = forms.IntegerField(max_value=int(parameter.range_max),\
 							min_value=int(parameter.range_min), required = True)
-				dt_fields[parameter.get_unique_id()].help_text = parameter.description + " Range: {}.".format(parameter.range_available)
+				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
 				if (not parameter.not_set_value is None):
-					dt_fields[parameter.get_unique_id()].help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
 
 			elif (parameter.is_float()):
 				dt_fields[parameter.get_unique_id()] = forms.FloatField(max_value=int(parameter.range_max),\
 							min_value=int(parameter.range_min), required = True)
-				dt_fields[parameter.get_unique_id()].help_text = parameter.description + " Range: {}.".format(parameter.range_available)
+				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
 				if (not parameter.not_set_value is None):
-					dt_fields[parameter.get_unique_id()].help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
-
+					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
 			else:
 				dt_fields[parameter.get_unique_id()] = forms.CharField(required = True)
-				dt_fields[parameter.get_unique_id()].help_text = parameter.description + " Range: {}.".format(parameter.range_available)
+				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
 				if (not parameter.not_set_value is None):
-					dt_fields[parameter.get_unique_id()].help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
 			dt_fields[parameter.get_unique_id()].label = parameter.name
 			dt_fields[parameter.get_unique_id()].initial = parameter.parameter

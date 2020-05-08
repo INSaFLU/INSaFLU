@@ -772,8 +772,23 @@ class Test(unittest.TestCase):
 		self.assertEqual(2, utils.get_number_sequeces_in_gff_file(gff_file))
 
 
-
-
+	def test_remove(self):
+		
+		utils = Utils()
+		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
+		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		self.assertTrue(os.path.exists(main_path))
+		utils.remove_dir(main_path)
+		self.assertTrue(os.path.exists(main_path))
+		utils.remove_dir(main_path + "/")
+		self.assertTrue(os.path.exists(main_path))
+		
+		main_path_2 = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY, "xpto")
+		if (not os.path.exists(main_path_2)): os.makedirs(main_path_2)
+		self.assertTrue(os.path.exists(main_path_2))
+		utils.remove_dir(main_path_2)
+		self.assertFalse(os.path.exists(main_path_2))
+		self.assertTrue(os.path.exists(main_path))
 
 		
 

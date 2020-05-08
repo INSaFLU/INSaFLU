@@ -155,8 +155,11 @@ class Utils(object):
 		return False
 
 	def remove_dir(self, path_name):
-		if (path_name != None and os.path.isdir(path_name)):
-			cmd = "rm -r %s*" % (path_name); os.system(cmd)
+		if (not path_name is None and os.path.isdir(path_name)):
+			main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
+			if path_name == main_path or path_name == (main_path + "/"): cmd = "rm -r {}/*".format(path_name)
+			else: cmd = "rm -r {}*".format(path_name)
+			os.system(cmd)
 
 	def move_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):
@@ -430,7 +433,7 @@ class Utils(object):
 				if (features.type == 'source'):
 					length = abs(features.location.end - features.location.start)
 				elif (features.type == 'CDS'):
-					for key_name in 'CDS':
+					for key_name in ['CDS', 'gene']:
 						if (key_name in features.qualifiers):
 							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
 								int(features.location.start), int(features.location.end), features.location.strand))

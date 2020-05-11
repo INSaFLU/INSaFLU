@@ -1021,7 +1021,7 @@ class Software(object):
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_RUNNING)
 		
 		### it can be deleted
-		if (sample.is_deleted):
+		if (sample.is_deleted or not sample.is_valid_1):
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
 			return True
 

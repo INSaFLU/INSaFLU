@@ -259,7 +259,8 @@ class Utils(object):
 			count = 0
 			for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
 				vect_length.append(len(str(record.seq)))
-				if (count > 100): break
+				count += 1
+				if (count > 200): break
 			handle.close()
 #			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:

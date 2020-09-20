@@ -5,10 +5,14 @@ from settings.default_software import DefaultSoftware
 from settings.tables import SoftwaresTable
 from settings.forms import SoftwareForm
 from utils.utils import ShowInfoMainPage
+from managing_files.models import Project, ProjectSample
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.db import transaction
-
+from extend_user.models import Profile
+from constants.meta_key_and_values import MetaKeyAndValue
+from managing_files.manage_database import ManageDatabase
+from utils.process_SGE import ProcessSGE
 
 # Create your views here.
 class SettingsView(LoginRequiredMixin, ListView):
@@ -26,7 +30,7 @@ class SettingsView(LoginRequiredMixin, ListView):
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(self.request.user) ## the user can have defaults yet
 		
-		query_set = Software.objects.filter(owner=self.request.user)
+		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global)
 		table = SoftwaresTable(query_set)
 		context['nav_settings'] = True
 		context['table'] = table	
@@ -56,7 +60,7 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
 		
 		context['error_cant_see'] = self.request.user != context['software'].owner
 		context['nav_settings'] = True
-		context['nav_modal'] = True	## short the size of modal window
+		context['nav_modal'] = True			## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
 		return context
 	
@@ -82,5 +86,173 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
 
 	## static method, not need for now.
 	form_valid_message = ""		## need to have this
+
+class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
+
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersProjView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_project'] = self.kwargs.get('pk_proj')
+		return kw
+	
+	def get_success_url(self):
+		"""
+		get source_pk from update project, need to pass it in context
+		"""
+		project_pk = self.kwargs.get('pk_proj')
+		return reverse_lazy('project-settings', kwargs={'pk': project_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersProjView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['pk_project'] = self.kwargs.get('pk_proj')
+		context['nav_project'] = True
+		context['project_settings'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
+		## save it...
+		with transaction.atomic():
+			software = form.save(commit=False)
+		
+			project_id = self.kwargs.get('pk_proj')
+			project = None
+			if (not project_id is None):
+				try:
+					project = Project.objects.get(pk=project_id)
+				except Project.DoesNotExist:
+					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					return super(UpdateParametersProjView, self).form_valid(form)
+				
+			paramers = Parameter.objects.filter(software=software, project=project)
+			for parameter in paramers:
+				if (not parameter.can_change): continue
+				if (parameter.get_unique_id() in form.cleaned_data):
+					parameter.parameter = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					parameter.save()
+			
+		messages.success(self.request, "Software '" + software.name + "' parameters was updated successfully for project '" + project.name + "'.", fail_silently=True)
+		return super(UpdateParametersProjView, self).form_valid(form)
+
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+	
+	
+class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
+
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersProjSampleView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_project_sample'] = self.kwargs.get('pk_proj_sample')
+		return kw
+	
+	def get_success_url(self):
+		"""
+		get source_pk from update project, need to pass it in context
+		"""
+		project_sample_pk = self.kwargs.get('pk_proj_sample')
+		return reverse_lazy('sample-project-settings', kwargs={'pk': project_sample_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersProjSampleView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['nav_project'] = True
+		context['pk_proj_sample'] = self.kwargs.get('pk_proj_sample')
+		context['sample_project_settings'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
+
+		## save it...
+		with transaction.atomic():
+			software = form.save(commit=False)
+			
+			project_sample_id = self.kwargs.get('pk_proj_sample')
+			project_sample = None
+			if (not project_sample_id is None):
+				try:
+					project_sample = ProjectSample.objects.get(pk=project_sample_id)
+				except ProjectSample.DoesNotExist:
+					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					return super(UpdateParametersProjSampleView, self).form_valid(form)
+				
+			paramers = Parameter.objects.filter(software=software, project_sample=project_sample)
+			b_change_value = False
+			for parameter in paramers:
+				if (not parameter.can_change): continue
+				if (parameter.get_unique_id() in form.cleaned_data):
+					value_to_change = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (parameter.parameter != value_to_change):
+						b_change_value = True
+					parameter.parameter = value_to_change
+					parameter.save()
+
+		### re-run this sample
+		if (b_change_value):
+			### re-run data
+			metaKeyAndValue = MetaKeyAndValue()
+			manageDatabase = ManageDatabase()
+			process_SGE = ProcessSGE()
+			
+			### change flag to nor finished
+			project_sample.is_finished = False
+			project_sample.save()
+			
+			### get the user
+			user = project_sample.project.owner
+			
+			### create a task to perform the analysis of snippy and freebayes
+			try:
+				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+				taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
+					
+				### set project sample queue ID
+				manageDatabase.set_project_sample_metakey(project_sample, user,\
+								metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+								MetaKeyAndValue.META_VALUE_Queue, taskID)
+				
+				### need to collect global files again
+				taskID = process_SGE.set_collect_global_files(project_sample.project, user)
+				manageDatabase.set_project_metakey(project_sample.project, user, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+			except:
+				pass
+
+		messages.success(self.request, "Software '" + software.name + "' parameters was updated successfully " +\
+						"for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
+		return super(UpdateParametersProjSampleView, self).form_valid(form)
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+
 
 

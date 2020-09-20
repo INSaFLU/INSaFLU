@@ -1,22 +1,37 @@
 from django.db import models
 from django.contrib.auth.models import User
+from managing_files.models import Project, ProjectSample
 # Create your models here.
-
 
 class Software(models.Model):
 	"""
 	Each user has it software parameters 
 	"""
+	TYPE_OF_USE_global = 0		### Used in the samples
+	TYPE_OF_USE_project = 1		### Used in a particular project
+	TYPE_OF_USE_project_sample = 2		### Used in a particular project sample
+	
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	version = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
+	
+	class Meta:
+		ordering = ['name', ]
 
 	def __str__(self):
 		return self.name
 
-	class Meta:
-		ordering = ['name', ]
-		
+
+	def is_used_in_global(self):
+		return self.type_of_use == Software.TYPE_OF_USE_global
+
+	def is_used_in_project(self):
+		return self.type_of_use == Software.TYPE_OF_USE_project
+
+	def is_used_in_project_sample(self):
+		return self.type_of_use == Software.TYPE_OF_USE_project_sample
+
 
 class Parameter(models.Model):
 	"""
@@ -34,6 +49,11 @@ class Parameter(models.Model):
 	parameter = models.CharField(max_length=50, db_index=True, blank=True, null=True)
 	type_data = models.SmallIntegerField()
 	software = models.ForeignKey(Software, related_name='parameter', on_delete=models.PROTECT)
+	
+	### this allow to have software parameters in projects
+	project = models.ForeignKey(Project, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
+	### this allow to have software parameters in project sample
+	project_sample = models.ForeignKey(ProjectSample, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
 	union_char = models.CharField(max_length=10, default="")	### ":" in the case LEADING:3
 	can_change = models.BooleanField(default=True)	### TOPHRED33 can change, and it is not to show in change dialog
 	sequence_out = models.SmallIntegerField()

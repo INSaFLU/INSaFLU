@@ -169,7 +169,7 @@ class CollectExtraData(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			
-			meta_data = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success)
+			meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_data == None): continue
 			decodeCoverage = DecodeObjects()
 			count_hits = decodeCoverage.decode_result(meta_data.description)

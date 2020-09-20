@@ -15,7 +15,6 @@ from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath, FileExtensions, TypeFile, FileType
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.software import Software
 from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
 from utils.result import DecodeObjects
@@ -34,6 +33,8 @@ from itertools import chain
 from extend_user.models import Profile
 from django.http import HttpResponseRedirect
 from utils.utils import ShowInfoMainPage
+from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.tables import SoftwaresTable
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -104,6 +105,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 	
 	@transaction.atomic
 	def form_valid(self, form):
+		from utils.software import Software
 		
 		### test anonymous account
 		try:
@@ -1278,7 +1280,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					project_sample.save()
 					project_sample_add += 1
 					
-					### create a task to perform the analysis of fastq and trimmomatic
+					### create a task to perform the analysis of snippy and freebayes
 					try:
 						if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
 						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
@@ -1297,7 +1299,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 				except:
-						pass
+					pass
 			
 			if (project_sample_add == 0):
 				messages.warning(self.request, _("No sample was added to the project '{}'".format(project.name)))
@@ -1381,6 +1383,83 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements[0], project.reference, self.request.user)
 		return context
 
+
+class ProjectsSettingsView(LoginRequiredMixin, ListView):
+	"""
+	can change settings in the projects
+	"""
+	model = Project
+	template_name = 'settings/settings.html'
+	context_object_name = 'project'
+	
+	def get_context_data(self, **kwargs):
+		from settings.models import Software
+		
+		context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
+		project = Project.objects.get(pk=self.kwargs['pk'])
+		
+		### can't see this project
+		context['nav_project'] = True
+		if (project.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
+		
+		### test all defaults first, if exist in database
+		default_software = DefaultProjectSoftware()
+		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project, project, None) ## the user can have defaults yet
+		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
+				parameter__project=project, parameter__project_sample=None).distinct()
+		
+		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
+		if (count_project_sample > 0):
+			context['message_not_change_settings'] = mark_safe("You can not change settings because there {} '{}' sample{} associated to this project.<br>".format(
+					'is' if count_project_sample == 1 else 'are', count_project_sample, 's' if count_project_sample > 1 else '') +\
+								"You can only change settings on a specific sample inside of this project.")
+		context['count_project_sample'] = count_project_sample
+		
+		table = SoftwaresTable(query_set, project, None, count_project_sample == 0)
+		context['nav_project'] = True
+		context['table'] = table
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['project'] = project
+		context['project_settings'] = True
+		return context
+
+class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
+	"""
+	can change settings in the projects
+	"""
+	model = ProjectSample
+	template_name = 'settings/settings.html'
+	context_object_name = 'project_sample'
+	
+	def get_context_data(self, **kwargs):
+		from settings.models import Software
+		
+		context = super(SampleProjectsSettingsView, self).get_context_data(**kwargs)
+		project_sample = ProjectSample.objects.get(pk=self.kwargs['pk'])
+		
+		### can't see this project
+		context['nav_project'] = True
+		if (project_sample.project.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
+		
+		### test all defaults first, if exist in database
+		default_software = DefaultProjectSoftware()
+		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project_sample, None, project_sample) ## the user can have defaults yet
+		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
+				parameter__project=None, parameter__project_sample=project_sample).distinct()
+		
+		table = SoftwaresTable(query_set, None, project_sample)
+		context['nav_project'] = True
+		context['table'] = table
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['project_sample'] = project_sample
+		context['sample_project_settings'] = True
+		return context
+	
+
 class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 	"""
 	"""
@@ -1412,7 +1491,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			vect_elements = self.utils.get_elements_from_db(project_sample.project.reference, project_sample.project.owner)
 			for element_temp in vect_elements:
 				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element_temp)
-				meta_data = manageDatabase.get_project_sample_metakey(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
+				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data != None):
 					alert_out.append(meta_data.description)
 				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element_temp)
@@ -1422,7 +1501,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			
 			### get different types of alerts
 			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_projects_details_view():
-				meta_data = manageDatabase.get_project_sample_metakey(project_sample, key, MetaKeyAndValue.META_VALUE_Success)
+				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, key, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_data != None): alert_out.append(meta_data.description)
 			context['alerts'] = alert_out
 			
@@ -1434,9 +1513,22 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
 			
 			context['consensus_file'] = project_sample.get_consensus_file_web()
-			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB ,SoftwareNames.SOFTWARE_SNIPPY_name)
+			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 			
+			#### software versions...
+			context['snippy_software'] = "Fail"
+			context['snippy_software_name'] = SoftwareNames.SOFTWARE_SNIPPY_name
+			context['freebayes_software'] = "Fail"
+			context['freebayes_software_name'] = SoftwareNames.SOFTWARE_FREEBAYES_name
+			list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
+			if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Snippy_Freebayes == list_meta[0].meta_tag.name):
+				decode_result = DecodeObjects()
+				result = decode_result.decode_result(list_meta[0].description)
+				if (not result is None):
+					context['snippy_software'] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
+					context['freebayes_software'] = result.get_software(SoftwareNames.SOFTWARE_FREEBAYES_name)
+		
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context

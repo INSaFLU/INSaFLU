@@ -30,6 +30,8 @@ from managing_files.models import CountVariations, MixedInfections
 from utils.mixed_infections_management import MixedInfectionsManagement
 from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import Tags, SeqVirus, IdentifyVirus
+from settings.default_software import DefaultSoftware
+from settings.models import Software as Software2, Parameter
 
 class Test(TestCase):
 
@@ -48,13 +50,6 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 
-	
-	def test_parse_sample_files(self):
-		"""
-		Test input files
-		"""
-		pass
-		
 
 
 

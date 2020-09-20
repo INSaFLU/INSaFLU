@@ -17,9 +17,11 @@ urlpatterns = [
 	
 	url(r'project/projects$', views.ProjectsView.as_view(), name='projects'),
 	url(r'project/project_add$', views.ProjectCreateView.as_view(), name='project-add'),
+	url(r'project/(?P<pk>\d+)/show_project_settings$', views.ProjectsSettingsView.as_view(), name='project-settings'),
 	url(r'project_samples/(?P<pk>\d+)/add_sample_project$', views.AddSamplesProjectsView.as_view(), name='add-sample-project'),
 	url(r'project_samples/(?P<pk>\d+)/remove_sample_project$', views.SamplesDetailView.as_view(), name='remove-sample-project'),
 	url(r'project_samples/(?P<pk>\d+)/show_sample_project_results$', views.ShowSampleProjectsView.as_view(), name='show-sample-project-results'),
+	url(r'project_samples/(?P<pk>\d+)/show_project_sample_settings$', views.SampleProjectsSettingsView.as_view(), name='sample-project-settings'),
 	url(r'project_samples/(?P<pk>\d+)/show_sample_project_single_details$', views.ShowSampleProjectsDetailsView.as_view(), name='show-sample-project-single-detail'),
 
 	### ajax functions

@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import unittest
+import unittest, time
 from constants.constantsTestsCase import ConstantsTestsCase
 from django.test.utils import override_settings
 from utils.utils import Utils
@@ -789,6 +789,36 @@ class Test(unittest.TestCase):
 		utils.remove_dir(main_path_2)
 		self.assertFalse(os.path.exists(main_path_2))
 		self.assertTrue(os.path.exists(main_path))
-
 		
+		### test 
+		last_value = int(os.path.getmtime(main_path))
+		time.sleep(2)
+		utils.touch_file(main_path)
+		self.assertEqual(2, int(os.path.getmtime(main_path)) - last_value)
+		utils.remove_dir(main_path)
+		
+	def test_link_file(self):
+		
+		utils = Utils()
+		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY, "temp_link" )
+		utils.remove_dir(main_path)
+		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		self.assertTrue(os.path.exists(main_path))
+		file_1 = os.path.join(main_path, "temp2.txt")
+		file_2 = os.path.join(main_path, "temp3.txt")
+		
+		cmd = "touch {}".format(file_1)
+		os.system(cmd)
+		self.assertTrue(os.path.exists(file_1))
+		self.assertFalse(os.path.exists(file_2))
+		utils.link_file(file_1, file_2)
+		
+		last_value = int(os.path.getmtime(file_2))
+		time.sleep(2)
+		utils.touch_file(file_2)
+		self.assertEqual(2, int(os.path.getmtime(file_2)) - last_value)
+		self.assertTrue(os.path.exists(file_2))
+		utils.remove_dir(main_path)
+
+
 

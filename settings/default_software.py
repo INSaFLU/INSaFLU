@@ -13,28 +13,53 @@ class DefaultSoftware(object):
 	'''
 	software_names = SoftwareNames()
 	
+	def __init__(self):
+		""" change values """
+		self.change_values_software = {}	### the key is the name of the software
+
 	def test_all_defaults(self, user):
 		### test all defaults
 		self.test_default_trimmomatic_db(user)
-		
+		self.test_default_snippy_db(user)
+
 	def test_default_trimmomatic_db(self, user):
 		"""
 		test if exist, if not persist in database
 		"""
 		try:
-			Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user)
+			Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+						type_of_use = Software.TYPE_OF_USE_global)
 		except Software.DoesNotExist:
 			### create a default one for this user
 			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 				vect_parameters = self._get_trimmomatic_default(user)
 				self._persist_parameters(vect_parameters)
-				
+
+	def test_default_snippy_db(self, user):
+		"""
+		test if exist, if not persist in database
+		"""
+		try:
+			Software.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
+						type_of_use = Software.TYPE_OF_USE_global)
+		except Software.DoesNotExist:
+			### create a default one for this user
+			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+				vect_parameters = self._get_snippy_default(user)
+				self._persist_parameters(vect_parameters)
+
 	def get_trimmomatic_parameters(self, user):
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+	def get_snippy_parameters(self, user):
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name)
+	
+	def _get_parameters(self, user, software_name):
 		"""
 		get trimmomatic parameters
 		"""
 		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user)
+			software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use=Software.TYPE_OF_USE_global)
 		except Software.DoesNotExist:
 			return ""
 
@@ -67,16 +92,28 @@ class DefaultSoftware(object):
 		return return_parameter.strip()
 
 	def set_default_software(self, software, user):
-		vect_parameters = self._get_trimmomatic_default(user)
+		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name): vect_parameters = self._get_snippy_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): vect_parameters = self._get_trimmomatic_default(user)
+		else: return
+		
 		parameters = Parameter.objects.filter(software=software)
+		self.change_values_software[software.name] = False
 		for parameter in parameters:
 			if parameter.can_change:
 				for parameter_to_set_default in vect_parameters:
 					if (parameter_to_set_default.sequence_out == parameter.sequence_out):
+						###   if change software name
+						if (parameter.parameter != parameter_to_set_default.parameter):
+							self.change_values_software[software.name] = True
+							
 						parameter.parameter = parameter_to_set_default.parameter
 						parameter.save()
 						break
-		
+
+	def is_change_values_for_software(self, software):
+		""" Return if the software has a value changed"""
+		return self.change_values_software.get(software.name, False)
+
 	def _persist_parameters(self, vect_parameters):
 		"""
 		presist a specific software by default 
@@ -100,6 +137,9 @@ class DefaultSoftware(object):
 		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
 			self.test_default_trimmomatic_db(user) 
 			return self.get_trimmomatic_parameters(user)
+		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
+			self.test_default_snippy_db(user) 
+			return self.get_snippy_parameters(user)
 		return ""
 
 
@@ -109,7 +149,66 @@ class DefaultSoftware(object):
 		"""
 		vect_software = []
 		vect_software.append(self.software_names.get_trimmomatic_name())
+		vect_software.append(self.software_names.get_snippy_name())
 		return vect_software
+
+	def _get_snippy_default(self, user):
+		"""
+		–mapqual: minimum mapping quality to allow (–mapqual 20)
+		—mincov: minimum coverage of variant site (–mincov 10)
+		–minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+		software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "--mapqual"
+		parameter.parameter = "20"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[5:100]"
+		parameter.range_max = "50"
+		parameter.range_min = "10"
+		parameter.description = "MAPQUAL: is the minimum mapping quality to accept in variant calling (–mapqual 20)."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "--mincov"
+		parameter.parameter = "10"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 2
+		parameter.range_available = "[5:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "5"
+		parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "--minfrac"
+		parameter.parameter = "0.51"
+		parameter.type_data = Parameter.PARAMETER_float
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 3
+		parameter.range_available = "[0.1:0.8]"
+		parameter.range_max = "0.8"
+		parameter.range_min = "0.1"
+		parameter.description = "MINFRAC: minumum proportion for variant evidence (–minfrac 0.51)"
+		vect_parameters.append(parameter)
+		
+		return vect_parameters
 
 
 	def _get_trimmomatic_default(self, user):
@@ -119,6 +218,7 @@ class DefaultSoftware(object):
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
 		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
+		software.type_of_use = Software.TYPE_OF_USE_global
 		software.owner = user
 		
 		vect_parameters =  []

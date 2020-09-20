@@ -7,6 +7,7 @@ import os, gzip, logging, cmd, re, humanfriendly
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
+from settings.default_software_project_sample import DefaultProjectSoftware
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
@@ -276,7 +277,7 @@ class Software(object):
 			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 		
 		file_out = os.path.join(out_dir_spades, "contigs.fasta")
@@ -286,7 +287,7 @@ class Software(object):
 			result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 		
 		### test id abricate has the database
@@ -298,7 +299,7 @@ class Software(object):
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 
 		if (not self.is_exist_database_abricate(uploadFile.abricate_name)):
@@ -309,7 +310,7 @@ class Software(object):
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.software_names.get_abricate_version()))
 				result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+				self.utils.remove_dir(out_dir_spades)
 				return False
 		
 		## run abricate
@@ -324,7 +325,7 @@ class Software(object):
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 							self.software_names.get_abricate_parameters() + " for type/subtype identification"))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 		
 		if (not os.path.exists(out_file_abricate)):
@@ -333,7 +334,7 @@ class Software(object):
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 
 		parseOutFiles = ParseOutFiles()
@@ -368,7 +369,7 @@ class Software(object):
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
-			cmd = "rm -r %s*" % (out_dir_spades); os.system(cmd)
+			self.utils.remove_dir(out_dir_spades)
 			return False
 		
 		
@@ -549,7 +550,7 @@ class Software(object):
 			raise Exception("Fail to run trimmomatic")
 		return (temp_dir, parameters)
 
-	def run_snippy(self, file_name_1, file_name_2, path_reference, sample_name):
+	def run_snippy(self, file_name_1, file_name_2, path_reference, sample_name, snippy_parameters):
 		"""
 		run snippy
 		return output directory
@@ -584,16 +585,16 @@ class Software(object):
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
 				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
-				path_reference, self.software_names.get_snippy_parameters(), file_name_1)
+				path_reference, snippy_parameters, file_name_1)
 		else:
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
 				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
-				path_reference, self.software_names.get_snippy_parameters(), file_name_1, file_name_2)
+				path_reference, snippy_parameters, file_name_1, file_name_2)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+			self.utils.remove_dir(temp_dir)
 			raise Exception("Fail to run snippy")
 		return temp_dir
 
@@ -1120,15 +1121,18 @@ class Software(object):
 	
 			## process snippy
 			try:
+				### get snippy parameters
+				default_software = DefaultProjectSoftware()
+				snippy_parameters = default_software.get_snippy_parameters_all_possibilities(user, project_sample)
 				out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 						project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
-						project_sample.sample.name)
-				result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
+						project_sample.sample.name, snippy_parameters)
+				result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), snippy_parameters))
 			except Exception as e:
 				result = Result()
 				result.set_error(e.args[0])
-				result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), self.software_names.get_snippy_parameters()))
+				result.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), snippy_parameters))
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				
 				### get again and set error
@@ -1136,7 +1140,7 @@ class Software(object):
 				project_sample.is_error = True
 				project_sample.save()
 				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 				if (meta_sample != None):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
@@ -1164,6 +1168,8 @@ class Software(object):
 				##################################
 				### set the alerts in the coverage
 				project_sample = ProjectSample.objects.get(pk=project_sample.id)
+				project_sample.alert_second_level = 0
+				project_sample.alert_first_level = 0
 				for element in coverage.get_dict_data():
 					if (not coverage.is_100_more_9(element)):
 						project_sample.alert_second_level += 1
@@ -1189,7 +1195,7 @@ class Software(object):
 				project_sample.is_error = True
 				project_sample.save()
 				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 				if (meta_sample != None):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
@@ -1225,7 +1231,7 @@ class Software(object):
 					project_sample.is_error = True
 					project_sample.save()
 					
-					meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+					meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 					if (meta_sample != None):
 						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 					process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
@@ -1251,7 +1257,7 @@ class Software(object):
 					project_sample.is_error = True
 					project_sample.save()
 					
-					meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+					meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 					if (meta_sample != None):
 						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 					process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
@@ -1280,7 +1286,7 @@ class Software(object):
 				project_sample.is_error = True
 				project_sample.save()
 				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 				if (meta_sample != None):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
@@ -1304,7 +1310,7 @@ class Software(object):
 				project_sample.is_error = True
 				project_sample.save()
 				
-				meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
+				meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 				if (meta_sample != None):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)

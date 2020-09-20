@@ -40,6 +40,10 @@
 	padding-right:10px;
 }
 
+.disable_fa_icon{
+	color:grey;
+}
+
 .header-software-settings {
 	padding-top:12px;
 	padding-bottom:12px;
@@ -184,4 +188,5 @@ a.disabled {
    pointer-events: none;
    cursor: default;
 }
+
 

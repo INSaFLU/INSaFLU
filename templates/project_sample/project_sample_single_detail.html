@@ -113,11 +113,13 @@
 				<ul class="nav nav-tabs" role="tablist">
 					<li class="nav-item active"><a class="nav-link fa fa-download" href="#download_files" role="tab" data-toggle="tab" > Download files</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
+					<li class="nav-item"><a class="nav-link fa fa-gears" href="#software" role="tab" data-toggle="tab"> Software</a></li>
 				</ul>
 	
 				<div class="tab-content">
 					<div id="download_files" role="tabpanel" class="tab-pane fade active box-blue">
 						<p class="title-box">Files available to download</p>
+						<hr>
 						<!--   Download consensus for each element   -->	
 						<div class="row">
 							<div class="col-lg-4"><strong>Consensus:</strong> {{ consensus_file }}</div>
@@ -128,6 +130,7 @@
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
 			    		<p class="title-box">Alerts for sample: '{{ project_sample.sample.name }}'</p>
+			    		<hr>
 			    		{% if alerts  %}
 				    		{% for alert in alerts  %}
 				    			<div class="row">
@@ -138,6 +141,14 @@
 					  	{% else %}
 					  		<p class="software">There's no alerts.</p>
 						{% endif %}
+			  		</div>
+			  		<div id="software" role="tabpanel" class="tab-pane fade box-blue">
+			    		<p class="title-box">Parameters of the software used</p>
+			    		<hr>
+				  		<p class="software"><strong>{{snippy_software_name}}: </strong> {% if snippy_software %} {{ snippy_software }} {% endif %}</p>
+				  		<hr>
+				  		<p class="software"><strong>{{freebayes_software_name}}: </strong> {% if freebayes_software %} {{ freebayes_software }} {% endif %}</p>
+				  		<hr>
 			  		</div>
 				</div>
 			</div>

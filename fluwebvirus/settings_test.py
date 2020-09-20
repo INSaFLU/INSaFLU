@@ -195,7 +195,8 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Lisbon'
 
-DATE_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
+DATE_FORMAT_FOR_TABLE = '%d-%m-%Y'
+DATETIME_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
 DATETIME_FORMAT = '%d-%m-%Y %H:%M'
 DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look which kind of date is returned from forms to correct the format
 

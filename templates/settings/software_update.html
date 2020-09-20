@@ -11,8 +11,19 @@
 
 {% block breadcrumbs %}
 	{{ block.super }}
-	{% breadcrumb "Settings" "settings" %}
-	{% breadcrumb "Update parameters" "software-update" %}
+	{% if project_settings %}
+		{% breadcrumb "Projects" "projects" %}
+		{% breadcrumb "Project settings" "project-settings" pk_project %}
+		{% breadcrumb "Update parameters" "software-update" %}
+	{% elif sample_project_settings %}
+		{% breadcrumb "Projects" "projects" %}
+		{% breadcrumb "Show project results" "show-sample-project-results" pk_proj_sample %}
+		{% breadcrumb "Project sample settings" "sample-project-settings" %}
+		{% breadcrumb "Update parameters" "software-update" %}
+	{% else %}
+		{% breadcrumb "Settings" "settings" %}
+		{% breadcrumb "Update parameters" "software-update" %}
+	{% endif %}
 {% endblock %}
 
 <!-- set the messages -->

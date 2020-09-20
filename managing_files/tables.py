@@ -59,7 +59,7 @@ class ReferenceTable(tables.Table):
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 	def order_owner(self, queryset, is_descending):
 		queryset = queryset.annotate(owner_name = F('owner__username')).order_by(('-' if is_descending else '') + 'owner_name')
@@ -82,7 +82,7 @@ class ReferenceProjectTable(tables.Table):
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 	def render_select_ref(self, value, record):
 		return mark_safe('<input name="select_ref" id="{}_{}" type="checkbox" value="{}"/>'.format(Constants.CHECK_BOX, record.id, value))
@@ -109,7 +109,7 @@ class SampleToProjectsTable(tables.Table):
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 class SampleTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -155,7 +155,7 @@ class SampleTable(tables.Table):
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 	def render_type_and_subtype(self, record):
 		"""
@@ -230,7 +230,7 @@ class ProjectTable(tables.Table):
 	reference = tables.Column('Reference', empty_values=())
 	samples = tables.Column('#Samples (P/W/E)', orderable=False, empty_values=())
 	creation_date = tables.Column('Creation date', empty_values=())
-	results = tables.LinkColumn('Results', orderable=False, empty_values=())
+	results = tables.LinkColumn('Options', orderable=False, empty_values=())
 	
 	class Meta:
 		model = Project
@@ -244,7 +244,7 @@ class ProjectTable(tables.Table):
 		user = current_request.user
 		if (user.username == Constants.USER_ANONYMOUS): return record.name;
 		if (user.username == record.owner.username):
-			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
+			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"' +\
 					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
 		return record.name;
 	
@@ -264,11 +264,11 @@ class ProjectTable(tables.Table):
 		tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(n_processed, n_processing, n_error)
 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=' + reverse('add-sample-project', args=[record.pk]) +\
 #		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
-						'><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
+						' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>' + add_remove)
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 	
 	def render_results(self, record):
 		"""
@@ -276,10 +276,22 @@ class ProjectTable(tables.Table):
 		"""
 		## there's nothing to show
 		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
-		if (count > 0): return mark_safe('<a href=' + reverse('show-sample-project-results', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i></span> See results</a>')
 		count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
-		if (count_not_finished > 0): return _("{} processing".format(count_not_finished))
-		return "-"
+		
+		sz_project_sample = ""
+		if (count > 0):
+			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results">' +\
+				'<span ><i class="fa fa-info-circle padding-button-table"></i></span></a>'
+			## only can change settings when has projects finished
+			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+		elif (count_not_finished > 0): 
+			sz_project_sample = _("{} processing ".format(count_not_finished))
+		else:
+			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+		
+		return mark_safe(sz_project_sample)
 	
 
 class ShowProjectSamplesResults(tables.Table):
@@ -289,11 +301,10 @@ class ShowProjectSamplesResults(tables.Table):
 	sample_name = tables.Column('Sample name', empty_values=())
 	coverage = tables.Column('Coverage', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
-	results = tables.LinkColumn('Results', orderable=False, empty_values=())
 	type_and_subtype = tables.LinkColumn('Classification', empty_values=())
 	putative_mixed_infection = tables.LinkColumn('Putative Mixed-infection', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
-	results = tables.LinkColumn('Results', orderable=False, empty_values=())
+	results = tables.LinkColumn('Options', orderable=False, empty_values=())
 	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
 	
 	class Meta:
@@ -313,9 +324,10 @@ class ShowProjectSamplesResults(tables.Table):
 		if (user.username == record.project.owner.username):
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.sample.name + '" pk="' + str(record.pk) + '" +\
-					" ref_project="' + record.project.name + '" ><i class="fa fa-trash"></i></span> </a>' + record.sample.name)
+					" ref_project="' + record.project.name + '" data-toggle="tooltip" title="Remove sample">' +\
+					'<i class="fa fa-trash"></i></span> </a>' + record.sample.name)
 		return record.sample.name
-	
+
 	def render_coverage(self, record):
 		"""
 		return icons about coverage
@@ -329,7 +341,7 @@ class ShowProjectSamplesResults(tables.Table):
 			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
 					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key))
 		return mark_safe(return_html)
-		
+
 	def render_alerts(self, record):
 		"""
 		return number
@@ -364,7 +376,13 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		icon with link to extra info
 		"""
-		return mark_safe('<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + '><span ><i class="fa fa-info-circle"></i> More info</a>')
+		str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+				
+		str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
+				'<span ><i class="fa fa-info-circle"></i> More info</a>'
+	
+		return mark_safe(str_links)
 
 	def order_sample_name(self, queryset, is_descending):
 		queryset = queryset.annotate(sample_name = F('sample__name')).order_by(('-' if is_descending else '') + 'sample_name')
@@ -401,7 +419,7 @@ class AddSamplesFromCvsFileTable(tables.Table):
 		empty_text = "There are no (csv) or (tsv) files with samples to add..."
 	
 	def render_creation_date(self, value, record):
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 	def render_number_samples(self, value, record):
 		return record.number_files_to_process
@@ -443,7 +461,7 @@ class AddSamplesFromCvsFileTableMetadata(tables.Table):
 		empty_text = "There are no (csv) or (tsv) files with samples to add..."
 	
 	def render_creation_date(self, value, record):
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 	def render_number_samples(self, value, record):
 		return record.number_files_to_process
@@ -484,11 +502,11 @@ class AddSamplesFromFastqFileTable(tables.Table):
 		empty_text = "There's no 'fastq' files with to show..."
 	
 	def render_creation_date(self, value, record):
-		return record.creation_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 	
 	def render_attached_date(self, value, record):
 		if (record.attached_date == None): return '---'
-		return record.attached_date.strftime(settings.DATE_FORMAT_FOR_TABLE)
+		return record.attached_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 	
 	def render_sample_attached(self, value, record):
 		samples = record.samples.all()
@@ -530,7 +548,5 @@ class AddSamplesFromFastqFileTable(tables.Table):
 		queryset = queryset.annotate(sample_name = F('samples__name')).order_by(('-' if is_descending else '') + 'sample_name')
 		return (queryset, True)
 	
-
-
 
 	

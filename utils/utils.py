@@ -80,8 +80,9 @@ class Utils(object):
 		"""
 		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		self.touch_file(main_path)
 		while 1:
-			return_file = os.path.join(main_path, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
+			return_file = os.path.join(main_path, "insa_flu_file_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
 			if (os.path.exists(return_file)): continue
 			try:
 				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
@@ -94,6 +95,7 @@ class Utils(object):
 		return a temp file name
 		"""
 		if (not os.path.exists(dir_out)): os.makedirs(dir_out)
+		self.touch_file(dir_out)		## up to date the path
 		while 1:
 			return_file = os.path.join(dir_out, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
 			if (os.path.exists(return_file)): continue
@@ -103,6 +105,13 @@ class Utils(object):
 			except FileExistsError:
 				pass
 
+	def touch_file(self, file_name):
+		"""
+		Uptodate dir name/file to not be removed by file system 
+		"""
+		if (os.path.exists(file_name)):
+			cmd = "touch {}".format(file_name)
+			os.system(cmd)
 
 	def get_temp_dir(self):
 		"""
@@ -110,12 +119,13 @@ class Utils(object):
 		"""
 		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		self.touch_file(main_path)		## up to date main path to not be removed by file system
 		while 1:
-			return_path = os.path.join(main_path, "insa_flu_" + str(random.randrange(10000000, 99999999, 10)))
+			return_path = os.path.join(main_path, "insa_flu_path_" + str(random.randrange(10000000, 99999999, 10)))
 			if (not os.path.exists(return_path)):
 				os.makedirs(return_path)
 				return return_path
-	
+
 	def get_file_name_without_extension(self, file_name):
 		"""
 		return file name without extension
@@ -157,7 +167,8 @@ class Utils(object):
 	def remove_dir(self, path_name):
 		if (not path_name is None and os.path.isdir(path_name)):
 			main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
-			if path_name == main_path or path_name == (main_path + "/"): cmd = "rm -r {}/*".format(path_name)
+			## to prevent errors
+			if path_name == main_path or path_name == (main_path + "/"): return
 			else: cmd = "rm -r {}*".format(path_name)
 			os.system(cmd)
 
@@ -175,7 +186,7 @@ class Utils(object):
 			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 			
 	def link_file(self, sz_file_from, sz_file_to):
-		if os.path.exists(sz_file_from):
+		if os.path.exists(sz_file_from) and not os.path.exists(sz_file_to):
 			self.make_path(os.path.dirname(sz_file_to))
 			cmd = "ln -f -s " + sz_file_from + " " + sz_file_to
 			exist_status = os.system(cmd)
@@ -259,7 +270,8 @@ class Utils(object):
 			count = 0
 			for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
 				vect_length.append(len(str(record.seq)))
-				if (count > 100): break
+				count += 1
+				if (count > 200): break
 			handle.close()
 #			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:

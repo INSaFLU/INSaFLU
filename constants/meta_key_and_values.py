@@ -35,6 +35,7 @@ class MetaKeyAndValue(object):
 	
 	## metakey about the alerts
 	META_KEY_ALERT_COVERAGE = "Alert Coverage"
+	META_KEY_ALERT_COVERAGE_value_defined_by_user = META_KEY_ALERT_COVERAGE + " >X"
 	META_KEY_ALERT_COVERAGE_9 = META_KEY_ALERT_COVERAGE + " >9"
 	META_KEY_ALERT_COVERAGE_0 = META_KEY_ALERT_COVERAGE + " >0"
 	META_KEY_ALERT_MIXED_INFECTION_COSINE_DISTANCE = "AlertMixedInfectionCosineDistance"
@@ -48,6 +49,17 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_REMOVE_ORIGINAL_FASTQ_FILES = "Remove Original Fastq Files"	### remove original fastq files
 	META_KEY_ALERT_NO_READS_AFTER_FILTERING = "No reads after filtering."
 	
+	#### KEYS to remove if we run Snippy And FreeBayes Again
+	VECT_TO_REMOVE_RUN_SNIPPY_AND_FREEBAYES = [META_KEY_ALERT_COVERAGE,\
+							META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+							META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
+
+	### VECT message for show in web page
+	VECT_MESSAGE_ALERT_COVERAGE = [META_KEY_ALERT_COVERAGE_value_defined_by_user,\
+						META_KEY_ALERT_COVERAGE_9,\
+						META_KEY_ALERT_COVERAGE_0]
+
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
 																	

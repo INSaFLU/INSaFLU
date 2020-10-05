@@ -15,5 +15,5 @@ class Test(unittest.TestCase):
 	def test_meta_keys(self):
 		self.assertEqual("TaskID_Project 20", self.metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Queue_TaskID_Project, 20))
 		self.assertEqual("Alert Coverage >9 230", self.metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, 230))
-
+		
 

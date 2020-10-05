@@ -1490,14 +1490,11 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			metaKeyAndValue = MetaKeyAndValue()
 			vect_elements = self.utils.get_elements_from_db(project_sample.project.reference, project_sample.project.owner)
 			for element_temp in vect_elements:
-				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element_temp)
-				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_data != None):
-					alert_out.append(meta_data.description)
-				meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element_temp)
-				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_data != None):
-					alert_out.append(meta_data.description)
+				for key_message in metaKeyAndValue.VECT_MESSAGE_ALERT_COVERAGE:
+					meta_key = metaKeyAndValue.get_meta_key(key_message, element_temp)
+					meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
+					if (meta_data != None):
+						alert_out.append(meta_data.description)
 			
 			### get different types of alerts
 			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_projects_details_view():

@@ -531,6 +531,19 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals(ConstantsTestsCase.VALUE_TEST + 'ddd', result_list[-1].value)
 		self.assertEquals('xxprorot', result_list[-1].description)
 		
+		
+		### remove test_coverage for this project_sample
+		manageDatabase.remove_project_sample_start_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
+		manageDatabase.get_project_sample_starts_with_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
+		manageDatabase.get_project_sample_starts_with_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
+		result_list = manageDatabase.get_project_sample_starts_with_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
+		self.assertEquals(0, len(result_list))
+		
+		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_value, ConstantsTestsCase.VALUE_TEST + 'ddd', 'xxprorot')
+		result_list = manageDatabase.get_project_sample_starts_with_metakey(project_sample, MetaKeyAndValue.META_KEY_ALERT_COVERAGE)
+		self.assertEquals(1, len(result_list))
+		
+		
 	def test_project_sample(self):
 		"""
 		test the metakey system

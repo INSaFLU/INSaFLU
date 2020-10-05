@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
 		pass
 	
 	def test_coverage(self):
-		coverage = DrawCoverage()
+		coverage = DrawCoverage(None)
 		vect_coverage = [1,2,4,5,6,7]
 		vect_coverage.extend([2] * 100)
 		vect_coverage.extend([20] * 100)
@@ -59,7 +59,7 @@ class Test(unittest.TestCase):
 		
 		
 	def test_coverage_2(self):
-		coverage = DrawCoverage()
+		coverage = DrawCoverage(None)
 		vect_coverage = [1,2,4,5,6,7]
 		vect_coverage.extend([2] * 100)
 		vect_coverage.extend([20] * 100)
@@ -101,6 +101,51 @@ class Test(unittest.TestCase):
 
 		self.assertTrue(os.path.exists(output_image))
 		self.assertTrue(filecmp.cmp(output_image, os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_IMAGES, 'second.png' )))
+		os.unlink(output_image)
+
+	def test_coverage_3(self):
+		coverage = DrawCoverage(20)
+		vect_coverage = [1,2,4,5,6,7]
+		vect_coverage.extend([2] * 100)
+		vect_coverage.extend([20] * 100)
+		vect_coverage.extend([200] * 100)
+		vect_coverage.extend([500] * 100)
+		vect_coverage.extend([300] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([20] * 100)
+		vect_coverage.extend([200] * 100)
+		vect_coverage.extend([500] * 100)
+		vect_coverage.extend([300] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([20] * 100)
+		vect_coverage.extend([200] * 100)
+		vect_coverage.extend([500] * 100)
+		vect_coverage.extend([300] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([330] * 100)
+		vect_coverage.extend([3] * 100)
+		vect_coverage.extend([33] * 100)
+		vect_genes = [Gene('xpto', 10, 300, 1), Gene('xpto2', 500, 800, -1)]
+		var_more_90 = [20, 50, 700]
+		var_more_50 = [2, 100, 500, 800]
+		var_less_50 = [6, 200, 350]
+		
+		output_image = self.utils.get_temp_file("image_test_coverage", ".png")
+		average_coverage = "23432"
+		ratio_more_zero = "100"
+		rati_more_nine = "98"
+		sample_name = "xpto"
+		sequence_name = "1"
+		coverage.create_coverage(vect_coverage, vect_genes, var_more_90, var_more_50, var_less_50, output_image,
+					average_coverage, ratio_more_zero, rati_more_nine, sample_name, sequence_name)
+
+		self.assertTrue(os.path.exists(output_image))
+		self.assertTrue(filecmp.cmp(output_image, os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_IMAGES, 'third.png' )))
 		os.unlink(output_image)
 
 

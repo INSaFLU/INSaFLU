@@ -247,12 +247,19 @@ class Coverage(object):
 	COVERAGE_ALL = "CoverageAll"
 	COVERAGE_MORE_0 = "CoverageMore0"
 	COVERAGE_MORE_9 = "CoverageMore9"
+	COVERAGE_MORE_DEFINED_BY_USER = "CoverageMoreDefinedByUser"
 
-	def __init__(self):
+	def __init__(self, limit_defined_by_user = None):
+		self.limit_defined_by_user = limit_defined_by_user		### if there is limit defined by user put it here
 		self.dt_data = {}
+		self.ratio_value_defined_by_user = 0
 		self.ratio_value_9 = 0
 		self.ratio_value_0 = 0
 
+	def is_exist_limit_defined_by_user(self):
+		""" test if limit defined by user exists """
+		return not self.limit_defined_by_user is None
+	
 	def get_dict_data(self): return self.dt_data
 	
 	def get_sorted_elements_name(self): return sorted(self.dt_data.keys())
@@ -285,6 +292,11 @@ class Coverage(object):
 		self.ratio_value_9 = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
 	
+	def is_100_more_defined_by_user(self, element):
+		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER)
+		self.ratio_value_defined_by_user = divmod(float(value_coverage), 1)[0]
+		return self.__is_100__(value_coverage)
+	
 	def is_100_more_0(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_0)
 		self.ratio_value_0 = divmod(float(value_coverage), 1)[0]
@@ -308,6 +320,9 @@ class Coverage(object):
 
 	def get_fault_message_9(self, element_name):
 		return "Fail, locus '{}': the % of locus size covered by at least 10-fold is '{}%' (below 100%)".format(element_name, self.ratio_value_9)
+	def get_fault_message_defined_by_user(self, element_name, limit_defined_by_user):
+		return "Fail, locus '{}': the % of locus size covered by at least {}-fold is '{}%' (below 100%)".format(\
+				element_name, limit_defined_by_user, self.ratio_value_defined_by_user)
 	def get_fault_message_0(self, element_name):
 		return "Fail, locus '{}': the % of locus size covered by at least 1-fold is '{}%' (below 100%)".format(element_name, self.ratio_value_0)
 
@@ -315,15 +330,24 @@ class Coverage(object):
 		"""
 		get message for web site about coverage in More than 9
 		"""
-		return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
-				self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
-				self.get_coverage(element, self.COVERAGE_MORE_9))
+		if (not self.limit_defined_by_user is None):
+			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(element,\
+					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
+					self.limit_defined_by_user,\
+					self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER))
+		else:
+			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
+					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
+					self.get_coverage(element, self.COVERAGE_MORE_9))
 	
 	def get_icon(self, element):
 		"""
 		get coverage for COVERAGE_MORE_9
 		"""
-		if (self.is_100_more_9(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
+		if (not self.limit_defined_by_user is None):
+			if (self.is_100_more_defined_by_user(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
+		else:
+			if (self.is_100_more_9(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
 		if (self.is_100_more_0(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
 		return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_RED_16_16)
 

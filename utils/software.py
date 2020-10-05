@@ -1158,23 +1158,48 @@ class Software(object):
 				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
 				self.utils.link_file(path_snippy_tab, sz_file_to)
 			
+			################################################
+			### Run again the snippy to check if 
+			# reference
+			# project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name())
+			
 			## get coverage from deep file
 			get_coverage = GetCoverage()
 			try:
-				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-							self.software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+				b_coverage_default = True
+				if (default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
+					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
+							self.software_names.get_snippy_name()),\
+							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+				else:
+					b_coverage_default = False
+					default_coverage_value = default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
+							self.software_names.get_snippy_name()),\
+							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
+							int(default_coverage_value))
 
 				################################
 				##################################
 				### set the alerts in the coverage
+				
+				### remove possible previous alerts from others run
+				for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SNIPPY_AND_FREEBAYES:
+					manageDatabase.remove_project_sample_start_metakey(project_sample, keys_to_remove)
+				
 				project_sample = ProjectSample.objects.get(pk=project_sample.id)
 				project_sample.alert_second_level = 0
 				project_sample.alert_first_level = 0
 				for element in coverage.get_dict_data():
-					if (not coverage.is_100_more_9(element)):
+					if (not coverage.is_100_more_9(element) and b_coverage_default):
 						project_sample.alert_second_level += 1
 						meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_9, element)
 						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success, coverage.get_fault_message_9(element))
+					elif (not coverage.is_100_more_defined_by_user(element) and not b_coverage_default):
+						project_sample.alert_second_level += 1
+						meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_value_defined_by_user, element)
+						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key, MetaKeyAndValue.META_VALUE_Success,
+										coverage.get_fault_message_defined_by_user(element, default_coverage_value))
 					elif (not coverage.is_100_more_0(element)):
 						project_sample.alert_first_level += 1
 						meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_ALERT_COVERAGE_0, element)
@@ -1262,6 +1287,7 @@ class Software(object):
 						manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 					process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 					return False
+			
 				
 				self.copy_files_to_project(project_sample, self.software_names.get_freebayes_name(), out_put_path)
 				## remove path dir if exist

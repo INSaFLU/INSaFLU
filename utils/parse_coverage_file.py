@@ -155,7 +155,7 @@ class GetCoverage(object):
 			dt_out[key] = [int(value_[1]) for value_ in data_file.get_dict_data()[key] ]
 		return dt_out
 
-	def get_coverage(self, deep_file, reference):
+	def get_coverage(self, deep_file, reference, limit_defined_by_user = None):
 		"""
 		get an instance of coverage 
 		"""
@@ -166,12 +166,16 @@ class GetCoverage(object):
 		data_file = parse_file.parse_file(deep_file)
 		self.read_reference_fasta(reference)
 
-		coverage = Coverage()
+		coverage = Coverage(limit_defined_by_user)
 		for chromosome in self.vect_reference:
 			if (chromosome not in self.reference_dict): raise Exception("Can't locate the chromosome '" + chromosome + "' in reference file")
 			coverage.add_coverage(chromosome, Coverage.COVERAGE_ALL, "%.1f" % (data_file.get_coverage(chromosome, self.reference_dict[chromosome])))
 			coverage.add_coverage(chromosome, Coverage.COVERAGE_MORE_0, "%.1f" % (data_file.get_ratio_more_than(chromosome, self.reference_dict[chromosome], 0) * 100))
 			coverage.add_coverage(chromosome, Coverage.COVERAGE_MORE_9, "%.1f" % (data_file.get_ratio_more_than(chromosome, self.reference_dict[chromosome], 9) * 100))
+			if (not limit_defined_by_user is None):
+				## need to decrease one value because is more than something
+				coverage.add_coverage(chromosome, Coverage.COVERAGE_MORE_DEFINED_BY_USER,\
+					"%.1f" % (data_file.get_ratio_more_than(chromosome, self.reference_dict[chromosome], limit_defined_by_user - 1) * 100))
 		return coverage
 
 

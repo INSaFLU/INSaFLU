@@ -188,9 +188,9 @@ class DefaultSoftware(object):
 		parameter.union_char = " "
 		parameter.can_change = True
 		parameter.sequence_out = 2
-		parameter.range_available = "[5:100]"
+		parameter.range_available = "[4:100]"
 		parameter.range_max = "100"
-		parameter.range_min = "5"
+		parameter.range_min = "4"
 		parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
 		vect_parameters.append(parameter)
 		
@@ -202,9 +202,9 @@ class DefaultSoftware(object):
 		parameter.union_char = " "
 		parameter.can_change = True
 		parameter.sequence_out = 3
-		parameter.range_available = "[0.1:0.8]"
-		parameter.range_max = "0.8"
-		parameter.range_min = "0.1"
+		parameter.range_available = "[0.5:1.0]"
+		parameter.range_max = "1.0"
+		parameter.range_min = "0.5"
 		parameter.description = "MINFRAC: minumum proportion for variant evidence (–minfrac 0.51)"
 		vect_parameters.append(parameter)
 		

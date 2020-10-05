@@ -13,7 +13,7 @@ from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.Alphabet import generic_dna
+#from Bio.Alphabet import generic_dna
 from utils.result import DecodeObjects, Result
 from utils.result import SoftwareDesc
 
@@ -259,7 +259,7 @@ class Proteins(object):
 					sz_out_temp += seq_other[i]
 
 			sz_out = sz_out.replace('-', '')
-			coding_dna = Seq(sz_out, generic_dna)
+			coding_dna = Seq(sz_out) ##, generic_dna)
 			## this is not necessary because if seq is reversed the Bio.Seq is returned in forward always  
 			## if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
 			coding_protein = coding_dna.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
@@ -268,14 +268,14 @@ class Proteins(object):
 			### sometimes it's necessary to star in other frame to get the best translation
 			count_stop_1 = 1000
 			if (count_stop > 0):
-				coding_dna_1 = Seq(sz_out[1:], generic_dna)
+				coding_dna_1 = Seq(sz_out[1:]) ##, generic_dna)
 				coding_protein_1 = coding_dna_1.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 				count_stop_1 = str(coding_protein_1)[:-1].count('*')
 				if (count_stop_1 < count_stop):
 					coding_protein = coding_protein_1 
 
 			if (count_stop > 0 and count_stop_1 > 0):
-				coding_dna_2 = Seq(sz_out[2:], generic_dna)
+				coding_dna_2 = Seq(sz_out[2:]) ##, generic_dna)
 				coding_protein_2 = coding_dna_2.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 				count_stop_2 = str(coding_protein_2)[:-1].count('*')
 				if (count_stop > count_stop_2 and count_stop_1 > count_stop_2):

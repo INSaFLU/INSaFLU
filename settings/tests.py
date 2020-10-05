@@ -315,12 +315,21 @@ class testsDefaultSoftwares(TestCase):
 		
 		### test set default
 		self.assertEqual("0.51", parameters[2].parameter)
+		parameter = parameters[1]
+		parameter.parameter = "30"
+		parameter.save()
 		parameter = parameters[2]
 		parameter.parameter = "0.222"
 		parameter.save()
 		
 		#### 
-		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		
+		self.assertFalse(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME))
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME))
+		self.assertEqual('30', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
+
 		
 		### must pass
 		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None)
@@ -338,7 +347,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		#### save a project_sample
 		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample)
-		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		default_software.set_default_software(software[0], user, Software.TYPE_OF_USE_project, project, None)
 		parameters = Parameter.objects.filter(software=software[0], project=project)
@@ -351,7 +360,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertFalse(default_software.is_change_values_for_software(software[0].name))
 
 		#### save a project_sample
-		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		
 	def test_default_software_project_sample(self):
@@ -437,6 +446,11 @@ class testsDefaultSoftwares(TestCase):
 		parameters = Parameter.objects.filter(software=software, project_sample=project_sample)
 		self.assertEqual("0.222", parameters[2].parameter)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME))
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME))
+		self.assertEqual('10', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
 		
 		#####################################
 		####################################

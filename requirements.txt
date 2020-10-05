@@ -15,7 +15,7 @@ user-agents
 scipy
 crispy-forms-foundation
 NumPy
-biopython
+biopython==1.78
 plotly
 Pillow
 psycopg2

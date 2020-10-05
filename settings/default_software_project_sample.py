@@ -15,6 +15,10 @@ class DefaultProjectSoftware(object):
 	'''
 	software_names = SoftwareNames()
 
+	SNIPPY_COVERAGE_NAME = "--mincov"
+	SNIPPY_MAPQUAL_NAME = "--mapqual"
+
+
 	def __init__(self):
 		""" change values """
 		self.change_values_software = {}	### the key is the name of the software
@@ -84,6 +88,41 @@ class DefaultProjectSoftware(object):
 		
 		software_names = SoftwareNames()
 		return software_names.get_snippy_parameters()
+	
+	def get_snippy_single_parameter_default(self, parameter_name):
+		"""
+		:param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
+		:return value of parameter
+		"""
+		vect_parameters = self._get_snippy_default(None, None, None, None)
+		for parameters in vect_parameters:
+			if parameters.name == parameter_name:
+				return parameters.parameter
+		return None
+
+	def is_snippy_single_parameter_default(self, project_sample, parameter_name):
+		"""
+		test if a specific parameter is default SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
+		"""
+		
+		value_default_parameter = self.get_snippy_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_snippy_single_parameter(project_sample, parameter_name)
+		if parameter_defined == value_default_parameter: return True
+		return False
+		
+	def get_snippy_single_parameter(self, project_sample, parameter_name):
+		"""
+		get snippy single parameters
+		:param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
+		"""
+		
+		parameters_string = self.get_snippy_parameters_all_possibilities(project_sample.project.owner, project_sample)
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1].split()[0]
+		return None
+
 
 	def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
 		"""
@@ -280,7 +319,7 @@ class DefaultProjectSoftware(object):
 		vect_parameters =  []
 		
 		parameter = Parameter()
-		parameter.name = "--mapqual"
+		parameter.name = DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME
 		parameter.parameter = "20"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
@@ -296,7 +335,7 @@ class DefaultProjectSoftware(object):
 		vect_parameters.append(parameter)
 		
 		parameter = Parameter()
-		parameter.name = "--mincov"
+		parameter.name = DefaultProjectSoftware.SNIPPY_COVERAGE_NAME
 		parameter.parameter = "10"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
@@ -305,9 +344,9 @@ class DefaultProjectSoftware(object):
 		parameter.union_char = " "
 		parameter.can_change = True
 		parameter.sequence_out = 2
-		parameter.range_available = "[5:100]"
+		parameter.range_available = "[4:100]"
 		parameter.range_max = "100"
-		parameter.range_min = "5"
+		parameter.range_min = "4"
 		parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
 		vect_parameters.append(parameter)
 		
@@ -321,9 +360,9 @@ class DefaultProjectSoftware(object):
 		parameter.union_char = " "
 		parameter.can_change = True
 		parameter.sequence_out = 3
-		parameter.range_available = "[0.1:0.8]"
-		parameter.range_max = "0.8"
-		parameter.range_min = "0.1"
+		parameter.range_available = "[0.5:1.0]"
+		parameter.range_max = "1.0"
+		parameter.range_min = "0.5"
 		parameter.description = "MINFRAC: minumum proportion for variant evidence (–minfrac 0.51)"
 		vect_parameters.append(parameter)
 		

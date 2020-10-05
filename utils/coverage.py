@@ -61,7 +61,7 @@ class DrawAllCoverage(object):
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
 		
-		draw_coverage = DrawCoverage()
+		draw_coverage = DrawCoverage(coverage.limit_defined_by_user)
 		for sequence_name in geneticElement.get_sorted_elements():
 			draw_coverage.create_coverage(dict_coverage[sequence_name], geneticElement.get_genes(sequence_name),\
 					dict_more_90[sequence_name] if sequence_name in dict_more_90 else [],\
@@ -70,6 +70,8 @@ class DrawAllCoverage(object):
 					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, sequence_name, FileExtensions.FILE_PNG),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_ALL),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_0),\
+					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_DEFINED_BY_USER) if\
+					coverage.is_exist_limit_defined_by_user() else\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_9),\
 					project_sample.sample.name, sequence_name)
 
@@ -122,10 +124,11 @@ class DrawCoverage(object):
 	rateImage = 2			## rate of the image
 	rateDrawCoverage = 2	## rate to draw the coverage
 	
-	def __init__(self):
+	def __init__(self, limit_defined_by_user):
 		'''
 		Constructor
 		'''
+		self.limit_defined_by_user = self.LIMIT_MINUNUM_COVERAGE if limit_defined_by_user is None else limit_defined_by_user
 		self.start_image_x = DrawCoverage.GAP_START_GENES_X
 	
 	def create_coverage(self, vect_coverage, vect_genes, var_more_90, var_more_50, var_less_50, output_image,
@@ -145,7 +148,6 @@ class DrawCoverage(object):
 		im = Image.new("RGB", (size_image_x, self.maxSizeImage[1]), self.WITHE_COLOR)
 		
 		draw = ImageDraw.Draw(im) 
-		
 		self.draw_genes_and_coverage(draw, vect_coverage, vect_genes)
 		self.draw_legend_coverage(draw, self.get_start_x(), self.get_start_x() + int(len(vect_coverage) / self.rateImage), int(len(vect_coverage) / self.rateImage))
 		self.draw_variants(draw, var_more_50, var_less_50)
@@ -255,7 +257,7 @@ class DrawCoverage(object):
 			else:
 				draw_y = self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y - (coverage / self.rateDrawCoverage)
 				if (draw_y == (self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y)): draw_y = posYBottom;
-				if (coverage <= self.LIMIT_MINUNUM_COVERAGE): bLessThanLimitLast = True;
+				if (coverage <= self.limit_defined_by_user): bLessThanLimitLast = True;
 
 			draw.line((start_x, posYBottom, start_x, draw_y), fill=self.COLOR_RGBGrey_225_225_225, width=1)
 			if (draw_y_last == 0): draw.point((start_x, draw_y), fill=self.COLOR_RGBGrey_64_64_64)
@@ -264,7 +266,7 @@ class DrawCoverage(object):
 			### limits of coverage
 			if (bMoreThanLimitLast and draw_y_last > 0):
 				draw.line((start_x - 1, draw_y_last, start_x - 1, draw_y_last - 2), fill=self.COLOR_RGBGreen_0_153_0, width=1)
-			elif (bLessThanLimitLast and draw_y_last >  0 and draw_y_last >= (self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y - (self.LIMIT_MINUNUM_COVERAGE / self.rateDrawCoverage))):
+			elif (bLessThanLimitLast and draw_y_last >  0 and draw_y_last >= (self.DRAW_COVERAGE_Y + self.SIZE_COVERAGE_Y - (self.limit_defined_by_user / self.rateDrawCoverage))):
 				draw.line((start_x - 1, draw_y_last, start_x - 1, draw_y_last - 2), fill=self.COLOR_RGBRed_153_0_0, width=1)
 			bMoreThanLimitLast = bMoreThanLimit;
 			draw_y_last = draw_y;
@@ -304,7 +306,9 @@ class DrawCoverage(object):
 		position_x_fourth_header = position_x
 		position_x = position_x_third_header
 		point_y += (self.START_DRAW_HEADER << 1) + font_12.getsize("text")[1]
-		position_x += self.draw_text_header(draw, font_12, "% of size covered by at least 10-fold: {}%".format(rati_more_nine), position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "% of size covered by at least {}-fold: {}%".format(\
+				self.limit_defined_by_user, rati_more_nine),\
+				position_x, point_y, DrawCoverage.COLOR_RGBGrey_32_32_32, b_only_calculate_size)
 		position_x_third_header = position_x
 		
 		### second line
@@ -315,7 +319,7 @@ class DrawCoverage(object):
 		if (not b_only_calculate_size):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBRed_153_0_0, width=3)
 		position_x += 7
-		position_x += self.draw_text_header(draw, font_12, "Cov. <{}".format(self.LIMIT_MINUNUM_COVERAGE), position_x  + lines_size, point_y, self.COLOR_RGBRed_153_0_0, b_only_calculate_size)
+		position_x += self.draw_text_header(draw, font_12, "Cov. <{}".format(self.limit_defined_by_user), position_x  + lines_size, point_y, self.COLOR_RGBRed_153_0_0, b_only_calculate_size)
 		position_x += lines_size
 		if (not b_only_calculate_size):
 			draw.line((position_x, point_y + (font_12.getsize("text")[1] >> 1), position_x + lines_size, point_y + (font_12.getsize("text")[1] >> 1)), fill=self.COLOR_RGBGreen_0_153_0, width=3)

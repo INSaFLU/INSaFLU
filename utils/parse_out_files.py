@@ -94,7 +94,7 @@ class ParseOutFiles(object):
 
 	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):
 		"""
-		limit_freq -> the tre max freq to accept the variation
+		limit_freq -> the max freq to accept the variation 
 		process tab files
 		possible in variation type
 				snp	Single Nucleotide Polymorphism	A => T
@@ -130,7 +130,7 @@ class ParseOutFiles(object):
 							if (b_exist): break	### exist, don't print
 							
 							if ((lst_type_var[i] in vect_type_out or len(vect_type_out) == 0) and self.utils.is_float(lst_freq_data[i])\
-										and float(lst_freq_data[i]) < limit_freq):
+										and float(lst_freq_data[i]) <= limit_freq):
 								vect_to_write = []
 								if (sample_name != None): vect_to_write = [sample_name]
 								if (len(lst_data) > 10):

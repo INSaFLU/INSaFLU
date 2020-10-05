@@ -258,7 +258,7 @@ class CollectExtraData(object):
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES):
-			## freebayes <50
+			## freebayes remove >50%
 			out_file = self.collect_variations_freebayes(project)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
@@ -420,7 +420,7 @@ class CollectExtraData(object):
 				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 				if (not os.path.exists(tab_file_to_process)): continue
 				parse_out_files.parse_tab_files(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out,\
-								vect_type_remove, 50, True if n_count == 0 else False)
+								vect_type_remove, Project.PERCENTAGE_validated_minor_variants, True if n_count == 0 else False)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)

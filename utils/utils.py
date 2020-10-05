@@ -6,7 +6,7 @@ Created on Oct 31, 2017
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
-from Bio.Alphabet import IUPAC
+## from Bio.Alphabet import IUPAC	version 1.78 doesn't have Bio.Alphabet 
 from utils.result import GeneticElement, Gene
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -68,7 +68,7 @@ class Utils(object):
 		"""
 		temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
 		main_path = os.path.dirname(file_name)
-		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		while 1:
 			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
 			temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
@@ -79,7 +79,7 @@ class Utils(object):
 		return a temp file name
 		"""
 		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
-		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		self.touch_file(main_path)
 		while 1:
 			return_file = os.path.join(main_path, "insa_flu_file_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
@@ -94,7 +94,7 @@ class Utils(object):
 		"""
 		return a temp file name
 		"""
-		if (not os.path.exists(dir_out)): os.makedirs(dir_out)
+		if (not os.path.exists(dir_out)): os.makedirs(dir_out, exist_ok=True)
 		self.touch_file(dir_out)		## up to date the path
 		while 1:
 			return_file = os.path.join(dir_out, "insa_flu_" + file_name + "_" + str(random.randrange(10000000, 99999999, 10)) + "_file" + sz_type)
@@ -118,12 +118,12 @@ class Utils(object):
 		return a temp directory
 		"""
 		main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
-		if (not os.path.exists(main_path)): os.makedirs(main_path)
+		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		self.touch_file(main_path)		## up to date main path to not be removed by file system
 		while 1:
 			return_path = os.path.join(main_path, "insa_flu_path_" + str(random.randrange(10000000, 99999999, 10)))
 			if (not os.path.exists(return_path)):
-				os.makedirs(return_path)
+				os.makedirs(return_path, exist_ok=True)
 				return return_path
 
 	def get_file_name_without_extension(self, file_name):
@@ -445,7 +445,7 @@ class Utils(object):
 				if (features.type == 'source'):
 					length = abs(features.location.end - features.location.start)
 				elif (features.type == 'CDS'):
-					for key_name in ['CDS', 'gene']:
+					for key_name in ['CDS', 'gene', 'locus_tag']:
 						if (key_name in features.qualifiers):
 							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
 								int(features.location.start), int(features.location.end), features.location.strand))
@@ -941,10 +941,8 @@ class Utils(object):
 			with open(in_file) as file_handle:
 				for seq_record in SeqIO.parse(file_handle, "fasta"):
 					# Take the current sequence
-					vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
+					vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', '')), id=seq_record.id, description="", name=""))
 				SeqIO.write(vect_sequences, output_file_handle, "fasta")
-
-
 
 	def from_genbank_to_bed(self, file_in, file_out):
 		"""

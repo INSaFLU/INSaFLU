@@ -209,7 +209,16 @@ class ManageDatabase(object):
 		try:
 			return list(MetaKeyProjectSample.objects.filter(project_sample__id=project_sample.id, meta_tag__name__startswith=meta_key_name).order_by('-creation_date'))
 		except MetaKeyProject.DoesNotExist:
-			return []	
+			return []
+
+	def remove_project_sample_start_metakey(self, project_sample, meta_key_name):
+		"""
+		in: meta_key_name + '%'
+		return a list with match
+		"""
+		return MetaKeyProjectSample.objects.filter(project_sample__id=project_sample.id,\
+					meta_tag__name__startswith=meta_key_name).delete()
+	
 
 
 	def get_variation_count(self, count_hits):

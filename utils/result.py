@@ -236,8 +236,7 @@ class CoverageElement(object):
 		self.dt_data[type_coverage] = coverage
 		
 	def get_coverage(self, type_coverage):
-		if (type_coverage in self.dt_data): return self.dt_data[type_coverage]
-		raise Exception("Error: there's no key like this: " + type_coverage)
+		return self.dt_data.get(type_coverage, None)
 
 
 class Coverage(object):
@@ -294,6 +293,7 @@ class Coverage(object):
 	
 	def is_100_more_defined_by_user(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER)
+		if (value_coverage == None): return False
 		self.ratio_value_defined_by_user = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
 	

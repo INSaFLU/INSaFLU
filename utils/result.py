@@ -287,6 +287,11 @@ class Coverage(object):
 		return self.__is_100__(value_coverage)
 	
 	def is_100_more_9(self, element):
+		#### if exist value defined by the user call next method
+		if (self.is_exist_limit_defined_by_user()):
+			return self.is_100_more_defined_by_user(element)
+		
+		### regular method
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
 		self.ratio_value_9 = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)

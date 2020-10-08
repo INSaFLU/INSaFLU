@@ -255,5 +255,83 @@ class Test(unittest.TestCase):
 		self.assertTrue(coverage.is_100_more_0('8'))
 		
 
+	def test_coverage_define_by_user_1(self):
+		reference_file = os.path.join(self.baseDirectory, "files_3/reference_zeros.fasta")
+		input_file = os.path.join(self.baseDirectory, "files_3/EVA001_S67_zeros.depth")
+		
+		get_coverage = GetCoverage()
+		defined_by_user_limit = 3
+		coverage = get_coverage.get_coverage(input_file, reference_file, defined_by_user_limit)
 
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_ALL), "5.0")
+		self.assertTrue(coverage.is_100_more_9('1'))
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_ALL), "5.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_ALL), "0.0")
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertFalse(coverage.is_100_more_9('3'))
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_0), "0.0")
+		
+	def test_coverage_define_by_user_2(self):
+		reference_file = os.path.join(self.baseDirectory, "files_3/reference_zeros.fasta")
+		input_file = os.path.join(self.baseDirectory, "files_3/EVA001_S67_zeros.depth")
+		
+		get_coverage = GetCoverage()
+		defined_by_user_limit = 4
+		coverage = get_coverage.get_coverage(input_file, reference_file, defined_by_user_limit)
+
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_ALL), "5.0")
+		self.assertTrue(coverage.is_100_more_9('1'))
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_ALL), "5.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_ALL), "0.0")
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertFalse(coverage.is_100_more_9('3'))
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_0), "0.0")
+	
+	def test_coverage_define_by_user_3(self):
+		reference_file = os.path.join(self.baseDirectory, "files_3/reference_zeros.fasta")
+		input_file = os.path.join(self.baseDirectory, "files_3/EVA001_S67_zeros.depth")
+		
+		get_coverage = GetCoverage()
+		defined_by_user_limit = 5
+		coverage = get_coverage.get_coverage(input_file, reference_file, defined_by_user_limit)
+
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_ALL), "5.0")
+		self.assertTrue(coverage.is_100_more_9('1'))
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_ALL), "5.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_ALL), "0.0")
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertFalse(coverage.is_100_more_9('3'))
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_0), "0.0")
+	
+	def test_coverage_define_by_user_4(self):
+		reference_file = os.path.join(self.baseDirectory, "files_3/reference_zeros.fasta")
+		input_file = os.path.join(self.baseDirectory, "files_3/EVA001_S67_zeros.depth")
+		
+		get_coverage = GetCoverage()
+		defined_by_user_limit = 6
+		coverage = get_coverage.get_coverage(input_file, reference_file, defined_by_user_limit)
+
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_ALL), "5.0")
+		self.assertFalse(coverage.is_100_more_9('1'))
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_ALL), "5.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_ALL), "0.0")
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_9), "0.0")
+		self.assertFalse(coverage.is_100_more_9('3'))
+		self.assertEqual(coverage.get_coverage('1', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('2', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('3', Coverage.COVERAGE_MORE_0), "0.0")
 

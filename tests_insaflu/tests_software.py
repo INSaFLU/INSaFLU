@@ -1174,6 +1174,7 @@ class Test(TestCase):
 		run snippy
 		"""
 
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
@@ -1222,7 +1223,7 @@ class Test(TestCase):
 		
 		software_names = SoftwareNames()
 		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False),
-				gb_file, sample.name, software_names.get_snippy_parameters())
+				fasta_file, gb_file, sample.name, software_names.get_snippy_parameters())
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, "")))))
 		file_size = os.path.getsize(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, ""))))
 		self.assertTrue(file_size > 1000 )
@@ -1239,7 +1240,7 @@ class Test(TestCase):
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
 
-		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), None, gb_file, sample.name, software_names.get_snippy_parameters())
+		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), None, fasta_file, gb_file, sample.name, software_names.get_snippy_parameters())
 		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, "")))))
 		file_size_2 = os.path.getsize(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, ""))))
 		self.assertTrue(file_size_2 > 1000)

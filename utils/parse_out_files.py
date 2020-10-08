@@ -20,9 +20,9 @@ class ParseOutFiles(object):
 	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
 	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
 	
-	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	
 	GENE = 'Gene'
 	COVERAGE = 'Coverage'
@@ -195,10 +195,10 @@ class ParseOutFiles(object):
 					elif (b_header): 	## start processing data
 						lst_data = sz_temp.split('\t')
 						vect_to_write = []
-						if (len(lst_data) > 10):
-							vect_to_write.extend(lst_data[:10])
-							vect_to_write.extend(lst_data[10].split(' '))
-							vect_to_write.extend(lst_data[11:])
+						if (len(lst_data) > 12):
+							vect_to_write.extend(lst_data[:12])
+							vect_to_write.extend(lst_data[12].split(' '))
+							vect_to_write.extend(lst_data[13:])
 							if (len(lst_data) > 1 and coverage.exist_this_element(lst_data[0]) and\
 									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
 								vect_to_write.append('yes')

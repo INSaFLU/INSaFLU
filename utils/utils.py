@@ -805,7 +805,10 @@ class Utils(object):
 		### need to have all with 100 more 9
 		if (test_all_locus_good_coverage):
 			for key in coverage.get_dict_data():
-				if (not coverage.is_100_more_9(key)): return None
+			##	if ((not coverage.is_exist_limit_defined_by_user() and not coverage.is_100_more_9(key)) or\
+			##			(coverage.is_exist_limit_defined_by_user() and not coverage.is_100_more_defined_by_user(key))):
+				if (not coverage.is_100_more_9(key)):
+					return None
 		
 		### test if the out directory exists
 		self.make_path(os.path.dirname(file_out))
@@ -815,6 +818,8 @@ class Utils(object):
 			with open(file_out, 'w') as handle_write:
 				records = []
 				for key in sorted(coverage.get_dict_data()):
+				##	if ((not coverage.is_exist_limit_defined_by_user() and coverage.is_100_more_9(key)) or\
+				##			(coverage.is_exist_limit_defined_by_user() and coverage.is_100_more_defined_by_user(key))):
 					if (coverage.is_100_more_9(key)):
 						records.append(SeqRecord(Seq(str(record_dict[key].seq)), id = key, description=""))
 				if (len(records) > 0): SeqIO.write(records, handle_write, "fasta")

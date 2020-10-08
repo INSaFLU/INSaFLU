@@ -72,6 +72,10 @@ class SoftwareNames(object):
 	SOFTWARE_SNIPPY_VCF_TO_TAB_name = "Snippy-vcf_to_tab_add_freq"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS = ""
+	SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy-vcf_to_tab_add_freq_and_evidence")
+	SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_name = "Snippy-vcf_to_tab_add_freq_and_evidence"
+	SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_VERSION = "3.2-dev"
+	SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_PARAMETERS = ""
 	SOFTWARE_SNP_EFF = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snpEff")
 	SOFTWARE_SNP_EFF_config = os.path.join(DIR_SOFTWARE_SNIPPY, "etc/snpeff.config")
 	SOFTWARE_SNP_EFF_name = "snpEff"
@@ -208,12 +212,20 @@ class SoftwareNames(object):
 	def get_snippy_parameters(self): return self.SOFTWARE_SNIPPY_PARAMETERS
 
 	"""
-	return snippy-vcf_to_tab software
+	return snippy-vcf_to_tab software. Add FRED
 	"""
 	def get_snippy_vcf_to_tab(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB
 	def get_snippy_vcf_to_tab_name(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_name
 	def get_snippy_vcf_to_tab_version(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_VERSION
 	def get_snippy_vcf_to_tab_parameters(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_PARAMETERS
+	
+	"""
+	return snippy-vcf_to_tab software. Add FRED and Evidence
+	"""
+	def get_snippy_vcf_to_tab_freq_and_evidence(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE
+	def get_snippy_vcf_to_tab_freq_and_evidence_name(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_name
+	def get_snippy_vcf_to_tab_freq_and_evidence_version(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_VERSION
+	def get_snippy_vcf_to_tab_freq_and_evidence_parameters(self): return self.SOFTWARE_SNIPPY_VCF_TO_TAB_AND_EVIDENCE_PARAMETERS
 	
 	"""
 	return snpEff software

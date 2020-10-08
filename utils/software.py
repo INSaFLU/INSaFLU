@@ -550,7 +550,7 @@ class Software(object):
 			raise Exception("Fail to run trimmomatic")
 		return (temp_dir, parameters)
 
-	def run_snippy(self, file_name_1, file_name_2, path_reference, sample_name, snippy_parameters):
+	def run_snippy(self, file_name_1, file_name_2, path_reference_fasta, path_reference_genbank, sample_name, snippy_parameters):
 		"""
 		run snippy
 		return output directory
@@ -585,18 +585,26 @@ class Software(object):
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --se %s" %\
 				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
-				path_reference, snippy_parameters, file_name_1)
+				path_reference_genbank, snippy_parameters, file_name_1)
 		else:
 			cmd = "%s --cpus %d --outdir %s --prefix %s --ref %s %s --R1 %s --R2 %s" %\
 				(self.software_names.get_snippy(), settings.THREADS_TO_RUN_SLOW, temp_dir, sample_name,
-				path_reference, snippy_parameters, file_name_1, file_name_2)
+				path_reference_genbank, snippy_parameters, file_name_1, file_name_2)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			self.utils.remove_dir(temp_dir)
 			raise Exception("Fail to run snippy")
+		
+		### add FREQ to VCF file
+		self.utils.add_freq_to_vcf(os.path.join(temp_dir, sample_name + '.vcf'), os.path.join(temp_dir, sample_name + '_2.vcf'))
+		### add FREQ to TAB file
+		self.run_snippy_vcf_to_tab_freq_and_evidence(path_reference_fasta, path_reference_genbank,\
+							os.path.join(temp_dir, sample_name + '_2.vcf'),\
+							os.path.join(temp_dir, sample_name + '.tab'))
 		return temp_dir
+
 
 	def run_genbank2gff3(self, genbank, out_file):
 		"""
@@ -716,7 +724,7 @@ class Software(object):
 		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
 		"""
 		
-		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab") 
+		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
 		self.run_genbank2gff3(genbank, temp_file)
 		
 		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.software_names.get_snippy_vcf_to_tab(), fasta, temp_file, vcf_file, out_file)
@@ -728,6 +736,27 @@ class Software(object):
 			raise Exception("Fail to run snippy-vcf-to-tab")
 		os.unlink(temp_file)
 		return out_file
+	
+	def run_snippy_vcf_to_tab_freq_and_evidence(self, fasta, genbank, vcf_file, out_file):
+		"""
+		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
+		"""
+		
+		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
+		self.run_genbank2gff3(genbank, temp_file)
+		
+		cmd = "%s --ref %s --gff %s --vcf %s > %s" % (self.software_names.get_snippy_vcf_to_tab_freq_and_evidence(),\
+						fasta, temp_file, vcf_file, out_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(temp_file)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run snippy-vcf-to-tab. Add freq and evidence")
+		os.unlink(temp_file)
+		return out_file
+
+
 
 	def run_freebayes(self, bam_file, reference_fasta, genbank_file, sample_name):
 		"""
@@ -1126,6 +1155,7 @@ class Software(object):
 				snippy_parameters = default_software.get_snippy_parameters_all_possibilities(user, project_sample)
 				out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 						project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
+						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, snippy_parameters)
 				result_all.add_software(SoftwareDesc(self.software_names.get_snippy_name(), self.software_names.get_snippy_version(), snippy_parameters))
@@ -1153,9 +1183,9 @@ class Software(object):
 			else: self.utils.remove_dir(out_put_path)
 	
 			### make the link for the new tab file name
-			path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+			path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
 			if (os.path.exists(path_snippy_tab)):
-				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())
+				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
 				self.utils.link_file(path_snippy_tab, sz_file_to)
 			
 			################################################

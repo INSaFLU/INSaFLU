@@ -23,6 +23,12 @@ class Test(unittest.TestCase):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), self.constantsTestsCase.MANAGING_TESTS)
 
 
+	def test_get_pos_from_header(self):
+		
+		parse_out_files = ParseOutFiles()
+		self.assertEqual(6, parse_out_files.get_pos_from_header(ParseOutFiles.HEADER_TAB_FILE, ParseOutFiles.HEADER_TAB_FILE_after_change))
+		self.assertEqual(5, parse_out_files.get_pos_from_header(ParseOutFiles.HEADER_TAB_FILE_snippy_changed, ParseOutFiles.HEADER_TAB_FILE_snippy_after_change))
+		
 	def test_parse_snippy_tab_files(self):
 		"""
 		test ParseOutFiles for tab files
@@ -67,7 +73,6 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
 
-		
 	def test_parse_freebays_tab_files_2(self):
 		"""
 		test ParseOutFiles for tab files
@@ -83,7 +88,7 @@ class Test(unittest.TestCase):
 		with open(temp_out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 50, b_add_header)
-			
+		
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
@@ -106,6 +111,7 @@ class Test(unittest.TestCase):
 			n_out_lines += parse_out_files.parse_tab_files('sample_name', tab_file_to_process, csv_writer, vect_type_out, vect_type_remove, 101, b_add_header)
 		
 		self.assertEquals(4, n_out_lines)
+		
 		self.assertTrue(os.path.exists(temp_out_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_out_file))
 		if (os.path.exists(temp_out_file)): os.unlink(temp_out_file)
@@ -146,8 +152,8 @@ class Test(unittest.TestCase):
 		
 		###
 		parse_out_files.add_variants_in_incomplete_locus(temp_file, coverage)
-		
 		expected_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS, ConstantsTestsCase.DIR_VCF, "out_snippy_translated_2.tsv")
+		
 		self.assertTrue(os.path.exists(temp_file))
 		self.assertTrue(filecmp.cmp(expected_file, temp_file))
 		if (os.path.exists(temp_file)): os.unlink(temp_file)

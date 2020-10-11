@@ -936,7 +936,6 @@ class Software(object):
 			vcf_file_out_temp = self.utils.add_freq_to_vcf(os.path.join(temp_dir, os.path.basename(temp_file_2)), os.path.join(temp_dir, sample_name + '.vcf'))
 			### pass vcf to tab
 			self.run_snippy_vcf_to_tab(reference_fasta, genbank_file, vcf_file_out_temp, "{}.tab".format(os.path.join(temp_dir, sample_name)))
-		
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
 		if (os.path.exists(temp_file_2)): os.unlink(temp_file_2)
 		if (os.path.exists(temp_file_regions)): os.unlink(temp_file_regions)
@@ -1196,23 +1195,27 @@ class Software(object):
 			## get coverage from deep file
 			get_coverage = GetCoverage()
 			try:
+				
+				### limit of the coverage for a project, can be None, if not exist
+				coverage_for_project = default_software.get_snippy_single_parameter_for_project(project_sample.project, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+				if (not coverage_for_project is None): coverage_for_project = int(coverage_for_project)
+				
 				b_coverage_default = True
 				if (default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 							self.software_names.get_snippy_name()),\
-							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+							None, coverage_for_project)
 				else:
 					b_coverage_default = False
 					default_coverage_value = default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 							self.software_names.get_snippy_name()),\
 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
-							int(default_coverage_value))
-
+							int(default_coverage_value), coverage_for_project)
 				################################
 				##################################
 				### set the alerts in the coverage
-				
 				### remove possible previous alerts from others run
 				for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SNIPPY_AND_FREEBAYES:
 					manageDatabase.remove_project_sample_start_metakey(project_sample, keys_to_remove)
@@ -1256,7 +1259,7 @@ class Software(object):
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
 			
-			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in ares with coverage problems
+			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
 			parse_out_files = ParseOutFiles()
 			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
 										self.software_names.get_snippy_name()), coverage)

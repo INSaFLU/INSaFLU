@@ -329,6 +329,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME))
 		self.assertEqual('30', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)) 
 		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter_for_project(project, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
 
 		
 		### must pass

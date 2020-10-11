@@ -15,6 +15,7 @@ from utils.tree import CreateTree
 import os, csv, time, json, logging
 import plotly.graph_objs as go
 from plotly.offline import plot
+from settings.default_software_project_sample import DefaultProjectSoftware
 from django.db import transaction
 from utils.result import Coverage
 from utils.parse_out_files import ParseOutFiles
@@ -115,7 +116,6 @@ class CollectExtraData(object):
 # 			self.utils.copy_file(out_file_png, file_destination)
 # 			os.unlink(out_file_png)
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
-
 
 		try:
 			## calculate the max sample label size of the samples that belong to this project
@@ -318,12 +318,21 @@ class CollectExtraData(object):
 		"""
 		collect all coverage and make a file
 		"""
+		default_project_software = DefaultProjectSoftware()
 		decode_coverage = DecodeObjects()
 		manageDatabase = ManageDatabase()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 		if (geneticElement == None): return None
 		
-		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least 10-fold"]
+		### get coverage for project, if exists
+		(coverage, coverage_project) = (10, None)
+		if (not default_project_software.is_snippy_single_parameter_default_for_project(project,\
+														 DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
+			coverage_project = default_project_software.get_snippy_single_parameter_for_project(project,
+							DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+			if (not coverage_project is None): coverage = coverage_project
+		
+		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least {}-fold".format(coverage)]
 		vect_reference = geneticElement.get_sorted_elements()
 		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
@@ -370,7 +379,8 @@ class CollectExtraData(object):
 					
 				vect_out.append('')
 				for element_name in vect_reference:
-					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9))
+					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9 if\
+							coverage_project is None else Coverage.COVERAGE_PROJECT))
 				csv_writer.writerow(vect_out)
 				n_count += 1
 		if (n_count == 0):

@@ -247,17 +247,24 @@ class Coverage(object):
 	COVERAGE_MORE_0 = "CoverageMore0"
 	COVERAGE_MORE_9 = "CoverageMore9"
 	COVERAGE_MORE_DEFINED_BY_USER = "CoverageMoreDefinedByUser"
+	COVERAGE_PROJECT = "CoverageProject"
 
-	def __init__(self, limit_defined_by_user = None):
+	def __init__(self, limit_defined_by_user = None, limit_defined_to_project = None):
 		self.limit_defined_by_user = limit_defined_by_user		### if there is limit defined by user put it here
+		self.limit_defined_to_project = limit_defined_to_project		### if there is limit defined to the project
 		self.dt_data = {}
 		self.ratio_value_defined_by_user = 0
+		self.ratio_value_project = 0
 		self.ratio_value_9 = 0
 		self.ratio_value_0 = 0
 
 	def is_exist_limit_defined_by_user(self):
 		""" test if limit defined by user exists """
 		return not self.limit_defined_by_user is None
+	
+	def is_exist_limit_defined_to_project(self):
+		""" test if limit defined by user exists """
+		return not self.limit_defined_to_project is None
 	
 	def get_dict_data(self): return self.dt_data
 	
@@ -286,18 +293,34 @@ class Coverage(object):
 		value_coverage = self.get_coverage(element, self.COVERAGE_ALL)
 		return self.__is_100__(value_coverage)
 	
-	def is_100_more_9(self, element):
-		#### if exist value defined by the user call next method
-		if (self.is_exist_limit_defined_by_user()):
-			return self.is_100_more_defined_by_user(element)
+	def is_100_more_9(self, element, b_only_project = False):
+		"""
+		:param b_only_project -> Test only project project limits 
+		"""
+		if (b_only_project):		### test only for a value in a project
+			#### if exist value defined by the user call next method
+			if (self.is_exist_limit_defined_to_project()):
+				return self.is_100_more_defined_to_project(element)
+		else:#### if exist value defined by the user call next method
+			if (self.is_exist_limit_defined_by_user()):
+				return self.is_100_more_defined_by_user(element)
 		
 		### regular method
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
 		self.ratio_value_9 = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
-	
+
 	def is_100_more_defined_by_user(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER)
+		if (value_coverage == None): return False
+		self.ratio_value_defined_by_user = divmod(float(value_coverage), 1)[0]
+		return self.__is_100__(value_coverage)
+	
+	def is_100_more_defined_to_project(self, element):
+		"""
+		this is only used for testing coverage when this value is defined to the a project
+		"""
+		value_coverage = self.get_coverage(element, self.COVERAGE_PROJECT)
 		if (value_coverage == None): return False
 		self.ratio_value_defined_by_user = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)

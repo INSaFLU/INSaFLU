@@ -7,7 +7,6 @@ Created on Nov 1, 2017
 from utils.utils import Utils
 from django.utils.translation import ugettext_lazy as _
 from constants.constants import Constants, FileExtensions
-from constants.software_names import SoftwareNames
 import csv, os
 
 class ParseOutFiles(object):
@@ -16,13 +15,22 @@ class ParseOutFiles(object):
 	'''
 
 	## header tab file
-	HEADER_TAB_FILE = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_old = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	### Add COVERAGE after FREQ
+	HEADER_TAB_FILE_after_change = "FREQ"
+	HEADER_TAB_FILE_after_change_add_fields = 1
 	
-	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	EVIDENCE	DP	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	
+	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed_old = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	### Add FREQ and COVERAGE after ALT
+	HEADER_TAB_FILE_snippy_after_change = "ALT"
+	HEADER_TAB_FILE_snippy_after_change_add_fields = 2
+	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	
 	GENE = 'Gene'
 	COVERAGE = 'Coverage'
@@ -39,6 +47,15 @@ class ParseOutFiles(object):
 		'''
 		pass
 	
+	def get_pos_from_header(self, vect_to_search, value_to_search):
+		"""
+		"""
+		count = 0
+		for data_ in vect_to_search.split():
+			if (value_to_search == data_): return count + 1
+			count += 1
+		return 0
+
 	def parse_abricate_file(self, file_name, file_name_out, clean_hits_below_value):
 		"""
 		#FILE	 SEQUENCE	 START   END	 GENE	 COVERAGE	 COVERAGE_MAP	 GAPS  %COVERAGE  %IDENTITY  DATABASE   ACCESSION  PRODUCT
@@ -112,18 +129,20 @@ class ParseOutFiles(object):
 			else: csv_writer.writerow(self.HEADER_TAB_FILE_WRITE.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
+			b_header_old = False
 			for line in handle_to_process:
 				sz_temp = line.strip()
 				if (len(sz_temp) == 0): continue
 				if (sz_temp == self.HEADER_TAB_FILE): b_header = True
-				elif (b_header): 	## start processing data
+				elif (sz_temp == self.HEADER_TAB_FILE_old): b_header_old = True
+				elif (b_header or b_header_old): 	## start processing data
 					lst_data = sz_temp.split('\t')
 					if (len(lst_data) > 5):
 						lst_freq_data = lst_data[5].split(',')
 						lst_type_var = lst_data[2].split(',')
 						b_exist = False
 						for i in range(0, len(lst_type_var)):
-							for value in vect_type_remove: 
+							for value in vect_type_remove: 	## don't print specific var types
 								if (value in lst_type_var):
 									b_exist = True
 									break
@@ -133,15 +152,26 @@ class ParseOutFiles(object):
 										and float(lst_freq_data[i]) <= limit_freq):
 								vect_to_write = []
 								if (sample_name != None): vect_to_write = [sample_name]
-								if (len(lst_data) > 10):
-									vect_to_write.extend(lst_data[:10])
-									vect_to_write.extend(lst_data[10].split(' '))
-									vect_to_write.extend(lst_data[11:])
-								else: vect_to_write.extend(lst_data)
+								## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
+								if (b_header_old):
+									if (len(lst_data) > 10):
+										vect_to_write.extend(lst_data[:10])
+										vect_to_write.extend(lst_data[10].split(' '))
+										vect_to_write.extend(lst_data[11:])
+									else: vect_to_write.extend(lst_data)
+									
+									### need to add empty fields
+									for _ in range(self.HEADER_TAB_FILE_after_change_add_fields):
+										vect_to_write.insert(self.get_pos_from_header(self.HEADER_TAB_FILE_old, self.HEADER_TAB_FILE_after_change) + 1, "")
+								else: 
+									if (len(lst_data) > 11):
+										vect_to_write.extend(lst_data[:11])
+										vect_to_write.extend(lst_data[11].split(' '))
+										vect_to_write.extend(lst_data[12:])
+									else: vect_to_write.extend(lst_data)
 								csv_writer.writerow(vect_to_write)
 								count_print += 1
 								break
-
 		return count_print
 
 	def parse_tab_files_snippy(self, sample_name, file_to_parse, csv_writer, vect_type_out, b_add_header):
@@ -160,11 +190,13 @@ class ParseOutFiles(object):
 		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy_expanded.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
+			b_header_old = False
 			for line in handle_to_process:
 				sz_temp = line.strip()
 				if (len(sz_temp) == 0): continue
 				if (sz_temp == self.HEADER_TAB_FILE_snippy_changed): b_header = True
-				elif (b_header): 	## start processing data
+				elif (sz_temp == self.HEADER_TAB_FILE_snippy_changed_old): b_header_old = True
+				elif (b_header or b_header_old): 	## start processing data
 					lst_data = sz_temp.split('\t')
 					if (len(lst_data) > 5):
 						lst_type_var = lst_data[2].split(',')
@@ -172,8 +204,13 @@ class ParseOutFiles(object):
 							if (len(vect_type_out) == 0 or lst_type_var[i] in vect_type_out):
 								vect_to_write = [sample_name]
 								vect_to_write.extend(lst_data)
-								csv_writer.writerow(vect_to_write)
 								break
+						
+						### test header old
+						if b_header_old:
+							for _ in range(self.HEADER_TAB_FILE_snippy_after_change_add_fields):
+								vect_to_write.insert(self.get_pos_from_header(self.HEADER_TAB_FILE_snippy_changed_old, self.HEADER_TAB_FILE_snippy_after_change) + 1, "")
+						csv_writer.writerow(vect_to_write)
 		return True
 
 
@@ -196,6 +233,7 @@ class ParseOutFiles(object):
 						lst_data = sz_temp.split('\t')
 						vect_to_write = []
 						if (len(lst_data) > 12):
+							## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
 							vect_to_write.extend(lst_data[:12])
 							vect_to_write.extend(lst_data[12].split(' '))
 							vect_to_write.extend(lst_data[13:])
@@ -208,6 +246,7 @@ class ParseOutFiles(object):
 									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
 								vect_to_write.extend([''] * (n_size_array - len(lst_data) - 1))
 								vect_to_write.append('yes')
+								
 						csv_writer.writerow(vect_to_write)
 
 		### copy to the origin to the result file

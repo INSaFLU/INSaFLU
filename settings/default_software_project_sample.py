@@ -68,7 +68,7 @@ class DefaultProjectSoftware(object):
 	
 	def get_snippy_parameters_all_possibilities(self, user, project_sample):
 		"""
-		get snippy parameters
+		get snippy parameters for project_sample, project and default
 		"""
 		
 		### Test project_sample first
@@ -88,6 +88,22 @@ class DefaultProjectSoftware(object):
 		
 		software_names = SoftwareNames()
 		return software_names.get_snippy_parameters()
+	
+	def get_snippy_parameters_for_project(self, user, project):
+		"""
+		get snippy parameters only for project or default
+		"""
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
+				Software.TYPE_OF_USE_project, project, None)
+		if (len(parameters) > 0): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_snippy_parameters(user)
+		if (len(parameters) > 0): return parameters
+		return None
 	
 	def get_snippy_single_parameter_default(self, parameter_name):
 		"""
@@ -109,7 +125,7 @@ class DefaultProjectSoftware(object):
 		if (value_default_parameter is None): return False
 		
 		parameter_defined = self.get_snippy_single_parameter(project_sample, parameter_name)
-		if parameter_defined == value_default_parameter: return True
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
 		return False
 		
 	def get_snippy_single_parameter(self, project_sample, parameter_name):
@@ -119,6 +135,31 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		parameters_string = self.get_snippy_parameters_all_possibilities(project_sample.project.owner, project_sample)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1].split()[0]
+		return None
+	
+	def is_snippy_single_parameter_default_for_project(self, project, parameter_name):
+		"""
+		test if a specific parameter is default SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
+		"""
+		
+		value_default_parameter = self.get_snippy_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_snippy_single_parameter_for_project(project, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+	
+	def get_snippy_single_parameter_for_project(self, project, parameter_name):
+		"""
+		get snippy single parameters
+		:param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
+		"""
+		
+		parameters_string = self.get_snippy_parameters_for_project(project.owner, project)
+		if (parameters_string is None): return None
 		lst_data = parameters_string.split(parameter_name)
 		if len(lst_data) == 2: return lst_data[1].split()[0]
 		return None

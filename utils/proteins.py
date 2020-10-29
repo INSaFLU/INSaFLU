@@ -212,7 +212,9 @@ class Proteins(object):
 		if (seq_ref is None): return False
 		
 		### get consensus sequence
-		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage, gene, out_dir)
+		limit_to_mask_consensus = -1	### not used in proteins
+		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage,\
+				gene, limit_to_mask_consensus, out_dir)
 		if (file_name is None): return False
 		
 		ref_seq_name = 'ref_seq_name__'

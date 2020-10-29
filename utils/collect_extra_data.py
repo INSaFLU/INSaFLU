@@ -90,7 +90,7 @@ class CollectExtraData(object):
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 		
-#	@transaction.atomic
+	@transaction.atomic
 	def __collect_extra_data_for_project(self, project, user):
 		"""
 		Everything that is necessary to do in the project
@@ -135,7 +135,9 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
-			
+			## collect all consensus files for a project_sample
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
+		
 			## calculate global variations for a project
 			self.calculate_count_variations(project)
 			
@@ -277,6 +279,10 @@ class CollectExtraData(object):
 			out_file = self.create_json_file_from_sample_csv(project)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus):
+			out_file = self.merge_all_consesnsus_files(project)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+			
 		if (out_file != None):
 			self.utils.copy_file(out_file, out_file_file_system)
 			os.unlink(out_file)
@@ -412,7 +418,22 @@ class CollectExtraData(object):
 			os.unlink(out_file)
 			return None
 		return out_file
-
+	
+	def merge_all_consesnsus_files(self, project):
+		"""
+		merge all consensus files
+		"""
+		
+		out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
+		vect_to_process = []
+		for project_sample in project.project_samples.all():
+			if (not project_sample.get_is_ready_to_proccess()): continue
+			vect_to_process.append([
+				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name),\
+				project_sample.sample.name])
+				
+		self.utils.merge_fasta_files(vect_to_process , out_file)
+		return out_file
 
 	def collect_variations_freebayes(self, project):
 		"""

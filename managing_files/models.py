@@ -647,6 +647,7 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
+	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
@@ -808,6 +809,7 @@ class ProjectSample(models.Model):
 	is_finished = models.BooleanField(default=False)
 	is_deleted = models.BooleanField(default=False)
 	is_error = models.BooleanField(default=False)		## if some problem occurs
+	is_mask_consensus_sequences = models.BooleanField(default=False)	### True if the consensus is masked with SoftwareNames.SOFTWARE_MSA_MASKER 
 	alert_first_level = models.IntegerField(default=0)	## has the number of alerts for high errors
 	alert_second_level = models.IntegerField(default=0)	## has the number of alerts for low errors
 	

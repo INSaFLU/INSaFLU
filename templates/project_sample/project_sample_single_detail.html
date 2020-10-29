@@ -45,13 +45,14 @@
 				<div class="col-lg-3"><strong>Vaccine status:</strong> {{ project_sample.sample.vaccine_status.name }}</div>
 			  	<div class="col-lg-3"><strong>Data set:</strong> {{ project_sample.sample.data_set.name }}</div>
 			  	<div class="col-lg-3"><strong>Is obsolete:</strong> {{ project_sample.sample.is_obsolete }}</div>
-			  	<div class="col-lg-3"><strong>Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
+			  	<div class="col-lg-3"><strong>Sample Upload date:</strong> {{ project_sample.sample.creation_date|date }}</div>
 			</div>
 			<hr>
 			<div class="row">
 				<div class="col-lg-3"><strong>Geolocation pos.(Lat, Lng):</strong> {{ project_sample.sample.geo_local.coords }}</div>
 			  	<div class="col-lg-3"><strong>Type and subtype/lineage:</strong> {{ project_sample.sample.type_subtype }}</div>
 			  	<div class="col-lg-3"><strong>Owner:</strong> {{ project_sample.sample.owner.username }}</div>
+			  	<div class="col-lg-3"><strong>Run date:</strong> {{ project_sample.creation_date|date }}</div>
 			</div>
 			
 			{% if extra_data_sample_expand %}
@@ -127,6 +128,11 @@
 				  			<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebayes_variants_file }}</div>
 				  		</div>
 				  		<hr>
+				  		<div class="row">
+							<div class="col-lg-4"><strong>Depth:</strong> {{ depth_file }}</div>
+							<div class="col-lg-4"><strong>Depth tbi:</strong> {{ depth_tbi_file }}</div>
+				  		</div>
+				  		<hr>
 					</div>
 					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
 			    		<p class="title-box">Alerts for sample: '{{ project_sample.sample.name }}'</p>
@@ -149,6 +155,10 @@
 				  		<hr>
 				  		<p class="software"><strong>{{freebayes_software_name}}: </strong> {% if freebayes_software %} {{ freebayes_software }} {% endif %}</p>
 				  		<hr>
+				  		{% if msa_markers_software %}
+				  			<p class="software"><strong>{{msa_markers_software_name}}: </strong> {% if msa_markers_software %} {{ msa_markers_software }} {% endif %}</p>
+				  			<hr>
+				  		{% endif %}
 			  		</div>
 				</div>
 			</div>

@@ -9,15 +9,19 @@
 {% block css %}
 {% endblock css %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock extra_messages %}
+
 {% block breadcrumbs %}
 	{{ block.super }}
 	{% breadcrumb "Samples" "samples" %}
 {% endblock %}
 
 {% block content %}
-	
-	<!-- set the messages -->
-	<div id="id_messages_remove"></div>
 	
 	{% if table.page and show_paginatior %}
 	  <div class="table-container">
@@ -89,13 +93,15 @@
 	  </div>
 	{% endif %}
 
+	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+	
 	<!-- The remove Modal -->
 	<div class="modal fade" id="id_remove_modal" >
 		<div class="modal-dialog">
 			<div class="modal-content">
    
   					<!-- Modal Header -->
-  					<div class="modal-header">
+  					<div class="modal-header alert alert-warning">
     					<h4 class="modal-title-remove">Remove a sample</h4>
     					<button type="button" class="close" data-dismiss="modal">&times;</button>
   					</div>

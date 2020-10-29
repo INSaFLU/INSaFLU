@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
+from settings.default_software_project_sample import DefaultProjectSoftware
 from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -281,7 +282,7 @@ class ProjectTable(tables.Table):
 		sz_project_sample = ""
 		if (count > 0):
 			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results">' +\
-				'<span ><i class="fa fa-info-circle padding-button-table"></i></span></a>'
+				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a>'
 			## only can change settings when has projects finished
 			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
@@ -289,7 +290,7 @@ class ProjectTable(tables.Table):
 			sz_project_sample = _("{} processing ".format(count_not_finished))
 		else:
 			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 		
 		return mark_safe(sz_project_sample)
 	
@@ -334,12 +335,19 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		manageDatabase = ManageDatabase()
 		meta_value = manageDatabase.get_project_sample_metakey_last(record, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		
+		### coverage
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
+		
+		### default parameters
+		default_software = DefaultProjectSoftware()
+		limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(record,\
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
 			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
-					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key))
+					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key, limit_to_mask_consensus))
 		return mark_safe(return_html)
 
 	def render_alerts(self, record):
@@ -377,11 +385,19 @@ class ShowProjectSamplesResults(tables.Table):
 		icon with link to extra info
 		"""
 		str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 				
-		str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
+		if (record.is_mask_consensus_sequences):
+			str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample run with user-selected parameters (see update 30 Oct 2020)">' +\
+				'<span ><i class="padding-button-table fa fa-calendar-check-o"></i></a>'
+		else:
+			str_links += '  '
+			
+		str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information" class="padding-button-table">' +\
 				'<span ><i class="fa fa-info-circle"></i> More info</a>'
 	
+		
+				
 		return mark_safe(str_links)
 
 	def order_sample_name(self, queryset, is_descending):

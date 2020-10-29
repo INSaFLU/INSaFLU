@@ -13,6 +13,7 @@ from utils.result import SoftwareDesc
 from utils.software import Software
 from utils.proteins import Proteins
 from constants.constants import Constants
+from settings.default_software_project_sample import DefaultProjectSoftware
 import os
 
 class CreateTree(object):
@@ -50,16 +51,21 @@ class CreateTree(object):
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
 		create the tree and the alignments
+		:param sequence_name Element name to process, None if they are all
 		return: path to results, or None if some error
 		"""
 		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
 		temp_dir = self.utils.get_temp_dir()
 		
+		### get limit mask
+		default_software = DefaultProjectSoftware()
+		
 		### get meta_key
 		meta_key = MetaKeyAndValue.META_KEY_Run_Tree_All_Sequences\
 				if sequence_name is None else metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)
-				
+		
+#		n_max_elements_in_reference = 0 
 		n_files_with_sequences = 0
 		n_count_samples_processed = 0
 		### create a fasta file with all consensus that pass in filters for each project_sample
@@ -72,19 +78,28 @@ class CreateTree(object):
 			
 			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
+			### get max number of elements
+# 			if (len(coverage.dt_data) > n_max_elements_in_reference):
+# 				n_max_elements_in_reference = len(coverage.dt_data)
 			
 			### get consensus
+			if (project_sample.is_mask_consensus_sequences): 
+				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+									DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+			else: limit_to_mask_consensus = -1
+			
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
 			if (not os.path.exists(consensus_fasta)):
 				manageDatabase.set_project_metakey(project, owner, meta_key,\
 						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)
 				self.utils.remove_dir(temp_dir)
 				return False
-			if (sequence_name is None):
-				if (self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, temp_dir)):
+			if (sequence_name is None):		### join all elements
+				if (self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name] = 1
 					n_files_with_sequences += 1
-			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, None, temp_dir)):
+			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, None,\
+					limit_to_mask_consensus, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
 					n_files_with_sequences += 1
 			n_count_samples_processed += 1
@@ -100,45 +115,61 @@ class CreateTree(object):
 		
 		### copy the reference
 		sample_name = project.reference.display_name.replace(' ', '_')
-		if (sequence_name != None):
+		if (sequence_name is None):
+			if (sample_name is None): sample_name = ""
+			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
+			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
+		else:
 			## test if exist a sample that is equal
 			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name
 			self.utils.filter_fasta_by_sequence_names(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
-						sample_name, sequence_name, coverage, None, temp_dir)
-		else:
-			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
-			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
+						sample_name, sequence_name, None, None, -1, temp_dir)
 		n_files_with_sequences += 1
 		
+		##########################
+		#####
+		##### When we have only one element in the reference it's not necessary run progressive mauve
 		### start processing the data
 		result_all = Result()
-		### run progressive mauve in all fasta files
-		try:
-			out_file_mauve = self.utils.get_temp_file_from_dir(temp_dir, "progressive_mauve", ".xfma")
-			self.software.run_mauve(temp_dir, out_file_mauve)
-			result_all.add_software(SoftwareDesc(self.software_names.get_mauve_name(), self.software_names.get_mauve_version(), self.software_names.get_mauve_parameters()))
-		except Exception:
-			result = Result()
-			result.set_error("Mauve (%s) fail to run" % (self.software_names.get_mauve_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_mauve_name(), self.software_names.get_mauve_version(), self.software_names.get_mauve_parameters()))
-			manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(temp_dir)
-			return False
-		
-		### run Convert.pl in mauve result
-		try:
-			out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
-			out_file_convert_mauve = self.software.run_convert_mauve(out_file_mauve, out_file_convert_mauve)
-			result_all.add_software(SoftwareDesc(self.software_names.get_convert_mauve_name(), self.software_names.get_convert_mauve_version(),\
-							self.software_names.get_convert_mauve_parameters()))
-		except Exception:
-			result = Result()
-			result.set_error("Convert mauve (%s) fail to run" % (self.software_names.get_convert_mauve_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_convert_mauve_name(), self.software_names.get_convert_mauve_version(),\
-							self.software_names.get_convert_mauve_parameters()))
-			manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(temp_dir)
-			return False
+		out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
+		## need to join all sequences
+		if (sequence_name is None):
+			vect_elements = self.utils.get_elements_from_db(project.reference, project.owner) 
+			self.utils.merge_fasta_and_join_sequences(temp_dir, vect_elements, out_file_convert_mauve)
+		else: self.utils.merge_fasta_first_sequence(temp_dir, out_file_convert_mauve)
+			
+# 		if (n_max_elements_in_reference == 1): ## only concatenate fasta files
+# 			out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
+# 			self.utils.merge_fasta_first_sequence(temp_dir, out_file_convert_mauve)
+# 			
+# 		else:	## because we have more than one element in reference we need to make a rough alignment first 
+# 			### run progressive mauve in all fasta files
+# 			try:
+# 				out_file_mauve = self.utils.get_temp_file_from_dir(temp_dir, "progressive_mauve", ".xfma")
+# 				self.software.run_mauve(temp_dir, out_file_mauve)
+# 				result_all.add_software(SoftwareDesc(self.software_names.get_mauve_name(), self.software_names.get_mauve_version(), self.software_names.get_mauve_parameters()))
+# 			except Exception:
+# 				result = Result()
+# 				result.set_error("Mauve (%s) fail to run" % (self.software_names.get_mauve_version()))
+# 				result.add_software(SoftwareDesc(self.software_names.get_mauve_name(), self.software_names.get_mauve_version(), self.software_names.get_mauve_parameters()))
+# 				manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+# 				self.utils.remove_dir(temp_dir)
+# 				return False
+# 			
+# 			### run Convert.pl in mauve result
+# 			try:
+# 				out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
+# 				out_file_convert_mauve = self.software.run_convert_mauve(out_file_mauve, out_file_convert_mauve)
+# 				result_all.add_software(SoftwareDesc(self.software_names.get_convert_mauve_name(), self.software_names.get_convert_mauve_version(),\
+# 								self.software_names.get_convert_mauve_parameters()))
+# 			except Exception:
+# 				result = Result()
+# 				result.set_error("Convert mauve (%s) fail to run" % (self.software_names.get_convert_mauve_version()))
+# 				result.add_software(SoftwareDesc(self.software_names.get_convert_mauve_name(), self.software_names.get_convert_mauve_version(),\
+# 								self.software_names.get_convert_mauve_parameters()))
+# 				manageDatabase.set_project_metakey(project, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+# 				self.utils.remove_dir(temp_dir)
+# 				return False
 		
 		### run mafft
 		try:
@@ -146,7 +177,7 @@ class CreateTree(object):
 			self.software.run_mafft(out_file_convert_mauve, out_file_mafft, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
 			result_all.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\
 							self.software_names.get_mafft_parameters()))
-		except Exception:
+		except Exception as e:
 			result = Result()
 			result.set_error("Mafft (%s) fail to run" % (self.software_names.get_mafft_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\

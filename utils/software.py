@@ -1187,11 +1187,6 @@ class Software(object):
 				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
 				self.utils.link_file(path_snippy_tab, sz_file_to)
 			
-			################################################
-			### Run again the snippy to check if 
-			# reference
-			# project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name())
-			
 			## get coverage from deep file
 			get_coverage = GetCoverage()
 			try:
@@ -1258,6 +1253,22 @@ class Software(object):
 					manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Error, meta_sample.description)
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
+			
+			#####################
+			###
+			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER 
+			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+			msa_parameters = self.make_mask_consensus( 
+				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
+				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, self.software_names.get_snippy_name()),
+				coverage, project_sample.sample.name, limit_to_mask_consensus)
+			### add version of mask
+			result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
+					"{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
+					default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME),									
+					100 - int(default_software.get_mask_consensus_single_parameter(project_sample, DefaultProjectSoftware.MASK_CONSENSUS_threshold)))) )
 			
 			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
 			parse_out_files = ParseOutFiles()
@@ -1383,6 +1394,7 @@ class Software(object):
 			project_sample.is_deleted_in_file_system = False
 			project_sample.date_deleted = None
 			project_sample.is_error = False
+			project_sample.is_mask_consensus_sequences = True
 			project_sample.count_variations = manage_database.get_variation_count(count_hits)
 			project_sample.mixed_infections = mixed_infection
 			project_sample.save()
@@ -1400,7 +1412,7 @@ class Software(object):
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
 			if (os.path.exists(consensus_fasta)):
 				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, False)
+				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, limit_to_mask_consensus, False)
 			
 			### set the tag of result OK 
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Snippy_Freebayes, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
@@ -1513,6 +1525,83 @@ class Software(object):
 			return(True, path_1_temp, path_2_temp if (path_2 != None and os.path.exists(path_2)) else None)
 		return(False, path_1, path_2)
 
+
+	def make_mask_consensus(self, consensus_file, reference_fasta, deep_file, coverage, sample_name, limit_make_mask):
+		"""
+		:param limit_to_mask_consensus, default 70%
+		/usr/local/software/insaflu/snippy/bin/msa_masker.py -i /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.consensus.fa -df /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.depth.gz -o /tmp/insaFlu/insa_flu_path_86811930/temp.fasta --c 200
+		"""
+		## run all elements in reference
+		temp_masked = self.utils.get_temp_file("masked_file", ".fasta")
+		temp_to_join = self.utils.get_temp_file("join_file", ".fasta")
+		temp_mafft_align = self.utils.get_temp_file("mafft_to_align", ".fasta")
+		temp_new_consensus = self.utils.get_temp_file("new_consensus", ".fasta")
+		vect_out_fasta = []
+		
+		msa_parameters = ""
+		with open(reference_fasta, "rU") as handle_fasta:
+			dt_consensus = SeqIO.to_dict(SeqIO.parse(consensus_file, "fasta"))
+			for record in SeqIO.parse(handle_fasta, "fasta"):
+				if (record.id in dt_consensus and coverage.ratio_value_coverage_bigger_limit(record.id, limit_make_mask)):	### make mask
+					
+					### get sequences
+					vect_out_fasta_to_align = []
+					record_id = record.id 
+					record.id = record.id + "_ref"
+					vect_out_fasta_to_align.append(record)
+					vect_out_fasta_to_align.append(dt_consensus[record_id])
+					
+					with open(temp_to_join, "w") as handle_fasta_out_align:
+						SeqIO.write(vect_out_fasta_to_align, handle_fasta_out_align, "fasta")
+
+					### run maft
+					temp_mafft_align = self.run_mafft(temp_to_join, temp_mafft_align, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
+					
+					### run mask 
+					msa_parameters = self.run_mask_app(temp_mafft_align, deep_file, temp_masked, coverage.get_middle_limit())
+					
+					### read output file
+					dt_mask_consensus = SeqIO.to_dict(SeqIO.parse(temp_masked, "fasta"))
+					if (record_id in dt_mask_consensus): record_temp = dt_mask_consensus[record_id]
+					else: record_temp = dt_consensus[record_id]
+					## add sample name to the consensus sequences
+					record_temp.description = sample_name
+					vect_out_fasta.append(record_temp)
+				else: ## write as is
+					## add sample name to the consensus sequences 
+					record.description = sample_name
+					vect_out_fasta.append(record)
+
+		### write the output
+		with open(temp_new_consensus, "w") as handle_fasta_out:
+			if (len(vect_out_fasta) > 0):
+				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
+
+		### move temp consensus to original position, if has info
+		if os.stat(temp_new_consensus).st_size > 0:
+			self.utils.move_file(temp_new_consensus, consensus_file)
+		
+		self.utils.remove_file(temp_new_consensus)
+		self.utils.remove_file(temp_to_join)
+		self.utils.remove_file(temp_masked)
+		self.utils.remove_file(temp_mafft_align)
+		return msa_parameters
+	
+	def run_mask_app(self, input_fasta, deep_file, out_file, coverage_limit):
+		"""
+		run msa_masker
+		/usr/local/software/insaflu/snippy/bin/msa_masker.py -i /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.consensus.fa -df /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.depth.gz -o /tmp/insaFlu/insa_flu_path_86811930/temp.fasta --c 200
+		"""
+		msa_parameters = "{} {}".format(self.software_names.get_msa_masker_parameters(), int(coverage_limit) - 1)
+		cmd = "{} -i {} -df {} -o {} {}".format(self.software_names.get_msa_masker(),
+			input_fasta, deep_file, out_file, msa_parameters)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run msa_masker") 
+		
+		return msa_parameters
 
 class Contigs2Sequences(object):
 	'''

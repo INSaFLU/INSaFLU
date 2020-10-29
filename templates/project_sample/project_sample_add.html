@@ -105,13 +105,46 @@
 	
 		<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
+		{% if show_message_change_settings %}
+			<div class="modal fade" id="modal_show_settings_allert">
+				<div class="modal-dialog">
+					<div class="modal-content">
+   
+	  					<!-- Modal Header -->
+	  					<div class="modal-header alert alert-warning">
+	    					<h4 class="modal-title-warning">Change settings of a project</h4>
+	    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	  					</div>
+	  
+	  					<!-- Modal body -->
+	  					<div class="modal-body">Before adding the first sample, you can change the settings of this project.</div>
+	  					<div class="modal-body">Please, <strong>Go Back</strong> and click on <strong>Magic Wand</strong> for this project.</div>
+	  					<div class="modal-body">After that, settings can still be modified for individual samples within the project.</div>
+	  					<!-- Modal footer -->
+	  					<div class="modal-footer" id="id-modal-footer-remove">
+	    					<button type="button" class="btn btn-primary" data-dismiss="modal">Exit</button>
+	  					</div>
+					</div>
+				</div>
+			</div><!-- /.modal -->
+		{% endif %}
+		
 	{% endif %}
 {% endblock content %}
 
  {% block js %}
+ 		
+	<script>
+		$(document).ready(function (){
+			$('#modal_show_settings_allert').modal('show')
+		});
+	</script>
+ 		
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+	    	
+			
      
  {% endblock %}
 

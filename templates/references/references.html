@@ -11,6 +11,13 @@
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 {% endblock css %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock extra_messages %}
+
 <!-- Breadcrumbs-->
 {% block breadcrumbs %}
 	{{ block.super }}
@@ -20,9 +27,6 @@
 <!-- Main content-->
 {% block content %}
 
-	<!-- set the messages -->
-	<div id="id_messages_remove"></div>
-	
 {% block table %}
 
 	{% if table.page and show_paginatior %}
@@ -103,7 +107,7 @@
 			<div class="modal-content">
    
   					<!-- Modal Header -->
-  					<div class="modal-header">
+  					<div class="modal-header alert alert-warning">
     					<h4 class="modal-title-remove">Remove a reference</h4>
     					<button type="button" class="close" data-dismiss="modal">&times;</button>
   					</div>

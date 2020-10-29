@@ -320,7 +320,7 @@ class Test(unittest.TestCase):
 		sample_name = 'xpto' 
 		utils = Utils()
 		temp_dir = utils.get_temp_dir()
-		result_fasta = utils.filter_fasta_all_sequences(consensus_EVA001_S66, sample_name, coverage, temp_dir)
+		result_fasta = utils.filter_fasta_all_sequences(consensus_EVA001_S66, sample_name, coverage, -1, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
@@ -328,7 +328,7 @@ class Test(unittest.TestCase):
 		self.assertEquals(8, self.utils.get_max_length_fasta(result_fasta))
 		
 		coverage.add_coverage('NA', Coverage.COVERAGE_MORE_9, '99.9')
-		result_fasta = utils.filter_fasta_all_sequences(consensus_EVA001_S66, sample_name, coverage, temp_dir)
+		result_fasta = utils.filter_fasta_all_sequences(consensus_EVA001_S66, sample_name, coverage, -1, temp_dir)
 		self.assertTrue(result_fasta == None)
 
 		## remove dir
@@ -414,7 +414,7 @@ class Test(unittest.TestCase):
 		sample_name = 'xpto' 
 		utils = Utils()
 		temp_dir = utils.get_temp_dir()
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NP', coverage, None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NP', coverage, None, 70, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
@@ -422,20 +422,20 @@ class Test(unittest.TestCase):
 		
 		
 		coverage.add_coverage('NA', Coverage.COVERAGE_MORE_9, '99.9')
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NA', coverage, None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'NA', coverage, None, 100, temp_dir)
 		self.assertTrue(result_fasta == None)
 		
 		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_9, '19.9')
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PB2', coverage, None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PB2', coverage, None, 70, temp_dir)
 		self.assertTrue(result_fasta == None)
 		
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', coverage, None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', coverage, None, 70, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
 		self.assertEquals(1, locus_fasta)
 
-		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', None, None, temp_dir)
+		result_fasta = utils.filter_fasta_by_sequence_names(consensus_EVA001_S66, sample_name, 'PA', None, None, 70, temp_dir)
 		self.assertTrue(result_fasta != None)
 		self.assertTrue(os.path.exists(result_fasta))
 		locus_fasta = self.utils.is_fasta(result_fasta)
@@ -819,6 +819,67 @@ class Test(unittest.TestCase):
 		self.assertEqual(2, int(os.path.getmtime(file_2)) - last_value)
 		self.assertTrue(os.path.exists(file_2))
 		utils.remove_dir(main_path)
+
+
+	def test_merge_fasta_first_sequence(self):
+		"""
+		testing merging fasta
+		"""
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA)
+		out_file = self.utils.get_temp_file("file_name", ".fasta")
+		self.assertTrue(os.path.exists(out_file))
+		utils.merge_fasta_first_sequence(path_to_fasta , out_file)
+		self.assertTrue(os.path.exists(out_file))
+		vect_read_file = utils.read_text_file(out_file)
+		self.assertEqual(40, len(vect_read_file))
+		
+		self.assertTrue(">fasta_1 EVA003_S91" in vect_read_file)
+		os.unlink(out_file)
+	
+	def test_merge_fasta_files(self):
+		"""
+		testing merging fasta
+		"""
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA)
+		out_file = self.utils.get_temp_file("file_name", ".fasta")
+		self.assertTrue(os.path.exists(out_file))
+		vest_data = [[os.path.join(path_to_fasta, "fasta_1.fasta"), "test_sample_1"],
+					[os.path.join(path_to_fasta, "fasta_2.fasta"), "test_sample_2"]]
+		utils.merge_fasta_files(vest_data , out_file)
+		self.assertTrue(os.path.exists(out_file))
+		vect_read_file = utils.read_text_file(out_file)
+		self.assertEqual(78, len(vect_read_file))
+		
+		self.assertTrue(">test_sample_1__EVA003_S91" in vect_read_file)
+		self.assertTrue(">test_sample_2__EVA003_S91" in vect_read_file)
+		os.unlink(out_file)
+
+
+	def test_merge_fasta_and_join_sequences(self):
+		"""
+		testing merging fasta and join sequences
+		"""
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_MERGE_FASTA)
+		vect_read_file = utils.read_text_file(os.path.join(path_to_fasta, "fasta_1.fasta"))
+		self.assertEqual(39, len(vect_read_file))
+		
+		out_file = self.utils.get_temp_file("file_name", ".fasta")
+		self.assertTrue(os.path.exists(out_file))
+		vect_elements = ['EVA003_S91', 'EVA001_S66', 'EVA002_S52', 'EVA002_S53', 'EVA011_S54']
+		utils.merge_fasta_and_join_sequences(path_to_fasta, vect_elements, out_file)
+		self.assertTrue(os.path.exists(out_file))
+		vect_read_file = utils.read_text_file(out_file)
+		self.assertEqual(70, len(vect_read_file))
+		
+		self.assertTrue(">fasta_1" in vect_read_file)
+		self.assertTrue(">fasta_2" in vect_read_file)
+		os.unlink(out_file)
 
 
 

@@ -9,14 +9,19 @@
 {% block css %}
 {% endblock css %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
 {% block breadcrumbs %}
 	{{ block.super }}
 	{% breadcrumb "Phylogeny" "phylogeny" %}
 {% endblock %}
 s
 {% block content %}
-	<!-- set the messages -->
-	<div id="id_messages_remove"></div>
 	
 	{% if table.page and show_paginatior %}s
 	  <div class="table-container">

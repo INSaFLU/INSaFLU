@@ -32,6 +32,7 @@ from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import Tags, SeqVirus, IdentifyVirus
 from settings.default_software import DefaultSoftware
 from settings.models import Software as Software2, Parameter
+from utils.parse_coverage_file import GetCoverage
 
 class Test(TestCase):
 
@@ -51,10 +52,9 @@ class Test(TestCase):
 		pass
 
 	
-	
-	def test_run_snippy(self):
+	def test_make_mask_consensus(self):
 		"""
-		run snippy
+		run make mask consensus
 		"""
 
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
@@ -90,12 +90,26 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
+		ref_name = "second_stage_2"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+			
 		project_name = "file_name_3_dsf"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:
 			project = Project()
 			project.name = sample_name
+			project.reference = reference
 			project.owner = user
 			project.save()
 		
@@ -107,40 +121,34 @@ class Test(TestCase):
 		software_names = SoftwareNames()
 		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False),
 				fasta_file, gb_file, sample.name, software_names.get_snippy_parameters())
-		self.assertTrue(False)
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, "")))))
-		file_size = os.path.getsize(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, ""))))
-		self.assertTrue(file_size > 1000 )
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, "")))))
-		self.assertFalse(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FASTA, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CSV, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ_TBI, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, "reference", os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, "")))))
+
+		### set coverage statistics
+		get_coverage = GetCoverage()
+		coverage = get_coverage.get_coverage(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, ""))),\
+						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+						700)
+
+		self.assertFalse(coverage.is_100_more_9("NP"))
+		self.assertEqual(0.0, coverage.ratio_value_defined_by_user)
+		self.assertFalse(coverage.is_100_more_9("PA"))
+		self.assertEqual(30.0, coverage.ratio_value_defined_by_user)
+		self.assertFalse(coverage.is_100_more_9("NA"))
+		self.assertEqual(86.0, coverage.ratio_value_defined_by_user)
+		self.assertFalse(coverage.is_100_more_9("PB2"))
+		self.assertEqual(49.0, coverage.ratio_value_defined_by_user)	
+
+		limit_make_mask = 70
+		msa_parameters = self.software.make_mask_consensus(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
+ 			project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+ 			os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, ""))), 
+ 			coverage, sample_name, limit_make_mask)
+		self.assertEqual("--c 699", msa_parameters)
+
+		print(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))))
+		print(os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, 'run_snippy1_sdfs.consensus.fa' ))
+		self.assertTrue(filecmp.cmp(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
+					os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, 'run_snippy1_sdfs.consensus.fa' )) )
+		
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
-
-		out_put_path = self.software.run_snippy(sample.get_fastq(TypePath.MEDIA_ROOT, True), None, fasta_file, gb_file, sample.name, software_names.get_snippy_parameters())
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, "")))))
-		file_size_2 = os.path.getsize(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, ""))))
-		self.assertTrue(file_size_2 > 1000)
-		self.assertTrue(file_size_2 < file_size)
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, "")))))
-		self.assertFalse(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FASTA, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CSV, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ_TBI, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_TAB, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF_GZ, "")))))
-		self.assertTrue(os.path.exists(os.path.join(out_put_path, "reference", os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, "")))))
-		remove_path = os.path.dirname(out_put_path)
-		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
-		else: self.utils.remove_dir(out_put_path)
-		self.utils.remove_dir(temp_dir)
-
-

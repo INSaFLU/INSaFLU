@@ -6,6 +6,7 @@ $(document).on("click", "a", function(e){
 	var proj_name = $(this).attr('proj_name');
 	var pk_proj = $(this).attr('pk_proj');
 	var pk_proj_sample = $(this).attr('pk_proj_sample');
+	var type_software = $(this).attr('type_software');
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'id_default_parameter'){
@@ -13,6 +14,7 @@ $(document).on("click", "a", function(e){
 		$('#id-modal-body-set-default').attr('pk', $(this).attr('pk'));		/// software ID
 		$('#id-modal-body-set-default').attr('ref_name', ref_name);
 		$('#id-modal-body-set-default').attr('td_to_update', td_to_update);
+		$('#id-modal-body-set-default').attr('type_software', type_software);
 		
 		// info about project or project_sample to set defaults in software
 		if ( typeof proj_name !== typeof undefined && proj_name !== false ) {
@@ -45,16 +47,23 @@ $('#id-set-default-button').on('click', function(){
           if (data['is_ok']) {
         	  /// add message with informaton
         	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-success">' +
-        		'The software \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was set to default values.' +
+        		'The ' + $('#id-modal-body-set-default').attr('type_software') + 
+        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was set to default values.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
         	  var element_to_update = document.getElementById($('#id-modal-body-set-default').attr('td_to_update'))
-        	  element_to_update.getElementsByTagName("td")[2].textContent = data['default']
+        	  if ($('#id-modal-body-set-default').attr('type_software') === 'software'){
+        		  element_to_update.getElementsByTagName("td")[2].textContent = data['default']
+        	  }
+        	  else{
+        		  element_to_update.getElementsByTagName("td")[1].textContent = data['default']
+        	  }
           }
           else{
         	/// add message with informaton
         	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The software \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was not set to default values.' +
+        		'The ' + $('#id-modal-body-set-default').attr('type_software') + 
+        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was not set to default values.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }

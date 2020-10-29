@@ -86,12 +86,16 @@ class SoftwareForm(forms.ModelForm):
 		self.helper.form_method = 'POST'
 		
 		#### message in form
-		form_message = 'Update software parameters for -{}-'.format(self.instance.name)
+		form_message = 'Update {} parameters for -{}-'.format("software" if self.instance.is_software() else "INSaFLU",\
+					self.instance.name)
 		if (not project is None):
-			form_message = "Update software parameters for -{}- project:'{}'".format(self.instance.name, project.name)
+			form_message = "Update {} parameters for -{}- project:'{}'".format(\
+				"software" if self.instance.is_software() else "INSaFLU",\
+				self.instance.name, project.name)
 		if (not project_sample is None):
-			form_message = "Update software parameters for -{}- project:'{}' for sample:'{}'.".format(self.instance.name,
-						project_sample.project.name, project_sample.sample.name)
+			form_message = "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(\
+				"software" if self.instance.is_software() else "INSaFLU",\
+				self.instance.name, project_sample.project.name, project_sample.sample.name)
 
 		if (len(vect_rows_divs) == 1):
 			self.helper.layout = Layout(

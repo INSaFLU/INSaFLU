@@ -26,15 +26,17 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(2, len(vect_software))
+		self.assertEqual(3, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[2])
 		
 		### test all defaults
 		default_software.test_all_defaults(user)
 		
 		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33", default_software.get_trimmomatic_parameters(user))
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user))
+		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user))
 		
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,
@@ -192,9 +194,7 @@ class testsDefaultSoftwares(TestCase):
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, project, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 42334", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
-
-
-
+		
 	def test_default_software_project(self):
 		try:
 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
@@ -236,6 +236,8 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project, project, None))
 #		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
 #				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, project))
+		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project))
+
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project,\
@@ -289,6 +291,8 @@ class testsDefaultSoftwares(TestCase):
 		## default
 		default_software = DefaultProjectSoftware()
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
+		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample))
+		self.assertEqual(True, default_software.is_mask_consensus_single_parameter_default(project_sample, DefaultProjectSoftware.MASK_CONSENSUS_threshold))
 
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
@@ -363,6 +367,73 @@ class testsDefaultSoftwares(TestCase):
 		#### save a project_sample
 		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
+		### test extra mask maker
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project)
+			self.assertTrue(software.is_used_in_project())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended, software.name_extended)
+		self.assertEqual(Software.TYPE_INSAFLU_PARAMETER, software.type_of_software)
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		self.assertEqual("70", parameters[0].parameter)
+		parameter = parameters[0]
+		parameter.parameter = "80"
+		parameter.save()
+		
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			self.fail("Must exist project name")
+		self.assertEqual("Threshold:80", default_software.get_mask_consensus_parameters_for_project(user, project))
+		self.assertEqual("80", default_software.get_mask_consensus_single_parameter_for_project(project,\
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+		
+		project_name = "file_name_3_4ww"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.name = project_name
+			project.owner = user
+			project.save()
+		
+		###  save project sample
+		project_sample = ProjectSample()
+		project_sample.project = project
+		project_sample.sample = sample
+		project_sample.save()
+
+		default_software = DefaultProjectSoftware()
+		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None)
+		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample))
+		self.assertEqual("70", default_software.get_mask_consensus_single_parameter(project_sample,\
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+		
+		### for project sample
+		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample)
+		### test extra mask maker
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project_sample)
+			self.assertTrue(software.is_used_in_project_sample())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+		
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		self.assertEqual("70", parameters[0].parameter)
+		parameter = parameters[0]
+		parameter.parameter = "90"
+		parameter.save()
+		
+		self.assertEqual("90", default_software.get_mask_consensus_single_parameter(project_sample,\
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+		self.assertEqual("Threshold:90", default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample))
 		
 	def test_default_software_project_sample(self):
 		

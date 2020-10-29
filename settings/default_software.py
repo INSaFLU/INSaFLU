@@ -21,6 +21,7 @@ class DefaultSoftware(object):
 		### test all defaults
 		self.test_default_trimmomatic_db(user)
 		self.test_default_snippy_db(user)
+		self.test_default_mask_consensus_threshold_db(user)
 
 	def test_default_trimmomatic_db(self, user):
 		"""
@@ -35,6 +36,19 @@ class DefaultSoftware(object):
 				vect_parameters = self._get_trimmomatic_default(user)
 				self._persist_parameters(vect_parameters)
 
+	def test_default_mask_consensus_threshold_db(self, user):
+		"""
+		percentage threshold of consensus coverage 
+		"""
+		try:
+			Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner = user,\
+						type_of_use = Software.TYPE_OF_USE_global)
+		except Software.DoesNotExist:
+			### create a default one for this user
+			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+				vect_parameters = self._get_mask_consensus_threshold_default(user)
+				self._persist_parameters(vect_parameters)
+	
 	def test_default_snippy_db(self, user):
 		"""
 		test if exist, if not persist in database
@@ -52,6 +66,8 @@ class DefaultSoftware(object):
 		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 	def get_snippy_parameters(self, user):
 		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name)
+	def get_mask_consensus_threshold_parameters(self, user):
+		return self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name)
 	
 	def _get_parameters(self, user, software_name):
 		"""
@@ -94,6 +110,8 @@ class DefaultSoftware(object):
 	def set_default_software(self, software, user):
 		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name): vect_parameters = self._get_snippy_default(user)
 		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): vect_parameters = self._get_trimmomatic_default(user)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
+			vect_parameters = self._get_mask_consensus_threshold_default(user)
 		else: return
 		
 		parameters = Parameter.objects.filter(software=software)
@@ -140,6 +158,9 @@ class DefaultSoftware(object):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			self.test_default_snippy_db(user) 
 			return self.get_snippy_parameters(user)
+		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
+			self.test_default_mask_consensus_threshold_db(user) 
+			return self.get_mask_consensus_threshold_parameters(user)
 		return ""
 
 
@@ -150,6 +171,7 @@ class DefaultSoftware(object):
 		vect_software = []
 		vect_software.append(self.software_names.get_trimmomatic_name())
 		vect_software.append(self.software_names.get_snippy_name())
+		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		return vect_software
 
 	def _get_snippy_default(self, user):
@@ -160,8 +182,10 @@ class DefaultSoftware(object):
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+		software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_name_extended
 		software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
 		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
 		software.owner = user
 		
 		vect_parameters =  []
@@ -210,6 +234,7 @@ class DefaultSoftware(object):
 		
 		return vect_parameters
 
+	
 
 	def _get_trimmomatic_default(self, user):
 		"""
@@ -217,8 +242,10 @@ class DefaultSoftware(object):
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+		software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
 		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
 		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
 		software.owner = user
 		
 		vect_parameters =  []
@@ -322,7 +349,7 @@ class DefaultSoftware(object):
 		parameter.range_available = "[5:500]"
 		parameter.range_max = "500"
 		parameter.range_min = "5"
-		parameter.description = "SMINLEN:<length> This module removes reads that fall below the specified minimal length."
+		parameter.description = "MINLEN:<length> This module removes reads that fall below the specified minimal length."
 		vect_parameters.append(parameter)
 
 ##		Only available in 0.30 version		
@@ -355,7 +382,33 @@ class DefaultSoftware(object):
 		return vect_parameters
 
 
-
-
+	def _get_mask_consensus_threshold_default(self, user):
+		"""
+		Threshold of mask not consensus coverage
+		"""
+		software = Software()
+		software.name = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name
+		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "Threshold"
+		parameter.parameter = "70"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[50:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "50"
+		parameter.description = "Threshold to mask failed consensus coverage. Value in percentage"
+		vect_parameters.append(parameter)
+		return vect_parameters
 
 

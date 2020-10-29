@@ -14,7 +14,7 @@ class Command(BaseCommand):
 	'''
 	classdocs
 	'''
-	help = "Reload default references."
+	help = "Unlock upload files for all accounts."
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")

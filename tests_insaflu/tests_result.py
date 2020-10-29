@@ -102,11 +102,7 @@ class Test(TestCase):
 		except Exception as e:
 			self.assertEquals("Error: there's no key like this: 4", e.args[0])
 		
-		try:
-			self.assertTrue("19", coverage_2.get_coverage('2', "xpto"))
-			self.fail("must raise exception")
-		except Exception as e:
-			self.assertEquals("Error: there's no key like this: xpto", e.args[0])
+		self.assertEqual(None, coverage_2.get_coverage('2', "xpto"))
 
 		self.assertTrue(coverage_2.exist_this_element('3'))
 		self.assertFalse(coverage_2.exist_this_element('adsa'))

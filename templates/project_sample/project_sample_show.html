@@ -12,6 +12,13 @@
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 {% endblock css %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
 {% block breadcrumbs %}
 	{{ block.super }}
 	{% breadcrumb "Projects" "projects" %}
@@ -25,9 +32,6 @@
 		<p><strong>Project sample not available</strong></p>
 	{% else %}
 	
-		<!-- set the messages -->
-		<div id="id_messages_remove"></div>
-		
 		<div id="accordion" role="tablist" aria-multiselectable="true">
 			<!-- Card overall project-->
 			<div class="card">
@@ -243,6 +247,7 @@
 				                    <th colspan="8">
 				                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
 										<strong style="padding-left:20px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
+										<strong style="padding-left:20px">All consensus (.fasta): {{ sample_file_all_consensus }} </strong>
 				                        <form method="get" action="" class="form-inline form-search pull-right">
 				                        	{% csrf_token %}
 				                            <div class="pull-right form-search">
@@ -298,6 +303,7 @@
 				{% endif %}
 		
 				<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 				
 				<!-- The Modal -->
 				<div class="modal fade" id="coverageModal">
@@ -305,7 +311,7 @@
 						<div class="modal-content">
 	     
 	       					<!-- Modal Header -->
-	       					<div class="modal-header">
+	       					<div class="modal-header alert alert-primary">
 	         					<h4 class="modal-title">Coverage</h4>
 	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
 	       					</div>
@@ -331,7 +337,7 @@
 						<div class="modal-content">
 			   
 			  					<!-- Modal Header -->
-			  					<div class="modal-header">
+			  					<div class="modal-header alert alert-warning">
 			    					<h4 class="modal-title-remove">Remove a sample in a project</h4>
 			    					<button type="button" class="close" data-dismiss="modal">&times;</button>
 			  					</div>

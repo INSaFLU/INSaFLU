@@ -1,4 +1,4 @@
 "ID"	"CHROM"	"POS"	"TYPE"	"REF"	"ALT"	"FREQ"	"COVERAGE"	"FTYPE"	"STRAND"	"NT_POS"	"AA_POS"	"EFFECT"	"NT CHANGE"	"AA CHANGE"	"LOCUS_TAG"	"GENE"	"PRODUCT"
-"sample_name"	"PB2"	"873"	"snp"	"A"	"G"	""	"2.58398"	"CDS"	"+"	"843/2250"	"281/749"	"synonymous_variant"	"c.843A>G"	"p.Gly281Gly"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
-"sample_name"	"PB2"	"1932"	"snp"	"G"	"A"	""	"20.2381"	"CDS"	"+"	"1902/2250"	"634/749"	"synonymous_variant"	"c.1902G>A"	"p.Gly634Gly"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
-"sample_name"	"HA"	"117"	"snp"	"A"	"G"	""	"3.39321"	"CDS"	"+"	"117/1701"	"39/566"	"synonymous_variant"	"c.117A>G"	"p.Gly39Gly"	"locus_00004"	"HA"	"Hemagglutinin"
+"sample_name"	"PB2"	"873"	"snp"	"A"	"G"	"2.58398"	"387"	"CDS"	"+"	"843/2250"	"281/749"	"synonymous_variant"	"c.843A>G"	"p.Gly281Gly"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
+"sample_name"	"PB2"	"1932"	"snp"	"G"	"A"	"20.2381"	"336"	"CDS"	"+"	"1902/2250"	"634/749"	"synonymous_variant"	"c.1902G>A"	"p.Gly634Gly"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
+"sample_name"	"HA"	"117"	"snp"	"A"	"G"	"3.39321"	"501"	"CDS"	"+"	"117/1701"	"39/566"	"synonymous_variant"	"c.117A>G"	"p.Gly39Gly"	"locus_00004"	"HA"	"Hemagglutinin"

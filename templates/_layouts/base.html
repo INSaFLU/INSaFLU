@@ -184,7 +184,10 @@
 					{% endfor %}
 				</div>
 			{% endif %}
-	
+			
+			{% block extra_messages %}
+			{% endblock extra_messages %}
+			
  			{% if nav_modal %} <div class="container"> {% endif %}
 				{% if not not_show_breadcrumbs %}
 					{% load django_bootstrap_breadcrumbs %}
@@ -231,7 +234,7 @@
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
-				<div class="modal-header">
+				<div class="modal-header alert alert-warning">
 					<h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
 					<button class="close" type="button" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">×</span>

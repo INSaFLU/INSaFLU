@@ -237,6 +237,9 @@ class CoverageElement(object):
 		
 	def get_coverage(self, type_coverage):
 		return self.dt_data.get(type_coverage, None)
+	
+	def __str__(self):
+		return "Element: {}  {}".format(self.element, self.dt_data)
 
 
 class Coverage(object):
@@ -266,6 +269,14 @@ class Coverage(object):
 		""" test if limit defined by user exists """
 		return not self.limit_defined_to_project is None
 	
+	def get_middle_limit(self):
+		"""
+		:return threshold of middle limit 
+		"""
+		if (not self.limit_defined_by_user is None): return self.limit_defined_by_user
+		if (not self.limit_defined_to_project is None): return self.limit_defined_to_project
+		return 10
+
 	def get_dict_data(self): return self.dt_data
 	
 	def get_sorted_elements_name(self): return sorted(self.dt_data.keys())
@@ -289,6 +300,18 @@ class Coverage(object):
 	def get_result_number(self):
 		return ""
 	
+	def ratio_value_coverage_bigger_limit(self, element, limit_to_mask_consensus):
+		"""
+		return the True if ratio bigger than limit_to_mask_consensus
+		"""
+		### set ratio value variable
+		self.is_100_more_9(element)
+		
+		if (self.ratio_value_project != 0 and self.ratio_value_project > limit_to_mask_consensus): return True
+		if (self.ratio_value_defined_by_user != 0 and self.ratio_value_defined_by_user > limit_to_mask_consensus): return True
+		if (self.ratio_value_9 != 0 and self.ratio_value_9 > limit_to_mask_consensus): return True
+		return False
+
 	def is_100_total(self, element):
 		value_coverage = self.get_coverage(element, self.COVERAGE_ALL)
 		return self.__is_100__(value_coverage)
@@ -322,7 +345,7 @@ class Coverage(object):
 		"""
 		value_coverage = self.get_coverage(element, self.COVERAGE_PROJECT)
 		if (value_coverage == None): return False
-		self.ratio_value_defined_by_user = divmod(float(value_coverage), 1)[0]
+		self.ratio_value_project = divmod(float(value_coverage), 1)[0]
 		return self.__is_100__(value_coverage)
 	
 	def is_100_more_0(self, element):
@@ -342,7 +365,7 @@ class Coverage(object):
 	def __str__(self):
 		sz_return = ""
 		for key in self.dt_data:
-			sz_return += "{} - All {}; 9 {}; 0 {}\n".format(key, self.get_coverage(key, Coverage.COVERAGE_ALL),\
+			sz_return += "{} - All {}; 9- {}; 0- {}\n".format(key, self.get_coverage(key, Coverage.COVERAGE_ALL),\
 				self.get_coverage(key, Coverage.COVERAGE_MORE_9), self.get_coverage(key, Coverage.COVERAGE_MORE_0))
 		return sz_return
 
@@ -363,20 +386,31 @@ class Coverage(object):
 					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 					self.limit_defined_by_user,\
 					self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER))
+		elif (not self.limit_defined_to_project is None):
+			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(element,\
+					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
+					self.limit_defined_to_project,\
+					self.get_coverage(element, self.COVERAGE_PROJECT))
 		else:
 			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
 					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 					self.get_coverage(element, self.COVERAGE_MORE_9))
 	
-	def get_icon(self, element):
+	def get_icon(self, element, limit_to_mask_consensus):
+		
 		"""
 		get coverage for COVERAGE_MORE_9
+		:param limit_to_mask_consensus can be -1 or integer
 		"""
-		if (not self.limit_defined_by_user is None):
+		### GREEN
+		if (not self.limit_defined_by_user is None):	### not defined by user
 			if (self.is_100_more_defined_by_user(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
-		else:
-			if (self.is_100_more_9(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
-		if (self.is_100_more_0(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
+		elif (not self.limit_defined_to_project is None):
+			if (self.is_100_more_defined_to_project(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
+		elif (self.is_100_more_9(element)): return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_GREEN_16_16)
+
+		if (limit_to_mask_consensus > 0 and self.ratio_value_coverage_bigger_limit(element, limit_to_mask_consensus)):
+			return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
 		return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_RED_16_16)
 
 

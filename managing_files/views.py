@@ -34,7 +34,7 @@ from extend_user.models import Profile
 from django.http import HttpResponseRedirect
 from utils.utils import ShowInfoMainPage
 from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.tables import SoftwaresTable
+from settings.tables import SoftwaresTable, INSaFLUParametersTable
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -1163,6 +1163,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			return context
 
 		## catch everything that is not in connection with project 
+		count_active_projects = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False).count()
 		samples_out = ProjectSample.objects.filter(Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)).values('sample__pk')
 		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False,\
 					is_ready_for_projects=True).exclude(pk__in=samples_out)
@@ -1201,6 +1202,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context['project_name'] = project.name
 		context['nav_modal'] = True	## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['show_message_change_settings'] = (count_active_projects == 0) ## Show message to change settings to the project
 		if self.request.POST: 
 			context['project_sample'] = AddSampleProjectForm(self.request.POST)
 		else: 
@@ -1366,6 +1368,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
 		context['sample_file_result_csv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
 		context['sample_file_result_tsv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)
+		context['sample_file_all_consensus'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
 		
 		### need to test becaus in the past this file was not created
 		file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
@@ -1407,8 +1410,11 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project, project, None) ## the user can have defaults yet
+		
+		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
-				parameter__project=project, parameter__project_sample=None).distinct()
+				parameter__project=project, parameter__project_sample=None,
+				type_of_software=Software.TYPE_SOFTWARE).distinct()
 		
 		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
 		if (count_project_sample > 0):
@@ -1416,13 +1422,22 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 					'is' if count_project_sample == 1 else 'are', count_project_sample, 's' if count_project_sample > 1 else '') +\
 								"You can only change settings on a specific sample inside of this project.")
 		context['count_project_sample'] = count_project_sample
-		
 		table = SoftwaresTable(query_set, project, None, count_project_sample == 0)
+		
+		### INSaFLU parameters
+		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
+				parameter__project=project, parameter__project_sample=None,
+				type_of_software=Software.TYPE_INSAFLU_PARAMETER).distinct()
+		table_insaflu = INSaFLUParametersTable(query_set_insaflu, project, None, count_project_sample == 0)
+				
 		context['nav_project'] = True
 		context['table'] = table
+		context['table_insaflu'] = table_insaflu
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		context['project'] = project
 		context['project_settings'] = True
+		context['show_paginatior_table'] = False
+		context['show_paginatior_table_insaflu'] = False
 		return context
 
 class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
@@ -1448,15 +1463,26 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project_sample, None, project_sample) ## the user can have defaults yet
+		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
-				parameter__project=None, parameter__project_sample=project_sample).distinct()
-		
+				parameter__project=None, parameter__project_sample=project_sample,
+				type_of_software=Software.TYPE_SOFTWARE).distinct()
 		table = SoftwaresTable(query_set, None, project_sample)
+		
+		### INSaFLU parameters
+		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
+				parameter__project=None, parameter__project_sample=project_sample,
+				type_of_software=Software.TYPE_INSAFLU_PARAMETER).distinct()
+		table_insaflu = INSaFLUParametersTable(query_set_insaflu, None, project_sample)
+		
 		context['nav_project'] = True
 		context['table'] = table
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['table_insaflu'] = table_insaflu
 		context['project_sample'] = project_sample
 		context['sample_project_settings'] = True
+		context['show_paginatior_table'] = False
+		context['show_paginatior_table_insaflu'] = False
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
 
@@ -1512,6 +1538,8 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['consensus_file'] = project_sample.get_consensus_file_web()
 			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+			context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+			context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)
 			
 			#### software versions...
 			context['snippy_software'] = "Fail"
@@ -1525,6 +1553,12 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				if (not result is None):
 					context['snippy_software'] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
 					context['freebayes_software'] = result.get_software(SoftwareNames.SOFTWARE_FREEBAYES_name)
+					
+					### could have or not, in older versions
+					msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
+					if (len(msa_markers_software) > 0):
+						context['msa_markers_software'] = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
+						context['msa_markers_software_name'] = SoftwareNames.SOFTWARE_MSA_MASKER_name
 		
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1

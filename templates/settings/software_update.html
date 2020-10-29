@@ -9,6 +9,13 @@
 		<link rel="stylesheet" href="{% static 'css/project-add.css' %}" type="text/css" />
 {% endblock css %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock extra_messages %}
+
 {% block breadcrumbs %}
 	{{ block.super }}
 	{% if project_settings %}
@@ -26,15 +33,9 @@
 	{% endif %}
 {% endblock %}
 
-<!-- set the messages -->
-{% block messages %}  
-	<div id="id_messages_remove"></div>
-{% endblock messages %}
-
 {% block content %}
 	
 	{% if error_cant_see %}
-		<div id="id_messages_remove"></div>
 		<div class="alert alert-danger ">Your credentials don't allow you to access this page.</div>
 	{% else %}
 		{% crispy form %} 

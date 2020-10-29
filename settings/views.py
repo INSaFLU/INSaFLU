@@ -2,7 +2,7 @@ from django.views.generic import ListView, UpdateView
 from braces.views import LoginRequiredMixin
 from settings.models import Software, Parameter
 from settings.default_software import DefaultSoftware
-from settings.tables import SoftwaresTable
+from settings.tables import SoftwaresTable, INSaFLUParametersTable
 from settings.forms import SoftwareForm
 from utils.utils import ShowInfoMainPage
 from managing_files.models import Project, ProjectSample
@@ -30,11 +30,17 @@ class SettingsView(LoginRequiredMixin, ListView):
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(self.request.user) ## the user can have defaults yet
 		
-		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global)
+		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
+				type_of_software=Software.TYPE_SOFTWARE)
 		table = SoftwaresTable(query_set)
+		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
+				type_of_software=Software.TYPE_INSAFLU_PARAMETER)
+		table_insaflu = INSaFLUParametersTable(query_set_insaflu)
 		context['nav_settings'] = True
 		context['table'] = table	
-		context['show_paginatior'] = False
+		context['table_insaflu'] = table_insaflu	
+		context['show_paginatior_table'] = False
+		context['show_paginatior_table_insaflu'] = False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
 		return context
 
@@ -80,7 +86,8 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
 					parameter.parameter = "{}".format(form.cleaned_data[parameter.get_unique_id()])
 					parameter.save()
 			
-		messages.success(self.request, "Software '" + software.name + "' parameters was updated successfully", fail_silently=True)
+			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters was updated successfully", fail_silently=True)
 		return super(UpdateParametersView, self).form_valid(form)
 
 
@@ -145,7 +152,9 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
 					parameter.parameter = "{}".format(form.cleaned_data[parameter.get_unique_id()])
 					parameter.save()
 			
-		messages.success(self.request, "Software '" + software.name + "' parameters was updated successfully for project '" + project.name + "'.", fail_silently=True)
+				
+			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+				software.name + "' parameters was updated successfully for project '" + project.name + "'.", fail_silently=True)
 		return super(UpdateParametersProjView, self).form_valid(form)
 
 
@@ -247,8 +256,9 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 			except:
 				pass
 
-		messages.success(self.request, "Software '" + software.name + "' parameters was updated successfully " +\
-						"for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
+		messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+				software.name + "' parameters was updated successfully " +\
+				"for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
 		return super(UpdateParametersProjSampleView, self).form_valid(form)
 
 	## static method, not need for now.

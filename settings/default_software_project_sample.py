@@ -15,9 +15,12 @@ class DefaultProjectSoftware(object):
 	'''
 	software_names = SoftwareNames()
 
+	### used in snippy
 	SNIPPY_COVERAGE_NAME = "--mincov"
 	SNIPPY_MAPQUAL_NAME = "--mapqual"
 
+	### used in mask consensus
+	MASK_CONSENSUS_threshold = "Threshold"
 
 	def __init__(self):
 		""" change values """
@@ -30,6 +33,10 @@ class DefaultProjectSoftware(object):
 		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project, project_sample)
 ## Not in used yet
 ##		self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, project)
+
+		
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
+						user, type_of_use, project, project_sample)
 
 	def test_default_db(self, software_name, user, type_of_use, project, project_sample):
 		"""
@@ -51,15 +58,27 @@ class DefaultProjectSoftware(object):
 	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			vect_parameters = self._get_snippy_default(user, type_of_use, project, project_sample)		### base values
-			if (not project is None): vect_parameters = self._get_snippy_default_global(user, vect_parameters)		### base values
-			if (not project_sample is None): vect_parameters = self._get_snippy_default_project(user,\
-									project_sample.project, vect_parameters)		### base values
+			if (not project is None): vect_parameters = self._get_default_project(user,\
+					SoftwareNames.SOFTWARE_SNIPPY_name, None, vect_parameters)		### base values
+			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
+					SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.project, vect_parameters)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return self._get_freebayes_default(user, type_of_use, project, project_sample)
+		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
+			vect_parameters = self._get_mask_consensus_threshold_default(user, type_of_use, project, project_sample)
+			if (not project is None): vect_parameters = self._get_default_project(user,\
+				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, None, vect_parameters)		### base values
+			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
+				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.project, vect_parameters)		### base values
+			return vect_parameters
 		return []
 
-
+	#####################################################
+	#####
+	#####		snippy
+	#####
+	
 	def get_snippy_parameters(self, user, type_of_use, project, project_sample):
 		"""
 		get snippy parameters
@@ -88,6 +107,7 @@ class DefaultProjectSoftware(object):
 		
 		software_names = SoftwareNames()
 		return software_names.get_snippy_parameters()
+	
 	
 	def get_snippy_parameters_for_project(self, user, project):
 		"""
@@ -164,7 +184,129 @@ class DefaultProjectSoftware(object):
 		if len(lst_data) == 2: return lst_data[1].split()[0]
 		return None
 
+	#####
+	#####		END snippy
+	#####
+	#####################################################
+	
+	
+	#####################################################
+	#####
+	#####		Mask consensus
+	#####
+	
+	def get_mask_consensus_parameters(self, user, type_of_use, project, project_sample):
+		"""
+		get snippy parameters
+		"""
+		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user, type_of_use, project, project_sample)
+	
+	def get_mask_consensus_parameters_all_possibilities(self, user, project_sample):
+		"""
+		get mask_consensus parameters for project and default
+		"""
+		
+		### Test project_sample first
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+				Software.TYPE_OF_USE_project_sample, None, project_sample)
+		if (len(parameters) > 0): return parameters
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+				Software.TYPE_OF_USE_project, project_sample.project, None)
+		if (len(parameters) > 0): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_mask_consensus_threshold_parameters(user)
+		if (len(parameters) > 0): return parameters
+		
+		software_names = SoftwareNames()
+		return software_names.get_insaflu_parameter_mask_consensus_parameters()
+	
+	
+	def get_mask_consensus_parameters_for_project(self, user, project):
+		"""
+		get snippy parameters only for project or default
+		"""
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+				Software.TYPE_OF_USE_project, project, None)
+		if (len(parameters) > 0): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_mask_consensus_threshold_parameters(user)
+		if (len(parameters) > 0): return parameters
+		return None
+	
+	def get_mask_consensus_single_parameter_default(self, parameter_name):
+		"""
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		:return value of parameter
+		"""
+		vect_parameters = self._get_mask_consensus_threshold_default(None, None, None, None)
+		for parameters in vect_parameters:
+			if parameters.name == parameter_name:
+				return parameters.parameter
+		return None
 
+	def is_mask_consensus_single_parameter_default(self, project_sample, parameter_name):
+		"""
+		 one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		value_default_parameter = self.get_mask_consensus_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_mask_consensus_single_parameter(project_sample, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+		
+	def get_mask_consensus_single_parameter(self, project_sample, parameter_name):
+		"""
+		get snippy single parameters
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		parameters_string = self.get_mask_consensus_parameters_all_possibilities(project_sample.project.owner, project_sample)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1][1:]
+		return None
+	
+	def is_mask_consensus_single_parameter_default_for_project(self, project, parameter_name):
+		"""
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		value_default_parameter = self.get_mask_consensus_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_mask_consensus_single_parameter_for_project(project, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+	
+
+	def get_mask_consensus_single_parameter_for_project(self, project, parameter_name):
+		"""
+		get snippy single parameters
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		parameters_string = self.get_mask_consensus_parameters_for_project(project.owner, project)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1][1:]
+		return None
+
+
+	#####
+	#####		END Mask consensus
+	#####
+	#####################################################
+	
 	def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
 		"""
 		get freebayes parameters
@@ -297,42 +439,21 @@ class DefaultProjectSoftware(object):
 #		vect_software.append(self.software_names.get_freebayes_name())
 		return vect_software
 
-	def _get_snippy_default_global(self, user, vect_parameters):
+	def _get_default_project(self, user, software_name, project, vect_parameters):
 		"""
-		try to get global parameters
-		"""
-		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
-						type_of_use=Software.TYPE_OF_USE_global)
-		except Software.DoesNotExist:
-			return vect_parameters
-
-		## get parameters for a specific user and software
-		parameters = Parameter.objects.filter(software=software)
-		
-		### parse them
-		for parameter in parameters:
-			### don't set the not set parameters
-			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
-			
-			for previous_parameter in vect_parameters:
-				if previous_parameter.sequence_out == parameter.sequence_out:
-					previous_parameter.parameter = parameter.parameter
-					break
-		return vect_parameters
-	
-	def _get_snippy_default_project(self, user, project, vect_parameters):
-		"""
+		:param software_name name of the software
+		:param project is None pass to global
 		try to get project parameters
 		"""
 		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
-						type_of_use=Software.TYPE_OF_USE_project)
+			software = Software.objects.get(name=software_name, owner=user,\
+				type_of_use=Software.TYPE_OF_USE_global if project is None else Software.TYPE_OF_USE_project)
 		except Software.DoesNotExist:
 			return vect_parameters
 
 		## get parameters for a specific user and software
-		parameters = Parameter.objects.filter(software=software, project=project)
+		if project is None: parameters = Parameter.objects.filter(software=software)
+		else: parameters = Parameter.objects.filter(software=software, project=project)
 		
 		### parse them
 		for parameter in parameters:
@@ -353,8 +474,10 @@ class DefaultProjectSoftware(object):
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+		software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_name_extended
 		software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
 		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_SOFTWARE
 		software.owner = user
 		
 		vect_parameters =  []
@@ -419,8 +542,10 @@ class DefaultProjectSoftware(object):
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_FREEBAYES_name
+		software.name_extended = SoftwareNames.SOFTWARE_FREEBAYES_name_extended
 		software.version = SoftwareNames.SOFTWARE_FREEBAYES_VERSION
 		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_SOFTWARE
 		software.owner = user
 		
 		vect_parameters =  []
@@ -527,6 +652,59 @@ class DefaultProjectSoftware(object):
 		return vect_parameters
 
 
+	def _get_mask_consensus_default_project(self, user, project, vect_parameters):
+		"""
+		try to get project parameters
+		"""
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
+						type_of_use=Software.TYPE_OF_USE_project)
+		except Software.DoesNotExist:
+			return vect_parameters
+
+		## get parameters for a specific user and software
+		parameters = Parameter.objects.filter(software=software, project=project)
+		
+		### parse them
+		for parameter in parameters:
+			### don't set the not set parameters
+			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
+			
+			for previous_parameter in vect_parameters:
+				if previous_parameter.sequence_out == parameter.sequence_out:
+					previous_parameter.parameter = parameter.parameter
+					break
+		return vect_parameters
 
 
+	def _get_mask_consensus_threshold_default(self, user, type_of_use, project, project_sample):
+		"""
+		Threshold of mask not consensus coverage
+		"""
+		software = Software()
+		software.name = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name
+		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = DefaultProjectSoftware.MASK_CONSENSUS_threshold
+		parameter.parameter = "70"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.project = project
+		parameter.project_sample = project_sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[50:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "50"
+		parameter.description = "Minimum percentage of locus horizontal coverage with depth of coverage equal or above –mincov (see Snippy) to generate consensus sequence."
+		vect_parameters.append(parameter)
+		return vect_parameters
 

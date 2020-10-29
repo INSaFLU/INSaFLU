@@ -7,13 +7,21 @@ class Software(models.Model):
 	"""
 	Each user has it software parameters 
 	"""
+	### where is going to be used
 	TYPE_OF_USE_global = 0		### Used in the samples
 	TYPE_OF_USE_project = 1		### Used in a particular project
 	TYPE_OF_USE_project_sample = 2		### Used in a particular project sample
 	
+	### if it is a software parameter or a general parameter (INSaFLU parameter)
+	TYPE_SOFTWARE = 0				### normal software
+	TYPE_INSAFLU_PARAMETER = 1		### it is a general parameter (INSaFLU parameter)
+	
+	
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+	name_extended = models.CharField(max_length=100, db_index=True, blank=True, null=True)	## extra name to show in the settings HTML table
 	version = models.CharField(max_length=100, db_index=True, blank=True, null=True)
-	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)
+	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)	### where is possible to define
+	type_of_software = models.SmallIntegerField(default = TYPE_SOFTWARE)	### it is a software or a general parameter
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	
 	class Meta:
@@ -31,6 +39,12 @@ class Software(models.Model):
 
 	def is_used_in_project_sample(self):
 		return self.type_of_use == Software.TYPE_OF_USE_project_sample
+	
+	def is_software(self):
+		"""
+		:return True if it is software type
+		"""
+		return self.type_of_software == Software.TYPE_SOFTWARE
 
 
 class Parameter(models.Model):

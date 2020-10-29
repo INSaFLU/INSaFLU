@@ -55,10 +55,12 @@ class SoftwareNames(object):
 	SOFTWARE_FASTQ = os.path.join(settings.DIR_SOFTWARE, "FastQC/{}/FastQC/fastqc".format(SOFTWARE_FASTQ_VERSION))
 	SOFTWARE_TRIMMOMATIC = os.path.join(settings.DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
+	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
+	SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"
 	SOFTWARE_SNIPPY_VERSION = "3.2-dev"
 	SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
 	
@@ -82,9 +84,16 @@ class SoftwareNames(object):
 	SOFTWARE_SNP_EFF_VERSION = "4.3p"
 	SOFTWARE_SNP_EFF_PARAMETERS = "-no-downstream -no-upstream -no-intergenic -no-utr -noStats"
 	
+	SOFTWARE_MSA_MASKER = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/msa_masker.py")
+	SOFTWARE_MSA_MASKER_name = "MSA Masker"
+	SOFTWARE_MSA_MASKER_VERSION = "1.0"
+##	SOFTWARE_MSA_MASKER_PARAMETERS = "--g --c"	### other possibility (--g If the process should mask gaps)
+	SOFTWARE_MSA_MASKER_PARAMETERS = "--c"
+	
 	SOFTWARE_FREEBAYES = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/freebayes")
 	SOFTWARE_FREEBAYES_PARALLEL = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/freebayes-parallel")
 	SOFTWARE_FREEBAYES_name = "Freebayes"
+	SOFTWARE_FREEBAYES_name_extended = "Mapping (Freebayes)"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
 	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
 	
@@ -156,6 +165,30 @@ class SoftwareNames(object):
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
+
+	
+	###################################
+	###################################
+	#####
+	#####	Global parameters for INSaFLU
+	#####
+	
+	INSAFLU_PARAMETER_MASK_CONSENSUS_name = "Threshold to mask consensus sequences"
+	INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended = "Minimum percentage of horizontal coverage to generate consensus"
+	INSAFLU_PARAMETER_MASK_CONSENSUS_vesion = "1"
+	INSAFLU_PARAMETER_MASK_CONSENSUS_parameters = "Threshold:70"
+
+
+	### has all names of simple parameters
+	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name]
+		
+	#####
+	#####	END Global parameters for INSaFLU
+	#####
+	###################################
+
+
+	
 	def __init__(self):
 		'''
 		Constructor
@@ -200,14 +233,24 @@ class SoftwareNames(object):
 	"""
 	def get_trimmomatic(self): return self.SOFTWARE_TRIMMOMATIC
 	def get_trimmomatic_name(self): return self.SOFTWARE_TRIMMOMATIC_name
+	def get_trimmomatic_name_extended(self): return self.SOFTWARE_TRIMMOMATIC_name_extended
 	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
 	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
-	
+
+	"""
+	return msa masker software
+	"""
+	def get_msa_masker(self): return self.SOFTWARE_MSA_MASKER
+	def get_msa_masker_name(self): return self.SOFTWARE_MSA_MASKER_name
+	def get_msa_masker_version(self): return self.SOFTWARE_MSA_MASKER_VERSION
+	def get_msa_masker_parameters(self): return self.SOFTWARE_MSA_MASKER_PARAMETERS
+		
 	"""
 	return snippy software
 	"""
 	def get_snippy(self): return self.SOFTWARE_SNIPPY
 	def get_snippy_name(self): return self.SOFTWARE_SNIPPY_name
+	def get_snippy_name_extended(self): return self.SOFTWARE_SNIPPY_name_extended
 	def get_snippy_version(self): return self.SOFTWARE_SNIPPY_VERSION
 	def get_snippy_parameters(self): return self.SOFTWARE_SNIPPY_PARAMETERS
 
@@ -379,4 +422,17 @@ class SoftwareNames(object):
 	def get_create_new_reference_to_snippy_version(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion
 	def get_create_new_reference_to_snippy_parameters(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters
 
-
+	###################################
+	#####
+	#####	Global parameters for INSaFLU
+	#####
+	"""
+	### it's a way to define a threshold to mask consensus sequences, with regions with low coverage, obtained by snippy
+	### It's a global parameter for INSaFLU
+	"""
+	def get_insaflu_parameter_mask_consensus(self): return ""
+	def get_insaflu_parameter_mask_consensus_name(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_name
+	def get_insaflu_parameter_mask_consensus_name_extended(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
+	def get_insaflu_parameter_mask_consensus_vesion(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_vesion
+	def get_insaflu_parameter_mask_consensus_parameters(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_parameters
+	

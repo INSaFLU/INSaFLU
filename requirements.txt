@@ -1,5 +1,5 @@
 django==1.11.29
-django-ipware
+django-ipware==2.1.0
 django-crequest
 django-embed-video
 django-bootstrap-breadcrumbs

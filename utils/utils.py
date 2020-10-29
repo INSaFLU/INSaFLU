@@ -15,7 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-import os, random, gzip, hashlib, logging, ntpath, stat, re
+import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from pysam import pysam
 from django.conf import settings
 from statistics import mean
@@ -185,8 +185,8 @@ class Utils(object):
 			### set attributes to file 664
 			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 			
-	def link_file(self, sz_file_from, sz_file_to):
-		if os.path.exists(sz_file_from) and not os.path.exists(sz_file_to):
+	def link_file(self, sz_file_from, sz_file_to, test_destination_file = True):
+		if os.path.exists(sz_file_from) and (not os.path.exists(sz_file_to) or not test_destination_file):
 			self.make_path(os.path.dirname(sz_file_to))
 			cmd = "ln -f -s " + sz_file_from + " " + sz_file_to
 			exist_status = os.system(cmd)
@@ -211,7 +211,6 @@ class Utils(object):
 	def make_path(self, path_name):
 		if (not os.path.isdir(path_name) and not os.path.isfile(path_name)):
 			cmd = "mkdir -p " + path_name
-			os.system(cmd)
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
@@ -782,18 +781,19 @@ class Utils(object):
 		return None
 
 
-	def filter_fasta_all_sequences(self, consensus_fasta, sample_name, coverage, out_dir):
+	def filter_fasta_all_sequences(self, consensus_fasta, sample_name, coverage, limit_to_mask_consensus, out_dir):
 		"""
 		filter fasta file
 		file name out: None if not saved, else output file name
 		return True if has sequences, False doesn't have sequences
 		"""
 		file_name = os.path.join(out_dir, sample_name +  FileExtensions.FILE_FASTA)
-		return self.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_name, True)
+		return self.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_name, limit_to_mask_consensus, True)
 	
-	def filter_fasta_all_sequences_file(self, consensus_fasta, coverage, file_out, test_all_locus_good_coverage):
+	def filter_fasta_all_sequences_file(self, consensus_fasta, coverage, file_out, limit_to_mask_consensus, test_all_locus_good_coverage):
 		"""
 		filter fasta file
+		:param limit_to_mask_consensus can be -1 if not defined for this project_sample
 		file name out: None if not saved, else output file name
 		return True if has sequences, False doesn't have sequences
 		"""
@@ -805,9 +805,9 @@ class Utils(object):
 		### need to have all with 100 more 9
 		if (test_all_locus_good_coverage):
 			for key in coverage.get_dict_data():
-			##	if ((not coverage.is_exist_limit_defined_by_user() and not coverage.is_100_more_9(key)) or\
-			##			(coverage.is_exist_limit_defined_by_user() and not coverage.is_100_more_defined_by_user(key))):
-				if (not coverage.is_100_more_9(key)):
+				if ( (limit_to_mask_consensus == -1 and not coverage.is_100_more_9(key)) or
+					(limit_to_mask_consensus > 0 and not 
+					coverage.ratio_value_coverage_bigger_limit(key, limit_to_mask_consensus)) ):
 					return None
 		
 		### test if the out directory exists
@@ -818,17 +818,17 @@ class Utils(object):
 			with open(file_out, 'w') as handle_write:
 				records = []
 				for key in sorted(coverage.get_dict_data()):
-				##	if ((not coverage.is_exist_limit_defined_by_user() and coverage.is_100_more_9(key)) or\
-				##			(coverage.is_exist_limit_defined_by_user() and coverage.is_100_more_defined_by_user(key))):
-					if (coverage.is_100_more_9(key)):
-						records.append(SeqRecord(Seq(str(record_dict[key].seq)), id = key, description=""))
+					if ( (limit_to_mask_consensus == -1 and coverage.is_100_more_9(key)) or
+						(limit_to_mask_consensus > 0 and coverage.ratio_value_coverage_bigger_limit(key, limit_to_mask_consensus)) ):
+						records.append(record_dict[key])
 				if (len(records) > 0): SeqIO.write(records, handle_write, "fasta")
 		if (len(records) == 0 and os.path.exists(file_out)): os.unlink(file_out)
 		return file_out if len(records) > 0 else None
 
 
-	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, gene, out_dir):
+	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, gene, limit_to_mask_consensus, out_dir):
 		"""
+		:param limit_to_mask_consensus can be -1 if not defined for this project_sample
 		filter fasta file
 		write a file for each element 
 		file name out: None if not saved, else output file name
@@ -838,7 +838,7 @@ class Utils(object):
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
 		### doesn't have the same size, sequences in consensus/coverage
-		if (coverage != None and locus_fasta != len(coverage.get_dict_data())): return None
+		if (not coverage is None and locus_fasta != len(coverage.get_dict_data())): return None
 		
 		file_name = os.path.join(out_dir, sample_name + FileExtensions.FILE_FASTA)
 #		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
@@ -846,14 +846,17 @@ class Utils(object):
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
 			with open(file_name, 'w') as handle:
-				if (coverage == None):
+				if (coverage == None):	### its the reference, there's no coverage and limit_to_mask
 					if sequence_name in record_dict:
 						seq_ref = record_dict[sequence_name]
 						if not gene is None and not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
 						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(seq_ref.seq).upper()))
 						b_saved = True
 				else:
-					if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and coverage.is_100_more_9(sequence_name):
+					if sequence_name in coverage.get_dict_data() and sequence_name in record_dict and\
+						( (limit_to_mask_consensus == -1 and coverage.is_100_more_9(sequence_name)) or\
+						(limit_to_mask_consensus > 0 and coverage.ratio_value_coverage_bigger_limit(sequence_name, limit_to_mask_consensus)) ):
+						
 						seq_ref = record_dict[sequence_name]
 						if not gene is None and not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
 						handle.write(">{}\n{}\n".format(sequence_name.replace(' ', '_'), str(seq_ref.seq).upper()))
@@ -1052,8 +1055,93 @@ class Utils(object):
 				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
 				count += 1
 		return count
+	
+	
+	def merge_fasta_first_sequence(self, path_where_files_are, out_file):
+		"""
+		Merge all fasta files into one
+		"""
+		vect_out_fasta = []
+		dt_out_name = {}
+		count = 1
+		for file in glob.glob(path_where_files_are + "/*.fasta"):
+			with open(file, "rU") as handle_fasta:
+				for record in SeqIO.parse(handle_fasta, "fasta"):
+					seq_name = os.path.splitext(os.path.basename(file))[0]
+					record.id = seq_name
+					while True:
+						if record.id in dt_out_name:
+							record.id = "{}_{}".format(seq_name, count)
+							count += 1
+						else: 
+							dt_out_name[record.id] = 1
+							break
+						
+					vect_out_fasta.append(record)
+					break
+					
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta) > 0):
+				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
+		return len(vect_out_fasta)
+	
+	def merge_fasta_and_join_sequences(self, path_where_files_are, vect_elements, out_file):
+		"""
+		Merge all fasta files into one
+		"""
+		vect_out_fasta = []
+		for file in glob.glob(path_where_files_are + "/*.fasta"):
+			dict_seq_record = SeqIO.to_dict(SeqIO.parse(file, "fasta"))
+			sequence = ""
+			b_not_all = False
+			for element in vect_elements:
+				if element in dict_seq_record:
+					sequence += str(dict_seq_record[element].seq)
+				else: b_not_all = True
+
+			### 
+			if (not b_not_all):
+				seq_name = os.path.splitext(os.path.basename(file))[0]
+				vect_out_fasta.append(SeqRecord(Seq(sequence), id=seq_name, description=""))
+			
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta) > 0):
+				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
+		return len(vect_out_fasta)
+	
+	def merge_fasta_files(self, vect_sample_path_and_name, out_file):
+		"""
+		:param vect_sample_path_and_name = [[path_file, sample_name], [path_file, sample_name], ... ]
+		:param outfile file 
+		"""
+		vect_out_fasta = []
+		dt_out_name = {}
 		
-		
+		for data_file in vect_sample_path_and_name:
+			count = 1
+			with open(data_file[0], "rU") as handle_fasta:
+				for record in SeqIO.parse(handle_fasta, "fasta"):
+					sample_name = data_file[1].replace(" ", "_")
+					possible_name = "{}__{}".format(sample_name, record.id)
+					while True:
+						if possible_name in dt_out_name:
+							possible_name = "{}__{}_{}".format(sample_name, record.id, count)
+							count += 1
+						else: 
+							dt_out_name[possible_name] = 1
+							break
+					record.id = possible_name
+					record.description = ""
+					vect_out_fasta.append(record)
+					
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta) > 0):
+				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
+		return len(vect_out_fasta)
+				
 class ShowInfoMainPage(object):
 	"""
 	only a help class

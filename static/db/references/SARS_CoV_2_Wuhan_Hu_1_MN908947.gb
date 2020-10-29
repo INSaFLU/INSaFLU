@@ -1,7 +1,7 @@
-LOCUS       MN908947               29903 bp ss-RNA     linear   VRL 11-FEB-2020
+LOCUS       SARS_CoV_2              29903 bp ss-RNA     linear   VRL 11-FEB-2020
 DEFINITION  Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1,
             complete genome.
-ACCESSION   MN908947
+ACCESSION   SARS_CoV_2
 VERSION     MN908947.3
 KEYWORDS    .
 SOURCE      Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2)

@@ -949,6 +949,7 @@ class Utils(object):
 			with open(in_file) as file_handle:
 				for seq_record in SeqIO.parse(file_handle, "fasta"):
 					# Take the current sequence
+					#vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', ''), IUPAC.ambiguous_dna), id=seq_record.id, description="", name=""))
 					vect_sequences.append(SeqRecord(Seq(str(seq_record.seq).upper().replace('-', '')), id=seq_record.id, description="", name=""))
 				SeqIO.write(vect_sequences, output_file_handle, "fasta")
 

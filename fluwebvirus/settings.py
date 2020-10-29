@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 from decouple import config
 
+## define APP version
+APP_VERSION_NUMBER = "1.2.0"
+
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
 

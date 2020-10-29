@@ -33,7 +33,8 @@ class HomePageView(generic.TemplateView):
 	
 	def get_context_data(self, **kwargs):
 		context = super(HomePageView, self).get_context_data(**kwargs)
-		context['nav_dashboard'] = True			
+		context['version'] = settings.APP_VERSION_NUMBER
+		context['nav_dashboard'] = True
 		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
 		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
 		context['is_authenticated'] = self.request.user.is_authenticated

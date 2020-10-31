@@ -67,6 +67,11 @@ class SoftwaresTable(tables.Table):
 		
 		### if project 
 		## Edit
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return "Options not available"
+		
 		if (not self.project is None):
 			str_links = '<a href=' + reverse('software-project-update', args=[record.pk, self.project.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
@@ -156,6 +161,11 @@ class INSaFLUParametersTable(tables.Table):
 		
 		### if project 
 		## Edit
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		if (user.username == Constants.USER_ANONYMOUS): return "Options not available"
+		
 		if (not self.project is None):
 			str_links = '<a href=' + reverse('software-project-update', args=[record.pk, self.project.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\

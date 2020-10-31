@@ -384,7 +384,12 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		icon with link to extra info
 		"""
-		str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		str_links = ""
+		if (user.username != Constants.USER_ANONYMOUS):
+			str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 				
 		if (record.is_mask_consensus_sequences):

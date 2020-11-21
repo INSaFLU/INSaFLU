@@ -18,7 +18,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.utils.translation import ugettext_lazy as _
 from extend_user.models import Profile
-from managing_files.models import Reference, Sample, UploadFiles, ProcessControler
+from managing_files.models import Reference, Sample, UploadFiles, MetaKey, ProcessControler
 from datetime import datetime
 from django.db import transaction
 from utils.process_SGE import ProcessSGE
@@ -782,6 +782,103 @@ def remove_uploaded_file(request):
 			data = { 'is_ok' : True }
 		
 		return JsonResponse(data)
+
+@transaction.atomic
+@csrf_protect
+def remove_uploaded_files(request):
+	"""
+	remove fastq files, all not processed 
+	"""
+	if request.is_ajax():
+		number_files_removed = 0
+		data = { 'is_ok' : False }
+		data['number_files_removed'] = number_files_removed
+		data['message_number_files_removed'] = "There's no files removed."
+		
+		## some pre-requisites
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+		try:
+			profile = Profile.objects.get(user__pk=request.user.pk)
+		except Profile.DoesNotExist:
+			return JsonResponse(data)
+		if (profile.only_view_project): return JsonResponse(data)
+			
+		### get all files that can be deleted, only not processed
+		query_set = UploadFiles.objects.filter(owner__id=request.user.id, is_deleted=False,\
+				is_processed=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz)
+		for uploaded_file in query_set:
+			
+			### now you can remove
+			uploaded_file.is_deleted = True
+			uploaded_file.is_deleted_in_file_system = False
+			uploaded_file.date_deleted = datetime.now()
+			uploaded_file.save()
+			
+			### new removed file
+			number_files_removed += 1
+		data = { 'is_ok' : True }
+		data['number_files_removed'] = number_files_removed
+		if (number_files_removed == 1): data['message_number_files_removed'] = "One file removed..."
+		elif (number_files_removed > 1): data['message_number_files_removed'] = "{} files removed...".format(number_files_removed)
+
+		return JsonResponse(data)
+
+#### 
+def unlock_upload_file(upload_file):
+	"""
+	unlock upload file
+	"""
+	for sample in upload_file.samples.all():
+		if (not sample.is_ready_for_projects and not sample.is_deleted):
+			sample.is_deleted = True
+			sample.date_deleted = datetime.now()
+			sample.save()
+	upload_file.is_processed = True	
+	upload_file.save()
+
+@transaction.atomic
+@csrf_protect
+def unlock_sample_file(request):
+	"""
+	unlock sample list files, drop all samples not processed yet 
+	"""
+	if request.is_ajax():
+		number_of_changes = 0
+		data = { 'is_ok' : False }
+		data['number_of_changes'] = number_of_changes
+		data['message_number_files_removed'] = "There's no files unlocked."
+		
+		## some pre-requisites
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+		try:
+			profile = Profile.objects.get(user__pk=request.user.pk)
+		except Profile.DoesNotExist:
+			return JsonResponse(data)
+		if (profile.only_view_project): return JsonResponse(data)
+		
+		### try to find sample_file imported not processed yet
+		try:
+			metaKey = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+		except MetaKey.DoesNotExist:
+			return JsonResponse(data)
+		
+		number_of_changes = 0
+		lst_files = UploadFiles.objects.all().filter(is_deleted=False, is_processed=False, owner=request.user, type_file=metaKey)
+		for uploadfile in lst_files:
+			
+			## teste the number files already processed
+			if uploadfile.number_files_processed == uploadfile.number_files_to_process: continue
+			
+			unlock_upload_file(uploadfile)
+			number_of_changes += 1
+	
+		data = { 'is_ok' : True }
+		data['number_of_changes'] = number_of_changes
+		if (number_of_changes == 1): data['message_number_of_changes'] = "One sample file was unlocked..."
+		elif (number_of_changes > 1): data['message_number_of_changes'] = "{} sample files were unlocked...".format(number_of_changes)
+
+		return JsonResponse(data)
+
 
 @csrf_protect
 def get_process_running(request):

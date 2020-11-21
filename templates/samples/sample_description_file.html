@@ -32,6 +32,10 @@
 	                    <th colspan="7">
 	                    	<a href="{% url "sample-add-single-csv-file" %}" data-title="Load samples from a (csv/tsv) file" 
 	                    		class="btn btn-small btn-primary dark {% if disable_upload_files  %} disabled {% endif %}"><span class="hidden-phone"><i class="fa fa-upload"></i> Load new file</span></a>
+	                    	<a href="#id_unlock_modal" data-title=" {{message_unlock_file}} " 
+	                    		class="btn btn-small btn-primary dark {% if not disable_upload_files %} disabled {% endif %}"
+	                    		data-toggle="modal">
+	                    		<span class="hidden-phone"><i class="fa fa-unlock"></i> Unlock last file </span></a>
 	                    	{% if can_add_other_file %} <label> {{ can_add_other_file }} </label>{% endif %}
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
@@ -89,5 +93,40 @@
 	{% endif %}
 
 	<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+	
+	
+	<!-- The unlock file -->
+	<div class="modal fade" id="id_unlock_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+				<!-- Modal Header -->
+				<div class="modal-header alert alert-warning">
+ 					<h4 class="modal-title-remove">Drop samples from last file</h4>
+ 					<button type="button" class="close" data-dismiss="modal">&times;</button>
+				</div>
+
+				<!-- Modal body -->
+				<div class="modal-body mx-auto mw-100">
+					<div id="id-modal-body-unlock-file-sample" remove-single-value-url="{% url 'unlock_sample_file' %}">
+						<label id="id-label-remove-all" class="col-form-label">{{message_unlock_file_question}}</label>
+						</div>
+				</div>
+				<!-- Modal footer -->
+				<div class="modal-footer" id="id-modal-footer-remove">
+ 					<button id="id-unlock-button" type="button" class="btn btn-primary" data-dismiss="modal">Unlock</button>
+ 					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+				</div>
+			</div>
+ 		</div>
+	</div>
+	
 {% endblock content %} 
+
+{% block js %}
+	{% load static from staticfiles %}
+	    <script type="text/javascript" src="{% static 'js/unlock_multiple_samples.js' %}"></script>
+	    
+{% endblock js %}
+
 

@@ -233,6 +233,10 @@ class Sample(models.Model):
 	### consensus file
 	OUT_CONSENSUS_FILE = "consensus.fasta"
 	
+	### type of fastq.gz
+	TYPE_OF_FASTQ_illumina = 0
+	TYPE_OF_FASTQ_minion = 1
+	
 	## to remove in future
 	objects = models.Manager()	## need to check this
 	
@@ -280,6 +284,9 @@ class Sample(models.Model):
 					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
 					max_length=500)
 
+	### type of fastq.gz, Default Illumina, 
+#	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=Sample.TYPE_OF_FASTQ_illumina)	## has the type of the fastq files
+	
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
 	
@@ -599,7 +606,12 @@ class Sample(models.Model):
 		if (query_set.count() == 0): return None
 		return query_set
 
-
+# 	def is_type_fastq_gz(self, type_of_fastq = Sample.TYPE_OF_FASTQ_illumina):
+# 		"""
+# 		:param type_of_fastq, can be TYPE_OF_FASTQ_illumina, TYPE_OF_FASTQ_minion and so on
+# 		"""
+# 		return self.type_of_fastq == type_of_fastq
+	
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
 	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)

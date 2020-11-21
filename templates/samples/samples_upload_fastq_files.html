@@ -24,9 +24,16 @@
 
 	<p> </p>
 	{{ message_note_1 }}
+	<!-- Note for file size -->
 	{% if show_note_message_down_size %}
 		<p> 
 			<strong>NOTE:</strong> {{ message_note_2 }}
+		</p>
+	{% endif %}
+	<!-- Note for type of sequencing Illumina or Minion-->
+	{% if message_note_3 %}
+		<p> 
+			<strong>NOTE:</strong> {{ message_note_3 }}
 		</p>
 	{% endif %}
 	<p> </p>
@@ -49,7 +56,10 @@
 	  <tbody>
 	  </tbody>
 	</table>
-
+	
+	<hr>
+	<a href="{% url 'sample-add-fastq' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+	
 	<!--  -->
 	<div class="modal fade" id="modal-progress" data-backdrop="static" data-keyboard="false">
 	  <div class="modal-dialog">

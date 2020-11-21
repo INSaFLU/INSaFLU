@@ -16,7 +16,7 @@ $(document).on("click", "a", function(e){
 	$('#id-label-remove').val('');
 });
 
-
+/// remove one specific file
 $('#id-remove-button').on('click', function(){
 
 	$.ajax({
@@ -49,6 +49,37 @@ $('#id-remove-button').on('click', function(){
         		'The file \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' was not removed.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
+          }
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
+	});
+});
+
+/// remove all files
+$('#id-remove-all-button').on('click', function(){
+
+	$.ajax({
+        url: $('#id-modal-body-remove-all-sample').attr("remove-single-value-url"),
+        data : { 
+    		csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, // data sent with the post request
+        		
+        success: function (data) {
+          if (data['is_ok']) {
+      	  
+        	  /// refresh page
+        	  location.reload();
+        	  
+        	  /// add message with information
+        	//  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        	//	data['message_number_files_removed'] +
+			//	'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+			//	'</div>');
           }
         },
         

@@ -389,6 +389,12 @@ class SamplesAddDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin, g
 		if (count_not_complete > 0): 
 			context['can_add_other_file'] = "You cannot add a new file because you must first upload NGS data regarding another file."
 			context['disable_upload_files'] = True
+			context['message_unlock_file'] = "It will drop remain samples ({}) not processed in last file".format(count_not_complete)
+			context['message_unlock_file_question'] = "Do you want drop remain samples ({}) not processed in last file?".format(count_not_complete)
+		else:
+			context['message_unlock_file'] = "No samples to drop for last sample file."
+			context['message_unlock_file_question'] = "No samples to drop for last sample file."
+		
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute 
 		return context
 
@@ -659,7 +665,7 @@ class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMess
 
 class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
 	"""
-	Create a new reference
+	Add fastq files to system
 	"""
 	form_class = SampleForm
 	success_url = reverse_lazy('samples')
@@ -691,6 +697,10 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 			b_show_all = self.request.GET.get('show-not-only-checked') != 'on'
 		else: b_show_all = True
 		
+		### get number of files that can be removed
+		number_files_can_be_removed = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
+				is_processed=False, type_file__name=TypeFile.TYPE_FILE_fastq_gz).count()
+
 		### 
 		tag_search = 'search_samples'
 		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
@@ -710,6 +720,19 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
 		context['nav_sample'] = True
 		context['disable_upload_files'] = disable_upload_files
 		context['check_box_not_show_processed_files'] = not b_show_all
+
+		### number of files to remove
+		context['disable_remove_all_files'] = number_files_can_be_removed == 0		
+		if (number_files_can_be_removed == 0):
+			context['message_remove_files'] = "There's no files to remove"
+			context['message_remove_files_2'] = "There's no files to remove..."
+		elif (number_files_can_be_removed == 1):
+			context['message_remove_files'] = "It is going to remove one file not processed"
+			context['message_remove_files_2'] = "Do you want to remove one file not processed?"
+		else:
+			context['message_remove_files'] = "It is going to remove {} files not processed".format(number_files_can_be_removed)
+			context['message_remove_files_2'] = "Do you want to remove {} files not processed?".format(number_files_can_be_removed)
+			
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
@@ -760,6 +783,9 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		else:
 			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
 				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)))		## show main information about the institute
+			
+		### message_note_3, type of files that can be uploaded
+		
 		return context
 
 	def post(self, request):

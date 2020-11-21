@@ -40,6 +40,11 @@
 	                    	<a href="{% url 'sample-upload-fastq' %}" data-title="Load fastq.gz files to match with samples added by a (csv/tsv) sample file" 
 	                    		class="btn btn-small btn-primary dark {% if disable_upload_files %} disabled {% endif %}" >
 	                    		<span class="hidden-phone"><i class="fa fa-upload"></i> Upload fastq.gz files</span></a>
+	                    	<a href="#id_remove_all_modal" data-title=" {{message_remove_files}} " 
+	                    		class="btn btn-small btn-primary dark {% if disable_remove_all_files %} disabled {% endif %}"
+	                    		data-toggle="modal">
+	                    		<span class="hidden-phone"><i class="fa fa-trash"></i> Remove all files not processed</span></a>
+	                    		
 	                        <form id="form_samples_fastq_id" method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                           <div class="form-check">
@@ -129,6 +134,32 @@
  		</div>
 	</div>
 
+	<!-- The remove All -->
+	<div class="modal fade" id="id_remove_all_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title-remove">Remove files</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-remove-all-sample" remove-single-value-url="{% url 'remove_uploaded_files' %}">
+  							<label id="id-label-remove-all" class="col-form-label">{{message_remove_files_2}}</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-remove">
+    					<button id="id-remove-all-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+	
 {% endblock content %}
 
 

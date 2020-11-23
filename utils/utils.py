@@ -241,13 +241,14 @@ class Utils(object):
 	def is_fastq_gz(self, file_name):
 		"""
 		test if the file name ends in gzip
-		raise Exception
+		:out (True/False, type of file) OR raise Exception
 		""" 
 		if (not self.is_gzip(file_name)): raise Exception("File need to have suffix '.fastq.gz'")
 		
 		try:
 			sz_type = self.get_type_file(file_name)
-			if (sz_type == Constants.FORMAT_FASTQ): return True
+			if (sz_type == Constants.FORMAT_FASTQ_illumina): return (True, Constants.FORMAT_FASTQ_illumina)
+			if (sz_type == Constants.FORMAT_FASTQ_other): return (True, Constants.FORMAT_FASTQ_other)
 		except OSError as e:
 			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
 			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
@@ -265,12 +266,14 @@ class Utils(object):
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')	## need to be opened in text mode, default it's in binary mode
 		else: handle = open(file_name)
 		vect_length = []
+		
+		### read 200 lines
 		try:
 			count = 0
-			for record in SeqIO.parse(handle, Constants.FORMAT_FASTQ):
+			for record in SeqIO.parse(handle, "fastq"):
 				vect_length.append(len(str(record.seq)))
 				count += 1
-				if (count > 200): break
+				if (count > 50): break
 			handle.close()
 #			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:
@@ -278,7 +281,8 @@ class Utils(object):
 		
 		### if read something in last SeqIO.parse
 		if (len(vect_length) > 1):
-			if (mean(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ
+			if (max(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
+			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_other
 			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')

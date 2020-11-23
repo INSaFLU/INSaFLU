@@ -83,9 +83,12 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_METADATA_data_tsv = "template_input_metadata_data.tsv"
 	
 	FORMAT_FASTA = "fasta"
-	FORMAT_FASTQ = "fastq"
+	## https://support.illumina.com/bulletins/2020/04/maximum-read-length-for-illumina-sequencing-platforms.html
+	FORMAT_FASTQ_illumina = "fastq_illumina"	### if is lower than 302 is illumina 
+	FORMAT_FASTQ_other = "fastq_other"
 	EXTENSION_ZIP = ".gz"
-	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 301
+	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 302
+	MIN_LENGHT_MINION_FASQC_SEQ = 100
 	
 	## vect with keys to get the ID
 	VECT_GENBANK_TAG_NAME = ['gene', 'CDS', 'locus_tag', 'protein_id']

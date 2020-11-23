@@ -745,33 +745,42 @@ class ParseInFiles(object):
 			
 			### if not files
 			upload_files_1 = None
+			type_sequence_file_upload_file_1 = None
 			upload_files_2 = None
+			type_sequence_file_upload_file_2 = None
 			if (len(sample.candidate_file_name_1) > 0):
 				try:
 					upload_files_1 = UploadFiles.objects.get(file_name=sample.candidate_file_name_1, owner=user, is_processed=False,\
 										is_deleted=False, is_valid=True, type_file__name=TypeFile.TYPE_FILE_fastq_gz)
 					path_to_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_1.path_name.name)
-					if (not os.path.exists(path_to_file) or not utils.is_fastq_gz(path_to_file)): upload_files_1 = None
+					if (not os.path.exists(path_to_file) or not utils.is_fastq_gz(path_to_file)[0] ): upload_files_1 = None
+					else:	## get type of sequencing
+						type_sequence_file_upload_file_1 = utils.get_type_file(path_to_file)
+
 				except UploadFiles.DoesNotExist as e:
 					pass
-			if (upload_files_1 != None and len(sample.candidate_file_name_2) > 0):
+			if (not upload_files_1 is None and len(sample.candidate_file_name_2) > 0):
 				try:
 					upload_files_2 = UploadFiles.objects.get(file_name=sample.candidate_file_name_2, owner=user, is_processed=False,\
 										is_deleted=False, is_valid=True, type_file__name=TypeFile.TYPE_FILE_fastq_gz)
 					path_to_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_2.path_name.name)
-					if (not os.path.exists(path_to_file) or not utils.is_fastq_gz(path_to_file)): upload_files_2 = None
+					if (not os.path.exists(path_to_file) or not utils.is_fastq_gz(path_to_file)[0] ): upload_files_2 = None
+					else:	## get type of sequencing
+						type_sequence_file_upload_file_2 = utils.get_type_file(path_to_file)
+
 				except UploadFiles.DoesNotExist as e:
 					pass
 			
 			## can set the data
-			if ((len(sample.candidate_file_name_2) > 0 and upload_files_1 != None and upload_files_2 != None) or\
-				(len(sample.candidate_file_name_2) == 0 and upload_files_1 != None)):
+			if ((len(sample.candidate_file_name_2) > 0 and not upload_files_1 is None and not upload_files_2 is None) or\
+				(len(sample.candidate_file_name_2) == 0 and not upload_files_1 is None)):
 				
 				## link the files to the right place
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_1)
 				utils.link_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_1.path_name.name), sz_file_to)
 				sample.path_name_1.name = os.path.join(utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_1)
 				sample.file_name_1 = sample.candidate_file_name_1
+				sample.set_type_of_fastq_sequencing(type_sequence_file_upload_file_1)
 				sample.is_valid_1 = True
 				
 				upload_files_1.is_processed = True
@@ -781,7 +790,9 @@ class ParseInFiles(object):
 				upload_files_1.attached_date = datetime.now()
 				upload_files_1.save()
 				
-				if (upload_files_2 != None):
+				### only illumina can add second file to the sample
+				if (not upload_files_2 is None and type_sequence_file_upload_file_1 == Constants.FORMAT_FASTQ_illumina and
+						type_sequence_file_upload_file_2 == Constants.FORMAT_FASTQ_illumina):
 					sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_2)
 					utils.link_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files_2.path_name.name), sz_file_to)
 					sample.path_name_2.name = os.path.join(utils.get_path_to_fastq_file(user.id, sample.id), sample.candidate_file_name_2)

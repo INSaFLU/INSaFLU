@@ -288,6 +288,10 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			else: sample.is_valid_2 = False
 			sample.has_files = True
 			
+			### set type of sequencing, illumina, minion...
+			## here, the file is already tested for gastq.gz and illumina and minion
+			sample.set_type_of_fastq_sequencing(utils.get_type_file(sample.path_name_1.name))
+			
 			if (like_dates == 'date_of_onset'):
 				sample.day = int(sample.date_of_onset.strftime("%d"))
 				sample.week = int(sample.date_of_onset.strftime("%W")) + 1

@@ -460,7 +460,14 @@ class SampleForm(forms.ModelForm):
 				fastaq_temp_file_name_2.close()
 				
 				try:
-					self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+					(is_fastq, type_of_fastq) = self.utils.is_fastq_gz(fastaq_temp_file_name_2.name)
+					
+					## only illumina can add a second file
+					if (type_of_fastq != Constants.FORMAT_FASTQ_illumina):
+						os.unlink(fastaq_temp_file_name_2.name)
+						self.add_error('path_name_2', _("Only illumina files can be add to the second file name."))
+						return cleaned_data
+				
 				except Exception as e:	## (e.errno, e.strerror)
 					os.unlink(fastaq_temp_file_name_2.name)
 					self.add_error('path_name_2', _(e.args[0]))

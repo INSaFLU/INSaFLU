@@ -285,7 +285,7 @@ class Sample(models.Model):
 					max_length=500)
 
 	### type of fastq.gz, Default Illumina, 
-#	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=Sample.TYPE_OF_FASTQ_illumina)	## has the type of the fastq files
+	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=TYPE_OF_FASTQ_illumina)	## has the type of the fastq files
 	
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -606,12 +606,20 @@ class Sample(models.Model):
 		if (query_set.count() == 0): return None
 		return query_set
 
-# 	def is_type_fastq_gz(self, type_of_fastq = Sample.TYPE_OF_FASTQ_illumina):
-# 		"""
-# 		:param type_of_fastq, can be TYPE_OF_FASTQ_illumina, TYPE_OF_FASTQ_minion and so on
-# 		"""
-# 		return self.type_of_fastq == type_of_fastq
+	def is_type_fastq_gz_sequencing(self, type_of_fastq = TYPE_OF_FASTQ_illumina):
+		"""
+		:param type_of_fastq, can be TYPE_OF_FASTQ_illumina, TYPE_OF_FASTQ_minion and so on
+		"""
+		return self.type_of_fastq == type_of_fastq
 	
+	def set_type_of_fastq_sequencing(self, type_of_fastq):
+		"""
+		:parm type_of_fastq Constants.FORMAT_FASTQ_illumina or Constants.FORMAT_FASTQ_other
+		"""
+		if (type_of_fastq == Constants.FORMAT_FASTQ_illumina): self.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
+		if (type_of_fastq == Constants.FORMAT_FASTQ_other): self.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+
+
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
 	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)

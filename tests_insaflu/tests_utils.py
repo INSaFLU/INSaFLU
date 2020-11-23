@@ -41,7 +41,7 @@ class Test(unittest.TestCase):
 
 	def test_is_fastq_gz(self):
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		self.assertTrue(self.utils.is_fastq_gz(path_file))
+		self.assertTrue((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		try:
@@ -69,7 +69,9 @@ class Test(unittest.TestCase):
 		
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
 		try:
-			self.assertFalse(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_other), self.utils.is_fastq_gz(path_file))
+			self.assertEqual(True, self.utils.is_fastq_gz(path_file)[0])
+			self.assertEqual(Constants.FORMAT_FASTQ_other, self.utils.is_fastq_gz(path_file)[1])
 		except Exception as e:
 			self.assertEqual("Can not detect file format. Ensure Illumina fastq file.", e.args[0])
 	
@@ -880,6 +882,54 @@ class Test(unittest.TestCase):
 		self.assertTrue(">fasta_1" in vect_read_file)
 		self.assertTrue(">fasta_2" in vect_read_file)
 		os.unlink(out_file)
+
+
+	def test_get_type_files(self):
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_MERGE_FASTA)
+		self.assertTrue(os.path.exists(os.path.join(path_to_fasta, "fasta_1.fasta")))
+		self.assertEqual(Constants.FORMAT_FASTA, utils.get_type_file(os.path.join(path_to_fasta, "fasta_1.fasta")))
+	
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		self.assertTrue(os.path.exists(path_file))
+		self.assertEqual(Constants.FORMAT_FASTQ_illumina, utils.get_type_file(path_file))
+
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
+		self.assertTrue(os.path.exists(path_file))
+		self.assertEqual(Constants.FORMAT_FASTQ_other, utils.get_type_file(path_file))
+
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR_GFF, "insa_flu_temp_empty.gff")
+		self.assertTrue(os.path.exists(gff_file))
+		try:
+			self.assertTrue(utils.get_type_file(gff_file))
+		except Exception as e:
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+			
+		gff_file_fake_fastq = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR_GFF, "insa_flu_temp_2.gff.fastq.gz")
+		self.assertTrue(os.path.exists(gff_file_fake_fastq))
+		try:
+			self.assertTrue(utils.get_type_file(gff_file_fake_fastq))
+		except Exception as e:
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+			
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

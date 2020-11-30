@@ -8,7 +8,7 @@ django-crispy-forms==1.7.2
 django-braces
 django-tables2==1.16
 django-nose
-django-bootstrap4
+django-bootstrap4==0.0.8
 pyyaml
 ua-parser
 user-agents

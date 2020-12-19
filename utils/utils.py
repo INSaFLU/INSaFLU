@@ -1122,6 +1122,7 @@ class Utils(object):
 		
 		for data_file in vect_sample_path_and_name:
 			count = 1
+			if (not os.path.exists(data_file[0])): continue
 			with open(data_file[0], "rU") as handle_fasta:
 				for record in SeqIO.parse(handle_fasta, "fasta"):
 					sample_name = data_file[1].replace(" ", "_")

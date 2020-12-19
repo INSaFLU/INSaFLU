@@ -429,7 +429,7 @@ class CollectExtraData(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			vect_to_process.append([
-				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name),\
+				project_sample.get_consensus_file(TypePath.MEDIA_ROOT),\
 				project_sample.sample.name])
 				
 		self.utils.merge_fasta_files(vect_to_process , out_file)

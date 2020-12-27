@@ -3,7 +3,8 @@ Created on Nov 27, 2017
 
 @author: mmp
 '''
-
+import os, csv, time, json, logging
+import plotly.graph_objs as go
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, TagNames, ProcessControler
@@ -12,8 +13,6 @@ from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
-import os, csv, time, json, logging
-import plotly.graph_objs as go
 from plotly.offline import plot
 from settings.default_software_project_sample import DefaultProjectSoftware
 from django.db import transaction
@@ -432,7 +431,7 @@ class CollectExtraData(object):
 				project_sample.get_consensus_file(TypePath.MEDIA_ROOT),\
 				project_sample.sample.name])
 				
-		self.utils.merge_fasta_files(vect_to_process , out_file)
+		self.utils.merge_fasta_files(vect_to_process, out_file)
 		return out_file
 
 	def collect_variations_freebayes(self, project):
@@ -484,21 +483,46 @@ class CollectExtraData(object):
 		id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
 		"""
 		
+		default_software = DefaultProjectSoftware()
 		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
 					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
 		
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
 						quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
-			vect_out = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
+			vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
 			
 			### extra tags
 			vect_tags = self.get_tags_for_samples_in_projects(project)
-			vect_out.extend(vect_tags)
-			csv_writer.writerow(vect_out)
+			vect_out_header.extend(vect_tags)
 
-			vect_out = [project.reference.name] + [''] * (len(vect_out) - 1)
+			### set software names and versions
+			### array with software names
+			(vect_tags_out_sample, vect_tags_out_project_sample, b_trimmomatic_stats, dict_all_results) =\
+							self.get_list_of_softwares_used(project)
+			
+			star_trimmomatic_tag = -1
+			if (b_trimmomatic_stats):
+				star_trimmomatic_tag = len(vect_out_header)
+				vect_out_header.extend([tag_name.replace(":", "")\
+					for tag_name in SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect]) 
+			
+			vect_out_header.extend(vect_tags_out_sample)
+			vect_out_header.extend(vect_tags_out_project_sample)
+			
+			### set default parameters
+			vect_out_header.extend(SoftwareNames.VECT_INSAFLU_PARAMETER)
+			
+			### write reference name for this project name on a single line
+			if (star_trimmomatic_tag == -1): vect_out = ["Reference name", project.reference.name] + [''] * (len(vect_out_header) - 2)
+			else: 
+				vect_out = ["Reference name:", project.reference.name] + [''] * (star_trimmomatic_tag - 2)
+				vect_out.extend(["Trimmo. stats."] * len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect))
+				vect_out.extend([''] * (len(vect_tags_out_sample) + len(vect_tags_out_project_sample) +\
+								len(SoftwareNames.VECT_INSAFLU_PARAMETER)))
 			csv_writer.writerow(vect_out)
+			csv_writer.writerow(vect_out_header)	### header in second line
+			
 			n_count = 0
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
@@ -539,13 +563,80 @@ class CollectExtraData(object):
 							break
 					if (not b_print): vect_out.append('')
 
+				###  BEGIN info about software versions  ####
+				if project_sample.id in dict_all_results:
+				
+					### trimmomatic stats	
+					if (b_trimmomatic_stats):
+						self._get_info_from_trimmomatic_stats(vect_out,
+							project_sample.id, dict_all_results)
+					
+					### samples NAME_sample
+					self._get_info_for_software(MetaKeyAndValue.NAME_sample, vect_out, dict_all_results,
+						project_sample.id, vect_tags_out_sample)
+
+					### samples NAME_project_sample
+					self._get_info_for_software(MetaKeyAndValue.NAME_project_sample, vect_out, dict_all_results,
+						project_sample.id, vect_tags_out_project_sample)
+					
+				else: vect_out.extend([''] * (len(vect_tags_out_sample) +\
+					len(vect_tags_out_project_sample) +\
+					len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect if b_trimmomatic_stats else 0)))
+				###		second project_sample
+				###  END info about software versions  ####
+
+				### BEGIN save global parameters
+				for parameter_name in SoftwareNames.VECT_INSAFLU_PARAMETER:
+					### 
+					if (parameter_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
+						if (project_sample.is_mask_consensus_sequences):
+							vect_out.append(default_software.get_mask_consensus_single_parameter(project_sample,\
+								DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+						else:
+							vect_out.append("Not applied")
+					else:
+						vect_out.append("")
+					
+				### END save global parameters
 				csv_writer.writerow(vect_out)
 				n_count += 1
 		if (n_count == 0):
 			os.unlink(out_file)
 			return None
 		return out_file
+
+	def _get_info_for_software(self, tag_to_search, vect_out, dict_all_results, project_sample_id, vect_tags_info):
+		"""
+		"""
+		if tag_to_search in dict_all_results[project_sample_id]:
+			for software_name in vect_tags_info:
+				software_result = ""
+				for result in dict_all_results[project_sample_id][tag_to_search]:
+					software_result = result.get_software(software_name)
+					if (len(software_result) > 0): break
+				vect_out.append(software_result)
+		else: vect_out.extend([''] * len(vect_tags_info))
 	
+	def _get_info_from_trimmomatic_stats(self, vect_out, project_sample_id, dict_all_results):
+		"""
+		return the stats of trimmomatic
+		"""
+		if MetaKeyAndValue.NAME_sample in dict_all_results[project_sample_id]:
+			for result in dict_all_results[project_sample_id][MetaKeyAndValue.NAME_sample]:
+				software = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+				if (not software is None and not software.get_vect_key_values() is None):
+					for stat_names in SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect:
+						b_found = False
+						for key_value in software.get_vect_key_values():
+							if (key_value.key == stat_names):
+								vect_out.append(key_value.value)
+								b_found = True
+								break
+						if (not b_found): vect_out.append("")
+					return
+				
+		vect_out.extend([''] * len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect))
+		
 	def get_tags_for_samples_in_projects(self, project):
 		"""
 		tags for samples in projects
@@ -559,6 +650,50 @@ class CollectExtraData(object):
 				dict_tags_out[tag_name.name] = 1
 				vect_tags_out.append(tag_name.name)
 		return vect_tags_out
+
+	def get_list_of_softwares_used(self, project):
+		"""
+		get list of software, in sample and sample_project
+		out: [Software_name, Software_name_1, Software_name_2, ...]
+				all results by id project_sample and key software
+		"""
+		manage_database = ManageDatabase()
+		decode_result = DecodeObjects()
+				
+		dict_all_results = {}		### all results in for project_sample
+		vect_tags_out_sample = []
+		vect_tags_out_project_sample = []
+		b_trimmomatic_tags = False	### test if has trimmomatic statistics
+		for project_sample in project.project_samples.all():
+			if (not project_sample.get_is_ready_to_proccess()): continue
+			### return software name
+			dt_out = {MetaKeyAndValue.NAME_sample: []}
+			if (MetaKeyAndValue.NAME_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS):
+				for keys_for_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS.get(MetaKeyAndValue.NAME_sample):
+					meta_sample = manage_database.get_sample_metakey_last(project_sample.sample, keys_for_sample, MetaKeyAndValue.META_VALUE_Success)
+					if (meta_sample is None): continue
+					result = decode_result.decode_result(meta_sample.description)
+					dt_out[MetaKeyAndValue.NAME_sample].append(result)
+					
+					soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+					if (not b_trimmomatic_tags and not soft_desc is None and not soft_desc.get_vect_key_values() is None and\
+						len(soft_desc.get_vect_key_values()) > 0):
+						b_trimmomatic_tags = True
+					for software_name in result.get_all_software_names():
+						if not software_name in vect_tags_out_sample: vect_tags_out_sample.append(software_name)
+			
+			### key of project sample
+			dt_out[MetaKeyAndValue.NAME_project_sample] = []
+			if (MetaKeyAndValue.NAME_project_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS):
+				for keys_for_proj_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS.get(MetaKeyAndValue.NAME_project_sample):
+					meta_sample = manage_database.get_project_sample_metakey_last(project_sample, keys_for_proj_sample, MetaKeyAndValue.META_VALUE_Success)
+					if (meta_sample is None): continue
+					result = decode_result.decode_result(meta_sample.description)
+					dt_out[MetaKeyAndValue.NAME_project_sample].append(result)
+					for software_name in result.get_all_software_names():
+						if not software_name in vect_tags_out_project_sample: vect_tags_out_project_sample.append(software_name)
+			dict_all_results[project_sample.id] = dt_out			
+		return (vect_tags_out_sample, vect_tags_out_project_sample, b_trimmomatic_tags, dict_all_results)
 			
 	def calculate_count_variations(self, project):
 		"""

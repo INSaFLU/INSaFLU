@@ -44,6 +44,10 @@ class DecodeObjects(object):
 			a = Outputs()
 			a.__dict__.update(o['__Outputs__'])
 			return a
+		elif '__KeyValues__' in o:
+			a = KeyValues()
+			a.__dict__.update(o['__KeyValues__'])
+			return a
 		elif '__Softwares__' in o:
 			a = Softwares()
 			a.__dict__.update(o['__Softwares__'])
@@ -51,6 +55,10 @@ class DecodeObjects(object):
 		elif '__Result__' in o:
 			a = Result()
 			a.__dict__.update(o['__Result__'])
+			return a
+		elif '__KeyValue__' in o:
+			a = KeyValue(o['__KeyValue__']['key'], o['__KeyValue__']['value'])
+			a.__dict__.update(o['__KeyValue__'])
 			return a
 		elif '__software_desc__' in o:
 			a = SoftwareDesc(o['__software_desc__']['name'], o['__software_desc__']['version'], o['__software_desc__']['parameters'])
@@ -88,16 +96,25 @@ class ObjectEncoder(json.JSONEncoder):
 	
 class SoftwareDesc(object):
 	
-	def __init__(self, name, version, parameters):
+	def __init__(self, name, version, parameters, key_values = None):
+		"""
+		:param key_values has the values from the analysis of the software
+		"""
 		self.name = name
 		self.version = version
 		self.parameters = parameters
+		self.key_values = None
+		if (not key_values is None):
+			self.key_values = KeyValues(key_values)
 		
 	def __eq__(self, other):
 		return other.name == self.name and other.version == self.version and other.parameters == self.parameters
 
 	def __str__(self):
 		return self.name
+
+	def get_vect_key_values(self):
+		return None if self.key_values is None else self.key_values.get_key_value() 
 
 
 class Softwares(object):
@@ -109,6 +126,7 @@ class Softwares(object):
 		self.list_software.append(software)
 
 	def get_software(self, sz_name):
+		"""   return software name, version and parameters"""
 		list_return = []
 		for software_desc in self.list_software:
 			if (software_desc.name == sz_name):
@@ -118,8 +136,23 @@ class Softwares(object):
 		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
 	
+	def get_software_instance(self, sz_name):
+		""" return software instance """
+		for software_desc in self.list_software:
+			if (software_desc.name == sz_name): return software_desc
+		return None
+			
 	def get_number_softwares(self):
 		return len(self.list_software)
+
+	def get_all_software_names(self):
+		"""
+		out: return all software names in an arrays
+		"""
+		vect_out = []
+		for software in self.list_software:
+			if (not software.name in vect_out): vect_out.append(software.name)
+		return vect_out
 
 class Output(object):
 	def __init__(self, file_name, path):
@@ -142,6 +175,32 @@ class Outputs(object):
 	
 	def add_output(self, output):
 		self.list_output.append(output)
+		
+class KeyValue(object):
+	def __init__(self, key, value):
+		self.key = key
+		self.value = value
+	
+	def __eq__(self, other):
+		return other.key == self.key and other.value == self.value
+		
+	def __str__(self):
+		return "{} {}".format(self.key, self.value)
+
+class KeyValues(object):
+	def __init__(self, key_values = None):
+		self.list_key_value = []
+		
+		## copy constructor
+		if (not key_values is None):
+			for key_value in key_values.get_key_value():
+				self.list_key_value.append(KeyValue(key_value.key, key_value.value))
+	
+	def add_key_value(self, key_value):
+		self.list_key_value.append(key_value)
+
+	def get_key_value(self):
+		return self.list_key_value
 
 class Result(object):
 	'''
@@ -155,6 +214,7 @@ class Result(object):
 		'''
 		self.result = ""
 		self.message = ""
+		self.key_values = KeyValues()
 		self.outputs = Outputs()
 		self.softwares = Softwares()
 	
@@ -169,6 +229,9 @@ class Result(object):
 	def add_output(self, output):
 		self.outputs.add_output(output)
 		
+	def add_key_value(self, key_value):
+		self.key_values.add_key_value(key_value)
+		
 	def add_software(self, software):
 		self.softwares.add_software(software)
 		
@@ -178,11 +241,20 @@ class Result(object):
 	def get_software(self, sz_name):
 		return self.softwares.get_software(sz_name)
 	
+	def get_software_instance(self, sz_name):
+		return self.softwares.get_software_instance(sz_name)
+	
 	def get_number_softwares(self):
 		return self.softwares.get_number_softwares()
 	
+	def get_all_software_names(self):
+		return self.softwares.get_all_software_names()
+	
 	def is_success(self):
 		return self.result == Result.SUCCESS
+
+	def get_key_value(self):
+		return self.key_values.get_key_value()
 
 class ResultEncoder(json.JSONEncoder):
 

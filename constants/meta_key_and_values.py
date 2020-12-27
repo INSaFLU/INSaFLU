@@ -60,6 +60,16 @@ class MetaKeyAndValue(object):
 						META_KEY_ALERT_COVERAGE_9,\
 						META_KEY_ALERT_COVERAGE_0]
 
+	### Key softwares to show in description of tab/csv file
+	### { SAMPLE/PROJECT_SAMPLE : [KEY_TO_SHOW, KEY_TO_SHOW_1, KEY_TO_SHOW_2, ...],
+	###   SAMPLE/PROJECT_SAMPLE : [KEY_TO_SHOW_2, KEY_TO_SHOW_4, KEY_TO_SHOW_2, ...]
+	### }
+	NAME_sample = "Sample"						### if the software was used in sample
+	NAME_project_sample = "ProjectSample"		### if the software was used in project sample
+	DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS = { 
+		NAME_sample : [META_KEY_Fastq_Trimmomatic_Software, META_KEY_Identify_Sample_Software, ],
+		NAME_project_sample : [META_KEY_Snippy_Freebayes, ],
+	}
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
 																	

@@ -58,6 +58,11 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
+	SOFTWARE_TRIMMOMATIC_vect_info_to_collect = ["Input Read Pairs:",
+					"Both Surviving:",
+					"Forward Only Surviving:",
+					"Reverse Only Surviving:",
+					"Dropped:",]
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"

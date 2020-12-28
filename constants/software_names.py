@@ -58,6 +58,13 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
+	
+	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
+	SOFTWARE_RabbitQC_name = "RabbitQC"
+	SOFTWARE_RabbitQC_name_extended = "Quality analysis and control (RabbitQC)"
+	SOFTWARE_RabbitQC_VERSION = "0.0.1"
+	SOFTWARE_RabbitQC_PARAMETERS = "-w 3 -D"	## for long reads
+	
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"
@@ -236,6 +243,15 @@ class SoftwareNames(object):
 	def get_trimmomatic_name_extended(self): return self.SOFTWARE_TRIMMOMATIC_name_extended
 	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
 	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
+
+	"""
+	return RabbitQC software
+	"""
+	def get_rabbitqc(self): return self.SOFTWARE_TRIMMOMATIC
+	def get_rabbitqc_name(self): return self.SOFTWARE_RabbitQC_name
+	def get_rabbitqc_name_extended(self): return self.SOFTWARE_RabbitQC_name_extended
+	def get_rabbitqc_version(self): return self.SOFTWARE_RabbitQC_VERSION
+	def get_rabbitqc_parameters(self): return self.SOFTWARE_RabbitQC_PARAMETERS
 
 	"""
 	return msa masker software

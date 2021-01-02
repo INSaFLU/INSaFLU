@@ -346,6 +346,16 @@ class Sample(models.Model):
 		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
 		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
 		return os.path.join(path_out, self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
+	
+	def get_nanofilt_file(self, type_path):
+		"""
+		get the trimmomatic files, it's going to be use for all processing
+		type_path = [MEDIA_ROOT, MEDIA_URL]
+		"""
+		b_first_file = True
+		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
+		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
+		return os.path.join(path_out, self.name + ".fastq.gz")
 
 	def get_fastq_trimmomatic(self, type_path, b_first_file):
 		"""
@@ -357,6 +367,15 @@ class Sample(models.Model):
 		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
 		return os.path.join(path_out, self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
 
+	def get_rabbitQC_nanofilt(self, type_path):
+		"""
+		return rabbitQC output first step
+		"""
+		b_first_file = True
+		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
+		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
+		return os.path.join(path_out, self.name + "_rabbitQC.html")
+	
 	def get_fastq(self, type_path, b_first_file):
 		"""
 		return fastq output first step, from MEDIA_URL or MEDIA_ROOT
@@ -370,13 +389,21 @@ class Sample(models.Model):
 		"""
 		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
 	
-	def get_fastq_output(self, type_path, b_first_file):
+	def get_fastqc_output(self, type_path, b_first_file):
 		"""
 		return fastq output second step
+		can be generic, also for rabbitQC
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
 
+	def get_rabbitQC_output(self, type_path):
+		"""
+		return fastq output second step
+		can be generic, also for rabbitQC
+		"""
+		b_first_file = True
+		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_rabbitQC.html"))
 		
 	def __get_path__(self, type_path, b_first_file):
 		"""

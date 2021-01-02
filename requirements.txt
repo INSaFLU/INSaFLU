@@ -25,3 +25,5 @@ python-decouple
 bcbio-gff
 humanfriendly
 python-dateutil
+nanostat==1.4.0
+nanofilt==2.6.0

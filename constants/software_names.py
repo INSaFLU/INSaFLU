@@ -63,7 +63,22 @@ class SoftwareNames(object):
 	SOFTWARE_RabbitQC_name = "RabbitQC"
 	SOFTWARE_RabbitQC_name_extended = "Quality analysis and control (RabbitQC)"
 	SOFTWARE_RabbitQC_VERSION = "0.0.1"
-	SOFTWARE_RabbitQC_PARAMETERS = "-w 3 -D"	## for long reads
+	SOFTWARE_RabbitQC_PARAMETERS = "-w 3 -D"		## for long reads
+	SOFTWARE_NanoStat = "NanoStat"
+	SOFTWARE_NanoStat_name = "NanoStat"
+	SOFTWARE_NanoStat_name_extended = "Calculate various statistics from a long read sequencing (NanoStat)"
+	SOFTWARE_NanoStat_VERSION = "1.4.0"
+	SOFTWARE_NanoStat_PARAMETERS = ""				## -o temp -n temp.txt --fastq ERR4082025_1.fastq.gz
+	SOFTWARE_NanoFilt = "NanoFilt"
+	SOFTWARE_NanoFilt_name = "NanoFilt"
+	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of long read sequencing data. (NanoFilt)"
+	SOFTWARE_NanoFilt_VERSION = "2.6.0"
+	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 40 --tailcrop 50"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
+	SOFTWARE_Medaka = os.path.join(".", settings.DIR_SOFTWARE, "medaka/bin/activate; medaka")
+	SOFTWARE_Medaka_name = "Medaka"
+	SOFTWARE_Medaka_name_extended = "Medaka is a tool to create consensus sequences."
+	SOFTWARE_Medaka_VERSION = "1.2.0"
+	SOFTWARE_Medaka_PARAMETERS = "variant --verbose"	## ref + " " + probs + " " + Output_file
 	
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
@@ -243,15 +258,6 @@ class SoftwareNames(object):
 	def get_trimmomatic_name_extended(self): return self.SOFTWARE_TRIMMOMATIC_name_extended
 	def get_trimmomatic_version(self): return self.SOFTWARE_TRIMMOMATIC_VERSION
 	def get_trimmomatic_parameters(self): return self.SOFTWARE_TRIMMOMATIC_PARAMETERS
-
-	"""
-	return RabbitQC software
-	"""
-	def get_rabbitqc(self): return self.SOFTWARE_TRIMMOMATIC
-	def get_rabbitqc_name(self): return self.SOFTWARE_RabbitQC_name
-	def get_rabbitqc_name_extended(self): return self.SOFTWARE_RabbitQC_name_extended
-	def get_rabbitqc_version(self): return self.SOFTWARE_RabbitQC_VERSION
-	def get_rabbitqc_parameters(self): return self.SOFTWARE_RabbitQC_PARAMETERS
 
 	"""
 	return msa masker software
@@ -438,6 +444,35 @@ class SoftwareNames(object):
 	def get_create_new_reference_to_snippy_version(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion
 	def get_create_new_reference_to_snippy_parameters(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters
 
+	###### START minion software
+	###
+	def get_rabbitQC(self): return self.SOFTWARE_RabbitQC
+	def get_rabbitQC_name(self): return self.SOFTWARE_RabbitQC_name
+	def get_rabbitQC_name_extended(self): return self.SOFTWARE_RabbitQC_name_extended
+	def get_rabbitQC_version(self): return self.SOFTWARE_RabbitQC_VERSION
+	def get_rabbitQC_parameters(self): return self.SOFTWARE_RabbitQC_PARAMETERS
+	
+	def get_NanoStat(self): return self.SOFTWARE_NanoStat
+	def get_NanoStat_name(self): return self.SOFTWARE_NanoStat_name
+	def get_NanoStat_name_extended(self): return self.SOFTWARE_NanoStat_name_extended
+	def get_NanoStat_version(self): return self.SOFTWARE_NanoStat_VERSION
+	def get_NanoStat_parameters(self): return self.SOFTWARE_NanoStat_PARAMETERS
+
+	def get_NanoFilt(self): return self.SOFTWARE_NanoFilt
+	def get_NanoFilt_name(self): return self.SOFTWARE_NanoFilt_name
+	def get_NanoFilt_name_extended(self): return self.SOFTWARE_NanoFilt_name_extended
+	def get_NanoFilt_version(self): return self.SOFTWARE_NanoFilt_VERSION
+	def get_NanoFilt_parameters(self): return self.SOFTWARE_NanoFilt_PARAMETERS
+
+	def get_medaka(self): return self.SOFTWARE_Medaka
+	def get_medaka_name(self): return self.SOFTWARE_Medaka_name
+	def get_medaka_name_extended(self): return self.SOFTWARE_Medaka_name_extended
+	def get_medaka_version(self): return self.SOFTWARE_Medaka_VERSION
+	def get_medaka_parameters(self): return self.SOFTWARE_Medaka_PARAMETERS
+
+	###
+	###### END minion software
+	
 	###################################
 	#####
 	#####	Global parameters for INSaFLU

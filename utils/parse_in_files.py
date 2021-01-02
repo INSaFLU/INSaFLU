@@ -649,6 +649,8 @@ class ParseInFiles(object):
 			if (not vect_sample[0].date_of_collection is None): sample.date_of_collection = vect_sample[0].date_of_collection
 			if (not vect_sample[0].date_of_receipt_lab is None): sample.date_of_receipt_lab = vect_sample[0].date_of_receipt_lab
 			if (not vect_sample[0].geo_local is None): sample.geo_local = vect_sample[0].geo_local
+			
+			### need to set the 
 			sample.save()
 
 			### now save the tag names
@@ -823,7 +825,8 @@ class ParseInFiles(object):
 			try:
 				## here can be direct because came from a djangoq
 				process_SGE = ProcessSGE()
-				taskID = process_SGE.set_run_trimmomatic_species(sample, user)
+				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user)
+				else: taskID = process_SGE.set_run_clean_minion(sample, user)	### minion
 				
 				### 
 				manageDatabase = ManageDatabase()

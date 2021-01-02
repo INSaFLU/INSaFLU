@@ -223,8 +223,8 @@ class Test(TestCase):
 			sample.save()
 
 		out_put_path = self.software.run_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False))
-		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))
-		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertTrue(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
@@ -232,8 +232,8 @@ class Test(TestCase):
 		self.utils.remove_dir(out_put_path)
 
 		out_put_path = self.software.run_fastq(file_1, None)
-		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))
-		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))
+		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))
+		out_file_2 = os.path.join(out_put_path, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertFalse(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
@@ -373,8 +373,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
@@ -444,7 +444,7 @@ class Test(TestCase):
 		
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		
 		manageDatabase = ManageDatabase()
@@ -713,8 +713,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
@@ -841,8 +841,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
@@ -969,8 +969,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
@@ -1097,8 +1097,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False)))))
-		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		

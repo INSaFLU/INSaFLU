@@ -128,6 +128,9 @@ class ConstantsTestsCase(object):
 	FASTQ11_1 = "EVA174_S64_L001_R1_001.fastq.gz"
 	FASTQ11_2 = "EVA174_S64_L001_R2_001.fastq.gz"
 	
+	### only for minion
+	FASTQ_MINION_1 = "ERR4082025_minion.fastq.gz"
+	
 	META_KEY_TEST = "meta_key_test"
 	VALUE_TEST = "value_test"
 	VALUE_TEST_2 = "value_test_2"

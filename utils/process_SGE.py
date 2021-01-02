@@ -289,6 +289,26 @@ class ProcessSGE(object):
 			raise Exception('Fail to submit the job.')
 		return sge_id
 		
+	def set_run_clean_minion(self, sample, user, job_name = "job_name_to_run"):
+		"""
+		Run trimmomatic and identify species 
+		Can run free without wait for anything
+		"""
+		process_controler = ProcessControler()
+		vect_command = ['python3 {} run_clean_minion --sample_id {} --user_id {} {}'.format(\
+				os.path.join(settings.BASE_DIR, 'manage.py'), sample.pk, user.pk,
+				"--settings fluwebvirus.settings_test" if settings.RUN_TEST_IN_COMMAND_LINE else "")]
+		self.logger_production.info('Processing: ' + ";".join(vect_command))
+		self.logger_debug.info('Processing: ' + ";".join(vect_command))
+		out_dir = self.utils.get_temp_dir()
+		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True)
+		try:
+			sge_id = self.submitte_job(path_file)
+			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
+		except:
+			raise Exception('Fail to submit the job.')
+		return sge_id	
+		
 	def set_link_files(self, user, b_test = False):
 		"""
 		only can run one at a time

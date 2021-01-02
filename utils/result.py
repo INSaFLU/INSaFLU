@@ -112,9 +112,12 @@ class Softwares(object):
 		list_return = []
 		for software_desc in self.list_software:
 			if (software_desc.name == sz_name):
-				if (software_desc.parameters != None and len(software_desc.parameters) > 0):
-					list_return.append("{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters))
-				else: list_return.append("{}-{}".format(software_desc.name, software_desc.version))
+				if (not software_desc.parameters is None and len(software_desc.parameters) > 0):
+					description = "{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters)
+					if (not description in list_return): list_return.append(description)
+				else:
+					description = "{}-{}".format(software_desc.name, software_desc.version)
+					if (not description in list_return): list_return.append(description)
 		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
 	

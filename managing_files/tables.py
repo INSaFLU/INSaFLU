@@ -181,8 +181,12 @@ class SampleTable(tables.Table):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 			if (result_average.number_file_2 is None):
-				tip_info = '<span ><i class="tip fa fa-info-circle" title="#Reads from fastq1: {}\n'\
-						'Length average from fastq1: {}\n"></i></span>'.format(result_average.number_file_1, result_average.average_file_1) 
+				if (record.is_type_fastq_gz_sequencing()):	### default illumina
+					tip_info = '<span ><i class="tip fa fa-info-circle" title="#Reads from fastq1: {}\n'\
+						'Length average from fastq1: {}\n"></i></span>'.format(result_average.number_file_1, result_average.average_file_1)
+				else:
+					tip_info = '<span ><i class="tip fa fa-info-circle" title="#Reads from fastq: {}\n'\
+						'Length average from fastq: {}\n"></i></span>'.format(result_average.number_file_1, result_average.average_file_1) 
 				return mark_safe(tip_info + ' (%s/%s) (%s)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_1 ))
 
@@ -203,7 +207,8 @@ class SampleTable(tables.Table):
 		icon with link to extra info
 		"""
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
+				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (record.candidate_file_name_1 != None and len(record.candidate_file_name_1) > 0):

@@ -19,53 +19,29 @@ class DefaultSoftware(object):
 
 	def test_all_defaults(self, user):
 		### test all defaults
-		self.test_default_trimmomatic_db(user)
-		self.test_default_snippy_db(user)
-		self.test_default_mask_consensus_threshold_db(user)
+		self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user), user)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user), user)
+		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
+		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user)
 
-	def test_default_trimmomatic_db(self, user):
+	def test_default_db(self, software_name, vect_parameters, user):
 		"""
 		test if exist, if not persist in database
 		"""
 		try:
-			Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+			Software.objects.get(name=software_name, owner=user,\
 						type_of_use = Software.TYPE_OF_USE_global)
 		except Software.DoesNotExist:
 			### create a default one for this user
 			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-				vect_parameters = self._get_trimmomatic_default(user)
-				self._persist_parameters(vect_parameters)
-
-	def test_default_mask_consensus_threshold_db(self, user):
-		"""
-		percentage threshold of consensus coverage 
-		"""
-		try:
-			Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner = user,\
-						type_of_use = Software.TYPE_OF_USE_global)
-		except Software.DoesNotExist:
-			### create a default one for this user
-			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-				vect_parameters = self._get_mask_consensus_threshold_default(user)
-				self._persist_parameters(vect_parameters)
-	
-	def test_default_snippy_db(self, user):
-		"""
-		test if exist, if not persist in database
-		"""
-		try:
-			Software.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
-						type_of_use = Software.TYPE_OF_USE_global)
-		except Software.DoesNotExist:
-			### create a default one for this user
-			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-				vect_parameters = self._get_snippy_default(user)
 				self._persist_parameters(vect_parameters)
 
 	def get_trimmomatic_parameters(self, user):
 		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 	def get_snippy_parameters(self, user):
 		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name)
+	def get_nanofilt_parameters(self, user):
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_NanoFilt_name)
 	def get_mask_consensus_threshold_parameters(self, user):
 		return self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name)
 	
@@ -110,6 +86,7 @@ class DefaultSoftware(object):
 	def set_default_software(self, software, user):
 		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name): vect_parameters = self._get_snippy_default(user)
 		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): vect_parameters = self._get_trimmomatic_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_NanoFilt_name): vect_parameters = self._get_nanofilt_default(user)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			vect_parameters = self._get_mask_consensus_threshold_default(user)
 		else: return
@@ -153,17 +130,19 @@ class DefaultSoftware(object):
 		"""
 		"""
 		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
-			self.test_default_trimmomatic_db(user) 
+			self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user), user)
 			return self.get_trimmomatic_parameters(user)
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
-			self.test_default_snippy_db(user) 
+			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
 			return self.get_snippy_parameters(user)
 		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
-			self.test_default_mask_consensus_threshold_db(user) 
+			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user), user)
 			return self.get_mask_consensus_threshold_parameters(user)
+		if (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
+			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user)
+			return self.get_nanofilt_parameters(user)
 		return ""
-
-
+		
 	def get_all_software(self):
 		"""
 		get all softwares available by this class
@@ -171,6 +150,7 @@ class DefaultSoftware(object):
 		vect_software = []
 		vect_software.append(self.software_names.get_trimmomatic_name())
 		vect_software.append(self.software_names.get_snippy_name())
+		vect_software.append(self.software_names.get_NanoFilt_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		return vect_software
 
@@ -381,6 +361,79 @@ class DefaultSoftware(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
+	def _get_nanofilt_default(self, user):
+		"""
+		SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_NanoFilt_name
+		software.name_extended = SoftwareNames.SOFTWARE_NanoFilt_name_extended
+		software.version = SoftwareNames.SOFTWARE_NanoFilt_VERSION
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "-q"
+		parameter.parameter = "10"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[5:30]"
+		parameter.range_max = "30"
+		parameter.range_min = "5"
+		parameter.description = "-q <QUALITY>, Filter on a minimum average read quality score."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "-l"
+		parameter.parameter = "50"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 2
+		parameter.range_available = "[50:1000]"
+		parameter.range_max = "1000"
+		parameter.range_min = "50"
+		parameter.description = "-l <LENGTH>, Filter on a minimum read length."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "--headcrop"
+		parameter.parameter = "10"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 3
+		parameter.range_available = "[1:1000]"
+		parameter.range_max = "1000"
+		parameter.range_min = "1"
+		parameter.not_set_value = "0"
+		parameter.description = "--headcrop <HEADCROP>, Trim n nucleotides from start of read."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "--tailcrop"
+		parameter.parameter = "10"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 4
+		parameter.range_available = "[1:1000]"
+		parameter.range_max = "1000"
+		parameter.range_min = "1"
+		parameter.not_set_value = "0"
+		parameter.description = "--tailcrop <TAILCROP>, Trim n nucleotides from end of read."
+		vect_parameters.append(parameter)
+		
+		return vect_parameters
 
 	def _get_mask_consensus_threshold_default(self, user):
 		"""

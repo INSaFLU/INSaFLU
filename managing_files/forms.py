@@ -240,7 +240,8 @@ class SampleForm(forms.ModelForm):
 	class Meta:
 		model = Sample
 		# specify what fields should be used in this form.
-		fields = ('name', 'vaccine_status', 'data_set', 'date_of_onset', 'date_of_collection', 'date_of_receipt_lab', 'path_name_1', 'path_name_2')
+		fields = ('name', 'vaccine_status', 'data_set', 'date_of_onset', 'date_of_collection',\
+				'date_of_receipt_lab', 'path_name_1', 'path_name_2')
 
 	def __init__(self, *args, **kwargs):
 		self.request = kwargs.pop('request')
@@ -442,7 +443,8 @@ class SampleForm(forms.ModelForm):
 				self.add_error('date_of_receipt_lab', _("Error, the Lab Receipt date is null."))
 				
 			try:
-				self.utils.is_fastq_gz(fastaq_temp_file_name.name)
+				(is_fastq, type_of_fastq) = self.utils.is_fastq_gz(fastaq_temp_file_name.name)
+				self.cleaned_data['type_fastq'] = type_of_fastq		### pass info to SamplesAddView
 			except Exception as e:	## (e.errno, e.strerror)
 				os.unlink(fastaq_temp_file_name.name)
 				self.add_error('path_name_1', _(e.args[0]))
@@ -465,7 +467,7 @@ class SampleForm(forms.ModelForm):
 					## only illumina can add a second file
 					if (type_of_fastq != Constants.FORMAT_FASTQ_illumina):
 						os.unlink(fastaq_temp_file_name_2.name)
-						self.add_error('path_name_2', _("Only illumina files can be add to the second file name."))
+						self.add_error('path_name_2', _("Only illumina files can be added to the second file name."))
 						return cleaned_data
 				
 				except Exception as e:	## (e.errno, e.strerror)

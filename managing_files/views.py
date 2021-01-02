@@ -290,7 +290,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			
 			### set type of sequencing, illumina, minion...
 			## here, the file is already tested for gastq.gz and illumina and minion
-			sample.set_type_of_fastq_sequencing(utils.get_type_file(sample.path_name_1.name))
+			sample.set_type_of_fastq_sequencing(form.cleaned_data['type_fastq'])
 			
 			if (like_dates == 'date_of_onset'):
 				sample.day = int(sample.date_of_onset.strftime("%d"))
@@ -326,7 +326,10 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		### create a task to perform the analysis of fastq and trimmomatic
 		try:
 			process_SGE = ProcessSGE()
-			taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+			if sample.is_type_fastq_gz_sequencing():	### default is Illumina
+				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+			else:										### Minion, codify with other
+				taskID = process_SGE.set_run_clean_minion(sample, self.request.user)
 		except Exception as e:
 			self.logger_production.error('Fail to run: ProcessSGE - ' + str(e))
 			self.logger_debug.error('Fail to run: ProcessSGE - ' + str(e))
@@ -890,7 +893,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			return context
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
+				if sample.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		## the info can be called from two distinct sources
 		## main info
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
@@ -899,19 +903,31 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 			file_name = sample.get_fastq(TypePath.MEDIA_ROOT, True)
 			if os.path.exists(file_name):
 				context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
-			else: context['href_fastq_1'] = _("Not available")
-			context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
-			context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
-				+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-			context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
-				os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+				if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
+					context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
+				else:
+					context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_output(TypePath.MEDIA_URL) + '">' + sample.file_name_1 + '.html</a>')
+			else: 
+				context['href_fastq_1'] = _("Not available")
+				context['href_fastq_quality_1'] = _("Not available")
+			
+			if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
+				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
+					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
+					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+			else:
+				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_nanofilt_file(TypePath.MEDIA_URL) + '" download="'\
+					+ os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '">' + os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '</a>')
+				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL) + '">' +\
+					os.path.basename(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL)) + '</a>')
 			
 			### testing second file
 			trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
 			if (trimmomatic_file_name != None):
 				context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
 					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-				context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
+				context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
 				
 				file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
 				if os.path.exists(file_name):
@@ -926,33 +942,50 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['href_trimmonatic_quality_2'] = _("Not available")
 
 			### software
-			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_sample == None):
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample != None):
-					lst_data = meta_sample.description.split(',')
-					context['fastq_software'] = lst_data[1].strip()
-					context['trimmomatic_software'] = lst_data[2].strip()
-			else:
-				decodeResult = DecodeObjects()
-				result = decodeResult.decode_result(meta_sample.description)
-				context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
-				context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+			if (sample.is_type_fastq_gz_sequencing()):
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample == None):
+					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
+					if (not meta_sample is None):
+						lst_data = meta_sample.description.split(',')
+						context['fastq_software'] = lst_data[1].strip()
+						context['trimmomatic_software'] = lst_data[2].strip()
+				else:
+					decodeResult = DecodeObjects()
+					result = decodeResult.decode_result(meta_sample.description)
+					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
+					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 	
-			meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
-			if (meta_sample == None):
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample != None):
-					lst_data = meta_sample.description.split(',')
-					context['spades_software'] = lst_data[1].strip()
-					context['abricate_software'] = lst_data[2].strip()
-			else:
-				decodeResult = DecodeObjects()
-				result = decodeResult.decode_result(meta_sample.description)
-				context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-				if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-				context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+				### species identification, only in Illumina
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample is None):
+					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+					if (meta_sample != None):
+						lst_data = meta_sample.description.split(',')
+						context['spades_software'] = lst_data[1].strip()
+						context['abricate_software'] = lst_data[2].strip()
+				else:
+					decodeResult = DecodeObjects()
+					result = decodeResult.decode_result(meta_sample.description)
+					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
+					if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
+					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+			else:	### Software Minion
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample == None):
+					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success)
+					if (not meta_sample is None):
+						lst_data = meta_sample.description.split(',')
+						context['fastq_software'] = lst_data[1].strip()
+						context['trimmomatic_software'] = lst_data[2].strip()
+				else:
+					decodeResult = DecodeObjects()
+					result = decodeResult.decode_result(meta_sample.description)
+					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoStat_name)
+					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
 				
+				
+					
 			##### extra data sample, columns added by the user
 			## [[header1, value1], [header2, value2], [header3, value3], ...]
 			### if it's to big expand button is better

@@ -26,16 +26,20 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(3, len(vect_software))
+		self.assertEqual(4, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
-		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[2])
+		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[2])
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[3])
 		
 		### test all defaults
 		default_software.test_all_defaults(user)
 		
 		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33", default_software.get_trimmomatic_parameters(user))
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user))
+		self.assertEqual("-q 10 -l 50 --headcrop 10 --tailcrop 10", default_software.get_nanofilt_parameters(user))
+		self.assertEqual("-q 10 -l 50 --headcrop 10 --tailcrop 10", 
+				default_software.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user))
 		
 		try:

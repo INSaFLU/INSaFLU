@@ -545,6 +545,7 @@ class Software(object):
 										new_file_name, os.path.join(temp_dir, sample_name), parameters)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
+			self.utils.remove_dir(temp_dir)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run trimmomatic")
@@ -964,7 +965,6 @@ class Software(object):
 					self.utils.move_file(file_name_1, sample.get_fastq(TypePath.MEDIA_ROOT, True))
 				if (file_name_2 != None and len(file_name_2) > 0 and os.path.exists(file_name_2) and os.path.getsize(file_name_2) > 100): 
 					self.utils.move_file(file_name_2, sample.get_fastq(TypePath.MEDIA_ROOT, False))
-				self.utils.remove_dir(os.path.dirname(file_name_1))
 				
 				### set the downsize message
 				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
@@ -977,16 +977,16 @@ class Software(object):
 			result_all.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq_version(), self.software_names.get_fastq_parameters()))
 			
 			### need to copy the files to samples/user path
-			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, True))), sample.get_fastq_output(TypePath.MEDIA_ROOT, True))
-			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_output(TypePath.MEDIA_ROOT, False))), sample.get_fastq_output(TypePath.MEDIA_ROOT, False))
+			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))), sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
+			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))), sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+			self.utils.remove_dir(temp_dir)
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(temp_dir)
 			return False
-		self.utils.remove_dir(temp_dir)
+		
 		
 		### run trimmomatic
 		try:
@@ -995,6 +995,7 @@ class Software(object):
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+			self.utils.remove_dir(temp_dir)
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run trimmomatic software: " + e.args[0])
@@ -1002,8 +1003,6 @@ class Software(object):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(temp_dir)
 			return False
-		self.utils.remove_dir(temp_dir)
-		
 		
 		### run fastq again
 		try:
@@ -1012,14 +1011,14 @@ class Software(object):
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))), sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))), sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+			self.utils.remove_dir(temp_dir)
 		except Exception as e:
 			result = Result()
 			result.set_error("Fail to run fastq software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_fastq_name(), self.software_names.get_fastq(), self.software_names.get_fastq_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(temp_dir)
 			return False
-		self.utils.remove_dir(temp_dir)
+		
 
 		### collect numbers
 		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))

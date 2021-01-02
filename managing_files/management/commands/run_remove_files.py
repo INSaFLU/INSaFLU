@@ -213,28 +213,34 @@ class Command(BaseCommand):
 				files_removed = []
 				files_to_remove = []
 				
-				## can be removed already
-				files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
-				
 				## test the days removed
-				if (sample.date_deleted != None): removed_days = int(divmod((datetime.datetime.now() - sample.date_deleted).total_seconds(), 86400)[0])
+				if (not sample.date_deleted is None): removed_days = int(divmod((datetime.datetime.now() - sample.date_deleted).total_seconds(), 86400)[0])
 				else: removed_days = 10000	## big number, older versions doesn't have this table field
 				if (removed_days < self.REMOVE_FILES_AFTER_DAYS):
 					self.out_message("Not remove physically: {}; Deleted in web site {} days ago.".format(files_to_remove[0], removed_days), False)
 					continue
 				try:
 					original_file_not_removed = False
-					files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
-					if (not sample.is_original_fastq_removed()):
-						files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-						files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, False))
-						files_to_remove.append(sample.get_fastq_output(TypePath.MEDIA_ROOT, True))
-						files_to_remove.append(sample.get_fastq_output(TypePath.MEDIA_ROOT, False))
-						original_file_not_removed = True
-					files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
-					files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
-					files_to_remove.append(sample.get_abricate_output(TypePath.MEDIA_ROOT))
-
+					if (sample.is_type_fastq_gz_sequencing()):	### illumina
+						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+						if (not sample.is_original_fastq_removed()):
+							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, False))
+							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
+							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+							original_file_not_removed = True
+						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+						files_to_remove.append(sample.get_abricate_output(TypePath.MEDIA_ROOT))
+					else:	### minion
+						if (not sample.is_original_fastq_removed()):
+							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+							files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+							original_file_not_removed = True
+						files_to_remove.append(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+						files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+						
 					if (only_identify_files):
 						files_removed = files_to_remove.copy()
 					else:

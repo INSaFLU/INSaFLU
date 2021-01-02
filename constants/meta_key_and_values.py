@@ -16,6 +16,8 @@ class MetaKeyAndValue(object):
 	META_KEY_Fastq_Trimmomatic = "FastqTrimmomatic"						## Used to run fastq and trimmomatic software.Software.run_fastq_and_trimmomatic 
 	META_KEY_Fastq_Trimmomatic_Software = "FastqTrimmomaticSoftware"	## Used to run fastq and trimmomatic software.Software.run_fastq_and_trimmomatic 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
+	META_KEY_NanoStat_NanoFilt = "NanoStatNanoFilt"						## Used to run NanoStat and NanoFilt errors 
+	META_KEY_NanoStat_NanoFilt_Software = "NanoStatNanoFiltSoftware"	## Used to run NanoStat and NanoFilt 
 	META_KEY_Number_And_Average_Reads = "NumberAndAverageReads"  		## Used to count the number of the reads on run software.Software.get_lines_and_average_reads 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 

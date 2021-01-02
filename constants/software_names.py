@@ -58,6 +58,12 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
+
+	SOFTWARE_TRIMMOMATIC_vect_info_to_collect = ["Input Read Pairs:",
+					"Both Surviving:",
+					"Forward Only Surviving:",
+					"Reverse Only Surviving:",
+					"Dropped:",]
 	
 	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
 	SOFTWARE_RabbitQC_name = "RabbitQC"

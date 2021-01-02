@@ -47,8 +47,10 @@ class Test(unittest.TestCase):
 		coverage.add_coverage('PB2', Coverage.COVERAGE_MORE_0, 100.0)
 		coverage.add_coverage('PB2', Coverage.COVERAGE_ALL, 100.0)
 		sequence_name = 'PB2'
+		limit_to_mask_consensus = -1
 		self.assertTrue(self.proteins.save_protein_by_sequence_name_and_cds(consensus_fasta_file, genbank_file,
-							sample_name, sequence_name, gene, coverage, out_dir, out_file))
+							sample_name, sequence_name, gene, coverage, limit_to_mask_consensus, out_dir, out_file))
+				
 		self.assertTrue(filecmp.cmp(out_file, expect_file))
 		self.utils.remove_dir(out_dir)
 		

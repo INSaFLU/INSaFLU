@@ -984,7 +984,6 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoStat_name)
 					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
 				
-				
 					
 			##### extra data sample, columns added by the user
 			## [[header1, value1], [header2, value2], [header3, value3], ...]

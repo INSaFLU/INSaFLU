@@ -11,6 +11,7 @@ from utils.software import Software
 from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
+from settings.default_software_project_sample import DefaultProjectSoftware
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
@@ -42,6 +43,9 @@ class Proteins(object):
 		manageDatabase = ManageDatabase()
 		temp_dir = self.utils.get_temp_dir()
 		
+		### get limit mask
+		default_software = DefaultProjectSoftware()
+		
 		### get meta_key
 		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Proteins_Alignment_By_Element, sequence_name)
 		
@@ -58,8 +62,16 @@ class Proteins(object):
 			decode_coverage = DecodeObjects()
 			coverage = decode_coverage.decode_result(meta_value.description)
 			
+			### get consensus
+			if (project_sample.is_mask_consensus_sequences): 
+				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+									DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+			else: limit_to_mask_consensus = -1
+			
 			## test the coverage
-			if (not coverage.is_100_more_9(sequence_name)): continue
+			if (limit_to_mask_consensus == -1 and not coverage.is_100_more_9(sequence_name)) or\
+				(limit_to_mask_consensus > 0 and not coverage.ratio_value_coverage_bigger_limit(sequence_name, limit_to_mask_consensus)):
+				continue
 			
 			### get consensus file name
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
@@ -70,14 +82,15 @@ class Proteins(object):
 				return False
 			
 			b_first = True
-			for gene in geneticElement.get_genes(sequence_name):
+			for gene in geneticElement.get_genes(sequence_name):	### can have more than one gene for each sequence
 				## get file name
 				if (gene.name not in dt_out_files): 
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
 							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
 				if (self.save_protein_by_sequence_name_and_cds(consensus_fasta, project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
-							project_sample.sample.name, sequence_name, gene, coverage, temp_dir, dt_out_files[gene.name])):
+							project_sample.sample.name, sequence_name, gene, coverage, limit_to_mask_consensus,
+							temp_dir, dt_out_files[gene.name])):
 					if (b_first): n_files_with_sequences += 1
 					dict_out_sample_name["{}_{}_{}".format(project_sample.sample.name, sequence_name, self.utils.clean_name(gene.name))] = 1
 					b_first = False
@@ -200,7 +213,8 @@ class Proteins(object):
 			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
 
 	def save_protein_by_sequence_name_and_cds(self, consensus_fasta_file, genbank_file,
-							sample_name, sequence_name, gene, coverage, out_dir, out_file):
+				sample_name, sequence_name, gene, coverage, limit_to_mask_consensus,
+				out_dir, out_file):
 		"""
 		save the protein sequence in a file
 		out_file, append file
@@ -212,7 +226,6 @@ class Proteins(object):
 		if (seq_ref is None): return False
 		
 		### get consensus sequence
-		limit_to_mask_consensus = -1	### not used in proteins
 		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage,\
 				gene, limit_to_mask_consensus, out_dir)
 		if (file_name is None): return False

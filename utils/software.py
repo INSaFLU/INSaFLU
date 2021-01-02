@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip, logging, cmd, re, humanfriendly
+import os, gzip, logging, cmd, re, humanfriendly, subprocess
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -14,7 +14,7 @@ from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample, MixedInfectionsTag, ProcessControler
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits
+from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits, KeyValue
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from settings.default_software import DefaultSoftware
@@ -378,8 +378,11 @@ class Software(object):
 		sample.save()
 		
 		## save everything OK
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(), self.software_names.get_abricate_version()))
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
+			MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(),
+			self.software_names.get_abricate_version()))
+		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
+			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
 		self.utils.remove_dir(out_dir_spades)
 		self.utils.remove_file(out_file_clean)
@@ -520,6 +523,7 @@ class Software(object):
 		PE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] [-basein <inputBase> | <inputFile1> <inputFile2>] [-baseout <outputBase> | <outputFile1P> <outputFile1U> <outputFile2P> <outputFile2U>] <trimmer1>...
    			or: 
 		SE [-threads <threads>] [-phred33|-phred64] [-trimlog <trimLogFile>] <inputFile> <outputFile> <trimmer1>
+		:out log.txt with data of the result
 		"""
 
 		## get dynamic parameters
@@ -543,13 +547,33 @@ class Software(object):
 			os.system(cmd)
 			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, 
 										new_file_name, os.path.join(temp_dir, sample_name), parameters)
-		exist_status = os.system(cmd)
+		(exist_status, output) = subprocess.getstatusoutput(cmd)
 		if (exist_status != 0):
 			self.utils.remove_dir(temp_dir)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run trimmomatic")
-		return (temp_dir, parameters)
+		
+		result = Result()
+		for line in output.split("\n"):
+			### line of interested
+			if (line.startswith("Input Read Pairs:")):
+				### parse line
+				### Input Read Pairs: 44425 Both Surviving: 41254 (92,86%) Forward Only Surviving: 2306 (5,19%) Reverse Only Surviving: 431 (0,97%) Dropped: 434 (0,98%)
+				for _ in range(len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect)):
+					if (_ + 1 == len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect)):
+						result.add_key_value(KeyValue(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[_],
+							line.split(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[_])[1].strip()))
+					else:
+						result.add_key_value(KeyValue(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[_],
+							line.split(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[_])[1].split(
+							SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect[_ + 1][0])[0].strip()))
+			elif (line.startswith("Quality encoding detected as")):
+				result.add_key_value(KeyValue("Quality encoding detected:",
+							line.split("Quality encoding detected as")[1].strip()))
+		### dt_info has the information
+		return (temp_dir, result, parameters)
+
 
 	def run_snippy(self, file_name_1, file_name_2, path_reference_fasta, path_reference_genbank, sample_name, snippy_parameters):
 		"""
@@ -990,8 +1014,11 @@ class Software(object):
 		
 		### run trimmomatic
 		try:
-			(temp_dir, parameters) = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name, owner)
-			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(), self.software_names.get_trimmomatic_version(), parameters))
+			(temp_dir, filtering_result, parameters) = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name, owner)
+			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(),
+						self.software_names.get_trimmomatic_version(), parameters,
+						filtering_result.key_values))
+
 			### need to copy the files to samples/user path
 			self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 			if (sample.exist_file_2()): self.utils.copy_file(os.path.join(temp_dir, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))), sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))

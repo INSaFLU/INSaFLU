@@ -273,13 +273,21 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		(out_put_path_trimmomatic, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path_trimmomatic, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
 		out_file_1 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		out_file_2 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
 		self.assertTrue(os.path.exists(out_file_2))
 		self.assertTrue(os.path.getsize(out_file_1) > 1000)
 		self.assertTrue(os.path.getsize(out_file_2) > 1000)
+		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33", parameters)
+		self.assertEqual("Quality encoding detected:", filtering_result.get_key_value()[0].key)
+		self.assertEqual("phred33", filtering_result.get_key_value()[0].value)
+		self.assertEqual("Input Read Pairs:", filtering_result.get_key_value()[1].key)
+		self.assertEqual("44425", filtering_result.get_key_value()[1].value)
+		self.assertEqual("Dropped:", filtering_result.get_key_value()[-1].key)
+		self.assertEqual("434 (0,98%)", filtering_result.get_key_value()[-1].value)
+		self.assertNotEqual("434 (0,98%)_", filtering_result.get_key_value()[-1].value)
 		
 		out_put_path = self.software.run_fastq(out_file_1, out_file_2)
 		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))
@@ -311,7 +319,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 		
-		(out_put_path, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
 		self.assertTrue(sample.get_fastq(TypePath.MEDIA_ROOT, False) == None)
 		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		self.assertTrue(os.path.exists(out_file_1))
@@ -743,6 +751,19 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		decodeResult = DecodeObjects()
+		result = decodeResult.decode_result(meta_sample.description)
+		soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, soft_desc.name)
+		self.assertEqual("Quality encoding detected:", soft_desc.get_vect_key_values()[0].key)
+		self.assertEqual("phred33", soft_desc.get_vect_key_values()[0].value)
+		self.assertEqual("Input Read Pairs:", soft_desc.get_vect_key_values()[1].key)
+		self.assertEqual("44425", soft_desc.get_vect_key_values()[1].value)
+		self.assertEqual("Dropped:", soft_desc.get_vect_key_values()[-1].key)
+		self.assertEqual("434 (0,98%)", soft_desc.get_vect_key_values()[-1].value)
+		self.assertNotEqual("434 (0,98%)_", soft_desc.get_vect_key_values()[-1].value)
 		
 		sample = Sample.objects.get(pk=sample.id)
 		self.assertTrue(sample.is_ready_for_projects)

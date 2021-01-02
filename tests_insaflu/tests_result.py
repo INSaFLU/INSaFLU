@@ -5,7 +5,7 @@ Created on Oct 28, 2017
 '''
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
-from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
+from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, KeyValue
 from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
 from constants.software_names import SoftwareNames
 
@@ -72,10 +72,16 @@ class Test(TestCase):
 		result.set_error("xpto")
 		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_SPAdes_name, SoftwareNames.SOFTWARE_SPAdes_VERSION, SoftwareNames.SOFTWARE_SPAdes_PARAMETERS))
 		result.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION, SoftwareNames.SOFTWARE_TRIMMOMATIC_PARAMETERS))
+		result.add_key_value(KeyValue("key", "value"))
+		result.add_key_value(KeyValue("key1", "value1"))
+		result.add_key_value(KeyValue("key2", "value2"))
 		
 		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
 		self.assertEqual("SPAdes-3.11.1; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
 		
+		self.assertEqual(KeyValue("key", "value"), result.get_key_value()[0])
+		self.assertEqual(KeyValue("key1", "value1"), result.get_key_value()[1])
+		self.assertEqual(KeyValue("key2", "value2"), result.get_key_value()[2])
 		
 	def test_Coverage(self):
 		

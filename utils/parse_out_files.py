@@ -255,4 +255,43 @@ class ParseOutFiles(object):
 			os.unlink(out_file)
 
 
-
+	def add_amino_single_letter_code(self, vcf_file):
+		"""
+		param:	vcf_file in
+		out:	file with amino transformation  
+		"""
+		### AB=0;ABP=0;AC=2;AF=1;AN=2;AO=289;CIGAR=1X;DP=289;DPB=289;DPRA=0;EPP=7.70639;EPPR=0;GTI=0;LEN=1;MEANALT=1;MQM=60;MQMR=0;NS=1;NUMALT=1;ODDS=204.925;PAIRED=0;PAIREDR=0;
+		###		PAO=0;PQA=0;PQR=0;PRO=0;QA=10861;QR=0;RO=0;RPL=151;RPP=4.28012;RPPR=0;RPR=138;RUN=1;SAF=133;SAP=6.98507;SAR=156;SRF=0;SRP=0;SRR=0;TYPE=snp;
+		###		ANN=T|synonymous_variant|LOW|Exon_PB1_1_2274|Gene_Exon_PB1_1_2274|transcript|Transcript_Exon_PB1_1_2274|Coding|1/1|c.876C>T|p.Asn292Asn|876/2274|876/2274|292/757||;FREQ=100
+		temp_file = self.utils.get_temp_file("add_amino_", ".vcf")
+		with open(vcf_file) as handle_in, open(temp_file, 'w') as handle_out:
+			for line in handle_in:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp[0] == '#'): 
+					
+					### check annotation info, because now they have two HGVS.p
+					if line.startswith("##INFO=<ID=ANN,Number="): line = line.replace('| HGVS.p', '| HGVS.p | HGVS.p') 
+					handle_out.write(line)
+					continue
+				lst_data = sz_temp.split()
+				if len(lst_data) > 7:
+					lst_tag = lst_data[7].split(";")
+					for pos_1, tag in enumerate(lst_tag):
+						if (tag.startswith('ANN=')):
+							lst_value = tag.split("|")
+							for pos_2, value_ in enumerate(lst_value):
+								if value_.startswith("p."):
+									parse_amino = self.utils.parse_amino_HGVS_code(value_)
+									if (not parse_amino is None): lst_value.insert(pos_2 + 1, parse_amino)
+									break
+							lst_tag[pos_1] = "|".join(lst_value)
+							lst_data[7] = ";".join(lst_tag)
+							break
+					handle_out.write("\t".join(lst_data) + "\n")
+				else: handle_out.write(line)
+		return temp_file
+		
+	
+		
+		
+		

@@ -282,10 +282,10 @@ class CollectExtraData(object):
 			out_file = self.merge_all_consesnsus_files(project)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 			
-		if (out_file != None):
+		if (not out_file is None):
 			self.utils.copy_file(out_file, out_file_file_system)
-			os.unlink(out_file)
-		elif (out_file_file_system != None and os.path.exists(out_file_file_system)): os.unlink(out_file_file_system)
+			self.utils.remove_file(out_file)
+		elif (not out_file_file_system is None and os.path.exists(out_file_file_system)): self.utils.remove_file(out_file_file_system)
 
 
 	def create_json_file_from_sample_csv(self, project):
@@ -719,6 +719,7 @@ class CollectExtraData(object):
 					csv_writer.writerow([data_temp[2], data_temp[0], data_temp[1]])
 			### move file
 			self.utils.copy_file(out_file, destination_file)
+			self.utils.remove_file(out_file);
 			return destination_file
 		else: os.unlink(destination_file)
 		return None

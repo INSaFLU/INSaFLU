@@ -11,6 +11,7 @@ from utils.result import GeneticElement, Gene
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.Data.IUPACData import protein_letters_3to1
 from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
@@ -168,9 +169,9 @@ class Utils(object):
 		if (not path_name is None and os.path.isdir(path_name)):
 			main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 			## to prevent errors
-			if path_name == main_path or path_name == (main_path + "/"): return
-			else: cmd = "rm -r {}*".format(path_name)
-			os.system(cmd)
+			if path_name != main_path and path_name != (main_path + "/"):
+				cmd = "rm -r {}*".format(path_name)
+				os.system(cmd)
 
 	def move_file(self, sz_file_from, sz_file_to):
 		if os.path.exists(sz_file_from):
@@ -203,7 +204,7 @@ class Utils(object):
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
 				self.logger_debug.error('Fail to run: ' + cmd)
-				raise Exception("Fail to make a move a file") 
+				raise Exception("Fail to make a copy a file") 
 			
 			### set attributes to file 664
 			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
@@ -689,6 +690,82 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, vcf_file_out):
+		""" add FREQ to VCF, FREQ=AO/DP
+		
+		vcffile must be gzip and tbi included
+		returns: vcf file with freq, AO and AF 
+		"""
+		FREQ = 'FREQ'
+		AO = 'AO'
+		AF = 'AF'
+		TYPE = "TYPE"
+		
+		#read the input file
+		vcf_hanlder = pysam.VariantFile(vcf_file, "r")
+		if (FREQ in vcf_hanlder.header.info and AO in vcf_hanlder.header.info and\
+			AF in vcf_hanlder.header.info): 
+			vcf_hanlder.close()
+			return
+		
+		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
+		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/DP')
+		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count')
+		if (not AF in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AF, number='R', type='Integer', description='Number of observation for each allele')
+		if (not TYPE in vcf_hanlder.header.info): vcf_hanlder.header.info.add(TYPE, number='A', type='String', description='The type of allele, either snp, mnp, ins, del, or complex')
+
+		## write the header
+		for variant_header_records in vcf_hanlder.header.records:
+			vcf_hanlder_write.header.add_record(variant_header_records)
+		
+		for variant_sample in vcf_hanlder.header.samples:
+			vcf_hanlder_write.header.add_sample(variant_sample)
+			
+		for variant in vcf_hanlder:
+			if ("SR" in variant.info and "DP" in variant.info):	## SR=0,0,15,6
+				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
+					vcf_hanlder_write.write(variant) 
+					continue		### different numbers of Alleles and References
+
+				#### extra info				
+				vect_out_ao = []	### AO
+				vect_out_af = []	### AF
+				vect_out_freq = []	### FREQ
+				vect_out_type = []	### TYPE
+				for value_ in range(0, len(variant.info['SR']), 2):
+					if (value_ > 0):
+						vect_out_ao.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
+						vect_out_type.append(self._get_type_variation(variant.ref, variant.alts[(value_ - 2) >> 1]))
+						if (int(variant.info['DP']) > 0):
+							### incongruences in Medaka, 
+							### these values are collected in different stages of the Medaka workflow, (email from support@nanoporetech.com at 23 Dec 2020)
+							if (int(variant.info['DP']) > vect_out_ao[-1]): vect_out_freq.append(100)
+							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(variant.info['DP']) * 100)))
+					vect_out_af.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
+				variant.info[AO] = tuple(vect_out_ao)
+				variant.info[AF] = tuple(vect_out_af)
+				variant.info[TYPE] = tuple(vect_out_type)
+				if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
+			vcf_hanlder_write.write(variant)
+			
+		vcf_hanlder_write.close()
+		vcf_hanlder.close()
+		return vcf_file_out
+
+	def _get_type_variation(self, ref, alt):
+		""" return type of variation based on change
+		possible in variation type
+				snp	Single Nucleotide Polymorphism	A => T
+				mnp	Multiple Nuclotide Polymorphism	GC => AT
+				ins	Insertion	ATT => AGTT
+				del	Deletion	ACGG => ACG
+				complex	Combination of snp/mnp 
+		"""
+		if (len(ref) == len(alt) and len(alt) == 1): return "snp"
+		if (len(ref) > len(alt)): return "del"
+		if (len(ref) < len(alt)): return "ins"
+		if (len(ref) == len(alt) and len(alt) > 1): return "mnp"
+		return "complex"
 
 	def count_hits_from_tab(self, tab_file, vect_count_type):
 		"""
@@ -735,6 +812,8 @@ class Utils(object):
 		out: dict_less_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
 		out: dict_more_50{ 'NP': [pos1, pos2, pos3, ...], 'BP1': [pos1, pos2, pos3, ...] ...}
 		"""
+		if (not os.path.exists(tab_file)): return ({}, {}, {})
+		
 		dict_less_50 = {}
 		dict_more_50 = {}
 		dict_more_90 = {}
@@ -1147,7 +1226,18 @@ class Utils(object):
 			if (len(vect_out_fasta) > 0):
 				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
 		return len(vect_out_fasta)
-				
+	
+	def parse_amino_HGVS_code(self, amino_value):
+		""" p.Asn292Asn -> p.Asn292Asn"""
+		match = re.search("p.(?P<first_amino>[A-Za-z*]+)(?P<position>[0-9]+)(?P<second_amino>[A-Za-z*]+)", amino_value)
+		
+		if (not match is None):
+			return "p.{}{}{}".format(protein_letters_3to1.get(
+					match.group('first_amino'), match.group('first_amino')),
+					match.group('position'),
+					protein_letters_3to1.get(match.group('second_amino'), match.group('second_amino')))
+		return None
+
 class ShowInfoMainPage(object):
 	"""
 	only a help class

@@ -905,7 +905,7 @@ class ProjectSample(models.Model):
 		"""
 		get human file name
 		"""
-		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
+		if (software == SoftwareNames.SOFTWARE_SNIPPY_name or software == SoftwareNames.SOFTWARE_Medaka_name):
 			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
 		if (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)

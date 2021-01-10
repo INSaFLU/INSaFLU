@@ -31,6 +31,7 @@ class MetaKeyAndValue(object):
 	META_KEY_Run_Proteins_Alignment_By_Element = "Proteins_Alignment_By_Element"		## Used to identify the status on run tree.CreateTree.create_alignement_for_element 
 	META_KEY_Count_Samples_Var_Graph = "Count_samples_var_graph"		## has the number of samples in var graph
 	META_KEY_Snippy = "Snippy"
+	META_KEY_Medaka = "Medaka"
 	META_KEY_Freebayes = "Freebayes"
 	META_KEY_Coverage = "Coverage"
 	META_KEY_Mixed_Infection = "Mixed Infection"
@@ -52,7 +53,7 @@ class MetaKeyAndValue(object):
 	META_KEY_ALERT_NO_READS_AFTER_FILTERING = "No reads after filtering."
 	
 	#### KEYS to remove if we run Snippy And FreeBayes Again
-	VECT_TO_REMOVE_RUN_SNIPPY_AND_FREEBAYES = [META_KEY_ALERT_COVERAGE,\
+	VECT_TO_REMOVE_RUN_PROJECT_SAMPLE = [META_KEY_ALERT_COVERAGE,\
 							META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
 							META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
 							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]

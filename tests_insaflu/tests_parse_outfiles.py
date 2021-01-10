@@ -158,4 +158,18 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(expected_file, temp_file))
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
 
+	def test_add_amino_single_letter_code(self):
+		
+		parse_out_files = ParseOutFiles()
+		
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_freebayes_parallel.vcf")
+		vcf_expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_protein_annotation.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(vcf_expect_result))
+		
+		temp_file = parse_out_files.add_amino_single_letter_code(vcf_file)
+		print(temp_file)
+		print(vcf_expect_result)
+		self.assertTrue(filecmp.cmp(vcf_expect_result, temp_file))
+		if (os.path.exists(temp_file)): os.unlink(temp_file)
 

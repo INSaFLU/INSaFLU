@@ -55,12 +55,14 @@ class Software(object):
 		"""
 		get type of files to copy
 		"""
-		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
+		if (software in [SoftwareNames.SOFTWARE_SNIPPY_name, SoftwareNames.SOFTWARE_Medaka_name]):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
-				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI, FileType.FILE_CSV, FileType.FILE_REF_FASTA]
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI]
+				## don't copy FileType.FILE_CSV, never use this file 
+				## don't copy the reference, FileType.FILE_REF_FASTA]
+				## TODO need to add a caveat in project_sample.get_output_file 
 		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
-
 
 	def copy_files_to_project(self, project_sample, software, path_from):
 		"""
@@ -107,6 +109,18 @@ class Software(object):
 			raise Exception("Fail to run samtools")
 		return cmd
 
+	def create_index_bam(self, file_bam):
+		"""
+		Create bai for a bam file
+		"""
+		cmd = "%s index %s" % (self.software_names.get_samtools(), file_bam)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run samtools")
+		return cmd
+	
 	def creat_new_reference_to_snippy(self, project_sample):
 		
 		### get temp file
@@ -641,9 +655,8 @@ class Software(object):
 		out_file_gb = self.utils.get_temp_file("file_name", ".gb")
 		self.utils.clean_genbank_version_name(genbank, out_file_gb)
 		
-		with open(temp_file, "w") as out_handle:
-			with open(out_file_gb) as in_handle:
-				GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
+		with open(temp_file, "w") as out_handle, open(out_file_gb) as in_handle:
+			GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
 
 		### remove clean version gb file
 		os.unlink(out_file_gb)
@@ -651,14 +664,14 @@ class Software(object):
 		### filter file
 	#	vect_filter = ['remark', 'source', 'gene']
 		vect_pass = ['CDS']
-		with open(temp_file) as handle:
-			with open(out_file, "w") as handle_write:
-				for line in handle:
-					sz_temp = line.strip()
-					if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
-					if (sz_temp.find('##FASTA') == 0): break
-					if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
-					elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_pass): handle_write.write(sz_temp + "\n")
+		with open(temp_file) as handle, open(out_file, "w") as handle_write:
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
+				if (sz_temp.find('##FASTA') == 0): break
+				if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
+				elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_pass):
+					handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file
 
@@ -740,6 +753,12 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run snpEff")
+		
+		#### add/transform p.Val423Glu to p.V423G
+		parse_out_files = ParseOutFiles()
+		out_file_transformed_amino = parse_out_files.add_amino_single_letter_code(out_file)
+		self.utils.move_file(out_file_transformed_amino, out_file)
+		
 		os.unlink(snpeff_config)
 		self.utils.remove_dir(temp_dir)
 		return out_file
@@ -1203,9 +1222,7 @@ class Software(object):
 	
 			## copy the files to the project sample directories
 			self.copy_files_to_project(project_sample, self.software_names.get_snippy_name(), out_put_path)
-			remove_path = os.path.dirname(out_put_path)
-			if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
-			else: self.utils.remove_dir(out_put_path)
+			self.utils.remove_dir(out_put_path)
 	
 			### make the link for the new tab file name
 			path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
@@ -1238,7 +1255,7 @@ class Software(object):
 				##################################
 				### set the alerts in the coverage
 				### remove possible previous alerts from others run
-				for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SNIPPY_AND_FREEBAYES:
+				for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_PROJECT_SAMPLE:
 					manageDatabase.remove_project_sample_start_metakey(project_sample, keys_to_remove)
 				
 				project_sample = ProjectSample.objects.get(pk=project_sample.id)
@@ -1467,17 +1484,23 @@ class Software(object):
 			self.logger_debug.error("Fail doesn't exist: " + file_to_index)
 			raise Exception("File doesn't exist")
 		
+		self.create_index_with_tabix(file_to_index)
+		
+	
+	def create_index_with_tabix(self, file_name, index_type = "vcf"):
+		"""
+		:param index_type [gff, bed, sam, vcf]
+		"""
 		## test if tbi exists
-		if (os.path.exists(file_to_index + FileExtensions.FILE_TBI)): return
-
-		cmd = "{} {}".format(self.software_names.get_tabix(), file_name)
+		if (os.path.exists(file_name + FileExtensions.FILE_TBI)): return
+		
+		cmd = "{} -p {} {}".format(self.software_names.get_tabix(), index_type, file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index") 
-	
-	
+		
 	def create_index_files_from_igv_tools(self, file_name):
 		"""
 		Create index from igvtools

@@ -913,9 +913,20 @@ class Test(unittest.TestCase):
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 			
+	def test_parse_amino_HGVS_code(self):
+		""" test HGVS parse code """
+		
+		utils = Utils()
+		self.assertEqual("p.N292N", utils.parse_amino_HGVS_code("p.Asn292Asn"))
+		self.assertEqual("p.S299S", utils.parse_amino_HGVS_code("p.Ser299Ser"))
+		self.assertEqual("p.S299fs", utils.parse_amino_HGVS_code("p.Ser299fs"))
+		self.assertEqual("p.S299*", utils.parse_amino_HGVS_code("p.Ser299*"))
+		self.assertEqual("p.A299D", utils.parse_amino_HGVS_code("p.Ala299Asp"))
+		self.assertEqual("p.G299Dir", utils.parse_amino_HGVS_code("p.Gly299Dir"))
+		self.assertEqual(None, utils.parse_amino_HGVS_code("xpto"))
+		
+
 			
-
-
 
 
 

@@ -13,6 +13,8 @@ class ConstantsTestsCase(object):
 	MANAGING_TESTS = "tests"
 	MANAGING_DIR = "managing_files"
 	MANAGING_DIR_GFF = "gff_files"
+	MANAGING_FILES_COVID_FASTA = "SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947.fasta"
+	MANAGING_FILES_COVID_GBK = "SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947.gb"
 	MANAGING_FILES_FASTA = "A_H3N2_A_Hong_Kong_4801_2014.fasta"
 	MANAGING_FILES_SNPEF_config = "snpeff.config"
 	MANAGING_FILES_FAIL_FASTA = "A_H3N2_A_Hong_Kong_4801_2014_fail.fasta"

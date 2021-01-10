@@ -27,7 +27,7 @@ class DrawAllCoverage(object):
 		pass
 
 
-	def draw_all_coverages(self, project_sample):
+	def draw_all_coverages(self, project_sample, software_name = SoftwareNames.SOFTWARE_SNIPPY_name):
 		"""
 		draw all coverage images for a coverage sample
 		
@@ -38,7 +38,7 @@ class DrawAllCoverage(object):
 		
 		### get coverage vectors from deep file
 		get_coverage = GetCoverage()
-		coverage_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+		coverage_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, software_name)
 		if (not os.path.exists(coverage_file)):
 			self.logger_production.error("File doesn't exist: " + coverage_file)
 			self.logger_debug.error("File doesn't exist: " + coverage_file)
@@ -54,6 +54,9 @@ class DrawAllCoverage(object):
 		tab_file_from_freebayes = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 		if (os.path.exists(tab_file_from_freebayes)):
 			(dict_less_50, dict_more_50, dict_more_90) = utils.get_variations_by_freq_from_tab(tab_file_from_freebayes, vect_count_type)
+		else:
+			tab_file_from_medaka = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
+			(dict_less_50, dict_more_50, dict_more_90) = utils.get_variations_by_freq_from_tab(tab_file_from_medaka, vect_count_type)
 		
 		### get coverage
 		manageDatabase = ManageDatabase()
@@ -64,9 +67,9 @@ class DrawAllCoverage(object):
 		draw_coverage = DrawCoverage(coverage.limit_defined_by_user)
 		for sequence_name in geneticElement.get_sorted_elements():
 			draw_coverage.create_coverage(dict_coverage[sequence_name], geneticElement.get_genes(sequence_name),\
-					dict_more_90[sequence_name] if sequence_name in dict_more_90 else [],\
-					dict_more_50[sequence_name] if sequence_name in dict_more_50 else [],\
-					dict_less_50[sequence_name] if sequence_name in dict_less_50 else [],\
+					dict_more_90.get(sequence_name, []),\
+					dict_more_50.get(sequence_name, []),\
+					dict_less_50.get(sequence_name, []),\
 					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, sequence_name, FileExtensions.FILE_PNG),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_ALL),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_0),\

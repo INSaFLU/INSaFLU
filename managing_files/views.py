@@ -911,38 +911,54 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['href_fastq_1'] = _("Not available")
 				context['href_fastq_quality_1'] = _("Not available")
 			
+			### files to show
 			if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
 				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
 					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
 				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
 					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
-			else:
+				
+				### testing second file
+				trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
+				if (trimmomatic_file_name != None):
+					context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
+						+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+					context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
+					
+					file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
+					if os.path.exists(file_name):
+						context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+					else: context['href_fastq_2'] = _("Not available")
+					context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
+						os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+				else:	## there's no second file
+					context['href_trimmonatic_2'] = _("Not available")
+					context['href_fastq_quality_2'] = _("Not available")
+					context['href_fastq_2'] = _("Not available")
+					context['href_trimmonatic_quality_2'] = _("Not available")
+				
+			else:	### other like Minion
 				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_nanofilt_file(TypePath.MEDIA_URL) + '" download="'\
 					+ os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '">' + os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '</a>')
 				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL) + '">' +\
 					os.path.basename(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL)) + '</a>')
 			
-			### testing second file
-			trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
-			if (trimmomatic_file_name != None):
-				context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
-					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-				context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
+				#### data from nanoStat
+				list_meta = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
+				decode_nanostat = DecodeObjects()
+				result_data = decode_nanostat.decode_result(list_meta.description)
+				vect_soft = result_data.get_list_software_instance(SoftwareNames.SOFTWARE_NanoStat_name)
+				if (len(vect_soft) == 2):		## has data
+					data_nanostat = []
+					key_data_0 = vect_soft[0].get_vect_key_values()
+					key_data_1 = vect_soft[1].get_vect_key_values()
+					for _ in range(len(key_data_0)):
+						data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value])
+					context['data_nanostat'] = data_nanostat
 				
-				file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
-				if os.path.exists(file_name):
-					context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
-				else: context['href_fastq_2'] = _("Not available")
-				context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
-					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
-			else:	## there's no second file
-				context['href_trimmonatic_2'] = _("Not available")
-				context['href_fastq_quality_2'] = _("Not available")
-				context['href_fastq_2'] = _("Not available")
-				context['href_trimmonatic_quality_2'] = _("Not available")
 
 			### software
-			if (sample.is_type_fastq_gz_sequencing()):
+			if (sample.is_type_fastq_gz_sequencing()):  ### for illumina
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_sample == None):
 					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
@@ -1037,7 +1053,8 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		context = super(ProjectsView, self).get_context_data(**kwargs)
 		tag_search = 'search_projects'
 		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
+			### TODO add sample name
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 										Q(reference__name__icontains=self.request.GET.get(tag_search)))
 		table = ProjectTable(query_set)
@@ -1347,7 +1364,10 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					### create a task to perform the analysis of snippy and freebayes
 					try:
 						if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
+						if (sample.is_type_fastq_gz_sequencing()):
+							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
+						else:
+							taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, job_name_wait)
 							
 						### set project sample queue ID
 						manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\

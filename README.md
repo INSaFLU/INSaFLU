@@ -210,7 +210,7 @@ $ sudo vi /etc/profile.d/sun-grid-engine.sh
 
 Configure queues
 
-Go to the folder `example_script_sge_add_queue` and change second line in the files `"grid_add_host_fast.txt"`, `"grid_add_host_queue_1.txt"` and `"grid_add_host_queue_2.txt"` and replace 'brazil' to your computer name. Mine is 'brazil'
+Go to the folder `example_script_sge_add_queue` and change second line in the files `"grid_add_all_hosts.txt"` and replace 'brazil' to your computer name. Mine is 'brazil'
 
 Get your computer name:
 
@@ -220,7 +220,7 @@ Linux brazil 4.15.0-50-generic #54-Ubuntu SMP Mon May 6 18:46:08 UTC 2019 x86_64
 ```
 
 
-Add your name to manage list:
+Add your name to manage list, to obtain permissions to change SGE configurations:
 
 ```
 $ sudo qconf -am <your name>
@@ -246,13 +246,15 @@ Then run:
 
 ```
 $ cd example_script_sge_add_queue
-$ qconf -Ahgrp grid_add_host_fast.txt
+$ qconf -Ahgrp grid_add_all_hosts.txt
 ```
 
 Show all groups:
 
 ```
 $ qconf -shgrpl
+$ qconf -shgrp_resolved @allhosts
+brazil
 ```
 
 If you want to delete a group name:
@@ -264,6 +266,7 @@ $ qconf -dhgrp <a group name>
 To add the queues:
 
 ```
+$ qconf -Aq grid_add_queue_all.txt
 $ qconf -Aq grid_add_queue_fast.txt
 $ qconf -Aq grid_add_queue_queue_1.txt
 $ qconf -Aq grid_add_queue_queue_2.txt
@@ -281,7 +284,7 @@ Show all info
 $ qconf -sq <queue name>
 ```
 
-Edit queues
+Edit queues. If you want to change slots change the number in 'slots'.
 
 ```
 $ qconf -mq <queue name> 

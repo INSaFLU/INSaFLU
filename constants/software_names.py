@@ -75,12 +75,21 @@ class SoftwareNames(object):
 	SOFTWARE_NanoStat_name_extended = "Calculate various statistics from a long read sequencing (NanoStat)"
 	SOFTWARE_NanoStat_VERSION = "1.4.0"
 	SOFTWARE_NanoStat_PARAMETERS = ""				## -o temp -n temp.txt --fastq ERR4082025_1.fastq.gz
+	SOFTWARE_NANOSTAT_vect_info_to_collect = ["Mean read length",
+					"Mean read quality",
+					"Median read length",
+					"Median read quality",
+					"Number of reads",
+					"Read length N50",
+					"STDEV read length",
+					"Total bases",]
 	SOFTWARE_NanoFilt = "NanoFilt"
 	SOFTWARE_NanoFilt_name = "NanoFilt"
 	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of long read sequencing data. (NanoFilt)"
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
 	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 40 --tailcrop 50"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
-	SOFTWARE_Medaka = os.path.join(".", settings.DIR_SOFTWARE, "medaka/bin/activate; medaka")
+	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
+	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
 	SOFTWARE_Medaka_name_extended = "Medaka is a tool to create consensus sequences."
 	SOFTWARE_Medaka_VERSION = "1.2.0"
@@ -470,6 +479,7 @@ class SoftwareNames(object):
 	def get_NanoFilt_version(self): return self.SOFTWARE_NanoFilt_VERSION
 	def get_NanoFilt_parameters(self): return self.SOFTWARE_NanoFilt_PARAMETERS
 
+	def get_medaka_env(self): return self.SOFTWARE_Medaka_Env
 	def get_medaka(self): return self.SOFTWARE_Medaka
 	def get_medaka_name(self): return self.SOFTWARE_Medaka_name
 	def get_medaka_name_extended(self): return self.SOFTWARE_Medaka_name_extended

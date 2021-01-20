@@ -30,47 +30,71 @@ class DefaultProjectSoftware(object):
 		"""
 		test all defaults for all software available
 		"""
-		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project, project_sample)
+		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project,
+					project_sample, SoftwareNames.TECHNOLOGY_illumina)
 ## Not in used yet
 ##		self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, project)
 
-		
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
-						user, type_of_use, project, project_sample)
+						user, type_of_use, project, project_sample, SoftwareNames.TECHNOLOGY_illumina)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
+						user, type_of_use, project, project_sample, SoftwareNames.TECHNOLOGY_minion)
 
-	def test_default_db(self, software_name, user, type_of_use, project, project_sample):
+
+	def test_default_db(self, software_name, user, type_of_use, project, project_sample, 
+					technology_name):
 		"""
 		test if exist, if not persist in database
 		"""
-		try:
-			Software.objects.get(name=software_name, owner=user, type_of_use=type_of_use,
-					parameter__project=project, parameter__project_sample=project_sample)
-		except Software.DoesNotExist:
-			### create a default one for this user
-			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-				vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project, project_sample)
-				### persist 
-				if (len(vect_parameters) > 0):
-					self._persist_parameters(vect_parameters, type_of_use)
-		except MultipleObjectsReturned:
-			pass
+		default_software = DefaultSoftware()
+		list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
+					parameter__project=project, parameter__project_sample=project_sample,
+					technology__name = technology_name).distinct("name")
+		if len(list_software) == 0:
+			### if it is Minion is because that does not exist at all. 
+			### Previous versions didn't have TechnologyName
+			vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project, project_sample, technology_name)
+			if (technology_name == SoftwareNames.TECHNOLOGY_illumina):
+				list_software = Software.objects.filter(name=software_name, owner=user,
+					type_of_use = type_of_use,
+					parameter__project=project,
+					parameter__project_sample=project_sample).distinct("name")
 
-	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample):
+				### if exist set illumina in technology					
+				if (len(list_software) == 1):
+					list_software[0].technology = default_software.get_technology_instance(technology_name)
+					list_software[0].save()
+				else:
+					with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+						self._persist_parameters(vect_parameters, type_of_use, technology_name)
+			else:			
+				### create a default one for this user
+				with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+					### persist 
+					if (len(vect_parameters) > 0):
+						self._persist_parameters(vect_parameters, type_of_use, technology_name)
+
+
+	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample, technology_name):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			vect_parameters = self._get_snippy_default(user, type_of_use, project, project_sample)		### base values
 			if (not project is None): vect_parameters = self._get_default_project(user,\
-					SoftwareNames.SOFTWARE_SNIPPY_name, None, vect_parameters)		### base values
+					SoftwareNames.SOFTWARE_SNIPPY_name, None, vect_parameters,
+					technology_name)		### base values
 			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
-					SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.project, vect_parameters)		### base values
+					SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.project, vect_parameters,
+					technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return self._get_freebayes_default(user, type_of_use, project, project_sample)
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			vect_parameters = self._get_mask_consensus_threshold_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
-				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, None, vect_parameters)		### base values
+				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, None, vect_parameters,
+				technology_name)		### base values
 			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
-				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.project, vect_parameters)		### base values
+				SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.project,
+				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		return []
 
@@ -83,7 +107,8 @@ class DefaultProjectSoftware(object):
 		"""
 		get snippy parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project, project_sample)
+		return self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use,
+			project, project_sample, SoftwareNames.TECHNOLOGY_illumina)
 	
 	def get_snippy_parameters_all_possibilities(self, user, project_sample):
 		"""
@@ -92,12 +117,14 @@ class DefaultProjectSoftware(object):
 		
 		### Test project_sample first
 		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
-				Software.TYPE_OF_USE_project_sample, None, project_sample)
+				Software.TYPE_OF_USE_project_sample, None, project_sample,
+				SoftwareNames.TECHNOLOGY_illumina)
 		if (len(parameters) > 0): return parameters
 		
 		### Test project
 		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
-				Software.TYPE_OF_USE_project, project_sample.project, None)
+				Software.TYPE_OF_USE_project, project_sample.project, None,
+				SoftwareNames.TECHNOLOGY_illumina)
 		if (len(parameters) > 0): return parameters
 		
 		### can be a default one
@@ -116,7 +143,7 @@ class DefaultProjectSoftware(object):
 		
 		### Test project
 		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
-				Software.TYPE_OF_USE_project, project, None)
+				Software.TYPE_OF_USE_project, project, None, SoftwareNames.TECHNOLOGY_illumina)
 		if (len(parameters) > 0): return parameters
 		
 		### can be a default one
@@ -195,49 +222,50 @@ class DefaultProjectSoftware(object):
 	#####		Mask consensus
 	#####
 	
-	def get_mask_consensus_parameters(self, user, type_of_use, project, project_sample):
+	def get_mask_consensus_parameters(self, user, type_of_use, project, project_sample, technology_name):
 		"""
 		get snippy parameters
 		"""
-		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user, type_of_use, project, project_sample)
+		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user, type_of_use,
+					project, project_sample, project_sample, technology_name)
 	
-	def get_mask_consensus_parameters_all_possibilities(self, user, project_sample):
+	def get_mask_consensus_parameters_all_possibilities(self, user, project_sample, technology_name):
 		"""
 		get mask_consensus parameters for project and default
 		"""
 		
 		### Test project_sample first
 		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
-				Software.TYPE_OF_USE_project_sample, None, project_sample)
+				Software.TYPE_OF_USE_project_sample, None, project_sample, technology_name)
 		if (len(parameters) > 0): return parameters
 		
 		### Test project
 		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
-				Software.TYPE_OF_USE_project, project_sample.project, None)
+				Software.TYPE_OF_USE_project, project_sample.project, None, technology_name)
 		if (len(parameters) > 0): return parameters
 		
 		### can be a default one
 		default_software = DefaultSoftware()
-		parameters = default_software.get_mask_consensus_threshold_parameters(user)
+		parameters = default_software.get_mask_consensus_threshold_parameters(user, technology_name)
 		if (len(parameters) > 0): return parameters
 		
 		software_names = SoftwareNames()
 		return software_names.get_insaflu_parameter_mask_consensus_parameters()
 	
 	
-	def get_mask_consensus_parameters_for_project(self, user, project):
+	def get_mask_consensus_parameters_for_project(self, user, project, technology_name):
 		"""
 		get snippy parameters only for project or default
 		"""
 		
 		### Test project
 		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
-				Software.TYPE_OF_USE_project, project, None)
+				Software.TYPE_OF_USE_project, project, None, technology_name)
 		if (len(parameters) > 0): return parameters
 		
 		### can be a default one
 		default_software = DefaultSoftware()
-		parameters = default_software.get_mask_consensus_threshold_parameters(user)
+		parameters = default_software.get_mask_consensus_threshold_parameters(user, technology_name)
 		if (len(parameters) > 0): return parameters
 		return None
 	
@@ -252,7 +280,7 @@ class DefaultProjectSoftware(object):
 				return parameters.parameter
 		return None
 
-	def is_mask_consensus_single_parameter_default(self, project_sample, parameter_name):
+	def is_mask_consensus_single_parameter_default(self, project_sample, parameter_name, technology_name):
 		"""
 		 one possibility available MASK_CONSENSUS_threshold
 		"""
@@ -260,23 +288,24 @@ class DefaultProjectSoftware(object):
 		value_default_parameter = self.get_mask_consensus_single_parameter_default(parameter_name)
 		if (value_default_parameter is None): return False
 		
-		parameter_defined = self.get_mask_consensus_single_parameter(project_sample, parameter_name)
+		parameter_defined = self.get_mask_consensus_single_parameter(project_sample, parameter_name, technology_name)
 		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
 		return False
 		
-	def get_mask_consensus_single_parameter(self, project_sample, parameter_name):
+	def get_mask_consensus_single_parameter(self, project_sample, parameter_name, technology_name):
 		"""
 		get snippy single parameters
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		"""
 		
-		parameters_string = self.get_mask_consensus_parameters_all_possibilities(project_sample.project.owner, project_sample)
+		parameters_string = self.get_mask_consensus_parameters_all_possibilities(project_sample.project.owner,
+								project_sample, technology_name)
 		if (parameters_string is None): return None
 		lst_data = parameters_string.split(parameter_name)
 		if len(lst_data) == 2: return lst_data[1][1:]
 		return None
 	
-	def is_mask_consensus_single_parameter_default_for_project(self, project, parameter_name):
+	def is_mask_consensus_single_parameter_default_for_project(self, project, parameter_name, technology_name):
 		"""
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		"""
@@ -284,18 +313,18 @@ class DefaultProjectSoftware(object):
 		value_default_parameter = self.get_mask_consensus_single_parameter_default(parameter_name)
 		if (value_default_parameter is None): return False
 		
-		parameter_defined = self.get_mask_consensus_single_parameter_for_project(project, parameter_name)
+		parameter_defined = self.get_mask_consensus_single_parameter_for_project(project, parameter_name, technology_name)
 		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
 		return False
 	
 
-	def get_mask_consensus_single_parameter_for_project(self, project, parameter_name):
+	def get_mask_consensus_single_parameter_for_project(self, project, parameter_name, technology_name):
 		"""
 		get snippy single parameters
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		"""
 		
-		parameters_string = self.get_mask_consensus_parameters_for_project(project.owner, project)
+		parameters_string = self.get_mask_consensus_parameters_for_project(project.owner, project, technology_name)
 		if (parameters_string is None): return None
 		lst_data = parameters_string.split(parameter_name)
 		if len(lst_data) == 2: return lst_data[1][1:]
@@ -312,15 +341,17 @@ class DefaultProjectSoftware(object):
 		get freebayes parameters
 		Add extra -V to the end
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project, project_sample) + " -V"
+		return self._get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project,
+				project_sample, SoftwareNames.TECHNOLOGY_illumina) + " -V"
 	
 	
-	def _get_parameters(self, software_name, user, type_of_use, project, project_sample):
+	def _get_parameters(self, software_name, user, type_of_use, project, project_sample, technology_name):
 		"""
 		:out return parameters for a specific software
 		"""
 		try:
-			software = Software.objects.get(name=software_name, owner=user, type_of_use=type_of_use)
+			software = Software.objects.get(name=software_name, owner=user, type_of_use=type_of_use,
+					technology__name = technology_name)
 		except Software.DoesNotExist:
 			return ""
 
@@ -381,41 +412,47 @@ class DefaultProjectSoftware(object):
 
 	def set_default_software(self, software, user, type_of_use, project, project_sample):
 		"""
-		Set default software
+		Set default parameters for a software
 		"""
-		vect_parameters = self._get_default_parameters(software.name, user, type_of_use, project, project_sample)
+		vect_parameters = self._get_default_parameters(software.name, user, type_of_use, project,
+					project_sample, software.technology.name)
 		parameters = Parameter.objects.filter(software=software, project=project, project_sample=project_sample)
-		self.change_values_software[software.name] = False
+		key_value = "{}_{}".format(software.name, SoftwareNames.TECHNOLOGY_illumina if\
+					software.technology is None else software.technology.name)
+		self.change_values_software[key_value] = False
 		for parameter in parameters:
 			if parameter.can_change:
 				for parameter_to_set_default in vect_parameters:
 					if (parameter_to_set_default.sequence_out == parameter.sequence_out):
 						###   if change software name
 						if (parameter.parameter != parameter_to_set_default.parameter):
-							self.change_values_software[software.name] = True
+							self.change_values_software[key_value] = True
 						
 						parameter.parameter = parameter_to_set_default.parameter
 						parameter.save()
 						break
 
-	def is_change_values_for_software(self, software_name):
+	def is_change_values_for_software(self, software_name, technology_name):
 		""" Return if the software has a value changed"""
-		return self.change_values_software.get(software_name, False)
+		key_value = "{}_{}".format(software_name, technology_name)
+		return self.change_values_software.get(key_value, False)
 
-	def _persist_parameters(self, vect_parameters, type_of_use):
+	def _persist_parameters(self, vect_parameters, type_of_use, technology_name):
 		"""
 		presist a specific software by default
 		param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
 		"""
+		default_software = DefaultSoftware()
 		software = None
 		dt_out_sequential = {}
 		for parameter in vect_parameters:
 			assert parameter.sequence_out not in dt_out_sequential
 			if software is None:
 				software = parameter.software
+				software.technology = default_software.get_technology_instance(technology_name)
 				try:
 					software = Software.objects.get(name=parameter.software.name, owner=parameter.software.owner,\
-						type_of_use=type_of_use)
+						type_of_use=type_of_use, technology__name=technology_name)
 				except Software.DoesNotExist:
 					software.save()
 			parameter.software = software
@@ -424,11 +461,12 @@ class DefaultProjectSoftware(object):
 			## set sequential number
 			dt_out_sequential[parameter.sequence_out] = 1
 
-	def get_parameters(self, software_name, user, type_of_use, project, project_sample):
+	def get_parameters(self, software_name, user, type_of_use, project, project_sample,
+				technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
 		"""
-		self.test_default_db(software_name, user, type_of_use, project, project_sample)
-		return self._get_parameters(software_name, user, type_of_use, project, project_sample)
+		self.test_default_db(software_name, user, type_of_use, project, project_sample, technology_name)
+		return self._get_parameters(software_name, user, type_of_use, project, project_sample, technology_name)
 
 	def get_all_software(self):
 		"""
@@ -439,7 +477,7 @@ class DefaultProjectSoftware(object):
 #		vect_software.append(self.software_names.get_freebayes_name())
 		return vect_software
 
-	def _get_default_project(self, user, software_name, project, vect_parameters):
+	def _get_default_project(self, user, software_name, project, vect_parameters, technology_name):
 		"""
 		:param software_name name of the software
 		:param project is None pass to global
@@ -447,7 +485,8 @@ class DefaultProjectSoftware(object):
 		"""
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
-				type_of_use=Software.TYPE_OF_USE_global if project is None else Software.TYPE_OF_USE_project)
+				type_of_use=Software.TYPE_OF_USE_global if project is None else Software.TYPE_OF_USE_project,
+				technology__name = technology_name)
 		except Software.DoesNotExist:
 			return vect_parameters
 

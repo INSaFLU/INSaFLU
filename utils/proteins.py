@@ -65,7 +65,8 @@ class Proteins(object):
 			### get consensus
 			if (project_sample.is_mask_consensus_sequences): 
 				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-									DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+						DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+						if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
 			## test the coverage
@@ -74,7 +75,9 @@ class Proteins(object):
 				continue
 			
 			### get consensus file name
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
+						SoftwareNames.SOFTWARE_SNIPPY_name \
+						if project_sample.is_sample_illumina() else SoftwareNames.SOFTWARE_Medaka_name)
 			if (not os.path.exists(consensus_fasta)):
 				manageDatabase.set_project_metakey(project, user, meta_key,\
 						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)

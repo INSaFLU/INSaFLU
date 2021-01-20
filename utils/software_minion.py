@@ -3,7 +3,7 @@ Created on 01/01/2021
 
 @author: mmp
 '''
-import os, logging, humanfriendly
+import os, logging, humanfriendly, datetime
 from constants.constants import Constants, TypePath, FileType
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -339,7 +339,9 @@ class SoftwareMinion(object):
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
-								self.software_names.get_medaka_version(), parameters))
+								self.software_names.get_medaka_version(), "consensus " + parameters))
+				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
+								self.software_names.get_medaka_version(), "depth -aa -q 0"))
 			except Exception as e:
 				result = Result()
 				result.set_error(e.args[0])
@@ -369,7 +371,7 @@ class SoftwareMinion(object):
 				self.utils.link_file(path_medaka_tab, sz_file_to)
 			
 			## get coverage from deep file
-			default_software = DefaultSoftware()
+			default_software = DefaultProjectSoftware()
 			get_coverage = GetCoverage()
 			try:
 				
@@ -448,21 +450,13 @@ class SoftwareMinion(object):
 			#####################
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-			## TODO 
-			## limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-			##	DefaultProjectSoftware.MASK_CONSENSUS_threshold))
-			limit_to_mask_consensus = 60
+			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
 			msa_parameters = self.software.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, self.software_names.get_medaka_name()),
 				coverage, project_sample.sample.name, limit_to_mask_consensus)
-			### add version of mask
-			### TODO
-			# result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
-					# "{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
-					# default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME),
-					# 100 - int(default_software.get_mask_consensus_single_parameter(project_sample, DefaultProjectSoftware.MASK_CONSENSUS_threshold)))) )
 			result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
 					"{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
 					10,									
@@ -472,7 +466,6 @@ class SoftwareMinion(object):
 			parse_out_files = ParseOutFiles()
 			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
 										self.software_names.get_medaka_name()), coverage)
-			
 			
 			### draw coverage
 			try:
@@ -499,13 +492,12 @@ class SoftwareMinion(object):
 			## count hits from tab file
 			count_hits = CountHits()
 			if (not out_put_path is None):
-				file_tab = os.path.join(out_put_path, project_sample.sample.name + ".tab")
+				file_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_medaka_name())
 				if (os.path.exists(file_tab)):
 					vect_count_type = ['snp']	## only detects snp
 					count_hits = self.utils.count_hits_from_tab(file_tab, vect_count_type)
 					### set flag that is finished
 					manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
-
 
 			### mixed infection
 			try:
@@ -516,7 +508,7 @@ class SoftwareMinion(object):
 				mixed_infection = mixed_infections_management.get_mixed_infections(project_sample, user, count_hits)
 			except:
 				result = Result()
-				result.set_error("Fail to calculate mixed infextion")
+				result.set_error("Fail to calculate mixed infection")
 				result.add_software(SoftwareDesc('In house software', '1.0', ''))
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Mixed_Infection, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				
@@ -544,10 +536,15 @@ class SoftwareMinion(object):
 			project_sample.mixed_infections = mixed_infection
 			project_sample.save()
 			
+			### add today date, last change
+			project = project_sample.project
+			project.last_change_date = datetime.datetime.now()
+			project.save()
+			
 			### get clean consensus file
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_Medaka_name)
 			if (os.path.exists(consensus_fasta)):
-				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)		### this is going to main path
 				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, limit_to_mask_consensus, False)
 			
 			### set the tag of result OK 
@@ -557,7 +554,7 @@ class SoftwareMinion(object):
 			meta_sample = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue)
 			if (meta_sample != None):
 				manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
-		except:
+		except Exception as e:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 			return False

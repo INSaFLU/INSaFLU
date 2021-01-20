@@ -242,7 +242,10 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 			### create a task to perform the analysis of snippy and freebayes
 			try:
 				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-				taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
+				if (project_sample.is_sample_illumina()):
+					taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
+				else:
+					taskID = process_SGE.set_second_stage_medaka(project_sample, user, job_name, job_name_wait)
 					
 				### set project sample queue ID
 				manageDatabase.set_project_sample_metakey(project_sample, user,\

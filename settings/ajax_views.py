@@ -15,6 +15,7 @@ from extend_user.models import Profile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from utils.process_SGE import ProcessSGE
+from constants.software_names import SoftwareNames
 
 @csrf_protect
 def set_default_parameters(request):
@@ -57,7 +58,8 @@ def set_default_parameters(request):
 					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample, None, project_sample)
 					
 					### need to re-run this sample with snippy if the values change
-					if (default_project_software.is_change_values_for_software(software.name)):
+					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
+								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion)):
 						### re-run data
 						metaKeyAndValue = MetaKeyAndValue()
 						manageDatabase = ManageDatabase()
@@ -70,7 +72,10 @@ def set_default_parameters(request):
 						### create a task to perform the analysis of snippy and freebayes
 						try:
 							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-							taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
+							if (project_sample.is_sample_illumina()):
+								taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
+							else:
+								taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, job_name_wait)
 								
 							### set project sample queue ID
 							manageDatabase.set_project_sample_metakey(project_sample, request.user,\

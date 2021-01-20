@@ -202,8 +202,11 @@ class SoftwareNames(object):
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
+	###############################
+	### technology available
+	TECHNOLOGY_illumina = "Illumina"
+	TECHNOLOGY_minion = "Minion"
 
-	
 	###################################
 	###################################
 	#####
@@ -224,7 +227,26 @@ class SoftwareNames(object):
 	#####
 	###################################
 
-
+	###################################
+	###################################
+	###
+	###		Relation between Technology -> Software 
+	###
+	DICT_SOFTWARE_RELATION = {
+		TECHNOLOGY_illumina : [
+				SOFTWARE_SNIPPY_name,
+				SOFTWARE_TRIMMOMATIC_name,
+				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+			],
+		TECHNOLOGY_minion : [
+				SOFTWARE_NanoFilt_name, 
+				SOFTWARE_Medaka_name,
+				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+			],
+		}
+	###
+	###################################
+	###################################
 	
 	def __init__(self):
 		'''
@@ -488,6 +510,19 @@ class SoftwareNames(object):
 
 	###
 	###### END minion software
+	
+	###### Relation between software and technology
+	def get_list_software_names_by_technology(self, technology_name):
+		"""
+		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+		"""
+		return self.DICT_SOFTWARE_RELATION.get(technology_name, [])
+	
+	def is_software_in_technology(self, technology_name, software_name):
+		"""
+		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
+		"""
+		return software_name in self.get_list_software_names_by_technology(technology_name)
 	
 	###################################
 	#####

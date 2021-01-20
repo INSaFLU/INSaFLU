@@ -10,6 +10,7 @@
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'vendor/tablefilter/style/tablefilter.css' %}" type="text/css">
 {% endblock css %}
 
 {% block extra_messages %}
@@ -106,6 +107,24 @@
 	      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
 	        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
 	        			</div>
+	      			</div>
+	    		</div>
+	  		</div>
+	  		
+	  		<!-- Card Show variants.tsv has a table -->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingTwo_1">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo_1" aria-expanded="false" aria-controls="collapseTwo_1">
+							<strong>Variants</strong> as a table
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseTwo_1" class="collapse" role="tabpanel" aria-labelledby="headingTwo_1">
+	      			<div class="card-block">
+	        			<div id='loader_showvariantsasatable'><img src="{{ spinner_url }}"/></div>
+	        			<div id="showvariantsasatable" project_id="{{ project_id }}" show-variants-as-a-table-url="{% url 'show-variants-as-a-table' %}"></div>
 	      			</div>
 	    		</div>
 	  		</div>
@@ -360,6 +379,9 @@
  {% endblock content%}
 
  {% block js %}
+ 
+	
+    
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	
@@ -372,10 +394,14 @@
 	    	<!-- <script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script>
 	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>  -->
 	    	
+	    	<!--  Table filter  https://github.com/koalyptus/TableFilter -->
+	    	<script type="text/javascript" src="{% static 'vendor/tablefilter/tablefilter.js' %}"></script>
+	    	
 	    	<!--  JS to insaphylo -->
 	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/aux.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/tree.js' %}" defer></script>
 	    	<!--  END JS to insaphylo -->
+	
  {% endblock %}
 
 

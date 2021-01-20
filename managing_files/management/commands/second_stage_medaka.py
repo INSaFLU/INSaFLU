@@ -5,7 +5,7 @@ Created on Jan 5, 2018
 '''
 from django.core.management import BaseCommand
 from managing_files.models import ProjectSample
-from utils.software import Software
+from utils.software_minion import SoftwareMinion
 from django.contrib.auth.models import User
 import logging
 
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 	# A command must define handle()
 	def handle(self, *args, **options):
 		
-		software = Software()
+		software_minion = SoftwareMinion()
 		project_sample_id = options['project_sample_id']
 		user_id = options['user_id']
 		self.stdout.write("Starting for project_sample_id: " + str(project_sample_id))
@@ -42,7 +42,7 @@ class Command(BaseCommand):
 			project_sample = ProjectSample.objects.get(pk=project_sample_id)
 			if (user_id == None): user = project_sample.project.owner
 			else: user = User.objects.get(pk=user_id)
-			software.process_second_stage_medaka(project_sample, user)
+			software_minion.process_second_stage_medaka(project_sample, user)
 			self.stdout.write("End")
 		except ProjectSample.DoesNotExist as e:
 			self.stdout.write("Error: ProjectSample id '{}' does not exist.".format(project_sample_id))

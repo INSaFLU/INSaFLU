@@ -53,10 +53,10 @@ $('#id-set-default-button').on('click', function(){
 				'</div>');
         	  var element_to_update = document.getElementById($('#id-modal-body-set-default').attr('td_to_update'))
         	  if ($('#id-modal-body-set-default').attr('type_software') === 'software'){
-        		  element_to_update.getElementsByTagName("td")[2].textContent = data['default']
+        		  element_to_update.getElementsByTagName("td")[3].textContent = data['default']
         	  }
         	  else{
-        		  element_to_update.getElementsByTagName("td")[1].textContent = data['default']
+        		  element_to_update.getElementsByTagName("td")[2].textContent = data['default']
         	  }
           }
           else{

@@ -157,6 +157,30 @@ def show_phylo_canvas(request):
 				pass
 		return JsonResponse(data)
 
+
+
+@csrf_protect
+def show_variants_as_a_table(request):
+	"""
+	return table with variants
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			try:
+				project = Project.objects.get(id=project_id)
+				out_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+							Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
+				if (os.path.exists(out_file) and os.stat(out_file).st_size > 0):
+					data['is_ok'] = True
+					data['url_path_variant_table'] = project.get_global_file_by_project(TypePath.MEDIA_URL,
+							Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)
+	
 @csrf_protect
 def show_msa_nucleotide(request):
 	"""
@@ -358,14 +382,23 @@ def show_igv(request):
 		if (key_with_project_sample_id in request.GET):
 			try:
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
-				path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
-				path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)
-				path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)
-#				old version where reference was 
-# 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
-# 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
-				path_name_reference = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
-				path_name_reference_index = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)
+				if (project_sample.is_sample_illumina()):
+					path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
+					path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)
+					path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)
+				else:
+					path_name_bam = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM, SoftwareNames.SOFTWARE_Medaka_name)
+					path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_Medaka_name)
+					path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_Medaka_name)
+					
+				### TODO need to check if works on Illumina
+# 				if (project_sample.is_sample_illumina()):
+# 					path_name_reference = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+# 					path_name_reference_index = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)
+# 				else:
+				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
+				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
+				
 				path_bed = project_sample.project.reference.get_reference_bed(TypePath.MEDIA_URL)
 				path_bed_idx = project_sample.project.reference.get_reference_bed_index(TypePath.MEDIA_URL)
 				data['is_ok'] = True

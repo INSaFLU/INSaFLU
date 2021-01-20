@@ -3,9 +3,19 @@ Created on 03/05/2020
 
 @author: mmp
 '''
-from settings.models import Software, Parameter
+from settings.models import Software, Parameter, Technology
 from constants.software_names import SoftwareNames
 from utils.lock_atomic_transaction import LockedAtomicTransaction
+
+""""
+--mapqual is the minimum mapping quality to accept in variant calling. BWA MEM using 60 to mean a read is "uniquely mapped".
+
+--basequal is minimum quality a nucleotide needs to be used in variant calling. We use 13 which corresponds to error probability of ~5%. It is a traditional SAMtools value.
+
+--maxsoft is how many bases of an alignment to allow to be soft-clipped before discarding the alignment. This is to encourage global over local alignment, and is passed to the samclip tool.
+
+--mincov and --minfrac are used to apply hard thresholds to the variant calling beyond the existing statistical measure.. The optimal values depend on your sequencing depth and contamination rate. Values of 10 and 0.9 are commonly used.
+"""
 
 class DefaultSoftware(object):
 	'''
@@ -21,39 +31,68 @@ class DefaultSoftware(object):
 		### test all defaults
 		self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user), user)
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user), user)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				self._get_mask_consensus_threshold_default(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
 		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
-		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user)
+		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
 
-	def test_default_db(self, software_name, vect_parameters, user):
+	def test_default_db(self, software_name, vect_parameters, user, 
+					technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
 		test if exist, if not persist in database
 		"""
 		try:
 			Software.objects.get(name=software_name, owner=user,\
-						type_of_use = Software.TYPE_OF_USE_global)
+						type_of_use = Software.TYPE_OF_USE_global,
+						technology__name = technology_name)
 		except Software.DoesNotExist:
-			### create a default one for this user
-			with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-				self._persist_parameters(vect_parameters)
+			
+			### if it is Minion is because that does not exist at all. 
+			### Previous versions didn't have TechnologyName
+			if (technology_name == SoftwareNames.TECHNOLOGY_illumina):
+				try:
+					software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use = Software.TYPE_OF_USE_global)
+					### if exist set illumina in technology
+					software.technology = self.get_technology_instance(technology_name)
+					software.save()
+				except Software.DoesNotExist:
+					with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+						self._persist_parameters(vect_parameters, technology_name)
+			else:	### do this all the time for 
+				### create a default one for this user TECHNOLOGY_minion
+				with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+					self._persist_parameters(vect_parameters, technology_name)
 
 	def get_trimmomatic_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+					SoftwareNames.TECHNOLOGY_illumina)
 	def get_snippy_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name)
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name,
+					SoftwareNames.TECHNOLOGY_illumina)
 	def get_nanofilt_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_NanoFilt_name)
-	def get_mask_consensus_threshold_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name)
+		return self._get_parameters(user, SoftwareNames.SOFTWARE_NanoFilt_name,
+					SoftwareNames.TECHNOLOGY_minion)
+	def get_mask_consensus_threshold_parameters(self, user, technology_name):
+		return self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+								technology_name)
 	
-	def _get_parameters(self, user, software_name):
+	def _get_parameters(self, user, software_name, technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
-		get trimmomatic parameters
+		get software_name parameters
 		"""
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use=Software.TYPE_OF_USE_global)
+						type_of_use=Software.TYPE_OF_USE_global,
+						technology__name=technology_name)
 		except Software.DoesNotExist:
-			return ""
+			try:
+				software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use=Software.TYPE_OF_USE_global)
+			except Software.DoesNotExist:
+				return ""
 
 		## get parameters for a specific user
 		parameters = Parameter.objects.filter(software=software)
@@ -91,15 +130,17 @@ class DefaultSoftware(object):
 			vect_parameters = self._get_mask_consensus_threshold_default(user)
 		else: return
 		
+		key_value = "{}_{}".format(software.name, SoftwareNames.TECHNOLOGY_illumina if\
+					software.technology is None else software.technology.name)
 		parameters = Parameter.objects.filter(software=software)
-		self.change_values_software[software.name] = False
+		self.change_values_software[key_value] = False
 		for parameter in parameters:
 			if parameter.can_change:
 				for parameter_to_set_default in vect_parameters:
 					if (parameter_to_set_default.sequence_out == parameter.sequence_out):
 						###   if change software name
 						if (parameter.parameter != parameter_to_set_default.parameter):
-							self.change_values_software[software.name] = True
+							self.change_values_software[key_value] = True
 							
 						parameter.parameter = parameter_to_set_default.parameter
 						parameter.save()
@@ -107,18 +148,22 @@ class DefaultSoftware(object):
 
 	def is_change_values_for_software(self, software):
 		""" Return if the software has a value changed"""
-		return self.change_values_software.get(software.name, False)
+		key_value = "{}_{}".format(software.name, SoftwareNames.TECHNOLOGY_illumina if\
+					software.technology is None else software.technology.name)
+		return self.change_values_software.get(key_value, False)
 
-	def _persist_parameters(self, vect_parameters):
+	def _persist_parameters(self, vect_parameters, technology_name):
 		"""
 		presist a specific software by default 
 		"""
 		software = None
+		technology = self.get_technology_instance(technology_name)
 		dt_out_sequential = {}
 		for parameter in vect_parameters:
 			assert parameter.sequence_out not in dt_out_sequential
 			if software is None:
-				software = parameter.software 
+				software = parameter.software
+				software.technology = technology 
 				software.save()
 			parameter.software = software
 			parameter.save()
@@ -126,20 +171,24 @@ class DefaultSoftware(object):
 			## set sequential number
 			dt_out_sequential[parameter.sequence_out] = 1
 
-	def get_parameters(self, software_name, user):
+	def get_parameters(self, software_name, user, technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
 		"""
 		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
-			self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user), user)
+			self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user),
+								user, technology_name)
 			return self.get_trimmomatic_parameters(user)
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
-			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
+			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user,
+								technology_name)
 			return self.get_snippy_parameters(user)
 		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
-			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user), user)
-			return self.get_mask_consensus_threshold_parameters(user)
+			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user),
+								user, technology_name)
+			return self.get_mask_consensus_threshold_parameters(user, technology_name)
 		if (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
-			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user)
+			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user,
+								technology_name)
 			return self.get_nanofilt_parameters(user)
 		return ""
 		
@@ -153,6 +202,19 @@ class DefaultSoftware(object):
 		vect_software.append(self.software_names.get_NanoFilt_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		return vect_software
+
+	def get_technology_instance(self, technology_name):
+		"""
+		:out return an instance with technology name
+		"""
+		with LockedAtomicTransaction(Technology):
+			try:
+				technology = Technology.objects.get(name=technology_name)
+			except Technology.DoesNotExist:
+				technology = Technology()
+				technology.name = technology_name
+				technology.save()
+			return technology
 
 	def _get_snippy_default(self, user):
 		"""

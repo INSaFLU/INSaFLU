@@ -7,7 +7,7 @@ import os, csv, time, json, logging
 import plotly.graph_objs as go
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, TagNames, ProcessControler
+from managing_files.models import Project, TagNames, ProcessControler, ProjectSample
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
@@ -331,11 +331,15 @@ class CollectExtraData(object):
 		
 		### get coverage for project, if exists
 		(coverage, coverage_project) = (10, None)
-		if (not default_project_software.is_snippy_single_parameter_default_for_project(project,\
-														 DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
-			coverage_project = default_project_software.get_snippy_single_parameter_for_project(project,
-							DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
-			if (not coverage_project is None): coverage = coverage_project
+		for project_sample in project.project_samples.all():
+			### TODO need to check this, it is only for the message 
+			if (project_sample.is_sample_illumina()):
+				if (not default_project_software.is_snippy_single_parameter_default_for_project(project,\
+															 DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
+					coverage_project = default_project_software.get_snippy_single_parameter_for_project(project,
+								DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+					if (not coverage_project is None): coverage = coverage_project
+			break
 		
 		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least {}-fold".format(coverage)]
 		vect_reference = geneticElement.get_sorted_elements()
@@ -409,7 +413,12 @@ class CollectExtraData(object):
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
 				if (not project_sample.get_is_ready_to_proccess()): continue
-				tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
+				
+				### different type of SNVs 
+				if (project_sample.is_sample_illumina()):
+					tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
+				else:
+					tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
 				if (not os.path.exists(tab_file_to_process)): continue
 				parse_out_files.parse_tab_files_snippy(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out, True if n_count == 0 else False)
 				n_count += 1
@@ -591,7 +600,8 @@ class CollectExtraData(object):
 					if (parameter_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 						if (project_sample.is_mask_consensus_sequences):
 							vect_out.append(default_software.get_mask_consensus_single_parameter(project_sample,\
-								DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+								DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 						else:
 							vect_out.append("Not applied")
 					else:

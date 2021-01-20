@@ -28,6 +28,7 @@ urlpatterns = [
 	url(r'^ajax/validate_project_reference_name$', ajax_views.validate_project_reference_name, name='validate-project-reference'),
 	url(r'^ajax/set_check_box_values$', ajax_views.set_check_box_values, name='set-check-box-values'),
 	url(r'^ajax/show_phylo_canvas$', ajax_views.show_phylo_canvas, name='show-phylo-canvas'),
+	url(r'^ajax/show_variants_as_a_table$', ajax_views.show_variants_as_a_table, name='show-variants-as-a-table'),
 	url(r'^ajax/show_msa_nucleotide$', ajax_views.show_msa_nucleotide, name='show-msa-nucleotide'),
 	url(r'^ajax/show_msa_protein$', ajax_views.show_msa_protein, name='show-msa-protein'),
 	url(r'^ajax/show_count_variations$', ajax_views.show_count_variations, name='show-count-variations'),

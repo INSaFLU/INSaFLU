@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip, logging, cmd, re, humanfriendly, subprocess
+import os, gzip, logging, cmd, re, humanfriendly, subprocess, datetime
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -55,14 +55,15 @@ class Software(object):
 		"""
 		get type of files to copy
 		"""
-		if (software in [SoftwareNames.SOFTWARE_SNIPPY_name, SoftwareNames.SOFTWARE_Medaka_name]):
+		if (software == SoftwareNames.SOFTWARE_SNIPPY_name):
 			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
-				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI]
-				## don't copy FileType.FILE_CSV, never use this file 
-				## don't copy the reference, FileType.FILE_REF_FASTA]
-				## TODO need to add a caveat in project_sample.get_output_file 
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI,
+				FileType.FILE_CSV, FileType.FILE_REF_FASTA]
 		elif (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return [FileType.FILE_VCF, FileType.FILE_TAB]
+		elif (software == SoftwareNames.SOFTWARE_Medaka_name):
+			return [FileType.FILE_BAM, FileType.FILE_BAM_BAI, FileType.FILE_CONSENSUS_FA, FileType.FILE_DEPTH_GZ, FileType.FILE_DEPTH_GZ_TBI,\
+				FileType.FILE_TAB, FileType.FILE_VCF_GZ, FileType.FILE_VCF, FileType.FILE_VCF_GZ_TBI]
 
 	def copy_files_to_project(self, project_sample, software, path_from):
 		"""
@@ -88,7 +89,7 @@ class Software(object):
 				### if snippy copy also the vcf
 				self.utils.copy_file(os.path.join(path_from, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 								project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
-			elif (type_file == FileType.FILE_REF_FASTA):
+			elif (type_file == FileType.FILE_REF_FASTA):	## this is only work for Snippy
 				self.utils.copy_file(os.path.join(path_from, 'reference', os.path.basename(project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))),\
 					project_sample.get_file_output(TypePath.MEDIA_ROOT, type_file, software))
 				## create the FAI index
@@ -1301,7 +1302,7 @@ class Software(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER 
 			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
 			msa_parameters = self.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
@@ -1311,7 +1312,7 @@ class Software(object):
 			result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
 					"{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
 					default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME),									
-					100 - int(default_software.get_mask_consensus_single_parameter(project_sample, DefaultProjectSoftware.MASK_CONSENSUS_threshold)))) )
+					100 - limit_to_mask_consensus) ))
 			
 			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
 			parse_out_files = ParseOutFiles()
@@ -1441,6 +1442,11 @@ class Software(object):
 			project_sample.count_variations = manage_database.get_variation_count(count_hits)
 			project_sample.mixed_infections = mixed_infection
 			project_sample.save()
+			
+			### add today date, last change
+			project = project_sample.project
+			project.last_change_date = datetime.datetime.now()
+			project.save()
 			
 			from utils.collect_extra_data import CollectExtraData
 			collect_extra_data = CollectExtraData()

@@ -1,5 +1,6 @@
 import django_tables2 as tables
 from managing_files.models import Reference, Sample, Project, ProjectSample
+from constants.software_names import SoftwareNames
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -235,12 +236,13 @@ class ProjectTable(tables.Table):
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
 	reference = tables.Column('Reference', empty_values=())
 	samples = tables.Column('#Samples (P/W/E)', orderable=False, empty_values=())
+	last_change_date = tables.Column('Last Change date', empty_values=())
 	creation_date = tables.Column('Creation date', empty_values=())
 	results = tables.LinkColumn('Options', orderable=False, empty_values=())
 	
 	class Meta:
 		model = Project
-		fields = ('name', 'reference', 'creation_date', 'samples', 'results')
+		fields = ('name', 'reference', 'last_change_date','creation_date', 'samples', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Projects to show..."
 	
@@ -275,6 +277,11 @@ class ProjectTable(tables.Table):
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
 		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+	
+	def render_last_change_date(self, **kwargs):
+		record = kwargs.pop("record")
+		if (record.last_change_date is None): return "Not set yet"
+		return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 	
 	def render_results(self, record):
 		"""
@@ -348,7 +355,8 @@ class ShowProjectSamplesResults(tables.Table):
 		### default parameters
 		default_software = DefaultProjectSoftware()
 		limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(record,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+				if record.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
 			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\

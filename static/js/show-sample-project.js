@@ -3,6 +3,63 @@
 //
 //$("#phylocanvas").on("change paste keyup", function () {
 
+$('#collapseTwo_1').on('shown.bs.collapse', function () {
+	show_variants_as_a_table();
+});
+
+//remove the tree from the screen
+$('#collapseTwo_1').on('hidden.bs.collapse', function () {
+	$('#showvariantsasatable').empty();
+});
+
+//draw phylocanvas
+//set size of window "#phylocanvas" defined in 'static/css/flu-web-site.css'
+function show_variants_as_a_table() {
+
+ $.ajax({
+ 	/// spin 
+ 	beforeSend: function() {
+ 		$('#showvariantsasatable').empty();
+ 		$('#loader_showvariantsasatable').show();
+ 	},
+ 	complete: function(){
+//  		$('#loader_showvariantsasatable').hide();
+ 	},
+ 	
+	    data : { 
+	    	project_id : $('#showvariantsasatable').attr("project_id"),
+			csrfmiddlewaretoken: '{{ csrf_token }}'
+	    }, // data sent with the get request
+	    
+	    url: $('#showvariantsasatable').attr("show-variants-as-a-table-url"),
+	    success: function (data) {
+	    	
+	      if (data['is_ok']) {
+	    	 $('#loader_showvariantsasatable').hide();
+	    	 
+	    	 var tf = new TableFilter('demo', {
+	    			base_path: data['url_path_variant_table'],
+	    			grid_layout: {
+	    				width: '100%'
+	    			}
+	    		});
+	    		tf.init();
+	      }
+	      else{
+	    	  $('#loader_showvariantsasatable').hide();
+	    	  $('#showvariantsasatable').append('<div class="alert alert-warning alert-dismissable text-center"><strong>Fail</strong> to load the variants file.</div>')
+	      }
+	    },
+	    
+	    // handle a non-successful response
+	    error : function(xhr,errmsg,err) {
+	    	$('#loader_showvariantsasatable').hide();
+	    	$('#showvariantsasatable').append('<div class="alert alert-warning alert-dismissable text-center"><strong>Fail</strong> to load the variants file.</div>')
+	        console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+	    }
+ });
+}
+
 $('#collapseTwo').on('shown.bs.collapse', function () {
 	draw_phylo_canvas();
 });

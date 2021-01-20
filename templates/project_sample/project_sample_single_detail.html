@@ -124,8 +124,12 @@
 						<!--   Download consensus for each element   -->	
 						<div class="row">
 							<div class="col-lg-4"><strong>Consensus:</strong> {{ consensus_file }}</div>
-				  			<div class="col-lg-4"><strong>Variants:</strong> {{ snippy_variants_file }}</div>
-				  			<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebayes_variants_file }}</div>
+							{% if medaka_variants_file %}
+					  			<div class="col-lg-4"><strong>Variants:</strong> {{ medaka_variants_file }}</div>
+					  		{% else %}
+					  			<div class="col-lg-4"><strong>Variants:</strong> {{ snippy_variants_file }}</div>
+					  			<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebayes_variants_file }}</div>
+					  		{% endif %}
 				  		</div>
 				  		<hr>
 				  		<div class="row">
@@ -151,14 +155,12 @@
 			  		<div id="software" role="tabpanel" class="tab-pane fade box-blue">
 			    		<p class="title-box">Parameters of the software used</p>
 			    		<hr>
-				  		<p class="software"><strong>{{snippy_software_name}}: </strong> {% if snippy_software %} {{ snippy_software }} {% endif %}</p>
-				  		<hr>
-				  		<p class="software"><strong>{{freebayes_software_name}}: </strong> {% if freebayes_software %} {{ freebayes_software }} {% endif %}</p>
-				  		<hr>
-				  		{% if msa_markers_software %}
-				  			<p class="software"><strong>{{msa_markers_software_name}}: </strong> {% if msa_markers_software %} {{ msa_markers_software }} {% endif %}</p>
-				  			<hr>
-				  		{% endif %}
+			    		{% if software_used %}
+				    		{% for software_name, software in software_used %}
+						  		<p class="software"><strong>{{software_name}}: </strong>{{ software}}</p>
+					  			<hr>
+							{% endfor %}
+						{% endif %}
 			  		</div>
 				</div>
 			</div>

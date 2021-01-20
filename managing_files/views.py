@@ -1054,9 +1054,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		tag_search = 'search_projects'
 		query_set = Project.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
-			### TODO add sample name
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(reference__name__icontains=self.request.GET.get(tag_search)))
+							Q(reference__name__icontains=self.request.GET.get(tag_search)) |\
+							Q(project_samples__sample__name__icontains=self.request.GET.get(tag_search)) )
 		table = ProjectTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
@@ -1443,7 +1443,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 								Q(alert_second_level__gte=1))).count()
 		context['samples_in_process'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=False).count()
 		context['samples_error'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=True, is_finished=False).count()
-		
+
 		## Files
 		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
 		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
@@ -1618,30 +1618,54 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
 			
 			context['consensus_file'] = project_sample.get_consensus_file_web()
-			context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
-			context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-			context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
-			context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)
+			software_used = []	### has a list with all software used... [name, parameters]
+			### only for illumina
+			if (project_sample.is_sample_illumina()):
+				context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
+				context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
+				context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)
 			
-			#### software versions...
-			context['snippy_software'] = "Fail"
-			context['snippy_software_name'] = SoftwareNames.SOFTWARE_SNIPPY_name
-			context['freebayes_software'] = "Fail"
-			context['freebayes_software_name'] = SoftwareNames.SOFTWARE_FREEBAYES_name
-			list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
-			if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Snippy_Freebayes == list_meta[0].meta_tag.name):
-				decode_result = DecodeObjects()
-				result = decode_result.decode_result(list_meta[0].description)
-				if (not result is None):
-					context['snippy_software'] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
-					context['freebayes_software'] = result.get_software(SoftwareNames.SOFTWARE_FREEBAYES_name)
-					
-					### could have or not, in older versions
-					msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
-					if (len(msa_markers_software) > 0):
-						context['msa_markers_software'] = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
-						context['msa_markers_software_name'] = SoftwareNames.SOFTWARE_MSA_MASKER_name
+				#### software versions...
+				software_used.append([SoftwareNames.SOFTWARE_SNIPPY_name, "Fail"])
+				software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
+				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
+				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Snippy_Freebayes == list_meta[0].meta_tag.name):
+					decode_result = DecodeObjects()
+					result = decode_result.decode_result(list_meta[0].description)
+					if (not result is None):
+						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
+						software_used[1][1] = result.get_software(SoftwareNames.SOFTWARE_FREEBAYES_name)
+						
+						### could have or not, in older versions
+						msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
+						if (len(msa_markers_software) > 0):
+							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
+								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
 		
+			else:
+				context['medaka_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
+				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_Medaka_name)
+				context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_Medaka_name)
+			
+				#### software versions...
+				software_used.append([SoftwareNames.SOFTWARE_Medaka_name, "Fail"])
+				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Medaka, None)
+				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Medaka == list_meta[0].meta_tag.name):
+					decode_result = DecodeObjects()
+					result = decode_result.decode_result(list_meta[0].description)
+					if (not result is None):
+						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_Medaka_name)
+						
+						### could have or not, in older versions
+						msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
+						if (len(msa_markers_software) > 0):
+							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
+								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
+
+			### list of software to used
+			context['software_used'] = software_used	
+
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context

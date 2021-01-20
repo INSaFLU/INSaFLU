@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from operator import itemgetter
-import os
+import os, datetime
 from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
 from constants.constants_mixed_infection import ConstantsMixedInfection
@@ -717,7 +717,8 @@ class Project(models.Model):
 	name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Project name')
 	owner = models.ForeignKey(User, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
 	reference = models.ForeignKey(Reference, related_name='project', blank=True, null=True, on_delete=models.CASCADE)
-	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	creation_date = models.DateTimeField('Uploaded date', auto_now_add=True)
+	last_change_date = models.DateTimeField('Last change date', blank=True, null=True)
 	is_deleted = models.BooleanField(default=False)
 	
 	### if is deleted in file system
@@ -966,7 +967,12 @@ class ProjectSample(models.Model):
 				self.constants.short_name(os.path.basename(out_file), 20)))
 		return _('Not available.')
 		
-		
+	def is_sample_illumina(self):
+		"""
+		test if the sample is illumina or other
+		"""
+		return self.sample.is_type_fastq_gz_sequencing()
+
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 

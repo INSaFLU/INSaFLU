@@ -35,7 +35,7 @@ class Utils(object):
 		Constructor
 		'''
 		pass
-	
+
 	def get_path_to_reference_file(self, user_id, ref_id):
 		"""
 		get the path to reference

@@ -7,6 +7,7 @@ import django_tables2 as tables
 
 from django.utils.safestring import mark_safe
 from constants.constants import Constants
+from constants.software_names import SoftwareNames
 from django.urls import reverse
 from managing_files.models import ProjectSample
 from settings.models import Software
@@ -21,7 +22,9 @@ class SoftwaresTable(tables.Table):
 	version = tables.Column('Version', empty_values=())
 	parameters = tables.Column('Parameters', empty_values=())
 	options = tables.Column('Options', empty_values=())
+	technology = tables.Column('Technology', empty_values=())
 	constants = Constants()
+	software_names = SoftwareNames()
 
 	def __init__(self, query_set, project = None, project_sample = None, b_enable_options = True):
 		tables.Table.__init__(self, query_set)
@@ -36,7 +39,7 @@ class SoftwaresTable(tables.Table):
 
 	class Meta:
 		model = Software()
-		fields = ('software', 'version', 'parameters', 'options')
+		fields = ('software', 'technology', 'version', 'parameters', 'options')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Softwares to show..."
 
@@ -52,17 +55,22 @@ class SoftwaresTable(tables.Table):
 		user = current_request.user
 		
 		record = kwargs.pop("record")
+		technology_name = SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 		if (self.project is None and self.project_sample is None):
 			default_software = DefaultSoftware()
-			return default_software.get_parameters(record.name, user)
+			return default_software.get_parameters(record.name, user, technology_name)
 		elif (self.project_sample is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None, technology_name)
 		elif (self.project is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample, technology_name)
 		return ""
 
+	def render_technology(self, record):
+		""" return technology names """
+		return SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
+	
 	def render_options(self, record):
 		
 		### if project 
@@ -115,6 +123,7 @@ class INSaFLUParametersTable(tables.Table):
 	software = tables.Column('Software', empty_values=())
 	parameters = tables.Column('Parameters', empty_values=())
 	options = tables.Column('Options', empty_values=())
+	technology = tables.Column('Technology', empty_values=())
 	constants = Constants()
 
 	def __init__(self, query_set, project = None, project_sample = None, b_enable_options = True):
@@ -130,12 +139,16 @@ class INSaFLUParametersTable(tables.Table):
 
 	class Meta:
 		model = Software()
-		fields = ('software', 'parameters', 'options')
+		fields = ('software', 'technology', 'parameters', 'options')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no INSaFLU parameters to show..."
 
 	def render_software(self, record):
 		return record.name if record.name_extended is None else record.name_extended
+
+	def render_technology(self, record):
+		""" return technology names """
+		return SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 
 	def render_parameters(self, **kwargs):
 		"""
@@ -146,15 +159,16 @@ class INSaFLUParametersTable(tables.Table):
 		user = current_request.user
 		
 		record = kwargs.pop("record")
+		technology_name = SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 		if (self.project is None and self.project_sample is None):
 			default_software = DefaultSoftware()
-			return default_software.get_parameters(record.name, user)
+			return default_software.get_parameters(record.name, user, technology_name)
 		elif (self.project_sample is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None, technology_name)
 		elif (self.project is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample, technology_name)
 		return ""
 
 	def render_options(self, record):

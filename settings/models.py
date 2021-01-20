@@ -3,6 +3,18 @@ from django.contrib.auth.models import User
 from managing_files.models import Project, ProjectSample
 # Create your models here.
 
+class Technology(models.Model):
+	
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+	name_extended = models.CharField(max_length=100, db_index=True, blank=True, null=True)	## extra name to show in the settings HTML table
+	
+	class Meta:
+		ordering = ['name', ]
+	
+	def __str__(self):
+		return self.name
+	
+	
 class Software(models.Model):
 	"""
 	Each user has it software parameters 
@@ -16,13 +28,13 @@ class Software(models.Model):
 	TYPE_SOFTWARE = 0				### normal software
 	TYPE_INSAFLU_PARAMETER = 1		### it is a general parameter (INSaFLU parameter)
 	
-	
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	name_extended = models.CharField(max_length=100, db_index=True, blank=True, null=True)	## extra name to show in the settings HTML table
 	version = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)	### where is possible to define
 	type_of_software = models.SmallIntegerField(default = TYPE_SOFTWARE)	### it is a software or a general parameter
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
+	technology = models.ForeignKey(Technology, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	
 	class Meta:
 		ordering = ['name', ]

@@ -85,7 +85,8 @@ class CreateTree(object):
 			### get consensus
 			if (project_sample.is_mask_consensus_sequences): 
 				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-									DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+								DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)

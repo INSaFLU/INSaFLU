@@ -7,9 +7,13 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, Fieldset
 from django.urls import reverse
 from django import forms
-from settings.models import Software, Parameter
+from settings.models import Software, Parameter, Sample
 from managing_files.models import Project, ProjectSample
 from django.utils.html import escape
+from django.utils.translation import ugettext_lazy as _
+from settings.default_software import DefaultSoftware
+from constants.software_names import SoftwareNames
+from utils.utils import Utils
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class SoftwareForm(forms.ModelForm):
@@ -17,6 +21,7 @@ class SoftwareForm(forms.ModelForm):
 	Reference form, name, isolate_name and others
 	"""
 	error_css_class = 'error'
+	utils = Utils()
 	
 	class Meta:
 		model = Software
@@ -37,16 +42,26 @@ class SoftwareForm(forms.ModelForm):
 			kwargs.pop('pk_project_sample')
 			project_sample = ProjectSample.objects.get(pk=pk_project_sample)
 			
+		sample = None
+		pk_sample = kwargs.get('pk_sample')
+		if (not pk_sample is None):
+			kwargs.pop('pk_sample')
+			sample = Sample.objects.get(pk=pk_sample)
+			
 		## end
 		super(SoftwareForm, self).__init__(*args, **kwargs)
 
 		### return the parameters that is possible to change
-		paramers = Parameter.objects.filter(software=self.instance, project=project, project_sample=project_sample)
+		paramers = Parameter.objects.filter(software=self.instance, project=project,
+						project_sample=project_sample, sample=sample)
 		dt_fields = {}
 		vect_divs = []
 		for parameter in paramers:
-			if (not parameter.can_change): continue
-			if (parameter.is_integer()):
+			if (not parameter.can_change or parameter.is_null()):
+				dt_fields[parameter.get_unique_id()] = forms.CharField(disabled=True, required = False)
+				help_text = parameter.description
+				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
+			elif (parameter.is_integer()):
 				dt_fields[parameter.get_unique_id()] = forms.IntegerField(max_value=int(parameter.range_max),\
 							min_value=int(parameter.range_min), required = True)
 				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
@@ -60,16 +75,28 @@ class SoftwareForm(forms.ModelForm):
 				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
 				if (not parameter.not_set_value is None):
 					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
+				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+			### this is use only for medaka
+			elif (parameter.is_char_list()):
+				if (parameter.software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
+					list_data = [[data_, data_] for data_ in self.utils.get_all_medaka_models()]
+				else:
+					list_data = [[parameter.parameter, parameter.parameter]]
+				dt_fields[parameter.get_unique_id()] = forms.ChoiceField(choices = list_data)
+				dt_fields[parameter.get_unique_id()].empty_label = None
+				
+				help_text = parameter.description
 				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
 			else:
 				dt_fields[parameter.get_unique_id()] = forms.CharField(required = True)
-				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
+				help_text = parameter.description
 				if (not parameter.not_set_value is None):
 					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
 				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
 			dt_fields[parameter.get_unique_id()].label = parameter.name
-			dt_fields[parameter.get_unique_id()].initial = parameter.parameter
+			if (not parameter.can_change): dt_fields[parameter.get_unique_id()].initial = parameter.name
+			else: dt_fields[parameter.get_unique_id()].initial = parameter.parameter
 			vect_divs.append(
 					Div(parameter.get_unique_id(),
 						css_class = "col-sm-4"))
@@ -96,6 +123,10 @@ class SoftwareForm(forms.ModelForm):
 			form_message = "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(\
 				"software" if self.instance.is_software() else "INSaFLU",\
 				self.instance.name, project_sample.project.name, project_sample.sample.name)
+		if (not sample is None):
+			form_message = "Update {} parameters for -{}- sample:'{}'.".format(\
+				"software" if self.instance.is_software() else "INSaFLU",\
+				self.instance.name, sample.name)
 
 		if (len(vect_rows_divs) == 1):
 			self.helper.layout = Layout(
@@ -107,7 +138,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample)))
+						self._get_reverse(project, project_sample, sample)))
 				)
 			)
 		elif (len(vect_rows_divs) == 2):
@@ -121,7 +152,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample)))
+						self._get_reverse(project, project_sample, sample)))
 				)
 			)
 		elif (len(vect_rows_divs) == 3):
@@ -136,7 +167,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample)))
+						self._get_reverse(project, project_sample, sample)))
 				)
 			)
 		elif (len(vect_rows_divs) == 4):
@@ -152,17 +183,41 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample)))
+						self._get_reverse(project, project_sample, sample)))
 				)
 			)
 		
-	def _get_reverse(self, project, project_sample):
+	def _get_reverse(self, project, project_sample, sample):
 		"""
 		"""
 		if (not project is None):
 			return reverse('project-settings', args=[project.pk])
 		if (not project_sample is None):
 			return reverse('sample-project-settings', args=[project_sample.pk])
+		if (not sample is None):
+			return reverse('sample-settings', args=[sample.pk])
 		return reverse('settings')
 
-
+	def clean(self):
+		"""
+		Clean to check some values
+		"""
+		
+		cleaned_data = super(SoftwareForm, self).clean()
+		#### THIS is only for NanoFilt
+		if '--maxlength_5' in self.cleaned_data and '-l_2' in self.cleaned_data:
+			max_length = self.cleaned_data.get('--maxlength_5')
+			min_length = self.cleaned_data.get('-l_2')
+			if (max_length > 0 and (max_length - min_length) < 1):
+				self.add_error('--maxlength_5', _("Error: Max value must be bigger than Minimum value."))
+				self.add_error('-l_2', _("Error: Minimum value must be smaller than Max value."))
+				return cleaned_data
+		if ('--maxlength_5' in self.cleaned_data):
+			max_length = self.cleaned_data.get('--maxlength_5')
+			if (max_length > 0 and max_length < DefaultSoftware.NANOFILT_MINIMUN_MAX):
+				self.add_error('--maxlength_5', _("Error: Max value must be bigger than {} value.".format(
+					DefaultSoftware.NANOFILT_MINIMUN_MAX)))
+		#### END for NanoFilt
+		
+		return cleaned_data
+	

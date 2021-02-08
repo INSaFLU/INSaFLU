@@ -172,7 +172,6 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, metaKey_sample.value)
 		self.assertEqual("description", metaKey_sample.description)
 		
-		
 		metaKey_sample_lst = manageDatabase.get_sample_metakey(sample, ConstantsTestsCase.META_KEY_TEST, None)
 		self.assertEquals(2, metaKey_sample_lst.count())
 		self.assertEqual(sample_name, metaKey_sample_lst[0].sample.name)

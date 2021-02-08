@@ -5,7 +5,7 @@ from settings.default_software import DefaultSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
 from settings.forms import SoftwareForm
 from utils.utils import ShowInfoMainPage
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Project, ProjectSample, Sample
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.db import transaction
@@ -80,14 +80,22 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
 			software = form.save(commit=False)
 			paramers = Parameter.objects.filter(software=software)
 			
+			b_change = False
 			for parameter in paramers:
 				if (not parameter.can_change): continue
 				if (parameter.get_unique_id() in form.cleaned_data):
-					parameter.parameter = "{}".format(form.cleaned_data[parameter.get_unique_id()])
-					parameter.save()
+					value_from_form = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (value_from_form != parameter.parameter):
+						b_change = True 
+						parameter.parameter = value_from_form
+						parameter.save()
 			
-			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+			if (b_change):
+				messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
 					software.name + "' parameters was updated successfully", fail_silently=True)
+			else:
+				messages.success(self.request, "No parameters to update for {} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters.", fail_silently=True)
 		return super(UpdateParametersView, self).form_valid(form)
 
 
@@ -123,7 +131,6 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
 		context['error_cant_see'] = self.request.user != context['software'].owner
 		context['pk_project'] = self.kwargs.get('pk_proj')
 		context['nav_project'] = True
-		context['project_settings'] = True
 		context['nav_modal'] = True	## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
 		return context
@@ -146,15 +153,22 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
 					return super(UpdateParametersProjView, self).form_valid(form)
 				
 			paramers = Parameter.objects.filter(software=software, project=project)
+			b_change = False
 			for parameter in paramers:
 				if (not parameter.can_change): continue
 				if (parameter.get_unique_id() in form.cleaned_data):
-					parameter.parameter = "{}".format(form.cleaned_data[parameter.get_unique_id()])
-					parameter.save()
+					value_from_form = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (value_from_form != parameter.parameter):
+						b_change = True 
+						parameter.parameter = value_from_form
+						parameter.save()
 			
-				
-			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
-				software.name + "' parameters was updated successfully for project '" + project.name + "'.", fail_silently=True)
+			if (b_change):
+				messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters were successfully updated for project '" + project.name + "'.", fail_silently=True)
+			else:
+				messages.success(self.request, "No parameters to update for {} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' for project '" + project.name + "'.", fail_silently=True)
 		return super(UpdateParametersProjView, self).form_valid(form)
 
 
@@ -222,8 +236,8 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 					value_to_change = "{}".format(form.cleaned_data[parameter.get_unique_id()])
 					if (parameter.parameter != value_to_change):
 						b_change_value = True
-					parameter.parameter = value_to_change
-					parameter.save()
+						parameter.parameter = value_to_change
+						parameter.save()
 
 		### re-run this sample
 		if (b_change_value):
@@ -259,10 +273,117 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 			except:
 				pass
 
-		messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
-				software.name + "' parameters was updated successfully " +\
-				"for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
+			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters were successfully updated " +\
+					"for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
+		else:
+			messages.success(self.request, "No parameters to update for {} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name +\
+					" for project '" + project_sample.project.name + "' and sample '" + project_sample.sample.name + "'.", fail_silently=True)
 		return super(UpdateParametersProjSampleView, self).form_valid(form)
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+	
+class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
+
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersSampleView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_sample'] = self.kwargs.get('pk_sample')
+		return kw
+	
+	def get_success_url(self):
+		"""
+		get source_pk from update sample, need to pass it in context
+		"""
+		sample_pk = self.kwargs.get('pk_sample')
+		return reverse_lazy('sample-settings', kwargs={'pk': sample_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersSampleView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['nav_sample'] = True
+		context['pk_sample'] = self.kwargs.get('pk_sample')
+		context['sample_settings'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
+
+		## save it...
+		with transaction.atomic():
+			software = form.save(commit=False)
+			
+			sample_id = self.kwargs.get('pk_sample')
+			sample = None
+			if (not sample_id is None):
+				try:
+					sample = Sample.objects.get(pk=sample_id)
+				except Sample.DoesNotExist:
+					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					return super(UpdateParametersSampleView, self).form_valid(form)
+				
+			paramers = Parameter.objects.filter(software=software, sample=sample)
+			b_change_value = False
+			for parameter in paramers:
+				if (not parameter.can_change): continue
+				if (parameter.get_unique_id() in form.cleaned_data):
+					value_to_change = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (parameter.parameter != value_to_change):
+						b_change_value = True
+						parameter.parameter = value_to_change
+						parameter.save()
+
+		### re-run this sample
+		if (b_change_value):
+			### re-run data
+			manageDatabase = ManageDatabase()
+			process_SGE = ProcessSGE()
+			
+			### change flag to nor finished
+			sample.is_ready_for_projects = False
+			sample.save()
+			
+			### get the user
+			user = sample.owner
+			
+			### create a task to perform the analysis of NanoFilt
+			try:
+				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+				if (sample.is_type_fastq_gz_sequencing()):
+					taskID = process_SGE.set_run_trimmomatic_species(sample, user, job_name)
+				else:
+					taskID = process_SGE.set_run_clean_minion(sample, user, job_name)
+					
+				### set sample queue ID
+				manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
+								MetaKeyAndValue.META_VALUE_Queue, taskID)
+			except:
+				pass
+
+			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters were successfully updated " +\
+					"for sample '" + sample.name + "'.", fail_silently=True)
+		else:
+			messages.success(self.request, "No parameters to update for {} '".format("Software" \
+					if software.is_software() else "INSaFLU") +\
+					software.name +\
+					" for sample '" + sample.name + "'.", fail_silently=True)
+		return super(UpdateParametersSampleView, self).form_valid(form)
 
 	## static method, not need for now.
 	form_valid_message = ""		## need to have this

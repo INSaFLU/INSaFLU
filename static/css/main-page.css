@@ -92,10 +92,19 @@
 }
 
 
-
-.insa-news {
+.text-align-justify{
 	text-align: justify;
 }
+.text-align-center{
+	text-align: center;
+}
+.text-align-right{
+	text-align: right;
+}
+.text-align-left{
+	text-align: left;
+}
+
 .insa-h4 {
   margin-bottom: 10px;
   font-size: 1.5rem;

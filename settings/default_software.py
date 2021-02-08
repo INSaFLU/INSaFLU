@@ -21,6 +21,9 @@ class DefaultSoftware(object):
 	'''
 	classdocs
 	'''
+	### MINIMUN of MAX of NanoFilt
+	NANOFILT_MINIMUN_MAX = 100
+	
 	software_names = SoftwareNames()
 	
 	def __init__(self):
@@ -30,13 +33,26 @@ class DefaultSoftware(object):
 	def test_all_defaults(self, user):
 		### test all defaults
 		self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user), user)
-		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user), user)
+		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				self._get_mask_consensus_threshold_default(user), user)
+		
+		## ONT software
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				self._get_mask_consensus_threshold_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
-		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+				self._get_limit_coverage_ONT_threshold_default(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
+		self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,
+				self._get_medaka_model_default(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
+		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+				self._get_samtools_depth_default_ONT(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
 		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
+
 
 	def test_default_db(self, software_name, vect_parameters, user, 
 					technology_name = SoftwareNames.TECHNOLOGY_illumina):
@@ -67,17 +83,33 @@ class DefaultSoftware(object):
 					self._persist_parameters(vect_parameters, technology_name)
 
 	def get_trimmomatic_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+		result = self._get_parameters(user, SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
 					SoftwareNames.TECHNOLOGY_illumina)
+		return "" if result is None else result
 	def get_snippy_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name,
+		result = self._get_parameters(user, SoftwareNames.SOFTWARE_SNIPPY_name,
 					SoftwareNames.TECHNOLOGY_illumina)
+		return "" if result is None else result
 	def get_nanofilt_parameters(self, user):
-		return self._get_parameters(user, SoftwareNames.SOFTWARE_NanoFilt_name,
+		result = self._get_parameters(user, SoftwareNames.SOFTWARE_NanoFilt_name,
 					SoftwareNames.TECHNOLOGY_minion)
+		return "" if result is None else result
 	def get_mask_consensus_threshold_parameters(self, user, technology_name):
-		return self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+		result = self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 								technology_name)
+		return "" if result is None else result
+	def get_limit_coverage_ONT_parameters(self, user):
+		result = self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+								SoftwareNames.TECHNOLOGY_minion)
+		return "" if result is None else result
+	def get_medaka_parameters_consensus(self, user):
+		result = self._get_parameters(user, SoftwareNames.SOFTWARE_Medaka_name_consensus,
+								SoftwareNames.TECHNOLOGY_minion)
+		return "" if result is None else result
+	def get_samtools_parameters_depth_ONT(self, user):
+		result = self._get_parameters(user, SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+								SoftwareNames.TECHNOLOGY_minion)
+		return "" if result is None else result
 	
 	def _get_parameters(self, user, software_name, technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
@@ -92,7 +124,7 @@ class DefaultSoftware(object):
 				software = Software.objects.get(name=software_name, owner=user,\
 						type_of_use=Software.TYPE_OF_USE_global)
 			except Software.DoesNotExist:
-				return ""
+				return None
 
 		## get parameters for a specific user
 		parameters = Parameter.objects.filter(software=software)
@@ -120,14 +152,26 @@ class DefaultSoftware(object):
 				return_parameter += " {}".format(par_name)
 				for _ in range(len(dict_out[par_name][0])):
 					return_parameter += "{}{}".format(dict_out[par_name][0][_], dict_out[par_name][1][_])
+					
+		#### This is the case where all the options can be "not to set"
+		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
 		return return_parameter.strip()
 
 	def set_default_software(self, software, user):
-		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name): vect_parameters = self._get_snippy_default(user)
-		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): vect_parameters = self._get_trimmomatic_default(user)
-		elif (software.name == SoftwareNames.SOFTWARE_NanoFilt_name): vect_parameters = self._get_nanofilt_default(user)
+		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name):
+			vect_parameters = self._get_snippy_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
+			vect_parameters = self._get_trimmomatic_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_NanoFilt_name):
+			vect_parameters = self._get_nanofilt_default(user)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			vect_parameters = self._get_mask_consensus_threshold_default(user)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
+			vect_parameters = self._get_limit_coverage_ONT_threshold_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
+			vect_parameters = self._get_medaka_model_default(user)
+		elif (software.name == SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT):
+			vect_parameters = self._get_samtools_depth_default_ONT(user)
 		else: return
 		
 		key_value = "{}_{}".format(software.name, SoftwareNames.TECHNOLOGY_illumina if\
@@ -176,11 +220,11 @@ class DefaultSoftware(object):
 		"""
 		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
 			self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, self._get_trimmomatic_default(user),
-								user, technology_name)
+								user, SoftwareNames.TECHNOLOGY_illumina)
 			return self.get_trimmomatic_parameters(user)
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, self._get_snippy_default(user), user,
-								technology_name)
+								SoftwareNames.TECHNOLOGY_illumina)
 			return self.get_snippy_parameters(user)
 		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, self._get_mask_consensus_threshold_default(user),
@@ -188,8 +232,22 @@ class DefaultSoftware(object):
 			return self.get_mask_consensus_threshold_parameters(user, technology_name)
 		if (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
 			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user,
-								technology_name)
+								SoftwareNames.TECHNOLOGY_minion)
 			return self.get_nanofilt_parameters(user)
+		if (software_name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
+			self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,
+								self._get_medaka_model_default(user), user,
+								SoftwareNames.TECHNOLOGY_minion)
+			return self.get_medaka_parameters_consensus(user)
+		if (software_name == SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT):
+			self.test_default_db(software_name, self._get_samtools_depth_default_ONT(user), user,
+								SoftwareNames.TECHNOLOGY_minion)
+			return self.get_samtools_parameters_depth_ONT(user)
+		if (software_name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
+			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+								self._get_limit_coverage_ONT_threshold_default(user), user,
+								SoftwareNames.TECHNOLOGY_minion)
+			return self.get_limit_coverage_ONT_parameters(user)
 		return ""
 		
 	def get_all_software(self):
@@ -201,6 +259,9 @@ class DefaultSoftware(object):
 		vect_software.append(self.software_names.get_snippy_name())
 		vect_software.append(self.software_names.get_NanoFilt_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
+		vect_software.append(self.software_names.get_medaka_name_extended_consensus())
+		vect_software.append(self.software_names.get_samtools_name_depth_ONT())
+		vect_software.append(self.software_names.get_insaflu_parameter_limit_coverage_name())
 		return vect_software
 
 	def get_technology_instance(self, technology_name):
@@ -425,7 +486,9 @@ class DefaultSoftware(object):
 
 	def _get_nanofilt_default(self, user):
 		"""
-		SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33
+		-l <LENGTH>, Filter on a minimum read length. Range: [50:1000].
+		--maxlength Filter on a maximum read length
+		dá para colocar outro parametro, por exemplo: -ml <MAX_LENGTH>, Set the maximum read length.
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_NanoFilt_name
@@ -495,6 +558,21 @@ class DefaultSoftware(object):
 		parameter.description = "--tailcrop <TAILCROP>, Trim n nucleotides from end of read."
 		vect_parameters.append(parameter)
 		
+		parameter = Parameter()
+		parameter.name = "--maxlength"
+		parameter.parameter = "0"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 5
+		parameter.range_available = "[{}:50000]".format(self.NANOFILT_MINIMUN_MAX)
+		parameter.range_max = "50000"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "--maxlength <LENGTH>, Set a maximum read length."
+		vect_parameters.append(parameter)
+		
 		return vect_parameters
 
 	def _get_mask_consensus_threshold_default(self, user):
@@ -525,5 +603,126 @@ class DefaultSoftware(object):
 		parameter.description = "Threshold to mask failed consensus coverage. Value in percentage"
 		vect_parameters.append(parameter)
 		return vect_parameters
+	
+	def _get_limit_coverage_ONT_threshold_default(self, user):
+		"""
+		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)
+		Where to use this cut-off:
+			This cut-off is used to exclude from vcf files sites with DEPTH <=30
+			This cut-off is used to mask consensus sequences with DEPTH <=30 in msa_masker (-c: 30-1 = 29)
+		"""
+		software = Software()
+		software.name = SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name
+		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "Threshold"
+		parameter.parameter = "30"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[4:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "4"
+		parameter.description = "This cut-off is used to exclude from vcf files sites and to mask consensus sequences. Value in percentage"
+		vect_parameters.append(parameter)
+		return vect_parameters
 
 
+	def _get_medaka_model_default(self, user):
+		"""
+		Model for medaka
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_Medaka_name_consensus
+		software.name_extended = SoftwareNames.SOFTWARE_Medaka_name_extended_consensus
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version = SoftwareNames.SOFTWARE_Medaka_VERSION
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "-m"
+		parameter.parameter = SoftwareNames.SOFTWARE_Medaka_default_model	## default model
+		parameter.type_data = Parameter.PARAMETER_char_list
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.description = "Medaka models are named to indicate: " +\
+			"i) the pore type; " +\
+			"ii) the sequencing device (min -> MinION, prom -> PromethION); " +\
+			"iii) the basecaller variant (only high and variant available in INSAFlu); " +\
+			"iv) the Guppy basecaller version. " +\
+			"Complete format: " +\
+			"{pore}_{device}_{caller variant}_{caller version}"
+		vect_parameters.append(parameter)
+		return vect_parameters
+	
+	def _get_samtools_depth_default_ONT(self, user):
+		"""
+		samtools depth for ONT
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT
+		software.name_extended = SoftwareNames.SOFTWARE_SAMTOOLS_name_extended_depth_ONT
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version = SoftwareNames.SOFTWARE_SAMTOOLS_VERSION
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "-q"
+		parameter.parameter = "0"	## default model
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "-q <Quality> base quality threshold."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "-Q"
+		parameter.parameter = "0"	## default model
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.sequence_out = 2
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "-Q <Quality> mapping quality threshold."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "-aa"
+		parameter.parameter = ""	## default model
+		parameter.type_data = Parameter.PARAMETER_null
+		parameter.software = software
+		parameter.union_char = ""
+		parameter.can_change = False
+		parameter.sequence_out = 3
+		parameter.description = "Output absolutely all positions, including unused ref. sequences."
+		vect_parameters.append(parameter)
+		
+		return vect_parameters
+	

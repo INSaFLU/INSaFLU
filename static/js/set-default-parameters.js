@@ -40,6 +40,7 @@ $('#id-set-default-button').on('click', function(){
         	project_name : $('#id-modal-body-set-default').attr('proj_name'),			/// can be Null
         	project_id : $('#id-modal-body-set-default').attr('pk_proj'),					/// can be Null
         	project_sample_id : $('#id-modal-body-set-default').attr('pk_proj_sample'),	/// can be Null
+        	sample_id : $('#id-modal-body-set-default').attr('pk_sample'),	/// can be Null
     		csrfmiddlewaretoken : '{{ csrf_token }}'
         }, // data sent with the post request
         		

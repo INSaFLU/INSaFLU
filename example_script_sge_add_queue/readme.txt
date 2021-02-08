@@ -55,5 +55,7 @@ $ qconf -mq <queue name>
 ### change the default schedule_interval from 0:0:15 to 0:0:5. This setting specifies how often the scheduler checks for new jobs.
 $ qconf -msconf
 
+### Cahnge priority to the job 38127
+$ qalter -p -1020 38127
 
 

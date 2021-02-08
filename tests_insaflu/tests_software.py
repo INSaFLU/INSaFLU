@@ -1845,12 +1845,17 @@ class Test(TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
 		result_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
 
-		out_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab")
-		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file, out_file)
-		self.assertEquals(out_file, out_file_2)
+		#### add the transform p.Val423Glu to p.V423G
+		### this run a on SNP_EFF
+		parse_out_files = ParseOutFiles()
+		vcf_file_with_pp = parse_out_files.add_amino_single_letter_code(vcf_file)
 		
+		out_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab")
+		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file_with_pp, out_file)
+		self.assertEquals(out_file, out_file_2)
 		self.assertTrue(filecmp.cmp(out_file_2, result_file))
 		os.unlink(out_file)
+		os.unlink(vcf_file_with_pp)
 
 
 	def test_test_bgzip_and_tbi_in_vcf(self):
@@ -1903,6 +1908,32 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 
+	def test_run_genbank2gff3_positions_comulative(self):
+		"""
+		test genbank2gff3 method
+		"""
+		## covid
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid_comulative_gene_position.gff")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name", ".txt")
+		out_file_2 = self.software.run_genbank2gff3_positions_comulative(gb_file, out_file)
+		self.assertFalse(out_file_2 is None)
+		self.assertEquals(out_file, out_file_2)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		
+		### flu
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "flu_comulative_gene_position.gff")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name", ".txt")
+		out_file_2 = self.software.run_genbank2gff3_positions_comulative(gb_file, out_file)
+		self.assertFalse(out_file_2 is None)
+		self.assertEquals(out_file, out_file_2)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		
+		os.unlink(out_file)
+		
 	def test_run_get_snpeff_config(self):
 		"""
 		test get_snpeff_config method
@@ -1925,7 +1956,6 @@ class Test(TestCase):
 		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_VCF)
 		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF)
-		freebayes_expect_vcf_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, ConstantsTestsCase.MANAGING_FILES_FREEBAYES_ANNOTATED_VCF_2)
 		
 		out_file = self.utils.get_temp_file("file_name", ".vcf")
 		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
@@ -1934,7 +1964,7 @@ class Test(TestCase):
 		out_file_clean = self.utils.get_temp_file("file_name", ".vcf")
 		cmd = "grep -v '{}' {} > {}".format(os.path.dirname(out_file), out_file, out_file_clean)
 		os.system(cmd)
-		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf) or filecmp.cmp(out_file_clean, freebayes_expect_vcf_2))
+		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf))
 		os.unlink(out_file_clean)
 		os.unlink(out_file)
 
@@ -2426,6 +2456,12 @@ class Test(TestCase):
 		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
 		uploadFiles.upload_file(version, file)	## upload file
 		
+		### files illumina covid
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, "covid/WHU02_SRR10903401_1.fastq.gz")
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, "covid/WHU02_SRR10903401_2.fastq.gz")
+		self.assertTrue(os.path.exists(file_1))
+		self.assertTrue(os.path.exists(file_2))
+		
 		try:
 			uploadFile = UploadFile.objects.order_by('-version')[0]
 			self.assertEqual("test_db_influenza_typing_v2", uploadFile.abricate_name)
@@ -2448,11 +2484,11 @@ class Test(TestCase):
 			sample = Sample()
 			sample.name = sample_name
 			sample.is_valid_1 = True
-			sample.file_name_1 = "WHU02_SRR10903401_1.fastq.gz"
-			sample.path_name_1.name = os.path.join("/home/mmp/insa/corona", "WHU02_SRR10903401_1.fastq.gz")
+			sample.file_name_1 = os.path.basename(file_1)
+			sample.path_name_1.name = file_1
 			sample.is_valid_2 = True
-			sample.file_name_2 = "WHU02_SRR10903401_2.fastq.gz"
-			sample.path_name_2.name = os.path.join("/home/mmp/insa/corona", "WHU02_SRR10903401_2.fastq.gz")
+			sample.file_name_2 = os.path.basename(file_2)
+			sample.path_name_2.name = file_2
 			sample.owner = user
 			sample.save()
 			
@@ -2501,7 +2537,6 @@ class Test(TestCase):
 		exist_status = os.system(cmd)
 		self.assertTrue(exist_status == 0)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
-
 
 	def test_make_downsize(self):
 		
@@ -2631,3 +2666,37 @@ class Test(TestCase):
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
+
+
+	def test_run_snippy_vcf_to_tab_freq_and_evidence(self):
+		
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippy_vcf_to_tab_freq_and_evidence.vcf")
+		self.assertTrue(os.path.exists(fasta_file))
+		self.assertTrue(os.path.exists(gb_file))
+		self.assertTrue(os.path.exists(vcf_file))
+		
+		out_file_vcf = self.utils.get_temp_file("vcf_file", ".vcf")
+		out_file_2 = self.utils.get_temp_file("parse_vcf_file", ".tab")
+		tab_expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippy_vcf_to_tab_freq_and_evidence.tab")
+		
+		#### add the transform p.Val423Glu to p.V423G
+		### this run a on SNP_EFF
+		parse_out_files = ParseOutFiles()
+		vcf_file_with_pp = parse_out_files.add_amino_single_letter_code(vcf_file)
+		
+		### first need to add FREQ
+		out_file_vcf = self.utils.add_freq_to_vcf(vcf_file_with_pp, out_file_vcf)
+		self.assertTrue(os.path.exists(out_file_vcf))
+		
+		self.software.run_snippy_vcf_to_tab_freq_and_evidence(fasta_file, gb_file, out_file_vcf, out_file_2)
+		self.assertTrue(os.path.exists(out_file_2))
+		self.assertTrue(os.path.exists(tab_expect_result))
+		
+		self.assertTrue(filecmp.cmp(tab_expect_result, out_file_2))
+		if (os.path.exists(out_file_vcf)): os.unlink(out_file_vcf)
+		if (os.path.exists(out_file_2)): os.unlink(out_file_2)
+		if (os.path.exists(vcf_file_with_pp)): os.unlink(vcf_file_with_pp)
+
+

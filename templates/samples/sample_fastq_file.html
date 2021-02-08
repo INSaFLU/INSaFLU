@@ -104,6 +104,9 @@
 	    {% endblock pagination %}
 	  </div>
 	  <p> </p>
+	{% else %}
+		<label id="id-total-list" class="pull-right">Total files: {{ total_itens }}</label>
+		<p> </p>
 	{% endif %}
 
 	<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>

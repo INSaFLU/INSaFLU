@@ -40,7 +40,7 @@ class Command(BaseCommand):
 		self.logger_debug.info("Starting for project_sample_id: " + str(project_sample_id))
 		try:
 			project_sample = ProjectSample.objects.get(pk=project_sample_id)
-			if (user_id == None): user = project_sample.project.owner
+			if (user_id is None): user = project_sample.project.owner
 			else: user = User.objects.get(pk=user_id)
 			software_minion.process_second_stage_medaka(project_sample, user)
 			self.stdout.write("End")

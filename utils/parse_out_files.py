@@ -15,23 +15,25 @@ class ParseOutFiles(object):
 	'''
 
 	## header tab file
-	HEADER_TAB_FILE = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_old = "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE 		= "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_old 	= "CHROM	POS	TYPE	REF	ALT	FREQ	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	### Add COVERAGE after FREQ
 	HEADER_TAB_FILE_after_change = "FREQ"
 	HEADER_TAB_FILE_after_change_add_fields = 1
 	
-	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
-	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT"
+	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT"
 	
-	HEADER_TAB_FILE_WRITE_snippy_expanded = "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_changed = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_changed_old = "CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_WRITE_snippy_expanded 	= "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed 			= 		"CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed_old 		= 		"CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
 	### Add FREQ and COVERAGE after ALT
 	HEADER_TAB_FILE_snippy_after_change = "ALT"
 	HEADER_TAB_FILE_snippy_after_change_add_fields = 2
-	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
 	
+	### original file header that came from snippy
+	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
+
 	GENE = 'Gene'
 	COVERAGE = 'Coverage'
 	IDENTITY = 'Identity'
@@ -111,6 +113,7 @@ class ParseOutFiles(object):
 
 	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):
 		"""
+		Only used in FreeBayes
 		limit_freq -> the max freq to accept the variation 
 		process tab files
 		possible in variation type
@@ -157,6 +160,7 @@ class ParseOutFiles(object):
 									if (len(lst_data) > 10):
 										vect_to_write.extend(lst_data[:10])
 										vect_to_write.extend(lst_data[10].split(' '))
+										vect_to_write.extend([self.utils.parse_amino_HGVS_code(vect_to_write[-1])])
 										vect_to_write.extend(lst_data[11:])
 									else: vect_to_write.extend(lst_data)
 									
@@ -167,6 +171,7 @@ class ParseOutFiles(object):
 									if (len(lst_data) > 11):
 										vect_to_write.extend(lst_data[:11])
 										vect_to_write.extend(lst_data[11].split(' '))
+										vect_to_write.extend([self.utils.parse_amino_HGVS_code(vect_to_write[-1])])
 										vect_to_write.extend(lst_data[12:])
 									else: vect_to_write.extend(lst_data)
 								csv_writer.writerow(vect_to_write)
@@ -176,7 +181,7 @@ class ParseOutFiles(object):
 
 	def parse_tab_files_snippy(self, sample_name, file_to_parse, csv_writer, vect_type_out, b_add_header):
 		"""
-		limit_freq -> the tre max freq to accept the variation
+		Join and Snippy/Medaka variant files
 		process tab files
 		possible in variation type
 				snp	Single Nucleotide Polymorphism	A => T
@@ -203,6 +208,14 @@ class ParseOutFiles(object):
 						for i in range(0, len(lst_type_var)):
 							if (len(vect_type_out) == 0 or lst_type_var[i] in vect_type_out):
 								vect_to_write = [sample_name]
+								### add HGMD amino p.V323S 
+								position = 12	## old versions
+								if (not b_header and len(lst_data) > position):
+									amino_p = lst_data[position]
+									lst_transformed = []
+									for amino in amino_p.split(','):
+										lst_transformed.append(self.utils.parse_amino_HGVS_code(amino))
+									lst_data = lst_data[:position+1] + [",".join(lst_transformed)] + lst_data[position+1:]
 								vect_to_write.extend(lst_data)
 								break
 						
@@ -216,7 +229,9 @@ class ParseOutFiles(object):
 
 	def add_variants_in_incomplete_locus(self, file_to_process, coverage):
 		"""
+		Used in snippy and Medaka
 		add variants_in_incomplete_locus in low coverage locus
+		AND -> transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
 		"""
 		out_file = self.utils.get_temp_file('variants_in_incomplete_locus', FileExtensions.FILE_TSV)
 		with open(out_file, 'w', newline='') as handle_out:
@@ -236,6 +251,7 @@ class ParseOutFiles(object):
 							## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
 							vect_to_write.extend(lst_data[:12])
 							vect_to_write.extend(lst_data[12].split(' '))
+							vect_to_write.extend([self.utils.parse_amino_HGVS_code(vect_to_write[-1])])
 							vect_to_write.extend(lst_data[13:])
 							if (len(lst_data) > 1 and coverage.exist_this_element(lst_data[0]) and\
 									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
@@ -257,8 +273,9 @@ class ParseOutFiles(object):
 
 	def add_amino_single_letter_code(self, vcf_file):
 		"""
-		param:	vcf_file in
-		out:	file with amino transformation  
+		add single letter Amino change to VCF files 
+		:param	vcf_file in
+		:out	file with amino transformation  
 		"""
 		### AB=0;ABP=0;AC=2;AF=1;AN=2;AO=289;CIGAR=1X;DP=289;DPB=289;DPRA=0;EPP=7.70639;EPPR=0;GTI=0;LEN=1;MEANALT=1;MQM=60;MQMR=0;NS=1;NUMALT=1;ODDS=204.925;PAIRED=0;PAIREDR=0;
 		###		PAO=0;PQA=0;PQR=0;PRO=0;QA=10861;QR=0;RO=0;RPL=151;RPP=4.28012;RPPR=0;RPR=138;RUN=1;SAF=133;SAP=6.98507;SAR=156;SRF=0;SRP=0;SRR=0;TYPE=snp;

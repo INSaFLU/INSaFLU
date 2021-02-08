@@ -10,6 +10,7 @@
 	{% load static from staticfiles %}
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'vendor/tablefilter/style/tablefilter.css' %}" type="text/css">
 {% endblock css %}
 
@@ -116,7 +117,7 @@
 				<div class="card-header" role="tab" id="headingTwo_1">
 					<h5 class="mb-0">
 						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo_1" aria-expanded="false" aria-controls="collapseTwo_1">
-							<strong>Variants</strong> as a table
+							<strong>Mutations</strong> list
 	        			</a>
 	      			</h5>
 	    		</div>
@@ -124,7 +125,7 @@
 	    		<div id="collapseTwo_1" class="collapse" role="tabpanel" aria-labelledby="headingTwo_1">
 	      			<div class="card-block">
 	        			<div id='loader_showvariantsasatable'><img src="{{ spinner_url }}"/></div>
-	        			<div id="showvariantsasatable" project_id="{{ project_id }}" show-variants-as-a-table-url="{% url 'show-variants-as-a-table' %}"></div>
+	        			<div id="showvariantsasatable" class="show_variants_table" project_id="{{ project_id }}" show-variants-as-a-table-url="{% url 'show-variants-as-a-table' %}"></div>
 	      			</div>
 	    		</div>
 	  		</div>
@@ -221,8 +222,9 @@
 	    		</div>
 	    	</div>
 	    		
-	   		<!-- Card Coverage overview-->
-	   		<div class="card">
+	   		<!-- Card Minor variants overview-->
+	   		{% if variations_statistics_file %}
+		   		<div class="card">
 					<div class="card-header" role="tab" id="headingFifth">
 						<h5 class="mb-0">
 							<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseFifth" aria-expanded="false" aria-controls="collapseFifth">
@@ -247,9 +249,35 @@
 			      			</div>
 			      		</div>
 		    		</div>
-		    		
-		    		
+			  	</div>
+			{% endif %}
+
+	   		<!-- Card Coverage overview-->
+	   		<div class="card">
+					<div class="card-header" role="tab" id="headingSixth">
+						<h5 class="mb-0">
+							<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseSixth" aria-expanded="false" aria-controls="collapseSixth">
+								<strong>Coverage</strong> for all samples
+		        			</a>
+		      			</h5>
+		    		</div>
+		
+		    		<div id="collapseSixth" class="collapse" role="tabpanel" aria-labelledby="headingSixth">
+		      			<div class="card-block">
+			      			<div class="container-fluid">
+			      				<br>
+		      					<div class="regular_info_box form-inline">
+							  		<div class="col-lg-5"><strong>Coverage file:</strong> {{ coverage_file }}</div>
+		      					</div>
+			      				<br>
+		      					<div id="loader_coverage_id"><img src="{{ spinner_url }}"/></div>
+		        				<div id="show_coverage_id" class="show_coverage_table" project_id="{{ project_id }}" show-coverage-as-a-table-url="{% url 'show-coverage-as-a-table' %}"></div>
+			      				<br>
+			      			</div>
+			      		</div>
+		    		</div>
 		  	</div>
+
 	  		
 		</div>
 	
@@ -316,9 +344,12 @@
 				
 				{% if table.page and show_paginatior %}
 				    {% block pagination %}
+				    	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 				        {% bootstrap_pagination table.page url=request.get_full_path %}
 				    {% endblock pagination %}
 				  </div>
+				{% else %}
+					<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 				{% endif %}
 		
 				<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
@@ -387,21 +418,28 @@
 	    	
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'js/show-sample-project.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
+	    	<!-- <script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script> -->
 	    	<script type="text/javascript" src="{% static 'Chart.js/2.7.1/Chart.min.js' %}"></script>
 	    	
 	    	<!-- <script src="https://cdn.bio.sh/msa/latest/msa.min.gz.js"></script>
 	    	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>  -->
 	    	
 	    	<!--  Table filter  https://github.com/koalyptus/TableFilter -->
+	    	<script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project-table.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/tablefilter/tablefilter.js' %}"></script>
 	    	
 	    	<!--  JS to insaphylo -->
 	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/aux.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/tree.js' %}" defer></script>
 	    	<!--  END JS to insaphylo -->
-	
+			
+			<!--  raphaelFS  SVG drawing -->
+			<script type="text/javascript" src="{% static 'vendor/raphael/raphael.min.js' %}"></script>
+			<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project-coverage.js' %}"></script>
  {% endblock %}
 
 

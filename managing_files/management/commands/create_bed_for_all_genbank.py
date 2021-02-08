@@ -43,6 +43,9 @@ class Command(BaseCommand):
 		
 			### create bed and index for genbank
 			utils.from_genbank_to_bed(reference.get_reference_gbk(TypePath.MEDIA_ROOT), reference.get_reference_bed(TypePath.MEDIA_ROOT))
+			software.run_genbank2gff3(reference.get_reference_gbk(TypePath.MEDIA_ROOT), reference.get_gff3(TypePath.MEDIA_ROOT))
+			software.run_genbank2gff3_positions_comulative(reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+							reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT))
 			software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
 			self.stdout.write("created\n")
 			

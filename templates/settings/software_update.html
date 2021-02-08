@@ -26,6 +26,10 @@
 		{% breadcrumb "Show project results" "show-sample-project-results" pk_proj_sample %}
 		{% breadcrumb "Project sample settings" "sample-project-settings" %}
 		{% breadcrumb "Update parameters" "software-update" %}
+	{% elif sample %}
+		{% breadcrumb "Samples" "samples" %}
+		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
+		{% breadcrumb "Update parameters" "software-update" %}
 	{% else %}
 		{% breadcrumb "Settings" "settings" %}
 		{% breadcrumb "Update parameters" "software-update" %}

@@ -8,7 +8,7 @@ Created on Dec 6, 2017
 from settings.models import Software
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Project, ProjectSample, Sample
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
@@ -27,6 +27,7 @@ def set_default_parameters(request):
 		software_id_a = 'software_id'
 		project_id_a = 'project_id'
 		project_sample_id_a = 'project_sample_id'
+		sample_id_a = 'sample_id'
 		
 		## some pre-requisites
 		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
@@ -40,22 +41,28 @@ def set_default_parameters(request):
 			software_id = request.GET[software_id_a]
 			try:
 				software = Software.objects.get(pk=software_id)
+				technology_name = SoftwareNames.TECHNOLOGY_illumina if software.technology is None else\
+								software.technology.name
 				if (project_id_a in request.GET):
 					project_id = request.GET[project_id_a]
 					project = Project.objects.get(pk=project_id)
 					
 					default_project_software = DefaultProjectSoftware()
-					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project, project, None)
+					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project, project,
+											None, None)
 					## set a new default
-					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project, project, None)
+					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
+													project, None, technology_name)
 				elif (project_sample_id_a in request.GET):
 					project_sample_id = request.GET[project_sample_id_a]
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)
 					
 					default_project_software = DefaultProjectSoftware()
-					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project_sample, None, project_sample)
+					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project_sample,
+										None, project_sample, None)
 					## set a new default
-					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample, None, project_sample)
+					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample,\
+													None, project_sample, None, technology_name)
 					
 					### need to re-run this sample with snippy if the values change
 					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
@@ -89,13 +96,50 @@ def set_default_parameters(request):
 						except:
 							pass
 						
+				elif (sample_id_a in request.GET):
+					sample_id = request.GET[sample_id_a]
+					sample = Sample.objects.get(pk=sample_id)
+					
+					default_project_software = DefaultProjectSoftware()
+					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_sample,
+										None, None, sample)
+					## set a new default
+					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_sample,\
+													None, None, sample, technology_name)
+					
+					### need to re-run this sample with NanoFilt if the values change
+					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
+								if sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion)):
+						### re-run data
+						manageDatabase = ManageDatabase()
+						process_SGE = ProcessSGE()
 						
+						### change flag to nor finished
+						sample.is_ready_for_projects = False
+						sample.save()
+		
+						### create a task to perform the analysis of NanoFilt
+						try:
+							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+							if (sample.is_sample_illumina()):
+								taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
+							else:
+								taskID = process_SGE.set_run_clean_minion(sample, request.user, job_name)
+								
+							### set sample queue ID
+							manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
+											MetaKeyAndValue.META_VALUE_Queue, taskID)
+						except:
+							pass
+					
 				else:
 					default_software = DefaultSoftware()
 					default_software.set_default_software(software, request.user)
 					
+					
 					## set a new default
-					data['default'] = default_software.get_parameters(software.name, request.user)
+					data['default'] = default_software.get_parameters(software.name, request.user,
+												technology_name)
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)

@@ -49,6 +49,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(software_names.get_fastqtools_sample()), "Fail to test - " + software_names.get_fastqtools_sample_name())
 
 
+
 if __name__ == "__main__":
 	#import sys;sys.argv = ['', 'Test.testName']
 	unittest.main()

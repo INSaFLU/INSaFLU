@@ -12,6 +12,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Data.IUPACData import protein_letters_3to1
+from constants.software_names import SoftwareNames
+## Add 'Ter' to dictonary
+## http://www.hgmd.cf.ac.uk/docs/cd_amino.html
+protein_letters_3to1['Ter'] = 'X'
 from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
@@ -170,7 +174,7 @@ class Utils(object):
 			main_path = os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY)
 			## to prevent errors
 			if path_name != main_path and path_name != (main_path + "/"):
-				cmd = "rm -r {}*".format(path_name)
+				cmd = "rm -rf {}*".format(path_name)
 				os.system(cmd)
 
 	def move_file(self, sz_file_from, sz_file_to):
@@ -657,6 +661,7 @@ class Utils(object):
 
 	def add_freq_to_vcf(self, vcf_file, vcf_file_out):
 		"""
+		Used in snippy and freebayes
 		add FREQ to VCF, FREQ=AO/DP
 		vcffile must be gzip and tbi included
 		"""
@@ -682,7 +687,7 @@ class Utils(object):
 			if ("DP" in variant.info and "AO" in variant.info):
 				vect_ao_out = []
 				for value_ in variant.info['AO']:
-					vect_ao_out.append((value_/float(variant.info['DP']) * 100))
+					vect_ao_out.append(float("{:.1f}".format((value_/float(variant.info['DP']) * 100))))
 				variant.info[FREQ] = tuple(vect_ao_out)
 			vcf_hanlder_write.write(variant)
 			
@@ -690,10 +695,12 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
-	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, vcf_file_out):
-		""" add FREQ to VCF, FREQ=AO/DP
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, vcf_file_out, coverage_limit):
+		""" add FREQ, AO, AF and TYPE to VCF, FREQ=AO/DP
+		This case is used in MEDAKA only
 		
 		vcffile must be gzip and tbi included
+		:param coverage_limit -> filter by this coverage (this is necessary because medaka doesn't have)
 		returns: vcf file with freq, AO and AF 
 		"""
 		FREQ = 'FREQ'
@@ -723,6 +730,8 @@ class Utils(object):
 			
 		for variant in vcf_hanlder:
 			if ("SR" in variant.info and "DP" in variant.info):	## SR=0,0,15,6
+				### don't process this VCF because has a low coverage
+				if coverage_limit > 0 and int(variant.info["DP"] < coverage_limit): continue
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
 					vcf_hanlder_write.write(variant) 
 					continue		### different numbers of Alleles and References
@@ -912,6 +921,7 @@ class Utils(object):
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, gene, limit_to_mask_consensus, out_dir):
 		"""
 		:param limit_to_mask_consensus can be -1 if not defined for this project_sample
+		Test if necessary reverse complement
 		filter fasta file
 		write a file for each element 
 		file name out: None if not saved, else output file name
@@ -929,7 +939,7 @@ class Utils(object):
 		with open(consensus_fasta) as handle_consensus:
 			record_dict = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
 			with open(file_name, 'w') as handle:
-				if (coverage == None):	### its the reference, there's no coverage and limit_to_mask
+				if (coverage is None):	### its the reference, there's no coverage and limit_to_mask
 					if sequence_name in record_dict:
 						seq_ref = record_dict[sequence_name]
 						if not gene is None and not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
@@ -1232,12 +1242,110 @@ class Utils(object):
 		match = re.search("p.(?P<first_amino>[A-Za-z*]+)(?P<position>[0-9]+)(?P<second_amino>[A-Za-z*]+)", amino_value)
 		
 		if (not match is None):
-			return "p.{}{}{}".format(protein_letters_3to1.get(
-					match.group('first_amino'), match.group('first_amino')),
+			return "p.{}{}{}".format(self._get_amino_single_letter(match.group('first_amino')),
 					match.group('position'),
-					protein_letters_3to1.get(match.group('second_amino'), match.group('second_amino')))
-		return None
+					self._get_amino_single_letter(match.group('second_amino')))
+		return ""
 
+	def _get_amino_single_letter(self, string_amino):
+		""" can have cases like this: SerVal """
+		if (len(string_amino) % 3 != 0): return string_amino
+		sz_out = ""
+		for i in range(0, len(string_amino), 3):
+			sz_out += protein_letters_3to1.get(string_amino[i:i+3], string_amino[i:i+3])
+		return sz_out
+
+	### get models from medaka
+	def get_all_medaka_models(self):
+		"""
+		--model MODEL         Model to use. {r103_min_high_g345, r103_min_high_g360,
+                        r103_prom_high_g360, r103_prom_snp_g3210,
+                        r103_prom_variant_g3210, r10_min_high_g303,
+                        r10_min_high_g340, r941_min_fast_g303,
+                        r941_min_high_g303, r941_min_high_g330,
+                        r941_min_high_g340_rle, r941_min_high_g344,
+                        r941_min_high_g351, r941_min_high_g360,
+                        r941_prom_fast_g303, r941_prom_high_g303,
+                        r941_prom_high_g330, r941_prom_high_g344,
+                        r941_prom_high_g360, r941_prom_high_g4011,
+                        r941_prom_snp_g303, r941_prom_snp_g322,
+                        r941_prom_snp_g360, r941_prom_variant_g303,
+                        r941_prom_variant_g322, r941_prom_variant_g360}
+                        (default: r941_min_high_g360)
+		--threads THREADS     Number of threads used by inference. (default: 1)
+		
+		Medaka models are named to indicate: 
+		i) the pore type, 
+		ii) the sequencing device (min -> MinION, prom -> PromethION), 
+		iii) the basecaller variant (only high and variant available in INSAFlu),
+		iv) the Guppy basecaller version.
+		Complete format:
+		{pore}_{device}_{caller variant}_{caller version}
+
+		:out return all models available
+		"""
+		software_names = SoftwareNames()
+		temp_file = self.get_temp_file("medaka_models", ".txt")
+		
+		cmd = "{} {} tools list_models > {}".format(
+				software_names.get_medaka_env(),
+				software_names.get_medaka(),
+				temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			self.utils.remove_file(temp_file)
+			raise Exception("Fail to run medaka_consensus")
+		
+		vect_data = self.read_text_file(temp_file)
+		vect_models = []
+		for line in vect_data:
+			if line.find('Available:') == 0:
+				lst_data = line.replace('Available:', '').split(',')
+				if len(lst_data) > 0:
+					for model in lst_data:
+						model_name = model.strip()
+						if (len(model_name) > 0 and not self._exist_tag_name(model_name,
+								software_names.get_medaka_remove_tags_model())): vect_models.append(model_name)
+			elif (len(vect_models) > 0): break
+		return vect_models
+
+	def _exist_tag_name(self, model_name, vect_names_to_exclude):
+		""" test if the model_name has some of the tags in vect_names_to_exclude"""
+		for tag_to_test in vect_names_to_exclude:
+			if (model_name.find(tag_to_test) != -1): return True
+		return False
+	
+	def is_differente_fasta_size(self, file_name, percentage_diff):
+		"""
+		:out True if difference between first two sequences is more than percentage_diff
+		"""
+		vect_length = []
+		
+		### read 200 lines
+		with open(file_name) as handle_in:
+			for record in SeqIO.parse(handle_in, "fasta"):
+				vect_length.append(len(str(record.seq)))
+				if (len(vect_length) == 2):
+					if (vect_length[0] > vect_length[1]):
+						if ((100 - ((vect_length[1] / vect_length[0] * 100))) > percentage_diff): return True
+						return False
+					else:
+						if ((100 - ((vect_length[0] / vect_length[1] * 100))) > percentage_diff): return True
+						return False
+		return False  
+	
+	def get_last_name_from_fasta(self, file_name):
+		""" return last name in the fasta file """
+		last_name = ""
+		if (os.path.exists(file_name)):
+			with open(file_name) as handle_in:
+				for line in handle_in:
+					sz_temp = line.strip()
+					if (len(sz_temp) > 0 and sz_temp[0] == '>'): last_name = sz_temp.split()[0].replace('>', '')
+		return last_name
+	
 class ShowInfoMainPage(object):
 	"""
 	only a help class

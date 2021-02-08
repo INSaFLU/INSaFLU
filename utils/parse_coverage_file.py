@@ -103,7 +103,9 @@ class DataFile(object):
 		if (sz_chromosome not in self.dict_data): return 0
 		if (sz_chromosome in self.dict_data_coverage): return self.dict_data_coverage[sz_chromosome]
 		if (length_chromosome == 0): return 0
-		if (len(self.dict_data[sz_chromosome]) > length_chromosome): 
+#		medaka sometimes creates bigger references than the original, difference 2 or 3 number of bases
+		if (len(self.dict_data[sz_chromosome]) > (length_chromosome * 1.10) or 
+			len(self.dict_data[sz_chromosome]) < (length_chromosome - (length_chromosome * 0.10))): 
 			raise Exception("Chromosome '%s' has different sizes. Coverage: %d; Reference: %d" % (sz_chromosome, len(self.dict_data[sz_chromosome]), length_chromosome))
 		sum_total = 0
 		for data_ in self.dict_data[sz_chromosome]: sum_total += int(data_[1])
@@ -113,7 +115,9 @@ class DataFile(object):
 	def get_ratio_more_than(self, sz_chromosome, length_chromosome, value):
 		if (sz_chromosome not in self.dict_data): return 0
 		if (length_chromosome == 0): return 0
-		if (len(self.dict_data[sz_chromosome]) > length_chromosome): 
+#		medaka sometimes creates bigger references than the original, difference 2 or 3 number of bases
+		if (len(self.dict_data[sz_chromosome]) > (length_chromosome * 1.10) or 
+			len(self.dict_data[sz_chromosome]) < (length_chromosome - (length_chromosome * 0.10))):
 			raise Exception("Chromosome '%s' has different sizes. Coverage: %d; Reference: %d" % (sz_chromosome, len(self.dict_data[sz_chromosome]), length_chromosome))
 		sum_total = 0
 		for data_ in self.dict_data[sz_chromosome]: sum_total += (1 if (int(data_[1]) > value) else 0)

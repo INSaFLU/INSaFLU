@@ -129,12 +129,14 @@ class Softwares(object):
 		"""   return software name, version and parameters"""
 		list_return = []
 		for software_desc in self.list_software:
-			if (software_desc.name == sz_name):
+			if (software_desc.name.startswith(sz_name)):
+				version_data = ""
+				if (len(software_desc.version) > 0): version_data = "-{}".format(software_desc.version)
 				if (not software_desc.parameters is None and len(software_desc.parameters) > 0):
-					description = "{}-{}; ({})".format(software_desc.name, software_desc.version, software_desc.parameters)
+					description = "{}{}; ({})".format(software_desc.name, version_data, software_desc.parameters)
 					if (not description in list_return): list_return.append(description)
 				else:
-					description = "{}-{}".format(software_desc.name, software_desc.version)
+					description = "{}{}".format(software_desc.name, version_data)
 					if (not description in list_return): list_return.append(description)
 		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
@@ -499,7 +501,24 @@ class Coverage(object):
 			return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_YELLOW_16_16)
 		return os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.ICON_RED_16_16)
 
+	def get_color(self, element, limit_to_mask_consensus):
+		
+		"""
+		get coverage for COVERAGE_MORE_9
+		:param limit_to_mask_consensus can be -1 or integer
+		:out return three color "red", "yellow", "green"
+		"""
+		### GREEN
+		if (not self.limit_defined_by_user is None):	### not defined by user
+			if (self.is_100_more_defined_by_user(element)): return "green"
+		elif (not self.limit_defined_to_project is None):
+			if (self.is_100_more_defined_to_project(element)): return "green"
+		elif (self.is_100_more_9(element)): return "green"
 
+		if (limit_to_mask_consensus > 0 and self.ratio_value_coverage_bigger_limit(element, limit_to_mask_consensus)):
+			return "yellow"
+		return "red"
+	
 class CountHits(object):
 	"""
 	Count the hits in the variations

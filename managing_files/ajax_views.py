@@ -13,16 +13,21 @@ from constants.constants import Constants, TypePath, FileExtensions, FileType, T
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.utils import Utils
+from utils.collect_extra_data import CollectExtraData
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from extend_user.models import Profile
 from managing_files.models import Reference, Sample, UploadFiles, MetaKey, ProcessControler
 from datetime import datetime
 from django.db import transaction
+from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
-
+from utils.software import Software
+from utils.result import Coverage
+from settings.default_software_project_sample import DefaultProjectSoftware
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -116,8 +121,12 @@ def show_phylo_canvas(request):
 				project = Project.objects.get(id=project_id)
 				file_name_root_json = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json)
 				file_name_url_json = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json)
-				file_name_root_sample = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
-				
+				### this is a little version of PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+				file_name_root_sample = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple)
+				if (not os.path.exists(file_name_root_sample) or os.path.getsize(file_name_root_sample) == 0):	## need to be created
+					collect_extra_data = CollectExtraData()
+					collect_extra_data.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, project.owner)
+					
 				if (element_name == 'all_together'): 
 					file_name_root_nwk = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_FASTTREE_tree)
 					file_name_nwk = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_FASTTREE)
@@ -130,7 +139,7 @@ def show_phylo_canvas(request):
 				if (os.path.exists(file_name_root_nwk) and os.path.exists(file_name_root_sample)):
 					string_file_content = utils.read_file_to_string(file_name_root_nwk).strip()
 					
-					if not os.path.exists(file_name_root_json):
+					if not os.path.exists(file_name_root_json) or os.path.getsize(file_name_root_json) == 0:
 						with open(file_name_root_json, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
 							reader = csv.DictReader(handle_in_csv)
 							all_data = json.loads(json.dumps(list(reader)))
@@ -175,18 +184,103 @@ def show_variants_as_a_table(request):
 							Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
 				if (os.path.exists(out_file) and os.stat(out_file).st_size > 0):
 					data['is_ok'] = True
-					data['url_path_variant_table'] = project.get_global_file_by_project(TypePath.MEDIA_URL,
-							Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
+					data['url_path_variant_table'] = mark_safe(request.build_absolute_uri(
+						project.get_global_file_by_project(TypePath.MEDIA_URL,
+						Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)))
+					data['static_table_filter'] = mark_safe(request.build_absolute_uri(
+						os.path.join(settings.STATIC_URL, "vendor/tablefilter")))
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)
+
+@csrf_protect
+def show_coverage_as_a_table(request):
+	"""
+	return table with coverage
+	"""
 	
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		key_client_width = 'client_width'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			client_width = int(request.GET.get(key_client_width)) - 300
+			try:
+				manageDatabase = ManageDatabase()
+				default_software = DefaultProjectSoftware()
+				utils = Utils()
+				project = Project.objects.get(id=project_id)
+				
+				### get all elements and gene names
+				geneticElement = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
+		
+				size_elements = client_width // len(geneticElement.get_sorted_elements())
+				size_samples_max = 150
+				if (size_elements > size_samples_max): size_elements = size_samples_max
+				len(geneticElement.get_sorted_elements())
+				## this line is passed at the end
+				## content = '<table id="table_with_coverage_variants_id" number_coluns={} number_rows={}>\n<thead>\n<tr>'
+				content = '<td id="id_table-coverage_0_0" class="header-table" size="{}">Samples</td>'.format(size_elements)
+				count_sequences = 1
+				for sequence_name in geneticElement.get_sorted_elements():
+					content += '<td id="id_table-coverage_0_{}" class="header-table" size="{}">{}</td>'.format(
+						count_sequences, size_elements, sequence_name);
+					count_sequences += 1
+
+				content += "</thead></tr><tbody>"
+				count_projects = 1
+				for project_sample in project.project_samples.all():
+					if (not project_sample.get_is_ready_to_proccess()): continue
+					content += '<tr class="coverage_image_tr_sample">' +\
+							'<td id="id_table-coverage_{}_0" class="table-header-coverage">'.format(count_projects) +\
+							project_sample.sample.name + "</td>";
+					
+					meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+					decode_coverage = DecodeObjects()
+					coverage = decode_coverage.decode_result(meta_value.description)
+					
+					### default parameters
+					limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+							if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+		
+					count_sequences = 1
+					for sequence_name in geneticElement.get_sorted_elements():
+						coverage_value_average = coverage.get_coverage(sequence_name, Coverage.COVERAGE_ALL)
+						coverage_value = coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_DEFINED_BY_USER) if\
+							coverage.is_exist_limit_defined_by_user() else\
+							coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_9)
+						href_sample = '<a href="#coverageModal" id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(\
+								count_projects, count_sequences,
+								project_sample.id, sequence_name, coverage.get_message_to_show_in_web_site(sequence_name))
+						content += '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" value_data_average="{}" color_graphic="{}" size="{}">{}</td>'.format(
+							count_projects, count_sequences,
+							coverage_value, coverage_value_average,
+							coverage.get_color(sequence_name, limit_to_mask_consensus),
+							size_elements, href_sample)
+						count_sequences += 1
+						
+					count_projects += 1
+					content += "</tr>"
+				content += '</tbody></table>'
+				
+				data['is_ok'] = True
+				data['content'] = '<table id="table_with_coverage_variants_id" number_coluns={} number_rows={}>\n<thead>\n<tr>'.format(
+						count_sequences - 1, count_projects - 1) + content
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)
+
+
 @csrf_protect
 def show_msa_nucleotide(request):
 	"""
 	manage msa nucleotide alignments
 	"""
 	if request.is_ajax():
+		software = Software()
+		utils = Utils()
 		data = { 'is_ok' : False }
 		key_with_project_id = 'project_id'
 		if (key_with_project_id in request.GET):
@@ -197,11 +291,26 @@ def show_msa_nucleotide(request):
 			try:
 				manage_database = ManageDatabase()
 				project = Project.objects.get(id=project_id)
+				
+				### set a GFF3 file in MSA file
+				file_name_gff3 = project.reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT)
+				### old versions doesn't have this file
+				if (not os.path.exists(file_name_gff3)):
+					software.run_genbank2gff3_positions_comulative(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT), file_name_gff3)
+				if (not os.path.exists(file_name_gff3)): file_name_gff3 = None
+				file_name_gff3 = project.reference.get_gff3_comulative_positions(TypePath.MEDIA_URL)
+				
 				if (element_name == 'all_together'):
 					file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_MAFFT)
+					last_name_seq = None
+					if (not file_name_gff3 is None): last_name_seq = utils.get_last_name_from_fasta(file_name_fasta)
+					
 					if (os.path.exists(file_name_fasta)):
 						file_name_fasta = project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_MAFFT)
 						data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
+						if (not file_name_gff3 is None): 
+							data['gff3_show_id'] = mark_safe(request.build_absolute_uri(file_name_gff3))
+							data['last_name_seq'] = last_name_seq
 						url_file_name_fasta = '<a href="{}" download> {}</a>'.format(file_name_fasta, os.path.basename(file_name_fasta))
 					else: 
 						url_file_name_fasta = 'File not available'
@@ -391,11 +500,6 @@ def show_igv(request):
 					path_name_bai = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_Medaka_name)
 					path_name_vcf = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_VCF, SoftwareNames.SOFTWARE_Medaka_name)
 					
-				### TODO need to check if works on Illumina
-# 				if (project_sample.is_sample_illumina()):
-# 					path_name_reference = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
-# 					path_name_reference_index = project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)
-# 				else:
 				path_name_reference = project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_URL)
 				path_name_reference_index = project_sample.project.reference.get_reference_fasta_index(TypePath.MEDIA_URL)
 				

@@ -17,7 +17,7 @@ from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from utils.result import DecodeObjects
 from constants.software_names import SoftwareNames
-from constants.constants import TypePath
+from constants.constants import TypePath, FileExtensions
 
 class Test(unittest.TestCase):
 
@@ -53,7 +53,7 @@ class Test(unittest.TestCase):
 				
 		self.assertTrue(filecmp.cmp(out_file, expect_file))
 		self.utils.remove_dir(out_dir)
-		
+
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_create_alignement_for_element(self):
@@ -234,8 +234,174 @@ class Test(unittest.TestCase):
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 		
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_create_alignement_for_element_2(self):
+		"""
+		Alignment_aa_SARS_CoV_2_ORF6.nex   SARSCoVDec200234
+		Alignment_aa_SARS_CoV_2_ORF7a.nex  SARSCoVDec200234
+		Alignment_aa_SARS_CoV_2_ORF8.nex   SARSCoVDec200153
+ 		"""
+		temp_dir = self.utils.get_temp_dir()
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+	
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
+		fasta_file_200153 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
+		file_expected_200153 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.protein_ORF8.fasta")
 		
+		self.assertTrue(os.path.exists(gb_file))
+		self.assertTrue(os.path.exists(fasta_file))
+		self.assertTrue(os.path.exists(fasta_file_200153))
+		self.assertTrue(os.path.exists(file_expected_200153))
 		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5110')
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME + '5110'
+			user.id = 5110
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stage_2_ test_create_tree_2"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.display_name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+		
+		## get generic element
+		sequence_name = 'MN908947'
+		geneticElement = self.utils.get_elements_and_cds_from_db(reference, user)
+		
+		limit_to_mask_consensus = -1
+		dt_out_files = {}
+		dict_out_sample_name = {}
+		n_count_samples_processed, n_with_sequences = 0, 0
+		for gene in geneticElement.get_genes(sequence_name):	### can have more than one gene for each sequence
+			### only do this one
+			if gene.name != 'ORF8': continue
+			
+			## get file name
+			if (gene.name not in dt_out_files): 
+				dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
+						"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
+			
+			if (self.proteins.save_protein_by_sequence_name_and_cds(fasta_file_200153, gb_file,
+						"xpto_sample", sequence_name, gene, None, limit_to_mask_consensus,
+						temp_dir, dt_out_files[gene.name])):
+				n_with_sequences += 1
+			n_count_samples_processed += 1
+
+			out_name = '{}_{}_{}'.format(reference.name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
+			dict_out_sample_name[out_name] = 1
+			self.proteins.save_protein_reference_cds(gb_file,
+							reference.display_name, sequence_name, gene,\
+							dt_out_files[gene.name], dict_out_sample_name)
+			### file with translated sequences
+			self.assertTrue(filecmp.cmp(dt_out_files[gene.name], file_expected_200153))
+			
+		self.assertEqual(1, n_count_samples_processed)
+		self.assertEqual(1, n_with_sequences)
+		
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_create_alignement_for_element_3(self):
+		"""
+		Alignment_aa_SARS_CoV_2_ORF6.nex   SARSCoVDec200234
+		Alignment_aa_SARS_CoV_2_ORF7a.nex  SARSCoVDec200234
+		Alignment_aa_SARS_CoV_2_ORF8.nex   SARSCoVDec200153
+ 		"""
+		temp_dir = self.utils.get_temp_dir()
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+	
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
+		fasta_file_200234 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
+		file_expected_200234_S = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.protein_S.fasta")
+		
+		self.assertTrue(os.path.exists(gb_file))
+		self.assertTrue(os.path.exists(fasta_file))
+		self.assertTrue(os.path.exists(fasta_file_200234))
+		self.assertTrue(os.path.exists(file_expected_200234_S))
+		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5110')
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME + '5110'
+			user.id = 5110
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stage_2_ test_create_tree_2"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.display_name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+		
+		## get generic element
+		sequence_name = 'MN908947'
+		geneticElement = self.utils.get_elements_and_cds_from_db(reference, user)
+		
+		limit_to_mask_consensus = -1
+		dt_out_files = {}
+		dict_out_sample_name = {}
+		n_count_samples_processed, n_with_sequences = 0, 0
+		for gene in geneticElement.get_genes(sequence_name):	### can have more than one gene for each sequence
+			### only do this one
+			if gene.name != 'ORF7a' and gene.name != 'ORF6' and gene.name != 'S': continue
+			
+			## get file name
+			if (gene.name not in dt_out_files): 
+				dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
+						"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
+			
+			n_count_samples_processed += 1
+			if (self.proteins.save_protein_by_sequence_name_and_cds(fasta_file_200234, gb_file,
+						"xpto_sample", sequence_name, gene, None, limit_to_mask_consensus,
+						temp_dir, dt_out_files[gene.name])):
+				n_with_sequences += 1
+			else: continue
+
+			out_name = '{}_{}_{}'.format(reference.name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
+			dict_out_sample_name[out_name] = 1
+			self.proteins.save_protein_reference_cds(gb_file,
+							reference.display_name, sequence_name, gene,\
+							dt_out_files[gene.name], dict_out_sample_name)
+			
+			### file with translated sequences
+			if (gene.name == 'S'):
+				self.assertTrue(filecmp.cmp(dt_out_files[gene.name], file_expected_200234_S))
+				
+		self.assertEqual(3, n_count_samples_processed)
+		self.assertEqual(1, n_with_sequences)
+		
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
 		
 		
 		

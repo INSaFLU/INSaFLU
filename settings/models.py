@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from managing_files.models import Project, ProjectSample
+from managing_files.models import Project, ProjectSample, Sample
 # Create your models here.
 
 class Technology(models.Model):
@@ -23,6 +23,7 @@ class Software(models.Model):
 	TYPE_OF_USE_global = 0		### Used in the samples
 	TYPE_OF_USE_project = 1		### Used in a particular project
 	TYPE_OF_USE_project_sample = 2		### Used in a particular project sample
+	TYPE_OF_USE_sample = 3		### Used in a particular sample
 	
 	### if it is a software parameter or a general parameter (INSaFLU parameter)
 	TYPE_SOFTWARE = 0				### normal software
@@ -49,6 +50,9 @@ class Software(models.Model):
 	def is_used_in_project(self):
 		return self.type_of_use == Software.TYPE_OF_USE_project
 
+	def is_used_in_sample(self):
+		return self.type_of_use == Software.TYPE_OF_USE_sample
+
 	def is_used_in_project_sample(self):
 		return self.type_of_use == Software.TYPE_OF_USE_project_sample
 	
@@ -69,7 +73,8 @@ class Parameter(models.Model):
 	PARAMETER_int = 0 
 	PARAMETER_float = 1 
 	PARAMETER_char = 2
-	PARAMETER_null = 3		### its like
+	PARAMETER_null = 3		### its like only to show, not editable, Example: (TOPHRED33)
+	PARAMETER_char_list = 4
 	
 	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
 	parameter = models.CharField(max_length=50, db_index=True, blank=True, null=True)
@@ -80,6 +85,9 @@ class Parameter(models.Model):
 	project = models.ForeignKey(Project, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
 	### this allow to have software parameters in project sample
 	project_sample = models.ForeignKey(ProjectSample, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
+	### this allow software to use in sample
+	sample = models.ForeignKey(Sample, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
+	
 	union_char = models.CharField(max_length=10, default="")	### ":" in the case LEADING:3
 	can_change = models.BooleanField(default=True)	### TOPHRED33 can change, and it is not to show in change dialog
 	sequence_out = models.SmallIntegerField()
@@ -102,12 +110,17 @@ class Parameter(models.Model):
 		return self.type_data == Parameter.PARAMETER_float
 	def is_char(self):
 		return self.type_data == Parameter.PARAMETER_char
+	def is_null(self):
+		return self.type_data == Parameter.PARAMETER_null
+	def is_char_list(self):
+		return self.type_data == Parameter.PARAMETER_char_list
 	
 	def get_unique_id(self):
 		"""
 		get unique ID for forms
 		"""
 		return "{}_{}".format(self.name, self.sequence_out)
+		
 
 
 

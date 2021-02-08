@@ -18,18 +18,19 @@ class SoftwaresTable(tables.Table):
 	
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-	software = tables.Column('Software', empty_values=())
-	version = tables.Column('Version', empty_values=())
-	parameters = tables.Column('Parameters', empty_values=())
-	options = tables.Column('Options', empty_values=())
-	technology = tables.Column('Technology', empty_values=())
+	software = tables.Column('Software', orderable=False, empty_values=())
+	version = tables.Column('Version', orderable=False, empty_values=())
+	parameters = tables.Column('Parameters', orderable=False, empty_values=())
+	options = tables.Column('Options', orderable=False, empty_values=())
+	technology = tables.Column('Technology', orderable=False, empty_values=())
 	constants = Constants()
 	software_names = SoftwareNames()
 
-	def __init__(self, query_set, project = None, project_sample = None, b_enable_options = True):
+	def __init__(self, query_set, project = None, project_sample = None, sample = None, b_enable_options = True):
 		tables.Table.__init__(self, query_set)
 		self.project = project
 		self.project_sample = project_sample
+		self.sample = sample
 		self.b_enable_options = b_enable_options
 		
 		self.count_project_sample = 0
@@ -56,15 +57,21 @@ class SoftwaresTable(tables.Table):
 		
 		record = kwargs.pop("record")
 		technology_name = SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
-		if (self.project is None and self.project_sample is None):
+		if (self.project is None and self.project_sample is None and self.sample is None):
 			default_software = DefaultSoftware()
 			return default_software.get_parameters(record.name, user, technology_name)
-		elif (self.project_sample is None):
+		elif (not self.project is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None, technology_name)
-		elif (self.project is None):
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project,
+							None, None, technology_name)
+		elif (not self.project_sample is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample, technology_name)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample,
+							None, self.project_sample, None, technology_name)
+		elif (not self.sample is None):
+			default_software_projects = DefaultProjectSoftware()
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_sample,
+							None, None, self.sample, technology_name)
 		return ""
 
 	def render_technology(self, record):
@@ -103,6 +110,17 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+		elif (not self.sample is None):
+			str_links = '<a href=' + reverse('software-sample-update', args=[record.pk, self.sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
+				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
+				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+			str_links += '<a href="{}"'.format('#id_set_default_modal' if self.b_enable_options else '') +\
+				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="Set default parameters"' +\
+				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') +\
+				' ref_name="' + record.name + '" pk="' + str(record.pk) + '" pk_sample="' + str(self.sample.pk) +\
+				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
+				'" proj_name="' + str(self.sample.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
+				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		else:
 			str_links = '<a href=' + reverse('software-update', args=[record.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
@@ -120,10 +138,10 @@ class INSaFLUParametersTable(tables.Table):
 	
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-	software = tables.Column('Software', empty_values=())
-	parameters = tables.Column('Parameters', empty_values=())
-	options = tables.Column('Options', empty_values=())
-	technology = tables.Column('Technology', empty_values=())
+	software = tables.Column('Software', orderable=False, empty_values=())
+	parameters = tables.Column('Parameters', orderable=False, empty_values=())
+	options = tables.Column('Options', orderable=False, empty_values=())
+	technology = tables.Column('Technology', orderable=False, empty_values=())
 	constants = Constants()
 
 	def __init__(self, query_set, project = None, project_sample = None, b_enable_options = True):
@@ -165,10 +183,12 @@ class INSaFLUParametersTable(tables.Table):
 			return default_software.get_parameters(record.name, user, technology_name)
 		elif (self.project_sample is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project, None, technology_name)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project, self.project,
+										None, None, technology_name)
 		elif (self.project is None):
 			default_software_projects = DefaultProjectSoftware()
-			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None, self.project_sample, technology_name)
+			return default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project_sample, None,
+									self.project_sample, None, technology_name)
 		return ""
 
 	def render_options(self, record):
@@ -214,7 +234,6 @@ class INSaFLUParametersTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" pk="' + str(record.pk) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'"></i></span></a>'
-		print(str_links)
 		return mark_safe(str_links)
 
 

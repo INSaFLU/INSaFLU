@@ -224,7 +224,8 @@ class Proteins(object):
 		"""
 		### get reference sequence
 		seq_ref = self.utils.get_sequence_from_genbank(sequence_name, gene, genbank_file)
-
+		gene_length = len(seq_ref)
+		
 		## there's no sequences...
 		if (seq_ref is None): return False
 		
@@ -241,7 +242,12 @@ class Proteins(object):
 		out_file_clustalo = self.utils.get_temp_file_from_dir(out_dir, 'sequence_name_and_cds', '.fna')
 		try:
 			## It's better mafft to make the alignment
-			self.software.run_mafft(file_name, out_file_clustalo, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
+			if (self.utils.is_differente_fasta_size(file_name, 20)):
+				### run this when the difference between sequences are small 
+				self.software.run_clustalo(file_name, out_file_clustalo)
+			else:
+				## It's better mafft to make the alignment when the 
+				self.software.run_mafft(file_name, out_file_clustalo, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
 		except Exception as a:
 			return False
 		
@@ -267,6 +273,8 @@ class Proteins(object):
 		sz_out = ""
 		sz_out_temp = ""
 		b_start = False
+		pos_start = -1
+		pos_end = -1
 		if (len(seq_ref) > 0 and len(seq_ref) == len(seq_other)):
 			for i in range(0, len(seq_ref)):
 				if (seq_ref[i] != '-'):
@@ -275,6 +283,21 @@ class Proteins(object):
 					sz_out_temp = ''
 				elif (b_start):
 					sz_out_temp += seq_other[i]
+			
+				### check the length of 
+				if (seq_ref[i] != '-' and seq_other[i] != '-'):
+					if (pos_start == -1): pos_start = i		## start position
+					pos_end = i
+			
+			### count N's if more than 20% discharge
+			if (sz_out.count('N') / gene_length > 0.05): return False 
+			
+			### test the size of the alignment
+			if (pos_end != -1 and pos_start != -1):
+				length_alignment = pos_end - pos_start
+				### didn't found a good alignment
+				if (length_alignment > gene_length and (gene_length / length_alignment) < 0.2): return False 
+			else: return False
 
 			sz_out = sz_out.replace('-', '')
 			coding_dna = Seq(sz_out) ##, generic_dna)

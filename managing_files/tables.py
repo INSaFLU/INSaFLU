@@ -119,13 +119,14 @@ class SampleTable(tables.Table):
 	number_quality_sequences = tables.Column('#Quality Seq. (Fastq1)-(Fastq2)', footer = '#original number sequence', orderable=False, empty_values=())
 #	extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
 	extra_info = tables.LinkColumn('Extra Information', orderable=False, empty_values=())
+	technology = tables.Column('Technology', empty_values=())
 	type_and_subtype = tables.Column('Classification', empty_values=())
 	fastq_files = tables.Column('#Fastq Files', empty_values=())
 	data_set = tables.Column('Data set', empty_values=())
 	
 	class Meta:
 		model = Sample
-		fields = ('name', 'creation_date', 'fastq_files', 'type_and_subtype', 'data_set',\
+		fields = ('name', 'creation_date', 'fastq_files', 'technology', 'type_and_subtype', 'data_set',\
 				'number_alerts', 'number_quality_sequences', 'extra_info')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Samples to show..."
@@ -154,6 +155,9 @@ class SampleTable(tables.Table):
 					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
 		return record.name;
 
+	def render_technology(self, record):
+		""" shows if it is Illumina or Minion """
+		return SoftwareNames.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -207,12 +211,30 @@ class SampleTable(tables.Table):
 		"""
 		icon with link to extra info
 		"""
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
 				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
-		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
-		elif (record.candidate_file_name_1 != None and len(record.candidate_file_name_1) > 0):
+				
+		if ((list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success)):
+			if (user.username != Constants.USER_ANONYMOUS and not record.is_type_fastq_gz_sequencing()):
+				## test if it has the original fastq files
+				if (record.is_original_fastq_removed()):
+					str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because original fastq files were removed">' +\
+						'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
+				## test if it's in a project
+				elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False).count() > 0):
+					str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in a project at least.">' +\
+						'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
+				else:
+					str_links = '<a href=' + reverse('sample-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+						'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+			else: str_links = ""
+			return mark_safe(str_links + '<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
+		elif (not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")
 		return _('Not yet')
@@ -316,13 +338,15 @@ class ShowProjectSamplesResults(tables.Table):
 	alerts = tables.Column('Alerts', empty_values=())
 	type_and_subtype = tables.LinkColumn('Classification', empty_values=())
 	putative_mixed_infection = tables.LinkColumn('Putative Mixed-infection', empty_values=())
+	technology = tables.Column('Technology', empty_values=())
 	dataset = tables.LinkColumn('Dataset', empty_values=())
 	results = tables.LinkColumn('Options', orderable=False, empty_values=())
 	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
 	
 	class Meta:
 		model = ProjectSample
-		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infection', 'dataset', 'coverage', 'consensus_file', 'alerts', 'results')
+		fields = ('sample_name', 'type_and_subtype', 'putative_mixed_infection', 'technology',\
+			'dataset', 'coverage', 'consensus_file', 'alerts', 'results')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no samples processed to show..."
 	
@@ -362,6 +386,11 @@ class ShowProjectSamplesResults(tables.Table):
 			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
 					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key, limit_to_mask_consensus))
 		return mark_safe(return_html)
+
+	def render_technology(self, record):
+		""" shows if it is Illumina or Minion """
+		return SoftwareNames.TECHNOLOGY_illumina if record.sample.is_type_fastq_gz_sequencing()\
+			else SoftwareNames.TECHNOLOGY_minion
 
 	def render_alerts(self, record):
 		"""

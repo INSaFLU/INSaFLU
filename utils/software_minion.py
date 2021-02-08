@@ -11,16 +11,16 @@ from utils.coverage import DrawAllCoverage
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
 from utils.parse_out_files import ParseOutFiles
-from managing_files.models import Sample, ProcessControler, ProjectSample
+from managing_files.models import Sample, ProcessControler, ProjectSample, MixedInfectionsTag
 from managing_files.manage_database import ManageDatabase
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits
 from utils.software import Software
-from settings.default_software import DefaultSoftware
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.result import KeyValue
+from settings.models import Software as SoftwareSettings
 
 ######################################
 ####   Minion methods
@@ -44,7 +44,7 @@ class SoftwareMinion(object):
 	"""
 	Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
 	"""
-	def run_clean_minion(self, sample, user):
+	def run_clean_minion(self, sample, user, b_make_identify_species = False):
 
 		print("Start ProcessControler")
 		process_controler = ProcessControler()
@@ -56,6 +56,19 @@ class SoftwareMinion(object):
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
 			return True
 
+		################################
+		##################################
+		### remove possible previous alerts from others run
+		manage_database = ManageDatabase()
+		for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
+			manage_database.remove_sample_start_metakey(sample, keys_to_remove)
+		
+		### remove some other 
+		sample.identify_virus.all().delete()
+		if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag = None
+		sample.number_alerts = 0
+		sample.save()
+		
 		try:
 			print("Start run_clean_minion")
 			### run stat and rabbit for Images
@@ -64,7 +77,7 @@ class SoftwareMinion(object):
 			print("Result run_clean_minion: " + str(b_return))
 			
 			### queue the quality check and
-			if (b_return):	## don't run for single file because spades doesn't work for one single file
+			if (b_return and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
 				self.software.identify_type_and_sub_type(sample, sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
 					None, user)
 	
@@ -72,15 +85,39 @@ class SoftwareMinion(object):
 			if (b_return):
 				sample_to_update = Sample.objects.get(pk=sample.id)
 				sample_to_update.is_ready_for_projects = True
-				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 				
-				manage_database = ManageDatabase()
-				message = "Warning: INSaFLU don't identify species for Nanopore sequences."
-				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-							MetaKeyAndValue.META_VALUE_Success, message)
-				
-				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
-				else: sample_to_update.number_alerts += 1
+				### make identify species
+				if (b_make_identify_species):
+					sample_to_update.type_subtype = sample_to_update.get_type_sub_type()	
+					(tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
+					if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
+					else: sample_to_update.number_alerts += alert
+						
+					manage_database = ManageDatabase()
+					if (message != None and len(message) > 0):
+						manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+											MetaKeyAndValue.META_VALUE_Success, message)
+		
+					### save tag mixed_infecion
+					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, tag_mixed_infection)
+	
+					try:
+						mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+					except MixedInfectionsTag.DoesNotExist as e:
+						mixed_infections_tag = MixedInfectionsTag()
+						mixed_infections_tag.name = tag_mixed_infection
+						mixed_infections_tag.save()
+					
+					sample_to_update.mixed_infections_tag = mixed_infections_tag
+					sample_to_update.save()
+				else:
+					sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
+					
+					manage_database = ManageDatabase()
+					message = "Warning: Classification using Nanopore sequences is under development."
+					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, message)
 				sample_to_update.save()
 			else:
 				sample_to_update = Sample.objects.get(pk=sample.id)
@@ -154,7 +191,16 @@ class SoftwareMinion(object):
 		
 		### run nanoflit
 		try:
-			(result_file, parameters) = self.run_nanofilt(sample.get_fastq(TypePath.MEDIA_ROOT, True), owner)
+			## get dynamic parameters
+			if (owner is None):
+				parameters = self.software_names.get_NanoFilt_parameters()
+			else:
+				default_software_project = DefaultProjectSoftware()
+				default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, owner,
+								 	SoftwareSettings.TYPE_OF_USE_sample,
+									None, None, sample, SoftwareNames.TECHNOLOGY_minion)
+				parameters = default_software_project.get_nanofilt_parameters_all_possibilities(owner, sample)
+			result_file = self.run_nanofilt(sample.get_fastq(TypePath.MEDIA_ROOT, True), parameters, owner)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(), parameters))
 			
 			### need to copy the files to samples/user path
@@ -168,7 +214,7 @@ class SoftwareMinion(object):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			return False
 		
-		### run stat again
+		### run start again
 		try:
 			result_nano_stat = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
@@ -279,18 +325,11 @@ class SoftwareMinion(object):
 		return temp_file
 	
 	
-	def run_nanofilt(self, file_name, user = None):
+	def run_nanofilt(self, file_name, parameters, user = None):
 		"""
 		run nanofilt
 		:out clean file and parameters
 		"""
-
-		## get dynamic parameters
-		if (user is None):
-			parameters = self.software_names.get_NanoFilt_parameters()
-		else:
-			default_software = DefaultSoftware()
-			parameters = default_software.get_parameters(self.software_names.get_NanoFilt_name(), user)
 
 		### run software
 		temp_file_name = self.utils.get_temp_file("nanofilt", "fastq.fz")
@@ -303,7 +342,7 @@ class SoftwareMinion(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run NanoFilt")
-		return (temp_file_name, parameters)
+		return temp_file_name
 		
 	"""
 	Global processing, Medaka, Coverage, and MixedInfections
@@ -330,23 +369,33 @@ class SoftwareMinion(object):
 			if (meta_sample != None and meta_sample.value == MetaKeyAndValue.META_VALUE_Success): return 
 	
 			## process medaka
+			default_project_software = DefaultProjectSoftware()
+			default_project_software.test_all_defaults(user, SoftwareSettings.TYPE_OF_USE_project_sample,
+									None, project_sample, None)
 			try:
 				#### need to check the models
-				parameters = "-m r941_min_high_g360"
-				### get snippy parameters
+				parameters_medaka_consensus = default_project_software.get_medaka_parameters_all_possibilities(user, project_sample)
+				coverage_limit = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+				parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
+				
 				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
-						project_sample.sample.name, parameters)
+						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
-								self.software_names.get_medaka_version(), "consensus " + parameters))
+								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
+				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\
+								self.software_names.get_samtools_version(), "depth {}".format(parameters_depth)))
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
-								self.software_names.get_medaka_version(), "depth -aa -q 0"))
+								self.software_names.get_medaka_version(), "variant --verbose"))
+				result_all.add_software(SoftwareDesc(self.software_names.get_insaflu_parameter_limit_coverage_name(),\
+								"", "Threshold:{}".format(coverage_limit)))
 			except Exception as e:
 				result = Result()
 				result.set_error(e.args[0])
 				result.add_software(SoftwareDesc(self.software_names.get_medaka_name(), self.software_names.get_medaka_version(),\
-						self.software_names.get_medaka_parameters()))
+						self.software_names.get_medaka_parameters_consensus()))
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Medaka, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				
 				### get again and set error
@@ -371,36 +420,20 @@ class SoftwareMinion(object):
 				self.utils.link_file(path_medaka_tab, sz_file_to)
 			
 			## get coverage from deep file
-			default_software = DefaultProjectSoftware()
 			get_coverage = GetCoverage()
 			try:
 				
 				### limit of the coverage for a project, can be None, if not exist
-				### TODO
-				b_coverage_default = True
-				coverage_for_project = 10
-				default_coverage_value = 10	### not used
+				b_coverage_default = False	## because in ONT the limit is different than10
+				coverage_for_project = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+				default_coverage_value = None ### not used
+				
 				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
  							self.software_names.get_medaka_name()),\
  							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
- 							None, coverage_for_project)
+ 							default_coverage_value, coverage_for_project)
 
-# 				coverage_for_project = default_software.get_snippy_single_parameter_for_project(project_sample.project, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
-# 				if (not coverage_for_project is None): coverage_for_project = int(coverage_for_project)
-# 				
-# 				b_coverage_default = True
-# 				if (default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
-# 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-# 							self.software_names.get_snippy_name()),\
-# 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
-# 							None, coverage_for_project)
-# 				else:
-# 					b_coverage_default = False
-# 					default_coverage_value = default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
-# 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
-# 							self.software_names.get_snippy_name()),\
-# 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
-# 							int(default_coverage_value), coverage_for_project)
 				################################
 				##################################
 				### set the alerts in the coverage
@@ -450,7 +483,7 @@ class SoftwareMinion(object):
 			#####################
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
-			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
+			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
 							DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
 			msa_parameters = self.software.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
@@ -459,10 +492,11 @@ class SoftwareMinion(object):
 				coverage, project_sample.sample.name, limit_to_mask_consensus)
 			result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
 					"{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
-					10,									
+					coverage_limit,									
 					100 - limit_to_mask_consensus) ))
 			
 			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
+			## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
 			parse_out_files = ParseOutFiles()
 			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
 										self.software_names.get_medaka_name()), coverage)
@@ -564,7 +598,8 @@ class SoftwareMinion(object):
 		return True
 
 
-	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name, parameters):
+	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name,
+				parameters_consensus, parameters_depth, coverage_limit):
 		"""
 		run medaka
 		return output directory of snippy, try to do something most close possible
@@ -612,14 +647,14 @@ class SoftwareMinion(object):
 		
 		consensus.fasta
 		calls_to_draft.bam
-		
+		:param coverage_limit cut all variants less than this coverage
 		"""
 		### make medaka consensus and bam
 		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 		cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
 				self.software_names.get_medaka_env(),
 				self.software_names.get_medaka(), file_fastq, reference_fasta,
-				temp_dir, settings.THREADS_TO_RUN_SLOW, parameters)
+				temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -648,9 +683,9 @@ class SoftwareMinion(object):
 		### create depth
 		depth_file = os.path.join(temp_dir, sample_name + ".depth.gz")
 ##		cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
-		cmd =  "{} depth -aa {} | {} -c > {}".format(
+		cmd =  "{} depth {} {} | {} -c > {}".format(
 			self.software_names.get_samtools(),
-			bam_file,
+			parameters_depth, bam_file,
 			self.software_names.get_bgzip(), 
 			depth_file) 
 		exist_status = os.system(cmd)
@@ -708,7 +743,7 @@ class SoftwareMinion(object):
 				
 			### add FREQ to VCF file
 			final_vcf = os.path.join(temp_dir, sample_name + '_2.vcf')
-			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, final_vcf)
+			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, final_vcf, coverage_limit)
 			self.utils.move_file(final_vcf, vcf_file)
 			self.software.test_bgzip_and_tbi_in_vcf(vcf_file)
 			

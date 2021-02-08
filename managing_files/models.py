@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from operator import itemgetter
-import os, datetime
+import os
 from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
 from constants.constants_mixed_infection import ConstantsMixedInfection
@@ -125,6 +125,31 @@ class Reference(models.Model):
 		"""
 		return self.get_reference_bed(type_path) + FileExtensions.FILE_IDX
 
+	def get_gff3(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+	
+	def get_gff3_comulative_positions(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + ".comulative_positions" + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
 
 	class Meta:
 		verbose_name = 'Reference'
@@ -693,7 +718,9 @@ class Project(models.Model):
 	PERCENTAGE_validated_minor_variants = 50		## only pass <= 50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
+	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv" 	### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
+																			### this file is only used for to show the manging_files.views.ShowSampleProjectsView
+	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
 	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments

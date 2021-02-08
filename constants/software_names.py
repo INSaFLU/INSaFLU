@@ -17,8 +17,12 @@ class SoftwareNames(object):
 	DIR_SOFTWARE_SNIPPY = os.path.join(settings.DIR_SOFTWARE, "snippy")
 	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
+	SOFTWARE_SAMTOOLS_name_depth_ONT = "Samtools depth ONT"
+	SOFTWARE_SAMTOOLS_name_extended_depth_ONT = "Coverage calculation (Samtools)"
 	SOFTWARE_SAMTOOLS_VERSION = "1.3"
 	SOFTWARE_SAMTOOLS_PARAMETERS = ""
+	SOFTWARE_SAMTOOLS_parameters_depth_ONT = ""
+	
 	SOFTWARE_BGZIP = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/bgzip")
 	SOFTWARE_BGZIP_name = "bgzip"
 	SOFTWARE_BGZIP_VERSION = "1.3"
@@ -85,15 +89,27 @@ class SoftwareNames(object):
 					"Total bases",]
 	SOFTWARE_NanoFilt = "NanoFilt"
 	SOFTWARE_NanoFilt_name = "NanoFilt"
-	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of long read sequencing data. (NanoFilt)"
+	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
 	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 40 --tailcrop 50"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
 	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
 	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
-	SOFTWARE_Medaka_name_extended = "Medaka is a tool to create consensus sequences."
+	SOFTWARE_Medaka_name_consensus = "Medaka consensus"
+	SOFTWARE_Medaka_name_variants = "Medaka variants"
+	SOFTWARE_Medaka_default_model = "r941_min_high_g360"
+	SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
+	SOFTWARE_Medaka_name_extended_consensus = "Making Consensus (Medaka)"
+	SOFTWARE_Medaka_name_extended_variant = "Call Variants (Medaka)"
+	SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
+	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
 	SOFTWARE_Medaka_VERSION = "1.2.0"
-	SOFTWARE_Medaka_PARAMETERS = "variant --verbose"	## ref + " " + probs + " " + Output_file
+	
+	SOFTWARE_CANU = os.path.join(settings.DIR_SOFTWARE, "canu/canu-2.1.1/bin/canu")
+	SOFTWARE_CANU_name = "Canu"
+	SOFTWARE_CANU_name_extended = "Assembly ONT (Canu)"
+	SOFTWARE_CANU_VERSION = "2.1.1"
+	SOFTWARE_CANU_PARAMETERS = "-nanopore "	## genomeSize=<number>[g|m|k] file1 file2
 	
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
@@ -177,6 +193,11 @@ class SoftwareNames(object):
 	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino"
 	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"
 	
+	SOFTWARE_CLUSTALO = os.path.join(settings.DIR_SOFTWARE, "clustalo/clustalo")
+	SOFTWARE_CLUSTALO_name = "clustalo"
+	SOFTWARE_CLUSTALO_VERSION = "1.2.4"
+	SOFTWARE_CLUSTALO_PARAMETERS = ""
+	
 	SOFTWARE_SEQRET = "/usr/bin/seqret"
 	SOFTWARE_SEQRET_name = "seqret (EMBOSS)"
 	SOFTWARE_SEQRET_VERSION = "6.6.0.0"
@@ -205,7 +226,7 @@ class SoftwareNames(object):
 	###############################
 	### technology available
 	TECHNOLOGY_illumina = "Illumina"
-	TECHNOLOGY_minion = "Minion"
+	TECHNOLOGY_minion = "ONT"
 
 	###################################
 	###################################
@@ -219,8 +240,14 @@ class SoftwareNames(object):
 	INSAFLU_PARAMETER_MASK_CONSENSUS_parameters = "Threshold:70"
 
 
+	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name = "Minimum depth of coverage per site to validate the sequence"
+	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended = "Minimum depth of coverage per site to validate the sequence"
+	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion = "1"
+	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters = "Threshold:30"
+	
 	### has all names of simple parameters
-	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name]
+	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name, ]
+	#		INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name]
 		
 	#####
 	#####	END Global parameters for INSaFLU
@@ -234,14 +261,17 @@ class SoftwareNames(object):
 	###
 	DICT_SOFTWARE_RELATION = {
 		TECHNOLOGY_illumina : [
-				SOFTWARE_SNIPPY_name,
 				SOFTWARE_TRIMMOMATIC_name,
+				SOFTWARE_SNIPPY_name,
+				SOFTWARE_FREEBAYES_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 			],
 		TECHNOLOGY_minion : [
 				SOFTWARE_NanoFilt_name, 
 				SOFTWARE_Medaka_name,
+				SOFTWARE_CANU_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
 			],
 		}
 	###
@@ -259,7 +289,9 @@ class SoftwareNames(object):
 	"""
 	def get_samtools(self): return self.SOFTWARE_SAMTOOLS
 	def get_samtools_name(self): return self.SOFTWARE_SAMTOOLS_name
+	def get_samtools_name_depth_ONT(self): return self.SOFTWARE_SAMTOOLS_name_depth_ONT
 	def get_samtools_version(self): return self.SOFTWARE_SAMTOOLS_VERSION
+	def get_samtools_parameters_depth_ONT(self): return self.SOFTWARE_SAMTOOLS_parameters_depth_ONT
 
 	"""
 	return spades software
@@ -446,6 +478,13 @@ class SoftwareNames(object):
 	def get_mafft_parameters(self): return self.SOFTWARE_MAFFT_PARAMETERS
 	def get_mafft_parameters_two_parameters(self): return self.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES
 	
+	"""
+	return ClustalO software
+	"""
+	def get_clustalo(self): return self.SOFTWARE_CLUSTALO
+	def get_clustalo_name(self): return self.SOFTWARE_CLUSTALO_name
+	def get_clustalo_version(self): return self.SOFTWARE_CLUSTALO_VERSION
+	def get_clustalo_parameters(self): return self.SOFTWARE_CLUSTALO_PARAMETERS
 	
 	"""
 	return seqret software EMBOSS
@@ -503,10 +542,25 @@ class SoftwareNames(object):
 
 	def get_medaka_env(self): return self.SOFTWARE_Medaka_Env
 	def get_medaka(self): return self.SOFTWARE_Medaka
+
 	def get_medaka_name(self): return self.SOFTWARE_Medaka_name
-	def get_medaka_name_extended(self): return self.SOFTWARE_Medaka_name_extended
+	def get_medaka_name_consensus(self): return self.SOFTWARE_Medaka_name_consensus
+	def get_medaka_name_variants(self): return self.SOFTWARE_Medaka_name_variants
+	
+	def get_medaka_name_extended_consensus(self): return self.SOFTWARE_Medaka_name_extended_consensus
+	def get_medaka_name_extended_variants(self): return self.SOFTWARE_Medaka_name_extended_variants
+	
+	def get_medaka_parameters_consensus(self): return self.SOFTWARE_Medaka_PARAMETERS_consensus
+	def get_medaka_parameters_variant(self): return self.SOFTWARE_Medaka_PARAMETERS_variant
+	def get_medaka_default_model(self): return self.SOFTWARE_Medaka_default_model
+	def get_medaka_remove_tags_model(self): return self.SOFTWARE_Medaka_remove_tags_model
 	def get_medaka_version(self): return self.SOFTWARE_Medaka_VERSION
-	def get_medaka_parameters(self): return self.SOFTWARE_Medaka_PARAMETERS
+
+	def get_canu(self): return self.SOFTWARE_CANU
+	def get_canu_name(self): return self.SOFTWARE_CANU_name
+	def get_canu_name_extended(self): return self.SOFTWARE_CANU_name_extended
+	def get_canu_version(self): return self.SOFTWARE_CANU_VERSION
+	def get_canu_parameters(self): return self.SOFTWARE_CANU_PARAMETERS
 
 	###
 	###### END minion software
@@ -532,9 +586,16 @@ class SoftwareNames(object):
 	### it's a way to define a threshold to mask consensus sequences, with regions with low coverage, obtained by snippy
 	### It's a global parameter for INSaFLU
 	"""
-	def get_insaflu_parameter_mask_consensus(self): return ""
+	### Define the Minimum percentage of horizontal coverage to generate consensus, otherwise drop sequence
+	##def get_insaflu_parameter_mask_consensus(self): return ""
 	def get_insaflu_parameter_mask_consensus_name(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_name
 	def get_insaflu_parameter_mask_consensus_name_extended(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
 	def get_insaflu_parameter_mask_consensus_vesion(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_vesion
 	def get_insaflu_parameter_mask_consensus_parameters(self): return self.INSAFLU_PARAMETER_MASK_CONSENSUS_parameters
 	
+	### Define the minimum coverage
+	##def get_insaflu_parameter_limit_coverage(self): return ""
+	def get_insaflu_parameter_limit_coverage_name(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name
+	def get_insaflu_parameter_limit_coverage_name_extended(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended
+	def get_insaflu_parameter_limit_coverage_vesion(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion
+	def get_insaflu_parameter_limit_coverage_parameters(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters

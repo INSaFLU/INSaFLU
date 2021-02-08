@@ -7,7 +7,6 @@ import os, gzip, logging, cmd, re, humanfriendly, subprocess, datetime
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from settings.default_software_project_sample import DefaultProjectSoftware
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from manage_virus.models import UploadFile
@@ -18,6 +17,7 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, Coun
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from settings.default_software import DefaultSoftware
+from settings.default_software_project_sample import DefaultProjectSoftware
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
 from BCBio import GFF
@@ -167,6 +167,38 @@ class Software(object):
 			raise Exception("Fail to run spades")
 		return cmd
 	
+	def run_canu(self, fastq_1, out_dir, size_reference):
+		"""
+		Run spades
+		IF you have problems running spades.py change the spades.py file from:
+		#!/usr/bin/env python
+		to
+		#!/usr/bin/env python3
+		useGrid=false
+		maxMemory=10G
+		maxThreads=3
+		./canu -p data -d ~/tmp useGrid=False -genomeSize=15k -nanopore ~/insa/flu_minion/68P_AFL679_pass_7793e65a_CAT_ALL.fastq.gz
+		29903 para o SARS
+		"""
+		if (not os.path.exists(fastq_1)):
+			self.logger_production.error('Fastq 1 not found: ' + fastq_1)
+			self.logger_debug.error('Fastq 1 not found: ' + fastq_1)
+			raise Exception('Fastq 1 not found: ' + fastq_1)
+		
+		cmd = "{} -p data -d {} useGrid=False genomeSize={}k {} {}".format(self.software_names.get_canu(),
+ 					out_dir, size_reference,
+ 					self.software_names.get_canu_parameters(),
+ 					fastq_1)
+
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run canu")
+		
+		### need create a file "contigs.fasta"
+		return cmd
+		
 	def is_exist_database_abricate(self, database):
 		"""
 		DATABASE	SEQUENCES	DATE
@@ -280,31 +312,71 @@ class Software(object):
 		
 		manageDatabase = ManageDatabase()
 		### temp dir out spades		
-		out_dir_spades = self.utils.get_temp_dir()
+		out_dir_result = self.utils.get_temp_dir()
 		result_all = Result()
-		try:
-			cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_spades)
-			parameters = self.software_names.get_spades_parameters()
-			if (fastq1_2 == None or len(fastq1_2) == 0): self.software_names.get_spades_parameters_single()
-			result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), parameters))
-		except Exception:
-			result = Result()
-			result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(out_dir_spades)
-			return False
 		
-		file_out = os.path.join(out_dir_spades, "contigs.fasta")
+		### test files
+		if (fastq1_1 is None or not os.path.exists(fastq1_1)): return False
+		if (not fastq1_2 is None and not os.path.exists(fastq1_2)): return False
+		
+		if (sample.is_type_fastq_gz_sequencing()):	## illumina
+			try:
+				cmd = self.run_spades(fastq1_1, fastq1_2, out_dir_result)
+				parameters = self.software_names.get_spades_parameters()
+				if (fastq1_2 == None or len(fastq1_2) == 0): parameters = self.software_names.get_spades_parameters_single()
+				result_all.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), parameters))
+			except Exception:
+				result = Result()
+				result.set_error("Spades (%s) fail to run" % (self.software_names.get_spades_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				self.utils.remove_dir(out_dir_result)
+				return False
+		else:	### for minion
+			try:
+				size_reference = 15 ### in K
+				cmd = self.run_canu(fastq1_1, out_dir_result, size_reference)
+				result_all.add_software(SoftwareDesc(self.software_names.get_canu_name(),
+							self.software_names.get_canu_version(),
+							self.software_names.get_canu_parameters()))
+				file_result = os.path.join(out_dir_result, "data.contigs.fasta")
+				if not os.path.exists(file_result):
+					result = Result()
+					result.set_error("Canu (%s) doesn't create contigs.fasta" % (self.software_names.get_canu_version()))
+					result.add_software(SoftwareDesc(self.software_names.get_canu_name(),
+						self.software_names.get_canu_version(), self.software_names.get_canu_parameters()))
+					manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+					self.utils.remove_dir(out_dir_result)
+					return False
+				
+				result_all.add_software(SoftwareDesc(self.software_names.get_canu_name(), self.software_names.get_canu_version(),
+											 self.software_names.get_canu_parameters()))
+				## File with coverage data.contigs.layout.tigInfo
+				self.utils.link_file(file_result, os.path.join(out_dir_result, "contigs.fasta"))
+				self.utils.link_file(os.path.join(out_dir_result, "data.contigs.layout.tigInfo"),
+					os.path.join(out_dir_result, "coverage_contigs.fasta"))
+			except Exception:
+				result = Result()
+				result.set_error("Canu (%s) fail to run" % (self.software_names.get_canu_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_canu_name(),
+					self.software_names.get_canu_version(), self.software_names.get_canu_parameters()))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				self.utils.remove_dir(out_dir_result)
+				return False
+		
+		file_out = os.path.join(out_dir_result, "contigs.fasta")
 		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
+			if (sample.is_type_fastq_gz_sequencing()):
+				result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
+			else:
+				result.set_error("Canu (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_canu_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(out_dir_spades)
+			self.utils.remove_dir(out_dir_result)
 			return False
-		
+			
 		### test id abricate has the database
 		try:
 			uploadFile = UploadFile.objects.order_by('-version')[0]
@@ -314,7 +386,7 @@ class Software(object):
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(out_dir_spades)
+			self.utils.remove_dir(out_dir_result)
 			return False
 
 		if (not self.is_exist_database_abricate(uploadFile.abricate_name)):
@@ -325,7 +397,7 @@ class Software(object):
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.software_names.get_abricate_version()))
 				result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				self.utils.remove_dir(out_dir_spades)
+				self.utils.remove_dir(out_dir_result)
 				return False
 		
 		## run abricate
@@ -340,7 +412,7 @@ class Software(object):
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 							self.software_names.get_abricate_parameters() + " for type/subtype identification"))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(out_dir_spades)
+			self.utils.remove_dir(out_dir_result)
 			return False
 		
 		if (not os.path.exists(out_file_abricate)):
@@ -349,7 +421,7 @@ class Software(object):
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			self.utils.remove_dir(out_dir_spades)
+			self.utils.remove_dir(out_dir_result)
 			return False
 
 		parseOutFiles = ParseOutFiles()
@@ -367,7 +439,7 @@ class Software(object):
 			if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
-		except Exception:
+		except Exception as e:
 			result = Result()
 			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
@@ -384,7 +456,7 @@ class Software(object):
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
-			self.utils.remove_dir(out_dir_spades)
+			self.utils.remove_dir(out_dir_result)
 			return False
 		
 		
@@ -393,13 +465,18 @@ class Software(object):
 		sample.save()
 		
 		## save everything OK
-		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
-			MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(),
-			self.software_names.get_abricate_version()))
+		if (sample.is_type_fastq_gz_sequencing()):
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
+				MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(),
+				self.software_names.get_abricate_version()))
+		else:
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
+				MetaKeyAndValue.META_VALUE_Success, "Success, Canu(%s), Abricate(%s)" % (self.software_names.get_canu_version(),
+				self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
-		self.utils.remove_dir(out_dir_spades)
+		self.utils.remove_dir(out_dir_result)
 		self.utils.remove_file(out_file_clean)
 		self.utils.remove_file(clean_abricate_file)
 		return True
@@ -494,6 +571,21 @@ class Software(object):
 		"""
 		cmd = "{}; {} {} --thread {} {} > {}".format(self.software_names.get_mafft_set_env_variable(), self.software_names.get_mafft(),\
 							parameters, settings.THREADS_TO_RUN_SLOW, input_file, out_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run mafft")
+		return out_file
+	
+	def run_clustalo(self, input_file, out_file, parameters = ""):
+		"""
+		run clustalo
+		out: out_file
+		"""
+		cmd = "{} --force --infmt=fa --outfmt=fa --seqtype dna --MAC-RAM 8000 {} --threads={} -i {} -o {}".format(
+				self.software_names.get_clustalo(),\
+				parameters, settings.THREADS_TO_RUN_SLOW, input_file, out_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -639,7 +731,7 @@ class Software(object):
 		
 		### add FREQ to VCF file
 		self.utils.add_freq_to_vcf(os.path.join(temp_dir, sample_name + '.vcf'), os.path.join(temp_dir, sample_name + '_2.vcf'))
-		### add FREQ to TAB file
+		### add FREQ and other things to TAB file
 		self.run_snippy_vcf_to_tab_freq_and_evidence(path_reference_fasta, path_reference_genbank,\
 							os.path.join(temp_dir, sample_name + '_2.vcf'),\
 							os.path.join(temp_dir, sample_name + '.tab'))
@@ -675,6 +767,60 @@ class Software(object):
 					handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file
+	
+	def run_genbank2gff3_positions_comulative(self, genbank, out_file):
+		"""
+		
+		"""
+		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt")
+		
+		## set VERSION ID equal to ACCESSION
+		out_file_gb = self.utils.get_temp_file("file_name", ".gb")
+		self.utils.clean_genbank_version_name(genbank, out_file_gb)
+		
+		with open(temp_file, "w") as out_handle, open(out_file_gb) as in_handle:
+			GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
+
+		### remove clean version gb file
+		os.unlink(out_file_gb)
+		### filter file
+	#	vect_filter = ['remark', 'source', 'gene']
+		vect_pass = ['CDS']
+		b_fail = False
+		dt_data_sequence_length = {}
+		sequence_name = ""
+		actual_position = 0
+		with open(temp_file) as handle, open(out_file, "w") as handle_write:
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0 or sz_temp.find('# Input') == 0 or sz_temp.find('# GFF3 saved') == 0): continue
+				if (sz_temp.find('##FASTA') == 0): break
+				
+				lst_data = sz_temp.split('\t')
+				if (sz_temp[0] == '#'):
+					lst_data = sz_temp.split()
+					if (sz_temp.startswith("##sequence-region") and len(lst_data) == 4):
+						dt_data_sequence_length[lst_data[1]] = int(lst_data[3])  
+					handle_write.write(sz_temp + "\n")
+				elif (len(lst_data) > 3 and lst_data[2] in vect_pass):
+					if (lst_data[0] in dt_data_sequence_length):
+						if (len(sequence_name) == 0):
+							sequence_name = lst_data[0]
+							actual_position = 0
+						elif (sequence_name != lst_data[0]):
+							actual_position += dt_data_sequence_length[sequence_name]
+							sequence_name = lst_data[0]
+					else:
+						b_fail = True
+						break
+					lst_data[3] = str(int(lst_data[3]) + actual_position)
+					lst_data[4] = str(int(lst_data[4]) + actual_position)
+					
+					vect_out = [data for data in lst_data[8].split(";") if not data.startswith("translation=")]
+					lst_data[8] = ";".join(vect_out)
+					handle_write.write("\t".join(lst_data) + "\n")
+		os.unlink(temp_file)
+		return None if b_fail else out_file
 
 	def get_snpeff_config(self, fasta_file):
 		"""
@@ -755,7 +901,7 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run snpEff")
 		
-		#### add/transform p.Val423Glu to p.V423G
+		#### add the transform p.Val423Glu to p.V423G
 		parse_out_files = ParseOutFiles()
 		out_file_transformed_amino = parse_out_files.add_amino_single_letter_code(out_file)
 		self.utils.move_file(out_file_transformed_amino, out_file)
@@ -766,7 +912,7 @@ class Software(object):
 	
 	def run_snippy_vcf_to_tab(self, fasta, genbank, vcf_file, out_file):
 		"""
-		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
+		./snippy-vcf_to_tab_add_freq [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
 		"""
 		
 		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
@@ -784,7 +930,7 @@ class Software(object):
 	
 	def run_snippy_vcf_to_tab_freq_and_evidence(self, fasta, genbank, vcf_file, out_file):
 		"""
-		./snippy-vcf_to_tab [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
+		./snippy-vcf_to_tab_add_freq_and_evidence [options] --ref ref.fa [--gff ref.gff] --vcf snps.vcf > snp.tab
 		"""
 		
 		temp_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".gff") 
@@ -1100,6 +1246,19 @@ class Software(object):
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
 			return True
 
+		################################
+		##################################
+		### remove possible previous alerts from others run
+		manage_database = ManageDatabase()
+		for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
+			manage_database.remove_sample_start_metakey(sample, keys_to_remove)
+		
+		### remove some other 
+		sample.identify_virus.all().delete()
+		if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag = None
+		sample.number_alerts = 0
+		sample.save()
+		
 		try:
 			print("Start run_fastq_and_trimmomatic")
 			### run trimmomatics
@@ -1315,6 +1474,7 @@ class Software(object):
 					100 - limit_to_mask_consensus) ))
 			
 			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems
+			## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
 			parse_out_files = ParseOutFiles()
 			parse_out_files.add_variants_in_incomplete_locus(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, 
 										self.software_names.get_snippy_name()), coverage)
@@ -1547,7 +1707,7 @@ class Software(object):
 		if (file_size_max > max_fastq_file):
 			ratio = max_fastq_file / file_size_max
 		
-			## smmall correction
+			## small correction
 			if (ratio < 0.8): ratio += 0.1
 
 			path_to_work = self.utils.get_temp_dir()
@@ -1733,10 +1893,12 @@ class Contigs2Sequences(object):
 				vect_possible_id = []
 				for dict_data in vect_data:
 					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
-				if (len(vect_possible_id)):
+				if (len(vect_possible_id) > 0):
 					vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
 												description=";".join(vect_possible_id)))
-				elif (float(record.id.split('_')[-1]) > SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
+				## NEED to check coverage for CANU
+				elif (record.id.find('_') != -1 and float(record.id.split('_')[-1]) > \
+					SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
 					vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
 
 			if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):

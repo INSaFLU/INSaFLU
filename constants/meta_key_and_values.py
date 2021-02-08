@@ -58,6 +58,13 @@ class MetaKeyAndValue(object):
 							META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
 							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
 
+	#### KEYS to remove if we run trimmomatic or NanoFilt again
+	VECT_TO_REMOVE_RUN_SAMPLE = [
+							META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+							META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
+							META_KEY_Identify_Sample]
+
 	### VECT message for show in web page
 	VECT_MESSAGE_ALERT_COVERAGE = [META_KEY_ALERT_COVERAGE_value_defined_by_user,\
 						META_KEY_ALERT_COVERAGE_9,\
@@ -69,10 +76,26 @@ class MetaKeyAndValue(object):
 	### }
 	NAME_sample = "Sample"						### if the software was used in sample
 	NAME_project_sample = "ProjectSample"		### if the software was used in project sample
-	DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS = { 
-		NAME_sample : [META_KEY_Fastq_Trimmomatic_Software, META_KEY_Identify_Sample_Software, ],
-		NAME_project_sample : [META_KEY_Snippy_Freebayes, ],
+	TECHNOLOGY_illumina = "illumina"
+	TECHNOLOGY_ONT = "ONT"
+	
+	### order out
+	VECT_TECHNOLOGIES_OUT_REPORT = [TECHNOLOGY_illumina , TECHNOLOGY_ONT]
+	### key to show in report
+	DICT_SOFTWARE_SHOW_IN_RESULTS = {
+		TECHNOLOGY_illumina : {
+			NAME_sample : [META_KEY_Fastq_Trimmomatic_Software, META_KEY_Identify_Sample_Software, ],
+			NAME_project_sample : [META_KEY_Snippy_Freebayes, ],
+		},
+		TECHNOLOGY_ONT : {
+			NAME_sample : [	META_KEY_NanoStat_NanoFilt_Software, ],
+			NAME_project_sample : [ META_KEY_Medaka, ],
+		}
 	}
+# 	DICT_SOFTWARE_SHOW_IN_SAMPLE_RESULTS = { 
+# 		NAME_sample : [	META_KEY_NanoStat_NanoFilt_Software, ],
+# 		NAME_project_sample : [ META_KEY_Medaka, META_KEY_limit_ONT_coverage ],
+# 	}
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
 																	

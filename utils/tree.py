@@ -89,10 +89,12 @@ class CreateTree(object):
 								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
+			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
+					SoftwareNames.SOFTWARE_SNIPPY_name if project_sample.is_sample_illumina() else\
+					SoftwareNames.SOFTWARE_Medaka_name)
 			if (not os.path.exists(consensus_fasta)):
 				manageDatabase.set_project_metakey(project, owner, meta_key,\
-						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)
+						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist - " + consensus_fasta)
 				self.utils.remove_dir(temp_dir)
 				return False
 			if (sequence_name is None):		### join all elements
@@ -204,6 +206,7 @@ class CreateTree(object):
 
 		### run fastTree
 		try:
+			## dvtditr
 			out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree", FileExtensions.FILE_NWK)
 			self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters())
 			result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\

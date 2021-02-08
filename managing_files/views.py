@@ -183,7 +183,12 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		### create bed and index for genbank
 		utils.from_genbank_to_bed(sz_file_to, reference.get_reference_bed(TypePath.MEDIA_ROOT))
 		software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
-				
+		
+		### create some gff3  essential to run other tools
+		software.run_genbank2gff3(sz_file_to, reference.get_gff3(TypePath.MEDIA_ROOT))
+		software.run_genbank2gff3_positions_comulative(sz_file_to,
+								reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT))
+
 		### save in database the elements and coordinates
 		utils.get_elements_from_db(reference, self.request.user)
 		utils.get_elements_and_cds_from_db(reference, self.request.user)
@@ -953,7 +958,9 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					key_data_0 = vect_soft[0].get_vect_key_values()
 					key_data_1 = vect_soft[1].get_vect_key_values()
 					for _ in range(len(key_data_0)):
-						data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value])
+						data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value,
+									"{:,.1f}".format(float(key_data_1[_].value.replace(',','')) -\
+									float(key_data_0[_].value.replace(',','')))])
 					context['data_nanostat'] = data_nanostat
 				
 
@@ -1056,7 +1063,9 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
 			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
 							Q(reference__name__icontains=self.request.GET.get(tag_search)) |\
-							Q(project_samples__sample__name__icontains=self.request.GET.get(tag_search)) )
+							Q(project_samples__sample__name__icontains=self.request.GET.get(tag_search)) ).\
+							distinct()
+							
 		table = ProjectTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
@@ -1071,6 +1080,7 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		context['table'] = table
 		context['nav_project'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['query_set_count'] = query_set.count()
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
@@ -1273,15 +1283,24 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 						self.request.session[key] = False
 					else: self.request.session[key] = True
 		## END need to clean all the others if are reject in filter
-			
+		
+		### check if it show already the settings message
+		key_session_name_project_settings = "project_settings_{}".format(project.name)
+		if (not key_session_name_project_settings in self.request.session):
+			self.request.session[key_session_name_project_settings] = True
+		else: self.request.session[key_session_name_project_settings] = False
+		
+		
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['query_set_count'] = query_set.count()
 		context['project_name'] = project.name
 		context['nav_modal'] = True	## short the size of modal window
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		context['show_message_change_settings'] = (count_active_projects == 0) ## Show message to change settings to the project
+		context['show_message_change_settings'] = (count_active_projects == 0 and
+					self.request.session[key_session_name_project_settings]) ## Show message to change settings to the project
 		if self.request.POST: 
 			context['project_sample'] = AddSampleProjectForm(self.request.POST)
 		else: 
@@ -1430,6 +1449,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')		
 		context['table'] = table
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+		context['query_set_count'] = query_set.count()
 		context['project_id'] = project.id
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['nav_project'] = True
@@ -1457,9 +1477,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		if (not os.path.exists(file_name)):
 			collect_extra_data = CollectExtraData()
 			collect_extra_data.calculate_count_variations(project)
-		context['variations_statistics_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
+		if (os.path.exists(file_name)):
+			context['variations_statistics_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
 		
-		## tODO , set this in database 
 		utils = Utils()
 		vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
 		if (vect_elements != None and len(vect_elements) > 0): 
@@ -1491,7 +1511,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project, project, None) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project, project, None, None) ## the user can have defaults yet
 		
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
@@ -1504,7 +1524,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 					'is' if count_project_sample == 1 else 'are', count_project_sample, 's' if count_project_sample > 1 else '') +\
 								"You can only change settings on a specific sample inside of this project.")
 		context['count_project_sample'] = count_project_sample
-		table = SoftwaresTable(query_set, project, None, count_project_sample == 0)
+		table = SoftwaresTable(query_set, project, None, None, count_project_sample == 0)
 		
 		### INSaFLU parameters
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
@@ -1517,7 +1537,6 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		context['table_insaflu'] = table_insaflu
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		context['project'] = project
-		context['project_settings'] = True
 		context['show_paginatior_table'] = False
 		context['show_paginatior_table_insaflu'] = False
 		return context
@@ -1544,12 +1563,13 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project_sample, None, project_sample) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project_sample, None,
+					project_sample, None) ## the user can have defaults yet
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
 				parameter__project=None, parameter__project_sample=project_sample,
 				type_of_software=Software.TYPE_SOFTWARE).distinct()
-		table = SoftwaresTable(query_set, None, project_sample)
+		table = SoftwaresTable(query_set, None, project_sample, None)
 		
 		### INSaFLU parameters
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
@@ -1567,7 +1587,45 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
-
+class SampleSettingsView(LoginRequiredMixin, ListView):
+	"""
+	can change settings in the projects
+	"""
+	model = Sample
+	template_name = 'settings/settings.html'
+	context_object_name = 'sample'
+	
+	def get_context_data(self, **kwargs):
+		from settings.models import Software
+		
+		context = super(SampleSettingsView, self).get_context_data(**kwargs)
+		sample = Sample.objects.get(pk=self.kwargs['pk'])
+		
+		### can't see this sample
+		context['nav_sample'] = True
+		if (sample.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
+		
+		### test all defaults first, if exist in database
+		default_software = DefaultProjectSoftware()
+		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_sample, None,
+					None, sample) ## the user can have defaults yet
+		### regular software
+		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_sample,
+				parameter__sample=sample, type_of_software=Software.TYPE_SOFTWARE).distinct()
+		table = SoftwaresTable(query_set, None, None, sample)
+		
+		context['nav_sample'] = True
+		context['table'] = table
+		## context['table_insaflu'] = None	## doen't have info
+		context['sample'] = sample
+		context['sample_settings'] = True
+		context['show_paginatior_table'] = False
+		context['show_paginatior_table_insaflu'] = False
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		return context
+	
 class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 	"""
 	"""
@@ -1642,7 +1700,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 						if (len(msa_markers_software) > 0):
 							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
 								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
-		
+						
 			else:
 				context['medaka_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
 				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_Medaka_name)
@@ -1657,11 +1715,21 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 					if (not result is None):
 						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_Medaka_name)
 						
+						software_software = result.get_software(SoftwareNames.SOFTWARE_SAMTOOLS_name)
+						if (len(software_software) > 0):
+							software_used.append([SoftwareNames.SOFTWARE_SAMTOOLS_name,
+								result.get_software(SoftwareNames.SOFTWARE_SAMTOOLS_name)])
+							
 						### could have or not, in older versions
 						msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
 						if (len(msa_markers_software) > 0):
 							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
 								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
+							
+						software_software = result.get_software(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name)
+						if (len(software_software) > 0):
+							software_used.append([SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended,
+								result.get_software(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name)])
 
 			### list of software to used
 			context['software_used'] = software_used	

@@ -883,7 +883,14 @@ class Test(unittest.TestCase):
 		self.assertTrue(">fasta_2" in vect_read_file)
 		os.unlink(out_file)
 
-
+	def test_get_last_name_from_fasta(self):
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_MERGE_FASTA)
+		file_fasta = os.path.join(path_to_fasta, "fasta_1.fasta")
+		sz_name = utils.get_last_name_from_fasta(file_fasta)
+		self.assertEqual("EVA011_S54", sz_name)
+		
 	def test_get_type_files(self):
 		
 		utils = Utils()
@@ -921,26 +928,67 @@ class Test(unittest.TestCase):
 		self.assertEqual("p.S299S", utils.parse_amino_HGVS_code("p.Ser299Ser"))
 		self.assertEqual("p.S299fs", utils.parse_amino_HGVS_code("p.Ser299fs"))
 		self.assertEqual("p.S299*", utils.parse_amino_HGVS_code("p.Ser299*"))
+		self.assertEqual("p.X299*", utils.parse_amino_HGVS_code("p.Ter299*"))
 		self.assertEqual("p.A299D", utils.parse_amino_HGVS_code("p.Ala299Asp"))
 		self.assertEqual("p.G299Dir", utils.parse_amino_HGVS_code("p.Gly299Dir"))
-		self.assertEqual(None, utils.parse_amino_HGVS_code("xpto"))
+		self.assertEqual("p.SV534SV", utils.parse_amino_HGVS_code("p.SerVal534SerVal"))
+		self.assertEqual("p.S534SV", utils.parse_amino_HGVS_code("p.Ser534SerVal"))
+		self.assertEqual("", utils.parse_amino_HGVS_code("xpto"))
+
+	def test_add_freq_ao_ad_and_type_to_vcf(self):
+
+		utils = Utils()
+		coverage_limit = 20
 		
-
-			
-
-
-
-
-
-
-
-
-
-
-
-
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka.vcf")
+		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		
+		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, vcf_file_out, coverage_limit)
+		
+		self.assertTrue(os.path.exists(vcf_file_out))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(expecteded_vcf_file, vcf_file_out))
+		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
 
 
+	def test_medaka_models(self):
+		
+		utils = Utils()
+		vect_data = utils.get_all_medaka_models()
+		self.assertTrue(len(vect_data) > 0)
+		self.assertTrue(SoftwareNames.SOFTWARE_Medaka_default_model in vect_data)
 
+	
+	def test_difference_files(self):
 
+		utils = Utils()
+		
+		fasta_file_out = utils.get_temp_file("fasta_data", ".fasta")
+		with open(fasta_file_out, 'w') as handle_write:
+			handle_write.write(">1\nAAAAAAAAAA\n")
+			handle_write.write(">2\nAAAAAAAAAA\n")
+		self.assertFalse(utils.is_differente_fasta_size(fasta_file_out, 1))
+		self.assertFalse(utils.is_differente_fasta_size(fasta_file_out, 10))
+		
+		with open(fasta_file_out, 'w') as handle_write:
+			handle_write.write(">1\nAAAAAAAAAA\n")
+			handle_write.write(">2\nAAAAAAAAAAAAA\n")
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 1))
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 5))
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 10))
+		self.assertFalse(utils.is_differente_fasta_size(fasta_file_out, 30))
+		
+		with open(fasta_file_out, 'w') as handle_write:
+			handle_write.write(">2\nAAAAAAAAAAAAAAAAAAAAAA\n")
+			handle_write.write(">1\nAAAAAAAAAA\n")
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 1))
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 10))
+		self.assertTrue(utils.is_differente_fasta_size(fasta_file_out, 50))
+		self.assertFalse(utils.is_differente_fasta_size(fasta_file_out, 60))
+
+		### remove file
+		utils.remove_file(fasta_file_out)
 

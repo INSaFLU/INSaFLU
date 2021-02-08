@@ -309,6 +309,7 @@ class FileExtensions(object):
 	FILE_NWK = '.nwk'
 	FILE_GZ = '.gz'
 	FILE_BED = '.bed'
+	FILE_GFF3 = '.gff3'
 	FILE_TBI = '.tbi'	### create with tabix
 	FILE_IDX = '.idx'	### created from igvtools
 	FILE_JSON = '.json'

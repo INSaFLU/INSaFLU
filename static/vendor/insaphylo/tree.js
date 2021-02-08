@@ -547,10 +547,10 @@ function radioDetect (metaData, max) {
     // -------------------------------- Generating Initial Color Set
 
         for (let j = 0; j < Object.keys(Object.values(metaData)[0]).length; j++) {
-
+        	
             for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-
-                if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === "" || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === " " || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined) {
+            
+            	if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === "" || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === " " || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined) {
 
                     color[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j] + Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j]] = "white";
 

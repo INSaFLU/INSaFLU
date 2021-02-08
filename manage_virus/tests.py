@@ -5,7 +5,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from django.conf import settings 
 from utils.utils import Utils
 from .uploadFiles import UploadFiles
-from constants.constants import Constants, TypePath
+from constants.constants import Constants, TypePath, FileExtensions
 from utils.parse_out_files import ParseOutFiles
 from django.contrib.auth.models import User
 from .models import UploadFile, Tags, SeqVirus
@@ -270,8 +270,13 @@ class Test(TestCase):
 			self.assertTrue(os.path.exists(reference.get_reference_fasta_index(TypePath.MEDIA_ROOT)))
 			self.assertTrue(os.path.exists(reference.get_reference_fasta(TypePath.MEDIA_ROOT)))
 			self.assertTrue(os.path.exists(reference.get_reference_gbk(TypePath.MEDIA_ROOT)))
+			self.assertTrue(reference.get_gff3(TypePath.MEDIA_ROOT).endswith(FileExtensions.FILE_GFF3))
+			self.assertTrue(reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT).
+						endswith(".comulative_positions" + FileExtensions.FILE_GFF3))
+			self.assertTrue(os.path.exists(reference.get_gff3(TypePath.MEDIA_ROOT)))
+			self.assertTrue(os.path.exists(reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT)))
 		self.assertEqual(4, n_files)	## it has a gbk file
-		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+	#	self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	
 		

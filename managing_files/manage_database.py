@@ -109,6 +109,14 @@ class ManageDatabase(object):
 		except MetaKeySample.DoesNotExist:
 			return None	
 		
+	def remove_sample_start_metakey(self, sample, meta_key_name):
+		"""
+		in: meta_key_name + '%'
+		return a list with match
+		"""
+		return MetaKeySample.objects.filter(sample__id=sample.id,\
+					meta_tag__name__startswith=meta_key_name).delete()
+					
 	def set_project_metakey(self, project, owner, meta_key_name, value, description):
 		"""
 		save a meta key

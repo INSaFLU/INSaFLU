@@ -1,0 +1,17 @@
+##gff-version 3
+##sequence-region PB2 1 2280
+PB2	feature	CDS	31	2280	.	+	0	codon_start=1;gene=PB2;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31345;locus_tag=locus_00001;product=Polymerase basic protein 2;protein_id=Prokka:locus_00001
+##sequence-region PB1 1 2274
+PB1	feature	CDS	2281	4554	.	+	0	EC_number=2.7.7.48;codon_start=1;gene=PB1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q3HM40;locus_tag=locus_00002;product=RNA-directed RNA polymerase catalytic subunit;protein_id=Prokka:locus_00002
+##sequence-region PA 1 2151
+PA	feature	CDS	4555	6705	.	+	0	codon_start=1;gene=PA;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31343;locus_tag=locus_00003;product=Polymerase acidic protein;protein_id=Prokka:locus_00003
+##sequence-region HA 1 1701
+HA	feature	CDS	6706	8406	.	+	0	codon_start=1;gene=HA;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:O11283;locus_tag=locus_00004;product=Hemagglutinin;protein_id=Prokka:locus_00004
+##sequence-region NP 1 1497
+NP	feature	CDS	8407	9903	.	+	0	codon_start=1;gene=NP;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P03467;locus_tag=locus_00005;product=Nucleoprotein;protein_id=Prokka:locus_00005
+##sequence-region NA 1 1410
+NA	feature	CDS	9904	11313	.	+	0	EC_number=3.2.1.18;codon_start=1;gene=NA;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P06820;locus_tag=locus_00006;product=Neuraminidase;protein_id=Prokka:locus_00006
+##sequence-region MP 1 982
+MP	feature	CDS	11314	12072	.	+	0	codon_start=1;gene=M;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P63233;locus_tag=locus_00007;product=Matrix protein 1;protein_id=Prokka:locus_00007
+##sequence-region NS 1 838
+NS	feature	CDS	12296	12988	.	+	0	codon_start=1;gene=NS;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q38SQ2;locus_tag=locus_00008;product=Non-structural protein 1;protein_id=Prokka:locus_00008

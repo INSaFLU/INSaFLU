@@ -1,0 +1,12 @@
+##gff-version 3
+##sequence-region MN908947 1 29903
+MN908947	feature	CDS	266	21555	.	+	0	codon_start=1;gene=orf1ab;note=pp1ab%3B translated by -1 ribosomal frameshift;product=orf1ab polyprotein;protein_id=QHD43415.1;ribosomal_slippage=
+MN908947	feature	CDS	21563	25384	.	+	0	codon_start=1;gene=S;note=structural protein;product=surface glycoprotein;protein_id=QHD43416.1
+MN908947	feature	CDS	25393	26220	.	+	0	codon_start=1;gene=ORF3a;product=ORF3a protein;protein_id=QHD43417.1
+MN908947	feature	CDS	26245	26472	.	+	0	codon_start=1;gene=E;note=structural protein%3B E protein;product=envelope protein;protein_id=QHD43418.1
+MN908947	feature	CDS	26523	27191	.	+	0	codon_start=1;gene=M;note=structural protein;product=membrane glycoprotein;protein_id=QHD43419.1
+MN908947	feature	CDS	27202	27387	.	+	0	codon_start=1;gene=ORF6;product=ORF6 protein;protein_id=QHD43420.1
+MN908947	feature	CDS	27394	27759	.	+	0	codon_start=1;gene=ORF7a;product=ORF7a protein;protein_id=QHD43421.1
+MN908947	feature	CDS	27894	28259	.	+	0	codon_start=1;gene=ORF8;product=ORF8 protein;protein_id=QHD43422.1
+MN908947	feature	CDS	28274	29533	.	+	0	codon_start=1;gene=N;note=structural protein;product=nucleocapsid phosphoprotein;protein_id=QHD43423.2
+MN908947	feature	CDS	29558	29674	.	+	0	codon_start=1;gene=ORF10;product=ORF10 protein;protein_id=QHI42199.1

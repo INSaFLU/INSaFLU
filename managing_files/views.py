@@ -958,11 +958,16 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					key_data_0 = vect_soft[0].get_vect_key_values()
 					key_data_1 = vect_soft[1].get_vect_key_values()
 					for _ in range(len(key_data_0)):
-						data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value,
-									"{:,.1f}".format(float(key_data_1[_].value.replace(',','')) -\
-									float(key_data_0[_].value.replace(',','')))])
+						percentage = "--"
+						value_0 = key_data_0[_].value.replace(',','')
+						value_1 = key_data_1[_].value.replace(',','')
+						if key_data_0[_].key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect_show_percentage and \
+								(len(value_0) > 0 and self.utils.is_float(value_0) and \
+								float(value_0) > 0 and len(value_1) > 0):
+							percentage = "{:,.1f}".format(float(value_1) / float(value_0) * 100)
+						data_nanostat.append([key_data_0[_].key, value_0, value_1,
+									"{:,.1f}".format(float(value_1) - float(value_0)), percentage])
 					context['data_nanostat'] = data_nanostat
-				
 
 			### software
 			if (sample.is_type_fastq_gz_sequencing()):  ### for illumina
@@ -1484,8 +1489,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
 		if (vect_elements != None and len(vect_elements) > 0): 
 			context['elements'] = vect_elements
+		vect_elements_protein = utils.get_elements_with_CDS_from_db(project.reference, self.request.user)
+		if (vect_elements_protein != None and len(vect_elements_protein) > 0): 
+			context['elements_protein'] = vect_elements_protein ## because some does not have CDS
 			### get a vect of genes name
-			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements[0], project.reference, self.request.user)
+			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements_protein[0],
+						project.reference, self.request.user)
 		return context
 
 

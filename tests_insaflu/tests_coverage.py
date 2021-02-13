@@ -231,6 +231,8 @@ class Test(unittest.TestCase):
 
 		draw_all_coverage = DrawAllCoverage()
 		draw_all_coverage.draw_all_coverages(project_sample)
+		self.assertEqual(['HA', 'MP', 'NA', 'NP', 'NS', 'PA', 'PB1', 'PB2'], self.utils.get_elements_from_db(reference, user))
+		self.assertEqual(['HA', 'MP', 'NA', 'NP', 'NS', 'PA', 'PB1', 'PB2'], self.utils.get_elements_with_CDS_from_db(reference, user))
 		for gene in self.utils.get_elements_from_db(reference, user):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))

@@ -950,7 +950,7 @@ class Test(unittest.TestCase):
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
-		self.assertTrue(filecmp.cmp(expecteded_vcf_file, vcf_file_out))
+		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
 
 
@@ -991,4 +991,25 @@ class Test(unittest.TestCase):
 
 		### remove file
 		utils.remove_file(fasta_file_out)
+
+	def test_get_number_sequences_fastq(self):
+		
+		utils = Utils()
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		self.assertTrue(os.path.exists(path_file))
+		self.assertEqual(44425, utils.get_number_sequences_fastq(path_file))
+		
+		fasta_file_out = utils.get_temp_file("fasta_data", ".fasta")
+		with open(fasta_file_out, 'w') as handle_write:
+			handle_write.write(">2\nAAAAAAAAAAAAAAAAAAAAAA\n")
+			handle_write.write(">1\nAAAAAAAAAA\n")
+		try:
+			self.assertEqual(10, utils.get_number_sequences_fastq(path_file))
+			self.fail("must throw exception")
+		except Exception as e:
+			pass
+
+
+
+
 

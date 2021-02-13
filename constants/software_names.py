@@ -87,6 +87,11 @@ class SoftwareNames(object):
 					"Read length N50",
 					"STDEV read length",
 					"Total bases",]
+	SOFTWARE_NANOSTAT_vect_info_to_collect_show_percentage = ["Mean read length",
+					"Median read length",
+					"Number of reads",
+					"Total bases",]
+	
 	SOFTWARE_NanoFilt = "NanoFilt"
 	SOFTWARE_NanoFilt_name = "NanoFilt"
 	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"

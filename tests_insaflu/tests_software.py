@@ -373,10 +373,6 @@ class Test(TestCase):
 		### run software
 		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
 		
-		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
-		self.assertTrue(meta_sample != None)
-		self.assertEquals(taskID, meta_sample.description)
-
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))

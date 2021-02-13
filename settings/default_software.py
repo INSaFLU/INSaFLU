@@ -185,9 +185,8 @@ class DefaultSoftware(object):
 						###   if change software name
 						if (parameter.parameter != parameter_to_set_default.parameter):
 							self.change_values_software[key_value] = True
-							
-						parameter.parameter = parameter_to_set_default.parameter
-						parameter.save()
+							parameter.parameter = parameter_to_set_default.parameter
+							parameter.save()
 						break
 
 	def is_change_values_for_software(self, software):

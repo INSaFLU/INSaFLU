@@ -157,6 +157,10 @@ class SampleTable(tables.Table):
 
 	def render_technology(self, record):
 		""" shows if it is Illumina or Minion """
+		### is not processed yet
+		if (not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0 and \
+				record.file_name_1 is None):
+			return "Undefined"
 		return SoftwareNames.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion
 	
 	def render_creation_date(self, **kwargs):
@@ -216,28 +220,46 @@ class SampleTable(tables.Table):
 		user = current_request.user
 		
 		manageDatabase = ManageDatabase()
+		if (manageDatabase.is_sample_processing_step(record)): return _('Processing')
+		
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
 				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
-				
-		if ((list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success)):
+		
+		if (record.is_ready_for_projects and list_meta.count() > 0 and \
+				list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			if (user.username != Constants.USER_ANONYMOUS and not record.is_type_fastq_gz_sequencing()):
 				## test if it has the original fastq files
-				if (record.is_original_fastq_removed()):
-					str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because original fastq files were removed">' +\
-						'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
-				## test if it's in a project
-				elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False).count() > 0):
-					str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in a project at least.">' +\
-						'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
-				else:
-					str_links = '<a href=' + reverse('sample-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-						'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+				str_links = self._get_magic_handle(record)
 			else: str_links = ""
 			return mark_safe(str_links + '<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
-		elif (not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0):
+		elif (len(list_meta) == 0 and not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
-		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error): return _("Error")
+		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error):
+			return _("Error")
+		### this case is when the number of remain reads are zero
+		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
+			if (record.is_type_fastq_gz_sequencing()): 
+				return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + \
+					'><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
+			
+			str_links = self._get_magic_handle(record)
+			if len(str_links) > 0: return mark_safe(str_links + ' No reads left')
 		return _('Not yet')
+	
+	def _get_magic_handle(self, record):
+		""" """
+		str_links = ""
+		if (record.is_original_fastq_removed()):
+			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because original fastq files were removed">' +\
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
+		## test if it's in a project
+		elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False).count() > 0):
+			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in a project at least.">' +\
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
+		else:
+			str_links = '<a href=' + reverse('sample-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+		return str_links
 	
 	def order_fastq_files(self, queryset, is_descending):
 		queryset = queryset.annotate(is_valid__1 = F('is_valid_1'), is_valid__2 = F('is_valid_2')).order_by(('-' if is_descending else '') + 'is_valid__1',\

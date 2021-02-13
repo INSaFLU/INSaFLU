@@ -1225,10 +1225,6 @@ class Software(object):
 							(self.software_names.get_fastq_version(), self.software_names.get_trimmomatic_version()))
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 
-		### set the flag of the end of the task		
-		meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_sample != None):
-			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return result_average.has_reads()
 
 	"""
@@ -1309,7 +1305,12 @@ class Software(object):
 				else: sample_to_update.number_alerts += 1
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 				sample_to_update.save()
-				
+			
+			### set the flag of the end of the task		
+			meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manage_database.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+
 		except:
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_ERROR)
 			return False

@@ -179,7 +179,8 @@ class Test(TestCase):
 			sample.save()
 		
 		### run software
-		self.assertTrue(self.software_minion.run_clean_minion(sample, user, True))
+		b_make_identify_species = False
+		self.assertTrue(self.software_minion.run_clean_minion(sample, user, b_make_identify_species))
 		
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_NanoFilt_name, owner=user,\
@@ -198,22 +199,29 @@ class Test(TestCase):
 		
 		tag_name_mixed= "No"
 		sample = Sample.objects.get(name=sample_name)
-		self.assertEqual("A-H5N5", sample.type_subtype)
-		self.assertEqual(tag_name_mixed, sample.mixed_infections_tag.name)
+		if (b_make_identify_species): 
+			self.assertEqual(tag_name_mixed, sample.mixed_infections_tag.name)
+			self.assertEqual("A-H5N5", sample.type_subtype)
+			
+			sample.mixed_infections_tag = None
+			sample.save()
+			
+			sample = Sample.objects.get(name=sample_name)
+			self.assertEqual(None, sample.mixed_infections_tag)
+			
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_name_mixed)
+			except MixedInfectionsTag.DoesNotExist as e:
+				self.fail("Must have tag mixed")
+							
+			if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag.delete()
+		else:
+			self.assertEqual(None, sample.mixed_infections_tag)
+			self.assertEqual("Not assigned", sample.type_subtype)
+		
 		self.assertEqual(0, sample.number_alerts)
 		
-		sample.mixed_infections_tag = None
-		sample.save()
 		
-		sample = Sample.objects.get(name=sample_name)
-		self.assertEqual(None, sample.mixed_infections_tag)
-		
-		try:
-			mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_name_mixed)
-		except MixedInfectionsTag.DoesNotExist as e:
-			self.fail("Must have tag mixed")
-						
-		if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag.delete()
 		
 		### run again
 		self.assertTrue(self.software_minion.run_clean_minion(sample, user, True))
@@ -311,7 +319,7 @@ class Test(TestCase):
 		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
 		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
 		file_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
-
+		
 		self.assertTrue(os.path.exists(gb_file))
 		self.assertTrue(os.path.exists(reference_fasta))
 		self.assertTrue(os.path.exists(file_fasta))
@@ -473,19 +481,19 @@ class Test(TestCase):
 		### get the hits value
 		decode_coverage = DecodeObjects()
 		count_hits = decode_coverage.decode_result(list_meta[0].description)
-		self.assertEquals(0, count_hits.get_hits_50_90())
-		self.assertEquals(0, count_hits.get_hits_less_50())
-		self.assertEquals(0, count_hits.get_total_50_50_90())
+		self.assertEquals(6, count_hits.get_hits_50_90())
+		self.assertEquals(2, count_hits.get_hits_less_50())
+		self.assertEquals(8, count_hits.get_total_50_50_90())
 		self.assertEquals(11, count_hits.get_total())
 		
-		self.assertEquals(0, project_sample.count_variations.var_less_50)
-		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
-		self.assertEquals(11, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(2, project_sample.count_variations.var_less_50)
+		self.assertEquals(6, project_sample.count_variations.var_bigger_50_90)
+		self.assertEquals(3, project_sample.count_variations.var_bigger_90)
 		self.assertEquals(0, project_sample.alert_first_level)
 		self.assertEquals(1, project_sample.alert_second_level)
 		
 		### test mixed infections
-		self.assertEquals('0.0', '{}'.format(project_sample.mixed_infections.average_value))
+		self.assertEquals('0.80070249555685', '{}'.format(project_sample.mixed_infections.average_value))
 		self.assertEquals('No', project_sample.mixed_infections.tag.name)
 		self.assertFalse(project_sample.mixed_infections.has_master_vector)
 		

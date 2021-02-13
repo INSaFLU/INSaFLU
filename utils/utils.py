@@ -484,7 +484,17 @@ class Utils(object):
 		else:
 			return meta_reference.description.split(',')
 		return None
-
+	
+	def get_elements_with_CDS_from_db(self, reference, user):
+		"""
+		return vector with name of elements sorted
+		"""
+		vect_elements = []
+		for element in self.get_elements_from_db(reference, user):
+			genetic_element = self.get_elements_and_cds_from_db(reference, user)
+			if (not genetic_element is None and genetic_element.has_genes(element)):
+				vect_elements.append(element)
+		return vect_elements
 
 	def get_elements_and_cds_from_db(self, reference, user):
 		"""
@@ -748,8 +758,9 @@ class Utils(object):
 						if (int(variant.info['DP']) > 0):
 							### incongruences in Medaka, 
 							### these values are collected in different stages of the Medaka workflow, (email from support@nanoporetech.com at 23 Dec 2020)
-							if (int(variant.info['DP']) > vect_out_ao[-1]): vect_out_freq.append(100)
+							if (int(variant.info['DP']) <= vect_out_ao[-1]): vect_out_freq.append(100)
 							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(variant.info['DP']) * 100)))
+							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
 					vect_out_af.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
 				variant.info[AO] = tuple(vect_out_ao)
 				variant.info[AF] = tuple(vect_out_af)
@@ -1295,7 +1306,7 @@ class Utils(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			self.utils.remove_file(temp_file)
+			self.remove_file(temp_file)
 			raise Exception("Fail to run medaka_consensus")
 		
 		vect_data = self.read_text_file(temp_file)
@@ -1346,6 +1357,25 @@ class Utils(object):
 					if (len(sz_temp) > 0 and sz_temp[0] == '>'): last_name = sz_temp.split()[0].replace('>', '')
 		return last_name
 	
+	def get_number_sequences_fastq(self, file_name):
+		""" return number of sequences """
+		
+		temp_file = self.get_temp_file("get_number_fastq", ".txt")
+		cmd = "gzip -cd {} | wc -l > {}".format(file_name, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			self.remove_file(temp_file)
+			raise Exception("Fail to run gzip")
+		
+		### get number
+		vect_lines = self.read_text_file(temp_file)
+		self.remove_file(temp_file)
+		if len(vect_lines) == 1 and self.is_integer(vect_lines[0]): return int(vect_lines[0]) // 4
+		return 0
+
+
 class ShowInfoMainPage(object):
 	"""
 	only a help class

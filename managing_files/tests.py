@@ -188,6 +188,34 @@ class testsReferenceFiles(TestCase):
 		self.assertFalse(meta_sample == None)
 		self.assertEqual(ConstantsTestsCase.VALUE_TEST_2, meta_sample.value)
 		
+		### test processing not process
+		self.assertTrue(manageDatabase.is_sample_processing_step(sample))
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
+								MetaKeyAndValue.META_VALUE_Queue, "description")
+		
+		self.assertTrue(manageDatabase.is_sample_processing_step(sample))
+		
+		time.sleep(0.2)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic,
+								MetaKeyAndValue.META_VALUE_Error, "description")
+		self.assertFalse(manageDatabase.is_sample_processing_step(sample))
+		
+		time.sleep(0.2)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
+								MetaKeyAndValue.META_VALUE_Queue, "description2")
+		
+		self.assertTrue(manageDatabase.is_sample_processing_step(sample))
+		time.sleep(0.2)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
+								MetaKeyAndValue.META_VALUE_Success, "description")
+		self.assertTrue(manageDatabase.is_sample_processing_step(sample))
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic,
+								MetaKeyAndValue.META_VALUE_Success, "description2")
+		self.assertTrue(manageDatabase.is_sample_processing_step(sample))
+		time.sleep(0.2)
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
+								MetaKeyAndValue.META_VALUE_Success, "description2")
+		self.assertFalse(manageDatabase.is_sample_processing_step(sample))
 		
 	def test_reference_meta_key(self):
 		"""

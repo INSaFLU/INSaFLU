@@ -96,6 +96,30 @@ class ManageDatabase(object):
 			return MetaKeySample.objects.get(sample__id=sample.id, meta_tag__name=meta_key_name, value=value)
 		except MetaKeySample.DoesNotExist:
 			return None
+		
+	def is_sample_processing_step(self, sample):
+		"""
+			META_VALUE_Error = "Error"
+			META_VALUE_Success = "Success"
+			META_VALUE_Queue = "Queue"
+			the end of a process is 
+		""" 
+	
+		meta_sample_queue = self.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_sample_queue is None): return True
+		
+		### try to find errors
+		number_errors = MetaKeySample.objects.filter(sample=sample, value=MetaKeyAndValue.META_VALUE_Error,
+					creation_date__gt=meta_sample_queue.creation_date).order_by('-creation_date').count()
+		### has a error
+		if (number_errors > 0): return False
+
+		### try to find queue_success 
+		meta_sample_queue_success = self.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)		
+		if (meta_sample_queue_success is None): return True
+		if (meta_sample_queue_success.creation_date > meta_sample_queue.creation_date and \
+			meta_sample_queue_success.description == meta_sample_queue.description): return False
+		return True
 	
 	def get_sample_metakey_last(self, sample, meta_key_name, value):
 		"""

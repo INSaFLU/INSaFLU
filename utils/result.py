@@ -661,6 +661,10 @@ class GeneticElement(object):
 		if (element_name in self.dt_elements): return self.dt_elements[element_name]
 		return None
 	
+	def has_genes(self, element_name):
+		if (element_name in self.dt_elements): return len(self.dt_elements[element_name]) > 0
+		return None
+	
 	def get_size_element(self, element_name):
 		if (element_name in self.dt_elements_size): return self.dt_elements_size[element_name]
 		return None

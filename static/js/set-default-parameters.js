@@ -6,6 +6,7 @@ $(document).on("click", "a", function(e){
 	var proj_name = $(this).attr('proj_name');
 	var pk_proj = $(this).attr('pk_proj');
 	var pk_proj_sample = $(this).attr('pk_proj_sample');
+	var pk_sample = $(this).attr('pk_sample');
 	var type_software = $(this).attr('type_software');
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
@@ -25,6 +26,9 @@ $(document).on("click", "a", function(e){
 			}
 			if ( typeof pk_proj_sample !== typeof undefined && pk_proj_sample !== false ) {
 				$('#id-modal-body-set-default').attr('pk_proj_sample', pk_proj_sample );
+			}
+			if ( typeof pk_sample !== typeof undefined && pk_sample !== false ) {
+				$('#id-modal-body-set-default').attr('pk_sample', pk_sample );
 			}
 		}
 	}

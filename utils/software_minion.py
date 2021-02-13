@@ -4,7 +4,7 @@ Created on 01/01/2021
 @author: mmp
 '''
 import os, logging, humanfriendly, datetime
-from constants.constants import Constants, TypePath, FileType
+from constants.constants import Constants, TypePath, FileType, FileExtensions
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.coverage import DrawAllCoverage
@@ -82,8 +82,8 @@ class SoftwareMinion(object):
 					None, user)
 	
 			## set the flag that is ready for process
+			sample_to_update = Sample.objects.get(pk=sample.id)
 			if (b_return):
-				sample_to_update = Sample.objects.get(pk=sample.id)
 				sample_to_update.is_ready_for_projects = True
 				
 				### make identify species
@@ -110,7 +110,6 @@ class SoftwareMinion(object):
 						mixed_infections_tag.save()
 					
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
-					sample_to_update.save()
 				else:
 					sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 					
@@ -118,9 +117,7 @@ class SoftwareMinion(object):
 					message = "Warning: Classification using Nanopore sequences is under development."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
-				sample_to_update.save()
 			else:
-				sample_to_update = Sample.objects.get(pk=sample.id)
 				manage_database = ManageDatabase()
 				manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
 										MetaKeyAndValue.META_VALUE_Success, "Warning: no reads left after filtering.")
@@ -128,8 +125,14 @@ class SoftwareMinion(object):
 				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
 				else: sample_to_update.number_alerts += 1
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-				sample_to_update.save()
-				
+			sample_to_update.save()
+			
+					### set the flag of the end of the task		
+			meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manage_database.set_sample_metakey(sample, sample.owner,
+						MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
+
 		except:
 			process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_ERROR)
 			return False
@@ -163,7 +166,7 @@ class SoftwareMinion(object):
 		
 		### first run stat
 		try:
-			result_nano_stat = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+			(result_nano_stat, number_sequences)  = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True))
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -216,7 +219,8 @@ class SoftwareMinion(object):
 		
 		### run start again
 		try:
-			result_nano_stat = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+			## if the user set a high coverage it can get no reads to process
+			(result_nano_stat, number_sequences) = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -251,12 +255,6 @@ class SoftwareMinion(object):
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s), NanoFilt(%s)" %\
 							(self.software_names.get_NanoStat_version(), self.software_names.get_NanoFilt_version()))
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-
-
-		### set the flag of the end of the task		
-		meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
-		if (meta_sample != None):
-			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 		return result_average.has_reads()
 
 	
@@ -280,31 +278,39 @@ class SoftwareMinion(object):
 			>Q12:	136331 (64.5%) 66.5Mb
 			>Q15:	16830 (8.0%) 8.2Mb
 		"""
-		temp_dir = self.utils.get_temp_dir()
-		out_path_file_name = os.path.join(temp_dir, "temp.txt")
-		cmd = "{} -o {} -n {} --fastq {}".format(self.software_names.get_NanoStat(), temp_dir, out_path_file_name, file_name)
-		exist_status = os.system(cmd)
-		if (exist_status != 0 or not os.path.exists(out_path_file_name)):
+		
+		### get number of lines
+		number_sequences = self.utils.get_number_sequences_fastq(file_name)
+		if (number_sequences == 0):
+			result = Result()
+			for key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
+				result.add_key_value(KeyValue(key, "0"))
+		else:
+			temp_dir = self.utils.get_temp_dir()
+			out_path_file_name = os.path.join(temp_dir, "temp.txt")
+			cmd = "{} -o {} -n {} --fastq {}".format(self.software_names.get_NanoStat(), temp_dir, out_path_file_name, file_name)
+			exist_status = os.system(cmd)
+			if (exist_status != 0 or not os.path.exists(out_path_file_name)):
+				self.utils.remove_dir(temp_dir)
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to run run_fastq")
+			
+			### process out STATs 
+			result = Result()
+			with open(out_path_file_name) as handle_in:
+				for line in handle_in:
+					sz_temp = line.strip()
+					if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
+					
+					### add tags
+					lst_data = sz_temp.split(':')
+					if len(lst_data) == 2 and lst_data[0].strip() in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
+						result.add_key_value(KeyValue(lst_data[0].strip(), lst_data[1].strip()))
+			
+			### remove dir
 			self.utils.remove_dir(temp_dir)
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run run_fastq")
-		
-		### process out STATs 
-		result = Result()
-		with open(out_path_file_name) as handle_in:
-			for line in handle_in:
-				sz_temp = line.strip()
-				if (len(sz_temp) == 0 or sz_temp[0] == '#'): continue
-				
-				### add tags
-				lst_data = sz_temp.split(':')
-				if len(lst_data) == 2 and lst_data[0].strip() in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
-					result.add_key_value(KeyValue(lst_data[0].strip(), lst_data[1].strip()))
-		
-		### remove dir
-		self.utils.remove_dir(temp_dir)
-		return result
+		return (result, number_sequences)
 	
 	
 	def run_rabbitQC(self, file_name):
@@ -427,7 +433,8 @@ class SoftwareMinion(object):
 				b_coverage_default = False	## because in ONT the limit is different than10
 				coverage_for_project = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
 							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
-				default_coverage_value = None ### not used
+				default_coverage_value = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
 				
 				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
  							self.software_names.get_medaka_name()),\
@@ -651,10 +658,15 @@ class SoftwareMinion(object):
 		"""
 		### make medaka consensus and bam
 		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
+		
+		###need to make a link to the reference files
+		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
+		self.utils.link_file(reference_fasta, reference_fasta_medaka, False)
+		
 		cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
-				self.software_names.get_medaka_env(),
-				self.software_names.get_medaka(), file_fastq, reference_fasta,
-				temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
+					self.software_names.get_medaka_env(),
+					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
+					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -704,7 +716,7 @@ class SoftwareMinion(object):
 #		cmd =  "{} {} snp --verbose {} {} {}".format(
 			self.software_names.get_medaka_env(),
 			self.software_names.get_medaka(),
-			reference_fasta, hdf_file, vcf_before_file)
+			reference_fasta_medaka, hdf_file, vcf_before_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -718,13 +730,13 @@ class SoftwareMinion(object):
 		cmd =  "{} {} tools annotate {} {} {} {}".format(
 			self.software_names.get_medaka_env(),
 			self.software_names.get_medaka(),
-			vcf_before_file, reference_fasta, bam_file, vcf_file)
+			vcf_before_file, reference_fasta_medaka, bam_file, vcf_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			self.utils.remove_dir(temp_dir)
-			raise Exception("Fail to run medaka variant")
+			raise Exception("Fail to run medaka annotate")
 		
 		### Add
 		##INFO=<ID=SR,Number=.,Type=Integer,Description="Depth of spanning reads by strand which best align to each allele (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.)">

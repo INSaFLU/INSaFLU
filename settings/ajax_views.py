@@ -109,7 +109,7 @@ def set_default_parameters(request):
 					
 					### need to re-run this sample with NanoFilt if the values change
 					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
-								if sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion)):
+								if sample.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion)):
 						### re-run data
 						manageDatabase = ManageDatabase()
 						process_SGE = ProcessSGE()
@@ -121,7 +121,7 @@ def set_default_parameters(request):
 						### create a task to perform the analysis of NanoFilt
 						try:
 							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-							if (sample.is_sample_illumina()):
+							if (sample.is_type_fastq_gz_sequencing()):
 								taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
 							else:
 								taskID = process_SGE.set_run_clean_minion(sample, request.user, job_name)

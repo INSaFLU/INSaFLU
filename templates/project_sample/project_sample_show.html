@@ -187,7 +187,7 @@
 								<div class="form-group">
 									<label for="selectElement">Select a locus</label>
 							  		<select id="combo_select_elements_amino_alignments_id" get-cds-from-element-url="{% url 'get-cds-from-element' %}" class="custom-select mx-sm-3">
-			      						{% for element in elements %}
+			      						{% for element in elements_protein %}
 			      							{% if forloop.first %}
 			      								<option selected value="{{ element }}">{{ element }}</option>
 			      							{% else %}

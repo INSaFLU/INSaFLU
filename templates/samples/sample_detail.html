@@ -212,17 +212,19 @@
 				  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
 				    		<p class="title-box">NanoStat results</p>
 				    		<div class="row">
-				    			<div class="col-lg-3"></div>
-								<div class="col-lg-3 text-align-center"><strong>Original</strong></div>
-								<div class="col-lg-3 text-align-center"><strong>Processed</strong></div>
-								<div class="col-lg-3 text-align-center"><strong>Difference</strong></div>
+				    			<div class="col-lg-4"></div>
+								<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
+								<div class="col-lg-2 text-align-center"><strong>Processed</strong></div>
+								<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
+								<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
 					  		</div>
-					  		{% for name, value_1, value_2, value_3 in data_nanostat %}
+					  		{% for name, value_1, value_2, value_3, value_4 in data_nanostat %}
 						  		<div class="row">
-				    				<div class="col-lg-3"><strong>{{ name }}</strong></div>
-				    				<div class="col-lg-3 text-align-center">{{ value_1 }}</div>
-				    				<div class="col-lg-3 text-align-center">{{ value_2 }}</div>
-				    				<div class="col-lg-3 text-align-center">{{ value_3 }}</div>
+				    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
+				    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
+				    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
+				    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
+				    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
 						  		</div>
 						  	{% endfor %}
 					  		<hr>

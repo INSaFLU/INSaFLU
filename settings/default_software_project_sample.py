@@ -167,9 +167,8 @@ class DefaultProjectSoftware(object):
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
 			vect_parameters = self._get_nanofilt_default(user, type_of_use, sample)
-			vect_parameters = self._get_default_project(user,\
-				software_name, sample,
-				vect_parameters, technology_name)		### base values
+			if (not sample is None): vect_parameters = self._get_default_project(user,\
+				software_name, None, vect_parameters, technology_name)		### base values
 			return vect_parameters		
 		return []
 
@@ -978,9 +977,8 @@ class DefaultProjectSoftware(object):
 						###   if change software name
 						if (parameter.parameter != parameter_to_set_default.parameter):
 							self.change_values_software[key_value] = True
-						
-						parameter.parameter = parameter_to_set_default.parameter
-						parameter.save()
+							parameter.parameter = parameter_to_set_default.parameter
+							parameter.save()
 						break
 
 	def is_change_values_for_software(self, software_name, technology_name):

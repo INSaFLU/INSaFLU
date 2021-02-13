@@ -52,30 +52,4 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 	
-	def test_run_snippy_vcf_to_tab(self):
-		"""
-  		test snippy_vcf_to_tab method
-  		"""
-		
-		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
-		result_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
-
-		#### add the transform p.Val423Glu to p.V423G
-		### this run a on SNP_EFF
-		parse_out_files = ParseOutFiles()
-		vcf_file_with_pp = parse_out_files.add_amino_single_letter_code(vcf_file)
-		
-		out_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab")
-		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file_with_pp, out_file)
-		self.assertEquals(out_file, out_file_2)
-		print(out_file_2, result_file)
-		self.assertTrue(filecmp.cmp(out_file_2, result_file))
-		os.unlink(out_file)
-		os.unlink(vcf_file_with_pp)
-		
-		
-		
-		
 		

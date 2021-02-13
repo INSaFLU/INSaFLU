@@ -247,12 +247,12 @@ class testsDefaultSoftwares(TestCase):
 		parameter = parameters[1]
 		parameter.parameter = "40"
 		parameter.save()
-		self.assertEqual("-q 20 -Q 40", default_software.get_samtools_parameters_depth_ONT(user))
+		self.assertEqual("-q 20 -Q 40 -aa", default_software.get_samtools_parameters_depth_ONT(user))
 		
 		parameter = parameters[1]
 		parameter.parameter = "0"
 		parameter.save()
-		self.assertEqual("-q 20", default_software.get_samtools_parameters_depth_ONT(user))
+		self.assertEqual("-q 20 -aa", default_software.get_samtools_parameters_depth_ONT(user))
 		
 	def test_default_project_sample_software_1(self):
 		""" Only test project_sample_software """

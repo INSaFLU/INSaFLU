@@ -232,6 +232,7 @@ class SoftwareNames(object):
 	### technology available
 	TECHNOLOGY_illumina = "Illumina"
 	TECHNOLOGY_minion = "ONT"
+	TECHNOLOGY_Undefined = "Undefined"
 
 	###################################
 	###################################

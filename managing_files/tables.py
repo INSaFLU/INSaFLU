@@ -158,9 +158,7 @@ class SampleTable(tables.Table):
 	def render_technology(self, record):
 		""" shows if it is Illumina or Minion """
 		### is not processed yet
-		if (not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0 and \
-				record.file_name_1 is None):
-			return "Undefined"
+		if (record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined): return "Undefined"
 		return SoftwareNames.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion
 	
 	def render_creation_date(self, **kwargs):
@@ -225,22 +223,25 @@ class SampleTable(tables.Table):
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
 				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		
+		print(record.name, record.id, record.is_ready_for_projects, list_meta.count(), list_meta[0].value)
 		if (record.is_ready_for_projects and list_meta.count() > 0 and \
 				list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-			if (user.username != Constants.USER_ANONYMOUS and not record.is_type_fastq_gz_sequencing()):
+			if (user.username != Constants.USER_ANONYMOUS):
 				## test if it has the original fastq files
 				str_links = self._get_magic_handle(record)
 			else: str_links = ""
 			return mark_safe(str_links + '<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
+		### read not attached, yet
 		elif (len(list_meta) == 0 and not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0):
 			return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + '><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Error):
 			return _("Error")
 		### this case is when the number of remain reads are zero
+		### it is success but there's no reads
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-			if (record.is_type_fastq_gz_sequencing()): 
-				return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + \
-					'><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
+# 			if (record.is_type_fastq_gz_sequencing()): 
+# 				return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + \
+# 					'><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
 			
 			str_links = self._get_magic_handle(record)
 			if len(str_links) > 0: return mark_safe(str_links + ' No reads left')
@@ -406,7 +407,7 @@ class ShowProjectSamplesResults(tables.Table):
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
 			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
-					record.id, key, coverage.get_message_to_show_in_web_site(key), coverage.get_icon(key, limit_to_mask_consensus))
+					record.id, key, coverage.get_message_to_show_in_web_site(record.sample.name, key), coverage.get_icon(key, limit_to_mask_consensus))
 		return mark_safe(return_html)
 
 	def render_technology(self, record):

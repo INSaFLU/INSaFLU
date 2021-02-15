@@ -84,7 +84,7 @@ class Test(TestCase):
 			sample.file_name_2 = ""
 			sample.path_name_2.name = ""
 			sample.owner = user
-			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_other)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_ont)
 			sample.save()
 			
 		return_value = self.software.identify_type_and_sub_type(sample, sample.path_name_1.name, None, user, True)

@@ -112,6 +112,7 @@ class Test(unittest.TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = vect_file[1]
 			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.is_ready_for_projects = True
 			sample.is_obsolete = False

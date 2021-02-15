@@ -88,7 +88,7 @@ class Test(unittest.TestCase):
 				sample.is_valid_2 = False
 				sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 				sample.owner = user
-				
+				sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 				sample.is_ready_for_projects = True
 				sample.is_obsolete = False
 				sample.save()
@@ -222,6 +222,7 @@ class Test(unittest.TestCase):
 				sample.owner = user
 				sample.is_ready_for_projects = True
 				sample.is_obsolete = False
+				sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 				sample.type_subtype = 'xpto, zpto'
 				sample.save()
 
@@ -447,6 +448,7 @@ class Test(unittest.TestCase):
 				sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
 				sample.owner = user
 				sample.is_ready_for_projects = True
+				sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 				sample.is_obsolete = False
 				sample.type_subtype = 'xpto, zpto'
 				sample.save()
@@ -677,6 +679,7 @@ class Test(unittest.TestCase):
 				sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
 				sample.owner = user
 				sample.is_ready_for_projects = True
+				if (n_id > 6002): sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 				sample.is_obsolete = False
 				sample.type_subtype = 'xpto, zpto'
 				sample.save()
@@ -772,7 +775,7 @@ class Test(unittest.TestCase):
 				sample.is_valid_2 = False
 				sample.owner = user
 				sample.is_ready_for_projects = True
-				sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_other)
+				sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_ont)
 				sample.is_obsolete = False
 				sample.type_subtype = 'xpto, zpto'
 				sample.save()

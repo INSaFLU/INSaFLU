@@ -332,28 +332,12 @@ class CollectExtraData(object):
 		"""
 		collect all coverage and make a file
 		"""
-		default_project_software = DefaultProjectSoftware()
 		decode_coverage = DecodeObjects()
 		manageDatabase = ManageDatabase()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 		if (geneticElement == None): return None
 		
-		### get coverage for project, if exists
-		(coverage, coverage_project) = (10, None)
-		for project_sample in project.project_samples.all():
-			### Only gets the value for first project
-			if (project_sample.is_sample_illumina()):
-				if (not default_project_software.is_snippy_single_parameter_default_for_project(project,\
-															 DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
-					coverage_project = default_project_software.get_snippy_single_parameter_for_project(project,
-								DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
-					if (not coverage_project is None): coverage = coverage_project
-			else:
-				coverage = default_project_software.get_limit_coverage_ONT_single_parameter(
-					project_sample, DefaultProjectSoftware.MASK_CONSENSUS_threshold)
-			break
-		
-		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least {}-fold".format(coverage)]
+		vect_ratios = ["% of size covered by at least 1-fold", "% of size covered by at least X-fold"]
 		vect_reference = geneticElement.get_sorted_elements()
 		out_file = self.utils.get_temp_file('coverage_file', FileExtensions.FILE_TSV)
 		n_count = 0
@@ -385,8 +369,9 @@ class CollectExtraData(object):
 			## chr names
 			vect_out = ['Samples']
 			vect_out.extend(vect_reference)
-			for ratio in vect_ratios: 
+			for _, ratio in enumerate(vect_ratios): 
 				vect_out.append('')
+				if _ == len(vect_ratios) - 1: vect_out.append("X-Fold")
 				vect_out.extend(vect_reference)
 			csv_writer.writerow(vect_out)
 			
@@ -404,11 +389,12 @@ class CollectExtraData(object):
 				vect_out.append('')
 				for element_name in vect_reference:
 					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_0))
-					
+				
+				### last coverage X-Fold
 				vect_out.append('')
+				vect_out.append(coverage.get_middle_limit())
 				for element_name in vect_reference:
-					vect_out.append(coverage.get_coverage(element_name, Coverage.COVERAGE_MORE_9 if\
-							coverage_project is None else Coverage.COVERAGE_PROJECT))
+					vect_out.append(coverage.get_coverage_by_middle_tag(element_name))
 				csv_writer.writerow(vect_out)
 				n_count += 1
 		if (n_count == 0):
@@ -436,8 +422,10 @@ class CollectExtraData(object):
 				### different type of SNVs 
 				if (project_sample.is_sample_illumina()):
 					tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
-				else:
+				elif (project_sample.is_sample_ont()):
 					tab_file_to_process = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
+				else:
+					continue
 				if (not os.path.exists(tab_file_to_process)): continue
 				parse_out_files.parse_tab_files_snippy(project_sample.sample.name, tab_file_to_process, csv_writer, vect_type_out, True if n_count == 0 else False)
 				n_count += 1
@@ -617,8 +605,7 @@ class CollectExtraData(object):
 				if (not b_simple):
 				
 					### print info about technology	
-					vect_out.append(SoftwareNames.TECHNOLOGY_illumina if project_sample.is_sample_illumina()
-						else SoftwareNames.TECHNOLOGY_minion)
+					vect_out.append(project_sample.get_type_technology())
 					
 					###  BEGIN info about software versions  ####
 					if project_sample.id in dict_all_results:

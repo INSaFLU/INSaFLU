@@ -41,7 +41,7 @@
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>
-	                              <input id="search_form_id" name="search_samples" type="text" class="form-control col-md-8" placeholder="Name, Type, Data set"{% if search_samples %} value="{{ search_samples }}"{% endif %}>
+	                              <input id="search_form_id" name="search_samples" type="text" class="form-control col-md-8" placeholder="Name, Type, Data set, Technology"{% if search_samples %} value="{{ search_samples }}"{% endif %}>
 	                              <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
 	                            </div>              
 	                        </form>

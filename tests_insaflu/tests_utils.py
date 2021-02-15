@@ -69,9 +69,9 @@ class Test(unittest.TestCase):
 		
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
 		try:
-			self.assertEqual((True, Constants.FORMAT_FASTQ_other), self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_ont), self.utils.is_fastq_gz(path_file))
 			self.assertEqual(True, self.utils.is_fastq_gz(path_file)[0])
-			self.assertEqual(Constants.FORMAT_FASTQ_other, self.utils.is_fastq_gz(path_file)[1])
+			self.assertEqual(Constants.FORMAT_FASTQ_ont, self.utils.is_fastq_gz(path_file)[1])
 		except Exception as e:
 			self.assertEqual("Can not detect file format. Ensure Illumina fastq file.", e.args[0])
 	
@@ -904,7 +904,7 @@ class Test(unittest.TestCase):
 
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
 		self.assertTrue(os.path.exists(path_file))
-		self.assertEqual(Constants.FORMAT_FASTQ_other, utils.get_type_file(path_file))
+		self.assertEqual(Constants.FORMAT_FASTQ_ont, utils.get_type_file(path_file))
 
 		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR_GFF, "insa_flu_temp_empty.gff")
 		self.assertTrue(os.path.exists(gff_file))
@@ -950,6 +950,7 @@ class Test(unittest.TestCase):
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		print(vcf_file_out, expecteded_vcf_file)
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
 

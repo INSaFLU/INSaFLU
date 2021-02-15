@@ -2,7 +2,7 @@
 
 import os, logging, time
 from utils.utils import Utils
-from constants.constants import Constants, FileExtensions
+from constants.constants import Constants, FileExtensions, TypePath
 from django.conf import settings
 from managing_files.models import ProcessControler
 from extend_user.models import Profile
@@ -291,6 +291,33 @@ class ProcessSGE(object):
 		return sge_id
 
 
+	def _remove_files_create_by_nanofilt_and_stat(self, sample):
+		"""
+		remove all files create by run_nanofilt_and_stat
+		"""
+		self.utils.remove_file(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+		self.utils.remove_file(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+		self.utils.remove_file(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+		
+	def _remove_files_create_by_fastq_and_trimmomatic(self, sample):
+		"""
+		remove all files create by run_nanofilt_and_stat
+		"""
+		self.utils.remove_file(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
+		self.utils.remove_file(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+		self.utils.remove_file(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		self.utils.remove_file(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+		self.utils.remove_file(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+		self.utils.remove_file(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+		
+	def _remove_files_create_by_identify_type_and_sub_type(self, sample):
+		"""
+		remove all files create by run_nanofilt_and_stat
+		"""
+		self.utils.remove_file(sample.get_abricate_output(TypePath.MEDIA_ROOT))
+		self.utils.remove_file(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+		self.utils.remove_file(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
+
 	def set_run_trimmomatic_species(self, sample, user, job_name = "job_name_to_run"):
 		"""
 		Run trimmomatic and identify species 
@@ -305,6 +332,8 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True)
 		try:
+			self._remove_files_create_by_identify_type_and_sub_type(sample)
+			self._remove_files_create_by_fastq_and_trimmomatic(sample)
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
 		except:
@@ -325,6 +354,8 @@ class ProcessSGE(object):
 		out_dir = self.utils.get_temp_dir()
 		path_file = self.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, job_name, True)
 		try:
+			self._remove_files_create_by_identify_type_and_sub_type(sample)
+			self._remove_files_create_by_nanofilt_and_stat(sample)
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
 		except:

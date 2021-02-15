@@ -261,6 +261,7 @@ class Sample(models.Model):
 	### type of fastq.gz
 	TYPE_OF_FASTQ_illumina = 0
 	TYPE_OF_FASTQ_minion = 1
+	TYPE_OF_FASTQ_not_defined = -1
 	
 	## to remove in future
 	objects = models.Manager()	## need to check this
@@ -310,7 +311,7 @@ class Sample(models.Model):
 					max_length=500)
 
 	### type of fastq.gz, Default Illumina, 
-	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=TYPE_OF_FASTQ_illumina)	## has the type of the fastq files
+	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=TYPE_OF_FASTQ_not_defined)	## has the type of the fastq files
 	
 	## has files, the user can upload the files after
 	has_files = models.BooleanField(default=False)
@@ -666,12 +667,16 @@ class Sample(models.Model):
 	
 	def set_type_of_fastq_sequencing(self, type_of_fastq):
 		"""
-		:parm type_of_fastq Constants.FORMAT_FASTQ_illumina or Constants.FORMAT_FASTQ_other
+		:parm type_of_fastq Constants.FORMAT_FASTQ_illumina or Constants.FORMAT_FASTQ_ont
 		"""
 		if (type_of_fastq == Constants.FORMAT_FASTQ_illumina): self.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
-		if (type_of_fastq == Constants.FORMAT_FASTQ_other): self.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+		if (type_of_fastq == Constants.FORMAT_FASTQ_ont): self.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
 
-
+	def get_type_technology(self):
+		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina): return "Illumina";
+		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_minion): return "ONT"
+		return "Not defined"
+		
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
 	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)
@@ -999,7 +1004,19 @@ class ProjectSample(models.Model):
 		test if the sample is illumina or other
 		"""
 		return self.sample.is_type_fastq_gz_sequencing()
+	
+	def is_sample_ont(self):
+		"""
+		test if the sample is illumina or other
+		"""
+		return self.sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_minion)
 
+	def get_type_technology(self):
+		"""
+		return type of technology
+		"""
+		return self.sample.get_type_technology()
+	
 class MetaKeyProjectSample(models.Model):
 	"""
 	Relation ManyToMany in 

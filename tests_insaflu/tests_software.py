@@ -273,7 +273,8 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		(out_put_path_trimmomatic, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path_trimmomatic, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True),
+						sample.get_fastq(TypePath.MEDIA_ROOT, False), sample)
 		out_file_1 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		out_file_2 = os.path.join(out_put_path_trimmomatic, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))
 		self.assertTrue(os.path.exists(out_file_1))
@@ -319,7 +320,8 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 		
-		(out_put_path, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample_name)
+		(out_put_path, filtering_result, parameters) = self.software.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True),
+							sample.get_fastq(TypePath.MEDIA_ROOT, False), sample)
 		self.assertTrue(sample.get_fastq(TypePath.MEDIA_ROOT, False) == None)
 		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))
 		self.assertTrue(os.path.exists(out_file_1))
@@ -519,6 +521,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			
@@ -606,6 +609,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ10_2
 			sample.path_name_2.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ10_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			
@@ -696,6 +700,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 		
@@ -837,6 +842,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ5_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ5_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 		
@@ -965,6 +971,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ6_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ6_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 		
@@ -1093,6 +1100,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ8_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ8_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 		
@@ -2220,6 +2228,7 @@ class Test(TestCase):
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 			sample.is_valid_2 = False
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			
@@ -2485,6 +2494,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = os.path.basename(file_2)
 			sample.path_name_2.name = file_2
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			

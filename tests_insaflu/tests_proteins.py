@@ -7,6 +7,7 @@ import unittest, os, filecmp
 from utils.utils import Utils 
 from django.conf import settings 
 from constants.constantsTestsCase import ConstantsTestsCase
+from constants.constants import Constants
 from utils.proteins import Proteins
 from utils.result import Gene
 from utils.result import Coverage
@@ -124,6 +125,7 @@ class Test(unittest.TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = vect_file[1]
 			sample.path_name_2.name = os.path.join(temp_dir, os.path.basename(vect_file[1]))
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.is_ready_for_projects = True
 			sample.is_obsolete = False

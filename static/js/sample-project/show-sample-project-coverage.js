@@ -49,6 +49,7 @@ function show_coverage_table() {
 	    				var id_to_search = 'id_table-coverage_' + i + '_' + x;
 	    				var id_to_get_value = 'id_table-coverage_content_' + i + '_' + x;
 	    				var value_coverage = $("#" + id_to_get_value).attr("value_data");
+	    				var value_limit_coverage = $("#" + id_to_get_value).attr("value_limit_coverage");
 	    				var value_data_average = $("#" + id_to_get_value).attr("value_data_average");
 	    				var color_graphic = $("#" + id_to_get_value).attr("color_graphic");
 	    				var x_size = $("#" + id_to_get_value).attr("size");
@@ -61,7 +62,8 @@ function show_coverage_table() {
 				            var filler = { fill: color_graphic, cursor: 'pointer' };
 				            rectangle.attr(filler);
 	    				}
-	    				paper.text(x_size / 2 - 3, 12, value_data_average + ' - ' + value_coverage + '%').attr({
+	    				paper.text(x_size / 2 - 3, 12, value_data_average + ' - ' + value_coverage + '%' + 
+	    					' (' + value_limit_coverage + 'x)').attr({
 			            	fill: '#000000',
 			            	"font-family": "Arial",
 			            	"font-size":"15px",

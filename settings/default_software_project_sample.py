@@ -75,9 +75,13 @@ class DefaultProjectSoftware(object):
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 		
 		### only for sample and ONT technology
-		if (not sample is None and sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_minion)):
-			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,\
+		if (not sample is None):
+			if (sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_minion)):
+				self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,\
 						user, Software.TYPE_OF_USE_sample, None, None, sample, SoftwareNames.TECHNOLOGY_minion)
+			if (sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_illumina)):
+				self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,\
+						user, Software.TYPE_OF_USE_sample, None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
 
 
 	def test_default_db(self, software_name, user, type_of_use, project, project_sample, 
@@ -99,7 +103,8 @@ class DefaultProjectSoftware(object):
 				list_software = Software.objects.filter(name=software_name, owner=user,
 					type_of_use = type_of_use,
 					parameter__project=project,
-					parameter__project_sample=project_sample).distinct("name")
+					parameter__project_sample=project_sample,
+					parameter__sample=sample).distinct("name")
 
 				### if exist set illumina in technology					
 				if (len(list_software) == 1):
@@ -169,7 +174,12 @@ class DefaultProjectSoftware(object):
 			vect_parameters = self._get_nanofilt_default(user, type_of_use, sample)
 			if (not sample is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters, technology_name)		### base values
-			return vect_parameters		
+			return vect_parameters
+		elif (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
+			vect_parameters = self._get_trimmomatic_default(user, type_of_use, sample)
+			if (not sample is None): vect_parameters = self._get_default_project(user,\
+				software_name, None, vect_parameters, technology_name)		### base values
+			return vect_parameters
 		return []
 
 	#####################################################
@@ -399,6 +409,118 @@ class DefaultProjectSoftware(object):
 
 	#####
 	#####		END nanofilt
+	#####
+	#####################################################
+
+	#####################################################
+	#####
+	#####		Trimmomatic
+	#####
+	
+	def get_trimmomatic_parameters(self, user, type_of_use, sample):
+		"""
+		get trimmomatic parameters
+		"""
+		return self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user, type_of_use,
+			None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
+	
+	def get_trimmomatic_parameters_all_possibilities(self, user, sample):
+		"""
+		get trimmomatic parameters for project_sample, project and default
+		"""
+		
+		### Test project_sample first
+		parameters = self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				SoftwareNames.TECHNOLOGY_illumina)
+		if (not parameters is None): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_trimmomatic_parameters(user)
+		if (len(parameters) > 0): return parameters
+		
+		software_names = SoftwareNames()
+		return software_names.get_trimmomatic_parameters()
+	
+	
+	def get_trimmomatic_parameters_for_sample(self, user, sample):
+		"""
+		get trimmomatic parameters only for project or default
+		"""
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
+		if (not parameters is None): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_trimmomatic_parameters(user)
+		if (len(parameters) > 0): return parameters
+		return None
+	
+	def get_trimmomatic_single_parameter_default(self, parameter_name):
+		"""
+		:param parameter_name -> NANOfilt_quality_read
+		:return value of parameter
+		"""
+		vect_parameters = self._get_trimmomatic_default(None, None, None)
+		for parameters in vect_parameters:
+			if parameters.name == parameter_name:
+				return parameters.parameter
+		return None
+
+	def is_trimmomatic_single_parameter_default(self, sample, parameter_name):
+		"""
+		test if a specific parameter is default NANOfilt_quality_read
+		"""
+		
+		value_default_parameter = self.get_trimmomatic_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_trimmomatic_single_parameter(sample, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+		
+	def get_trimmomatic_single_parameter(self, sample, parameter_name):
+		"""
+		get trimmomatic single parameters
+		:param parameter_name -> Only these two possibilities available NANOfilt_quality_read
+		"""
+		
+		parameters_string = self.get_trimmomatic_parameters_all_possibilities(sample.owner, sample)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1].split()[0]
+		return None
+	
+	def is_trimmomatic_single_parameter_default_for_project(self, sample, parameter_name):
+		"""
+		test if a specific parameter is default NANOfilt_quality_read
+		"""
+		
+		value_default_parameter = self.get_trimmomatic_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_trimmomatic_single_parameter_for_sample(sample, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+	
+	def get_trimmomatic_single_parameter_for_sample(self, sample, parameter_name):
+		"""
+		get trimmomatic single parameters
+		:param parameter_name -> Only these two possibilities available NANOfilt_quality_read
+		"""
+		
+		parameters_string = self.get_trimmomatic_parameters_for_sample(sample.owner, sample)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1].split()[0]
+		return None
+
+	#####
+	#####		END trimmomatic
 	#####
 	#####################################################
 	
@@ -1026,6 +1148,7 @@ class DefaultProjectSoftware(object):
 		vect_software.append(self.software_names.get_medaka_name_consensus())
 		vect_software.append(self.software_names.get_samtools_name_depth_ONT())
 		vect_software.append(self.software_names.get_NanoFilt_name())
+		vect_software.append(self.software_names.get_trimmomatic_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_limit_coverage_name())
 #		vect_software.append(self.software_names.get_freebayes_name())
@@ -1512,3 +1635,157 @@ class DefaultProjectSoftware(object):
 		vect_parameters.append(parameter)
 		
 		return vect_parameters
+	
+	def _get_trimmomatic_default(self, user, type_of_use, sample):
+		
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+		software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
+		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "HEADCROP"
+		parameter.parameter = "0"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "CROP"
+		parameter.parameter = "0"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 2
+		parameter.range_available = "[0:400]"
+		parameter.range_max = "400"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "CROP:<length> Cut the read to a specified length."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "SLIDINGWINDOW"
+		parameter.parameter = "5"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 3
+		parameter.range_available = "[3:50]"
+		parameter.range_max = "50"
+		parameter.range_min = "3"
+		parameter.description = "SLIDINGWINDOW:<windowSize> specifies the number of bases to average across"
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "SLIDINGWINDOW"
+		parameter.parameter = "20"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 4
+		parameter.range_available = "[10:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "10"
+		parameter.description = "SLIDINGWINDOW:<requiredQuality> specifies the average quality required"
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "LEADING"
+		parameter.parameter = "3"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 5
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "LEADING:<quality> Remove low quality bases from the beginning."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "TRAILING"
+		parameter.parameter = "3"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 6
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.not_set_value = "0"
+		parameter.description = "TRAILING:<quality> Remove low quality bases from the end."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "MINLEN"
+		parameter.parameter = "35"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 7
+		parameter.range_available = "[5:500]"
+		parameter.range_max = "500"
+		parameter.range_min = "5"
+		parameter.description = "MINLEN:<length> This module removes reads that fall below the specified minimal length."
+		vect_parameters.append(parameter)
+
+##		Only available in 0.30 version		
+#
+# 		parameter = Parameter()
+# 		parameter.name = "AVGQUAL"
+# 		parameter.parameter = "0"
+# 		parameter.type_data = Parameter.PARAMETER_int
+# 		parameter.software = software
+#		parameter.sample = sample
+# 		parameter.union_char = ":"
+# 		parameter.can_change = True
+# 		parameter.sequence_out = 8
+# 		parameter.range_available = "[0:100]"
+# 		parameter.range_max = "100"
+# 		parameter.range_min = "0"
+# 		parameter.not_set_value = "0"
+# 		parameter.description = "AVGQUAL:<quality> Drop the read if the average quality is below the specified level."
+# 		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "TOPHRED33"
+		parameter.parameter = ""
+		parameter.type_data = Parameter.PARAMETER_null
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = ""
+		parameter.can_change = False
+		parameter.sequence_out = 8
+		parameter.description = "This (re)encodes the quality part of the FASTQ file to base 33."
+		vect_parameters.append(parameter)
+		return vect_parameters
+
+		

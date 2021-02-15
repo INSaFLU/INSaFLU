@@ -216,7 +216,7 @@ def show_coverage_as_a_table(request):
 				geneticElement = utils.get_elements_and_genes(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 		
 				size_elements = client_width // len(geneticElement.get_sorted_elements())
-				size_samples_max = 150
+				size_samples_max = 160
 				if (size_elements > size_samples_max): size_elements = size_samples_max
 				len(geneticElement.get_sorted_elements())
 				## this line is passed at the end
@@ -253,12 +253,12 @@ def show_coverage_as_a_table(request):
 							coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_9)
 						href_sample = '<a href="#coverageModal" id="id_table-coverage_{}_{}" data-toggle="modal" class="tip" project_sample_id="{}" sequence="{}" title="{}"></a>'.format(\
 								count_projects, count_sequences,
-								project_sample.id, sequence_name, coverage.get_message_to_show_in_web_site(sequence_name))
-						content += '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" value_data_average="{}" color_graphic="{}" size="{}">{}</td>'.format(
-							count_projects, count_sequences,
-							coverage_value, coverage_value_average,
-							coverage.get_color(sequence_name, limit_to_mask_consensus),
-							size_elements, href_sample)
+								project_sample.id, sequence_name, coverage.get_message_to_show_in_web_site(project_sample.sample.name, sequence_name))
+						content += '<td id="id_table-coverage_content_{}_{}" class="table-coverage-image" value_data="{}" '.format(
+							count_projects, count_sequences, coverage_value) +\
+							'value_data_average="{}" color_graphic="{}" size="{}" value_limit_coverage="{}">{}</td>'.format(
+							coverage_value_average, coverage.get_color(sequence_name, limit_to_mask_consensus),
+							size_elements, coverage.get_middle_limit(), href_sample)
 						count_sequences += 1
 						
 					count_projects += 1
@@ -415,6 +415,7 @@ def show_count_variations(request):
 					if (project_sample.is_deleted): continue
 					if (project_sample.is_error): continue
 					if (not project_sample.is_finished): continue
+					if (not project_sample.is_sample_illumina()): continue
 					data_out.append([project_sample.count_variations.var_less_50, project_sample.count_variations.var_bigger_50_90, project_sample.sample.name])
 
 				if (len(data_out) > 0):

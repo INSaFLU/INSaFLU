@@ -3,7 +3,7 @@ Created on 01/01/2021
 
 @author: mmp
 '''
-import os
+import os, filecmp
 from django.test import TestCase
 from django.conf import settings
 from constants.constantsTestsCase import ConstantsTestsCase
@@ -216,7 +216,7 @@ class Test(TestCase):
 							
 			if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag.delete()
 		else:
-			self.assertEqual(None, sample.mixed_infections_tag)
+			self.assertEqual("NA (not applicable)", sample.mixed_infections_tag.name)
 			self.assertEqual("Not assigned", sample.type_subtype)
 		
 		self.assertEqual(0, sample.number_alerts)
@@ -461,6 +461,21 @@ class Test(TestCase):
 		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_Medaka_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)))
 		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_Medaka_name)))
+		
+		### campare VCF
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "medaka_out.vcf")
+		out_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_Medaka_name)
+		temp_file = self.utils.get_temp_file("clean_vcf", ".txt")
+		os.system('grep -v "##SnpEffCmd" {} > {}'.format(out_file, temp_file))
+		self.assertTrue(os.path.exists(temp_file))
+		self.assertTrue(filecmp.cmp(temp_file, expected_file_samples))
+		
+		### compare
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "medaka_output.tab")
+		out_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		
 		## test consensus file
 		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))

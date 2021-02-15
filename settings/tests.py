@@ -282,7 +282,7 @@ class testsDefaultSoftwares(TestCase):
 			sample = Sample()
 			sample.name = sample_name
 			sample.path_name_1.name = "/tmp/zpt"
-			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_other)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_ont)
 			sample.owner = user
 			sample.save()
 			
@@ -592,13 +592,14 @@ class testsDefaultSoftwares(TestCase):
 			user.save()
 		
 		### define a project
-		sample_name = "file_name_2"
+		sample_name = "file_name_2_232"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
 			sample = Sample()
 			sample.name = sample_name
 			sample.path_name_1.name = "/tmp/zpt"
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			
@@ -613,7 +614,7 @@ class testsDefaultSoftwares(TestCase):
 			
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(6, len(vect_software))
+		self.assertEqual(7, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		
@@ -829,6 +830,49 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:90", default_software.get_mask_consensus_parameters_all_possibilities(user,
 				project_sample, SoftwareNames.TECHNOLOGY_illumina))
 		
+		
+		##########################
+		### test Trimmomatic
+		default_software.test_all_defaults(user, Software.TYPE_OF_USE_sample, None, None, sample)
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_sample,
+							technology__name = SoftwareNames.TECHNOLOGY_minion)
+			self.fail("Must fail")
+		except Software.DoesNotExist:
+			pass
+			
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_sample,
+							technology__name = SoftwareNames.TECHNOLOGY_illumina)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertFalse(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_global())
+			self.assertTrue(software.is_used_in_sample())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		### test set default
+		self.assertEqual("0", parameters[0].parameter)
+		self.assertEqual("5", parameters[2].parameter)
+		self.assertEqual("HEADCROP", parameters[0].name)
+		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
+						default_software.get_trimmomatic_parameters(user,
+						Software.TYPE_OF_USE_sample, sample))
+		parameter = parameters[0]
+		parameter.parameter = "20"
+		parameter.save()
+		self.assertEqual("HEADCROP:20 SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
+						default_software.get_trimmomatic_parameters(user,
+						Software.TYPE_OF_USE_sample, sample))
+		
+		self.assertFalse(default_software.is_trimmomatic_single_parameter_default_for_project(sample,
+									"HEADCROP"))
+		
 	def test_default_software_project_sample(self):
 		
 		try:
@@ -848,6 +892,7 @@ class testsDefaultSoftwares(TestCase):
 			sample = Sample()
 			sample.name = sample_name
 			sample.path_name_1.name = "/tmp/zpt"
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 			
@@ -871,7 +916,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		vect_software = default_software.get_all_software()
-		self.assertEqual(6, len(vect_software))
+		self.assertEqual(7, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		
@@ -938,7 +983,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(6, len(vect_software))
+		self.assertEqual(7, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 #		self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		

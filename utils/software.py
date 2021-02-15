@@ -620,7 +620,7 @@ class Software(object):
 			raise Exception("Fail to run fasttree")
 		return out_file
 	
-	def run_trimmomatic(self, file_name_1, file_name_2, sample_name, user = None):
+	def run_trimmomatic(self, file_name_1, file_name_2, sample, user = None):
 		"""
 		run trimmomatic
 		return output directory
@@ -637,14 +637,14 @@ class Software(object):
 		if (user is None):
 			parameters = self.software_names.get_trimmomatic_parameters()
 		else:
-			default_software = DefaultSoftware()
-			parameters = default_software.get_parameters(self.software_names.get_trimmomatic_name(), user)
+			default_software_project = DefaultProjectSoftware()
+			parameters = default_software_project.get_trimmomatic_parameters_all_possibilities(user, sample)
 
 		### run software
 		temp_dir = self.utils.get_temp_dir()
 		if (file_name_2 is None or len(file_name_2) == 0):
 			cmd = "java -jar %s SE -threads %d %s %s_1P.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, file_name_1, 
-					os.path.join(temp_dir, sample_name), parameters)
+					os.path.join(temp_dir, sample.name), parameters)
 		else:
 			### need to make links the files to trimmomatic identify the _R1_ and _R2_ 
 			new_file_name = os.path.join(temp_dir, 'name_R1_001.fastq.gz')
@@ -653,7 +653,7 @@ class Software(object):
 			cmd = "ln -s {} {}".format(file_name_2, os.path.join(temp_dir, 'name_R2_001.fastq.gz'))
 			os.system(cmd)
 			cmd = "java -jar %s PE -threads %d -basein %s -baseout %s.fastq.gz %s" % (self.software_names.get_trimmomatic(), settings.THREADS_TO_RUN_FAST, 
-										new_file_name, os.path.join(temp_dir, sample_name), parameters)
+										new_file_name, os.path.join(temp_dir, sample.name), parameters)
 		(exist_status, output) = subprocess.getstatusoutput(cmd)
 		if (exist_status != 0):
 			self.utils.remove_dir(temp_dir)
@@ -1133,7 +1133,6 @@ class Software(object):
 		if (os.path.exists(temp_file_bam_coverage)): os.unlink(temp_file_bam_coverage)
 		return temp_dir
 
-
 	"""
 	Global processing
 	"""
@@ -1145,7 +1144,7 @@ class Software(object):
 		"""
 		manage_database = ManageDatabase()
 		result_all = Result()
-		
+
 		### first try run downsize if necessary
 		if (settings.DOWN_SIZE_FASTQ_FILES):
 			(is_downsized, file_name_1, file_name_2) = self.make_downsize(sample.get_fastq(TypePath.MEDIA_ROOT, True),\
@@ -1180,7 +1179,8 @@ class Software(object):
 		
 		### run trimmomatic
 		try:
-			(temp_dir, filtering_result, parameters) = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True), sample.get_fastq(TypePath.MEDIA_ROOT, False), sample.name, owner)
+			(temp_dir, filtering_result, parameters) = self.run_trimmomatic(sample.get_fastq(TypePath.MEDIA_ROOT, True),
+						sample.get_fastq(TypePath.MEDIA_ROOT, False), sample, owner)
 			result_all.add_software(SoftwareDesc(self.software_names.get_trimmomatic_name(),
 						self.software_names.get_trimmomatic_version(), parameters,
 						filtering_result.key_values))

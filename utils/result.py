@@ -364,6 +364,14 @@ class Coverage(object):
 		if (not self.limit_defined_by_user is None): return self.limit_defined_by_user
 		if (not self.limit_defined_to_project is None): return self.limit_defined_to_project
 		return 10
+	
+	def get_type_coverage_middle_limit(self):
+		"""
+		:return threshold of middle limit 
+		"""
+		if (not self.limit_defined_by_user is None): return self.COVERAGE_MORE_DEFINED_BY_USER
+		if (not self.limit_defined_to_project is None): return self.COVERAGE_PROJECT
+		return self.COVERAGE_MORE_9
 
 	def get_dict_data(self): return self.dt_data
 	
@@ -374,7 +382,12 @@ class Coverage(object):
 		else:
 			self.dt_data[element] = CoverageElement(element)
 			self.dt_data[element].add_coverage(type_coverage, coverage)
-
+	
+	def get_coverage_by_middle_tag(self, element):
+		type_coverage = self.get_type_coverage_middle_limit()
+		if (element in self.dt_data): return self.dt_data[element].get_coverage(type_coverage)
+		raise Exception("Error: there's no key like this: " + element)
+	
 	def get_coverage(self, element, type_coverage):
 		if (element in self.dt_data): return self.dt_data[element].get_coverage(type_coverage)
 		raise Exception("Error: there's no key like this: " + element)
@@ -465,22 +478,25 @@ class Coverage(object):
 	def get_fault_message_0(self, element_name):
 		return "Fail, locus '{}': the % of locus size covered by at least 1-fold is '{}%' (below 100%)".format(element_name, self.ratio_value_0)
 
-	def get_message_to_show_in_web_site(self, element):
+	def get_message_to_show_in_web_site(self, sample_name, element):
 		"""
 		get message for web site about coverage in More than 9
 		"""
 		if (not self.limit_defined_by_user is None):
-			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(element,\
+			return "Sample name: {}\nLocus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(
+					sample_name, element,
 					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 					self.limit_defined_by_user,\
 					self.get_coverage(element, self.COVERAGE_MORE_DEFINED_BY_USER))
 		elif (not self.limit_defined_to_project is None):
-			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(element,\
+			return "Sample name: {}\nLocus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least {}-fold: {}%".format(
+					sample_name, element,
 					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 					self.limit_defined_to_project,\
 					self.get_coverage(element, self.COVERAGE_PROJECT))
 		else:
-			return "Locus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(element,\
+			return "Sample name: {}\nLocus: {}\n\nMean depth of coverage: {}\n% of size covered by at least 1-fold: {}%\n% of size covered by at least 10-fold: {}%".format(
+					sample_name, element,
 					self.get_coverage(element, self.COVERAGE_ALL), self.get_coverage(element, self.COVERAGE_MORE_0),\
 					self.get_coverage(element, self.COVERAGE_MORE_9))
 	

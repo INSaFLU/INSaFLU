@@ -85,7 +85,7 @@ class Constants(object):
 	FORMAT_FASTA = "fasta"
 	## https://support.illumina.com/bulletins/2020/04/maximum-read-length-for-illumina-sequencing-platforms.html
 	FORMAT_FASTQ_illumina = "fastq_illumina"	### if is lower than 302 is illumina 
-	FORMAT_FASTQ_other = "fastq_other"
+	FORMAT_FASTQ_ont = "fastq_other"
 	EXTENSION_ZIP = ".gz"
 	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 302
 	MIN_LENGHT_MINION_FASQC_SEQ = 100

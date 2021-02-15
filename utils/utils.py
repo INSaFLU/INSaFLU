@@ -253,7 +253,7 @@ class Utils(object):
 		try:
 			sz_type = self.get_type_file(file_name)
 			if (sz_type == Constants.FORMAT_FASTQ_illumina): return (True, Constants.FORMAT_FASTQ_illumina)
-			if (sz_type == Constants.FORMAT_FASTQ_other): return (True, Constants.FORMAT_FASTQ_other)
+			if (sz_type == Constants.FORMAT_FASTQ_ont): return (True, Constants.FORMAT_FASTQ_ont)
 		except OSError as e:
 			self.logger_production.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
 			self.logger_debug.error("Fail to test '" + file_name + "' fastq.gz file: " + e.args[0])
@@ -287,7 +287,7 @@ class Utils(object):
 		### if read something in last SeqIO.parse
 		if (len(vect_length) > 1):
 			if (max(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
-			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_other
+			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_ont
 			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		
 		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')
@@ -715,6 +715,7 @@ class Utils(object):
 		"""
 		FREQ = 'FREQ'
 		AO = 'AO'
+		RO = 'RO'
 		AF = 'AF'
 		TYPE = "TYPE"
 		
@@ -728,6 +729,7 @@ class Utils(object):
 		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
 		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/DP')
 		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count')
+		if (not RO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(RO, number='1', type='Integer', description='Reference allele observation count')
 		if (not AF in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AF, number='R', type='Integer', description='Number of observation for each allele')
 		if (not TYPE in vcf_hanlder.header.info): vcf_hanlder.header.info.add(TYPE, number='A', type='String', description='The type of allele, either snp, mnp, ins, del, or complex')
 
@@ -748,6 +750,7 @@ class Utils(object):
 
 				#### extra info				
 				vect_out_ao = []	### AO
+				out_ro = -1	### RO
 				vect_out_af = []	### AF
 				vect_out_freq = []	### FREQ
 				vect_out_type = []	### TYPE
@@ -762,9 +765,11 @@ class Utils(object):
 							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(variant.info['DP']) * 100)))
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
 					vect_out_af.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
+					if (out_ro == -1): out_ro = int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1])
+				if (out_ro > -1): variant.info[RO] = tuple([out_ro])
 				variant.info[AO] = tuple(vect_out_ao)
 				variant.info[AF] = tuple(vect_out_af)
-				variant.info[TYPE] = tuple(vect_out_type)
+				variant.info[TYPE] = tuple(vect_out_type)	
 				if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
 			vcf_hanlder_write.write(variant)
 			

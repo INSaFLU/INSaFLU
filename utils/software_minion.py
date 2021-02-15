@@ -4,7 +4,7 @@ Created on 01/01/2021
 @author: mmp
 '''
 import os, logging, humanfriendly, datetime
-from constants.constants import Constants, TypePath, FileType, FileExtensions
+from constants.constants import Constants, TypePath, FileType
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
 from utils.coverage import DrawAllCoverage
@@ -41,11 +41,11 @@ class SoftwareMinion(object):
 		Constructor
 		'''
 		pass
-	"""
-	Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
-	"""
+	
 	def run_clean_minion(self, sample, user, b_make_identify_species = False):
-
+		"""
+		Global processing, RabbitQC, NanoStat, NanoFilt and GetSpecies
+		"""
 		print("Start ProcessControler")
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
@@ -112,6 +112,15 @@ class SoftwareMinion(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 				else:
 					sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
+					tag_mixed_infection = "NA (not applicable)"
+					try:
+						mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+					except MixedInfectionsTag.DoesNotExist as e:
+						mixed_infections_tag = MixedInfectionsTag()
+						mixed_infections_tag.name = tag_mixed_infection
+						mixed_infections_tag.save()
+					
+					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
 					message = "Warning: Classification using Nanopore sequences is under development."

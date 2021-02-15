@@ -213,16 +213,32 @@ class SamplesView(LoginRequiredMixin, ListView):
 		
 	def get_context_data(self, **kwargs):
 		context = super(SamplesView, self).get_context_data(**kwargs)
-		tag_search = 'search_samples'
+		search_key = 'search_samples'
+		tag_search = self.request.GET.get(search_key)
 		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(type_subtype__icontains=self.request.GET.get(tag_search)) |\
-										Q(data_set__name__icontains=self.request.GET.get(tag_search)))
+		if (not tag_search is None and len(tag_search) > 0):
+			filter_dict = {'name__icontains': tag_search,
+					'type_subtype__icontains': tag_search,
+					'data_set__name__icontains': tag_search
+			}  # Dict with fields
+			or_condition = Q()
+			for key, value in filter_dict.items():
+				or_condition.add(Q(**{key: value}), Q.OR)
+				
+			if (tag_search.lower().startswith(SoftwareNames.TECHNOLOGY_illumina.lower())):
+				or_condition.add(Q(type_of_fastq = Sample.TYPE_OF_FASTQ_illumina), Q.OR)
+			elif (tag_search.lower().startswith(SoftwareNames.TECHNOLOGY_minion.lower())):
+				or_condition.add(Q(type_of_fastq = Sample.TYPE_OF_FASTQ_minion), Q.OR)
+			elif (tag_search.lower().startswith(SoftwareNames.TECHNOLOGY_Undefined.lower())):
+				or_condition.add(Q(type_of_fastq = Sample.TYPE_OF_FASTQ_not_defined), Q.OR)
 			
+			### filtering
+			query_set = query_set.filter(or_condition)
+
+				
 		table = SampleTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
+		if (not tag_search is None): context[search_key] = tag_search
 		context['table'] = table
 		context['nav_sample'] = True
 		context['total_itens'] = query_set.count()
@@ -1472,12 +1488,12 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		## Files
 		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
 		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
 		context['sample_file_result_csv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
 		context['sample_file_result_tsv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)
 		context['sample_file_all_consensus'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
 		
-		### need to test becaus in the past this file was not created
+		### need to test because in the past this file was not created
+		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
 		file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
 		if (not os.path.exists(file_name)):
 			collect_extra_data = CollectExtraData()

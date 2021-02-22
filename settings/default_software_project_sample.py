@@ -1119,12 +1119,12 @@ class DefaultProjectSoftware(object):
 		for parameter in vect_parameters:
 			assert parameter.sequence_out not in dt_out_sequential
 			if software is None:
-				software = parameter.software
-				software.technology = default_software.get_technology_instance(technology_name)
 				try:
 					software = Software.objects.get(name=parameter.software.name, owner=parameter.software.owner,\
 						type_of_use=type_of_use, technology__name=technology_name)
 				except Software.DoesNotExist:
+					software = parameter.software
+					software.technology = default_software.get_technology_instance(technology_name)
 					software.save()
 			parameter.software = software
 			parameter.save()
@@ -1525,7 +1525,7 @@ class DefaultProjectSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "--headcrop"
-		parameter.parameter = "10"
+		parameter.parameter = "70"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
 		parameter.sample = sample
@@ -1541,7 +1541,7 @@ class DefaultProjectSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "--tailcrop"
-		parameter.parameter = "10"
+		parameter.parameter = "70"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
 		parameter.sample = sample

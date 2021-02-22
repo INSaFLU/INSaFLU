@@ -2275,7 +2275,7 @@ class Test(TestCase):
 		self.assertTrue(exist_status == 0)
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_process_second_stage_analysis_single_file_3(self):
+	def test_process_second_stage_analysis_single_file(self):
 		"""
  		test global method
  		"""
@@ -2283,8 +2283,8 @@ class Test(TestCase):
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
 
-		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_gbk)
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_PV1_KX162693_fasta)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
 
@@ -2297,7 +2297,7 @@ class Test(TestCase):
 			user.password = ConstantsTestsCase.TEST_USER_NAME
 			user.save()
 
-		ref_name = "second_stagis_single_file3_pk"
+		ref_name = "second_stagis_single_file2"
 		try:
 			reference = Reference.objects.get(name=ref_name)
 		except Reference.DoesNotExist:
@@ -2314,7 +2314,7 @@ class Test(TestCase):
 		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
 			
-		sample_name = "run_snippyis_single_file3_pk"
+		sample_name = "run_snippyis_single_file1"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -2329,7 +2329,7 @@ class Test(TestCase):
 			sample.owner = user
 			sample.save()
 
-		project_name = "file_naais_single_filee_4_pk"
+		project_name = "file_naais_single_filee_3"
 		try:
 			project = Project.objects.get(name=project_name)
 		except Project.DoesNotExist:
@@ -2359,6 +2359,7 @@ class Test(TestCase):
 		except ProjectSample.DoesNotExist:
 			self.fail("Must exist")
 		self.assertTrue(project_sample.is_finished)
+		self.assertTrue(project_sample.is_mask_consensus_sequences)
 		
 		### test the files
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
@@ -2374,22 +2375,39 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
 		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		
 		## freebayes
 		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
 
 		## test freebayes clean
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-#		self.assertTrue(os.path.getsize(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)) > 10)
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertTrue(os.path.getsize(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)) > 10)
 
 		## test consensus file
-		self.assertFalse(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
+		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
+		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
 
 		### human file name, snippy tab
 		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
 		self.assertTrue(os.path.getsize(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())) > 10)
+		
+		b_second_choice = False
+		file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
+		self.assertTrue(os.path.exists(file_out))
+		self.assertTrue(filecmp.cmp(file_out, os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR,
+							"validated_minor_iSNVs_sample_run_snippyis_single_file1.tab")))
+		
+		b_second_choice = True
+		file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
+		self.assertTrue(os.path.exists(file_out))
+		self.assertTrue(filecmp.cmp(file_out, os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR,
+							"validated_minor_inc_indels_sample_run_snippyis_single_file1.tab")))
 		
 		### set flag that is finished
 		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, None)
@@ -2401,18 +2419,18 @@ class Test(TestCase):
 		decode_coverage = DecodeObjects()
 		count_hits = decode_coverage.decode_result(list_meta[0].description)
 		self.assertEquals(0, count_hits.get_hits_50_90())
-		self.assertEquals(0, count_hits.get_hits_less_50())
-		self.assertEquals(0, count_hits.get_total_50_50_90())
-		self.assertEquals(0, count_hits.get_total())
+		self.assertEquals(3, count_hits.get_hits_less_50())
+		self.assertEquals(3, count_hits.get_total_50_50_90())
+		self.assertEquals(125, count_hits.get_total())
 		
-		self.assertEquals(0, project_sample.count_variations.var_less_50)
+		self.assertEquals(3, project_sample.count_variations.var_less_50)
 		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
-		self.assertEquals(0, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(122, project_sample.count_variations.var_bigger_90)
 		self.assertEquals(0, project_sample.alert_first_level)
-		self.assertEquals(1, project_sample.alert_second_level)
+		self.assertEquals(0, project_sample.alert_second_level)
 		
 		### test mixed infections
-		self.assertEquals('0.0', '{}'.format(project_sample.mixed_infections.average_value))
+		self.assertEquals('0.815100969586423', '{}'.format(project_sample.mixed_infections.average_value))
 		self.assertEquals('No', project_sample.mixed_infections.tag.name)
 		self.assertFalse(project_sample.mixed_infections.has_master_vector)
 		
@@ -2431,9 +2449,15 @@ class Test(TestCase):
 		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
-		self.assertEqual(coverage.get_coverage('KX162693', Coverage.COVERAGE_ALL), "0.0")
-		self.assertEqual(coverage.get_coverage('KX162693', Coverage.COVERAGE_MORE_9), "0.0")
-		self.assertEqual(coverage.get_coverage('KX162693', Coverage.COVERAGE_MORE_0), "0.0")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "527.4")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "2198.8")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_ALL), "1449.3")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
 		
 		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
 		self.assertEquals(2, len(lst_meta_sample))
@@ -2447,6 +2471,7 @@ class Test(TestCase):
 
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_identify_type_and_sub_type_corona(self):

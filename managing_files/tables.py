@@ -239,10 +239,6 @@ class SampleTable(tables.Table):
 		### this case is when the number of remain reads are zero
 		### it is success but there's no reads
 		elif (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
-# 			if (record.is_type_fastq_gz_sequencing()): 
-# 				return mark_safe('<a href=' + reverse('sample-description', args=[record.pk]) + \
-# 					'><span ><i class="fa fa-plus-square"></i></span> More Info</a>')
-			
 			str_links = self._get_magic_handle(record)
 			if len(str_links) > 0: return mark_safe(str_links + ' No reads left')
 		return _('Not yet')
@@ -536,7 +532,7 @@ class AddSamplesFromCvsFileTableMetadata(tables.Table):
 	"""
 	To add samples to projects
 	"""
-	samples_processed = tables.Column('#Samples updated', empty_values=())
+	samples_processed = tables.Column('#Samples linked', empty_values=())
 	number_samples = tables.Column('#Samples', empty_values=())
 	is_completed = tables.Column('Load completed', empty_values=())
 	

@@ -37,8 +37,8 @@ class testsDefaultSoftwares(TestCase):
 		
 		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33", default_software.get_trimmomatic_parameters(user))
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user))
-		self.assertEqual("-q 10 -l 50 --headcrop 10 --tailcrop 10", default_software.get_nanofilt_parameters(user))
-		self.assertEqual("-q 10 -l 50 --headcrop 10 --tailcrop 10", 
+		self.assertEqual("-q 10 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters(user))
+		self.assertEqual("-q 10 -l 50 --headcrop 70 --tailcrop 70", 
 				default_software.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user, SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user, SoftwareNames.TECHNOLOGY_minion))
@@ -131,14 +131,14 @@ class testsDefaultSoftwares(TestCase):
 		parameter = parameters[0]
 		parameter.parameter = "20"
 		parameter.save()
-		self.assertEqual("-q 20 -l 50 --headcrop 10 --tailcrop 10", default_software.get_nanofilt_parameters(user))
+		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters(user))
 		
 		self.assertEqual("--maxlength", parameters[4].name)
 		parameter = parameters[4]
 		parameter.parameter = "20"
 		parameter.save()
-		self.assertEqual("-q 20 -l 50 --headcrop 10 --tailcrop 10 --maxlength 20", default_software.get_nanofilt_parameters(user))
-		self.assertEqual("-q 20 -l 50 --headcrop 10 --tailcrop 10 --maxlength 20", 
+		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70 --maxlength 20", default_software.get_nanofilt_parameters(user))
+		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70 --maxlength 20", 
 					default_software.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name,
 							user, SoftwareNames.TECHNOLOGY_minion))
 		
@@ -376,9 +376,9 @@ class testsDefaultSoftwares(TestCase):
 		parameter = parameters[0]
 		parameter.parameter = "20"
 		parameter.save()
-		self.assertEqual("-q 20 -l 50 --headcrop 10 --tailcrop 10", default_software.get_nanofilt_parameters(user,
+		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters(user,
 									Software.TYPE_OF_USE_sample, sample))
-		self.assertEqual("-q 20 -l 50 --headcrop 10 --tailcrop 10", default_software.get_nanofilt_parameters_all_possibilities(user,
+		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters_all_possibilities(user,
 									sample))
 		self.assertEqual("20", default_software.get_nanofilt_single_parameter(sample,
 									DefaultProjectSoftware.NANOfilt_quality_read))

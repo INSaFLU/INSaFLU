@@ -1706,6 +1706,9 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			if (project_sample.is_sample_illumina()):
 				context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 				context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
+				b_second_choice = True
+				context['freebayes_variants_file_snp_indel'] = project_sample.get_file_web(FileType.FILE_TAB,
+						SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
 				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
 				context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)
 			

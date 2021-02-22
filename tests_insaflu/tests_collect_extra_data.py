@@ -332,7 +332,8 @@ class Test(unittest.TestCase):
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### collect variations from freebayes
-		out_file = collect_extra_data.collect_variations_freebayes(project)
+		vect_type_remove = ['ins', 'del']
+		out_file = collect_extra_data.collect_variations_freebayes(project, vect_type_remove)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes.tsv")
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
@@ -562,7 +563,8 @@ class Test(unittest.TestCase):
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### collect variations from freebayes
-		out_file = collect_extra_data.collect_variations_freebayes(project)
+		vect_type_remove = ['ins', 'del']
+		out_file = collect_extra_data.collect_variations_freebayes(project, vect_type_remove)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes.tsv")
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
@@ -906,7 +908,8 @@ class Test(unittest.TestCase):
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### collect variations from freebayes
-		out_file = collect_extra_data.collect_variations_freebayes(project)
+		vect_type_remove = ['ins', 'del']
+		out_file = collect_extra_data.collect_variations_freebayes(project, vect_type_remove)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes_ont.tsv")
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)

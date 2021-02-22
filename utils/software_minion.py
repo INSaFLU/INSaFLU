@@ -397,7 +397,8 @@ class SoftwareMinion(object):
 				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
-						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit)
+						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
+						project_sample.id)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
 								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
 				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\
@@ -615,7 +616,7 @@ class SoftwareMinion(object):
 
 
 	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name,
-				parameters_consensus, parameters_depth, coverage_limit):
+				parameters_consensus, parameters_depth, coverage_limit, project_sample_id = -1):
 		"""
 		run medaka
 		return output directory of snippy, try to do something most close possible
@@ -672,10 +673,17 @@ class SoftwareMinion(object):
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
 		self.utils.link_file(reference_fasta, reference_fasta_medaka, False)
 		
-		cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
+		if (project_sample_id != -1):
+			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {} > /tmp/insaFlu/medaka_project_sample_{}.txt 2>&1".format(
+					self.software_names.get_medaka_env(),
+					self.software_names.get_medaka(), file_fastq, reference_fasta,
+					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus, project_sample_id)
+		else:
+			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
 					self.software_names.get_medaka_env(),
 					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
 					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
+		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -717,7 +725,7 @@ class SoftwareMinion(object):
 			raise Exception("Fail to run samtools depth in nanopore")
 		
 		### create tbi
-		self.software.create_index_with_tabix(depth_file, "bed")
+		self.software.create_index_with_tabix(depth_file, SoftwareNames.SOFTWARE_DEPTH_SAMTOOLS_file_flag)
 		
 		### vcf
 		vcf_before_file = os.path.join(temp_dir, sample_name + "_before_annotation.vcf")
@@ -764,7 +772,7 @@ class SoftwareMinion(object):
 				
 			### add FREQ to VCF file
 			final_vcf = os.path.join(temp_dir, sample_name + '_2.vcf')
-			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, final_vcf, coverage_limit)
+			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf, coverage_limit)
 			self.utils.move_file(final_vcf, vcf_file)
 			self.software.test_bgzip_and_tbi_in_vcf(vcf_file)
 			

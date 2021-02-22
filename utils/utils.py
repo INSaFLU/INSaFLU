@@ -705,7 +705,7 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
-	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, vcf_file_out, coverage_limit):
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, coverage_limit):
 		""" add FREQ, AO, AF and TYPE to VCF, FREQ=AO/DP
 		This case is used in MEDAKA only
 		
@@ -718,6 +718,7 @@ class Utils(object):
 		RO = 'RO'
 		AF = 'AF'
 		TYPE = "TYPE"
+		DP_COMPOSED = "DP_COMPOSED"		### this is used to get 
 		
 		#read the input file
 		vcf_hanlder = pysam.VariantFile(vcf_file, "r")
@@ -727,11 +728,13 @@ class Utils(object):
 			return
 		
 		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
-		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/DP')
-		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count')
-		if (not RO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(RO, number='1', type='Integer', description='Reference allele observation count')
-		if (not AF in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AF, number='R', type='Integer', description='Number of observation for each allele')
+		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/(DPSP-AR)')
+		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)')
+		if (not RO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(RO, number='1', type='Integer', description='Reference allele observation count, SR (ref fwd + ref rev)')
+		if (not AF in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AF, number='R', type='Integer', description='Number of observation for each allele, SR (ref fwd + ref rev, alt1 fwd + alt1 rev, etc.)')
 		if (not TYPE in vcf_hanlder.header.info): vcf_hanlder.header.info.add(TYPE, number='A', type='String', description='The type of allele, either snp, mnp, ins, del, or complex')
+		if (not DP_COMPOSED in vcf_hanlder.header.info): vcf_hanlder.header.info.add(DP_COMPOSED, number='1', type='String',\
+						description='Coverage at position (DPSP-AR)/(samtools -aa). First is collected by Medaka, Second is collected by samtools.')
 
 		## write the header
 		for variant_header_records in vcf_hanlder.header.records:
@@ -741,28 +744,32 @@ class Utils(object):
 			vcf_hanlder_write.header.add_sample(variant_sample)
 			
 		for variant in vcf_hanlder:
-			if ("SR" in variant.info and "DP" in variant.info):	## SR=0,0,15,6
+			### DP must be replaced by DPSP. DPSP is the sum of all reads Span and Ambiguous
+			if ("SR" in variant.info and "DPSP" in variant.info and "AR" in variant.info):	## SR=0,0,15,6
 				### don't process this VCF because has a low coverage
-				if coverage_limit > 0 and int(variant.info["DP"] < coverage_limit): continue
+				total_deep = int(variant.info['DPSP']) - sum([int(_) for _ in variant.info['AR']]) 
+				if (coverage_limit > 0 and total_deep < coverage_limit): continue
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
 					vcf_hanlder_write.write(variant) 
 					continue		### different numbers of Alleles and References
 
 				#### extra info				
 				vect_out_ao = []	### AO
-				out_ro = -1	### RO
+				out_ro = -1			### RO
 				vect_out_af = []	### AF
 				vect_out_freq = []	### FREQ
 				vect_out_type = []	### TYPE
+				
+				
 				for value_ in range(0, len(variant.info['SR']), 2):
 					if (value_ > 0):
 						vect_out_ao.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
 						vect_out_type.append(self._get_type_variation(variant.ref, variant.alts[(value_ - 2) >> 1]))
-						if (int(variant.info['DP']) > 0):
+						if (total_deep > 0):
 							### incongruences in Medaka, 
 							### these values are collected in different stages of the Medaka workflow, (email from support@nanoporetech.com at 23 Dec 2020)
-							if (int(variant.info['DP']) <= vect_out_ao[-1]): vect_out_freq.append(100)
-							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(variant.info['DP']) * 100)))
+							if (total_deep <= vect_out_ao[-1]): vect_out_freq.append(100)
+							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(total_deep) * 100)))
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
 					vect_out_af.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
 					if (out_ro == -1): out_ro = int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1])
@@ -770,6 +777,8 @@ class Utils(object):
 				variant.info[AO] = tuple(vect_out_ao)
 				variant.info[AF] = tuple(vect_out_af)
 				variant.info[TYPE] = tuple(vect_out_type)	
+				variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, self.get_coverage_by_pos(file_coverage,
+								variant.chrom, variant.pos, variant.pos))])
 				if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
 			vcf_hanlder_write.write(variant)
 			
@@ -937,6 +946,9 @@ class Utils(object):
 	def filter_fasta_by_sequence_names(self, consensus_fasta, sample_name, sequence_name, coverage, gene, limit_to_mask_consensus, out_dir):
 		"""
 		:param limit_to_mask_consensus can be -1 if not defined for this project_sample
+		:param coverage Can be None
+		:param gene Can be None
+		:param limit_to_mask_consensus if Coverage is None this value is not necessary
 		Test if necessary reverse complement
 		filter fasta file
 		write a file for each element 
@@ -1380,7 +1392,32 @@ class Utils(object):
 		if len(vect_lines) == 1 and self.is_integer(vect_lines[0]): return int(vect_lines[0]) // 4
 		return 0
 
+	def get_coverage_by_pos(self, file_coverage, chr_name, position_start, position_end):
+		"""
+		:out coverage at a specific position
+		"""
+		if (not os.path.exists(file_coverage)): return -1
 
+		software_names = SoftwareNames()
+		temp_file = self.get_temp_file("get_number_fastq", ".txt")
+		cmd = "{} {} {}:{}-{} > {}".format(software_names.get_tabix(), file_coverage,
+						chr_name, position_start, position_end, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			self.remove_file(temp_file)
+			raise Exception("Fail to run gzip")
+
+		### get number
+		vect_lines = self.read_text_file(temp_file)
+		self.remove_file(temp_file)
+		if len(vect_lines) == 1 and len(vect_lines[0].split()) == 3 and self.is_integer(vect_lines[0].split()[2]):
+			return int(vect_lines[0].split()[2])
+		
+		return -1
+	
+		
 class ShowInfoMainPage(object):
 	"""
 	only a help class

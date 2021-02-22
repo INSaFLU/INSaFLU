@@ -17,19 +17,13 @@
 ##INFO=<ID=SR,Number=.,Type=Integer,Description="Depth of spanning reads by strand which best align to each allele (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.)">
 ##INFO=<ID=AR,Number=2,Type=Integer,Description="Depth of ambiguous spanning reads by strand which align equally well to all alleles (fwd, rev)">
 ##INFO=<ID=SC,Number=.,Type=Integer,Description="Total alignment score to each allele of spanning reads by strand (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.) aligned with parasail match 5, mismatch -4, open 5, extend 3">
-##SnpEffVersion="4.1l (build 2015-10-03), by Pablo Cingolani"
-##SnpEffCmd="SnpEff  -no-downstream -no-upstream -no-intergenic -no-utr -noStats SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947 /tmp/insaFlu/insa_flu_path_79523860/run_snippyis_single_covid.vcf "
-##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO'">
-##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
-##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
-##INFO=<ID=FREQ,Number=A,Type=Float,Description="Ratio of AO/DP">
-##INFO=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count">
-##INFO=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count">
-##INFO=<ID=AF,Number=R,Type=Integer,Description="Number of observation for each allele">
+##INFO=<ID=FREQ,Number=A,Type=Float,Description="Ratio of AO/(DPSP-AR)">
+##INFO=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)">
+##INFO=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count, SR (ref fwd + ref rev)">
+##INFO=<ID=AF,Number=R,Type=Integer,Description="Number of observation for each allele, SR (ref fwd + ref rev, alt1 fwd + alt1 rev, etc.)">
 ##INFO=<ID=TYPE,Number=A,Type=String,Description="The type of allele, either snp, mnp, ins, del, or complex">
+##INFO=<ID=DP_COMPOSED,Number=1,Type=String,Description="Coverage at position (DPSP-AR)/(samtools -aa). First is collected by Medaka, Second is collected by samtools.">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
-MN908947	160	.	G	T	54.923	PASS	AR=0,0;DP=23;DPS=17,6;DPSP=23;SC=3955,1356,4102,1410;SR=0,0,17,6;n_cols=1;pred_q=54.923;pred_qs=54.923;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=G;RO=0;AO=23;AF=0,23;TYPE=snp;FREQ=100	GT:GQ	1:55
-MN908947	241	.	C	T	52.247	PASS	AR=2,0;DP=23;DPS=17,6;DPSP=23;SC=3699,1351,3834,1405;SR=0,0,15,6;n_cols=1;pred_q=52.247;pred_qs=52.247;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=C;RO=0;AO=21;AF=0,21;TYPE=snp;FREQ=91.3	GT:GQ	1:52
-MN908947	23403	.	A	G	48.131	PASS	AR=2,1;DP=21;DPS=11,10;DPSP=22;SC=2595,2552,2664,2637;SR=1,0,8,10;n_cols=7;pred_q=357.521;pred_qs=53.326,45.471,50.486,54.466,55.435,48.131,50.206;pred_seq=G****G*;ref_q=309.39;ref_qs=53.326,45.471,50.486,54.466,55.435,0,50.206;ref_seq=G****A*;ANN=G|missense_variant|MODERATE|Exon_MN908947_21563_25384|Gene_Exon_MN908947_21563_25384|transcript|Transcript_Exon_MN908947_21563_25384|Coding|1/1|c.1841A>G|p.Asp614Gly|p.D614G|1841/3822|1841/3822|614/1273||;RO=1;AO=18;AF=1,18;TYPE=snp;FREQ=85.7	GT:GQ	1:48
-MN908947	23816	.	C	CT	4.519	PASS	AR=0,0;DP=24;DPS=9,15;DPSP=26;SC=2048,4075,2053,4088;SR=5,11,4,6;n_cols=3;pred_q=98.236;pred_qs=49.552,5.832,42.852;pred_seq=CT*;ref_q=93.718;ref_qs=49.552,1.314,42.852;ref_seq=C**;ANN=CT|frameshift_variant|HIGH|Exon_MN908947_21563_25384|Gene_Exon_MN908947_21563_25384|transcript|Transcript_Exon_MN908947_21563_25384|Coding|1/1|c.2258dupT|p.Leu753fs|p.L753fs|2259/3822|2259/3822|753/1273||INFO_REALIGN_3_PRIME;LOF=(Exon_MN908947_21563_25384|Gene_Exon_MN908947_21563_25384|1|1,00);RO=16;AO=10;AF=16,10;TYPE=ins;FREQ=41.7	GT:GQ	1:5
-MN908947	26529	.	G	T	7.841	PASS	AR=0,0;DP=30;DPS=17,13;DPSP=18;SC=2707,1333,2808,1387;SR=0,0,12,6;n_cols=8;pred_q=390.88;pred_qs=55.257,53.796,8.502,49.994,56.227,56.227,55.62,55.257;pred_seq=A*T*****;ref_q=383.039;ref_qs=55.257,53.796,0.661,49.994,56.227,56.227,55.62,55.257;ref_seq=A*G*****;ANN=T|missense_variant|MODERATE|Exon_MN908947_26523_27191|Gene_Exon_MN908947_26523_27191|transcript|Transcript_Exon_MN908947_26523_27191|Coding|1/1|c.7G>T|p.Asp3Tyr|p.D3Y|7/669|7/669|3/222||;RO=0;AO=18;AF=0,18;TYPE=snp;FREQ=60	GT:GQ	1:8
+MN908947	160	.	G	T	54.923	PASS	AR=0,0;DP=23;DPS=17,6;DPSP=23;SC=3955,1356,4102,1410;SR=0,0,17,6;n_cols=1;pred_q=54.923;pred_qs=54.923;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=G;RO=0;AO=23;AF=0,23;TYPE=snp;DP_COMPOSED=23/23;FREQ=100	GT:GQ	1:55
+MN908947	241	.	C	T	52.247	PASS	AR=2,0;DP=23;DPS=17,6;DPSP=23;SC=3699,1351,3834,1405;SR=0,0,15,6;n_cols=1;pred_q=52.247;pred_qs=52.247;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=C;RO=0;AO=21;AF=0,21;TYPE=snp;DP_COMPOSED=21/21;FREQ=100	GT:GQ	1:52
+MN908947	23816	.	C	CT	4.519	PASS	AR=0,0;DP=24;DPS=9,15;DPSP=26;SC=2048,4075,2053,4088;SR=5,11,4,6;n_cols=3;pred_q=98.236;pred_qs=49.552,5.832,42.852;pred_seq=CT*;ref_q=93.718;ref_qs=49.552,1.314,42.852;ref_seq=C**;RO=16;AO=10;AF=16,10;TYPE=ins;DP_COMPOSED=26/29;FREQ=38.5	GT:GQ	1:5

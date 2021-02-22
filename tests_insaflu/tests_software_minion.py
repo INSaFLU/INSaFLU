@@ -91,7 +91,7 @@ class Test(TestCase):
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 		self.assertEqual('969', result_average.number_file_1)
-		self.assertEqual('468.1', result_average.average_file_1)
+		self.assertEqual('348.1', result_average.average_file_1)
 		self.assertEqual(None, result_average.number_file_2)
 		self.assertEqual(None, result_average.average_file_2)
 
@@ -116,9 +116,9 @@ class Test(TestCase):
 		self.assertEqual("Total bases", vect_soft[0].get_vect_key_values()[-1].key)
 		self.assertEqual("517,186.0", vect_soft[0].get_vect_key_values()[-1].value)
 		self.assertEqual("Mean read length", vect_soft[1].get_vect_key_values()[0].key)
-		self.assertEqual("468.1", vect_soft[1].get_vect_key_values()[0].value)
+		self.assertEqual("348.1", vect_soft[1].get_vect_key_values()[0].value)
 		self.assertEqual("Total bases", vect_soft[1].get_vect_key_values()[-1].key)
-		self.assertEqual("453,569.0", vect_soft[1].get_vect_key_values()[-1].value)
+		self.assertEqual("337,289.0", vect_soft[1].get_vect_key_values()[-1].value)
 		
 		### software
 		meta_key_data = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
@@ -130,7 +130,7 @@ class Test(TestCase):
 		self.assertTrue(not result is None)
 		self.assertEquals("NanoStat-1.4.0",
 				result.get_software(self.software_names.get_NanoStat_name()))
-		self.assertEquals("NanoFilt-2.6.0; (-q 10 -l 50 --headcrop 10 --tailcrop 10)",\
+		self.assertEquals("NanoFilt-2.6.0; (-q 10 -l 50 --headcrop 70 --tailcrop 70)",\
  						result.get_software(self.software_names.get_NanoFilt_name()))
 		self.assertEquals("RabbitQC-0.0.1; (-w 3 -D)",\
  						result.get_software(self.software_names.get_rabbitQC_name()))
@@ -247,7 +247,7 @@ class Test(TestCase):
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 		self.assertEqual('3000', result_average.number_file_1)
-		self.assertEqual('1278.4', result_average.average_file_1)
+		self.assertEqual('1158.4', result_average.average_file_1)
 		self.assertEqual(None, result_average.number_file_2)
 		self.assertEqual(None, result_average.average_file_2)
 
@@ -273,14 +273,15 @@ class Test(TestCase):
 		self.assertEqual("Total bases", vect_soft[0].get_vect_key_values()[-1].key)
 		self.assertEqual("3,895,144.0", vect_soft[0].get_vect_key_values()[-1].value)
 		self.assertEqual("Mean read length", vect_soft[1].get_vect_key_values()[0].key)
-		self.assertEqual("1,278.4", vect_soft[1].get_vect_key_values()[0].value)
+		self.assertEqual("1,158.4", vect_soft[1].get_vect_key_values()[0].value)
 		self.assertEqual("Total bases", vect_soft[1].get_vect_key_values()[-1].key)
-		self.assertEqual("3,835,144.0", vect_soft[1].get_vect_key_values()[-1].value)
+		self.assertEqual("3,475,144.0", vect_soft[1].get_vect_key_values()[-1].value)
 		
 		sample = Sample.objects.get(name=sample_name)
-		self.assertEqual("A-H5N5", sample.type_subtype)
+	#	self.assertEqual("A-H5N5", sample.type_subtype)
+		self.assertEqual("H5N5", sample.type_subtype)
 		self.assertEqual("No", sample.mixed_infections_tag.name)
-		self.assertEqual(0, sample.number_alerts)
+		self.assertEqual(1, sample.number_alerts)
 		
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		self.assertEquals(2, len(list_meta))
@@ -298,7 +299,7 @@ class Test(TestCase):
 		self.assertTrue(not result is None)
 		self.assertEquals("NanoStat-1.4.0",
 				result.get_software(self.software_names.get_NanoStat_name()))
-		self.assertEquals("NanoFilt-2.6.0; (-q 5 -l 50 --headcrop 10 --tailcrop 10)",\
+		self.assertEquals("NanoFilt-2.6.0; (-q 5 -l 50 --headcrop 70 --tailcrop 70)",\
  						result.get_software(self.software_names.get_NanoFilt_name()))
 		self.assertEquals("RabbitQC-0.0.1; (-w 3 -D)",\
  						result.get_software(self.software_names.get_rabbitQC_name()))
@@ -496,19 +497,19 @@ class Test(TestCase):
 		### get the hits value
 		decode_coverage = DecodeObjects()
 		count_hits = decode_coverage.decode_result(list_meta[0].description)
-		self.assertEquals(6, count_hits.get_hits_50_90())
-		self.assertEquals(2, count_hits.get_hits_less_50())
-		self.assertEquals(8, count_hits.get_total_50_50_90())
+		self.assertEquals(0, count_hits.get_hits_50_90())
+		self.assertEquals(4, count_hits.get_hits_less_50())
+		self.assertEquals(4, count_hits.get_total_50_50_90())
 		self.assertEquals(11, count_hits.get_total())
 		
-		self.assertEquals(2, project_sample.count_variations.var_less_50)
-		self.assertEquals(6, project_sample.count_variations.var_bigger_50_90)
-		self.assertEquals(3, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(4, project_sample.count_variations.var_less_50)
+		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
+		self.assertEquals(7, project_sample.count_variations.var_bigger_90)
 		self.assertEquals(0, project_sample.alert_first_level)
 		self.assertEquals(1, project_sample.alert_second_level)
 		
 		### test mixed infections
-		self.assertEquals('0.80070249555685', '{}'.format(project_sample.mixed_infections.average_value))
+		self.assertEquals('0.815100969586423', '{}'.format(project_sample.mixed_infections.average_value))
 		self.assertEquals('No', project_sample.mixed_infections.tag.name)
 		self.assertFalse(project_sample.mixed_infections.has_master_vector)
 		
@@ -524,7 +525,7 @@ class Test(TestCase):
 			self.software_names.get_msa_masker_name()))
 		self.assertEquals("Minimum depth of coverage per site to validate the sequence; (Threshold:5)", result.get_software(
 			self.software_names.get_insaflu_parameter_limit_coverage_name()))
-		self.assertEquals("Medaka-1.2.0; (consensus -m r941_min_high_g360)/Medaka-1.2.0; (variant --verbose)",\
+		self.assertEquals("Medaka-1.2.1; (consensus -m r941_min_high_g360)/Medaka-1.2.1; (variant --verbose)",\
  			result.get_software(self.software_names.get_medaka_name()))
 		self.assertEquals("Samtools-1.3; (depth -aa)",\
  			result.get_software(self.software_names.get_samtools_name()))

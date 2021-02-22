@@ -3,16 +3,15 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import unittest, time
+import unittest, time, os, filecmp
 from constants.constantsTestsCase import ConstantsTestsCase
 from django.test.utils import override_settings
 from utils.utils import Utils
 from utils.software import Software
-from django.conf import settings 
-import os, filecmp
+from django.conf import settings
 from constants.software_names import SoftwareNames
 from utils.result import Coverage
-from constants.constants import FileExtensions, Constants
+from constants.constants import Constants, FileExtensions
 from utils.result import Gene
 
 class Test(unittest.TestCase):
@@ -940,13 +939,15 @@ class Test(unittest.TestCase):
 		utils = Utils()
 		coverage_limit = 20
 		
-		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka.vcf")
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
+		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, vcf_file_out, coverage_limit)
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
@@ -1009,8 +1010,4 @@ class Test(unittest.TestCase):
 			self.fail("must throw exception")
 		except Exception as e:
 			pass
-
-
-
-
 

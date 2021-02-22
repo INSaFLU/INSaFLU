@@ -152,7 +152,7 @@ class ParseOutFiles(object):
 							if (b_exist): break	### exist, don't print
 							
 							if ((lst_type_var[i] in vect_type_out or len(vect_type_out) == 0) and self.utils.is_float(lst_freq_data[i])\
-										and float(lst_freq_data[i]) <= limit_freq):
+										and float(lst_freq_data[i]) < limit_freq):
 								vect_to_write = []
 								if (sample_name != None): vect_to_write = [sample_name]
 								## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]

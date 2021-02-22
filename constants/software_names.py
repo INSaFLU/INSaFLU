@@ -15,6 +15,7 @@ class SoftwareNames(object):
 
 	## some software is distributed by snippy
 	DIR_SOFTWARE_SNIPPY = os.path.join(settings.DIR_SOFTWARE, "snippy")
+	SOFTWARE_DEPTH_SAMTOOLS_file_flag = "DEPTH_SAMTOOLS"
 	SOFTWARE_SAMTOOLS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/samtools")
 	SOFTWARE_SAMTOOLS_name = "Samtools"
 	SOFTWARE_SAMTOOLS_name_depth_ONT = "Samtools depth ONT"
@@ -108,7 +109,7 @@ class SoftwareNames(object):
 	SOFTWARE_Medaka_name_extended_variant = "Call Variants (Medaka)"
 	SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
 	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
-	SOFTWARE_Medaka_VERSION = "1.2.0"
+	SOFTWARE_Medaka_VERSION = "1.2.1"
 	
 	SOFTWARE_CANU = os.path.join(settings.DIR_SOFTWARE, "canu/canu-2.1.1/bin/canu")
 	SOFTWARE_CANU_name = "Canu"

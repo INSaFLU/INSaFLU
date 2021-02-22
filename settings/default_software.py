@@ -70,7 +70,8 @@ class DefaultSoftware(object):
 			if (technology_name == SoftwareNames.TECHNOLOGY_illumina):
 				try:
 					software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use = Software.TYPE_OF_USE_global)
+						type_of_use = Software.TYPE_OF_USE_global, 
+						technology__name=technology_name)
 					### if exist set illumina in technology
 					software.technology = self.get_technology_instance(technology_name)
 					software.save()
@@ -529,7 +530,7 @@ class DefaultSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "--headcrop"
-		parameter.parameter = "10"
+		parameter.parameter = "70"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
 		parameter.union_char = " "
@@ -544,7 +545,7 @@ class DefaultSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "--tailcrop"
-		parameter.parameter = "10"
+		parameter.parameter = "70"
 		parameter.type_data = Parameter.PARAMETER_int
 		parameter.software = software
 		parameter.union_char = " "

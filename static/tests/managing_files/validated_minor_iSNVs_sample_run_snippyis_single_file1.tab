@@ -1,0 +1,4 @@
+"CHROM"	"POS"	"TYPE"	"REF"	"ALT"	"FREQ"	"COVERAGE"	"FTYPE"	"STRAND"	"NT_POS"	"AA_POS"	"EFFECT"	"NT CHANGE"	"AA CHANGE"	"AA CHANGE ALT"	"LOCUS_TAG"	"GENE"	"PRODUCT"
+"PB2"	"873"	"snp"	"A"	"G"	"2.5"	"730"	"CDS"	"+"	"843/2250"	"281/749"	"synonymous_variant"	"c.843A>G"	"p.Gly281Gly"	"p.G281G"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
+"PB2"	"1932"	"snp"	"G"	"A"	"18.9"	"681"	"CDS"	"+"	"1902/2250"	"634/749"	"synonymous_variant"	"c.1902G>A"	"p.Gly634Gly"	"p.G634G"	"locus_00001"	"PB2"	"Polymerase basic protein 2"
+"HA"	"117"	"snp"	"A"	"G"	"3.3"	"1004"	"CDS"	"+"	"117/1701"	"39/566"	"synonymous_variant"	"c.117A>G"	"p.Gly39Gly"	"p.G39G"	"locus_00004"	"HA"	"Hemagglutinin"

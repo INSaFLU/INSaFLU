@@ -720,7 +720,11 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_TOTAL_VARIATIONS = "proportions_iSNVs_graph.tsv"
 	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv" 
 	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50
-	PERCENTAGE_validated_minor_variants = 50		## only pass <= 50
+	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv" 	## with snps, del and ins and everything bigger than >50
+	##					MIGUEL
+	##					"Minor intra-host variants (inc. indels):"
+	## freebayes_variants_file_snp_indel
+	PERCENTAGE_validated_minor_variants = 51		## only pass <= 50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv" 	### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
@@ -880,6 +884,7 @@ class ProjectSample(models.Model):
 	FILE_CONSENSUS_FILE = "Consensus_"
 	FILE_SNIPPY_TAB = "validated_variants_sample_"
 	FILE_FREEBAYES_TAB = "validated_minor_iSNVs_sample_"
+	FILE_FREEBAYES_TAB_with_indels = "validated_minor_inc_indels_sample_"
 	
 	project = models.ForeignKey(Project, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
 	sample = models.ForeignKey(Sample, related_name='project_samples', blank=True, null=True, on_delete=models.CASCADE)
@@ -922,7 +927,7 @@ class ProjectSample(models.Model):
 		constants = Constants()
 		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
 
-	def get_file_output_human(self, type_path, file_type, software):
+	def get_file_output_human(self, type_path, file_type, software, b_second_choice = False):
 		"""
 		return file path output by software, but with human name
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
@@ -932,16 +937,18 @@ class ProjectSample(models.Model):
 		constants = Constants()
 		
 		return os.path.join(self.__get_path__(type_path, software.lower() if software != None else None),\
-				constants.get_extensions_by_file_type(self.__get_human_name_file__(software, file_type), file_type))
+				constants.get_extensions_by_file_type(self.__get_human_name_file__(software, file_type, b_second_choice), file_type))
 
-	def __get_human_name_file__(self, software, file_type):
+	def __get_human_name_file__(self, software, file_type, b_second_choice = False):
 		"""
 		get human file name
 		"""
 		if (software == SoftwareNames.SOFTWARE_SNIPPY_name or software == SoftwareNames.SOFTWARE_Medaka_name):
 			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_SNIPPY_TAB, self.sample.name)
-		if (software == SoftwareNames.SOFTWARE_FREEBAYES_name):
+		if (software == SoftwareNames.SOFTWARE_FREEBAYES_name and not b_second_choice):
 			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB, self.sample.name)
+		if (software == SoftwareNames.SOFTWARE_FREEBAYES_name and b_second_choice):
+			if (file_type == FileType.FILE_TAB): return "{}{}".format(ProjectSample.FILE_FREEBAYES_TAB_with_indels, self.sample.name)
 		return self.sample.name
 
 
@@ -985,17 +992,18 @@ class ProjectSample(models.Model):
 						TypePath.MEDIA_URL), self.constants.short_name(os.path.basename(out_file), 15)))
 		return _('Not available.')
 
-	def get_file_web(self, file_type, software):
+	def get_file_web(self, file_type, software, b_second_choice = False):
 		"""
 		get file web from different softwares
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
 		file_type: constants.FileType -> FILE_BAM, FILE_BAM_BAI, FILE_CONSENSUS_FA, ...
 		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
+		:param b_second_choice some software can have second choices
 		"""
-		out_file = self.get_file_output_human(TypePath.MEDIA_ROOT, file_type, software)
+		out_file = self.get_file_output_human(TypePath.MEDIA_ROOT, file_type, software, b_second_choice)
 		if (os.path.exists(out_file)):
 			return mark_safe('<a href="{}" download> {}</a>'.format(\
-				self.get_file_output_human(TypePath.MEDIA_URL, file_type, software),\
+				self.get_file_output_human(TypePath.MEDIA_URL, file_type, software, b_second_choice),\
 				self.constants.short_name(os.path.basename(out_file), 20)))
 		return _('Not available.')
 		

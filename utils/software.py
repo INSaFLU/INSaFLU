@@ -1616,7 +1616,12 @@ class Software(object):
 			tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
 			if (os.path.exists(tab_freebayes_file)):
 				file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out)
+				vect_type_remove = ['ins', 'del']
+				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out, vect_type_remove)
+				vect_type_remove = []
+				b_second_choice = True
+				file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
+				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out, vect_type_remove)
 			
 			### get clean consensus file
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
@@ -1661,7 +1666,13 @@ class Software(object):
 		## test if tbi exists
 		if (os.path.exists(file_name + FileExtensions.FILE_TBI)): return
 		
-		cmd = "{} -p {} {}".format(self.software_names.get_tabix(), index_type, file_name)
+		if (index_type == SoftwareNames.SOFTWARE_DEPTH_SAMTOOLS_file_flag):
+			### index -s 1 -> chr name
+			### index -b 2 -> start position
+			### index -e 2 -> end position
+			cmd = "{} -s 1 -b 2 -e 2 {}".format(self.software_names.get_tabix(), file_name)
+		else:
+			cmd = "{} -p {} {}".format(self.software_names.get_tabix(), index_type, file_name)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

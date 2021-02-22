@@ -135,6 +135,9 @@
 				  		<div class="row">
 							<div class="col-lg-4"><strong>Depth:</strong> {{ depth_file }}</div>
 							<div class="col-lg-4"><strong>Depth tbi:</strong> {{ depth_tbi_file }}</div>
+							{% if not medaka_variants_file %}
+								<div class="col-lg-4"><strong>Minor intra-host variants (inc. indels):</strong> {{ freebayes_variants_file_snp_indel }}</div>
+							{% endif %}
 				  		</div>
 				  		<hr>
 					</div>

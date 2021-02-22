@@ -12,6 +12,8 @@ from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
+from utils.result import GeneticElement, Gene
+from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
@@ -31,7 +33,8 @@ class Proteins(object):
 		'''
 		Constructor
 		'''
-		pass
+		### has the alignments of the genes in the consensus
+		self.dt_alignments_genes_consensus = {}
 	
 	
 	def create_alignement_for_element(self, project, user, geneticElement, sequence_name):
@@ -84,6 +87,18 @@ class Proteins(object):
 				self.utils.remove_dir(temp_dir)
 				return False
 			
+			### get dict consensus file
+			with open(consensus_fasta) as handle_consensus: 
+				record_dict_consensus = SeqIO.to_dict(SeqIO.parse(handle_consensus, "fasta"))
+				if (record_dict_consensus is None): continue
+				
+			### get positions of the genes in the consensus file
+			if (not project_sample.id in self.dt_alignments_genes_consensus):
+				self.dt_alignments_genes_consensus[project_sample.id] = \
+					self.genetic_element_from_sample(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+							record_dict_consensus, geneticElement, coverage, 
+							limit_to_mask_consensus, temp_dir)
+			
 			b_first = True
 			for gene in geneticElement.get_genes(sequence_name):	### can have more than one gene for each sequence
 				## get file name
@@ -91,9 +106,10 @@ class Proteins(object):
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
 							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
-				if (self.save_protein_by_sequence_name_and_cds(consensus_fasta, project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
-							project_sample.sample.name, sequence_name, gene, coverage, limit_to_mask_consensus,
-							temp_dir, dt_out_files[gene.name])):
+				if (self.save_protein_by_sequence_name_and_cds(record_dict_consensus,
+							self.dt_alignments_genes_consensus[project_sample.id],
+							project_sample.sample.name, sequence_name, gene,
+							dt_out_files[gene.name])):
 					if (b_first): n_files_with_sequences += 1
 					dict_out_sample_name["{}_{}_{}".format(project_sample.sample.name, sequence_name, self.utils.clean_name(gene.name))] = 1
 					b_first = False
@@ -215,92 +231,31 @@ class Proteins(object):
 			if (out_name in dict_out_sample_name): out_name += 'Ref_' + out_name
 			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
 
-	def save_protein_by_sequence_name_and_cds(self, consensus_fasta_file, genbank_file,
-				sample_name, sequence_name, gene, coverage, limit_to_mask_consensus,
-				out_dir, out_file):
+
+	def save_protein_by_sequence_name_and_cds(self, record_dict_consensus, generic_element_consensus,
+				sample_name, sequence_name, gene, out_file):
 		"""
 		save the protein sequence in a file
 		out_file, append file
 		"""
-		### get reference sequence
-		seq_ref = self.utils.get_sequence_from_genbank(sequence_name, gene, genbank_file)
-		gene_length = len(seq_ref)
 		
-		## there's no sequences...
-		if (seq_ref is None): return False
+		### test if has genes
+		if (generic_element_consensus.has_genes(sequence_name)):
 		
-		### get consensus sequence
-		file_name = self.utils.filter_fasta_by_sequence_names(consensus_fasta_file, sample_name, sequence_name, coverage,\
-				gene, limit_to_mask_consensus, out_dir)
-		if (file_name is None): return False
-		
-		ref_seq_name = 'ref_seq_name__'
-		with open(file_name, 'a') as handle:
-			handle.write('>{}\n{}\n'.format(ref_seq_name, str(seq_ref)))
-		
-		## make the alignment
-		out_file_clustalo = self.utils.get_temp_file_from_dir(out_dir, 'sequence_name_and_cds', '.fna')
-		try:
-			## It's better mafft to make the alignment
-			if (self.utils.is_differente_fasta_size(file_name, 20)):
-				### run this when the difference between sequences are small 
-				self.software.run_clustalo(file_name, out_file_clustalo)
-			else:
-				## It's better mafft to make the alignment when the 
-				self.software.run_mafft(file_name, out_file_clustalo, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
-		except Exception as a:
-			return False
-		
-		## test if the output is in fasta
-		try:
-			self.utils.is_fasta(out_file_clustalo)
-		except IOError as e:
-			return False
-		
-		## read file
-		record_dict = SeqIO.index(out_file_clustalo, "fasta")
-		if (len(record_dict) != 2): return False
-		
-		seq_ref = ""
-		seq_other = ""
-		for seq in record_dict:
-			if (seq == ref_seq_name):	## ref seq
-				seq_ref = record_dict[seq].seq.upper()
-			else:
-				seq_other = record_dict[seq].seq.upper()	
-		
-		### we have sequences
-		sz_out = ""
-		sz_out_temp = ""
-		b_start = False
-		pos_start = -1
-		pos_end = -1
-		if (len(seq_ref) > 0 and len(seq_ref) == len(seq_other)):
-			for i in range(0, len(seq_ref)):
-				if (seq_ref[i] != '-'):
-					b_start = True
-					sz_out += sz_out_temp + seq_other[i]
-					sz_out_temp = ''
-				elif (b_start):
-					sz_out_temp += seq_other[i]
+			### get gene
+			gene_to_translate_in_conensus = generic_element_consensus.get_gene(sequence_name, gene.name)
+			if (gene_to_translate_in_conensus is None): return False
 			
-				### check the length of 
-				if (seq_ref[i] != '-' and seq_other[i] != '-'):
-					if (pos_start == -1): pos_start = i		## start position
-					pos_end = i
+			gene_length = gene_to_translate_in_conensus.end - gene_to_translate_in_conensus.start
+			sz_out = str(record_dict_consensus[sequence_name].seq)[gene_to_translate_in_conensus.start:
+									gene_to_translate_in_conensus.end]
 			
 			### count N's if more than 20% discharge
 			if (sz_out.count('N') / gene_length > 0.05): return False 
-			
-			### test the size of the alignment
-			if (pos_end != -1 and pos_start != -1):
-				length_alignment = pos_end - pos_start
-				### didn't found a good alignment
-				if (length_alignment > gene_length and (gene_length / length_alignment) < 0.2): return False 
-			else: return False
-
 			sz_out = sz_out.replace('-', '')
 			coding_dna = Seq(sz_out) ##, generic_dna)
+			
+			if (not gene_to_translate_in_conensus.is_forward()): coding_dna = coding_dna.reverse_complement()
 			## this is not necessary because if seq is reversed the Bio.Seq is returned in forward always  
 			## if not gene.is_forward(): coding_dna = coding_dna.reverse_complement()
 			coding_protein = coding_dna.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
@@ -326,4 +281,88 @@ class Proteins(object):
 				handle.write('>{}\n{}\n'.format(sample_name.replace(' ', '_'), str(coding_protein)))
 			return True
 		return False
-		
+	
+	def genetic_element_from_sample(self, reference_fasta_file, record_dict_consensus, genetic_element,
+					coverage, limit_to_mask_consensus, out_dir):
+		"""
+		get position where genes consensus from sample matches in the reference
+		"""
+		generic_consensus_element = GeneticElement()
+		with open(reference_fasta_file) as handle_ref: 
+			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+			if (record_dict_ref is None): return generic_consensus_element
+
+		for sequence_name in genetic_element.get_sorted_elements():
+			
+			if sequence_name in coverage.get_dict_data() and sequence_name in record_dict_ref and\
+				sequence_name in record_dict_consensus and\
+				( (limit_to_mask_consensus == -1 and coverage.is_100_more_9(sequence_name)) or\
+				(limit_to_mask_consensus > 0 and coverage.ratio_value_coverage_bigger_limit(sequence_name, limit_to_mask_consensus)) ):
+				
+				temp_file_name = self.utils.get_temp_file_from_dir(out_dir, "to_align", ".fasta")
+				temp_file_name_out = self.utils.get_temp_file_from_dir(out_dir, "to_align_out", ".fasta")
+				records = []
+				ref_seq_name = "ref"
+				records.append(SeqRecord( Seq(str(record_dict_ref[sequence_name].seq)),
+										id = ref_seq_name, description=""))
+				records.append(SeqRecord( Seq(str(record_dict_consensus[sequence_name].seq)),
+										id = "consensus", description=""))
+				
+				### save file
+				with open(temp_file_name, 'w') as handle_write:
+					SeqIO.write(records, handle_write, "fasta")
+
+				try:
+					#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
+					self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
+#					self.software.run_clustalo(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_CLUSTALO_PARAMETERS)
+				except Exception as a:
+					continue
+				
+				## test if the output is in fasta
+				try:
+					self.utils.is_fasta(temp_file_name_out)
+				except IOError as e:
+					continue
+				
+				## read file
+				record_dict = SeqIO.index(temp_file_name_out, "fasta")
+				if (len(record_dict) != 2): continue
+				
+				## get both sequences
+				seq_ref = ""
+				seq_other = ""
+				for seq in record_dict:
+					if (seq == ref_seq_name):	## ref seq
+						seq_ref = str(record_dict[seq].seq).upper()
+					else:
+						seq_other = str(record_dict[seq].seq).upper()
+				
+				#### get positions for genes				
+				for gene in genetic_element.get_genes(sequence_name):
+					### only has
+					pos_ref = 0
+					pos_con = 0
+					cons_start = 0
+					if (len(seq_ref) > 0 and len(seq_other) > 0):
+						for i in range(0, len(seq_ref)):
+							if (pos_ref == gene.start):
+								cons_start = pos_con 
+							if (pos_ref == gene.end):
+								generic_consensus_element.add_gene(sequence_name,
+										len(seq_other.replace('-', '')), Gene(
+											gene.name, cons_start, pos_con,
+											gene.strand))
+								break
+							
+							if (seq_ref[i] != '-'): pos_ref += 1
+							if (i < len(seq_other) and seq_other[i] != '-'): pos_con += 1
+						
+						### can have last pos
+						if (pos_ref == gene.end):
+							generic_consensus_element.add_gene(sequence_name,
+									len(seq_other.replace('-', '')), Gene(
+									gene.name, cons_start, pos_con,
+									gene.strand))
+		return generic_consensus_element
+

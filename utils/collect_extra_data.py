@@ -131,6 +131,8 @@ class CollectExtraData(object):
 			## collect tab variations freebayes, <50%
 			## remove del or ins
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
+			## with snp, del and ins
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels, project, user)
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
@@ -263,9 +265,14 @@ class CollectExtraData(object):
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES):
 			## freebayes remove >50%
-			out_file = self.collect_variations_freebayes(project)
+			vect_type_remove = ['ins', 'del']
+			out_file = self.collect_variations_freebayes(project, vect_type_remove)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
-		
+		elif (type_file == Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels):
+			## freebayes remove >50%, keep snp and indel
+			vect_type_remove = []
+			out_file = self.collect_variations_freebayes(project, vect_type_remove)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV):
 			## samples csv
 			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA)
@@ -450,7 +457,7 @@ class CollectExtraData(object):
 		self.utils.merge_fasta_files(vect_to_process, out_file)
 		return out_file
 
-	def collect_variations_freebayes(self, project):
+	def collect_variations_freebayes(self, project, vect_type_remove):
 		"""
 		collect freebayes variations
 		"""
@@ -458,7 +465,7 @@ class CollectExtraData(object):
 		parse_out_files = ParseOutFiles()
 		n_count = 0
 		vect_type_out = []
-		vect_type_remove = ['ins', 'del']	### evan if it's in complex,ins or del,snp
+		#vect_type_remove = ['ins', 'del']	### evan if it's in complex,ins or del,snp
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)
 			for project_sample in project.project_samples.all():
@@ -473,13 +480,13 @@ class CollectExtraData(object):
 			return None
 		return out_file
 	
-	def collect_variations_freebayes_only_one_file(self, file_in, file_out):
+	def collect_variations_freebayes_only_one_file(self, file_in, file_out, vect_type_remove):
 		"""
 		collect freebayes variations
 		"""
 		parse_out_files = ParseOutFiles()
 		vect_type_out = []
-		vect_type_remove = ['ins', 'del']
+		##vect_type_remove = ['ins', 'del']
 
 		with open(file_out, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=Constants.SEPARATOR_TAB, quotechar='"', quoting=csv.QUOTE_ALL)

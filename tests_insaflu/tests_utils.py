@@ -10,7 +10,7 @@ from utils.utils import Utils
 from utils.software import Software
 from django.conf import settings
 from constants.software_names import SoftwareNames
-from utils.result import Coverage
+from utils.result import Coverage, FeatureLocationSimple
 from constants.constants import Constants, FileExtensions
 from utils.result import Gene
 
@@ -240,7 +240,26 @@ class Test(unittest.TestCase):
 		self.assertEquals(1, geneticElement.get_genes('PB2')[0].strand)
 		self.assertTrue(geneticElement.get_genes('PB2')[0].is_forward())
 		self.assertEquals(1410, geneticElement.get_size_element('NA'))
-
+		
+	def test_get_elements_and_genes_2(self):
+		"""
+		test cout hits
+		"""
+		genbank_file = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS,\
+					ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		geneticElement = self.utils.get_elements_and_genes(genbank_file)
+		self.assertEquals(1, len(geneticElement.get_sorted_elements()))
+		self.assertEquals(265, geneticElement.get_genes('MN908947')[0].start)
+		self.assertEquals(21555, geneticElement.get_genes('MN908947')[0].end)
+		self.assertEquals(21562, geneticElement.get_genes('MN908947')[1].start)
+		self.assertEquals(25384, geneticElement.get_genes('MN908947')[1].end)
+		for gene in geneticElement.get_genes('MN908947'):
+			if (gene.name == 'orf1ab'):
+				self.assertEqual(2, len(gene.get_feature_locations()))
+				self.assertEqual(FeatureLocationSimple(265, 13468, 1), gene.get_feature_locations()[0])
+				self.assertEqual(FeatureLocationSimple(13467, 21555, 1), gene.get_feature_locations()[1])
+			else:
+				self.assertEqual(0, len(gene.get_feature_locations()))
 		
 	def test_filter_fasta_all_sequences(self):
 		"""
@@ -938,6 +957,29 @@ class Test(unittest.TestCase):
 
 		utils = Utils()
 		coverage_limit = 20
+		freq_vcf_limit = 0.51
+		
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
+		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
+		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(depth_file))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		
+		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+								freq_vcf_limit)
+		
+		self.assertTrue(os.path.exists(vcf_file_out))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+
+	def test_add_freq_ao_ad_and_type_to_vcf_2(self):
+
+		utils = Utils()
+		coverage_limit = 20
+		freq_vcf_limit = 0.38
 		
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
@@ -947,15 +989,36 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit)
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
-		print(vcf_file_out, expecteded_vcf_file)
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
 
+	def test_add_freq_ao_ad_and_type_to_vcf_3(self):
 
+		utils = Utils()
+		coverage_limit = 20
+		freq_vcf_limit = 0.39
+		
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
+		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
+		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(depth_file))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		
+		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+								freq_vcf_limit)
+		
+		self.assertTrue(os.path.exists(vcf_file_out))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		
 	def test_medaka_models(self):
 		
 		utils = Utils()

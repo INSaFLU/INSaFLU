@@ -26,7 +26,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(7, len(vect_software))
+		self.assertEqual(8, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
 		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[2])
@@ -201,7 +201,7 @@ class testsDefaultSoftwares(TestCase):
 
 		parameters = Parameter.objects.filter(software=software)
 		self.assertTrue(1, len(parameters))
-		
+
 		### test set default
 		self.assertEqual("30", parameters[0].parameter)
 		self.assertEqual("Threshold", parameters[0].name)
@@ -211,6 +211,42 @@ class testsDefaultSoftwares(TestCase):
 		parameter.save()
 		self.assertEqual("Threshold:20", default_software.get_limit_coverage_ONT_parameters(user))
 		self.assertEqual("Threshold:20", default_software.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+													user, SoftwareNames.TECHNOLOGY_minion))
+		
+		
+		##########################
+		### test freq_vcf ONT_parameters
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = SoftwareNames.TECHNOLOGY_illumina)
+			self.fail("Must fail")
+		except Software.DoesNotExist:
+			pass
+			
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = SoftwareNames.TECHNOLOGY_minion)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertFalse(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_sample())
+			self.assertTrue(software.is_used_in_global())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+
+		### test set default
+		self.assertEqual("0.51", parameters[0].parameter)
+		self.assertEqual("Threshold", parameters[0].name)
+		self.assertEqual("Threshold:0.51", default_software.get_vcf_freq_ONT_parameters(user))
+		parameter = parameters[0]
+		parameter.parameter = "0.1"
+		parameter.save()
+		self.assertEqual("Threshold:0.1", default_software.get_vcf_freq_ONT_parameters(user))
+		self.assertEqual("Threshold:0.1", default_software.get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
 													user, SoftwareNames.TECHNOLOGY_minion))
 		
 		##########################
@@ -464,6 +500,48 @@ class testsDefaultSoftwares(TestCase):
 		
 		
 		##########################
+		### test vcf Freq ONT_parameters
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = SoftwareNames.TECHNOLOGY_illumina)
+			self.fail("Must fail")
+		except Software.DoesNotExist:
+			pass
+			
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project,
+							technology__name = SoftwareNames.TECHNOLOGY_minion)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertTrue(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_sample())
+			self.assertFalse(software.is_used_in_global())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		### test set default
+		self.assertEqual("0.51", parameters[0].parameter)
+		self.assertEqual("Threshold", parameters[0].name)
+		self.assertEqual("Threshold:0.51", default_software.get_freq_vcf_ONT_parameters(user,
+										Software.TYPE_OF_USE_project, project, None))
+		self.assertTrue(default_software.is_freq_vcf_ONT_single_parameter_default_for_project(project,
+										DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+
+		parameter = parameters[0]
+		parameter.parameter = "0.12"
+		parameter.save()
+		self.assertEqual("Threshold:0.12", default_software.get_freq_vcf_ONT_parameters(user,
+											Software.TYPE_OF_USE_project, project, None))
+		self.assertFalse(default_software.is_freq_vcf_ONT_single_parameter_default_for_project(project,
+											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+		self.assertEqual("0.12", default_software.get_freq_vcf_ONT_single_parameter(project_sample,
+											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+		
+		##########################
 		### test samtools ONT
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
@@ -614,7 +692,7 @@ class testsDefaultSoftwares(TestCase):
 			
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(7, len(vect_software))
+		self.assertEqual(8, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		
@@ -916,7 +994,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		vect_software = default_software.get_all_software()
-		self.assertEqual(7, len(vect_software))
+		self.assertEqual(8, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		
@@ -983,7 +1061,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(7, len(vect_software))
+		self.assertEqual(8, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 #		self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		

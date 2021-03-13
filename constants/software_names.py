@@ -97,7 +97,7 @@ class SoftwareNames(object):
 	SOFTWARE_NanoFilt_name = "NanoFilt"
 	SOFTWARE_NanoFilt_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
-	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 40 --tailcrop 50"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
+	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 70 --tailcrop 70"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
 	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
 	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
@@ -110,6 +110,11 @@ class SoftwareNames(object):
 	SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
 	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
 	SOFTWARE_Medaka_VERSION = "1.2.1"
+	
+	SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
+	SOFTWARE_BCFTOOLS_name = "bcftools"
+	SOFTWARE_BCFTOOLS_VERSION = "1.9"
+	SOFTWARE_BCFTOOLS_NEX_PARAMETERS = ""
 	
 	SOFTWARE_CANU = os.path.join(settings.DIR_SOFTWARE, "canu/canu-2.1.1/bin/canu")
 	SOFTWARE_CANU_name = "Canu"
@@ -229,6 +234,9 @@ class SoftwareNames(object):
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
+	### genebank to perl
+	SOFTWARE_genbank_to_perl = os.path.join(settings.DIR_SOFTWARE, "scripts/bp_genbank2gff3.pl")
+	
 	###############################
 	### technology available
 	TECHNOLOGY_illumina = "Illumina"
@@ -248,9 +256,14 @@ class SoftwareNames(object):
 
 
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name = "Minimum depth of coverage per site to validate the sequence"
-	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended = "Minimum depth of coverage per site to validate the sequence"
+	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended = "Minimum depth of coverage per site to validate the sequence (mincov)"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion = "1"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters = "Threshold:30"
+	
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_name = "Minumum proportion for variant evidence"
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended = "Minumum proportion for variant evidence (minfrac)"
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion = "1"
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_parameters = "Threshold:0.51"
 	
 	### has all names of simple parameters
 	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name, ]
@@ -279,6 +292,7 @@ class SoftwareNames(object):
 				SOFTWARE_CANU_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+				INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
 			],
 		}
 	###
@@ -519,6 +533,14 @@ class SoftwareNames(object):
 	def get_fastqtools_sample_parameters(self): return self.SOFTWARE_FASTQ_TOOLS_SAMPLE_PARAMETERS
 
 	"""
+	return BCFTOOLS sample software
+	"""
+	def get_bcftools(self): return self.SOFTWARE_BCFTOOLS
+	def get_bcftools_name(self): return self.SOFTWARE_BCFTOOLS_name
+	def get_bcftools_version(self): return self.SOFTWARE_BCFTOOLS_VERSION
+	def get_bcftools_parameters(self): return self.SOFTWARE_BCFTOOLS_PARAMETERS
+
+	"""
 	return 
 	### not necessary to install, it's a caveat for older versions, before 1/07/2018
 	"""
@@ -606,3 +628,12 @@ class SoftwareNames(object):
 	def get_insaflu_parameter_limit_coverage_name_extended(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended
 	def get_insaflu_parameter_limit_coverage_vesion(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion
 	def get_insaflu_parameter_limit_coverage_parameters(self): return self.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters
+	
+	### Define the minimum freq
+	##def get_insaflu_parameter_limit_freq_cov(self): return ""
+	def get_insaflu_parameter_freq_vcf_name(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
+	def get_insaflu_parameter_freq_vcf_name_extended(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended
+	def get_insaflu_parameter_freq_vcf_vesion(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion
+	def get_insaflu_parameter_freq_vcf_parameters(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_parameters
+
+

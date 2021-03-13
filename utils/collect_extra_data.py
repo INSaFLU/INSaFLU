@@ -91,7 +91,7 @@ class CollectExtraData(object):
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 		
-	@transaction.atomic
+##	@transaction.atomic
 	def __collect_extra_data_for_project(self, project, user):
 		"""
 		Everything that is necessary to do in the project

@@ -358,6 +358,7 @@ class Test(unittest.TestCase):
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
 		fasta_file_200234 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
 		file_expected_200234_S = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.protein_S.fasta")
+		file_expected_200234_orf1ab = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.protein_orf1ab.fasta")
 		
 		self.assertTrue(os.path.exists(gb_file))
 		self.assertTrue(os.path.exists(fasta_file))
@@ -404,13 +405,14 @@ class Test(unittest.TestCase):
 		limit_to_mask_consensus = -1
 		genetic_element_from_sample = proteins_test.genetic_element_from_sample(fasta_file,
 					record_dict_consensus, geneticElement, coverage, limit_to_mask_consensus, temp_dir)
-		
+
+		n_count_genes_compared = 0		
 		dt_out_files = {}
 		dict_out_sample_name = {}
 		n_count_samples_processed, n_with_sequences = 0, 0
 		for gene in geneticElement.get_genes(sequence_name):	### can have more than one gene for each sequence
 			### only do this one
-			if gene.name != 'ORF7a' and gene.name != 'ORF6' and gene.name != 'S': continue
+			if gene.name != 'orf1ab' and gene.name != 'ORF7a' and gene.name != 'ORF6' and gene.name != 'S': continue
 			
 			## get file name
 			if (gene.name not in dt_out_files): 
@@ -433,10 +435,14 @@ class Test(unittest.TestCase):
 			
 			### file with translated sequences
 			if (gene.name == 'S'):
+				n_count_genes_compared += 1
 				self.assertTrue(filecmp.cmp(dt_out_files[gene.name], file_expected_200234_S))
-				
-		self.assertEqual(3, n_count_samples_processed)
-		self.assertEqual(1, n_with_sequences)
+			if (gene.name == 'orf1ab'):
+				self.assertTrue(filecmp.cmp(dt_out_files[gene.name], file_expected_200234_orf1ab))
+				n_count_genes_compared += 1
+		self.assertEqual(4, n_count_samples_processed)
+		self.assertEqual(2, n_with_sequences)
+		self.assertEqual(2, n_count_genes_compared)
 		
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))

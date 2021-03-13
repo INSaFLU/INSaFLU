@@ -49,6 +49,8 @@ class DefaultProjectSoftware(object):
 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,\
 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,\
+							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
@@ -68,6 +70,8 @@ class DefaultProjectSoftware(object):
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,\
+								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,\
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
@@ -145,6 +149,15 @@ class DefaultProjectSoftware(object):
 			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
 			vect_parameters = self._get_limit_coverage_ONT_threshold_default(user, type_of_use, project, project_sample)
+			if (not project is None): vect_parameters = self._get_default_project(user,\
+				software_name, None, vect_parameters,
+				technology_name)		### base values
+			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
+				software_name, project_sample.project,
+				vect_parameters, technology_name)		### base values
+			return vect_parameters
+		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
+			vect_parameters = self._get_vcf_freq_ONT_threshold_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -1002,6 +1015,124 @@ class DefaultProjectSoftware(object):
 	#####
 	#####################################################
 	
+	#####################################################
+	#####
+	#####		FREQ VCF ONT
+	#####
+	
+	def get_freq_vcf_ONT_parameters(self, user, type_of_use, project, project_sample):
+		"""
+		get freq_vcf_ONT parameters
+		"""
+		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user, type_of_use,
+					project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+	
+	def get_freq_vcf_ONT_parameters_all_possibilities(self, user, project_sample):
+		"""
+		get freq_vcf parameters for project and default
+		"""
+		
+		### Test project_sample first
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+				Software.TYPE_OF_USE_project_sample, None, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+		if (not parameters is None): return parameters
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+				Software.TYPE_OF_USE_project, project_sample.project, None, None, SoftwareNames.TECHNOLOGY_minion)
+		if (not parameters is None): return parameters
+		
+		### can be a default one
+		default_software = DefaultSoftware()
+		parameters = default_software.get_freq_vcf_ONT_parameters(user)
+		if (len(parameters) > 0): return parameters
+		
+		software_names = SoftwareNames()
+		return software_names.get_insaflu_parameter_freq_vcf_parameters()
+	
+	
+	def get_freq_vcf_ONT_parameters_for_project(self, user, project):
+		"""
+		get freq_vcf_ONT parameters only for project or default
+		"""
+		
+		### Test project
+		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_minion)
+		if (not parameters is None): return parameters
+		
+		### can be a default one_get_freq_vcf
+		default_software = DefaultSoftware()
+		parameters = default_software.get_freq_vcf_ONT_parameters(user)
+		if (len(parameters) > 0): return parameters
+		return None
+	
+	def get_freq_vcf_ONT_single_parameter_default(self, parameter_name):
+		"""
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		:return value of parameter
+		"""
+		vect_parameters = self._get_vcf_freq_ONT_threshold_default(None, None, None, None)
+		for parameters in vect_parameters:
+			if parameters.name == parameter_name:
+				return parameters.parameter
+		return None
+	
+	def is_freq_vcf_ONT_single_parameter_default(self, project_sample, parameter_name):
+		"""
+		 one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		value_default_parameter = self.get_freq_vcf_ONT_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_freq_vcf_ONT_single_parameter(project_sample, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+	
+	def get_freq_vcf_ONT_single_parameter(self, project_sample, parameter_name):
+		"""
+		get freq_vcf_ONT single parameters
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		parameters_string = self.get_freq_vcf_ONT_parameters_all_possibilities(project_sample.project.owner,
+								project_sample)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1][1:]
+		return None
+	
+	def is_freq_vcf_ONT_single_parameter_default_for_project(self, project, parameter_name):
+		"""
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		value_default_parameter = self.get_freq_vcf_ONT_single_parameter_default(parameter_name)
+		if (value_default_parameter is None): return False
+		
+		parameter_defined = self.get_freq_vcf_ONT_single_parameter_for_project(project, parameter_name)
+		if not parameter_defined is None and parameter_defined == value_default_parameter: return True
+		return False
+	
+
+	def get_freq_vcf_ONT_single_parameter_for_project(self, project, parameter_name):
+		"""
+		get freq_vcf_ONT single parameters
+		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
+		"""
+		
+		parameters_string = self.get_freq_vcf_ONT_parameters_for_project(project.owner, project)
+		if (parameters_string is None): return None
+		lst_data = parameters_string.split(parameter_name)
+		if len(lst_data) == 2: return lst_data[1][1:]
+		return None
+	
+	#####
+	#####		END -- FREQ VCF ONT
+	#####
+	#####################################################
+	
 	
 	def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
 		"""
@@ -1151,6 +1282,7 @@ class DefaultProjectSoftware(object):
 		vect_software.append(self.software_names.get_trimmomatic_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_limit_coverage_name())
+		vect_software.append(self.software_names.get_insaflu_parameter_freq_vcf_name())
 #		vect_software.append(self.software_names.get_freebayes_name())
 		return vect_software
 
@@ -1251,7 +1383,7 @@ class DefaultProjectSoftware(object):
 		parameter.range_available = "[0.5:1.0]"
 		parameter.range_max = "1.0"
 		parameter.range_min = "0.5"
-		parameter.description = "MINFRAC: minumum proportion for variant evidence (–minfrac 0.51)"
+		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
 		vect_parameters.append(parameter)
 		
 		return vect_parameters
@@ -1437,6 +1569,38 @@ class DefaultProjectSoftware(object):
 		parameter.range_max = "100"
 		parameter.range_min = "4"
 		parameter.description = "This cut-off is used to exclude from vcf files sites and to mask consensus sequences. Value in percentage"
+		vect_parameters.append(parameter)
+		return vect_parameters
+
+	def _get_vcf_freq_ONT_threshold_default(self, user, type_of_use, project, project_sample):
+		"""
+		MINFRAC: minumum proportion for variant evidence (–minfrac 51) Range: [10:100]
+		
+		"""
+		software = Software()
+		software.name = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
+		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "Threshold"
+		parameter.parameter = "0.51"
+		parameter.type_data = Parameter.PARAMETER_float
+		parameter.software = software
+		parameter.project = project
+		parameter.project_sample = project_sample
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[0.10:1.0]"
+		parameter.range_max = "1.0"
+		parameter.range_min = "0.10"
+		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac) Range: [0.1:1.0]"
 		vect_parameters.append(parameter)
 		return vect_parameters
 

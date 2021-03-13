@@ -1477,7 +1477,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		
 		context['project_name'] = project.name
-		context['reference_name'] = project.reference.name
+		context['reference_name'] = project.reference.get_reference_fasta_web()
 		context['number_of_samples'] = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
 		context['number_of_alerts'] = ProjectSample.objects.filter(Q(project=project) & Q(is_deleted=False) &\
 								Q(is_error=False) & Q(is_finished=True) & (Q(alert_first_level__gte=1) |\

@@ -6,7 +6,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
 from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, KeyValue
-from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene
+from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, FeatureLocationSimple
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -170,8 +170,47 @@ class Test(TestCase):
 		self.assertEquals(2, len(geneticElement_2.get_genes('element_name')))
 		self.assertEquals(100, geneticElement_2.get_size_element('element_name'))
 		self.assertEquals(200, geneticElement_2.get_size_element('element_name2'))
+		
+		
+	def test_elements_genes_2(self):
+		
+		geneticElement = GeneticElement()
+		self.assertTrue(geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertFalse(geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertTrue(geneticElement.add_gene('element_name', 100, Gene('name2', 35, 55, -1)))
+		vect_feature_location = []
+		vect_feature_location.append(FeatureLocationSimple(265, 13468, 1))
+		vect_feature_location.append(FeatureLocationSimple(13467, 21555, 1))
+		self.assertTrue(geneticElement.add_gene('element_name2', 200, Gene('name', 12, 45, 1, vect_feature_location)))
+		geneticElement.add_gene('element_name2', 200, Gene('name2', 212, 245, 1))
+		geneticElement.add_gene('element_name2', 200, Gene('name3', 412, 445, -1))
+		geneticElement.add_gene('element', 50, Gene('name', 412, 445, -1))
 
+		json = geneticElement.to_json()
+		decodeCoverage = DecodeObjects()
+		geneticElement_2 = decodeCoverage.decode_result(json)
+		self.assertEquals(geneticElement, geneticElement_2)
+		self.assertEquals("element,element_name,element_name2", ",".join(geneticElement_2.get_sorted_elements()))
+		self.assertEquals(2, len(geneticElement_2.get_genes('element_name')))
+		self.assertEquals(100, geneticElement_2.get_size_element('element_name'))
+		self.assertEquals(200, geneticElement_2.get_size_element('element_name2'))
+		gene = geneticElement_2.get_gene('element_name2', 'name')
+		self.assertEqual(2, len(gene.get_feature_locations()))
+		self.assertEqual(FeatureLocationSimple(265, 13468, 1), gene.get_feature_locations()[0])
+		self.assertEqual(FeatureLocationSimple(13467, 21555, 1), gene.get_feature_locations()[1])
+		gene = geneticElement_2.get_gene('element_name2', 'name2')
+		self.assertEqual(0, len(gene.get_feature_locations()))
 
+		geneticElement_3 = GeneticElement()
+		self.assertTrue(geneticElement_3.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertFalse(geneticElement_3.add_gene('element_name', 100, Gene('name', 12, 45, 1)))
+		self.assertTrue(geneticElement_3.add_gene('element_name', 100, Gene('name2', 35, 55, -1)))
+		self.assertTrue(geneticElement_3.add_gene('element_name2', 200, Gene('name', 12, 45, 1)))
+		geneticElement_3.add_gene('element_name2', 200, Gene('name2', 212, 245, 1))
+		geneticElement_3.add_gene('element_name2', 200, Gene('name3', 412, 445, -1))
+		geneticElement_3.add_gene('element', 50, Gene('name', 412, 445, -1))
+		self.assertNotEqual(geneticElement, geneticElement_3)
+		
 	def test_mixed_infection_main_vector(self):
 		
 		mixedInfectionMainVector = MixedInfectionMainVector()

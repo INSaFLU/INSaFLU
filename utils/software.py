@@ -16,7 +16,6 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits, KeyValue
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
-from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from constants.software_names import SoftwareNames
 from Bio import SeqIO
@@ -748,8 +747,17 @@ class Software(object):
 		out_file_gb = self.utils.get_temp_file("file_name", ".gb")
 		self.utils.clean_genbank_version_name(genbank, out_file_gb)
 		
-		with open(temp_file, "w") as out_handle, open(out_file_gb) as in_handle:
-			GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
+		cmd = "perl {} ".format(SoftwareNames.SOFTWARE_genbank_to_perl) +\
+			"-f GenBank {} -out stdout -x gene > {}".format(out_file_gb, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.unlink(out_file_gb)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run genbank2gff3")
+		
+##		with open(temp_file, "w") as out_handle, open(out_file_gb) as in_handle:
+##			GFF.write(SeqIO.parse(in_handle, "genbank"), out_handle)
 
 		### remove clean version gb file
 		os.unlink(out_file_gb)
@@ -764,6 +772,26 @@ class Software(object):
 				if (sz_temp.find('##FASTA') == 0): break
 				if (sz_temp[0] == '#'): handle_write.write(sz_temp + "\n")
 				elif (len(sz_temp.split('\t')) > 3 and sz_temp.split('\t')[2] in vect_pass):
+					lst_data = sz_temp.split('\t')
+					if (len(lst_data) > 8):
+						lst_data_info = lst_data[8].split(";")
+						has_gene = False
+						gene = ""
+						for data_ in lst_data_info:
+							if (data_.lower().startswith('gene=')):
+								has_gene = True
+								break
+							if (data_.lower().startswith('name=')):
+								gene = "gene={}".format('='.join(data_.split('=')[1:]))
+						
+						### zero base 
+						if self.utils.is_integer(lst_data[7]) and int(lst_data[7]) > 0: 
+							lst_data[7] = "{}".format(int(lst_data[7]) - 1)
+							
+						### add gene
+						if (not has_gene and len(gene) > 0):
+							lst_data[8] = gene + ";" + ";".join(lst_data_info)
+							sz_temp = "\t".join(lst_data)
 					handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file

@@ -44,6 +44,9 @@ class DefaultSoftware(object):
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
 				self._get_limit_coverage_ONT_threshold_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
+		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
+				self._get_vcf_freq_ONT_threshold_default(user), user,
+				SoftwareNames.TECHNOLOGY_minion)
 		self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,
 				self._get_medaka_model_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
@@ -101,6 +104,10 @@ class DefaultSoftware(object):
 		return "" if result is None else result
 	def get_limit_coverage_ONT_parameters(self, user):
 		result = self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+								SoftwareNames.TECHNOLOGY_minion)
+		return "" if result is None else result
+	def get_vcf_freq_ONT_parameters(self, user):
+		result = self._get_parameters(user, SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
 								SoftwareNames.TECHNOLOGY_minion)
 		return "" if result is None else result
 	def get_medaka_parameters_consensus(self, user):
@@ -169,6 +176,8 @@ class DefaultSoftware(object):
 			vect_parameters = self._get_mask_consensus_threshold_default(user)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
 			vect_parameters = self._get_limit_coverage_ONT_threshold_default(user)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
+			vect_parameters = self._get_vcf_freq_ONT_threshold_default(user)
 		elif (software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
 			vect_parameters = self._get_medaka_model_default(user)
 		elif (software.name == SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT):
@@ -248,6 +257,11 @@ class DefaultSoftware(object):
 								self._get_limit_coverage_ONT_threshold_default(user), user,
 								SoftwareNames.TECHNOLOGY_minion)
 			return self.get_limit_coverage_ONT_parameters(user)
+		if (software_name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
+			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
+								self._get_vcf_freq_ONT_threshold_default(user), user,
+								SoftwareNames.TECHNOLOGY_minion)
+			return self.get_vcf_freq_ONT_parameters(user)
 		return ""
 		
 	def get_all_software(self):
@@ -262,6 +276,7 @@ class DefaultSoftware(object):
 		vect_software.append(self.software_names.get_medaka_name_extended_consensus())
 		vect_software.append(self.software_names.get_samtools_name_depth_ONT())
 		vect_software.append(self.software_names.get_insaflu_parameter_limit_coverage_name())
+		vect_software.append(self.software_names.get_insaflu_parameter_freq_vcf_name())
 		return vect_software
 
 	def get_technology_instance(self, technology_name):
@@ -281,7 +296,7 @@ class DefaultSoftware(object):
 		"""
 		–mapqual: minimum mapping quality to allow (–mapqual 20)
 		—mincov: minimum coverage of variant site (–mincov 10)
-		–minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+		–minfrac: minimum proportion for variant evidence (–minfrac 0.51)
 		"""
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_SNIPPY_name
@@ -332,7 +347,7 @@ class DefaultSoftware(object):
 		parameter.range_available = "[0.5:1.0]"
 		parameter.range_max = "1.0"
 		parameter.range_min = "0.5"
-		parameter.description = "MINFRAC: minumum proportion for variant evidence (–minfrac 0.51)"
+		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
 		vect_parameters.append(parameter)
 		
 		return vect_parameters
@@ -636,6 +651,35 @@ class DefaultSoftware(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
+	def _get_vcf_freq_ONT_threshold_default(self, user):
+		"""
+		MINFRAC: minimum proportion for variant evidence (–minfrac 51) Range: [10:100]
+		
+		"""
+		software = Software()
+		software.name = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
+		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = "Threshold"
+		parameter.parameter = "0.51"
+		parameter.type_data = Parameter.PARAMETER_float
+		parameter.software = software
+		parameter.union_char = ":"
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.range_available = "[0.10:1.0]"
+		parameter.range_max = "1.0"
+		parameter.range_min = "0.10"
+		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac) Range: [0.1:1.0]"
+		vect_parameters.append(parameter)
+		return vect_parameters
 
 	def _get_medaka_model_default(self, user):
 		"""

@@ -392,21 +392,27 @@ class SoftwareMinion(object):
 				parameters_medaka_consensus = default_project_software.get_medaka_parameters_all_possibilities(user, project_sample)
 				coverage_limit = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
 							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+				freq_vcf_limit = float(default_project_software.get_freq_vcf_ONT_single_parameter(project_sample,\
+							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
 				parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
 				
 				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
-						project_sample.id)
+						freq_vcf_limit, project_sample.id)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
-								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
+ 								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
 				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\
 								self.software_names.get_samtools_version(), "depth {}".format(parameters_depth)))
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
 								self.software_names.get_medaka_version(), "variant --verbose"))
 				result_all.add_software(SoftwareDesc(self.software_names.get_insaflu_parameter_limit_coverage_name(),\
 								"", "Threshold:{}".format(coverage_limit)))
+				result_all.add_software(SoftwareDesc(self.software_names.get_insaflu_parameter_freq_vcf_name(),\
+								"", "Threshold:{}".format(freq_vcf_limit)))
+				result_all.add_software(SoftwareDesc(self.software_names.get_bcftools_name(),\
+								self.software_names.get_bamtools_version(), "consensus"))
 			except Exception as e:
 				result = Result()
 				result.set_error(e.args[0])
@@ -616,7 +622,8 @@ class SoftwareMinion(object):
 
 
 	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name,
-				parameters_consensus, parameters_depth, coverage_limit, project_sample_id = -1):
+				parameters_consensus, parameters_depth, coverage_limit, freq_vcf_limit,
+				project_sample_id = -1):
 		"""
 		run medaka
 		return output directory of snippy, try to do something most close possible
@@ -670,6 +677,7 @@ class SoftwareMinion(object):
 		temp_dir = os.path.join(self.utils.get_temp_dir(), sample_name)
 		
 		###need to make a link to the reference files
+		### Always need to run consensus because do HDF file for variants
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
 		self.utils.link_file(reference_fasta, reference_fasta_medaka, False)
 		
@@ -706,7 +714,8 @@ class SoftwareMinion(object):
 		### change bam file names
 		self.utils.move_file(bam_file, os.path.join(os.path.dirname(bam_file), sample_name + ".bam"))
 		self.utils.move_file(bam_file + ".bai", os.path.join(os.path.dirname(bam_file), sample_name + ".bam.bai"))
-		self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
+		## get from BCFtools
+		## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 		bam_file = os.path.join(os.path.dirname(bam_file), sample_name + ".bam")
 				
 		### create depth
@@ -772,10 +781,31 @@ class SoftwareMinion(object):
 				
 			### add FREQ to VCF file
 			final_vcf = os.path.join(temp_dir, sample_name + '_2.vcf')
-			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf, coverage_limit)
+			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf, coverage_limit,
+													freq_vcf_limit)
 			self.utils.move_file(final_vcf, vcf_file)
 			self.software.test_bgzip_and_tbi_in_vcf(vcf_file)
 			
+			### run BCF tools to get the consensus
+			if (not os.path.exists(vcf_file + ".gz")):
+				self.logger_production.error('Fail to find: ' + vcf_file + ".gz")
+				self.logger_debug.error('Fail to find: ' + vcf_file + ".gz")
+				self.utils.remove_dir(temp_dir)
+				raise Exception("Fail to find VCF file: " + vcf_file + ".gz")
+			
+			## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
+			cmd =  "{} consensus -s SAMPLE -f {} {} -o {}".format(
+				self.software_names.get_bcftools(),
+				reference_fasta_medaka,
+				vcf_file + ".gz",
+				os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				self.utils.remove_dir(temp_dir)
+				raise Exception("Fail to run bcftools consensus")
+		
 			### create TAB file
 			self.software.run_snippy_vcf_to_tab_freq_and_evidence(reference_fasta,\
 								reference_gbk, vcf_file,\

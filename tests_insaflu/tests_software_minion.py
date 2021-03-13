@@ -433,6 +433,29 @@ class Test(TestCase):
 		self.assertEqual("5", parameters[0].parameter)
 		
 		
+		##################### set FREQ vcf limit
+		try:
+			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project,
+							technology__name = SoftwareNames.TECHNOLOGY_minion)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertTrue(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_global())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+			
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		### test set default
+		self.assertEqual("0.51", parameters[0].parameter)
+		parameter = parameters[0]
+		parameter.parameter = ".40"
+		parameter.save()
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		self.assertEqual(".40", parameters[0].parameter)
+		
 		## continue to process	
 		manageDatabase = ManageDatabase()
 		metaKeyAndValue = MetaKeyAndValue()
@@ -469,6 +492,7 @@ class Test(TestCase):
 		temp_file = self.utils.get_temp_file("clean_vcf", ".txt")
 		os.system('grep -v "##SnpEffCmd" {} > {}'.format(out_file, temp_file))
 		self.assertTrue(os.path.exists(temp_file))
+		print(temp_file, expected_file_samples)
 		self.assertTrue(filecmp.cmp(temp_file, expected_file_samples))
 		
 		### compare
@@ -498,11 +522,11 @@ class Test(TestCase):
 		decode_coverage = DecodeObjects()
 		count_hits = decode_coverage.decode_result(list_meta[0].description)
 		self.assertEquals(0, count_hits.get_hits_50_90())
-		self.assertEquals(4, count_hits.get_hits_less_50())
-		self.assertEquals(4, count_hits.get_total_50_50_90())
-		self.assertEquals(11, count_hits.get_total())
+		self.assertEquals(3, count_hits.get_hits_less_50())
+		self.assertEquals(3, count_hits.get_total_50_50_90())
+		self.assertEquals(10, count_hits.get_total())
 		
-		self.assertEquals(4, project_sample.count_variations.var_less_50)
+		self.assertEquals(3, project_sample.count_variations.var_less_50)
 		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
 		self.assertEquals(7, project_sample.count_variations.var_bigger_90)
 		self.assertEquals(0, project_sample.alert_first_level)

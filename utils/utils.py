@@ -7,10 +7,11 @@ from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 ## from Bio.Alphabet import IUPAC	version 1.78 doesn't have Bio.Alphabet 
-from utils.result import GeneticElement, Gene
+from utils.result import GeneticElement, Gene, FeatureLocationSimple
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
 from constants.software_names import SoftwareNames
 ## Add 'Ter' to dictonary
@@ -24,6 +25,7 @@ import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from pysam import pysam
 from django.conf import settings
 from statistics import mean
+from django.db import transaction
 
 class Utils(object):
 	'''
@@ -455,8 +457,16 @@ class Utils(object):
 				elif (features.type == 'CDS'):
 					for key_name in ['CDS', 'gene', 'locus_tag']:
 						if (key_name in features.qualifiers):
+							### has join or others... otherwise can be empty
+							vect_feature_location = []
+							if (isinstance(features.location, CompoundLocation)):
+								for feature_location in features.location.parts:	## has more than one part
+									vect_feature_location.append(FeatureLocationSimple(feature_location.start,
+											feature_location.end, feature_location.strand))
+								
 							geneticElement.add_gene(record.name, length, Gene(features.qualifiers[key_name][0],
-								int(features.location.start), int(features.location.end), features.location.strand))
+								int(features.location.start), int(features.location.end),
+								features.location.strand, vect_feature_location))
 							gene_add = True
 							break
 						
@@ -473,7 +483,7 @@ class Utils(object):
 		"""
 		manageDatabase = ManageDatabase()
 		meta_key = MetaKeyAndValue.META_KEY_Elements_Reference
-		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		meta_reference = manageDatabase.get_reference_metakey_last(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_reference == None):
 			utils = Utils()
 			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
@@ -496,19 +506,28 @@ class Utils(object):
 				vect_elements.append(element)
 		return vect_elements
 
+	@transaction.atomic
 	def get_elements_and_cds_from_db(self, reference, user):
 		"""
 		return geneticElement
 		"""
 		manageDatabase = ManageDatabase()
 		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
-		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
-		if (meta_reference == None):
+		meta_reference = manageDatabase.get_reference_metakey_last(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		if (meta_reference is None or meta_reference.creation_date < datetime.now()):
 			utils = Utils()
 			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
 			if (geneticElement == None): return None
-			manageDatabase.set_reference_metakey(reference, user, meta_key,\
-				MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+			
+			if (not meta_reference is None):
+				decodeCoverage = DecodeObjects()
+				geneticElement_old = decodeCoverage.decode_result(meta_reference.description)
+				if (geneticElement_old != geneticElement):
+					manageDatabase.set_reference_metakey(reference, user, meta_key,\
+						MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+			else:
+				manageDatabase.set_reference_metakey(reference, user, meta_key,\
+					MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
 			return geneticElement
 		else:
 			decodeCoverage = DecodeObjects()
@@ -522,7 +541,7 @@ class Utils(object):
 		"""
 		manageDatabase = ManageDatabase()
 		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
-		meta_reference = manageDatabase.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		meta_reference = manageDatabase.get_reference_metakey_last(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
 		if (meta_reference == None):
 			utils = Utils()
 			geneticElement = utils.get_elements_and_genes(reference.get_reference_gbk(TypePath.MEDIA_ROOT))
@@ -705,12 +724,14 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
-	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, coverage_limit):
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, coverage_limit,
+									freq_vcf_limit):
 		""" add FREQ, AO, AF and TYPE to VCF, FREQ=AO/DP
 		This case is used in MEDAKA only
 		
 		vcffile must be gzip and tbi included
 		:param coverage_limit -> filter by this coverage (this is necessary because medaka doesn't have)
+		:param cut off for VCF freq
 		returns: vcf file with freq, AO and AF 
 		"""
 		FREQ = 'FREQ'
@@ -750,7 +771,7 @@ class Utils(object):
 				total_deep = int(variant.info['DPSP']) - sum([int(_) for _ in variant.info['AR']]) 
 				if (coverage_limit > 0 and total_deep < coverage_limit): continue
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
-					vcf_hanlder_write.write(variant) 
+					#vcf_hanlder_write.write(variant) 
 					continue		### different numbers of Alleles and References
 
 				#### extra info				
@@ -760,27 +781,38 @@ class Utils(object):
 				vect_out_freq = []	### FREQ
 				vect_out_type = []	### TYPE
 				
-				
 				for value_ in range(0, len(variant.info['SR']), 2):
 					if (value_ > 0):
-						vect_out_ao.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
-						vect_out_type.append(self._get_type_variation(variant.ref, variant.alts[(value_ - 2) >> 1]))
+						allele_count = int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1])
+						
 						if (total_deep > 0):
 							### incongruences in Medaka, 
 							### these values are collected in different stages of the Medaka workflow, (email from support@nanoporetech.com at 23 Dec 2020)
-							if (total_deep <= vect_out_ao[-1]): vect_out_freq.append(100)
-							else: vect_out_freq.append(float("{:.1f}".format(vect_out_ao[-1]/float(total_deep) * 100)))
+							if (total_deep <= allele_count): vect_out_freq.append(100)
+							else:
+								freq_value = allele_count/float(total_deep)
+								if (freq_value >= freq_vcf_limit): 
+									vect_out_freq.append(float("{:.1f}".format(freq_value * 100)))
+								else: continue
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
+						
+						vect_out_ao.append(allele_count)
+						vect_out_type.append(self._get_type_variation(variant.ref, variant.alts[(value_ - 2) >> 1]))
 					vect_out_af.append(int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1]))
 					if (out_ro == -1): out_ro = int(variant.info['SR'][value_]) + int(variant.info['SR'][value_ + 1])
-				if (out_ro > -1): variant.info[RO] = tuple([out_ro])
-				variant.info[AO] = tuple(vect_out_ao)
-				variant.info[AF] = tuple(vect_out_af)
-				variant.info[TYPE] = tuple(vect_out_type)	
-				variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, self.get_coverage_by_pos(file_coverage,
-								variant.chrom, variant.pos, variant.pos))])
-				if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
-			vcf_hanlder_write.write(variant)
+				
+				### has some variant to save
+				if (len(vect_out_freq) > 0):
+					if (out_ro > -1): variant.info[RO] = tuple([out_ro])
+					variant.info[AO] = tuple(vect_out_ao)
+					variant.info[AF] = tuple(vect_out_af)
+					variant.info[TYPE] = tuple(vect_out_type)	
+					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, self.get_coverage_by_pos(file_coverage,
+									variant.chrom, variant.pos, variant.pos))])
+					if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
+					
+					### Only save the ones with FREQ
+					vcf_hanlder_write.write(variant)
 			
 		vcf_hanlder_write.close()
 		vcf_hanlder.close()

@@ -6,6 +6,7 @@ Created on Nov 2, 2017
 import json, os
 from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
+from Bio.SeqFeature import SeqFeature, CompoundLocation, FeatureLocation
 
 class DecodeObjects(object):
 
@@ -28,8 +29,14 @@ class DecodeObjects(object):
 			a = TasksToProcess()
 			a.__dict__.update(o['__TasksToProcess__'])
 			return a
+		elif '__FeatureLocationSimple__' in o:
+			a = FeatureLocationSimple(o['__FeatureLocationSimple__']['start'], o['__FeatureLocationSimple__']['end'],\
+				o['__FeatureLocationSimple__']['strand'])
+			a.__dict__.update(o['__FeatureLocationSimple__'])
+			return a
 		elif '__Gene__' in o:
-			a = Gene(o['__Gene__']['name'], o['__Gene__']['start'], o['__Gene__']['end'], o['__Gene__']['strand'])
+			a = Gene(o['__Gene__']['name'], o['__Gene__']['start'], o['__Gene__']['end'],\
+				o['__Gene__']['strand'])
 			a.__dict__.update(o['__Gene__'])
 			return a
 		elif '__GeneticElement__' in o:
@@ -341,8 +348,9 @@ class Coverage(object):
 	COVERAGE_PROJECT = "CoverageProject"
 
 	def __init__(self, limit_defined_by_user = None, limit_defined_to_project = None):
-		self.limit_defined_by_user = limit_defined_by_user		### if there is limit defined by user put it here
-		self.limit_defined_to_project = limit_defined_to_project		### if there is limit defined to the project
+		self.limit_defined_by_user = limit_defined_by_user			### if there is limit defined by user put it here
+																	## limit_defined_by_user is called first
+		self.limit_defined_to_project = limit_defined_to_project	### if there is limit defined to the project
 		self.dt_data = {}
 		self.ratio_value_defined_by_user = 0
 		self.ratio_value_project = 0
@@ -425,9 +433,9 @@ class Coverage(object):
 			#### if exist value defined by the user call next method
 			if (self.is_exist_limit_defined_to_project()):
 				return self.is_100_more_defined_to_project(element)
-		else:#### if exist value defined by the user call next method
-			if (self.is_exist_limit_defined_by_user()):
-				return self.is_100_more_defined_by_user(element)
+		#### if exist value defined by the user call next method
+		elif (self.is_exist_limit_defined_by_user()):
+			return self.is_100_more_defined_by_user(element)
 		
 		### regular method
 		value_coverage = self.get_coverage(element, self.COVERAGE_MORE_9)
@@ -636,25 +644,64 @@ class TasksToProcess(object):
 		for value_ in self.vect_tasks_id:
 			if (value_ not in other.vect_tasks_id): return False
 		return True
+	
+class FeatureLocationSimple(object):
+	
+	def __init__(self, start, end, strand):
+		self.start = start
+		self.end = end
+		self.strand = strand	## 1 forward, -1 reverse
+		
+	def is_forward(self):
+		return self.strand > 0
+		
+	def __eq__(self, other):
+		if (other == None): return False 
+		return self.start == other.start and self.end == other.end and self.strand == other.strand
+		
+	def __str__(self):
+		return "[{}-{}] ({})".format(self.start, self.end, self.strand)
+
+	def get_feature_location(self):
+		return FeatureLocation(self.start, self.end, strand=self.strand)
 
 class Gene(object):
 	
-	def __init__(self, name, start, end, strand):
+	def __init__(self, name, start, end, strand, vect_feature_locations = []):
 		self.name = name
 		self.start = start
 		self.end = end
 		self.strand = strand	## 1 forward, -1 reverse
+		self.vect_feature_locations = vect_feature_locations
 		
 	def is_forward(self):
 		return self.strand == 1
 		
 	def __eq__(self, other):
 		if (other == None): return False 
-		return self.name == other.name
+		return self.name == other.name and self.start == other.start and \
+			self.end == other.end and self.strand == other.strand and \
+			self.vect_feature_locations == other.vect_feature_locations
 		
 	def __str__(self):
 		return "{} {}/{} {}".format(self.name, self.start, self.end, self.strand)
 
+	def get_feature_locations(self):
+		""" return feature locations"""
+		return self.vect_feature_locations
+
+	def has_feature_locations(self):
+		""" return feature locations"""
+		return len(self.vect_feature_locations) > 0
+	
+	def get_seq_feature(self):
+		if (self.has_feature_locations()):
+			vect_compound_location = []
+			for feature_location in self.vect_feature_locations:
+				vect_compound_location.append(feature_location.get_feature_location())
+			return SeqFeature(CompoundLocation(vect_compound_location), type="CDS")
+		return SeqFeature(FeatureLocation(self.start, self.end, strand=self.strand), type="CDS")
+		
 class GeneticElement(object):
 	
 	def __init__(self):

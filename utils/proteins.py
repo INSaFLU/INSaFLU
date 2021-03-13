@@ -12,7 +12,7 @@ from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
-from utils.result import GeneticElement, Gene
+from utils.result import GeneticElement, Gene, FeatureLocationSimple
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -106,6 +106,9 @@ class Proteins(object):
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
 							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
+#				if (project_sample.project.owner.id in [38, 245]):
+#					continue
+				
 				if (self.save_protein_by_sequence_name_and_cds(record_dict_consensus,
 							self.dt_alignments_genes_consensus[project_sample.id],
 							project_sample.sample.name, sequence_name, gene,
@@ -129,7 +132,6 @@ class Proteins(object):
 			self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
 							project.reference.display_name, sequence_name, gene,\
 							dt_out_files[gene.name], dict_out_sample_name)
-			
 			
 		### start processing the data
 		result_all = Result()
@@ -247,12 +249,16 @@ class Proteins(object):
 			if (gene_to_translate_in_conensus is None): return False
 			
 			gene_length = gene_to_translate_in_conensus.end - gene_to_translate_in_conensus.start
-			sz_out = str(record_dict_consensus[sequence_name].seq)[gene_to_translate_in_conensus.start:
+			seq_feature = gene_to_translate_in_conensus.get_seq_feature()
+			if (not seq_feature is None):
+				seq = Seq(str(record_dict_consensus[sequence_name].seq).replace('-', ''))
+				sz_out = str(seq_feature.extract(seq))
+			else:
+				sz_out = str(record_dict_consensus[sequence_name].seq).replace('-', '')[gene_to_translate_in_conensus.start:
 									gene_to_translate_in_conensus.end]
 			
 			### count N's if more than 20% discharge
-			if (sz_out.count('N') / gene_length > 0.05): return False 
-			sz_out = sz_out.replace('-', '')
+			if (sz_out.count('N') / gene_length > 0.05): return False
 			coding_dna = Seq(sz_out) ##, generic_dna)
 			
 			if (not gene_to_translate_in_conensus.is_forward()): coding_dna = coding_dna.reverse_complement()
@@ -311,7 +317,6 @@ class Proteins(object):
 				### save file
 				with open(temp_file_name, 'w') as handle_write:
 					SeqIO.write(records, handle_write, "fasta")
-
 				try:
 					#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
 					self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
@@ -344,15 +349,34 @@ class Proteins(object):
 					pos_ref = 0
 					pos_con = 0
 					cons_start = 0
+					
+					### can had some feature locations like join{[265:13468](+), [13467:21555](+)}
+					vect_feature_location = []
+					dt_positions = {}		## only for speed
+					for feature in gene.get_feature_locations():
+						dt_positions[feature.start] = 1
+						dt_positions[feature.end] = 1
+						vect_feature_location.append(FeatureLocationSimple(feature.start,
+								feature.end, strand=feature.strand))
+					
+					###  let's start
 					if (len(seq_ref) > 0 and len(seq_other) > 0):
 						for i in range(0, len(seq_ref)):
+							## has some position in seq features
+							if (pos_ref in dt_positions):
+								for _, feature in enumerate(gene.get_feature_locations()):
+									if feature.start == pos_ref: vect_feature_location[_].start = pos_con
+									if feature.end == pos_ref: vect_feature_location[_].end = pos_con
+
+							### start and end position
 							if (pos_ref == gene.start):
 								cons_start = pos_con 
 							if (pos_ref == gene.end):
 								generic_consensus_element.add_gene(sequence_name,
 										len(seq_other.replace('-', '')), Gene(
 											gene.name, cons_start, pos_con,
-											gene.strand))
+											gene.strand,
+											vect_feature_location))
 								break
 							
 							if (seq_ref[i] != '-'): pos_ref += 1
@@ -363,6 +387,6 @@ class Proteins(object):
 							generic_consensus_element.add_gene(sequence_name,
 									len(seq_other.replace('-', '')), Gene(
 									gene.name, cons_start, pos_con,
-									gene.strand))
+									gene.strand, vect_feature_location))
 		return generic_consensus_element
 

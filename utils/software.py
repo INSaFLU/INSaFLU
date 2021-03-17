@@ -765,6 +765,11 @@ class Software(object):
 		### filter file
 	#	vect_filter = ['remark', 'source', 'gene']
 		vect_pass = ['CDS']
+		##### CAVEAT...
+		### If you lead ID= in the gff the orf1ab will be continued (Transcript_Exon_MN908947_13468_21555|Coding|1/1|c.395C>T|p.Thr132Ile|p.T132I)
+		### if it is removed ID=  is going like (Transcript_orf1ab|Coding|1/1|c.13597C>T|p.His4533Tyr|p.H4533Y)
+		### the last one is equal to SNIPPY 
+		vect_remove_info = ['ID=']
 		with open(temp_file) as handle, open(out_file, "w") as handle_write:
 			for line in handle:
 				sz_temp = line.strip()
@@ -777,13 +782,21 @@ class Software(object):
 						lst_data_info = lst_data[8].split(";")
 						has_gene = False
 						gene = ""
-						for data_ in lst_data_info:
-							if (data_.lower().startswith('gene=')):
-								has_gene = True
-								break
+						vect_remove_index = []
+						for _, data_ in enumerate(lst_data_info):
+							if (data_.lower().startswith('gene=')):	has_gene = True
 							if (data_.lower().startswith('name=')):
 								gene = "gene={}".format('='.join(data_.split('=')[1:]))
-						
+							for to_remove in vect_remove_info:
+								if (data_.lower().startswith(to_remove.lower())):
+									vect_remove_index.append(_)
+									break
+
+						### remove index
+						vect_remove_index = sorted(vect_remove_index, reverse=True)
+						for remove_index in vect_remove_index:
+							lst_data_info.pop(remove_index)
+
 						### zero base 
 						if self.utils.is_integer(lst_data[7]) and int(lst_data[7]) > 0: 
 							lst_data[7] = "{}".format(int(lst_data[7]) - 1)

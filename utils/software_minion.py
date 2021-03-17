@@ -679,12 +679,13 @@ class SoftwareMinion(object):
 		###need to make a link to the reference files
 		### Always need to run consensus because do HDF file for variants
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
+		#self.utils.copy_file(reference_fasta, reference_fasta_medaka)
 		self.utils.link_file(reference_fasta, reference_fasta_medaka, False)
 		
 		if (project_sample_id != -1):
 			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {} > /tmp/insaFlu/medaka_project_sample_{}.txt 2>&1".format(
 					self.software_names.get_medaka_env(),
-					self.software_names.get_medaka(), file_fastq, reference_fasta,
+					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
 					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus, project_sample_id)
 		else:
 			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
@@ -774,7 +775,7 @@ class SoftwareMinion(object):
 		if (os.path.getsize(vcf_file) > 0):
 			### Add ANN anotation with snpEff
 			temp_file_2 = os.path.join(temp_dir, sample_name + '_ann.vcf')
-			output_file = self.software.run_snpEff(reference_fasta, reference_gbk, vcf_file, temp_file_2)
+			output_file = self.software.run_snpEff(reference_fasta_medaka, reference_gbk, vcf_file, temp_file_2)
 			
 			if not output_file is None:	## sometimes the gff does not have amino sequences
 				self.utils.copy_file(output_file, vcf_file)
@@ -807,7 +808,7 @@ class SoftwareMinion(object):
 				raise Exception("Fail to run bcftools consensus")
 		
 			### create TAB file
-			self.software.run_snippy_vcf_to_tab_freq_and_evidence(reference_fasta,\
+			self.software.run_snippy_vcf_to_tab_freq_and_evidence(reference_fasta_medaka,\
 								reference_gbk, vcf_file,\
 								os.path.join(temp_dir, sample_name + '.tab'))
 		return temp_dir

@@ -768,8 +768,11 @@ class Utils(object):
 			### DP must be replaced by DPSP. DPSP is the sum of all reads Span and Ambiguous
 			if ("SR" in variant.info and "DPSP" in variant.info and "AR" in variant.info):	## SR=0,0,15,6
 				### don't process this VCF because has a low coverage
-				total_deep = int(variant.info['DPSP']) - sum([int(_) for _ in variant.info['AR']]) 
-				if (coverage_limit > 0 and total_deep < coverage_limit): continue
+				total_deep = int(variant.info['DPSP']) - sum([int(_) for _ in variant.info['AR']])
+				total_deep_samtools = self.get_coverage_by_pos(file_coverage,
+									variant.chrom, variant.pos, variant.pos)
+				if (coverage_limit > 0 and total_deep_samtools > 0 and \
+					total_deep_samtools < coverage_limit): continue
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
 					#vcf_hanlder_write.write(variant) 
 					continue		### different numbers of Alleles and References
@@ -807,8 +810,7 @@ class Utils(object):
 					variant.info[AO] = tuple(vect_out_ao)
 					variant.info[AF] = tuple(vect_out_af)
 					variant.info[TYPE] = tuple(vect_out_type)	
-					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, self.get_coverage_by_pos(file_coverage,
-									variant.chrom, variant.pos, variant.pos))])
+					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, total_deep_samtools)])
 					if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
 					
 					### Only save the ones with FREQ

@@ -52,15 +52,15 @@ class ParseFile(object):
 		b_temp_file = False
 		if self.utils.is_gzip(reference_file):
 			b_temp_file = True
-			temp_file_name = self.utils.__get_temp_file__(reference_file, 10, self.utils.get_type_file(reference_file))
+			temp_file_name = self.utils.get_temp_file("reference_file_", ".fasta")
 			cmd = "gzip -cd " + reference_file + " > " + temp_file_name
-			sz_out = os.system(cmd)
+			os.system(cmd)
 			
 		for rec in SeqIO.parse(temp_file_name, 'fasta'):
 			self.reference_dict[rec.id] = len(str(rec.seq))
 			self.vect_reference.append(rec.id)
 		
-		###
+		### remove temp file if necessary
 		if (b_temp_file): os.remove(temp_file_name)
 		
 
@@ -200,9 +200,9 @@ class GetCoverage(object):
 		b_temp_file = False
 		if self.utils.is_gzip(reference_file):
 			b_temp_file = True
-			temp_file_name = self.utils.get_temp_file(os.path.basename(reference_file), self.utils.get_type_file(reference_file))
+			temp_file_name = self.utils.get_temp_file("reference_file_", ".fasta")
 			cmd = "gzip -cd " + reference_file + " > " + temp_file_name
-			sz_out = os.system(cmd)
+			os.system(cmd)
 			
 		for rec in SeqIO.parse(temp_file_name, 'fasta'):
 			self.reference_dict[rec.id] = len(str(rec.seq))

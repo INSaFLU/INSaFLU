@@ -53,23 +53,37 @@ class Test(TestCase):
 		pass
 	
 
-	def test_run_snpEff_2(self):
-		"""
-		test snpEff method
-		"""
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snpeff.vcf")
-		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snpeff_expected.vcf")
+# 	def test_run_snpEff_2(self):
+# 		"""
+# 		test snpEff method
+# 		"""
+# 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+# 		genbank_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+# 		freebayes_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snpeff.vcf")
+# 		freebayes_expect_vcf = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snpeff_expected.vcf")
+# 		
+# 		out_file = self.utils.get_temp_file("file_name", ".vcf")
+# 		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
+# 		self.assertEquals(out_file, out_file_2)
+# 		
+# 		out_file_clean = self.utils.get_temp_file("file_name", ".vcf")
+# 		cmd = "grep -v '{}' {} > {}".format(os.path.dirname(out_file), out_file, out_file_clean)
+# 		os.system(cmd)
+# 		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf))
+# 		os.unlink(out_file_clean)
+# 		os.unlink(out_file)
 		
-		out_file = self.utils.get_temp_file("file_name", ".vcf")
-		out_file_2 = self.software.run_snpEff(fasta_file, genbank_file, freebayes_vcf, out_file)
-		self.assertEquals(out_file, out_file_2)
-		
-		out_file_clean = self.utils.get_temp_file("file_name", ".vcf")
-		cmd = "grep -v '{}' {} > {}".format(os.path.dirname(out_file), out_file, out_file_clean)
-		os.system(cmd)
-		self.assertTrue(filecmp.cmp(out_file_clean, freebayes_expect_vcf))
-		os.unlink(out_file_clean)
+	def test_run_genbank2gff3_positions_1(self):
+		"""
+		test genbank2gff3 method
+		"""
+		## covid
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid.gff3")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name", ".txt")
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file)
+		self.assertFalse(out_file_2 is None)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 		

@@ -1456,7 +1456,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			context['error_cant_see'] = "1"
 			return context
 		
-		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False, is_error=False).order_by('-creation_date')
+		query_set = ProjectSample.objects.filter(project__id=project.id, is_finished=True, is_deleted=False, is_error=False).order_by('creation_date')
 		tag_search = 'search_add_project_sample'
 		### filter the search
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
@@ -1758,7 +1758,17 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 						if (len(software_software) > 0):
 							software_used.append([SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended,
 								result.get_software(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name)])
-
+						
+						software_software = result.get_software(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name)
+						if (len(software_software) > 0):
+							software_used.append([SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended,
+								result.get_software(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name)])
+							
+						software_software = result.get_software(SoftwareNames.SOFTWARE_BCFTOOLS_name)
+						if (len(software_software) > 0):
+							software_used.append([SoftwareNames.SOFTWARE_BCFTOOLS_name,
+								result.get_software(SoftwareNames.SOFTWARE_BCFTOOLS_name)])
+						
 			### list of software to used
 			context['software_used'] = software_used	
 

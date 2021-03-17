@@ -250,7 +250,7 @@ class SampleTable(tables.Table):
 			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because original fastq files were removed">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
 		## test if it's in a project
-		elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False).count() > 0):
+		elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False, is_error=False).count() > 0):
 			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in a project at least.">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
 		else:

@@ -771,7 +771,7 @@ class Utils(object):
 				total_deep = int(variant.info['DPSP']) - sum([int(_) for _ in variant.info['AR']])
 				total_deep_samtools = self.get_coverage_by_pos(file_coverage,
 									variant.chrom, variant.pos, variant.pos)
-				if (coverage_limit > 0 and total_deep_samtools > 0 and \
+				if (coverage_limit > 0 and total_deep_samtools >= 0 and \
 					total_deep_samtools < coverage_limit): continue
 				if ( ((len(variant.info['SR']) // 2) - 1) != len(variant.alts)):
 					#vcf_hanlder_write.write(variant) 

@@ -412,7 +412,7 @@ class SoftwareMinion(object):
 				result_all.add_software(SoftwareDesc(self.software_names.get_insaflu_parameter_freq_vcf_name(),\
 								"", "Threshold:{}".format(freq_vcf_limit)))
 				result_all.add_software(SoftwareDesc(self.software_names.get_bcftools_name(),\
-								self.software_names.get_bamtools_version(), "consensus"))
+								self.software_names.get_bamtools_version(), "consensus generation from medaka filtered vcf"))
 			except Exception as e:
 				result = Result()
 				result.set_error(e.args[0])
@@ -692,7 +692,6 @@ class SoftwareMinion(object):
 					self.software_names.get_medaka_env(),
 					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
 					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
-		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

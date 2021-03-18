@@ -1018,6 +1018,50 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+
+	def test_add_freq_ao_ad_and_type_to_vcf_4(self):
+
+		utils = Utils()
+		coverage_limit = 20
+		freq_vcf_limit = 0.39
+		
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "UK_ERR4082154.vcf")
+		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "UK_ERR4082154.depth.gz")
+		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_3.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(depth_file))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		
+		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+								freq_vcf_limit)
+		
+		self.assertTrue(os.path.exists(vcf_file_out))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		
+	def test_add_freq_ao_ad_and_type_to_vcf_5(self):
+
+		utils = Utils()
+		coverage_limit = 20
+		freq_vcf_limit = 0.39
+		
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "UK_ERR4248992.vcf")
+		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "UK_ERR4248992.depth.gz")
+		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_4.vcf")
+		self.assertTrue(os.path.exists(vcf_file))
+		self.assertTrue(os.path.exists(depth_file))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		
+		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+								freq_vcf_limit)
+		
+		self.assertTrue(os.path.exists(vcf_file_out))
+		self.assertTrue(os.path.exists(expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
 		
 	def test_medaka_models(self):
 		

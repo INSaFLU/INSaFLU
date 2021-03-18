@@ -281,7 +281,7 @@ class Test(TestCase):
 	#	self.assertEqual("A-H5N5", sample.type_subtype)
 		self.assertEqual("H5N5", sample.type_subtype)
 		self.assertEqual("No", sample.mixed_infections_tag.name)
-		self.assertEqual(1, sample.number_alerts)
+		self.assertEqual(0, sample.number_alerts)
 		
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		self.assertEquals(2, len(list_meta))
@@ -492,7 +492,6 @@ class Test(TestCase):
 		temp_file = self.utils.get_temp_file("clean_vcf", ".txt")
 		os.system('grep -v "##SnpEffCmd" {} > {}'.format(out_file, temp_file))
 		self.assertTrue(os.path.exists(temp_file))
-		print(temp_file, expected_file_samples)
 		self.assertTrue(filecmp.cmp(temp_file, expected_file_samples))
 		
 		### compare

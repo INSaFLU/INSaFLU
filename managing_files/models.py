@@ -548,6 +548,10 @@ class Sample(models.Model):
 		alert: positive number, or zero
 		message: None, empty or the string with the error message
 		"""
+		### If ONT don't do anything
+		if (not self.is_type_fastq_gz_sequencing()):
+			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+		
 		vect_identify_virus_temp = self.identify_virus.all()
 		if (vect_identify_virus_temp.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 					"Warning: no typing data was obtained (possible reason: low number of influenza reads).")

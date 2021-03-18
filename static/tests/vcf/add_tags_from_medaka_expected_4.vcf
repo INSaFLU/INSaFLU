@@ -1,7 +1,7 @@
 ##fileformat=VCFv4.2
 ##FILTER=<ID=PASS,Description="All filters passed">
 ##medaka_version=1.2.1
-##contig=<ID=MN908947,length=29903>
+##contig=<ID=SARS_CoV_2,length=29903>
 ##INFO=<ID=ref_seq,Number=1,Type=String,Description="Medaka reference sequence">
 ##INFO=<ID=pred_seq,Number=1,Type=String,Description="Medaka predicted sequence">
 ##INFO=<ID=ref_qs,Number=.,Type=Float,Description="Medaka quality score for reference">
@@ -17,6 +17,11 @@
 ##INFO=<ID=SR,Number=.,Type=Integer,Description="Depth of spanning reads by strand which best align to each allele (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.)">
 ##INFO=<ID=AR,Number=2,Type=Integer,Description="Depth of ambiguous spanning reads by strand which align equally well to all alleles (fwd, rev)">
 ##INFO=<ID=SC,Number=.,Type=Integer,Description="Total alignment score to each allele of spanning reads by strand (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.) aligned with parasail match 5, mismatch -4, open 5, extend 3">
+##SnpEffVersion="4.1l (build 2015-10-03), by Pablo Cingolani"
+##SnpEffCmd="SnpEff  -no-downstream -no-upstream -no-intergenic -no-utr -noStats insa_flu_medaka_ref_54665960_file /tmp/insaFlu/insa_flu_path_78745520/UK_ERR4248992.vcf "
+##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO'">
+##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
+##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
 ##INFO=<ID=FREQ,Number=A,Type=Float,Description="Ratio of AO/(DPSP-AR)">
 ##INFO=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)">
 ##INFO=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count, SR (ref fwd + ref rev)">
@@ -24,8 +29,4 @@
 ##INFO=<ID=TYPE,Number=A,Type=String,Description="The type of allele, either snp, mnp, ins, del, or complex">
 ##INFO=<ID=DP_COMPOSED,Number=1,Type=String,Description="Coverage at position (DPSP-AR)/(samtools -aa). First is collected by Medaka, Second is collected by samtools.">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
-MN908947	160	.	G	T	54.923	PASS	AR=0,0;DP=23;DPS=17,6;DPSP=23;SC=3955,1356,4102,1410;SR=0,0,17,6;n_cols=1;pred_q=54.923;pred_qs=54.923;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=G;RO=0;AO=23;AF=0,23;TYPE=snp;DP_COMPOSED=23/23;FREQ=100	GT:GQ	1:55
-MN908947	241	.	C	T	52.247	PASS	AR=2,0;DP=23;DPS=17,6;DPSP=23;SC=3699,1351,3834,1405;SR=0,0,15,6;n_cols=1;pred_q=52.247;pred_qs=52.247;pred_seq=T;ref_q=0;ref_qs=0;ref_seq=C;RO=0;AO=21;AF=0,21;TYPE=snp;DP_COMPOSED=21/21;FREQ=100	GT:GQ	1:52
-MN908947	23403	.	A	G	48.131	PASS	AR=2,1;DP=21;DPS=11,10;DPSP=22;SC=2595,2552,2664,2637;SR=1,0,8,10;n_cols=7;pred_q=357.521;pred_qs=53.326,45.471,50.486,54.466,55.435,48.131,50.206;pred_seq=G****G*;ref_q=309.39;ref_qs=53.326,45.471,50.486,54.466,55.435,0,50.206;ref_seq=G****A*;RO=1;AO=18;AF=1,18;TYPE=snp;DP_COMPOSED=19/21;FREQ=94.7	GT:GQ	1:48
-MN908947	23816	.	C	CT	4.519	PASS	AR=0,0;DP=24;DPS=9,15;DPSP=26;SC=2048,4075,2053,4088;SR=5,11,4,6;n_cols=3;pred_q=98.236;pred_qs=49.552,5.832,42.852;pred_seq=CT*;ref_q=93.718;ref_qs=49.552,1.314,42.852;ref_seq=C**;RO=16;AO=10;AF=16,10;TYPE=ins;DP_COMPOSED=26/29;FREQ=38.5	GT:GQ	1:5
-MN908947	26529	.	G	T	7.841	PASS	AR=0,0;DP=30;DPS=17,13;DPSP=18;SC=2707,1333,2808,1387;SR=0,0,12,6;n_cols=8;pred_q=390.88;pred_qs=55.257,53.796,8.502,49.994,56.227,56.227,55.62,55.257;pred_seq=A*T*****;ref_q=383.039;ref_qs=55.257,53.796,0.661,49.994,56.227,56.227,55.62,55.257;ref_seq=A*G*****;RO=0;AO=18;AF=0,18;TYPE=snp;DP_COMPOSED=18/30;FREQ=100	GT:GQ	1:8
+SARS_CoV_2	14999	.	G	GTGGGGC	17.164	PASS	AR=0,0;DP=811;DPS=431,380;DPSP=5;SC=451,310,470,314;SR=0,0,3,2;n_cols=50;pred_q=473.791;pred_qs=47.807,4.31,4.914,5.677,10.57,8.752,4.489,8.143,7.562,9.735,6.375,8.051,4.555,6.224,5.569,3.604,4.278,6.645,4.242,7.218,4.151,5.668,4.702,4.655,4.95,6.224,4.844,7.456,5.845,8.535,6.619,6.651,4.898,6.093,7.641,6.915,3.121,5.738,6.054,10.388,12.232,11.924,8.27,6.162,15.499,21.18,21.308,22.406,29.239,35.704;pred_seq=GT*********************GGGG*********C*************;ref_q=456.627;ref_qs=47.807,1.996,4.914,5.677,10.57,8.752,4.489,8.143,7.562,9.735,6.375,8.051,4.555,6.224,5.569,3.604,4.278,6.645,4.242,7.218,4.151,5.668,4.702,1.727,1.614,1.142,1.653,7.456,5.845,8.535,6.619,6.651,4.898,6.093,7.641,6.915,2.808,5.738,6.054,10.388,12.232,11.924,8.27,6.162,15.499,21.18,21.308,22.406,29.239,35.704;ref_seq=G*************************************************;ANN=GTGGGGC|inframe_insertion|MODERATE|orf1ab|Gene_Exon_SARS_CoV_2_13468_21555|transcript|Transcript_Exon_SARS_CoV_2_13468_21555|Coding|1/1|c.1533_1534insGGGGCT|p.Ser511_Tyr512insGlyAla||1534/8088|1534/8088|512/2695||WARNING_TRANSCRIPT_NO_START_CODON&INFO_REALIGN_3_PRIME;RO=0;AO=5;AF=0,5;TYPE=ins;DP_COMPOSED=5/30;FREQ=100	GT:GQ	1:17

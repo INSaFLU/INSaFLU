@@ -1,14 +1,14 @@
 CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS
 MN908947	160	snp	G	T	100	23/23	T:23 G:0												yes
 MN908947	241	snp	C	T	100	21/21	T:21 C:0												yes
-MN908947	3037	snp	C	T	100	6/7	T:6 C:0	CDS	+	2772/21290	924/7095	synonymous_variant	c.2772C>T	p.Phe924Phe	p.F924F		orf1ab	orf1ab polyprotein	yes
-MN908947	6312	ins	C	CA	40	5/5	CA:2 C:3	CDS	+	6052/21290	2018/7095	frameshift_variant	c.6051dupA	p.Pro2018fs	p.P2018fs		orf1ab	orf1ab polyprotein	yes
-MN908947	6329	ins	T	TC	40	5/5	TC:2 T:3	CDS	+	6066/21290	2022/7095	frameshift_variant	c.6065dupC	p.Asn2023fs	p.N2023fs		orf1ab	orf1ab polyprotein	yes
-MN908947	13862	snp	C	T	100	6/5	T:6 C:0	CDS	+	13597/21290	4533/7095	missense_variant	c.13597C>T	p.His4533Tyr	p.H4533Y		orf1ab	orf1ab polyprotein	yes
-MN908947	14750	ins	T	TA	75	8/8	TA:6 T:2	CDS	+	14490/21290	4830/7095	frameshift_variant	c.14489dupA	p.Asn4830fs	p.N4830fs		orf1ab	orf1ab polyprotein	yes
-MN908947	17565	snp	T	C	94.1	17/15	C:16 T:1	CDS	+	17300/21290	5767/7095	missense_variant	c.17300T>C	p.Val5767Ala	p.V5767A		orf1ab	orf1ab polyprotein	yes
-MN908947	17953	ins	C	CT	44.4	9/9	CT:4 C:5	CDS	+	17692/21290	5898/7095	frameshift_variant	c.17691dupT	p.Ala5898fs	p.A5898fs		orf1ab	orf1ab polyprotein	yes
-MN908947	21133	ins	C	CA	42.9	7/7	CA:3 C:4	CDS	+	20873/21290	6958/7095	frameshift_variant	c.20872dupA	p.Ser6958fs	p.S6958fs		orf1ab	orf1ab polyprotein	yes
+MN908947	3037	snp	C	T	100	6/7	T:6 C:0	CDS	+	2772/13203	924/4400	synonymous_variant	c.2772C>T	p.Phe924Phe	p.F924F		orf1ab	orf1ab polyprotein	yes
+MN908947	6312	ins	C	CA	40	5/5	CA:2 C:3	CDS	+	6052/13203	2018/4400	frameshift_variant	c.6051dupA	p.Pro2018fs	p.P2018fs		orf1ab	orf1ab polyprotein	yes
+MN908947	6329	ins	T	TC	40	5/5	TC:2 T:3	CDS	+	6066/13203	2022/4400	frameshift_variant	c.6065dupC	p.Asn2023fs	p.N2023fs		orf1ab	orf1ab polyprotein	yes
+MN908947	13862	snp	C	T	100	6/5	T:6 C:0	CDS	+	395/8088	132/2695	missense_variant	c.395C>T	p.Thr132Ile	p.T132I		orf1ab	orf1ab polyprotein	yes
+MN908947	14750	ins	T	TA	75	8/8	TA:6 T:2	CDS	+	1288/8088	430/2695	frameshift_variant	c.1287dupA	p.His430fs	p.H430fs		orf1ab	orf1ab polyprotein	yes
+MN908947	17565	snp	T	C	94.1	17/15	C:16 T:1	CDS	+	4098/8088	1366/2695	synonymous_variant	c.4098T>C	p.Arg1366Arg	p.R1366R		orf1ab	orf1ab polyprotein	yes
+MN908947	17953	ins	C	CT	44.4	9/9	CT:4 C:5	CDS	+	4490/8088	1497/2695	frameshift_variant	c.4489dupT	p.Cys1497fs	p.C1497fs		orf1ab	orf1ab polyprotein	yes
+MN908947	21133	ins	C	CA	42.9	7/7	CA:3 C:4	CDS	+	7671/8088	2557/2695	frameshift_variant	c.7670dupA	p.Leu2558fs	p.L2558fs		orf1ab	orf1ab polyprotein	yes
 MN908947	23403	snp	A	G	94.7	19/21	G:18 A:1	CDS	+	1841/3822	614/1273	missense_variant	c.1841A>G	p.Asp614Gly	p.D614G		S	surface glycoprotein	yes
 MN908947	24278	mnp	TT	AC	66.7	9/9	AC:6 TT:3	CDS	+	2716/3822	906/1273	missense_variant	c.2716_2717delTTinsAC	p.Phe906Thr	p.F906T		S	surface glycoprotein	yes
 MN908947	26529	snp	G	T	100	18/30	T:18 G:0	CDS	+	7/669	3/222	missense_variant	c.7G>T	p.Asp3Tyr	p.D3Y		M	membrane glycoprotein	yes

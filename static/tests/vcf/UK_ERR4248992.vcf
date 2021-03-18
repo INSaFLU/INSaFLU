@@ -1,0 +1,26 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##medaka_version=1.2.1
+##contig=<ID=SARS_CoV_2,length=29903>
+##INFO=<ID=ref_seq,Number=1,Type=String,Description="Medaka reference sequence">
+##INFO=<ID=pred_seq,Number=1,Type=String,Description="Medaka predicted sequence">
+##INFO=<ID=ref_qs,Number=.,Type=Float,Description="Medaka quality score for reference">
+##INFO=<ID=pred_qs,Number=.,Type=Float,Description="Medaka quality score for prediction">
+##INFO=<ID=ref_q,Number=1,Type=Float,Description="Medaka per position quality score for reference">
+##INFO=<ID=pred_q,Number=1,Type=Float,Description="Medaka per position quality score for prediction">
+##INFO=<ID=n_cols,Number=1,Type=Integer,Description="Number of medaka pileup columns in variant call">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Medaka genotype.">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Medaka genotype quality score">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Depth of reads at pos">
+##INFO=<ID=DPS,Number=2,Type=Integer,Description="Depth of reads at pos by strand (fwd, rev)">
+##INFO=<ID=DPSP,Number=1,Type=Integer,Description="Depth of reads spanning pos +-25">
+##INFO=<ID=SR,Number=.,Type=Integer,Description="Depth of spanning reads by strand which best align to each allele (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.)">
+##INFO=<ID=AR,Number=2,Type=Integer,Description="Depth of ambiguous spanning reads by strand which align equally well to all alleles (fwd, rev)">
+##INFO=<ID=SC,Number=.,Type=Integer,Description="Total alignment score to each allele of spanning reads by strand (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.) aligned with parasail match 5, mismatch -4, open 5, extend 3">
+##SnpEffVersion="4.1l (build 2015-10-03), by Pablo Cingolani"
+##SnpEffCmd="SnpEff  -no-downstream -no-upstream -no-intergenic -no-utr -noStats insa_flu_medaka_ref_54665960_file /tmp/insaFlu/insa_flu_path_78745520/UK_ERR4248992.vcf "
+##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO'">
+##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
+##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+SARS_CoV_2	14999	.	G	GTGGGGC	17.164	PASS	AR=0,0;DP=811;DPS=431,380;DPSP=5;SC=451,310,470,314;SR=0,0,3,2;n_cols=50;pred_q=473.791;pred_qs=47.807,4.31,4.914,5.677,10.57,8.752,4.489,8.143,7.562,9.735,6.375,8.051,4.555,6.224,5.569,3.604,4.278,6.645,4.242,7.218,4.151,5.668,4.702,4.655,4.95,6.224,4.844,7.456,5.845,8.535,6.619,6.651,4.898,6.093,7.641,6.915,3.121,5.738,6.054,10.388,12.232,11.924,8.27,6.162,15.499,21.18,21.308,22.406,29.239,35.704;pred_seq=GT*********************GGGG*********C*************;ref_q=456.627;ref_qs=47.807,1.996,4.914,5.677,10.57,8.752,4.489,8.143,7.562,9.735,6.375,8.051,4.555,6.224,5.569,3.604,4.278,6.645,4.242,7.218,4.151,5.668,4.702,1.727,1.614,1.142,1.653,7.456,5.845,8.535,6.619,6.651,4.898,6.093,7.641,6.915,2.808,5.738,6.054,10.388,12.232,11.924,8.27,6.162,15.499,21.18,21.308,22.406,29.239,35.704;ref_seq=G*************************************************;ANN=GTGGGGC|inframe_insertion|MODERATE|orf1ab|Gene_Exon_SARS_CoV_2_13468_21555|transcript|Transcript_Exon_SARS_CoV_2_13468_21555|Coding|1/1|c.1533_1534insGGGGCT|p.Ser511_Tyr512insGlyAla||1534/8088|1534/8088|512/2695||WARNING_TRANSCRIPT_NO_START_CODON&INFO_REALIGN_3_PRIME	GT:GQ	1:17

@@ -5,16 +5,16 @@
 # Note Aedes albopictus strain Rimini isolate 1#Rim1 haplogroup A1a1a1 mitochondrion, complete genome.
 # date 19-NOV-2016
 # working on region:KX383916, Aedes albopictus, Aedes albopictus strain Rimini isolate 1#Rim1 haplogroup A1a1a1 mitochondrion, complete genome., 19-NOV-2016
-KX383916	GenBank	CDS	1	911	.	+	0	gene=ND2;ID=ND2;Name=ND2;codon_start=2;product=NADH dehydrogenase subunit 2;protein_id=APC25167.1;transl_table=5;translation=length.8
-KX383916	GenBank	CDS	1112	2648	.	+	0	gene=COX1;ID=COX1;Name=COX1;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA%3B start codon not determined;codon_start=1;product=cytochrome c oxidase subunit I;protein_id=APC25168.1;transl_except=(pos:2970%2Caa:TERM);transl_table=5;translation=length.512
-KX383916	GenBank	CDS	2717	3401	.	+	0	gene=COX2;ID=COX2;Name=COX2;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA;codon_start=1;product=cytochrome c oxidase subunit II;protein_id=APC25169.1;transl_except=(pos:3723%2Caa:TERM);transl_table=5;translation=length.228
-KX383916	GenBank	CDS	3555	3716	.	+	0	gene=ATP8;ID=ATP8;Name=ATP8;codon_start=1;product=ATP synthase F0 subunit 8;protein_id=APC25170.1;transl_table=5;translation=length.53
-KX383916	GenBank	CDS	3710	4390	.	+	0	gene=ATP6;ID=ATP6;Name=ATP6;codon_start=1;product=ATP synthase F0 subunit 6;protein_id=APC25171.1;transl_table=5;translation=length.226
-KX383916	GenBank	CDS	4394	5182	.	+	0	gene=COX3;ID=COX3;Name=COX3;codon_start=1;product=cytochrome c oxidase subunit III;protein_id=APC25172.1;transl_table=5;translation=length.262
-KX383916	GenBank	CDS	5249	5602	.	+	0	gene=ND3;ID=ND3;Name=ND3;codon_start=1;product=NADH dehydrogenase subunit 3;protein_id=APC25173.1;transl_table=5;translation=length.117
-KX383916	GenBank	CDS	6021	7763	.	-	0	gene=ND5;ID=ND5;Name=ND5;codon_start=1;product=NADH dehydrogenase subunit 5;protein_id=APC25174.1;transl_table=5;translation=length.580
-KX383916	GenBank	CDS	7835	9178	.	-	0	gene=ND4;ID=ND4;Name=ND4;codon_start=1;product=NADH dehydrogenase subunit 4;protein_id=APC25175.1;transl_table=5;translation=length.447
-KX383916	GenBank	CDS	9172	9468	.	-	0	gene=ND4L;ID=ND4L;Name=ND4L;codon_start=1;product=NADH dehydrogenase subunit 4L;protein_id=APC25176.1;transl_table=5;translation=length.98
-KX383916	GenBank	CDS	9605	10126	.	+	0	gene=ND6;ID=ND6;Name=ND6;codon_start=1;product=NADH dehydrogenase subunit 6;protein_id=APC25177.1;transl_table=5;translation=length.173
-KX383916	GenBank	CDS	10126	11262	.	+	0	gene=CYTB;ID=CYTB;Name=CYTB;codon_start=1;product=cytochrome b;protein_id=APC25178.1;transl_table=5;translation=length.378
-KX383916	GenBank	CDS	11350	12291	.	-	0	gene=ND1;ID=ND1;Name=ND1;codon_start=1;product=NADH dehydrogenase subunit 1;protein_id=APC25179.1;transl_table=5;translation=length.313
+KX383916	GenBank	CDS	1	911	.	+	0	gene=ND2;Name=ND2;codon_start=2;product=NADH dehydrogenase subunit 2;protein_id=APC25167.1;transl_table=5;translation=length.8
+KX383916	GenBank	CDS	1112	2648	.	+	0	gene=COX1;Name=COX1;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA%3B start codon not determined;codon_start=1;product=cytochrome c oxidase subunit I;protein_id=APC25168.1;transl_except=(pos:2970%2Caa:TERM);transl_table=5;translation=length.512
+KX383916	GenBank	CDS	2717	3401	.	+	0	gene=COX2;Name=COX2;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA;codon_start=1;product=cytochrome c oxidase subunit II;protein_id=APC25169.1;transl_except=(pos:3723%2Caa:TERM);transl_table=5;translation=length.228
+KX383916	GenBank	CDS	3555	3716	.	+	0	gene=ATP8;Name=ATP8;codon_start=1;product=ATP synthase F0 subunit 8;protein_id=APC25170.1;transl_table=5;translation=length.53
+KX383916	GenBank	CDS	3710	4390	.	+	0	gene=ATP6;Name=ATP6;codon_start=1;product=ATP synthase F0 subunit 6;protein_id=APC25171.1;transl_table=5;translation=length.226
+KX383916	GenBank	CDS	4394	5182	.	+	0	gene=COX3;Name=COX3;codon_start=1;product=cytochrome c oxidase subunit III;protein_id=APC25172.1;transl_table=5;translation=length.262
+KX383916	GenBank	CDS	5249	5602	.	+	0	gene=ND3;Name=ND3;codon_start=1;product=NADH dehydrogenase subunit 3;protein_id=APC25173.1;transl_table=5;translation=length.117
+KX383916	GenBank	CDS	6021	7763	.	-	0	gene=ND5;Name=ND5;codon_start=1;product=NADH dehydrogenase subunit 5;protein_id=APC25174.1;transl_table=5;translation=length.580
+KX383916	GenBank	CDS	7835	9178	.	-	0	gene=ND4;Name=ND4;codon_start=1;product=NADH dehydrogenase subunit 4;protein_id=APC25175.1;transl_table=5;translation=length.447
+KX383916	GenBank	CDS	9172	9468	.	-	0	gene=ND4L;Name=ND4L;codon_start=1;product=NADH dehydrogenase subunit 4L;protein_id=APC25176.1;transl_table=5;translation=length.98
+KX383916	GenBank	CDS	9605	10126	.	+	0	gene=ND6;Name=ND6;codon_start=1;product=NADH dehydrogenase subunit 6;protein_id=APC25177.1;transl_table=5;translation=length.173
+KX383916	GenBank	CDS	10126	11262	.	+	0	gene=CYTB;Name=CYTB;codon_start=1;product=cytochrome b;protein_id=APC25178.1;transl_table=5;translation=length.378
+KX383916	GenBank	CDS	11350	12291	.	-	0	gene=ND1;Name=ND1;codon_start=1;product=NADH dehydrogenase subunit 1;protein_id=APC25179.1;transl_table=5;translation=length.313

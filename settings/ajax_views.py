@@ -52,7 +52,7 @@ def set_default_parameters(request):
 											None, None)
 					## set a new default
 					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
-													project, None, technology_name)
+													project, None, None, technology_name)
 				elif (project_sample_id_a in request.GET):
 					project_sample_id = request.GET[project_sample_id_a]
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)

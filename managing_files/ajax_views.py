@@ -825,6 +825,15 @@ def remove_project(request):
 			project.is_deleted_in_file_system = False
 			project.date_deleted = datetime.now()
 			project.save()
+			
+			### delete all project samples
+			### this is only necessary for consistency
+			for project_sample in project.project_samples.all():
+				project_sample.is_deleted = True
+				project_sample.is_deleted_in_file_system = False
+				project_sample.date_deleted = datetime.now()
+				project_sample.save()
+			
 			data = { 'is_ok' : True }
 		
 		return JsonResponse(data)

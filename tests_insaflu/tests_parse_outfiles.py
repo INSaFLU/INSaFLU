@@ -167,7 +167,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(vcf_expect_result))
 		
-		temp_file = parse_out_files.add_amino_single_letter_code(vcf_file)
+		temp_file = parse_out_files.add_amino_single_letter_code(vcf_file))
 		self.assertTrue(filecmp.cmp(temp_file, vcf_expect_result))
 		if (os.path.exists(temp_file)): os.unlink(temp_file)
 

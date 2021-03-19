@@ -123,7 +123,7 @@ class SoftwareMinion(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
-					message = "Warning: Classification using Nanopore sequences is under development."
+					message = "Info: Classification using Nanopore sequences is under development."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
 			else:

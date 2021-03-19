@@ -251,7 +251,7 @@ class SampleTable(tables.Table):
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
 		## test if it's in a project
 		elif (not record.project_samples is None and record.project_samples.filter(is_deleted=False, is_error=False).count() > 0):
-			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in a project at least.">' +\
+			str_links = '<a href=# data-toggle="tooltip" title="Software settings are not enable because this sample is in at least one project.">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table" style="color: grey"></i></span></a>'
 		else:
 			str_links = '<a href=' + reverse('sample-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\

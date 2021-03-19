@@ -260,8 +260,8 @@ class SoftwareNames(object):
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion = "1"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters = "Threshold:30"
 	
-	INSAFLU_PARAMETER_VCF_FREQ_ONT_name = "Minumum proportion for variant evidence"
-	INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended = "Minumum proportion for variant evidence (minfrac)"
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_name = "Minimum proportion for variant evidence"
+	INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended = "Minimum proportion for variant evidence (minfrac)"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion = "1"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_parameters = "Threshold:0.51"
 	

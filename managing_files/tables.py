@@ -271,7 +271,12 @@ class SampleTable(tables.Table):
 		queryset = queryset.annotate(number_alerts_ = F('number_alerts')).order_by(('-' if is_descending else '') + 'number_alerts_')
 		return (queryset, True)
 	
-	
+	def order_technology(self, queryset, is_descending):
+		""" shows if it is Illumina or Minion """
+		queryset = queryset.annotate(technology = F('type_of_fastq')).order_by(('-' if is_descending else '') + 'technology')
+		return (queryset, True)
+
+
 class ProjectTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
@@ -461,9 +466,6 @@ class ShowProjectSamplesResults(tables.Table):
 			
 		str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information" class="padding-button-table">' +\
 				'<span ><i class="fa fa-info-circle"></i> More info</a>'
-	
-		
-				
 		return mark_safe(str_links)
 
 	def order_sample_name(self, queryset, is_descending):
@@ -486,6 +488,11 @@ class ShowProjectSamplesResults(tables.Table):
 		queryset = queryset.annotate(mixed_infection = F('mixed_infections__tag__name')).order_by(('-' if is_descending else '') + 'mixed_infection')
 		return (queryset, True)
 	
+	def order_technology(self, queryset, is_descending):
+		""" shows if it is Illumina or Minion """
+		queryset = queryset.annotate(technology = F('sample__type_of_fastq')).order_by(('-' if is_descending else '') + 'technology')
+		return (queryset, True)
+			
 class AddSamplesFromCvsFileTable(tables.Table):
 	"""
 	To add samples to projects

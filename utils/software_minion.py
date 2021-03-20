@@ -400,6 +400,7 @@ class SoftwareMinion(object):
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
+				#		freq_vcf_limit)
 						freq_vcf_limit, project_sample.id)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
  								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
@@ -679,8 +680,7 @@ class SoftwareMinion(object):
 		###need to make a link to the reference files
 		### Always need to run consensus because do HDF file for variants
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
-		#self.utils.copy_file(reference_fasta, reference_fasta_medaka)
-		self.utils.link_file(reference_fasta, reference_fasta_medaka, False)
+		self.utils.copy_file(reference_fasta, reference_fasta_medaka)
 		
 		if (project_sample_id != -1):
 			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {} > /tmp/insaFlu/medaka_project_sample_{}.txt 2>&1".format(

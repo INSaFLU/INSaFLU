@@ -248,7 +248,7 @@ class ParseOutFiles(object):
 						lst_data = sz_temp.split('\t')
 						vect_to_write = []
 						if (len(lst_data) > 12):
-							## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"] 
+							## transform 'synonymous_variant c.981A>G p.Glu327Glu' to ["synonymous_variant", "c.981A>G", "p.Glu327Glu"]
 							vect_to_write.extend(lst_data[:12])
 							vect_to_write.extend(lst_data[12].split(' '))
 							vect_to_write.extend([self.utils.parse_amino_HGVS_code(vect_to_write[-1])])
@@ -262,7 +262,6 @@ class ParseOutFiles(object):
 									(not coverage.is_100_more_0(lst_data[0]) or not coverage.is_100_more_9(lst_data[0]))):
 								vect_to_write.extend([''] * (n_size_array - len(lst_data) - 1))
 								vect_to_write.append('yes')
-								
 						csv_writer.writerow(vect_to_write)
 
 		### copy to the origin to the result file

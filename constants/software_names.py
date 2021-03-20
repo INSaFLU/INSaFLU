@@ -99,6 +99,7 @@ class SoftwareNames(object):
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
 	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 70 --tailcrop 70"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
 	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
+#	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka.1.2.3/bin/activate"))
 	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
 	SOFTWARE_Medaka_name_consensus = "Medaka consensus"

@@ -729,7 +729,10 @@ class Software(object):
 			raise Exception("Fail to run snippy")
 		
 		### add FREQ to VCF file
-		self.utils.add_freq_to_vcf(os.path.join(temp_dir, sample_name + '.vcf'), os.path.join(temp_dir, sample_name + '_2.vcf'))
+		parse_out_files = ParseOutFiles()
+		out_file_transformed_amino = parse_out_files.add_amino_single_letter_code(os.path.join(temp_dir, sample_name + '.vcf'))
+		self.utils.add_freq_to_vcf(out_file_transformed_amino, os.path.join(temp_dir, sample_name + '_2.vcf'))
+		
 		### add FREQ and other things to TAB file
 		self.run_snippy_vcf_to_tab_freq_and_evidence(path_reference_fasta, path_reference_genbank,\
 							os.path.join(temp_dir, sample_name + '_2.vcf'),\

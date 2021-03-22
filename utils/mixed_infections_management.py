@@ -47,8 +47,10 @@ class MixedInfectionsManagement(object):
 		if (tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES and tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO):
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
 			
-		## test ratio method
-		if (count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
+		## test ratio methodm only for illumina
+		if (project_sample.sample.is_type_fastq_gz_sequencing() and 
+				(count_hits.is_mixed_infection_ratio_test() or 
+				count_hits.total_grather_than_mixed_infection()) ):	## doesn't matter the other
 			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
 			
 		### get tag
@@ -67,7 +69,9 @@ class MixedInfectionsManagement(object):
 		mixed_infections.save()
 		
 		##  set the alert
-		if (tag == ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES or count_hits.is_mixed_infection_ratio_test() or count_hits.total_grather_than_mixed_infection()):
+		if (project_sample.sample.is_type_fastq_gz_sequencing() and (
+				tag == ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES or count_hits.is_mixed_infection_ratio_test() or 
+				count_hits.total_grather_than_mixed_infection()) ):
 			project_sample_ = ProjectSample.objects.get(pk=project_sample.id)
 			project_sample_.alert_first_level += 1
 			project_sample_.save()

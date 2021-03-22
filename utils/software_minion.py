@@ -28,6 +28,9 @@ class SoftwareMinion(object):
 	'''
 	classdocs
 	'''
+	### if the NanoFilt and NanoStat is installed in medaka environment
+	RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV = False 
+	
 	utils = Utils()
 	software_names = SoftwareNames()
 	software = Software()
@@ -297,7 +300,13 @@ class SoftwareMinion(object):
 		else:
 			temp_dir = self.utils.get_temp_dir()
 			out_path_file_name = os.path.join(temp_dir, "temp.txt")
-			cmd = "{} -o {} -n {} --fastq {}".format(self.software_names.get_NanoStat(), temp_dir, out_path_file_name, file_name)
+			if (SoftwareMinion.RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV):
+				cmd = "{} {} -o {} -n {} --fastq {}".format(self.software_names.get_medaka_env(),
+							self.software_names.get_NanoStat(), temp_dir, out_path_file_name, file_name)
+			else:
+				cmd = "{} -o {} -n {} --fastq {}".format(self.software_names.get_NanoStat(),
+							temp_dir, out_path_file_name, file_name)
+
 			exist_status = os.system(cmd)
 			if (exist_status != 0 or not os.path.exists(out_path_file_name)):
 				self.utils.remove_dir(temp_dir)
@@ -348,9 +357,18 @@ class SoftwareMinion(object):
 
 		### run software
 		temp_file_name = self.utils.get_temp_file("nanofilt", "fastq.fz")
-		cmd = "gzip -cd {} | {} {} | gzip > {}".format(
+		if (SoftwareMinion.RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV):
+			cmd = "{} gzip -cd {} | {} {} | gzip > {}".format(
+				self.software_names.get_medaka_env(),
 				file_name, self.software_names.get_NanoFilt(), parameters,
 				temp_file_name)
+		else:
+			cmd = "gzip -cd {} | {} {} | gzip > {}".format(
+				file_name, self.software_names.get_NanoFilt(), parameters,
+				temp_file_name)
+		
+		
+		
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.utils.remove_file(temp_file_name)

@@ -53,8 +53,8 @@ class DefaultProjectSoftware(object):
 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
-			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
-							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+# 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
+# 							user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 		## only for project sample and by technology
 		elif (not project_sample is None):
 			
@@ -75,8 +75,8 @@ class DefaultProjectSoftware(object):
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
-				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
-								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
+# 				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
+# 								user, type_of_use, project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 		
 		### only for sample and ONT technology
 		if (not sample is None):
@@ -1589,7 +1589,7 @@ class DefaultProjectSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "Threshold"
-		parameter.parameter = "0.51"
+		parameter.parameter = "0.80"
 		parameter.type_data = Parameter.PARAMETER_float
 		parameter.software = software
 		parameter.project = project

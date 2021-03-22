@@ -56,6 +56,14 @@
   padding:10px
 }
 
+.insa-description-process {
+  background-color: #F6F6FF !important;
+  color: #05264c !important;
+  font-size: 1.6rem;
+  text-align: center;
+  padding:10px
+}
+
 .insa-description-read-more-header {
 	font-size: 1.3rem;
 	padding-left: 12px;

@@ -394,14 +394,16 @@ class SoftwareMinion(object):
 							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
 				freq_vcf_limit = float(default_project_software.get_freq_vcf_ONT_single_parameter(project_sample,\
 							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
-				parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
+				## deactivate, rigth now
+				#parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
+				parameters_depth = "-aa"
 				
 				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
-				#		freq_vcf_limit)
-						freq_vcf_limit, project_sample.id)
+						freq_vcf_limit)
+				#		freq_vcf_limit, project_sample.id)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
  								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
 				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\

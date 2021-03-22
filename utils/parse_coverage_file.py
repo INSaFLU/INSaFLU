@@ -139,8 +139,6 @@ class GetCoverage(object):
 	def __init__(self):
 		self.reference_dict = {}
 		self.vect_reference = []
-		pass
-
 
 	def get_dict_reference(self): return self.reference_dict
 	def get_vect_reference(self): return self.vect_reference

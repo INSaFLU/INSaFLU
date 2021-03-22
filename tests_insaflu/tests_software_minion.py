@@ -448,7 +448,7 @@ class Test(TestCase):
 		self.assertTrue(1, len(parameters))
 		
 		### test set default
-		self.assertEqual("0.51", parameters[0].parameter)
+		self.assertEqual("0.80", parameters[0].parameter)
 		parameter = parameters[0]
 		parameter.parameter = ".40"
 		parameter.save()

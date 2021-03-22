@@ -50,9 +50,9 @@ class DefaultSoftware(object):
 		self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,
 				self._get_medaka_model_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
-		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
-				self._get_samtools_depth_default_ONT(user), user,
-				SoftwareNames.TECHNOLOGY_minion)
+# 		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+# 				self._get_samtools_depth_default_ONT(user), user,
+# 				SoftwareNames.TECHNOLOGY_minion)
 		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, self._get_nanofilt_default(user), user,
 				SoftwareNames.TECHNOLOGY_minion)
 
@@ -653,7 +653,7 @@ class DefaultSoftware(object):
 
 	def _get_vcf_freq_ONT_threshold_default(self, user):
 		"""
-		MINFRAC: minimum proportion for variant evidence (–minfrac 51) Range: [10:100]
+		MINFRAC: minimum proportion for variant evidence (–minfrac 0.80) Range: [10:100]
 		
 		"""
 		software = Software()
@@ -668,7 +668,7 @@ class DefaultSoftware(object):
 		
 		parameter = Parameter()
 		parameter.name = "Threshold"
-		parameter.parameter = "0.51"
+		parameter.parameter = "0.80"
 		parameter.type_data = Parameter.PARAMETER_float
 		parameter.software = software
 		parameter.union_char = ":"

@@ -217,7 +217,7 @@ class Command(BaseCommand):
 				if (not sample.date_deleted is None): removed_days = int(divmod((datetime.datetime.now() - sample.date_deleted).total_seconds(), 86400)[0])
 				else: removed_days = 10000	## big number, older versions doesn't have this table field
 				if (removed_days < self.REMOVE_FILES_AFTER_DAYS):
-					self.out_message("Not remove physically: {}; Deleted in web site {} days ago.".format(files_to_remove[0], removed_days), False)
+					self.out_message("Not remove physically: 1; Deleted in web site {} days ago.".format(removed_days), False)
 					continue
 				try:
 					original_file_not_removed = False

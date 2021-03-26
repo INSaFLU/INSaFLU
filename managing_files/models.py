@@ -132,7 +132,8 @@ class Reference(models.Model):
 		out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
 		if (os.path.exists(out_file)):
 			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_fasta(\
-						TypePath.MEDIA_URL), self.name, self.name))
+						TypePath.MEDIA_URL), os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
+						self.name))
 		return _('File not available.')
 
 	def get_gff3(self, type_path):

@@ -106,9 +106,6 @@ class Proteins(object):
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
 							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
-#				if (project_sample.project.owner.id in [38, 245]):
-#					continue
-				
 				if (self.save_protein_by_sequence_name_and_cds(record_dict_consensus,
 							self.dt_alignments_genes_consensus[project_sample.id],
 							project_sample.sample.name, sequence_name, gene,
@@ -118,8 +115,8 @@ class Proteins(object):
 					b_first = False
 			n_count_samples_processed += 1
 
-		### error, there's no enough sequences to create tree file
-		if (n_files_with_sequences < 2):
+		### error, there's no enough sequences to create tree file, at least one from sample + reference
+		if (n_files_with_sequences < 1):
 			manageDatabase.set_project_metakey(project, user, meta_key,\
 					MetaKeyAndValue.META_VALUE_Error, "Error: there's no enough valid sequences to create a tree.")
 			self.utils.remove_dir(temp_dir)
@@ -283,6 +280,8 @@ class Proteins(object):
 				if (count_stop > count_stop_2 and count_stop_1 > count_stop_2):
 					coding_protein = coding_protein_2
 
+			### can be zero
+			if (len(str(coding_protein)) == 0): return False
 			with open(out_file, 'a') as handle:
 				handle.write('>{}\n{}\n'.format(sample_name.replace(' ', '_'), str(coding_protein)))
 			return True

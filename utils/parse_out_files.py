@@ -25,11 +25,13 @@ class ParseOutFiles(object):
 	HEADER_TAB_FILE_WRITE_WITHOUT_SAMPLE_ID = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT"
 	
 	HEADER_TAB_FILE_WRITE_snippy_expanded 	= "ID	CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	### three types of header
 	HEADER_TAB_FILE_snippy_changed 			= 		"CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	HEADER_TAB_FILE_snippy_changed_old 		= 		"CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
-	### Add FREQ and COVERAGE after ALT
-	HEADER_TAB_FILE_snippy_after_change = "ALT"
-	HEADER_TAB_FILE_snippy_after_change_add_fields = 2
+	HEADER_TAB_FILE_snippy_changed_old_1	= 		"CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	HEADER_TAB_FILE_snippy_changed_old_2	= 		"CHROM	POS	TYPE	REF	ALT	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS"
+	### Add FREQ and COVERAGE after ALT, IMPORTANT, first the most distants
+	HEADER_TAB_FILE_snippy_after_change_old_2 = "ALT"
+	HEADER_TAB_FILE_snippy_after_change_add_fields_old_2 = 2
 	
 	### original file header that came from snippy
 	HEADER_TAB_FILE_snippy_original = "CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	LOCUS_TAG	GENE	PRODUCT"
@@ -195,13 +197,15 @@ class ParseOutFiles(object):
 		if (b_add_header): csv_writer.writerow(self.HEADER_TAB_FILE_WRITE_snippy_expanded.split('\t'))
 		with open(file_to_parse) as handle_to_process:
 			b_header = False
-			b_header_old = False
+			b_header_old_1 = False
+			b_header_old_2 = False
 			for line in handle_to_process:
 				sz_temp = line.strip()
 				if (len(sz_temp) == 0): continue
 				if (sz_temp == self.HEADER_TAB_FILE_snippy_changed): b_header = True
-				elif (sz_temp == self.HEADER_TAB_FILE_snippy_changed_old): b_header_old = True
-				elif (b_header or b_header_old): 	## start processing data
+				elif (sz_temp == self.HEADER_TAB_FILE_snippy_changed_old_1): b_header_old_1 = True
+				elif (sz_temp == self.HEADER_TAB_FILE_snippy_changed_old_2): b_header_old_2 = True
+				elif (b_header or b_header_old_1 or b_header_old_2): 	## start processing data
 					lst_data = sz_temp.split('\t')
 					if (len(lst_data) > 5):
 						lst_type_var = lst_data[2].split(',')
@@ -209,7 +213,8 @@ class ParseOutFiles(object):
 							if (len(vect_type_out) == 0 or lst_type_var[i] in vect_type_out):
 								vect_to_write = [sample_name]
 								### add HGMD amino p.V323S 
-								position = 12	## old versions
+								if b_header_old_2: position = 12	## oldest versions
+								elif b_header_old_1: position = 14	## old versions
 								if (not b_header and len(lst_data) > position):
 									amino_p = lst_data[position]
 									lst_transformed = []
@@ -220,9 +225,10 @@ class ParseOutFiles(object):
 								break
 						
 						### test header old
-						if b_header_old:
-							for _ in range(self.HEADER_TAB_FILE_snippy_after_change_add_fields):
-								vect_to_write.insert(self.get_pos_from_header(self.HEADER_TAB_FILE_snippy_changed_old, self.HEADER_TAB_FILE_snippy_after_change) + 1, "")
+						if b_header_old_2:
+							for _ in range(self.HEADER_TAB_FILE_snippy_after_change_add_fields_old_2):
+								vect_to_write.insert(self.get_pos_from_header(self.HEADER_TAB_FILE_snippy_changed_old_2,
+									self.HEADER_TAB_FILE_snippy_after_change_old_2) + 1, "")
 						csv_writer.writerow(vect_to_write)
 		return True
 

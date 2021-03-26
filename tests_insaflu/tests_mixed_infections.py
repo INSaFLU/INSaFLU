@@ -162,6 +162,7 @@ class Test(unittest.TestCase):
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
 			sample.owner = user
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.save()
 
 		project_name = "file_nametest_get_mixed_infections"
@@ -271,6 +272,7 @@ class Test(unittest.TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.owner = user
 			sample.save()
 
@@ -400,6 +402,7 @@ class Test(unittest.TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.owner = user
 			sample.save()
 
@@ -511,6 +514,7 @@ class Test(unittest.TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.owner = user
 			sample.save()
 

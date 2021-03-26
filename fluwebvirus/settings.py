@@ -65,6 +65,8 @@ DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
 ## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
 MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
 
+### if NanoFilt runs on MEDAKA ENV, because of old < python3.5  
+RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV = config('RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV', default=False, cast=bool)		### 250M
 
 #https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
 #https://gist.github.com/bradmontgomery/6487319

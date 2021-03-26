@@ -192,7 +192,7 @@ class SoftwareNames(object):
 	SOFTWARE_CONVERT_VERSION = ""
 	SOFTWARE_CONVERT_PARAMETERS = ""
 
-	vect_versions_available = ['7.313', '7.453']
+	vect_versions_available = ['7.453', '7.313']
 	for version in vect_versions_available:
 		SOFTWARE_MAFFT_VERSION = version
 		SOFTWARE_MAFFT = os.path.join(settings.DIR_SOFTWARE, "mafft-{}-without-extensions/scripts/mafft".format(version))

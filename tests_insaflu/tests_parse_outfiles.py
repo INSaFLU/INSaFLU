@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
 		
 		parse_out_files = ParseOutFiles()
 		self.assertEqual(6, parse_out_files.get_pos_from_header(ParseOutFiles.HEADER_TAB_FILE, ParseOutFiles.HEADER_TAB_FILE_after_change))
-		self.assertEqual(5, parse_out_files.get_pos_from_header(ParseOutFiles.HEADER_TAB_FILE_snippy_changed, ParseOutFiles.HEADER_TAB_FILE_snippy_after_change))
+		self.assertEqual(5, parse_out_files.get_pos_from_header(ParseOutFiles.HEADER_TAB_FILE_snippy_changed, ParseOutFiles.HEADER_TAB_FILE_snippy_after_change_old_2))
 		
 	def test_parse_snippy_tab_files(self):
 		"""

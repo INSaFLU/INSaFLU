@@ -1,0 +1,33 @@
+CHROM	POS	TYPE	REF	ALT	FREQ	COVERAGE	EVIDENCE	FTYPE	STRAND	NT_POS	AA_POS	EFFECT	NT CHANGE	AA CHANGE	AA CHANGE ALT	LOCUS_TAG	GENE	PRODUCT	VARIANTS IN INCOMPLETE LOCUS
+SARS_CoV_2	241	snp	C	T	100	1163	T:1163 C:0												yes
+SARS_CoV_2	913	snp	C	T	100	8354	T:8353 C:1	CDS	+	648/13203	216/4400	synonymous_variant	c.648C>T	p.Ser216Ser	p.S216S		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	3037	snp	C	T	100	10131	T:10127 C:4	CDS	+	2772/13203	924/4400	synonymous_variant	c.2772C>T	p.Phe924Phe	p.F924F		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	3267	snp	C	T	100	7229	T:7228 C:1	CDS	+	3002/13203	1001/4400	missense_variant	c.3002C>T	p.Thr1001Ile	p.T1001I		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	4057	snp	T	C	97.2	2615	C:2543 T:72	CDS	+	3792/13203	1264/4400	synonymous_variant	c.3792T>C	p.His1264His	p.H1264H		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	5388	snp	C	A	99.9	3280	A:3278 C:0	CDS	+	5123/13203	1708/4400	missense_variant	c.5123C>A	p.Ala1708Asp	p.A1708D		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	5986	snp	C	T	100	4867	T:4866 C:1	CDS	+	5721/13203	1907/4400	synonymous_variant	c.5721C>T	p.Phe1907Phe	p.F1907F		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	6884	snp	G	T	99.8	1656	T:1653 G:0	CDS	+	6619/13203	2207/4400	missense_variant	c.6619G>T	p.Gly2207Cys	p.G2207C		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	6954	snp	T	C	100	2099	C:2099 T:0	CDS	+	6689/13203	2230/4400	missense_variant	c.6689T>C	p.Ile2230Thr	p.I2230T		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	11287	del	GTCTGGTTTTA	GA	99.9	7898	GA:7894 GTCTGGTTTTA:0	CDS	+	11023/13203	3675/4400	inframe_deletion	c.11023_11031delTCTGGTTTT	p.Ser3675_Phe3677del			orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	12436	snp	T	C	84.1	744	C:626 T:118	CDS	+	12171/13203	4057/4400	synonymous_variant	c.12171T>C	p.Val4057Val	p.V4057V		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	14408	snp	C	T	100	1291	T:1291 C:0	CDS	+	941/8088	314/2695	missense_variant	c.941C>T	p.Pro314Leu	p.P314L		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	14676	snp	C	T	99.9	6694	T:6690 C:3	CDS	+	1209/8088	403/2695	synonymous_variant	c.1209C>T	p.Pro403Pro	p.P403P		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	15096	snp	T	C	100	3624	C:3624 T:0	CDS	+	1629/8088	543/2695	synonymous_variant	c.1629T>C	p.Asn543Asn	p.N543N		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	15279	snp	C	T	100	427	T:427 C:0	CDS	+	1812/8088	604/2695	synonymous_variant	c.1812C>T	p.His604His	p.H604H		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	16176	snp	T	C	100	780	C:780 T:0	CDS	+	2709/8088	903/2695	synonymous_variant	c.2709T>C	p.Thr903Thr	p.T903T		orf1ab	orf1ab polyprotein	yes
+SARS_CoV_2	21764	del	ATACATGT	AT	100	23	AT:23 ATACATGT:0	CDS	+	204/3822	68/1273	disruptive_inframe_deletion	c.204_209delACATGT	p.His69_Val70del			S	surface glycoprotein	yes
+SARS_CoV_2	21990	del	TTTATTAC	TTTAC	100	17	TTTAC:17 TTTATTAC:0	CDS	+	432/3822	144/1273	disruptive_inframe_deletion	c.432_434delTTA	p.Tyr145del	p.Y145del		S	surface glycoprotein	yes
+SARS_CoV_2	23271	snp	C	A	100	4724	A:4722 C:0	CDS	+	1709/3822	570/1273	missense_variant	c.1709C>A	p.Ala570Asp	p.A570D		S	surface glycoprotein	yes
+SARS_CoV_2	23403	snp	A	G	100	6844	G:6842 A:0	CDS	+	1841/3822	614/1273	missense_variant	c.1841A>G	p.Asp614Gly	p.D614G		S	surface glycoprotein	yes
+SARS_CoV_2	23604	snp	C	A	100	8455	A:8455 C:0	CDS	+	2042/3822	681/1273	missense_variant	c.2042C>A	p.Pro681His	p.P681H		S	surface glycoprotein	yes
+SARS_CoV_2	23709	snp	C	T	100	7262	T:7259 C:3	CDS	+	2147/3822	716/1273	missense_variant	c.2147C>T	p.Thr716Ile	p.T716I		S	surface glycoprotein	yes
+SARS_CoV_2	24506	snp	T	G	100	285	G:285 T:0	CDS	+	2944/3822	982/1273	missense_variant	c.2944T>G	p.Ser982Ala	p.S982A		S	surface glycoprotein	yes
+SARS_CoV_2	24914	snp	G	C	100	10496	C:10495 G:1	CDS	+	3352/3822	1118/1273	missense_variant	c.3352G>C	p.Asp1118His	p.D1118H		S	surface glycoprotein	yes
+SARS_CoV_2	27972	snp	C	T	100	6996	T:6995 C:1	CDS	+	79/366	27/121	stop_gained	c.79C>T	p.Gln27*	p.Q27*		ORF8	ORF8 protein	yes
+SARS_CoV_2	28048	snp	G	T	100	5000	T:4999 G:0	CDS	+	155/366	52/121	missense_variant	c.155G>T	p.Arg52Ile	p.R52I		ORF8	ORF8 protein	yes
+SARS_CoV_2	28095	snp	A	T	96.7	3230	T:3125 A:105	CDS	+	202/366	68/121	stop_gained	c.202A>T	p.Lys68*	p.K68*		ORF8	ORF8 protein	yes
+SARS_CoV_2	28111	snp	A	G	100	2139	G:2139 A:0	CDS	+	218/366	73/121	missense_variant	c.218A>G	p.Tyr73Cys	p.Y73C		ORF8	ORF8 protein	yes
+SARS_CoV_2	28270	del	TAA	TA	84.8	3292	TA:2790 TAA:501												yes
+SARS_CoV_2	28280	mnp	GAT	CTA	99.8	2942	CTA:2936 GAT:0	CDS	+	7/1260	3/419	missense_variant	c.7_9delGATinsCTA	p.Asp3Leu	p.D3L		N	nucleocapsid phosphoprotein	yes
+SARS_CoV_2	28881	mnp	GGG	AAC	99.6	1376	AAC:1370 GGG:0	CDS	+	608/1260	203/419	missense_variant	c.608_610delGGGinsAAC	p.ArgGly203LysArg	p.RG203KR		N	nucleocapsid phosphoprotein	yes
+SARS_CoV_2	28977	snp	C	T	100	834	T:834 C:0	CDS	+	704/1260	235/419	missense_variant	c.704C>T	p.Ser235Phe	p.S235F		N	nucleocapsid phosphoprotein	yes

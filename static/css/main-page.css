@@ -172,3 +172,14 @@
 .remove_box_sizing{
 	box-sizing: content-box;
 }
+
+.imagesMain {
+   margin-left: auto;
+   margin-right: auto;
+   margin-top: 5px;
+   text-align: center;
+}
+.imagesMain img {
+   width: 300px;
+   vertical-align: middle;
+}

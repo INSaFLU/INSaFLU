@@ -66,7 +66,7 @@
 			    {% if not is_authenticated %}
 			    	<a href="{% url 'login' %}"><p class="login-demo-account">Walkthrough INSaFLU by logging into the "demo" account</p></a>
 			    {% endif %}
-
+	
 				<!-- Video Tutorial -->
 				{% if video_tutorial %}
 				    <div class="card">
@@ -81,17 +81,31 @@
 					</div>
 					<p> </p>
 				{% endif %}
+				
+				<div class="card">
+					<div class="card-block">
+						<h4 class="card-title">More information</h4>
+						<ul>
+						<li><p class="card-text"><strong>Documentation: </strong>
+						<a href=https://insaflu.readthedocs.io/en/latest/" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest/</a></p></li>
+						<li><p class="card-text"><strong>Code: </strong>
+						<a href=https://insaflu.readthedocs.io/en/latest/" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest/</a></p></li>
+						<li><p class="card-text"><strong>Local installation: </strong>
+						<a href=https://insaflu.readthedocs.io/en/latest/" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest/</a></p></li>
+						</ul>
+					</div>
+				</div>
+				<p> </p>
 												
 			    <div class="card">
 					<div class="card-block">
 						<h4 class="card-title">Future Directions</h4>
 						<p class="card-text">INSaFLU is under active development in order to have additional features, such as modules to automatically 
 						detect virus reassortment and to perform temporal and geographical data integration and visualization.</p>
-					<!-- 	<a href="#" class="card-link">Card link</a>
-						<a href="#" class="card-link">Another link</a> -->
 					</div>
 				</div>
 				<p> </p>
+				
 				<div class="card">
 					<div class="card-block">
 						<h4 class="card-title">How to cite</h4>
@@ -100,7 +114,17 @@
 					 	<a href="https://doi.org/10.1186/s13073-018-0555-0" target="_blank" class="card-link">https://doi.org/10.1186/s13073-018-0555-0</a>
 					</div>
 				</div>
+				
 				<p> </p>
+				<div class="card">
+					<div class="card-block">
+						<h4 class="card-title">Funding</h4>
+						<p class="card-text">INSaFLU development is being co-funded by the European Commission on behalf of OneHealth EJP TELE-Vir project.</p>
+						<a href="https://onehealthejp.eu/jrp-tele-vir/" target="_blank" class="card-link">https://onehealthejp.eu/jrp-tele-vir/</a>
+					</div>
+				</div>
+				<p> </p>
+				
 				<div class="card">
 					<div class="card-block">
 						<h4 class="card-title">Contacts</h4>
@@ -112,10 +136,13 @@
 				<!-- Show or not the log image in the main page -->
   				{% if show_info_main_page and show_info_main_page.show_images_main_page%}
 					<p> </p>
-					<div class="row">
+					<div class="imagesMain">
 						<img src="{% static 'insa/Republica_Portuguesa_logo.svg' %}" style="width:180px; padding-right:30px; padding-top:15px" id='rep_portuguese_logo_id'>
 						<img src="{% static 'insa/SNS_logo.svg' %}" style="width:180px; padding-right:10px" id='sns_logo_id'>
+					</div>
+					<div class="imagesMain">
 						<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:220px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
+						<a href="https://onehealthejp.eu/jrp-tele-vir/" target="_blank"><img src="{% static 'insa/televir_logo.png' %}" style="width:120px; padding-right:10px" id='televir_logo_id'></a>
 					</div>
 				{% endif %}
 			</div>
@@ -132,6 +159,14 @@
 				<div class="sidebar-module">
 					<h4 class="insa-h4">News</h4>
 					<div class="insa-post">
+						<h2 class="insa-post-title-news" style="padding-bottom:5px;">INSaFLU now also handles Oxford Nanopore Technologies (ONT) data.</h2>
+		            	<p class="insa-post-meta">March 25, 2021 by Vitor Borges</p>
+		            	<p class="text-align-justify">This upgrade is available both in INSaFLU free online and locally installable 
+		            	(<a href="https://github.com/INSaFLU/docker" target="_blank" class="card-link">https://github.com/INSaFLU/docker</a>)
+		            	versions. Please check all details in INSaFLU documentation 
+		            	(<a href="https://insaflu.readthedocs.io/en/latest/" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest/</a>)</p>
+		            	<hr>
+		            	
 						<h2 class="insa-post-title-news" style="padding-bottom:5px;">INSaFLU can now be locally installed using Docker.</h2>
 		            	<p class="insa-post-meta">May 6, 2020 by Miguel Pinheiro</p>
 		            	<p class="text-align-justify">A Docker-compose version of INSaFLU, which eases the manual installation process, is now available 
@@ -143,11 +178,7 @@
 		            	<p class="text-align-justify">INSaFLU now performs rapid assignment of five Human Betacoronavirus (BetaCoV), including the novel coronavirus (SARS-CoV-2/hCoV-19) and
 		            	includes default SARS-CoV-2 reference sequences for mapping/variant calling within “Projects”. See documentation for details.</p>
 		            	<hr>
-		            	
-						<h2 class="insa-post-title-news" style="padding-bottom:5px;">INSaFLU now published in Genome Medicine.</h2>
-		            	<p class="insa-post-meta">June 29, 2018 by <a href="mailto:vitor.borges@insa.min-saude.pt?subject=InsaFlu" target="_blank">Vitor Borges</a></p>
-		            	<p class="text-align-justify">INSaFLU now published in Genome Medicine (<a href="https://doi.org/10.1186/s13073-018-0555-0" target="_blank" class="card-link">https://doi.org/10.1186/s13073-018-0555-0</a>)</p>
-		            	<hr>
+						
 		            </div>
           		</div>
 				<div class="sidebar-module">

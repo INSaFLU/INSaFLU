@@ -255,7 +255,7 @@ class Proteins(object):
 									gene_to_translate_in_conensus.end]
 			
 			### count N's if more than 20% discharge
-			if (sz_out.count('N') / gene_length > 0.05): return False
+			if (sz_out.count('N') / gene_length > 0.1): return False
 			coding_dna = Seq(sz_out) ##, generic_dna)
 			
 			if (not gene_to_translate_in_conensus.is_forward()): coding_dna = coding_dna.reverse_complement()

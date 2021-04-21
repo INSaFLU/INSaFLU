@@ -73,8 +73,9 @@ class SoftwarePangolin(object):
 				self.software_names.get_pangolin_learn_version()
 		
 		temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-		cmd = "{} {} --update > {} 2>&1".format(self.software_names.get_pangolin_env(),
-			self.software_names.get_pangolin(), temp_file)
+		cmd = "{} {} --update; {} -v > {}; {} -pv >> {}".format(self.software_names.get_pangolin_env(),
+			self.software_names.get_pangolin(), self.software_names.get_pangolin(),
+			temp_file, self.software_names.get_pangolin(), temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -226,8 +227,8 @@ class SoftwarePangolin(object):
 		if (not meta_sample is None):
 			software_names = SoftwareNames()
 			result_pangolin = decode_result.decode_result(meta_sample.description)
-			pangolin_version_run = result_pangolin.get_software(software_names.get_pangolin_name())
-			pangolin_learn_version_run = result_pangolin.get_software(software_names.get_pangolin_learn_name())
+			pangolin_version_run = result_pangolin.get_software_version(software_names.get_pangolin_name())
+			pangolin_learn_version_run = result_pangolin.get_software_version(software_names.get_pangolin_learn_name())
 			if (not pangolin_version_run is None and not pangolin_learn_version_run is None and \
 				pangolin_version == pangolin_version_run and pangolin_learn_version == pangolin_learn_version_run):
 				return False

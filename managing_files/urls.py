@@ -36,6 +36,7 @@ urlpatterns = [
 	url(r'^ajax/show_count_variations$', ajax_views.show_count_variations, name='show-count-variations'),
 	url(r'^ajax/get_cds_from_element$', ajax_views.get_cds_from_element, name='get-cds-from-element'),
 	url(r'^ajax/get_image_coverage$', ajax_views.get_image_coverage, name='get_image_coverage'),
+	url(r'^ajax/update_project_pangolin', ajax_views.update_project_pangolin, name='update_project_pangolin'),
 	url(r'^ajax/add_single_value_database$', ajax_views.add_single_value_database, name='add_single_value_database'),	## add a single value to a table in database
 	url(r'^ajax/remove_single_value_database$', ajax_views.remove_single_value_database, name='remove_single_value_database'),	## add a single value to a table in database
 	url(r'^ajax/show_igv$', ajax_views.show_igv, name='show_igv'),	## get values for IGV

@@ -139,6 +139,9 @@ class Constants(object):
 	## session values
 	SESSION_KEY_USER_ID = 'session_key_user_id'
 	
+	## separator between names 
+	SEPARATOR_sample_record_id = "__"
+	
 	## errors
 	PROJECT_NAME = 'project_name'
 	ERROR_REFERENCE = 'error_reference'

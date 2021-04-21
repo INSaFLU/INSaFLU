@@ -196,6 +196,30 @@ class ManageDatabase(object):
 			return None	
 
 
+	def is_project_processing_step(self, project, tag_key):
+		"""
+			META_VALUE_Error = "Error"
+			META_VALUE_Success = "Success"
+			META_VALUE_Queue = "Queue"
+			the end of a process is 
+		""" 
+	
+		meta_project_queue = self.get_project_metakey_last(project, tag_key, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_project_queue is None): return True
+		
+		### try to find errors
+		number_errors = MetaKeySample.objects.filter(project=project, value=MetaKeyAndValue.META_VALUE_Error,
+					creation_date__gt=meta_project_queue.creation_date).order_by('-creation_date').count()
+		### has a error
+		if (number_errors > 0): return False
+
+		### try to find queue_success 
+		meta_project_queue_success = self.get_project_metakey_last(project, tag_key, MetaKeyAndValue.META_VALUE_Success)		
+		if (meta_project_queue_success is None): return True
+		if (meta_project_queue_success.creation_date > meta_project_queue.creation_date and \
+			meta_project_queue_success.description == meta_project_queue.description): return False
+		return True
+	
 	def set_project_sample_metakey(self, project_sample, owner, meta_key_name, value, description):
 		"""
 		save a meta key

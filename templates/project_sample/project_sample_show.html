@@ -292,10 +292,10 @@
 				            {% block table.thead %}
 				            <thead>                 
 				      			<tr>
-				                    <th colspan="8">
+				                    <th colspan="9">
 				                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
-										<strong style="padding-left:20px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
-										<strong style="padding-left:20px">All consensus (.fasta): {{ sample_file_all_consensus }} </strong>
+										<strong style="padding-left:15px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
+										<strong style="padding-left:15px">All consensus (.fasta): {{ sample_file_all_consensus }} </strong>
 				                        <form method="get" action="" class="form-inline form-search pull-right">
 				                        	{% csrf_token %}
 				                            <div class="pull-right form-search">
@@ -355,6 +355,9 @@
 		
 				<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 				<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+				{% if update_pangolin %}
+					<a href="#id_update_pangolin" id="id-button-update-pangolin" class="btn btn-small btn-primary dark" data-toggle="modal"><i class="fa fa-refresh"></i> Update Pangolin lieage</a>
+				{% endif %}
 				
 				<!-- The Modal -->
 				<div class="modal fade" id="coverageModal">
@@ -382,28 +385,52 @@
 	   				</div>
 	 			</div>
 	 			
+	 			<!-- Update pangolin -->
+				<div class="modal fade" id="id_update_pangolin">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+	       					<!-- Modal Header -->
+	       					<div class="modal-header alert alert-primary">
+	         					<h4 class="modal-title">Pangolin</h4>
+	         					<button type="button" class="close" data-dismiss="modal">&times;</button>
+	       					</div>
+	       
+	       					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-upadate-pangolin" pk="{{project_id}}" update-pangolin-value-url="{% url 'update_project_pangolin' %}">
+		  							<label id="id-label-update-pangolin" class="col-form-label">{{update_pangolin_message}}</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-update">
+		    					<button id="id-update-pangolin-button" type="button" class="btn btn-primary" data-dismiss="modal">Run</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
+						</div>
+	   				</div>
+	 			</div>
+	 			
 				<!-- The remove Modal -->
 				<div class="modal fade" id="id_remove_modal">
 					<div class="modal-dialog">
 						<div class="modal-content">
-			   
-			  					<!-- Modal Header -->
-			  					<div class="modal-header alert alert-warning">
-			    					<h4 class="modal-title-remove">Remove a sample in a project</h4>
-			    					<button type="button" class="close" data-dismiss="modal">&times;</button>
-			  					</div>
-			  
-			  					<!-- Modal body -->
-			  					<div class="modal-body mx-auto mw-100">
-			  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project_sample' %}">
-			  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
-			   						</div>
-			  					</div>
-			  					<!-- Modal footer -->
-			  					<div class="modal-footer" id="id-modal-footer-remove">
-			    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
-			    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
-			  					</div>
+		  					<!-- Modal Header -->
+		  					<div class="modal-header alert alert-warning">
+		    					<h4 class="modal-title-remove">Remove a sample in a project</h4>
+		    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+		  					</div>
+		  
+		  					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project_sample' %}">
+		  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-remove">
+		    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
 						</div>
 			 		</div>
 				</div>

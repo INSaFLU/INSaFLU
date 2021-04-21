@@ -12,6 +12,7 @@ from django.conf import settings
 from constants.software_names import SoftwareNames
 from utils.result import Coverage, FeatureLocationSimple
 from constants.constants import Constants, FileExtensions
+from managing_files.models import ProjectSample
 from utils.result import Gene
 
 class Test(unittest.TestCase):
@@ -867,8 +868,8 @@ class Test(unittest.TestCase):
 		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA)
 		out_file = self.utils.get_temp_file("file_name", ".fasta")
 		self.assertTrue(os.path.exists(out_file))
-		vest_data = [[os.path.join(path_to_fasta, "fasta_1.fasta"), "test_sample_1"],
-					[os.path.join(path_to_fasta, "fasta_2.fasta"), "test_sample_2"]]
+		vest_data = [[os.path.join(path_to_fasta, "fasta_1.fasta"), "test_sample_1", -1],
+					[os.path.join(path_to_fasta, "fasta_2.fasta"), "test_sample_2", -1]]
 		utils.merge_fasta_files(vest_data , out_file)
 		self.assertTrue(os.path.exists(out_file))
 		vect_read_file = utils.read_text_file(out_file)
@@ -876,8 +877,48 @@ class Test(unittest.TestCase):
 		
 		self.assertTrue(">test_sample_1__EVA003_S91" in vect_read_file)
 		self.assertTrue(">test_sample_2__EVA003_S91" in vect_read_file)
+		self.assertTrue(">test_sample_1__EVA002_S52_1" in vect_read_file)
 		os.unlink(out_file)
 
+	def test_merge_fasta_files_1(self):
+		"""
+		testing merging fasta
+		"""
+		
+		project_sample = ProjectSample()
+		project_sample.save()
+		
+		project_sample_1 = ProjectSample()
+		project_sample_1.save()
+		
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA)
+		out_file = self.utils.get_temp_file("file_name", ".fasta")
+		self.assertTrue(os.path.exists(out_file))
+		vest_data = [[os.path.join(path_to_fasta, "fasta_1.fasta"), "test_sample_1", project_sample.id],
+					[os.path.join(path_to_fasta, "fasta_2.fasta"), "test_sample_2", project_sample_1.id]]
+		utils.merge_fasta_files(vest_data , out_file)
+		self.assertTrue(os.path.exists(out_file))
+		vect_read_file = utils.read_text_file(out_file)
+		self.assertEqual(78, len(vect_read_file))
+		
+		self.assertTrue(">test_sample_1__EVA003_S91" in vect_read_file)
+		self.assertTrue(">test_sample_2__EVA003_S91" in vect_read_file)
+		
+		try:
+			project_sample = ProjectSample.objects.get(id=project_sample.id)
+			self.assertEqual("test_sample_1{}".format(Constants.SEPARATOR_sample_record_id),
+				project_sample.seq_name_all_consensus)
+		except ProjectSample.DoesNotExist:	## need to create with last version
+			self.fail("Must exist...")
+			
+		try:
+			project_sample = ProjectSample.objects.get(id=project_sample_1.id)
+			self.assertEqual("test_sample_2{}".format(Constants.SEPARATOR_sample_record_id),
+				project_sample.seq_name_all_consensus)
+		except ProjectSample.DoesNotExist:	## need to create with last version
+			self.fail("Must exist...")
+		os.unlink(out_file)
 
 	def test_merge_fasta_and_join_sequences(self):
 		"""

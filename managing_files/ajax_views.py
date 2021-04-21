@@ -480,6 +480,40 @@ def get_image_coverage(request):
 				pass
 		return JsonResponse(data)
 
+@csrf_protect
+def update_project_pangolin(request):
+	"""
+	get image coverage
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			
+			project_id = request.GET[key_with_project_id]
+			try:
+				project = Project.objects.get(pk=project_id)
+			except Project.DoesNotExist:
+				return JsonResponse(data)
+			
+			try:
+				### need to send a message to recalculate the global files
+				metaKeyAndValue = MetaKeyAndValue()
+				manageDatabase = ManageDatabase()
+				try:
+					process_SGE = ProcessSGE()
+					project = Project.objects.get(id=project_id)
+					taskID = process_SGE.set_collect_update_pangolin_lineage(project, request.user)
+					manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
+								MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+								MetaKeyAndValue.META_VALUE_Queue, taskID)
+					data = { 'is_ok' : True }
+				except:
+					data = { 'is_ok' : False }
+			except ProjectSample.DoesNotExist as e:
+				pass
+		return JsonResponse(data)
+
 
 @csrf_protect
 def show_igv(request):
@@ -880,7 +914,8 @@ def remove_project_sample(request):
 				process_SGE = ProcessSGE()
 				taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
-							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id),
+							MetaKeyAndValue.META_VALUE_Queue, taskID)
 				data = { 'is_ok' : True }
 			except:
 				data = { 'is_ok' : False }

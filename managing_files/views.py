@@ -33,6 +33,7 @@ from itertools import chain
 from extend_user.models import Profile
 from django.http import HttpResponseRedirect
 from utils.utils import ShowInfoMainPage
+from utils.software_pangolin import SoftwarePangolin
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
 
@@ -1351,7 +1352,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			### get project sample..
 			context = self.get_context_data()
 	
-			### get project 		
+			### get project
 			project = Project.objects.get(pk=self.kwargs['pk'])
 			
 			vect_sample_id_add_temp = []
@@ -1421,7 +1422,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				try:
 					taskID = process_SGE.set_collect_global_files(project, self.request.user)
 					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
-							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+							MetaKeyAndValue.META_VALUE_Queue, taskID)
 				except:
 					pass
 			
@@ -1449,6 +1451,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
 		project = Project.objects.get(pk=self.kwargs['pk'])
+		software_pangolin = SoftwarePangolin()
 		
 		### can't see this project
 		context['nav_project'] = True
@@ -1511,6 +1514,17 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			### get a vect of genes name
 			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements_protein[0],
 						project.reference, self.request.user)
+			
+		### pangolin data
+		context['update_pangolin'] = False
+		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
+		## first condition is to the ones without pangolin lineage
+		### need at least one sequence fasta to run pangolin
+		if (project.number_passed_sequences != 0 and \
+			(not os.path.exists(file_pangolin_result) and software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))) or \
+			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
+			context['update_pangolin'] = True
+			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
 		return context
 
 
@@ -1708,6 +1722,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['consensus_file'] = project_sample.get_consensus_file_web()
 			software_used = []	### has a list with all software used... [name, parameters]
 			### only for illumina
+			decode_result = DecodeObjects()
 			if (project_sample.is_sample_illumina()):
 				context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
 				context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
@@ -1722,7 +1737,6 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
 				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
 				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Snippy_Freebayes == list_meta[0].meta_tag.name):
-					decode_result = DecodeObjects()
 					result = decode_result.decode_result(list_meta[0].description)
 					if (not result is None):
 						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
@@ -1743,7 +1757,6 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				software_used.append([SoftwareNames.SOFTWARE_Medaka_name, "Fail"])
 				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Medaka, None)
 				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Medaka == list_meta[0].meta_tag.name):
-					decode_result = DecodeObjects()
 					result = decode_result.decode_result(list_meta[0].description)
 					if (not result is None):
 						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_Medaka_name)
@@ -1773,7 +1786,17 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 						if (len(software_software) > 0):
 							software_used.append([SoftwareNames.SOFTWARE_BCFTOOLS_name,
 								result.get_software(SoftwareNames.SOFTWARE_BCFTOOLS_name)])
-						
+			
+			## pangolin version, it is transversel (illumina e ONT)
+			meta_key = manageDatabase.get_project_metakey_last(project_sample.project, 
+										MetaKeyAndValue.META_KEY_Identify_pangolin,
+										MetaKeyAndValue.META_VALUE_Success)
+			if (not meta_key is None):
+				result = decode_result.decode_result(meta_key.description)
+				## only need to call first Pangolin, PangolinLearn is added automatically
+				software_used.append([SoftwareNames.SOFTWARE_Pangolin_name,
+						result.get_software(SoftwareNames.SOFTWARE_Pangolin_name)])
+				
 			### list of software to used
 			context['software_used'] = software_used	
 

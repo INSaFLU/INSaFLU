@@ -20,10 +20,10 @@ class Software(models.Model):
 	Each user has it software parameters 
 	"""
 	### where is going to be used
-	TYPE_OF_USE_global = 0		### Used in the samples
-	TYPE_OF_USE_project = 1		### Used in a particular project
+	TYPE_OF_USE_global = 0				### Used in the samples
+	TYPE_OF_USE_project = 1				### Used in a particular project
 	TYPE_OF_USE_project_sample = 2		### Used in a particular project sample
-	TYPE_OF_USE_sample = 3		### Used in a particular sample
+	TYPE_OF_USE_sample = 3				### Used in a particular sample
 	
 	### if it is a software parameter or a general parameter (INSaFLU parameter)
 	TYPE_SOFTWARE = 0				### normal software
@@ -32,8 +32,9 @@ class Software(models.Model):
 	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 	name_extended = models.CharField(max_length=100, db_index=True, blank=True, null=True)	## extra name to show in the settings HTML table
 	version = models.CharField(max_length=100, db_index=True, blank=True, null=True)
-	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)	### where is possible to define
-	type_of_software = models.SmallIntegerField(default = TYPE_SOFTWARE)	### it is a software or a general parameter
+	version_parameters = models.SmallIntegerField(default = 0)					### every time you add/remove parameters that can be changed by a user, add a unit here.
+	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)					### where is possible to define
+	type_of_software = models.SmallIntegerField(default = TYPE_SOFTWARE)					### it is a software or a general parameter
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	technology = models.ForeignKey(Technology, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	

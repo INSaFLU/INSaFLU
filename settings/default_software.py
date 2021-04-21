@@ -73,8 +73,7 @@ class DefaultSoftware(object):
 			if (technology_name == SoftwareNames.TECHNOLOGY_illumina):
 				try:
 					software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use = Software.TYPE_OF_USE_global, 
-						technology__name=technology_name)
+						type_of_use = Software.TYPE_OF_USE_global)
 					### if exist set illumina in technology
 					software.technology = self.get_technology_instance(technology_name)
 					software.save()

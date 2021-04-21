@@ -12,7 +12,7 @@ from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames, CountVariations
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.collect_extra_data import CollectExtraData
+from utils.collect_extra_data import CollectExtraData, ParsePangolinResult
 from django.test.utils import override_settings
 from utils.parse_coverage_file import GetCoverage
 from constants.constants import TypePath, FileType, Constants
@@ -31,6 +31,35 @@ class Test(unittest.TestCase):
 	def tearDown(self):
 		pass
 
+	def test_pangolin_file(self):
+		"""
+		'taxon,lineage,probability,pangoLEARN_version,status,note',
+		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
+		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
+		"""
+		
+		pangolin_results = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "pangolin_results.csv")
+		parse_pangolin_result = ParsePangolinResult(pangolin_results)
+		self.assertTrue(parse_pangolin_result.has_data())
+		self.assertEqual("B.1.177", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200153"))
+		self.assertEqual("1.0", parse_pangolin_result.get_probability("MN908947_SARSCoVDec200153"))
+		self.assertEqual("passed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec200153"))
+		self.assertEqual("B.1.1.7", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200234"))
+		self.assertEqual("1.01", parse_pangolin_result.get_probability("MN908947_SARSCoVDec200234"))
+		self.assertEqual("notpassed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec200234"))
+		self.assertEqual("B.1.177;B.1.1.7", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200"))
+		self.assertEqual("1.0;1.01", parse_pangolin_result.get_probability("MN908947_SARSCoVDec20"))
+		self.assertEqual("passed_qc;notpassed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec20"))
+		self.assertEqual("", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200___"))
+		self.assertEqual("", parse_pangolin_result.get_probability("MN908947_SARSCoVDec20___"))
+		self.assertEqual("", parse_pangolin_result.get_status("MN908947_SARSCo200___"))
+		self.assertEqual("", parse_pangolin_result.get_lineage(None))
+		self.assertEqual("", parse_pangolin_result.get_probability(None))
+		self.assertEqual("", parse_pangolin_result.get_status(None))
+		
+		parse_pangolin_result = ParsePangolinResult("xpto.xpt")
+		self.assertFalse(parse_pangolin_result.has_data())
+		
 
 	def test_create_graph_minor_variants(self):
 		manageDatabase = ManageDatabase()
@@ -592,6 +621,16 @@ class Test(unittest.TestCase):
 	def test_create_tree_and_alignments_3(self):
 		"""
  		test global method
+ 		mmp@cs-nb0008:~/git/INSaFLU$ more /tmp/tests_insa_flu/projects/result/user_6000/project_6000/main_result/proportions_iSNVs_graph.tsv
+ 		Sample	Less 50	Between 90 and 50
+		EVA011_S54	15	6005
+		EVA003_S91	14	6004
+		mmp@cs-nb0008:~/git/INSaFLU$ more /home/mmp/git/INSaFLU/static_all/tests/global_project/insa_flu_variations_total_2_ont.tsv
+		Sample	Less 50	Between 90 and 50
+		EVA011_S54	15	6005
+		EVA003_S91	14	6004
+		EVA002_S52	13	6003
+		EVA001_S66	12	6002
  		"""
 		software_names = SoftwareNames()
 		manage_database = ManageDatabase()

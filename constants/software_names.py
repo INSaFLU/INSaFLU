@@ -112,6 +112,15 @@ class SoftwareNames(object):
 	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
 	SOFTWARE_Medaka_VERSION = "1.2.1"
 	
+	SOFTWARE_Pangolin_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate"))
+	SOFTWARE_Pangolin = "pangolin"
+	SOFTWARE_Pangolin_name = "Pangolin"
+	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
+	SOFTWARE_Pangolin_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
+	SOFTWARE_Pangolin_VERSION = "2.3.8"				## this value is going to increase across time 
+	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
+	
+	
 	SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
 	SOFTWARE_BCFTOOLS_name = "bcftools"
 	SOFTWARE_BCFTOOLS_VERSION = "1.9"
@@ -636,5 +645,15 @@ class SoftwareNames(object):
 	def get_insaflu_parameter_freq_vcf_name_extended(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended
 	def get_insaflu_parameter_freq_vcf_vesion(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion
 	def get_insaflu_parameter_freq_vcf_parameters(self): return self.INSAFLU_PARAMETER_VCF_FREQ_ONT_parameters
+
+	### get pangolin
+	def get_pangolin_env(self): return self.SOFTWARE_Pangolin_Env
+	def get_pangolin(self): return self.SOFTWARE_Pangolin
+	def get_pangolin_name(self): return self.SOFTWARE_Pangolin_name
+	def get_pangolin_learn_name(self): return self.SOFTWARE_Pangolin_learn_name
+	def get_pangolin_name_extended(self): return self.SOFTWARE_Pangolin_name_extended
+	def get_pangolin_version(self): return self.SOFTWARE_Pangolin_VERSION
+	def get_pangolin_learn_version(self): return self.SOFTWARE_Pangolin_learn_VERSION
+	## version must be obtain from ManagingFiles.Software.Version
 
 

@@ -828,9 +828,10 @@ class ParseInFiles(object):
 				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user)
 				else: taskID = process_SGE.set_run_clean_minion(sample, user)	### minion
 				
-				### 
+				### information that been queued 
 				manageDatabase = ManageDatabase()
-				manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+				manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID,
+							MetaKeyAndValue.META_VALUE_Queue, taskID)
 			except:
 				pass
 					
@@ -903,7 +904,14 @@ class UpdateMetadataFileByDjangoQ(object):
 			## if some project is affected need to recalculate
 			if (len(vect_project_affected) > 0):
 				for project in vect_project_affected:
-					process_SGE.set_collect_global_files_for_update_metadata(project, user)
+					taskID = process_SGE.set_collect_global_files_for_update_metadata(project, user)
+					
+					### information that been queued 
+					manageDatabase = ManageDatabase()
+					metaKeyAndValue = MetaKeyAndValue()
+					manageDatabase.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+							MetaKeyAndValue.META_VALUE_Queue, taskID)
 				
 		except:
 			## finished with error

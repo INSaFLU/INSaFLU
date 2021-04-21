@@ -92,7 +92,8 @@ def set_default_parameters(request):
 							### need to collect global files again
 							taskID = process_SGE.set_collect_global_files(project, request.user)
 							manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
-									MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+									MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+									MetaKeyAndValue.META_VALUE_Queue, taskID)
 						except:
 							pass
 						

@@ -22,6 +22,8 @@ class MetaKeyAndValue(object):
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
+	META_KEY_Identify_pangolin = "IdentifyPangolin"						## Tag to use in pangolin
+																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
 	META_KEY_Tree_Count_All_Sequences = "Tree_Count_All_Sequences"		## has the number of samples processed to build the tree
 	META_KEY_Tree_Count_By_Element = "Tree_Count_By_Element"			## has the number of samples processed to build the tree by element

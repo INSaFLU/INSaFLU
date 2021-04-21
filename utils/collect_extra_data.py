@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, TagNames, ProcessControler
+from managing_files.models import Software as SoftwareModel
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
@@ -16,7 +17,8 @@ from utils.tree import CreateTree
 from plotly.offline import plot
 from settings.default_software_project_sample import DefaultProjectSoftware
 from django.db import transaction
-from utils.result import Coverage
+from utils.result import Coverage, Result, SoftwareDesc
+from utils.software_pangolin import SoftwarePangolin
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
 from django.conf import settings
@@ -68,6 +70,80 @@ class CollectExtraData(object):
 		## run collect data
 		self.__collect_update_extra_metadata_for_project(project, user)
 		
+	def collect_update_pangolin_lineage(self, project, user):
+		"""
+		Only for update metadata
+		"""
+		### make it running 
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_RUNNING)
+		
+		## need to add a delay for the test in command line
+		if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
+		
+		## need to do this because old projects doesn't have defined the "project_sample.seq_name_all_consensus" field
+		## collect all consensus files for a project_sample
+		self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
+			
+		## run pangolin collect data
+		self.__collect_update_pangolin_lineage(project, user, False)
+		
+		## run collect data
+		self.__collect_update_extra_metadata_for_project(project, user)
+
+
+	def __collect_update_pangolin_lineage(self, project, user, b_mark_sge_success = True):
+		"""
+		Only for update metadata
+		"""
+		### get the taskID and seal it
+		software_pangolin = SoftwarePangolin()
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		try:
+			## collect sample table with plus type and subtype, mixed infection, equal to upload table
+			file_pangolin_output = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+										Project.PROJECT_FILE_NAME_Pangolin_lineage)
+			file_consensus = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+										Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
+			## test if is necesserary to run pangolin lineage
+			if (os.path.exists(file_pangolin_output) or software_pangolin.is_ref_sars_cov_2(
+					project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
+				## process pangolin
+				software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
+				
+				try:
+					software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
+					
+					### set last version of the Pangolin run in this project
+					(pangolin_version, pangolin_learn_version) = software.get_dual_version()
+					result_all = Result()
+					manage_database = ManageDatabase()
+					software_names = SoftwareNames()
+					result_all.add_software(SoftwareDesc(software_names.get_pangolin_name(),
+							pangolin_version, ""))
+					result_all.add_software(SoftwareDesc(software_names.get_pangolin_learn_name(),
+							pangolin_learn_version, ""))
+					manage_database.set_project_metakey(project, user,
+							MetaKeyAndValue.META_KEY_Identify_pangolin,\
+							MetaKeyAndValue.META_VALUE_Success,\
+							result_all.to_json() )
+				except SoftwareModel.DoesNotExist:	## need to create with last version
+					self.logger_production.error('ProjectID: {} Fail to detect software model'.format(project.id))
+					self.logger_debug.error('ProjectID: {} Fail to detect software model'.format(project.id))
+				except:
+					self.logger_production.error('ProjectID: {}  Fail to run pangolin'.format(project.id))
+					self.logger_debug.error('ProjectID: {}  '.format(project.id))
+		except:
+			## finished with error
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+			return
+		
+		if (b_mark_sge_success):
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
+
+
 	def __collect_update_extra_metadata_for_project(self, project, user):
 		"""
 		Only for update metadata
@@ -75,8 +151,10 @@ class CollectExtraData(object):
 		### get the taskID and seal it
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
+		manage_database = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		
 		try:
-			
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
@@ -88,6 +166,14 @@ class CollectExtraData(object):
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return
 		
+		## seal the tag		
+		meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_project != None):
+			manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
+					MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+					MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+				
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 		
@@ -124,6 +210,13 @@ class CollectExtraData(object):
 			b_calculate_again = True
 			manage_database.get_max_length_label(project, user, b_calculate_again)
 			
+			## collect all consensus files for a project_sample
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
+			
+			## calculate the lineage, if necessary
+			## This need to be after the PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus
+			self.__collect_update_pangolin_lineage(project, user, False)
+			
 			### calculate global file
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
 			## collect tab variations snippy
@@ -139,8 +232,6 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
-			## collect all consensus files for a project_sample
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
 		
 			## calculate global variations for a project
 			self.calculate_count_variations(project)
@@ -153,7 +244,8 @@ class CollectExtraData(object):
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
 			if (meta_project != None):
 				manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
-						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+						MetaKeyAndValue.META_VALUE_Success, meta_project.description)
 		except:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
@@ -452,8 +544,12 @@ class CollectExtraData(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			vect_to_process.append([
 				project_sample.get_consensus_file(TypePath.MEDIA_ROOT),\
-				project_sample.sample.name])
-				
+				project_sample.sample.name, project_sample.id])
+		
+		### set the number sequences that passed 	
+		project.number_passed_sequences = len(vect_to_process)
+		project.save()
+		
 		self.utils.merge_fasta_files(vect_to_process, out_file)
 		return out_file
 
@@ -506,11 +602,16 @@ class CollectExtraData(object):
 		column_separator : COMMA or TAB
 		id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
 		:param b_simple == True, doesn't have fastq1,fastq2 and all software information, Good for the tree
+		
 		"""
 		
 		default_software = DefaultProjectSoftware()
 		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
 					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
+		
+		### test if exist pangolin lineage, if exist parse the file.
+		parse_pangolin = ParsePangolinResult(project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+								Project.PROJECT_FILE_NAME_Pangolin_lineage))
 		
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
@@ -521,7 +622,16 @@ class CollectExtraData(object):
 			### extra tags
 			vect_tags = self.get_tags_for_samples_in_projects(project)
 			vect_out_header.extend(vect_tags)
-			if (not b_simple): vect_out_header.append("Technology")
+			
+			if (not b_simple):
+				if parse_pangolin.has_data():
+					vect_out_header.append("Lineage (Pangolin)")
+					vect_out_header.append("Probability (Pangolin)")
+					vect_out_header.append("Status (Pangolin)") 
+				vect_out_header.append("Technology")
+			else:	### simple, the one that goes to TreeView
+				if parse_pangolin.has_data():
+					vect_out_header.append("Lineage (Pangolin)")
 			
 			### all information about the softwares
 			if (not b_simple):
@@ -610,7 +720,12 @@ class CollectExtraData(object):
 
 				### information about the software
 				if (not b_simple):
-				
+					### pangolin if exists, not simple
+					if parse_pangolin.has_data():
+						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_probability(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_status(project_sample.seq_name_all_consensus))
+
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
 					
@@ -654,7 +769,11 @@ class CollectExtraData(object):
 								vect_out.append("Not applied")
 						else:
 							vect_out.append("")
-					
+				else: ## simple, for the tree
+					### pangolin if exists, simple
+					if parse_pangolin.has_data():
+						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
+
 				### END save global parameters
 				csv_writer.writerow(vect_out)
 				n_count += 1
@@ -738,12 +857,26 @@ class CollectExtraData(object):
 		"""
 		manage_database = ManageDatabase()
 		decode_result = DecodeObjects()
-				
+		
 		dict_all_results = {}		### all results in for project_sample
 		vect_tags_out_sample = []
 		vect_tags_out_project_sample = []
 		b_trimmomatic_tags = False	### test if has trimmomatic statistics
 		b_nanostat_sats = False		### test if has NanoFilt statistics
+		
+		### START First, test pangolin version, if exist
+		result_pangolin = None
+		meta_sample = manage_database.get_project_metakey_last(project,
+							MetaKeyAndValue.META_KEY_Identify_pangolin,\
+							MetaKeyAndValue.META_VALUE_Success)
+		if (not meta_sample is None):
+			result_pangolin = decode_result.decode_result(meta_sample.description)
+			for software_name in result_pangolin.get_all_software_names():
+				if not software_name in vect_tags_out_project_sample and \
+						software_name != SoftwareNames.SOFTWARE_Pangolin_learn_name:
+					vect_tags_out_project_sample.append(software_name)
+		## END pangolin
+	
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### return software name, illumina and ONT
@@ -783,7 +916,12 @@ class CollectExtraData(object):
 						dt_out[MetaKeyAndValue.NAME_project_sample].append(result)
 						for software_name in result.get_all_software_names():
 							if not software_name in vect_tags_out_project_sample: vect_tags_out_project_sample.append(software_name)
-			dict_all_results[project_sample.id] = dt_out			
+
+			## add pangolin if exists...
+			if (not result_pangolin is None): dt_out[MetaKeyAndValue.NAME_project_sample].append(result_pangolin)
+			## add everything to all	
+			dict_all_results[project_sample.id] = dt_out
+			
 		return (vect_tags_out_sample, vect_tags_out_project_sample, b_trimmomatic_tags, b_nanostat_sats, dict_all_results)
 
 
@@ -817,3 +955,53 @@ class CollectExtraData(object):
 		else: self.utils.remove_file(destination_file)
 		return None
 
+
+class ParsePangolinResult(object):
+	
+	utils = Utils()
+	HEADER_PANGOLIN_file = "taxon,lineage,probability,pangoLEARN_version,status,note"
+	
+	def __init__(self, file_pangolin_output):
+		self.file_pangolin_output = file_pangolin_output
+		self.dt_data = {}	### SAmple : [lineage, probability, status]
+		self.process_file()
+		
+	def has_data(self):
+		return len(self.dt_data) > 0
+
+	def get_lineage(self, sample_name_starts_with):
+		if (sample_name_starts_with is None): return ""
+		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
+		return ";".join([self.dt_data.get(key, [""])[0] for key in vect_match ] )
+	def get_probability(self, sample_name_starts_with):
+		if (sample_name_starts_with is None): return ""
+		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
+		return ";".join([self.dt_data.get(key, [""])[1] for key in vect_match ] )
+	def get_status(self, sample_name_starts_with):
+		if (sample_name_starts_with is None): return ""
+		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
+		return ";".join([self.dt_data.get(key, [""])[2] for key in vect_match ] )
+	
+	def process_file(self):
+		"""
+		### pangolin ouput
+		'taxon,lineage,probability,pangoLEARN_version,status,note',
+		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
+		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
+		"""
+
+		## start parsing
+		if (os.path.exists(self.file_pangolin_output)):
+			vect_data = self.utils.read_text_file(self.file_pangolin_output)
+			b_header = False
+			for line in vect_data:
+				if not b_header:
+					if line == ParsePangolinResult.HEADER_PANGOLIN_file: b_header = True
+				else:	## start processing pangolin data
+					lst_data = line.split(',')
+					if len(lst_data) > 4:
+						self.dt_data[lst_data[0]] = [lst_data[1],
+							lst_data[2], lst_data[4]]
+		
+		
+					

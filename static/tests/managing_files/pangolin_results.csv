@@ -1,0 +1,3 @@
+taxon,lineage,probability,pangoLEARN_version,status,note
+MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,
+MN908947_SARSCoVDec200234,B.1.1.7,1.01,2021-04-01,notpassed_qc,17/17 B.1.1.7 SNPs

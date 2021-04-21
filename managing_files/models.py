@@ -1,5 +1,8 @@
 from django.db import models
 
+import os
+from datetime import datetime
+
 # Create your models here.
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import GeoManager    ##  change to django  2.x
@@ -12,7 +15,6 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from operator import itemgetter
-import os
 from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
 from constants.constants_mixed_infection import ConstantsMixedInfection
@@ -747,6 +749,8 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
 	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
 	
+	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
+	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
 					PROJECT_FILE_NAME_FASTTREE_tree,\
@@ -771,6 +775,7 @@ class Project(models.Model):
 	creation_date = models.DateTimeField('Uploaded date', auto_now_add=True)
 	last_change_date = models.DateTimeField('Last change date', blank=True, null=True)
 	is_deleted = models.BooleanField(default=False)
+	number_passed_sequences = models.SmallIntegerField(default=-1)	### has the number of sequences that passed the filters in this project 
 	
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
@@ -912,6 +917,7 @@ class ProjectSample(models.Model):
 	is_mask_consensus_sequences = models.BooleanField(default=False)	### True if the consensus is masked with SoftwareNames.SOFTWARE_MSA_MASKER 
 	alert_first_level = models.IntegerField(default=0)	## has the number of alerts for high errors
 	alert_second_level = models.IntegerField(default=0)	## has the number of alerts for low errors
+	seq_name_all_consensus = models.CharField(blank=True, null=True, max_length=200)	## name of the sample when saved in AllConsensus.fasta file
 	
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
@@ -1067,37 +1073,40 @@ class Statistics(models.Model):
 	def __str__(self):
 		return 'Tag: {} Value: {}'.format(self.tag.name, self.value)
 
-# class CosineDistance(models.Model):
-# 	"""
-# 	Has the values of cosine distance 
-# 	"""
-# 	pass
-
-class Version(models.Model):
-	"""
-	"""
-	name = models.CharField(max_length=100)
-
-	def __str__(self):
-		return self.name
-	
-	class Meta:
-		ordering = ['name', ]
-		
-
 class Software(models.Model):
 	"""
 	Has all the softwares
 	It can be used for all users 
 	"""
+	BREAK_TAG = "$$$"
 	name = models.CharField(max_length=100, blank=True, null=True)
 	path_to_run = models.CharField(max_length=300)
-	version = models.ForeignKey(Version, related_name='software', on_delete=models.CASCADE)
-	
+	version = models.CharField(max_length=100)
+
+	### last update of the software
+	last_update = models.DateTimeField(auto_now_add=True, null=True,
+				blank=True, verbose_name='Last update date')
+
 	class Meta:
 		ordering = ['name', 'version__name']
 
+	def is_updated_today(self):
+		return self.last_update.date() == datetime.now().date()
 
+	def set_last_update_today(self):
+		self.last_update = datetime.now()
+		
+	def set_dual_version(self, version_1, version_2):
+		self.version = "{}{}{}".format(version_1, Software.BREAK_TAG, version_2)
+		
+	def get_dual_version(self):
+		"""
+		return dual version
+		"""
+		lst_data = self.version.split(Software.BREAK_TAG)
+		if len(lst_data) > 1: return (lst_data[0], lst_data[1])
+		return lst_data[0]
+	
 class UploadFiles(models.Model):
 	"""
 	this class has the files that the user can upload, has he want,

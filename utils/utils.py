@@ -6,6 +6,7 @@ Created on Oct 31, 2017
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProjectSample
 ## from Bio.Alphabet import IUPAC	version 1.78 doesn't have Bio.Alphabet 
 from utils.result import GeneticElement, Gene, FeatureLocationSimple
 from Bio import SeqIO
@@ -1269,7 +1270,8 @@ class Utils(object):
 	
 	def merge_fasta_files(self, vect_sample_path_and_name, out_file):
 		"""
-		:param vect_sample_path_and_name = [[path_file, sample_name], [path_file, sample_name], ... ]
+		:param vect_sample_path_and_name = [[path_file, sample_name],
+					[path_file, sample_name], ... ]
 		:param outfile file 
 		"""
 		vect_out_fasta = []
@@ -1281,10 +1283,12 @@ class Utils(object):
 			with open(data_file[0], "rU") as handle_fasta:
 				for record in SeqIO.parse(handle_fasta, "fasta"):
 					sample_name = data_file[1].replace(" ", "_")
-					possible_name = "{}__{}".format(sample_name, record.id)
+					possible_name = "{}{}{}".format(sample_name,
+						Constants.SEPARATOR_sample_record_id, record.id)
 					while True:
 						if possible_name in dt_out_name:
-							possible_name = "{}__{}_{}".format(sample_name, record.id, count)
+							possible_name = "{}{}{}_{}".format(sample_name,
+								Constants.SEPARATOR_sample_record_id, record.id, count)
 							count += 1
 						else: 
 							dt_out_name[possible_name] = 1
@@ -1292,6 +1296,17 @@ class Utils(object):
 					record.id = possible_name
 					record.description = ""
 					vect_out_fasta.append(record)
+					
+					### set all_consensus name in table project_sample
+					if data_file[2] != -1:
+						try:
+							project_sample = ProjectSample.objects.get(id=data_file[2])
+							## if the sample starts like this
+							project_sample.seq_name_all_consensus = "{}{}".format(sample_name,
+								Constants.SEPARATOR_sample_record_id)
+							project_sample.save()
+						except ProjectSample.DoesNotExist:	## need to create with last version
+							continue
 					
 		### write the output
 		with open(out_file, "w") as handle_fasta_out:

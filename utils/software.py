@@ -1874,6 +1874,7 @@ class Software(object):
 		
 		return msa_parameters
 
+	
 class Contigs2Sequences(object):
 	'''
 	classdocs

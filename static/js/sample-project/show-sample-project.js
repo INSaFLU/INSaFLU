@@ -566,4 +566,42 @@ $('#id-remove-button').on('click', function(){
 	});
 });
 
+$('#id-update-pangolin-button').on('click', function(){
+
+	$.ajax({
+        url: $('#id-modal-body-upadate-pangolin').attr("update-pangolin-value-url"),
+        data : { 
+        	project_id : $('#id-modal-body-upadate-pangolin').attr('pk'),
+    		csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, // data sent with the post request
+        		
+        success: function (data) {
+          if (data['is_ok']) {
+        	  
+        	  /// hide button of Pangolin refresh
+        	  document.getElementById('id-button-update-pangolin').style.display = "none";
+        	  
+        	  /// add message with informaton
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was successfully applied to pangolin identification.' +
+				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+          else{
+        	/// add message with informaton
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was NOT applied to pangolin identification.' +
+				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+				'</div>');
+          }
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
+	});
+});
+
 

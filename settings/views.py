@@ -273,7 +273,8 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 				### need to collect global files again
 				taskID = process_SGE.set_collect_global_files(project_sample.project, user)
 				manageDatabase.set_project_metakey(project_sample.project, user, metaKeyAndValue.get_meta_key(\
-						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
+						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id),
+						MetaKeyAndValue.META_VALUE_Queue, taskID)
 			except:
 				pass
 

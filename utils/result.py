@@ -154,6 +154,12 @@ class Softwares(object):
 			if (software_desc.name == sz_name): return software_desc
 		return None
 	
+	def get_software_version(self, sz_name):
+		""" return software instance """
+		for software_desc in self.list_software:
+			if (software_desc.name == sz_name): return software_desc.version
+		return None
+	
 	def get_list_software_instance(self, sz_name):
 		""" return software instance """
 		vect_software = []
@@ -262,6 +268,9 @@ class Result(object):
 	
 	def get_software_instance(self, sz_name):
 		return self.softwares.get_software_instance(sz_name)
+	
+	def get_software_version(self, sz_name):
+		return self.softwares.get_software_version(sz_name)
 	
 	def get_list_software_instance(self, sz_name):
 		""" return a list of softwares """

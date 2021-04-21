@@ -268,6 +268,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
+			self.utils.remove_temp_file(temp_file)
 			raise Exception("Fail to run get_lines_and_average_reads")
 		
 		###
@@ -280,6 +281,7 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
+			self.utils.remove_temp_file(temp_file)
 			raise Exception("Fail to run get_lines_and_average_reads")
 		
 		###
@@ -287,11 +289,13 @@ class Software(object):
 		if (len(vect_out) == 0):
 			self.logger_production.error('can not read any data: ' + temp_file)
 			self.logger_debug.error('can not read any data: ' + temp_file)
+			self.utils.remove_temp_file(temp_file)
 			raise Exception("Can't read any data")
 		vect_data = vect_out[0].split()
 		if (len(vect_data) != 4):
 			self.logger_production.error('can not parse this data: ' + vect_out[0])
 			self.logger_debug.error('can not parse this data: ' + vect_out[0])
+			self.utils.remove_temp_file(temp_file)
 			raise Exception("Can't read any data")
 		if (self.utils.is_float(vect_data[3])): average_value = "%.1f" % (float(vect_data[3]))
 		else: average_value = vect_data[3]

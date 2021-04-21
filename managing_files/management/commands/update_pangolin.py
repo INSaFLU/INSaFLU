@@ -16,8 +16,7 @@ class Command(BaseCommand):
 	help = "Update pangolin learn."
 
 	## logging
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+	logger = logging.getLogger("fluWebVirus.update_pangolin")
 	
 	def __init__(self, *args, **kwargs):
 		super(Command, self).__init__(*args, **kwargs)
@@ -27,15 +26,12 @@ class Command(BaseCommand):
 		
 		software_pangolin = SoftwarePangolin()
 		self.stdout.write("Starting update pangolin and learn")
-		self.logger_production.info("Starting update pangolin and learn")
-		self.logger_debug.info("Starting update pangolin and learn")
+		self.logger.info("Starting update pangolin and learn")
 
 		try:
 			software_pangolin.run_pangolin_update()
-			self.logger_production.info("End update pangolin and learn")
-			self.logger_debug.info("End update pangolin and learn")
+			self.logger.info("End update pangolin and learn")
 			self.stdout.write("Success update pangolin")
 		except:
-			self.logger_production.info("Fail to update pangolin and learn")
-			self.logger_debug.info("Fail to update pangolin and learn")
+			self.logger.info("Fail to update pangolin and learn")
 			self.stdout.write("Fail to update pangolin and learn")

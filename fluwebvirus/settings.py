@@ -317,6 +317,12 @@ LOGGING = {
             'filename': '/var/log/insaFlu/remove_files.log',
             'formatter': 'verbose',
         },
+		'update_pangolin': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/insaFlu/update_pangolin.log',
+            'formatter': 'verbose',
+        },
 		'console':{
             'level':'DEBUG',
             'class':'logging.StreamHandler',
@@ -344,6 +350,10 @@ LOGGING = {
         },
 		'fluWebVirus.remove_files': {
             'handlers': ['file_remove_files'],
+            'level': 'INFO',
+        },
+		'fluWebVirus.update_pangolin': {
+            'handlers': ['update_pangolin'],
             'level': 'INFO',
         },
     }

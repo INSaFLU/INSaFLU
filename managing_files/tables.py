@@ -218,6 +218,7 @@ class SampleTable(tables.Table):
 		user = current_request.user
 		
 		manageDatabase = ManageDatabase()
+		if (manageDatabase.is_sample_wating_fastq_file(record)): return _('Waiting FASTQ files')
 		if (manageDatabase.is_sample_processing_step(record)): return _('Processing')
 		
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \

@@ -96,7 +96,19 @@ class ManageDatabase(object):
 			return MetaKeySample.objects.get(sample__id=sample.id, meta_tag__name=meta_key_name, value=value)
 		except MetaKeySample.DoesNotExist:
 			return None
-		
+	
+	def is_sample_wating_fastq_file(self, sample):
+		"""
+			META_VALUE_Error = "Error"
+			META_VALUE_Success = "Success"
+			META_VALUE_Queue = "Queue"
+			the end of a process is 
+		""" 
+	
+		meta_sample_queue = self.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+		if (meta_sample_queue is None): return True
+		return False
+	
 	def is_sample_processing_step(self, sample):
 		"""
 			META_VALUE_Error = "Error"

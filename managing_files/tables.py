@@ -145,15 +145,29 @@ class SampleTable(tables.Table):
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
 		user = current_request.user
-		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		
+		### get the link for sample, to expand data
+		manageDatabase = ManageDatabase()
+		sample_name = record.name
+		if (not manageDatabase.is_sample_processing_step(record)):
+			list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
+				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
+			if (record.is_ready_for_projects and list_meta.count() > 0 and \
+				list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
+				sample_name = '<a href=' + reverse('sample-description', args=[record.pk]) + '> {}</a>'.format(record.name)
+			### read not attached, yet
+			elif (len(list_meta) == 0 and not record.candidate_file_name_1 is None and len(record.candidate_file_name_1) > 0):
+				sample_name = '<a href=' + reverse('sample-description', args=[record.pk]) + '> {}</a>'.format(record.name)
+		
+		if (user.username == Constants.USER_ANONYMOUS): return mark_safe(sample_name);
 		if (user.username == record.owner.username):	## it can't be in any active project
 			## it can have project samples not deleted but in projects deleted
 			for project_samples in record.project_samples.all().filter(is_deleted=False, is_error=False):
-				if (not project_samples.is_deleted and not project_samples.project.is_deleted): return record.name;
+				if (not project_samples.is_deleted and not project_samples.project.is_deleted): return mark_safe(sample_name);
 				
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
-					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
-		return record.name;
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + sample_name)
+		return mark_safe(sample_name);
 
 	def render_technology(self, record):
 		""" shows if it is Illumina or Minion """
@@ -224,7 +238,6 @@ class SampleTable(tables.Table):
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic \
 				if record.is_type_fastq_gz_sequencing() else MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
 		
-		print(record.name, record.id, record.is_ready_for_projects, list_meta.count(), list_meta[0].value)
 		if (record.is_ready_for_projects and list_meta.count() > 0 and \
 				list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			if (user.username != Constants.USER_ANONYMOUS):
@@ -297,11 +310,22 @@ class ProjectTable(tables.Table):
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
 		user = current_request.user
-		if (user.username == Constants.USER_ANONYMOUS): return record.name;
+		
+		## there's nothing to show
+		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
+		project_sample = record.name
+		if (count > 0):
+			project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results">' +\
+				'{}</a>'.format(record.name)
+		else:
+			project_sample = record.name
+
+
+		if (user.username == Constants.USER_ANONYMOUS): return mark_safe(project_sample);
 		if (user.username == record.owner.username):
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"' +\
-					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
-		return record.name;
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + project_sample)
+		return project_sample;
 	
 	def render_samples(self, record):
 		"""

@@ -34,11 +34,14 @@ class SettingsView(LoginRequiredMixin, ListView):
 		### IMPORTANT, must have technology__name__in, because old versions
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion] )
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False)
+		
 		table = SoftwaresTable(query_set)
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
 				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion] )
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False )
 		table_insaflu = INSaFLUParametersTable(query_set_insaflu)
 		context['nav_settings'] = True
 		context['table'] = table	

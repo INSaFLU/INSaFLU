@@ -16,6 +16,7 @@ from constants.software_names import SoftwareNames
 from utils.tree import CreateTree
 from plotly.offline import plot
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from django.db import transaction
 from utils.result import Coverage, Result, SoftwareDesc
 from utils.software_pangolin import SoftwarePangolin
@@ -604,7 +605,7 @@ class CollectExtraData(object):
 		:param b_simple == True, doesn't have fastq1,fastq2 and all software information, Good for the tree
 		
 		"""
-		
+		manage_database = ManageDatabase()
 		default_software = DefaultProjectSoftware()
 		out_file = self.utils.get_temp_file('sample_out', FileExtensions.FILE_CSV if\
 					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
@@ -629,6 +630,7 @@ class CollectExtraData(object):
 					vect_out_header.append("Probability (Pangolin)")
 					vect_out_header.append("Status (Pangolin)") 
 				vect_out_header.append("Technology")
+				vect_out_header.append("Sample Downsized")
 			else:	### simple, the one that goes to TreeView
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
@@ -728,6 +730,8 @@ class CollectExtraData(object):
 
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
+					### downsized
+					vect_out.append("True" if manage_database.is_sample_downsized(project_sample.sample) else "False")
 					
 					###  BEGIN info about software versions  ####
 					if project_sample.id in dict_all_results:
@@ -762,7 +766,7 @@ class CollectExtraData(object):
 						if (parameter_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 							if (project_sample.is_mask_consensus_sequences):
 								vect_out.append(default_software.get_mask_consensus_single_parameter(project_sample,\
-									DefaultProjectSoftware.MASK_CONSENSUS_threshold,
+									DefaultParameters.MASK_CONSENSUS_threshold,
 									SoftwareNames.TECHNOLOGY_illumina \
 									if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 							else:

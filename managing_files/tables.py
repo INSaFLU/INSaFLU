@@ -6,6 +6,7 @@ from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from constants.constants import Constants, TypePath
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -114,6 +115,10 @@ class SampleToProjectsTable(tables.Table):
 		return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
 
 class SampleTable(tables.Table):
+	
+	### manage database
+	manage_database = ManageDatabase()
+	
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
 	number_quality_sequences = tables.Column('#Quality Seq. (Fastq1)-(Fastq2)', footer = '#original number sequence', orderable=False, empty_values=())
@@ -270,6 +275,11 @@ class SampleTable(tables.Table):
 		else:
 			str_links = '<a href=' + reverse('sample-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+				
+		### check if it was downsized
+		if (self.manage_database.is_sample_downsized(record)):
+			str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample was downsized">' +\
+				'<span ><i class="padding-button-table warning_fa_icon fa fa-level-down"></i></a>'
 		return str_links
 	
 	def order_fastq_files(self, queryset, is_descending):
@@ -382,6 +392,8 @@ class ShowProjectSamplesResults(tables.Table):
 	"""
 	Has the results from the result samples processed against references
 	"""
+	manage_database = ManageDatabase()
+	
 	sample_name = tables.Column('Sample name', empty_values=())
 	coverage = tables.Column('Coverage', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
@@ -428,7 +440,7 @@ class ShowProjectSamplesResults(tables.Table):
 		### default parameters
 		default_software = DefaultProjectSoftware()
 		limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(record,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
 				if record.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
@@ -483,10 +495,19 @@ class ShowProjectSamplesResults(tables.Table):
 			str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 				
+		b_space_add = False
 		if (record.is_mask_consensus_sequences):
 			str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample run with user-selected parameters (see update 30 Oct 2020)">' +\
 				'<span ><i class="padding-button-table fa fa-calendar-check-o"></i></a>'
 		else:
+			b_space_add = True
+			str_links += '  '
+			
+		### check if it was downsized
+		if (self.manage_database.is_sample_downsized(record.sample)):
+			str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample was downsized">' +\
+				'<span ><i class="padding-button-table warning_fa_icon fa fa-level-down"></i></a>'
+		elif (not b_space_add):
 			str_links += '  '
 			
 		str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information" class="padding-button-table">' +\

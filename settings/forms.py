@@ -11,7 +11,7 @@ from settings.models import Software, Parameter, Sample
 from managing_files.models import Project, ProjectSample
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
-from settings.default_software import DefaultSoftware
+from settings.default_parameters import DefaultParameters
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 
@@ -76,10 +76,13 @@ class SoftwareForm(forms.ModelForm):
 				if (not parameter.not_set_value is None):
 					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
 				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
-			### this is use only for medaka
+			### this is use for Medaka and Trimmomatic
 			elif (parameter.is_char_list()):
 				if (parameter.software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
 					list_data = [[data_, data_] for data_ in self.utils.get_all_medaka_models()]
+				elif (parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip and \
+					parameter.software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
+					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available]
 				else:
 					list_data = [[parameter.parameter, parameter.parameter]]
 				dt_fields[parameter.get_unique_id()] = forms.ChoiceField(choices = list_data)
@@ -214,9 +217,9 @@ class SoftwareForm(forms.ModelForm):
 				return cleaned_data
 		if ('--maxlength_5' in self.cleaned_data):
 			max_length = self.cleaned_data.get('--maxlength_5')
-			if (max_length > 0 and max_length < DefaultSoftware.NANOFILT_MINIMUN_MAX):
+			if (max_length > 0 and max_length < DefaultParameters.NANOFILT_MINIMUN_MAX):
 				self.add_error('--maxlength_5', _("Error: Max value must be bigger than {} value.".format(
-					DefaultSoftware.NANOFILT_MINIMUN_MAX)))
+					DefaultParameters.NANOFILT_MINIMUN_MAX)))
 		#### END for NanoFilt
 		
 		return cleaned_data

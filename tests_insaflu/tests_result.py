@@ -76,7 +76,7 @@ class Test(TestCase):
 		result.add_key_value(KeyValue("key1", "value1"))
 		result.add_key_value(KeyValue("key2", "value2"))
 		
-		self.assertEqual("Trimmomatic-0.27; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertEqual("Trimmomatic-0.39; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
 		self.assertEqual("SPAdes-3.11.1; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
 		
 		self.assertEqual(KeyValue("key", "value"), result.get_key_value()[0])

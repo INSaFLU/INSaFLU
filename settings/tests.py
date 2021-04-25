@@ -3,16 +3,86 @@ from settings.models import Software, Parameter
 from constants.software_names import SoftwareNames, Constants
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from constants.constantsTestsCase import ConstantsTestsCase
 from django.contrib.auth.models import User
 from managing_files.models import Project, Sample, ProjectSample
+
 # Create your tests here.
 
 class testsDefaultSoftwares(TestCase):
 	
 	def setUp(self):
 		pass
+	
+	def test_software_obsolete(self):
 		
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + " set obsolete")
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME + " set obsolete"
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+		
+		default_software = DefaultSoftware()
+		vect_software = default_software.get_all_software()
+		self.assertEqual(8, len(vect_software))
+		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
+		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
+		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[2])
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[3])
+		
+		### test all defaults
+		default_software.test_all_defaults(user)
+		
+		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
+					default_software.get_trimmomatic_parameters(user))
+		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user))
+		self.assertEqual("-q 10 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters(user))
+		
+		### set new software with version 0
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+		software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
+		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
+		software.type_of_use = Software.TYPE_OF_USE_global
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version_parameters = 0
+		software.owner = user
+		software.save()
+		
+		###
+		query_set = Software.objects.filter(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+					type_of_use = Software.TYPE_OF_USE_global,
+					is_obsolete=False, owner=user)
+		self.assertEqual(2, len(query_set))
+		
+		default_parameters = DefaultParameters()
+		default_parameters.set_software_obsolete()
+		
+		###
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+						type_of_use = Software.TYPE_OF_USE_global,
+						version_parameters = default_parameters.get_software_parameters_version(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+			self.assertEqual(default_parameters.get_software_parameters_version(SoftwareNames.SOFTWARE_TRIMMOMATIC_name),
+							software.version_parameters)
+			self.assertFalse(software.is_obsolete)
+		except Software.DoesNotExist:
+			self.fail("Must exist")
+			
+		###
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
+						type_of_use = Software.TYPE_OF_USE_global,
+						version_parameters = 0)
+			self.assertEqual(0, software.version_parameters)
+			self.assertTrue(software.is_obsolete)
+		except Software.DoesNotExist:
+			self.fail("Must exist")
+						
 	def test_default_software(self):
 		
 		try:
@@ -35,7 +105,8 @@ class testsDefaultSoftwares(TestCase):
 		### test all defaults
 		default_software.test_all_defaults(user)
 		
-		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33", default_software.get_trimmomatic_parameters(user))
+		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
+					default_software.get_trimmomatic_parameters(user))
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user))
 		self.assertEqual("-q 10 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters(user))
 		self.assertEqual("-q 10 -l 50 --headcrop 70 --tailcrop 70", 
@@ -55,7 +126,8 @@ class testsDefaultSoftwares(TestCase):
 		self.assertTrue(9, len(parameters))
 		
 		### test set default
-		self.assertEqual("5", parameters[2].parameter)
+		self.assertEqual("5", parameters[3].parameter)
+		self.assertEqual("0", parameters[2].parameter)
 		parameter = parameters[2]
 		parameter.parameter = "42334"
 		parameter.save()
@@ -63,9 +135,16 @@ class testsDefaultSoftwares(TestCase):
 		parameters = Parameter.objects.filter(software=software)
 		self.assertEqual("42334", parameters[2].parameter)
 		
+		parameter = parameters[0]
+		parameter.parameter = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available[1]
+		parameter.save()
+		self.assertEqual("ILLUMINACLIP:/usr/local/software/insaflu/trimmomatic/adapters/All-adapters.fa:3:30:10:6:true CROP:42334 " +
+					"SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
+					default_software.get_trimmomatic_parameters(user))
+			
 		default_software.set_default_software(software, user)
 		parameters = Parameter.objects.filter(software=software)
-		self.assertEqual("5", parameters[2].parameter)
+		self.assertEqual("5", parameters[3].parameter)
 		self.assertNotEqual("42334", parameters[2].parameter)
 		
 		#####
@@ -417,10 +496,10 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("-q 20 -l 50 --headcrop 70 --tailcrop 70", default_software.get_nanofilt_parameters_all_possibilities(user,
 									sample))
 		self.assertEqual("20", default_software.get_nanofilt_single_parameter(sample,
-									DefaultProjectSoftware.NANOfilt_quality_read))
+									DefaultParameters.NANOfilt_quality_read))
 		
 		self.assertFalse(default_software.is_nanofilt_single_parameter_default_for_project(sample,
-									DefaultProjectSoftware.NANOfilt_quality_read))
+									DefaultParameters.NANOfilt_quality_read))
 		
 		##########################
 		### test medaka
@@ -457,7 +536,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("-m 20", default_software.get_medaka_parameters(user,
 									Software.TYPE_OF_USE_project, project, None))
 		self.assertFalse(default_software.is_medaka_single_parameter_default_for_project(project,
-											DefaultProjectSoftware.MEDAKA_model))
+											DefaultParameters.MEDAKA_model))
 
 		##########################
 		### test limit_coverage_ONT_parameters
@@ -494,9 +573,9 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:20", default_software.get_limit_coverage_ONT_parameters(user,
 											Software.TYPE_OF_USE_project, project, None))
 		self.assertFalse(default_software.is_limit_coverage_ONT_single_parameter_default_for_project(project,
-											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+											DefaultParameters.MASK_CONSENSUS_threshold))
 		self.assertEqual("20", default_software.get_limit_coverage_ONT_single_parameter(project_sample,
-											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+											DefaultParameters.MASK_CONSENSUS_threshold))
 		
 		
 		##########################
@@ -529,7 +608,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:0.80", default_software.get_freq_vcf_ONT_parameters(user,
 										Software.TYPE_OF_USE_project, project, None))
 		self.assertTrue(default_software.is_freq_vcf_ONT_single_parameter_default_for_project(project,
-										DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+										DefaultParameters.MASK_CONSENSUS_threshold))
 
 		parameter = parameters[0]
 		parameter.parameter = "0.12"
@@ -537,9 +616,9 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:0.12", default_software.get_freq_vcf_ONT_parameters(user,
 											Software.TYPE_OF_USE_project, project, None))
 		self.assertFalse(default_software.is_freq_vcf_ONT_single_parameter_default_for_project(project,
-											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+											DefaultParameters.MASK_CONSENSUS_threshold))
 		self.assertEqual("0.12", default_software.get_freq_vcf_ONT_single_parameter(project_sample,
-											DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+											DefaultParameters.MASK_CONSENSUS_threshold))
 		
 		##########################
 		### test samtools ONT
@@ -759,7 +838,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample, SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual(True, default_software.is_mask_consensus_single_parameter_default(project_sample,
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
 
 		default_software = DefaultProjectSoftware()
 		
@@ -792,11 +871,11 @@ class testsDefaultSoftwares(TestCase):
 		#### 
 		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
-		self.assertFalse(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME))
-		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME))
-		self.assertEqual('30', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)) 
-		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
-		self.assertEqual('20', default_software.get_snippy_single_parameter_for_project(project, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
+		self.assertFalse(default_software.is_snippy_single_parameter_default(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME))
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME))
+		self.assertEqual('30', default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter_for_project(project, DefaultParameters.SNIPPY_MAPQUAL_NAME)) 
 
 		
 		### must pass
@@ -855,12 +934,12 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:80", default_software.get_mask_consensus_parameters_for_project(user, project,
 					SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual("80", default_software.get_mask_consensus_single_parameter_for_project(project,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold,
+				DefaultParameters.MASK_CONSENSUS_threshold,
 				SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project,
 					SoftwareNames.TECHNOLOGY_minion))
 		self.assertEqual("70", default_software.get_mask_consensus_single_parameter_for_project(project,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold,
+				DefaultParameters.MASK_CONSENSUS_threshold,
 				SoftwareNames.TECHNOLOGY_minion))
 		
 		project_name = "file_name_3_4ww"
@@ -883,7 +962,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_all_possibilities(user,
 				project_sample, SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual("70", default_software.get_mask_consensus_single_parameter(project_sample,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
 		
 		### for project sample
 		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
@@ -904,7 +983,7 @@ class testsDefaultSoftwares(TestCase):
 		parameter.save()
 		
 		self.assertEqual("90", default_software.get_mask_consensus_single_parameter(project_sample,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:90", default_software.get_mask_consensus_parameters_all_possibilities(user,
 				project_sample, SoftwareNames.TECHNOLOGY_illumina))
 		
@@ -935,13 +1014,14 @@ class testsDefaultSoftwares(TestCase):
 		self.assertTrue(1, len(parameters))
 		
 		### test set default
-		self.assertEqual("0", parameters[0].parameter)
-		self.assertEqual("5", parameters[2].parameter)
-		self.assertEqual("HEADCROP", parameters[0].name)
+		self.assertEqual("Not apply", parameters[0].parameter)
+		self.assertEqual("0", parameters[1].parameter)
+		self.assertEqual("5", parameters[3].parameter)
+		self.assertEqual("HEADCROP", parameters[1].name)
 		self.assertEqual("SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
 						default_software.get_trimmomatic_parameters(user,
 						Software.TYPE_OF_USE_sample, sample))
-		parameter = parameters[0]
+		parameter = parameters[1]
 		parameter.parameter = "20"
 		parameter.save()
 		self.assertEqual("HEADCROP:20 SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33",
@@ -1036,10 +1116,10 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("0.222", parameters[2].parameter)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
-		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME))
-		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME))
-		self.assertEqual('10', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)) 
-		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME)) 
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME))
+		self.assertTrue(default_software.is_snippy_single_parameter_default(project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME))
+		self.assertEqual('10', default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME)) 
+		self.assertEqual('20', default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_MAPQUAL_NAME)) 
 		
 		#####################################
 		####################################

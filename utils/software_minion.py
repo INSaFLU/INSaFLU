@@ -7,6 +7,7 @@ import os, logging, humanfriendly, datetime
 from constants.constants import Constants, TypePath, FileType
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from utils.coverage import DrawAllCoverage
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
@@ -111,8 +112,8 @@ class SoftwareMinion(object):
 					
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 				else:
-					sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-					tag_mixed_infection = "NA (not applicable)"
+					sample_to_update.type_subtype = Constants.EMPTY_VALUE_NA
+					tag_mixed_infection = Constants.EMPTY_VALUE_NA
 					try:
 						mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
 					except MixedInfectionsTag.DoesNotExist as e:
@@ -406,9 +407,9 @@ class SoftwareMinion(object):
 				#### need to check the models
 				parameters_medaka_consensus = default_project_software.get_medaka_parameters_all_possibilities(user, project_sample)
 				coverage_limit = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+							DefaultParameters.MASK_CONSENSUS_threshold))
 				freq_vcf_limit = float(default_project_software.get_freq_vcf_ONT_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+							DefaultParameters.MASK_CONSENSUS_threshold))
 				## deactivate, rigth now
 				#parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
 				parameters_depth = "-aa"
@@ -466,9 +467,9 @@ class SoftwareMinion(object):
 				### limit of the coverage for a project, can be None, if not exist
 				b_coverage_default = False	## because in ONT the limit is different than10
 				coverage_for_project = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+							DefaultParameters.MASK_CONSENSUS_threshold))
 				default_coverage_value = int(default_project_software.get_limit_coverage_ONT_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold))
+							DefaultParameters.MASK_CONSENSUS_threshold))
 				
 				coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
  							self.software_names.get_medaka_name()),\
@@ -525,7 +526,7 @@ class SoftwareMinion(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
 			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
+							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
 			msa_parameters = self.software.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),

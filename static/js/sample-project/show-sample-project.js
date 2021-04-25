@@ -84,7 +84,7 @@ function draw_phylo_canvas() {
 	    		  fetch(data['url_sample']).then(function(response) {
 	    			  return response.json();
 	    		  }).then(function(jsonData) {
-	    			  phylTree(jsonData, data['tree']);
+	    			  phylTree(jsonData, data['tree'], data['root']);
 	    			  window.PhylocanvasTree.load(data['tree']);
 	    			  
 	    			  window.PhylocanvasTree.setTreeType('circular'); // Choosing type of tree: takes radial, rectangular, circular, diagonal and hierarchy.

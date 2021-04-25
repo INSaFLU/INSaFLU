@@ -61,7 +61,7 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC = os.path.join(settings.DIR_SOFTWARE, "trimmomatic/classes/trimmomatic.jar")
 	SOFTWARE_TRIMMOMATIC_name = "Trimmomatic"
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
-	SOFTWARE_TRIMMOMATIC_VERSION = "0.27"
+	SOFTWARE_TRIMMOMATIC_VERSION = "0.39"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
 
 	SOFTWARE_TRIMMOMATIC_vect_info_to_collect = ["Input Read Pairs:",
@@ -69,6 +69,22 @@ class SoftwareNames(object):
 					"Forward Only Surviving:",
 					"Reverse Only Surviving:",
 					"Dropped:",]
+	
+	SOFTWARE_TRIMMOMATIC_illuminaclip = "ILLUMINACLIP"
+	SOFTWARE_TRIMMOMATIC_addapter_to_replace = "ADAPTER_FILE"
+	SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble = ":3:30:10:6:true"
+	SOFTWARE_TRIMMOMATIC_addapter_trim = "ILLUMINACLIP:{}:3:30:10:6:true".format(SOFTWARE_TRIMMOMATIC_addapter_to_replace)
+	SOFTWARE_TRIMMOMATIC_addapter_not_apply = "Not apply"
+	SOFTWARE_TRIMMOMATIC_addapter_apply_all = "All-adapters.fa"
+	SOFTWARE_TRIMMOMATIC_addapter_vect_available = [
+					SOFTWARE_TRIMMOMATIC_addapter_not_apply,
+					SOFTWARE_TRIMMOMATIC_addapter_apply_all,
+					'NexteraPE-PE.fa',  
+					'TruSeq2-PE.fa',
+					'TruSeq2-SE.fa',
+					'TruSeq3-PE-2.fa',
+					'TruSeq3-PE.fa',
+					'TruSeq3-SE.fa']
 	
 	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
 	SOFTWARE_RabbitQC_name = "RabbitQC"

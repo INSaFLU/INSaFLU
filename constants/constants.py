@@ -135,7 +135,8 @@ class Constants(object):
 	
 	### 
 	EMPTY_VALUE_TYPE_SUBTYPE = "Not assigned"
-	
+	EMPTY_VALUE_NA = "NA (not applicable)"
+
 	## session values
 	SESSION_KEY_USER_ID = 'session_key_user_id'
 	

@@ -1556,7 +1556,8 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
 				parameter__project=project, parameter__project_sample=None,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion]).distinct()
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False).distinct()
 		
 		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
 		if (count_project_sample > 0):
@@ -1570,7 +1571,8 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
 				parameter__project=project, parameter__project_sample=None,
 				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion]).distinct()
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False).distinct()
 		table_insaflu = INSaFLUParametersTable(query_set_insaflu, project, None, count_project_sample == 0)
 				
 		context['nav_project'] = True
@@ -1610,14 +1612,16 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
 				parameter__project=None, parameter__project_sample=project_sample,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion]).distinct()
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False).distinct()
 		table = SoftwaresTable(query_set, None, project_sample, None)
 		
 		### INSaFLU parameters
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
 				parameter__project=None, parameter__project_sample=project_sample,
 				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion]).distinct()
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False).distinct()
 		table_insaflu = INSaFLUParametersTable(query_set_insaflu, None, project_sample)
 		
 		context['nav_project'] = True
@@ -1657,7 +1661,8 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_sample,
 				parameter__sample=sample, type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion]).distinct()
+				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				is_obsolete = False).distinct()
 		table = SoftwaresTable(query_set, None, None, sample)
 		
 		context['nav_sample'] = True

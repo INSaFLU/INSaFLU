@@ -28,6 +28,7 @@ from utils.process_SGE import ProcessSGE
 from utils.software import Software
 from utils.result import Coverage
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -159,6 +160,7 @@ def show_phylo_canvas(request):
 					if (string_file_content != None and len(string_file_content) > 0):
 						data['is_ok'] = True
 						data['tree'] = string_file_content
+						data['root'] = project.reference.name
 						data['url_sample'] = file_name_url_json
 						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
 						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name_tree, os.path.basename(file_name_tree)))
@@ -242,7 +244,7 @@ def show_coverage_as_a_table(request):
 					
 					### default parameters
 					limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
+							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
 							if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
 		
 					count_sequences = 1

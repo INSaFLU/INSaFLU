@@ -185,7 +185,8 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_NanoFilt_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_sample,
-							technology__name = SoftwareNames.TECHNOLOGY_minion)
+							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							is_obsolete = False)
 		except Software.DoesNotExist:
 			self.fail("Must must exist")
 		
@@ -199,7 +200,8 @@ class Test(TestCase):
 		
 		tag_name_mixed= "No"
 		sample = Sample.objects.get(name=sample_name)
-		if (b_make_identify_species): 
+		if (b_make_identify_species):
+			self.fail("Must have b_make_identify_species FALSE")
 			self.assertEqual(tag_name_mixed, sample.mixed_infections_tag.name)
 			self.assertEqual("A-H5N5", sample.type_subtype)
 			
@@ -216,12 +218,10 @@ class Test(TestCase):
 							
 			if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag.delete()
 		else:
-			self.assertEqual("NA (not applicable)", sample.mixed_infections_tag.name)
-			self.assertEqual("Not assigned", sample.type_subtype)
+			self.assertEqual(Constants.EMPTY_VALUE_NA, sample.mixed_infections_tag.name)
+			self.assertEqual(Constants.EMPTY_VALUE_NA, sample.type_subtype)
 		
 		self.assertEqual(0, sample.number_alerts)
-		
-		
 		
 		### run again
 		self.assertTrue(self.software_minion.run_clean_minion(sample, user, True))
@@ -389,7 +389,8 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion)
+							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -413,7 +414,8 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion)
+							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -437,7 +439,8 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion)
+							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -532,8 +535,7 @@ class Test(TestCase):
 		self.assertEquals(1, project_sample.alert_second_level)
 		
 		### test mixed infections
-		self.assertEquals('0.815100969586423', '{}'.format(project_sample.mixed_infections.average_value))
-		self.assertEquals('No', project_sample.mixed_infections.tag.name)
+		self.assertEquals(Constants.EMPTY_VALUE_NA, project_sample.mixed_infections.tag.name)
 		self.assertFalse(project_sample.mixed_infections.has_master_vector)
 		
 		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Medaka, None)

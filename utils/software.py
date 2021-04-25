@@ -17,7 +17,9 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, Coun
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from constants.software_names import SoftwareNames
+from settings.models import Software as SoftwareSettings
 from Bio import SeqIO
 from BCBio import GFF
 from django.conf import settings
@@ -641,6 +643,9 @@ class Software(object):
 			parameters = self.software_names.get_trimmomatic_parameters()
 		else:
 			default_software_project = DefaultProjectSoftware()
+			default_software_project.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, sample.owner,
+								 	SoftwareSettings.TYPE_OF_USE_sample,
+									None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
 			parameters = default_software_project.get_trimmomatic_parameters_all_possibilities(user, sample)
 
 		### run software
@@ -1406,6 +1411,9 @@ class Software(object):
 				### get snippy parameters
 				default_software = DefaultProjectSoftware()
 				snippy_parameters = default_software.get_snippy_parameters_all_possibilities(user, project_sample)
+				default_software.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.sample.owner,
+								 	SoftwareSettings.TYPE_OF_USE_project_sample,
+									None, project_sample, None, SoftwareNames.TECHNOLOGY_illumina)
 				out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 						project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
@@ -1444,18 +1452,18 @@ class Software(object):
 			try:
 				
 				### limit of the coverage for a project, can be None, if not exist
-				coverage_for_project = default_software.get_snippy_single_parameter_for_project(project_sample.project, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+				coverage_for_project = default_software.get_snippy_single_parameter_for_project(project_sample.project, DefaultParameters.SNIPPY_COVERAGE_NAME)
 				if (not coverage_for_project is None): coverage_for_project = int(coverage_for_project)
 				
 				b_coverage_default = True
-				if (default_software.is_snippy_single_parameter_default(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)):
+				if (default_software.is_snippy_single_parameter_default(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME)):
 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 							self.software_names.get_snippy_name()),\
 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 							None, coverage_for_project)
 				else:
 					b_coverage_default = False
-					default_coverage_value = default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME)
+					default_coverage_value = default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME)
 					coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 							self.software_names.get_snippy_name()),\
 							project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
@@ -1510,7 +1518,10 @@ class Software(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER 
 			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-				DefaultProjectSoftware.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+			default_software.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.sample.owner,
+								 	SoftwareSettings.TYPE_OF_USE_project_sample,
+									None, project_sample, None, SoftwareNames.TECHNOLOGY_illumina)
 			msa_parameters = self.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
@@ -1519,7 +1530,7 @@ class Software(object):
 			### add version of mask
 			result_all.add_software(SoftwareDesc(self.software_names.get_msa_masker_name(), self.software_names.get_msa_masker_version(),\
 					"{}; for coverages less than {} in {}% of the regions.".format(msa_parameters,\
-					default_software.get_snippy_single_parameter(project_sample, DefaultProjectSoftware.SNIPPY_COVERAGE_NAME),									
+					default_software.get_snippy_single_parameter(project_sample, DefaultParameters.SNIPPY_COVERAGE_NAME),									
 					100 - limit_to_mask_consensus) ))
 			
 			## identify VARIANTS IN INCOMPLETE LOCUS in all locus, set yes in variants if are in areas with coverage problems

@@ -10,6 +10,7 @@ from managing_files.models import MixedInfectionsTag
 from manage_virus.uploadFiles import UploadFiles
 from django.contrib.auth.models import User
 from managing_files.models import DataSet
+from settings.default_parameters import DefaultParameters
 from extend_user.models	import Profile
 from utils.software import Software
 from django.db import transaction
@@ -51,8 +52,6 @@ class Command(BaseCommand):
 			except Exception as e:
 				## try to create this database
 				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
-
-
 
 	@transaction.atomic
 	def upload_default_references(self):
@@ -152,5 +151,11 @@ class Command(BaseCommand):
 		#### set default references
 		self.stdout.write("Upload References")
 		self.upload_default_references()
+		
+		#### set obsolete some softwares because of parameters
+		self.stdout.write("Set obsolete softwares because of parameters ")
+		default_parameters = DefaultParameters()
+		default_parameters.set_software_obsolete()
+		
 		self.stdout.write("End")
 		

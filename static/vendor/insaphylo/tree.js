@@ -5,8 +5,8 @@ let insaphylogeo_source_images = "/static/img/insaphylogeo/"
 
 // -------------------------------------- Metadata Dependent Operations --------------------------------------
 
-function phylTree(metaData, data_input) {
-
+function phylTree(metaData, data_input, root_name) {
+// --- TODO set root with root_name
 // -------------------------------- Generating Metadata Options Coloring Nodes
 
 	/// call the initialization
@@ -1115,8 +1115,7 @@ function toggle() {
 }
 
 
-// -------------------------------------- Select All Button --------------------------------------
-
+//-------------------------------------- Select All Button --------------------------------------
 function selectAlll (metaData, max) {
 
     document.getElementById("metadataSwitch").addEventListener("change", function () {

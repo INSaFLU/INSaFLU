@@ -35,6 +35,7 @@ class Software(models.Model):
 	version_parameters = models.SmallIntegerField(default = 0)					### every time you add/remove parameters that can be changed by a user, add a unit here.
 	type_of_use = models.SmallIntegerField(default = TYPE_OF_USE_global)					### where is possible to define
 	type_of_software = models.SmallIntegerField(default = TYPE_SOFTWARE)					### it is a software or a general parameter
+	is_obsolete = models.BooleanField(default=False)							## set to True if it's obsolete
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	technology = models.ForeignKey(Technology, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	
@@ -76,6 +77,7 @@ class Parameter(models.Model):
 	PARAMETER_char = 2
 	PARAMETER_null = 3		### its like only to show, not editable, Example: (TOPHRED33)
 	PARAMETER_char_list = 4
+	PARAMETER_check_box = 5	### check box
 	
 	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
 	parameter = models.CharField(max_length=50, db_index=True, blank=True, null=True)
@@ -115,6 +117,8 @@ class Parameter(models.Model):
 		return self.type_data == Parameter.PARAMETER_null
 	def is_char_list(self):
 		return self.type_data == Parameter.PARAMETER_char_list
+	def is_check_box(self):
+		return self.type_data == Parameter.PARAMETER_check_box
 	
 	def get_unique_id(self):
 		"""

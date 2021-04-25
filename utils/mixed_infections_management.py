@@ -5,6 +5,7 @@ Created on Dec 14, 2017
 '''
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.constants_mixed_infection import ConstantsMixedInfection
+from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import ProjectSample, MixedInfections, MixedInfectionsTag
 from utils.result import DecodeObjects, MixedInfectionMainVector
@@ -27,31 +28,30 @@ class MixedInfectionsManagement(object):
 		return a MixedInfections instance and set an alert if necessary
 		"""
 		
-		### calculate mixed infection value
-		value = self.get_value_mixed_infection(count_hits)
-
-		## Old version of cosine, not used anymore
-		#constants_mixed_infection = ConstantsMixedInfection()
-		#tag = constants_mixed_infection.get_tag_by_value(value)
+		### calculate mixed infection value, only for Illumina Fastq.gz
+		if (project_sample.sample.is_type_fastq_gz_sequencing()):
+			value = self.get_value_mixed_infection(count_hits)
 		
-		## get mixed infection from sample
-		manage_database = ManageDatabase()
-		meta_data_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-								MetaKeyAndValue.META_VALUE_Success)
-		meta_data_tag_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
-								MetaKeyAndValue.META_VALUE_Success)
-		if (not meta_data_tag_sample_mixed_infection is None): tag = meta_data_tag_sample_mixed_infection.description
-		else: (tag, alert, message) = project_sample.sample.get_mixed_infection()
+			## get mixed infection from sample
+			manage_database = ManageDatabase()
+			meta_data_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+									MetaKeyAndValue.META_VALUE_Success)
+			meta_data_tag_sample_mixed_infection = manage_database.get_sample_metakey_last(project_sample.sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+									MetaKeyAndValue.META_VALUE_Success)
+			if (not meta_data_tag_sample_mixed_infection is None): tag = meta_data_tag_sample_mixed_infection.description
+			else: (tag, alert, message) = project_sample.sample.get_mixed_infection()
 		
-		## to be sure that is NO or YES
-		if (tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES and tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO):
-			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
-			
-		## test ratio methodm only for illumina
-		if (project_sample.sample.is_type_fastq_gz_sequencing() and 
-				(count_hits.is_mixed_infection_ratio_test() or 
-				count_hits.total_grather_than_mixed_infection()) ):	## doesn't matter the other
-			tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+			## to be sure that is NO or YES
+			if (tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES and tag != ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO):
+				tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO
+				
+			## test ratio methodm only for illumina
+			if (count_hits.is_mixed_infection_ratio_test() or 
+				count_hits.total_grather_than_mixed_infection()):	## doesn't matter the other
+				tag = ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+		else:
+			value = 0.0
+			tag = Constants.EMPTY_VALUE_NA
 			
 		### get tag
 		with LockedAtomicTransaction(MixedInfectionsTag):
@@ -65,7 +65,8 @@ class MixedInfectionsManagement(object):
 		mixed_infections = MixedInfections()
 		mixed_infections.tag = mixed_infections_tag
 		mixed_infections.average_value = value
-		mixed_infections.description = self.get_mixed_infection_main_vector().to_json()
+		mixed_infections.description = self.get_mixed_infection_main_vector().to_json() \
+				if project_sample.sample.is_type_fastq_gz_sequencing() else "{}"
 		mixed_infections.save()
 		
 		##  set the alert

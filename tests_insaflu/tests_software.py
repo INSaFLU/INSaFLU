@@ -411,7 +411,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		## remove all files
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
@@ -480,7 +480,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		## remove all files
 		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
@@ -754,7 +754,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
 		decodeResult = DecodeObjects()
@@ -896,7 +896,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		sample = Sample.objects.get(pk=sample.id)
 		self.assertTrue(sample.is_ready_for_projects)
@@ -1025,7 +1025,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		sample = Sample.objects.get(pk=sample.id)
 		self.assertTrue(sample.is_ready_for_projects)
@@ -1154,7 +1154,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.27)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
 		
 		sample = Sample.objects.get(pk=sample.id)
 		self.assertTrue(sample.is_ready_for_projects)
@@ -1403,6 +1403,7 @@ class Test(TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina) 
 			sample.owner = user
 			sample.save()
 
@@ -1598,6 +1599,7 @@ class Test(TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
 			sample.owner = user
 			sample.save()
 
@@ -1814,7 +1816,7 @@ class Test(TestCase):
 		decode_result = DecodeObjects()
 		result = decode_result.decode_result(list_meta[0].description)
 		self.assertTrue(result is not None)
-		self.assertEquals("Snippy-3.2-dev; (--mapqual 15 --mincov 5 --minfrac 0.40)", result.get_software(self.software_names.get_snippy_name()))
+		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
 		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V)",\
  						result.get_software(self.software_names.get_freebayes_name()))
 

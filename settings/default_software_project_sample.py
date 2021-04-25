@@ -8,6 +8,7 @@ from constants.software_names import SoftwareNames
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 from settings.default_software import DefaultSoftware
 from managing_files.models import Project, ProjectSample, Sample
+from settings.default_parameters import DefaultParameters
 		
 class DefaultProjectSoftware(object):
 	'''
@@ -15,27 +16,16 @@ class DefaultProjectSoftware(object):
 	'''
 	software_names = SoftwareNames()
 
-	### used in snippy
-	SNIPPY_COVERAGE_NAME = "--mincov"
-	SNIPPY_MAPQUAL_NAME = "--mapqual"
-
-	### used in NANOfilt
-	NANOfilt_quality_read = "-q"
-	
-	### used in Medaka
-	MEDAKA_model = "-m"
-	
-	### used in mask consensus
-	MASK_CONSENSUS_threshold = "Threshold"
-
 	def __init__(self):
 		""" change values """
+		self.default_parameters = DefaultParameters()
 		self.change_values_software = {}	### the key is the name of the software
 		
 	def test_all_defaults(self, user, type_of_use, project, project_sample, sample):
 		"""
 		test all defaults for all software available
 		"""
+		
 		## only for project and for all technology
 		if (not project is None):
 			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project,
@@ -93,10 +83,10 @@ class DefaultProjectSoftware(object):
 		"""
 		test if exist, if not persist in database
 		"""
-		default_software = DefaultSoftware()
 		list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
 					parameter__project=project, parameter__project_sample=project_sample,
 					parameter__sample=sample,
+					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
 					technology__name = technology_name).distinct("name")
 		if len(list_software) == 0:
 			### if it is Minion is because that does not exist at all. 
@@ -106,29 +96,30 @@ class DefaultProjectSoftware(object):
 			if (technology_name == SoftwareNames.TECHNOLOGY_illumina):
 				list_software = Software.objects.filter(name=software_name, owner=user,
 					type_of_use = type_of_use,
+					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
 					parameter__project=project,
 					parameter__project_sample=project_sample,
 					parameter__sample=sample).distinct("name")
 
 				### if exist set illumina in technology					
 				if (len(list_software) == 1):
-					list_software[0].technology = default_software.get_technology_instance(technology_name)
+					list_software[0].technology = self.default_parameters.get_technology_instance(technology_name)
 					list_software[0].save()
 				else:
 					with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-						self._persist_parameters(vect_parameters, type_of_use, technology_name)
+						self.default_parameters.persist_parameters(vect_parameters, type_of_use, technology_name)
 			else:			
 				### create a default one for this user
 				with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 					### persist 
 					if (len(vect_parameters) > 0):
-						self._persist_parameters(vect_parameters, type_of_use, technology_name)
+						self.default_parameters.persist_parameters(vect_parameters, type_of_use, technology_name)
 
 
 	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample,
 					sample, technology_name):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
-			vect_parameters = self._get_snippy_default(user, type_of_use, project, project_sample)		### base values
+			vect_parameters = self.default_parameters.get_snippy_default(user, type_of_use, project, project_sample)		### base values
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 					SoftwareNames.SOFTWARE_SNIPPY_name, None, vect_parameters,
 					technology_name)		### base values
@@ -137,9 +128,9 @@ class DefaultProjectSoftware(object):
 					technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name):
-			return self._get_freebayes_default(user, type_of_use, project, project_sample)
+			return self.default_parameters.get_freebayes_default(user, type_of_use, project, project_sample)
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
-			vect_parameters = self._get_mask_consensus_threshold_default(user, type_of_use, project, project_sample)
+			vect_parameters = self.default_parameters.get_mask_consensus_threshold_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -148,7 +139,7 @@ class DefaultProjectSoftware(object):
 				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
-			vect_parameters = self._get_limit_coverage_ONT_threshold_default(user, type_of_use, project, project_sample)
+			vect_parameters = self.default_parameters.get_limit_coverage_ONT_threshold_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -157,7 +148,7 @@ class DefaultProjectSoftware(object):
 				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
-			vect_parameters = self._get_vcf_freq_ONT_threshold_default(user, type_of_use, project, project_sample)
+			vect_parameters = self.default_parameters.get_vcf_freq_ONT_threshold_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -166,7 +157,7 @@ class DefaultProjectSoftware(object):
 				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
-			vect_parameters = self._get_medaka_model_default(user, type_of_use, project, project_sample)
+			vect_parameters = self.default_parameters.get_medaka_model_default(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -175,7 +166,7 @@ class DefaultProjectSoftware(object):
 				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT):
-			vect_parameters = self._get_samtools_depth_default_ONT(user, type_of_use, project, project_sample)
+			vect_parameters = self.default_parameters.get_samtools_depth_default_ONT(user, type_of_use, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters,
 				technology_name)		### base values
@@ -184,12 +175,12 @@ class DefaultProjectSoftware(object):
 				vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
-			vect_parameters = self._get_nanofilt_default(user, type_of_use, sample)
+			vect_parameters = self.default_parameters.get_nanofilt_default(user, type_of_use, sample)
 			if (not sample is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
-			vect_parameters = self._get_trimmomatic_default(user, type_of_use, sample)
+			vect_parameters = self.default_parameters.get_trimmomatic_default(user, type_of_use, sample)
 			if (not sample is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters, technology_name)		### base values
 			return vect_parameters
@@ -204,7 +195,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get snippy parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use,
 			project, project_sample, None, SoftwareNames.TECHNOLOGY_illumina)
 	
 	def get_snippy_parameters_all_possibilities(self, user, project_sample):
@@ -213,13 +204,13 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 				SoftwareNames.TECHNOLOGY_illumina)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None,
 				SoftwareNames.TECHNOLOGY_illumina)
 		if (not parameters is None): return parameters
@@ -239,7 +230,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,\
 				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_illumina)
 		if (not parameters is None): return parameters
 		
@@ -254,7 +245,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only these two possibilities available SNIPPY_COVERAGE_NAME; SNIPPY_MAPQUAL_NAME
 		:return value of parameter
 		"""
-		vect_parameters = self._get_snippy_default(None, None, None, None)
+		vect_parameters = self.default_parameters.get_snippy_default(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -322,7 +313,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get nanofilt parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user, type_of_use,
 			None, None, sample, SoftwareNames.TECHNOLOGY_minion)
 	
 	def get_nanofilt_parameters_all_possibilities(self, user, sample):
@@ -331,7 +322,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
 				Software.TYPE_OF_USE_sample, None, None, sample,
 				SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
@@ -351,7 +342,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
 				Software.TYPE_OF_USE_sample, None, None, sample, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -366,7 +357,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> NANOfilt_quality_read
 		:return value of parameter
 		"""
-		vect_parameters = self._get_nanofilt_default(None, None, None)
+		vect_parameters = self.default_parameters.get_nanofilt_default(None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -434,7 +425,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get trimmomatic parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user, type_of_use,
 			None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
 	
 	def get_trimmomatic_parameters_all_possibilities(self, user, sample):
@@ -443,7 +434,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
 				Software.TYPE_OF_USE_sample, None, None, sample,
 				SoftwareNames.TECHNOLOGY_illumina)
 		if (not parameters is None): return parameters
@@ -463,7 +454,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
 				Software.TYPE_OF_USE_sample, None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
 		if (not parameters is None): return parameters
 		
@@ -478,7 +469,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> NANOfilt_quality_read
 		:return value of parameter
 		"""
-		vect_parameters = self._get_trimmomatic_default(None, None, None)
+		vect_parameters = self.default_parameters.get_trimmomatic_default(None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -546,7 +537,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get medaka parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user, type_of_use,
 			project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 	
 	def get_medaka_parameters_all_possibilities(self, user, project_sample):
@@ -556,13 +547,13 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 				SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None,
 				SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
@@ -582,7 +573,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_Medaka_name_consensus, user,\
 				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -597,7 +588,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only these two possibilities available MEDAKA_model
 		:return value of parameter
 		"""
-		vect_parameters = self._get_medaka_model_default(None, None, None, None)
+		vect_parameters = self.default_parameters.get_medaka_model_default(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -665,7 +656,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get samtools parameters
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user, type_of_use,
 			project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 	
 	def get_samtools_parameters_all_possibilities_ONT(self, user, project_sample):
@@ -675,13 +666,13 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 				SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None,
 				SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
@@ -701,7 +692,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, user,\
 				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -716,7 +707,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only these two possibilities available Samtools ONT
 		:return value of parameter
 		"""
-		vect_parameters = self._get_samtools_depth_default_ONT(None, None, None, None)
+		vect_parameters = self.default_parameters.get_samtools_depth_default_ONT(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -786,7 +777,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get mask_consensus parameters
 		"""
-		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user, type_of_use,
 					project, project_sample, None, technology_name)
 	
 	def get_mask_consensus_parameters_all_possibilities(self, user, project_sample, technology_name):
@@ -795,12 +786,12 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None, technology_name)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None, technology_name)
 		if (not parameters is None): return parameters
 		
@@ -819,7 +810,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,\
 				Software.TYPE_OF_USE_project, project, None, None, technology_name)
 		if (not parameters is None): return parameters
 		
@@ -834,7 +825,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		:return value of parameter
 		"""
-		vect_parameters = self._get_mask_consensus_threshold_default(None, None, None, None)
+		vect_parameters = self.default_parameters.get_mask_consensus_threshold_default(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -906,7 +897,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get limit_coverage_ONT parameters
 		"""
-		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user, type_of_use,
 					project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 	
 	def get_limit_coverage_ONT_parameters_all_possibilities(self, user, project_sample):
@@ -915,12 +906,12 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -939,7 +930,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,\
 				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -954,7 +945,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		:return value of parameter
 		"""
-		vect_parameters = self._get_limit_coverage_ONT_threshold_default(None, None, None, None)
+		vect_parameters = self.default_parameters.get_limit_coverage_ONT_threshold_default(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -1024,7 +1015,7 @@ class DefaultProjectSoftware(object):
 		"""
 		get freq_vcf_ONT parameters
 		"""
-		return self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user, type_of_use,
+		return self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user, type_of_use,
 					project, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 	
 	def get_freq_vcf_ONT_parameters_all_possibilities(self, user, project_sample):
@@ -1033,12 +1024,12 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project_sample first
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
 				Software.TYPE_OF_USE_project_sample, None, project_sample, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
 				Software.TYPE_OF_USE_project, project_sample.project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -1057,7 +1048,7 @@ class DefaultProjectSoftware(object):
 		"""
 		
 		### Test project
-		parameters = self._get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
+		parameters = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, user,\
 				Software.TYPE_OF_USE_project, project, None, None, SoftwareNames.TECHNOLOGY_minion)
 		if (not parameters is None): return parameters
 		
@@ -1072,7 +1063,7 @@ class DefaultProjectSoftware(object):
 		:param parameter_name -> Only one possibility available MASK_CONSENSUS_threshold
 		:return value of parameter
 		"""
-		vect_parameters = self._get_vcf_freq_ONT_threshold_default(None, None, None, None)
+		vect_parameters = self.default_parameters.get_vcf_freq_ONT_threshold_default(None, None, None, None)
 		for parameters in vect_parameters:
 			if parameters.name == parameter_name:
 				return parameters.parameter
@@ -1139,78 +1130,10 @@ class DefaultProjectSoftware(object):
 		get freebayes parameters
 		Add extra -V to the end
 		"""
-		return self._get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project,
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project,
 				project_sample, None, SoftwareNames.TECHNOLOGY_illumina) + " -V"
 	
 	
-	def _get_parameters(self, software_name, user, type_of_use, project, project_sample, sample, technology_name):
-		"""
-		:out return parameters for a specific software
-		"""
-		try:
-			software = Software.objects.get(name=software_name, owner=user, type_of_use=type_of_use,
-					technology__name = technology_name)
-		except Software.DoesNotExist:
-			return None
-
-		## get parameters for a specific user
-		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample)
-		
-		### parse them
-		dict_out = {}
-		vect_order_ouput = []
-		for parameter in parameters:
-			### don't set the not set parameters
-			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
-			
-			### create a dict with parameters
-			if (parameter.name in dict_out): 
-				dict_out[parameter.name][1].append(parameter.parameter)
-				dict_out[parameter.name][0].append(parameter.union_char)
-			else:
-				vect_order_ouput.append(parameter.name) 
-				dict_out[parameter.name] = [[parameter.union_char], [parameter.parameter]]
-			
-		return_parameter = ""
-		for par_name in vect_order_ouput:
-			if (len(dict_out[par_name][1]) == 1 and len(dict_out[par_name][1][0]) == 0):
-				return_parameter += " {}".format(par_name)
-			else:
-				return_parameter += " {}".format(par_name)
-				for _ in range(len(dict_out[par_name][0])):
-					return_parameter += "{}{}".format(dict_out[par_name][0][_], dict_out[par_name][1][_])
-					
-		#### This is the case where all the options can be "not to set"
-		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
-		return return_parameter.strip()
-
-# 	def get_vect_parameters_higher_priority(self, software_name, user, type_of_use, project, project_sample):
-# 		"""
-# 		:out return parameters for a specific software
-# 		"""
-# 		try:
-# 			software = Software.objects.get(name=software_name, owner=user, type_of_use=type_of_use)
-# 		except Software.DoesNotExist:
-# 			return ""
-# 
-# 		## get parameters for a specific user
-# 		parameters = Parameter.objects.filter(software=software, project=project, project_sample=project_sample)
-# 		
-# 		### parse them
-# 		dict_out = {}
-# 		for parameter in parameters:
-# 			### don't set the not set parameters
-# 			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
-# 			
-# 			### create a dict with parameters
-# 			if (parameter.name in dict_out): 
-# 				dict_out[parameter.name][1].append(parameter.parameter)
-# 				dict_out[parameter.name][0].append(parameter.union_char)
-# 			else:
-# 				dict_out[parameter.name] = [[parameter.union_char], [parameter.parameter]]
-# 		return dict_out
-
 
 	def set_default_software(self, software, user, type_of_use, project, project_sample, sample):
 		"""
@@ -1239,36 +1162,13 @@ class DefaultProjectSoftware(object):
 		key_value = "{}_{}".format(software_name, technology_name)
 		return self.change_values_software.get(key_value, False)
 
-	def _persist_parameters(self, vect_parameters, type_of_use, technology_name):
-		"""
-		presist a specific software by default
-		param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
-		"""
-		default_software = DefaultSoftware()
-		software = None
-		dt_out_sequential = {}
-		for parameter in vect_parameters:
-			assert parameter.sequence_out not in dt_out_sequential
-			if software is None:
-				try:
-					software = Software.objects.get(name=parameter.software.name, owner=parameter.software.owner,\
-						type_of_use=type_of_use, technology__name=technology_name)
-				except Software.DoesNotExist:
-					software = parameter.software
-					software.technology = default_software.get_technology_instance(technology_name)
-					software.save()
-			parameter.software = software
-			parameter.save()
-			
-			## set sequential number
-			dt_out_sequential[parameter.sequence_out] = 1
 
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample, sample,
 				technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""
 		"""
 		self.test_default_db(software_name, user, type_of_use, project, project_sample, sample, technology_name)
-		return self._get_parameters(software_name, user, type_of_use, project, project_sample, sample, technology_name)
+		return self.default_parameters.get_parameters(software_name, user, type_of_use, project, project_sample, sample, technology_name)
 
 	def get_all_software(self):
 		"""
@@ -1301,7 +1201,8 @@ class DefaultProjectSoftware(object):
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
 				type_of_use=type_of_use,
-				technology__name = technology_name)
+				technology__name = technology_name,
+				version_parameters = self.default_parameters.get_software_parameters_version(software_name))
 		except Software.DoesNotExist:
 			return vect_parameters
 
@@ -1322,634 +1223,6 @@ class DefaultProjectSoftware(object):
 					break
 		return vect_parameters
 
-	def _get_snippy_default(self, user, type_of_use, project, project_sample):
-		"""
-		–mapqual: minimum mapping quality to allow (–mapqual 20)
-		—mincov: minimum coverage of variant site (–mincov 10)
-		–minfrac: minumum proportion for variant evidence (–minfrac 0.51)
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_SNIPPY_name
-		software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_name_extended
-		software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = DefaultProjectSoftware.SNIPPY_MAPQUAL_NAME
-		parameter.parameter = "20"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[5:100]"
-		parameter.range_max = "50"
-		parameter.range_min = "10"
-		parameter.description = "MAPQUAL: is the minimum mapping quality to accept in variant calling (–mapqual 20)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = DefaultProjectSoftware.SNIPPY_COVERAGE_NAME
-		parameter.parameter = "10"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[4:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "4"
-		parameter.description = "MINCOV: the minimum number of reads covering a site to be considered (–mincov 10)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--minfrac"
-		parameter.parameter = "0.51"
-		parameter.type_data = Parameter.PARAMETER_float
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 3
-		parameter.range_available = "[0.5:1.0]"
-		parameter.range_max = "1.0"
-		parameter.range_min = "0.5"
-		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
 
-	def _get_freebayes_default(self, user, type_of_use, project, project_sample):
-		"""
-		–min-mapping-quality: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)
-		—min-base-quality: excludes alleles from iSNV analysis if their supporting base quality is less than Q (–min-base-quality 20)
-		–min-coverage: requires at least 100-fold of coverage to process a site (–min-coverage 100)
-		—min-alternate-count: require at least 10 reads supporting an alternate allele within a single individual in order to evaluate the position (–min-alternate-count 10)
-		–min-alternate-fraction: defines the minimum intra-host frequency of the alternate allele to be assumed (–min-alternate-fraction 0.01). This frequency is contingent on the depth of coverage of each processed site since min-alternate-count is set to 10, i.e., the identification of iSNV sites at frequencies of 10%, 2% and 1% is only allowed for sites with depth of coverage of at least 100-fold, 500-fold and 1000-fold, respectively.
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_FREEBAYES_name
-		software.name_extended = SoftwareNames.SOFTWARE_FREEBAYES_name_extended
-		software.version = SoftwareNames.SOFTWARE_FREEBAYES_VERSION
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "--min-mapping-quality"
-		parameter.parameter = "20"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[10:50]"
-		parameter.range_max = "50"
-		parameter.range_min = "10"
-		parameter.not_set_value = "0"
-		parameter.description = "min-mapping-quality: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--min-base-quality"
-		parameter.parameter = "20"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[10:50]"
-		parameter.range_max = "50"
-		parameter.range_min = "10"
-		parameter.not_set_value = "0"
-		parameter.description = "min-base-quality: excludes alleles from iSNV analysis if their supporting base quality is less than Q (–min-base-quality 20)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--min-coverage"
-		parameter.parameter = "100"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 3
-		parameter.range_available = "[20:500]"
-		parameter.range_max = "500"
-		parameter.range_min = "20"
-		parameter.description = "min-coverage: requires at least 100-fold of coverage to process a site (–min-coverage 100)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--min-alternate-count"
-		parameter.parameter = "10"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 4
-		parameter.range_available = "[5:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "5"
-		parameter.description = "min-alternate-count: require at least 10 reads supporting an alternate allele within a single " +\
-			"individual in order to evaluate the position (–min-alternate-count 10)."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--min-alternate-fraction"
-		parameter.parameter = "100"
-		parameter.type_data = Parameter.PARAMETER_float
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 5
-		parameter.range_available = "[0.01:0.5]"
-		parameter.range_max = "0.5"
-		parameter.range_min = "0.01"
-		parameter.description = "min-alternate-fraction: defines the minimum intra-host frequency of the alternate allele to be assumed (–min-alternate-fraction 0.01)."
-		vect_parameters.append(parameter)
-
-		parameter = Parameter()
-		parameter.name = "--ploidy"
-		parameter.parameter = "2"
-		parameter.type_data = Parameter.PARAMETER_float
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 6
-		parameter.range_available = "[1:5]"
-		parameter.range_max = "5"
-		parameter.range_min = "1"
-		parameter.description = "ploidy:  Sets the default ploidy for the analysis to N.  default: 2"
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
-
-	def _get_mask_consensus_threshold_default(self, user, type_of_use, project, project_sample):
-		"""
-		Threshold of mask not consensus coverage
-		"""
-		software = Software()
-		software.name = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name
-		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
-		software.version = "1.0"
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = DefaultProjectSoftware.MASK_CONSENSUS_threshold
-		parameter.parameter = "70"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[50:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "50"
-		parameter.description = "Minimum percentage of locus horizontal coverage with depth of coverage equal or above –mincov (see Snippy) to generate consensus sequence."
-		vect_parameters.append(parameter)
-		return vect_parameters
-
-	def _get_limit_coverage_ONT_threshold_default(self, user, type_of_use, project, project_sample):
-		"""
-		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)
-		Where to use this cut-off:
-			This cut-off is used to exclude from vcf files sites with DEPTH <=30
-			This cut-off is used to mask consensus sequences with DEPTH <=30 in msa_masker (-c: 30-1 = 29)
-		"""
-		software = Software()
-		software.name = SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name
-		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
-		software.version = "1.0"
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "Threshold"
-		parameter.parameter = "30"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[4:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "4"
-		parameter.description = "This cut-off is used to exclude from vcf files sites and to mask consensus sequences. Value in percentage"
-		vect_parameters.append(parameter)
-		return vect_parameters
-
-	def _get_vcf_freq_ONT_threshold_default(self, user, type_of_use, project, project_sample):
-		"""
-		MINFRAC: minumum proportion for variant evidence (–minfrac 51) Range: [10:100]
-		
-		"""
-		software = Software()
-		software.name = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
-		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
-		software.version = "1.0"
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "Threshold"
-		parameter.parameter = "0.80"
-		parameter.type_data = Parameter.PARAMETER_float
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[0.10:1.0]"
-		parameter.range_max = "1.0"
-		parameter.range_min = "0.10"
-		parameter.description = "MINFRAC: minimum proportion for variant evidence (–minfrac) Range: [0.1:1.0]"
-		vect_parameters.append(parameter)
-		return vect_parameters
-
-	def _get_medaka_model_default(self, user, type_of_use, project, project_sample):
-		"""
-		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)
-		Where to use this cut-off:
-			This cut-off is used to exclude from vcf files sites with DEPTH <=30
-			This cut-off is used to mask consensus sequences with DEPTH <=30 in msa_masker (-c: 30-1 = 29)
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_Medaka_name_consensus
-		software.name_extended = SoftwareNames.SOFTWARE_Medaka_name_extended_consensus
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.version = SoftwareNames.SOFTWARE_Medaka_VERSION
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "-m"
-		parameter.parameter = SoftwareNames.SOFTWARE_Medaka_default_model	## default model
-		parameter.type_data = Parameter.PARAMETER_char_list
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.description = "Medaka models are named to indicate: " +\
-			"i) the pore type; " +\
-			"ii) the sequencing device (min -> MinION, prom -> PromethION); " +\
-			"iii) the basecaller variant (only high and variant available in INSAFlu); " +\
-			"iv) the Guppy basecaller version. " +\
-			"Complete format: " +\
-			"{pore}_{device}_{caller variant}_{caller version}"
-		vect_parameters.append(parameter)
-		return vect_parameters
-
-	def _get_nanofilt_default(self, user, type_of_use, sample):
-		"""
-		-l <LENGTH>, Filter on a minimum read length. Range: [50:1000].
-		--maxlength Filter on a maximum read length
-		dá para colocar outro parametro, por exemplo: -ml <MAX_LENGTH>, Set the maximum read length.
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_NanoFilt_name
-		software.name_extended = SoftwareNames.SOFTWARE_NanoFilt_name_extended
-		software.version = SoftwareNames.SOFTWARE_NanoFilt_VERSION
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "-q"
-		parameter.parameter = "10"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[5:30]"
-		parameter.range_max = "30"
-		parameter.range_min = "5"
-		parameter.description = "-q <QUALITY>, Filter on a minimum average read quality score."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "-l"
-		parameter.parameter = "50"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[50:1000]"
-		parameter.range_max = "1000"
-		parameter.range_min = "50"
-		parameter.description = "-l <LENGTH>, Filter on a minimum read length."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--headcrop"
-		parameter.parameter = "70"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 3
-		parameter.range_available = "[1:1000]"
-		parameter.range_max = "1000"
-		parameter.range_min = "1"
-		parameter.not_set_value = "0"
-		parameter.description = "--headcrop <HEADCROP>, Trim n nucleotides from start of read."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--tailcrop"
-		parameter.parameter = "70"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 4
-		parameter.range_available = "[1:1000]"
-		parameter.range_max = "1000"
-		parameter.range_min = "1"
-		parameter.not_set_value = "0"
-		parameter.description = "--tailcrop <TAILCROP>, Trim n nucleotides from end of read."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "--maxlength"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 5
-		parameter.range_available = "[{}:50000]".format(DefaultSoftware.NANOFILT_MINIMUN_MAX)
-		parameter.range_max = "50000"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "--maxlength <LENGTH>, Set a maximum read length."
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
-
-	def _get_samtools_depth_default_ONT(self, user, type_of_use, project, project_sample):
-		"""
-		samtools depth for ONT
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT
-		software.name_extended = SoftwareNames.SOFTWARE_SAMTOOLS_name_extended_depth_ONT
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.version = SoftwareNames.SOFTWARE_SAMTOOLS_VERSION
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "-q"
-		parameter.parameter = "0"	## default model
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "-q <Quality> base quality threshold."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "-Q"
-		parameter.parameter = "0"	## default model
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "-Q <Quality> mapping quality threshold."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "-aa"
-		parameter.parameter = ""	## default model
-		parameter.type_data = Parameter.PARAMETER_null
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ""
-		parameter.can_change = False
-		parameter.sequence_out = 3
-		parameter.description = "Output absolutely all positions, including unused ref. sequences."
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
-	
-	def _get_trimmomatic_default(self, user, type_of_use, sample):
-		
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
-		software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
-		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "HEADCROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 1
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "CROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[0:400]"
-		parameter.range_max = "400"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "CROP:<length> Cut the read to a specified length."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "SLIDINGWINDOW"
-		parameter.parameter = "5"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 3
-		parameter.range_available = "[3:50]"
-		parameter.range_max = "50"
-		parameter.range_min = "3"
-		parameter.description = "SLIDINGWINDOW:<windowSize> specifies the number of bases to average across"
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "SLIDINGWINDOW"
-		parameter.parameter = "20"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 4
-		parameter.range_available = "[10:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "10"
-		parameter.description = "SLIDINGWINDOW:<requiredQuality> specifies the average quality required"
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "LEADING"
-		parameter.parameter = "3"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 5
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "LEADING:<quality> Remove low quality bases from the beginning."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "TRAILING"
-		parameter.parameter = "3"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 6
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "TRAILING:<quality> Remove low quality bases from the end."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "MINLEN"
-		parameter.parameter = "35"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 7
-		parameter.range_available = "[5:500]"
-		parameter.range_max = "500"
-		parameter.range_min = "5"
-		parameter.description = "MINLEN:<length> This module removes reads that fall below the specified minimal length."
-		vect_parameters.append(parameter)
-
-##		Only available in 0.30 version		
-#
-# 		parameter = Parameter()
-# 		parameter.name = "AVGQUAL"
-# 		parameter.parameter = "0"
-# 		parameter.type_data = Parameter.PARAMETER_int
-# 		parameter.software = software
-#		parameter.sample = sample
-# 		parameter.union_char = ":"
-# 		parameter.can_change = True
-# 		parameter.sequence_out = 8
-# 		parameter.range_available = "[0:100]"
-# 		parameter.range_max = "100"
-# 		parameter.range_min = "0"
-# 		parameter.not_set_value = "0"
-# 		parameter.description = "AVGQUAL:<quality> Drop the read if the average quality is below the specified level."
-# 		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "TOPHRED33"
-		parameter.parameter = ""
-		parameter.type_data = Parameter.PARAMETER_null
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ""
-		parameter.can_change = False
-		parameter.sequence_out = 8
-		parameter.description = "This (re)encodes the quality part of the FASTQ file to base 33."
-		vect_parameters.append(parameter)
-		return vect_parameters
 
 		

@@ -302,7 +302,17 @@ class ManageDatabase(object):
 		count_variations.save()
 		return count_variations
 
-
+	def is_sample_downsized(self, sample):
+		"""
+		:out True  
+		""" 
+	
+		meta_sample_queue = self.get_sample_metakey_last(sample,
+			MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,
+			MetaKeyAndValue.META_VALUE_Success)
+		if (not meta_sample_queue is None): return True
+		return False
+											
 	#######################################
 	###
 	###		Other methods

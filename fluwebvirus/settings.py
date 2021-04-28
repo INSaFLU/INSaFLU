@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.4.0"
+APP_VERSION_NUMBER = "1.4.1"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False

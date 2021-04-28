@@ -23,7 +23,6 @@ from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
 from django.db.models import Q
@@ -930,8 +929,8 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				else:
 					context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_output(TypePath.MEDIA_URL) + '">' + sample.file_name_1 + '.html</a>')
 			else: 
-				context['href_fastq_1'] = _("Not available")
-				context['href_fastq_quality_1'] = _("Not available")
+				context['href_fastq_1'] = "Not available"
+				context['href_fastq_quality_1'] = "Not available"
 			
 			### files to show
 			if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
@@ -942,22 +941,24 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				
 				### testing second file
 				trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
-				if (trimmomatic_file_name != None):
+				if (not trimmomatic_file_name is None):
 					context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
 						+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-					context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
+					context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
+												os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
 					
 					file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
 					if os.path.exists(file_name):
 						context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
-					else: context['href_fastq_2'] = _("Not available")
-					context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
-						os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+						context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
+					else: 
+						context['href_fastq_2'] = "Not available"
+						context['href_fastq_quality_2'] = "Not available"
 				else:	## there's no second file
-					context['href_trimmonatic_2'] = _("Not available")
-					context['href_fastq_quality_2'] = _("Not available")
-					context['href_fastq_2'] = _("Not available")
-					context['href_trimmonatic_quality_2'] = _("Not available")
+					context['href_fastq_2'] = "Not available"
+					context['href_fastq_quality_2'] = "Not available"
+					context['href_trimmonatic_2'] = "Not available"
+					context['href_trimmonatic_quality_2'] = "Not available"
 				
 			else:	### other like Minion
 				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_nanofilt_file(TypePath.MEDIA_URL) + '" download="'\
@@ -1204,7 +1205,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		b_error = False
 		try:
 			Project.objects.get(name__iexact=name, is_deleted=False, owner__username=self.request.user.username)
-			self.request.session[Constants.ERROR_PROJECT_NAME] = _("Exists a project with this name.")
+			self.request.session[Constants.ERROR_PROJECT_NAME] = "Exists a project with this name."
 			self.request.session[Constants.PROJECT_NAME] = name
 			b_error = True
 		except Project.DoesNotExist:
@@ -1428,13 +1429,13 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					pass
 			
 			if (project_sample_add == 0):
-				messages.warning(self.request, _("No sample was added to the project '{}'".format(project.name)))
+				messages.warning(self.request, "No sample was added to the project '{}'".format(project.name))
 			else:
 				if (project_sample_add > 1):
-					messages.success(self.request, _("'{}' samples were added to your project.".format(\
-								project_sample_add)), fail_silently=True)
+					messages.success(self.request, "'{}' samples were added to your project.".format(\
+								project_sample_add), fail_silently=True)
 				else:
-					messages.success(self.request, _("One sample was added to your project."), fail_silently=True)
+					messages.success(self.request, "One sample was added to your project.", fail_silently=True)
 			return HttpResponseRedirect(reverse_lazy('projects'))
 		else:
 			return super(AddSamplesProjectsView, self).form_invalid(form)

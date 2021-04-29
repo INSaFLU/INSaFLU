@@ -460,14 +460,10 @@ class Software(object):
 			result.set_error("Fail to identify type and sub type")
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			cmd = "rm %s" % (out_file_abricate); os.system(cmd)
-			self.utils.remove_dir(out_dir_result)
-			return False
-		
-		
-		for identify_virus in vect_data:
-			sample.identify_virus.add(identify_virus)
-		sample.save()
+		else:
+			for identify_virus in vect_data:
+				sample.identify_virus.add(identify_virus)
+			sample.save()
 		
 		## save everything OK
 		if (sample.is_type_fastq_gz_sequencing()):
@@ -480,7 +476,7 @@ class Software(object):
 				self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		cmd = "rm %s" % (out_file_abricate); os.system(cmd)
+		self.utils.remove_file(out_file_abricate)
 		self.utils.remove_dir(out_dir_result)
 		self.utils.remove_file(out_file_clean)
 		self.utils.remove_file(clean_abricate_file)

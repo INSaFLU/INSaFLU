@@ -823,7 +823,7 @@ class ParseInFiles(object):
 		## samples that can proceed to trimmomatic
 		for sample in vect_sample_to_trimmomatic:
 			try:
-				## here can be direct because came from a djangoq
+				## here can be direct because came from a django
 				process_SGE = ProcessSGE()
 				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user)
 				else: taskID = process_SGE.set_run_clean_minion(sample, user)	### minion

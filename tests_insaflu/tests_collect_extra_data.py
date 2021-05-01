@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
 
 	def test_pangolin_file(self):
 		"""
-		'taxon,lineage,probability,pangoLEARN_version,status,note',
+		'taxon,lineage,conflict,pangoLEARN_version,status,note',
 		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
 		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
 		"""
@@ -42,19 +42,22 @@ class Test(unittest.TestCase):
 		parse_pangolin_result = ParsePangolinResult(pangolin_results)
 		self.assertTrue(parse_pangolin_result.has_data())
 		self.assertEqual("B.1.177", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200153"))
-		self.assertEqual("1.0", parse_pangolin_result.get_probability("MN908947_SARSCoVDec200153"))
+		self.assertEqual("0", parse_pangolin_result.get_conflict("MN908947_SARSCoVDec200153"))
 		self.assertEqual("passed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec200153"))
 		self.assertEqual("B.1.1.7", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200234"))
-		self.assertEqual("1.01", parse_pangolin_result.get_probability("MN908947_SARSCoVDec200234"))
+		self.assertEqual("1.01", parse_pangolin_result.get_conflict("MN908947_SARSCoVDec200234"))
 		self.assertEqual("notpassed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec200234"))
 		self.assertEqual("B.1.177;B.1.1.7", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200"))
-		self.assertEqual("1.0;1.01", parse_pangolin_result.get_probability("MN908947_SARSCoVDec20"))
+		self.assertEqual("0;1.01", parse_pangolin_result.get_conflict("MN908947_SARSCoVDec20"))
 		self.assertEqual("passed_qc;notpassed_qc", parse_pangolin_result.get_status("MN908947_SARSCoVDec20"))
 		self.assertEqual("", parse_pangolin_result.get_lineage("MN908947_SARSCoVDec200___"))
-		self.assertEqual("", parse_pangolin_result.get_probability("MN908947_SARSCoVDec20___"))
+		self.assertEqual("", parse_pangolin_result.get_conflict("MN908947_SARSCoVDec20___"))
 		self.assertEqual("", parse_pangolin_result.get_status("MN908947_SARSCo200___"))
+		self.assertEqual("B.1.1.348", parse_pangolin_result.get_lineage("LRSP_LA_183570_2021__SARS_CoV_2"))
+		self.assertEqual("0.0", parse_pangolin_result.get_conflict("LRSP_LA_183570_2021__SARS_CoV_2"))
+		self.assertEqual("passed_qc", parse_pangolin_result.get_status("LRSP_LA_183570_2021__SARS_CoV_2"))
 		self.assertEqual("", parse_pangolin_result.get_lineage(None))
-		self.assertEqual("", parse_pangolin_result.get_probability(None))
+		self.assertEqual("", parse_pangolin_result.get_conflict(None))
 		self.assertEqual("", parse_pangolin_result.get_status(None))
 		
 		parse_pangolin_result = ParsePangolinResult("xpto.xpt")

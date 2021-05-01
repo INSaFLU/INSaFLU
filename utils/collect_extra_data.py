@@ -627,7 +627,7 @@ class CollectExtraData(object):
 			if (not b_simple):
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
-					vect_out_header.append("Probability (Pangolin)")
+					vect_out_header.append("Conflict (Pangolin)")
 					vect_out_header.append("Status (Pangolin)") 
 				vect_out_header.append("Technology")
 				vect_out_header.append("Sample Downsized")
@@ -725,7 +725,7 @@ class CollectExtraData(object):
 					### pangolin if exists, not simple
 					if parse_pangolin.has_data():
 						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
-						vect_out.append(parse_pangolin.get_probability(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_conflict(project_sample.seq_name_all_consensus))
 						vect_out.append(parse_pangolin.get_status(project_sample.seq_name_all_consensus))
 
 					### print info about technology	
@@ -963,11 +963,11 @@ class CollectExtraData(object):
 class ParsePangolinResult(object):
 	
 	utils = Utils()
-	HEADER_PANGOLIN_file = "taxon,lineage,probability,pangoLEARN_version,status,note"
+	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangoLEARN_version,pango_version,status,note"
 	
 	def __init__(self, file_pangolin_output):
 		self.file_pangolin_output = file_pangolin_output
-		self.dt_data = {}	### SAmple : [lineage, probability, status]
+		self.dt_data = {}	### SAmple : [lineage, conflict, status]
 		self.process_file()
 		
 	def has_data(self):
@@ -977,7 +977,7 @@ class ParsePangolinResult(object):
 		if (sample_name_starts_with is None): return ""
 		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
 		return ";".join([self.dt_data.get(key, [""])[0] for key in vect_match ] )
-	def get_probability(self, sample_name_starts_with):
+	def get_conflict(self, sample_name_starts_with):
 		if (sample_name_starts_with is None): return ""
 		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
 		return ";".join([self.dt_data.get(key, [""])[1] for key in vect_match ] )
@@ -989,7 +989,7 @@ class ParsePangolinResult(object):
 	def process_file(self):
 		"""
 		### pangolin ouput
-		'taxon,lineage,probability,pangoLEARN_version,status,note',
+		'taxon,lineage,conflict,pangoLEARN_version,pango_version,status,note',
 		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
 		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
 		"""
@@ -1003,9 +1003,9 @@ class ParsePangolinResult(object):
 					if line == ParsePangolinResult.HEADER_PANGOLIN_file: b_header = True
 				else:	## start processing pangolin data
 					lst_data = line.split(',')
-					if len(lst_data) > 4:
+					if len(lst_data) > 5:
 						self.dt_data[lst_data[0]] = [lst_data[1],
-							lst_data[2], lst_data[4]]
+							lst_data[2], lst_data[5]]
 		
 		
 					

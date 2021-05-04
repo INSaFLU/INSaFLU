@@ -55,6 +55,11 @@ THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## 
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
+## MAX LENGTH_SEQUENCE_FROM_FASTA - REFERENCE
+MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA', default=50000, cast=int)
+MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
+MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
+	
 ### Files sizes   https://pypi.org/project/humanfriendly/
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 

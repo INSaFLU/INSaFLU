@@ -42,11 +42,14 @@ class ReferenceForm(forms.ModelForm):
 			# (field_name, Field title label, Detailed field description, requiered)
 			('name', 'Name', 'Regular name for this reference', True),
 			('isolate_name', 'Isolate name', 'Isolate name for this reference', False),
-			('reference_fasta', 'Reference (fasta)', 'Reference file in fasta format', True),
-			('reference_genbank', 'Reference (genBank)', 
-					"""Reference file in genBank format.<br>
+			('reference_fasta', 'Reference (FASTA)', "Reference file in fasta format.<br>" +\
+				"Max total sequence length: {}<br>".format(humanfriendly.format_size(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA))  +\
+				"Max FASTA file size: {}".format(humanfriendly.format_size(settings.MAX_REF_FASTA_FILE)), True),
+			('reference_genbank', 'Reference (Genbank) - Optional', 
+					"""Reference file in Genbank format.<br>
 					Locus designations in the multi-GenBank file must have the same name as in the respective fasta file.<br>
-					If you do not upload a Genbank file, INSaFLU will annotate the upload fasta file for you""", False),
+					If you do not upload a Genbank file, INSaFLU will annotate the upload fasta file for you.<br>""" +\
+					"Max GenBank file size: {}".format(humanfriendly.format_size(settings.MAX_REF_GENBANK_FILE)), False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]
@@ -118,9 +121,9 @@ class ReferenceForm(forms.ModelForm):
 				self.add_error('reference_fasta', _('Max allow number of sequences in fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_FASTA)))
 				some_error_in_files = True
 			total_length_fasta = self.utils.get_total_length_fasta(reference_fasta_temp_file_name.name)
-			if (not some_error_in_files and total_length_fasta > Constants.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA):
+			if (not some_error_in_files and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA):
 				some_error_in_files = True
-				self.add_error('reference_fasta', _('The length sum of the sequences in fasta: {}'.format(Constants.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)))
+				self.add_error('reference_fasta', _('The max sum length of the sequences in fasta: {}'.format(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)))
 			
 			n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(reference_fasta_temp_file_name.name, Constants.MAX_LENGTH_SEQ_NAME)
 			if (not some_error_in_files and n_seq_name_bigger_than > 0):

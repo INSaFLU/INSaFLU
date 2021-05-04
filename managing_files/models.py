@@ -60,14 +60,14 @@ class Reference(models.Model):
 	
 	## Size 100K
 	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
-										max_upload_size=Constants.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
+										max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
 	## application/x-gameboy-rom because of 'gb' extension file of gbk
 	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/x-gameboy-rom'],\
-									max_upload_size=Constants.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
+									max_upload_size=settings.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
 

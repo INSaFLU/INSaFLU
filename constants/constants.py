@@ -26,14 +26,6 @@ class Constants(object):
 	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
 	
-	## MAX LENGTH_SEQUENCE_FROM_FASTA
-	MAX_LENGTH_SEQUENCE_FROM_FASTA = 10000 
-	MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = 50000
-# 	MAX_FASTQ_FILE = 50971520			## 50M
-# 	MAX_FASTQ_FILE_WITH_DOWNSIZE = 250971520			## 250M
-	MAX_REF_FASTA_FILE = 100000			## 100k
-	MAX_REF_GENBANK_FILE = 150000		## 150k
-	
 	### has the minimun number of files to calculate global files
 	MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES = 2
 	

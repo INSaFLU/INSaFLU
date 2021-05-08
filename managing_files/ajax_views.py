@@ -581,6 +581,20 @@ def validate_project_reference_name(request):
 		if (data['is_taken']): data['error_message'] = _('Exists a project with this name.')
 		return JsonResponse(data)
 
+@csrf_protect
+def validate_reference_name(request):
+	"""
+	test if exist this reference name
+	"""
+	if request.is_ajax():
+		reference_name = request.GET.get('reference_name')
+		
+		data = {
+			'is_taken': Reference.objects.filter(name__iexact=reference_name,
+				is_deleted=False, owner__username=request.user.username).exists()
+		}
+		if (data['is_taken']): data['error_message'] = _('Exists a reference with this name.')
+		return JsonResponse(data)
 
 @csrf_protect
 def add_single_value_database(request):

@@ -1757,7 +1757,21 @@ class Software(object):
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to create index") 
+			raise Exception("Fail to create index")
+
+	def fasta_2_upper(self, file_name):
+		"""
+		covert fasta 2 upper
+		"""
+		if (not os.path.exists(file_name)): return
+		temp_file = self.utils.get_temp_file("fasta_2_upper", ".fasta")
+		cmd = "awk '/^>/ {print($0)}; /^[^>]/ {print(toupper($0))}'" + " {} > {}; mv {} {}".format(
+			file_name, temp_file, temp_file, file_name)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to create index")
 	
 
 	def make_downsize(self, path_1, path_2, max_fastq_file):

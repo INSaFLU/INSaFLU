@@ -62,6 +62,8 @@ class ReferenceForm(forms.ModelForm):
 
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
+		self.helper.attrs["data-validate-reference-url"] = reverse('validate-reference-name')
+		self.helper.attrs["id"] = "id_form_reference"
 		self.helper.layout = Layout(
 			Div(
 				Div('name', css_class="col-sm-3"),

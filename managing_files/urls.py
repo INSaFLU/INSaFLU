@@ -27,6 +27,7 @@ urlpatterns = [
 
 	### ajax functions
 	url(r'^ajax/validate_project_reference_name$', ajax_views.validate_project_reference_name, name='validate-project-reference'),
+	url(r'^ajax/validate_reference_name$', ajax_views.validate_reference_name, name='validate-reference-name'),
 	url(r'^ajax/set_check_box_values$', ajax_views.set_check_box_values, name='set-check-box-values'),
 	url(r'^ajax/show_phylo_canvas$', ajax_views.show_phylo_canvas, name='show-phylo-canvas'),
 	url(r'^ajax/show_variants_as_a_table$', ajax_views.show_variants_as_a_table, name='show-variants-as-a-table'),

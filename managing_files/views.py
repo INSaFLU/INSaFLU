@@ -126,13 +126,15 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		
 		## create a genbank file
 		temp_genbank_dir = None
-		if (reference_genbank == None):
+		temp_genbank_file = None
+		if (reference_genbank is None):
 			reference_fasta_temp_file_name = NamedTemporaryFile(prefix='flu_fa_', delete=False)
 			reference_fasta.file.seek(0)
 			reference_fasta_temp_file_name.write(reference_fasta.read())
 			reference_fasta_temp_file_name.flush()
 			reference_fasta_temp_file_name.close()
 			software.dos_2_unix(reference_fasta_temp_file_name.name)
+			software.fasta_2_upper(reference_fasta_temp_file_name.name)
 			
 			file_name_cleaned = utils.clean_name(ntpath.basename(reference_fasta.name))
 			try:
@@ -149,34 +151,35 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 				messages.error(self.request, "Error creating the genbank file", fail_silently=True)
 				return super(ReferenceAddView, self).form_invalid(form)
 
-		hash_value_fasta = hashlib.md5(form.files.get('reference_fasta').read()).hexdigest()
-		if (reference_genbank == None): hash_value_genbank = utils.md5sum(temp_genbank_file)
-		else: hash_value_genbank = hashlib.md5(form.files.get('reference_genbank').read()).hexdigest()
-		
 		reference = form.save(commit=False)
 		## set other data
 		reference.display_name = reference.name
 		reference.owner = self.request.user
 		reference.is_obsolete = False
 		reference.number_of_locus = self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE]
-		reference.hash_reference_fasta = hash_value_fasta
 		reference.reference_fasta_name = utils.clean_name(ntpath.basename(reference_fasta.name))
 		reference.scentific_name = scentific_name
-		reference.hash_reference_genbank = hash_value_genbank
 		if (reference_genbank == None): reference.reference_genbank_name = ntpath.basename(temp_genbank_file)
 		else: reference.reference_genbank_name = utils.clean_name(ntpath.basename(reference_genbank.name))
 		reference.save()
 
 		## move the files to the right place
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
-		utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name), sz_file_to)
-		software.dos_2_unix(sz_file_to)
+		sz_file_to = os.path.join(settings.MEDIA_ROOT, utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
+		software.dos_2_unix(os.path.join(settings.MEDIA_ROOT, reference.reference_fasta.name))
+		## test if bases all lower
+		software.fasta_2_upper(os.path.join(settings.MEDIA_ROOT, reference.reference_fasta.name))
+		utils.move_file(os.path.join(settings.MEDIA_ROOT, reference.reference_fasta.name), sz_file_to)
+		reference.hash_reference_fasta = utils.md5sum(sz_file_to)
 		reference.reference_fasta.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_fasta_name)
 		
-		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
-		if (reference_genbank == None): utils.move_file(temp_genbank_file, sz_file_to)
-		else: utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_genbank.name), sz_file_to)
+		### 
+		## genbank file
+		sz_file_to = os.path.join(settings.MEDIA_ROOT, utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
+		if (reference_genbank is None):
+			if (not temp_genbank_file is None): utils.move_file(temp_genbank_file, sz_file_to)
+		else: utils.move_file(os.path.join(settings.MEDIA_ROOT, reference.reference_genbank.name), sz_file_to)
 		software.dos_2_unix(sz_file_to)
+		reference.hash_reference_genbank = utils.md5sum(sz_file_to)
 		reference.reference_genbank.name = os.path.join(utils.get_path_to_reference_file(self.request.user.id, reference.id), reference.reference_genbank_name)
 		reference.save()
 		

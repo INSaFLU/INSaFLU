@@ -1017,7 +1017,7 @@ class ParsePangolinResult(object):
 							if key.lower() == key_test.lower():
 								dt_positions[key] = _
 								break
-					if (len(dt_positions) == len(vect_data)): b_header = True
+					if (len(dt_positions) == len(ParsePangolinResult.vect_all_keys)): b_header = True
 							
 				elif (b_header):	## start processing pangolin data
 					lst_data = line.split(',')

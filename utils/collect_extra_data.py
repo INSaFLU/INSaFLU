@@ -963,7 +963,16 @@ class CollectExtraData(object):
 class ParsePangolinResult(object):
 	
 	utils = Utils()
-	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangoLEARN_version,pango_version,status,note"
+	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note"
+	HEADER_PANGOLIN_file_start = "taxon,lineage,conflict"
+	KEY_TO_FIND_taxon = "taxon"
+	KEY_TO_FIND_lineage = "lineage"
+	KEY_TO_FIND_conflict = "conflict"
+	KEY_TO_FIND_status = "status"
+	vect_all_keys = [KEY_TO_FIND_taxon,
+				KEY_TO_FIND_lineage,
+				KEY_TO_FIND_conflict,
+				KEY_TO_FIND_status] 
 	
 	def __init__(self, file_pangolin_output):
 		self.file_pangolin_output = file_pangolin_output
@@ -989,23 +998,34 @@ class ParsePangolinResult(object):
 	def process_file(self):
 		"""
 		### pangolin ouput
+		'taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note
 		'taxon,lineage,conflict,pangoLEARN_version,pango_version,status,note',
 		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
 		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
 		"""
 
 		## start parsing
+		dt_positions = {}
 		if (os.path.exists(self.file_pangolin_output)):
 			vect_data = self.utils.read_text_file(self.file_pangolin_output)
 			b_header = False
 			for line in vect_data:
-				if not b_header:
-					if line == ParsePangolinResult.HEADER_PANGOLIN_file: b_header = True
-				else:	## start processing pangolin data
+				if not b_header and line.startswith(ParsePangolinResult.HEADER_PANGOLIN_file_start):
+					lst_data = line.strip().split(',')
+					for key in ParsePangolinResult.vect_all_keys:
+						for _, key_test in enumerate(lst_data):
+							if key.lower() == key_test.lower():
+								dt_positions[key] = _
+								break
+					if (len(dt_positions) == len(vect_data)): b_header = True
+							
+				elif (b_header):	## start processing pangolin data
 					lst_data = line.split(',')
 					if len(lst_data) > 5:
-						self.dt_data[lst_data[0]] = [lst_data[1],
-							lst_data[2], lst_data[5]]
+						self.dt_data[lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_taxon]]] = [
+							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_lineage]],
+							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_conflict]],
+							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_status]] ]
 		
 		
 					

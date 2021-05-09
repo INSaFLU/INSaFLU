@@ -51,6 +51,8 @@ class ProcessSGE(object):
 
 	###########################################
 	###
+	###		BEGIN main methods
+	###
 	###		IMPORTANT
 	###			Put qsub in /usr/bin/qsub
 	###
@@ -79,7 +81,7 @@ class ProcessSGE(object):
 		if (not b_found): raise Exception("\n".join(vect_out))
 
 
-	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, job_name, b_remove_out_dir = False, job_name_wait = "", nPriority = 0):
+	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, job_name, b_remove_out_dir = False, job_name_wait = ""):
 		"""
 		create the script to run SGE
 		"""
@@ -97,7 +99,6 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
 			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
 			handleSGE.write("#$ -o {}\n".format(out_dir))		# out path file
-			if (nPriority > 0): handleSGE.write("#$ -p {}\n".format(nPriority))	# execute the job for the current work directory
 			for cline in vect_cmd: handleSGE.write("\n" + cline)
 			if (b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE):
 				handleSGE.write("\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir))
@@ -199,6 +200,9 @@ class ProcessSGE(object):
 				print("=" * 50)
 				if (len(vect_sge_ids) > 0): time.sleep(5)	## wais 5 seconds
 
+	#### END MAIN files
+	#############
+	#############
 
 	##### set collect global files
 	def set_collect_global_files(self, project, user):

@@ -1,4 +1,4 @@
-django==1.11.29
+django==2.2.24
 django-ipware==2.1.0
 django-crequest==2018.5.11
 django-embed-video==1.2.0

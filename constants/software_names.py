@@ -132,9 +132,11 @@ class SoftwareNames(object):
 	SOFTWARE_Pangolin = "pangolin"
 	SOFTWARE_Pangolin_name = "Pangolin"
 	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
+	SOFTWARE_Pangolin_designation_name = "Pango-designation"
 	SOFTWARE_Pangolin_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
 	SOFTWARE_Pangolin_VERSION = "2.3.8"				## this value is going to increase across time 
 	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
+	SOFTWARE_Pangolin_designation_VERSION = "v1.2.12"	## this value is going to increase across time
 	
 	
 	SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
@@ -667,9 +669,11 @@ class SoftwareNames(object):
 	def get_pangolin(self): return self.SOFTWARE_Pangolin
 	def get_pangolin_name(self): return self.SOFTWARE_Pangolin_name
 	def get_pangolin_learn_name(self): return self.SOFTWARE_Pangolin_learn_name
+	def get_pangolin_designation_name(self): return self.SOFTWARE_Pangolin_designation_name
 	def get_pangolin_name_extended(self): return self.SOFTWARE_Pangolin_name_extended
 	def get_pangolin_version(self): return self.SOFTWARE_Pangolin_VERSION
 	def get_pangolin_learn_version(self): return self.SOFTWARE_Pangolin_learn_VERSION
+	def get_pangolin_designation_version(self): return self.SOFTWARE_Pangolin_designation_VERSION
 	## version must be obtain from ManagingFiles.Software.Version
 
 

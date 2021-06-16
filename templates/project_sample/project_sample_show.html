@@ -295,6 +295,11 @@
 				                    <th colspan="9">
 				                    	<strong>Sample result list (.csv): {{ sample_file_result_csv }}</strong>
 										<strong style="padding-left:15px">Sample result list (.tsv): {{ sample_file_result_tsv }} </strong>
+										<!-- Pangolin result file -->
+										{% if pangolin_lineage %}
+											<strong style="padding-left:15px">Pangolin Lineage (.csv): {{ pangolin_lineage }} </strong>
+										{% endif %}
+										
 										<strong style="padding-left:15px">All consensus (.fasta): {{ sample_file_all_consensus }} </strong>
 				                        <form method="get" action="" class="form-inline form-search pull-right">
 				                        	{% csrf_token %}

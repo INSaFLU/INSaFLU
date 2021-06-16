@@ -628,12 +628,14 @@ class CollectExtraData(object):
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
 					vect_out_header.append("Conflict (Pangolin)")
-					vect_out_header.append("Status (Pangolin)") 
+					vect_out_header.append("Status (Pangolin)")
+					vect_out_header.append("Scorpio (Pangolin)")
 				vect_out_header.append("Technology")
 				vect_out_header.append("Sample Downsized")
 			else:	### simple, the one that goes to TreeView
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
+					vect_out_header.append("Scorpio (Pangolin)")
 			
 			### all information about the softwares
 			if (not b_simple):
@@ -727,6 +729,7 @@ class CollectExtraData(object):
 						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
 						vect_out.append(parse_pangolin.get_conflict(project_sample.seq_name_all_consensus))
 						vect_out.append(parse_pangolin.get_status(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_scorpio_call(project_sample.seq_name_all_consensus))
 
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
@@ -777,6 +780,7 @@ class CollectExtraData(object):
 					### pangolin if exists, simple
 					if parse_pangolin.has_data():
 						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_scorpio_call(project_sample.seq_name_all_consensus))
 
 				### END save global parameters
 				csv_writer.writerow(vect_out)
@@ -963,13 +967,15 @@ class CollectExtraData(object):
 class ParsePangolinResult(object):
 	
 	utils = Utils()
-	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note"
-	HEADER_PANGOLIN_file_start = "taxon,lineage,conflict"
+##	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note"
+	HEADER_PANGOLIN_file_start = "taxon,lineage"
 	KEY_TO_FIND_taxon = "taxon"
 	KEY_TO_FIND_lineage = "lineage"
 	KEY_TO_FIND_conflict = "conflict"
 	KEY_TO_FIND_status = "status"
+	KEY_TO_FIND_scorpio_call = "scorpio_call"
 	vect_all_keys = [KEY_TO_FIND_taxon,
+				KEY_TO_FIND_scorpio_call,
 				KEY_TO_FIND_lineage,
 				KEY_TO_FIND_conflict,
 				KEY_TO_FIND_status] 
@@ -994,12 +1000,15 @@ class ParsePangolinResult(object):
 		if (sample_name_starts_with is None): return ""
 		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
 		return ";".join([self.dt_data.get(key, [""])[2] for key in vect_match ] )
+	def get_scorpio_call(self, sample_name_starts_with):
+		if (sample_name_starts_with is None): return ""
+		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
+		return ";".join([self.dt_data.get(key, [""])[3] for key in vect_match ] )
 	
 	def process_file(self):
 		"""
 		### pangolin ouput
 		'taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note
-		'taxon,lineage,conflict,pangoLEARN_version,pango_version,status,note',
 		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
 		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
 		"""
@@ -1025,7 +1034,8 @@ class ParsePangolinResult(object):
 						self.dt_data[lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_taxon]]] = [
 							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_lineage]],
 							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_conflict]],
-							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_status]] ]
+							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_status]],
+							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_scorpio_call]] ]
 		
 		
 					

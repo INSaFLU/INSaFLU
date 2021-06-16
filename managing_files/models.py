@@ -1105,7 +1105,7 @@ class Software(models.Model):
 		"""
 		lst_data = self.version.split(Software.BREAK_TAG)
 		if len(lst_data) > 1: return (lst_data[0], lst_data[1])
-		return lst_data[0]
+		return lst_data[0], "0"
 	
 class UploadFiles(models.Model):
 	"""

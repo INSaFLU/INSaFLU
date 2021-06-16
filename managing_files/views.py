@@ -1529,6 +1529,10 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
 			context['update_pangolin'] = True
 			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
+			
+		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
+			context['pangolin_lineage'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_Pangolin_lineage)
+			
 		return context
 
 

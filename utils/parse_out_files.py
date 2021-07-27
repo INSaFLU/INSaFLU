@@ -74,11 +74,12 @@ class ParseOutFiles(object):
 		Parse out abricate files
 		return also a file with coverage below clean_hits_below_value removed
 		Can be empty
+		:out dictonary { 'Seq.id' : [dt_data, dt_data2, ...], 'Seq.id1' : [dt_data5, dt_data6, ...]
 		"""
 		clean_abricate_file = self.utils.get_temp_file('clean_abricate', FileExtensions.FILE_TXT)
 		with open(file_name) as handle, open(clean_abricate_file, 'w') as handle_new:
 			b_fisrt_line_found = False 
-			vect_out = []
+			dict_data_out = {}
 			for line in handle:
 				sz_temp = line.strip()
 				if (len(sz_temp) == 0): continue
@@ -107,10 +108,18 @@ class ParseOutFiles(object):
 					dt_data[self.TYPE] = lst_split[10]
 					dt_data[self.ACCESSION] = lst_split[11]
 					dt_data[self.SEQ_NAME] = lst_split[1]
-					vect_out.append(dt_data)
+					if (dt_data[self.SEQ_NAME] in dict_data_out): dict_data_out[dt_data[self.SEQ_NAME]].append(dt_data)
+					else: dict_data_out[dt_data[self.SEQ_NAME]] = [dt_data]
 		
-		## order by coverage and identity
-		return sorted(vect_out, reverse=True, key=lambda k: "%03d %03d" % (int(k[self.COVERAGE]) , int(k[self.IDENTITY]))), clean_abricate_file
+		### order the geneId by coverage
+		for key in dict_data_out:
+			dict_data_out[key] = sorted(dict_data_out[key], reverse=True, key=lambda k: (k[self.COVERAGE],
+															k[self.IDENTITY]) )
+
+		
+		### order the key 
+		## order by coverage and identity, bigger better...
+		return dict_data_out, clean_abricate_file
 
 
 	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):

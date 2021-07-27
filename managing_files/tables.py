@@ -423,7 +423,9 @@ class ShowProjectSamplesResults(tables.Table):
 			return mark_safe('<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"' +\
 					' ref_name="' + record.sample.name + '" pk="' + str(record.pk) + '" +\
 					" ref_project="' + record.project.name + '" data-toggle="tooltip" title="Remove sample">' +\
-					'<i class="fa fa-trash"></i></span> </a>' + record.sample.name)
+					'<i class="fa fa-trash"></i></span> </a>' +\
+					'<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
+					'{}</a>'.format(record.sample.name))
 		return record.sample.name
 
 	def render_coverage(self, record):

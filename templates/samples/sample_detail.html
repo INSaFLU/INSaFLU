@@ -138,7 +138,11 @@
 								{% if has_draft_contigs %}
 									<div class="row draft_assembly">
 										<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
-										<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+										{% if file_draft_contigs_abricate %} 
+											<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+										{% elif file_draft_reads_abricate %}
+											<div class="col-lg-6"><strong>Seg./Ref. to reads:</strong> {{ file_draft_reads_abricate }}</div>
+										{% endif %}
 									</div>
 									<p></p>
 									<div class="container h-100">
@@ -149,7 +153,6 @@
 									<hr>
 								{% endif %}
 								
-								<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 							{% else %}
 								<p class="software">No type/subtype has been assigned.</p>
 								
@@ -168,6 +171,7 @@
 									<hr>
 								{% endif %}
 							{% endif %}
+							<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 						</div>
 						<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
 				    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>
@@ -244,38 +248,36 @@
 						  			</div>
 						  			<hr>
 								{% endfor %}
-								{% if has_draft_contigs %}
-									<div class="row draft_assembly">
-										<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
-										<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
-									</div>
-									<p></p>
-									<div class="container h-100">
-	  									<div class="row h-100 justify-content-center">
-											<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
-										</div>
-									</div>
-									<hr>
-								{% endif %}
-								
-								<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
 							{% else %}
 								<p class="software">No type/subtype has been assigned.</p>
-								
-								{% if has_draft_contigs %}
-									<hr>
-									<div class="row draft_assembly">
-										<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
-										<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+							{% endif %}
+							
+							<!-- Test draft contigs or reads, if it is ONT -->
+							{% if has_draft_contigs %}
+								<div class="row draft_assembly">
+									<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
+									<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+								</div>
+								<p></p>
+								<div class="container h-100">
+  									<div class="row h-100 justify-content-center">
+										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
 									</div>
-									<p></p>
-									<div class="container h-100">
-	  									<div class="row h-100 justify-content-center">
-											<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
-										</div>
+								</div>
+								<hr>
+								<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
+							{% elif has_draft_reads %} <!-- ONT technology -->
+								<div class="row draft_assembly">
+									<div class="col-lg-6"><strong>Draft assembly:</strong> Not appliable</div>
+									<div class="col-lg-6"><strong>Seg./Ref. to reads:</strong> {{ file_draft_reads_abricate }}</div>
+								</div>
+								<p></p>
+								<div class="container h-100">
+  									<div class="row h-100 justify-content-center">
+										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
 									</div>
-									<hr>
-								{% endif %}
+								</div>
+								<hr>
 							{% endif %}
 						</div>
 						<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">

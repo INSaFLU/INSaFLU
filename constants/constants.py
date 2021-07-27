@@ -109,6 +109,9 @@ class Constants(object):
 	### data_set 
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	
+	### NextClade link
+	NEXTCLADE_LINK = "https://clades.nextstrain.org/?input-fasta="
+	
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 12
 	PAGINATE_NUMBER_SMALL = 2

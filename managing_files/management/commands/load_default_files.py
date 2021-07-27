@@ -13,6 +13,7 @@ from managing_files.models import DataSet
 from settings.default_parameters import DefaultParameters
 from extend_user.models	import Profile
 from utils.software import Software
+from utils.software import Contigs2Sequences
 from django.db import transaction
 from django.conf import settings
 import logging
@@ -36,6 +37,7 @@ class Command(BaseCommand):
 		## only runs once, when it start and test if the file was uploaded with virus hypothesis
 		uploadFiles = UploadFiles()
 		## get version and path
+		## Constants.DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 		b_test = False
 		(version, path) = uploadFiles.get_file_to_upload(b_test)
 		
@@ -43,8 +45,10 @@ class Command(BaseCommand):
 		uploadFile = uploadFiles.upload_file(version, path)
 
 		# create the Abricate database
+		b_testing = False
+		contigs2sequences = Contigs2Sequences(b_testing)
+		software= Software()
 		if (not uploadFile is None):
-			software= Software()
 			try:
 				if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
 					self.stdout.write("Create new Abricate database: {}".format(uploadFile.abricate_name))
@@ -53,6 +57,16 @@ class Command(BaseCommand):
 				## try to create this database
 				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
 
+		## tests other abricate database
+		### get database file name, if it is not passed
+		## Constants.DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
+		(version, database_file_name) = contigs2sequences.get_most_recent_database()
+		database_name = contigs2sequences.get_database_name()
+		
+		### first create database
+		if (not software.is_exist_database_abricate(database_name)):
+			software.create_database_abricate(database_name, database_file_name)
+			
 	@transaction.atomic
 	def upload_default_references(self):
 		"""

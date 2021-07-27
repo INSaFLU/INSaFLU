@@ -56,3 +56,62 @@ class Test(TestCase):
 		pass
 	
 
+	def test_is_ref_sars_cov(self):
+		"""
+		test SARS cov 
+		"""
+		uploadFiles = UploadFiles()
+		version = 1
+		file = os.path.join(self.baseDirectory, Constants.DIR_TYPE_IDENTIFICATION, "test_covid_typing.fasta")
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		database_name = "xpto_sars_cov"
+		if (not self.software.is_exist_database_abricate(database_name)):
+			self.software.create_database_abricate(database_name, file)
+			
+		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
+		self.assertTrue(self.software_pangolin.is_ref_sars_cov_2(consensus_file_1))
+		
+		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_A_Hong_Kong_4801_2014.fasta")
+		self.assertFalse(self.software_pangolin.is_ref_sars_cov_2(consensus_file_1))
+
+# def test_run_pangolin(self):
+# 	"""
+# 	test genbank2gff3 method
+# 	"""
+# 	## covid
+#
+# 	consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
+# 	consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
+# 	out_file_consensus = self.utils.get_temp_file("all_file_name", ".fasta")
+# 	cmd = "cat {} {} > {}".format(consensus_file_1, consensus_file_2, out_file_consensus)
+# 	os.system(cmd)
+#
+# 	try:
+# 		software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
+# 		self.fail("Must not exist software name")
+# 	except SoftwareModel.DoesNotExist:	## need to create with last version
+# 		pass
+#
+# 	self.software_pangolin.run_pangolin_update()
+#
+# 	try:
+# 		software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
+# 		software.is_updated_today()
+# 		(version_1, version_2) = software.get_dual_version()
+# 		self.assertTrue(len(version_1.strip()) > 0)
+# 		self.assertTrue(len(version_2.strip()) > 0)
+# 	except SoftwareModel.DoesNotExist:	## need to create with last version
+# 		self.fail("Must not exist software name")
+#
+# 	out_file = self.utils.get_temp_file("file_name", ".txt")
+# 	self.software_pangolin.run_pangolin(out_file_consensus, out_file)
+#
+# 	vect_data = self.utils.read_text_file(out_file)
+# 	self.assertEqual(3, len(vect_data))
+#
+# 	cmd = "cp {} {}".format(out_file_consensus, "/home/mmp/temp.fasta")
+# 	os.system(cmd)
+#
+# 	os.unlink(out_file)
+# 	os.unlink(out_file_consensus)

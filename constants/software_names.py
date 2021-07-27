@@ -13,6 +13,10 @@ class SoftwareNames(object):
 	classdocs
 	'''
 
+	## Simple tags, Yes, No
+	SOFTWARE_TAG_yes = "Yes"
+	SOFTWARE_TAG_no = "No"
+					
 	## some software is distributed by snippy
 	DIR_SOFTWARE_SNIPPY = os.path.join(settings.DIR_SOFTWARE, "snippy")
 	SOFTWARE_DEPTH_SAMTOOLS_file_flag = "DEPTH_SAMTOOLS"
@@ -143,12 +147,6 @@ class SoftwareNames(object):
 	SOFTWARE_BCFTOOLS_name = "bcftools"
 	SOFTWARE_BCFTOOLS_VERSION = "1.9"
 	SOFTWARE_BCFTOOLS_NEX_PARAMETERS = ""
-	
-	SOFTWARE_CANU = os.path.join(settings.DIR_SOFTWARE, "canu/canu-2.1.1/bin/canu")
-	SOFTWARE_CANU_name = "Canu"
-	SOFTWARE_CANU_name_extended = "Assembly ONT (Canu)"
-	SOFTWARE_CANU_VERSION = "2.1.1"
-	SOFTWARE_CANU_PARAMETERS = "-nanopore "	## genomeSize=<number>[g|m|k] file1 file2
 	
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
@@ -293,8 +291,19 @@ class SoftwareNames(object):
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion = "1"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_parameters = "Threshold:0.51"
 	
-	### has all names of simple parameters
-	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name, ]
+	### clean human reads
+	SOFTWARE_CLEAN_HUMAN_READS_name = "Clean human reads"
+	SOFTWARE_CLEAN_HUMAN_READS_extended = "Remove human reads on fastq files"
+	SOFTWARE_CLEAN_HUMAN_READS_VERSION = "1"
+	SOFTWARE_CLEAN_HUMAN_READS_PARAMETERS = SOFTWARE_TAG_no
+	SOFTWARE_CLEAN_HUMAN_READS_vect_available = [
+					SOFTWARE_TAG_yes,
+					SOFTWARE_TAG_no,
+					]
+	### Extend Parameters names in output tables, "csv" and "tst"
+	VECT_INSAFLU_PARAMETER = [INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+#				SOFTWARE_CLEAN_HUMAN_READS_name,
+	]
 	#		INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name]
 		
 	#####
@@ -313,12 +322,13 @@ class SoftwareNames(object):
 				SOFTWARE_SNIPPY_name,
 				SOFTWARE_FREEBAYES_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				SOFTWARE_CLEAN_HUMAN_READS_name,
 			],
 		TECHNOLOGY_minion : [
 				SOFTWARE_NanoFilt_name, 
 				SOFTWARE_Medaka_name,
-				SOFTWARE_CANU_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				SOFTWARE_CLEAN_HUMAN_READS_name,
 				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
 				INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
 			],
@@ -612,12 +622,6 @@ class SoftwareNames(object):
 	def get_medaka_default_model(self): return self.SOFTWARE_Medaka_default_model
 	def get_medaka_remove_tags_model(self): return self.SOFTWARE_Medaka_remove_tags_model
 	def get_medaka_version(self): return self.SOFTWARE_Medaka_VERSION
-
-	def get_canu(self): return self.SOFTWARE_CANU
-	def get_canu_name(self): return self.SOFTWARE_CANU_name
-	def get_canu_name_extended(self): return self.SOFTWARE_CANU_name_extended
-	def get_canu_version(self): return self.SOFTWARE_CANU_VERSION
-	def get_canu_parameters(self): return self.SOFTWARE_CANU_PARAMETERS
 
 	###
 	###### END minion software

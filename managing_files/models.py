@@ -267,6 +267,7 @@ class Sample(models.Model):
 	OUT_FILE_ABRICATE = "abricate.txt"
 	DRAFT_CONTIGS = "_draft_contigs.fasta"
 	SEGMENTS_CONTIGS = "_segments_to_contigs.tsv"
+	SEGMENTS_READS = "_segments_to_reads.tsv"		### if the abricate is produced from reads, instead
 	
 	### consensus file
 	OUT_CONSENSUS_FILE = "consensus.fasta"
@@ -352,13 +353,15 @@ class Sample(models.Model):
 		if (self.path_name_2 is None or self.path_name_2.name is None or len(self.path_name_2.name) == 0): return False
 		return True
 
-	def get_abricate_output(self, type_path):
+	def get_abricate_output(self, type_path, b_gzip_file = False):
 		"""
 		type_path = [MEDIA_ROOT, MEDIA_URL]
 		Return the file name of the abricate output base on fastq File input
 		path it's a FileField instance, or a string
+		Can be zipped
 		"""
-		return os.path.join(self.__get_path__(type_path, True), self.OUT_FILE_ABRICATE)
+		return os.path.join(self.__get_path__(type_path, True),\
+			self.OUT_FILE_ABRICATE + (FileExtensions.FILE_GZ if b_gzip_file else "")) 
 	
 	def get_draft_contigs_output(self, type_path):
 		"""
@@ -375,6 +378,15 @@ class Sample(models.Model):
 		path it's a FileField instance, or a string
 		"""
 		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.SEGMENTS_CONTIGS))
+	
+	def get_draft_reads_abricate_output(self, type_path):
+		"""
+		If the obreciate result came from Reads instead contigs. This appends in ONT reads. It is not produced contigs
+		type_path = [MEDIA_ROOT, MEDIA_URL]
+		Return the file name of the abricate output base on fastq File input
+		path it's a FileField instance, or a string
+		"""
+		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.SEGMENTS_READS))
 	
 	def get_trimmomatic_file(self, type_path, b_first_file):
 		"""
@@ -551,10 +563,6 @@ class Sample(models.Model):
 		alert: positive number, or zero
 		message: None, empty or the string with the error message
 		"""
-		### If ONT don't do anything
-		if (not self.is_type_fastq_gz_sequencing()):
-			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-		
 		vect_identify_virus_temp = self.identify_virus.all()
 		if (vect_identify_virus_temp.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 					"Warning: no typing data was obtained (possible reason: low number of influenza reads).")

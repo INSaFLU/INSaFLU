@@ -21,7 +21,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from fluwebvirus.views import activate, reset_password_key
 
-urlpatterns = [
+urlpatterns = []
+if settings.ADMIN_ENABLED:
+	urlpatterns += [url(r'^admin/', admin.site.urls),]
+
+urlpatterns += [
     url('^$', HomePageView.as_view(), name='home'),
     url(r'^accounts/register/$', SignUpView.as_view(), name='register'),
     url(r'^accounts/reset_password/$', ResetPasswordView.as_view(), name='reset_password'),
@@ -34,7 +38,6 @@ urlpatterns = [
     url(r'^accounts/change_password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', ChangePasswordView.as_view(), name='change_password'),
     url(r'^dashboard/$', HomePageView.as_view(), name='dashboard'),
 
-    url(r'^admin/', admin.site.urls),
     url(r'^managing_files/', include('managing_files.urls')),
     url(r'^phylogeny/', include('phylogeny.urls')),
     url(r'^settings/', include('settings.urls')),

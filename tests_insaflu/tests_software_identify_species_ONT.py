@@ -94,18 +94,18 @@ class Test(TestCase):
 		self.assertEqual(3, len(vect_identify_virus))
 		for identify_virus in vect_identify_virus:
 			if (identify_virus.rank == 0):
-				self.assertEquals("99.80", identify_virus.coverage)
-				self.assertEquals("87.98", identify_virus.identity)
+				self.assertEquals("99.19", identify_virus.coverage)
+				self.assertEquals("85.71", identify_virus.identity)
 				self.assertEquals("A", identify_virus.seq_virus.name)
 				self.assertEquals(ConstantsVirus.SEQ_VIRUS_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 1):
-				self.assertEquals("99.79", identify_virus.coverage)
-				self.assertEquals("91.05", identify_virus.identity)
+				self.assertEquals("98.80", identify_virus.coverage)
+				self.assertEquals("85.83", identify_virus.identity)
 				self.assertEquals("N5", identify_virus.seq_virus.name)
 				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 			elif (identify_virus.rank == 2):
-				self.assertEquals("99.41", identify_virus.coverage)
-				self.assertEquals("90.22", identify_virus.identity)
+				self.assertEquals("98.59", identify_virus.coverage)
+				self.assertEquals("87.10", identify_virus.identity)
 				self.assertEquals("H5", identify_virus.seq_virus.name)
 				self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, identify_virus.seq_virus.kind_type.name)
 		
@@ -116,8 +116,10 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
 		
 		file_spades_contigs = sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)
-		self.assertTrue(os.path.exists(file_spades_contigs))
+		self.assertFalse(os.path.exists(file_spades_contigs))
 		file_abricate_contigs = sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertFalse(os.path.exists(file_abricate_contigs))
+		file_abricate_contigs = sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)
 		self.assertTrue(os.path.exists(file_abricate_contigs))
 		
 		manageDatabase = ManageDatabase()
@@ -125,7 +127,7 @@ class Test(TestCase):
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Canu(2.1.1), Abricate(0.8-dev)", list_meta[0].description)
+		self.assertEquals("Success, Abricate(0.8-dev)", list_meta[0].description)
 		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
 		if (os.path.exists(file_spades_contigs)): os.unlink(file_spades_contigs)
 		if (os.path.exists(file_abricate_contigs)): os.unlink(file_abricate_contigs)

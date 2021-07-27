@@ -168,36 +168,25 @@ class Software(object):
 			raise Exception("Fail to run spades")
 		return cmd
 	
-	def run_canu(self, fastq_1, out_dir, size_reference):
+	def convert_fastq_to_fasta(self, fastq_1, fasta_out_file):
 		"""
-		Run spades
-		IF you have problems running spades.py change the spades.py file from:
-		#!/usr/bin/env python
-		to
-		#!/usr/bin/env python3
-		useGrid=false
-		maxMemory=10G
-		maxThreads=3
-		./canu -p data -d ~/tmp useGrid=False -genomeSize=15k -nanopore ~/insa/flu_minion/68P_AFL679_pass_7793e65a_CAT_ALL.fastq.gz
-		29903 para o SARS
+		Convert fastq to Fasta
 		"""
 		if (not os.path.exists(fastq_1)):
 			self.logger_production.error('Fastq 1 not found: ' + fastq_1)
 			self.logger_debug.error('Fastq 1 not found: ' + fastq_1)
 			raise Exception('Fastq 1 not found: ' + fastq_1)
 		
-		cmd = "{} -p data -d {} useGrid=False genomeSize={}k {} {}".format(self.software_names.get_canu(),
- 					out_dir, size_reference,
- 					self.software_names.get_canu_parameters(),
- 					fastq_1)
+		cmd = "gzip -cd {} | sed -n '1~4s/^@/>/p;2~4p' > {}".format(fastq_1,
+ 					fasta_out_file)
 
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run canu")
+			raise Exception("Fail to run fastq to fasta")
 		
-		### need create a file "contigs.fasta"
+		### need create a fasta file
 		return cmd
 		
 	def is_exist_database_abricate(self, database):
@@ -339,45 +328,25 @@ class Software(object):
 				return False
 		else:	### for minion
 			try:
-				size_reference = 15 ### in K
-				cmd = self.run_canu(fastq1_1, out_dir_result, size_reference)
-				result_all.add_software(SoftwareDesc(self.software_names.get_canu_name(),
-							self.software_names.get_canu_version(),
-							self.software_names.get_canu_parameters()))
-				file_result = os.path.join(out_dir_result, "data.contigs.fasta")
-				if not os.path.exists(file_result):
-					result = Result()
-					result.set_error("Canu (%s) doesn't create contigs.fasta" % (self.software_names.get_canu_version()))
-					result.add_software(SoftwareDesc(self.software_names.get_canu_name(),
-						self.software_names.get_canu_version(), self.software_names.get_canu_parameters()))
-					manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-					self.utils.remove_dir(out_dir_result)
-					return False
-				
-				result_all.add_software(SoftwareDesc(self.software_names.get_canu_name(), self.software_names.get_canu_version(),
-											 self.software_names.get_canu_parameters()))
-				## File with coverage data.contigs.layout.tigInfo
-				self.utils.link_file(file_result, os.path.join(out_dir_result, "contigs.fasta"))
-				self.utils.link_file(os.path.join(out_dir_result, "data.contigs.layout.tigInfo"),
-					os.path.join(out_dir_result, "coverage_contigs.fasta"))
+				cmd = self.convert_fastq_to_fasta(fastq1_1, os.path.join(out_dir_result, "contigs.fasta"))
 			except Exception:
 				result = Result()
-				result.set_error("Canu (%s) fail to run" % (self.software_names.get_canu_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_canu_name(),
-					self.software_names.get_canu_version(), self.software_names.get_canu_parameters()))
+				result.set_error("Fail to convert fastq to fasta.")
+				result.add_software(SoftwareDesc("sed", "", ""))
 				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				self.utils.remove_dir(out_dir_result)
 				return False
-		
-		file_out = os.path.join(out_dir_result, "contigs.fasta")
-		if (not os.path.exists(file_out) or os.path.getsize(file_out) < 50):
+			
+		file_out_contigs = os.path.join(out_dir_result, "contigs.fasta")
+		if (not os.path.exists(file_out_contigs) or os.path.getsize(file_out_contigs) < 50):
 			## save error in MetaKeySample
 			result = Result()
 			if (sample.is_type_fastq_gz_sequencing()):
 				result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
+				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			else:
-				result.set_error("Canu (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_canu_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
+				result.set_error("Low number of reads in fasta file. Came from fastq.gz")
+				result.add_software(SoftwareDesc("sed", "", ""))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(out_dir_result)
 			return False
@@ -400,7 +369,7 @@ class Software(object):
 			except Exception:
 				result = Result()
 				result.set_error("Abricate (%s) fail to run --setupdb" % (self.software_names.get_abricate_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
+				result.add_software(SoftwareDesc(self.softwafile_outre_names.get_abricate_name(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 				self.utils.remove_dir(out_dir_result)
 				return False
@@ -408,7 +377,7 @@ class Software(object):
 		## run abricate
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
-			cmd = self.run_abricate(uploadFile.abricate_name, file_out, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
+			cmd = self.run_abricate(uploadFile.abricate_name, file_out_contigs, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters() + " for type/subtype identification"))
 		except Exception:
@@ -423,37 +392,20 @@ class Software(object):
 		if (not os.path.exists(out_file_abricate)):
 			## save error in MetaKeySample
 			result = Result()
-			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.set_error("Abricate (%s)identify_contigs fail to run" % (self.software_names.get_abricate_version()))
 			result.add_software(SoftwareDesc(self.software_names.get_abricate(), self.software_names.get_abricate_version(), self.software_names.get_abricate_parameters()))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(out_dir_result)
 			return False
 
 		parseOutFiles = ParseOutFiles()
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate, os.path.basename(sample.get_abricate_output(TypePath.MEDIA_ROOT)),\
+		(dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate,
+											os.path.basename(sample.get_abricate_output(TypePath.MEDIA_ROOT)),\
 											SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
-		## copy the abricate output 
-		self.utils.copy_file(clean_abricate_file, sample.get_abricate_output(TypePath.MEDIA_ROOT))
-
-		try:
-			contigs_2_sequences = Contigs2Sequences(b_run_tests)
-			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out,\
-					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)))
-			## copy the contigs from spades
-			if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
-			if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
-			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
-						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
-		except Exception as e:
-			result = Result()
-			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
-			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
-							self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
 		
+		### set the identification in database
 		uploadFiles = UploadFiles()
-		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
+		vect_data = uploadFiles.uploadIdentifyVirus(dict_data_out, uploadFile.abricate_name)
 		if (len(vect_data) == 0):
 			## save error in MetaKeySample
 			result = Result()
@@ -464,6 +416,33 @@ class Software(object):
 			for identify_virus in vect_data:
 				sample.identify_virus.add(identify_virus)
 			sample.save()
+			
+		## copy the abricate output
+		self.utils.copy_file(clean_abricate_file, sample.get_abricate_output(TypePath.MEDIA_ROOT))
+
+		## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
+		try:
+			contigs_2_sequences = Contigs2Sequences(b_run_tests)
+			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
+					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
+					os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
+					True if sample.is_type_fastq_gz_sequencing() else False)
+			## copy the contigs from spades
+			if (sample.is_type_fastq_gz_sequencing()):	## illumina
+				if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
+			else:
+				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))
+			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
+			if not out_file_clean is None: self.utils.remove_file(out_file_clean)
+		except Exception as e:
+			result = Result()
+			result.set_error("Abricate (%s) fail to run" % (self.software_names.get_abricate_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
+							self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			return False
 		
 		## save everything OK
 		if (sample.is_type_fastq_gz_sequencing()):
@@ -472,13 +451,11 @@ class Software(object):
 				self.software_names.get_abricate_version()))
 		else:
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
-				MetaKeyAndValue.META_VALUE_Success, "Success, Canu(%s), Abricate(%s)" % (self.software_names.get_canu_version(),
-				self.software_names.get_abricate_version()))
+				MetaKeyAndValue.META_VALUE_Success, "Success, Abricate(%s)" % (self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		self.utils.remove_file(out_file_abricate)
 		self.utils.remove_dir(out_dir_result)
-		self.utils.remove_file(out_file_clean)
 		self.utils.remove_file(clean_abricate_file)
 		return True
 
@@ -1945,48 +1922,59 @@ class Contigs2Sequences(object):
 		return self.utils.clean_extension(os.path.basename(database_file_name))
 
 
-	def identify_contigs(self, file_name, file_name_out):
+	def identify_contigs(self, file_name, file_name_out, b_create_fasta = True):
 		"""
+		params database_name: if not a database_name is going to test the last one 
 		identify contigs
 		params in: fasta file from spades
 		out: fasta file with low coverage removed and Elements ID in description
+		
+		Change line 110 in abricate from (because of ONT approach, identify in reads instead of contigs):
+		. " blastn -db \Q$db_path\E -outfmt '$format'"
+		to:
+		. " blastn -db \Q$db_path\E -outfmt '$format' -num_threads 3"
 		"""
 		software = Software()
 		
-		### get database file name
+		### get database file name, if it is not passed
 		(version, database_file_name) = self.get_most_recent_database()
-		dabasename = self.get_database_name()
+		database_name = self.get_database_name()
 		
 		### first create database
-		if (not software.is_exist_database_abricate(dabasename)):
-			software.create_database_abricate(dabasename, database_file_name)
+		if (not software.is_exist_database_abricate(database_name)):
+			software.create_database_abricate(database_name, database_file_name)
 		
 		out_file = self.utils.get_temp_file('abricate_contig2seq', FileExtensions.FILE_TXT)
 		### run abricate
-		software.run_abricate(dabasename, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
+		software.run_abricate(database_name, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
 
 		parseOutFiles = ParseOutFiles()
-		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out, SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		(dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out,
+									SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
-		vect_out_fasta = []
-		vect_out_fasta_without_id = []
-		out_file_fasta = self.utils.get_temp_file('spades_out_identified', FileExtensions.FILE_FASTA)
-		with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
-			for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
-				vect_possible_id = []
-				for dict_data in vect_data:
-					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
-				if (len(vect_possible_id) > 0):
-					vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
-												description=";".join(vect_possible_id)))
-				## NEED to check coverage for CANU
-				elif (record.id.find('_') != -1 and float(record.id.split('_')[-1]) > \
-					SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
-					vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
-
-			if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
-				vect_out_fasta.extend(vect_out_fasta_without_id)
-				SeqIO.write(vect_out_fasta, handle_out, "fasta")
+		out_file_fasta = None
+		if b_create_fasta:
+			vect_out_fasta = []
+			vect_out_fasta_without_id = []
+			out_file_fasta = self.utils.get_temp_file('abricate_out_identified', FileExtensions.FILE_FASTA)
+			with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
+				for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
+					vect_possible_id = []
+	#				for dict_data in vect_data:
+	#					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
+					for dict_data in dict_data_out.get(record.name, []):
+						vect_possible_id.append(dict_data['Gene'])
+					if (len(vect_possible_id) > 0):
+						vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
+													description=";".join(vect_possible_id)))
+					## NEED to check coverage for CANU
+					elif (record.id.find('_') != -1 and float(record.id.split('_')[-1]) > \
+						SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE):
+						vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
+	
+				if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
+					vect_out_fasta.extend(vect_out_fasta_without_id)
+					SeqIO.write(vect_out_fasta, handle_out, "fasta")
 		
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		return (out_file_fasta, clean_abricate_file)

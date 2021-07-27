@@ -95,7 +95,7 @@ class Utils(object):
 			try:
 				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file
-			except FileExistsError:
+			except OSError:
 				pass
 			
 	def get_temp_file_from_dir(self, dir_out, file_name, sz_type):
@@ -110,7 +110,7 @@ class Utils(object):
 			try:
 				os.close(os.open(return_file, os.O_CREAT | os.O_EXCL))
 				return return_file
-			except FileExistsError:
+			except OSError:
 				pass
 
 	def touch_file(self, file_name):

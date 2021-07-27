@@ -19,6 +19,7 @@ from utils.collect_extra_data import CollectExtraData
 from utils.utils import Utils
 from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
+from django.contrib.sites.shortcuts import get_current_site
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -1057,15 +1058,22 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['vect_identify_virus'] = vect_identify_virus
 
 			## files with contigs
-			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and 
-				os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
-				context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
-										'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
-										os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
-				context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
-										'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
-										os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
-				context['has_draft_contigs'] = True
+			if (sample.is_type_fastq_gz_sequencing()):
+				if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and\
+					os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
+					context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
+											'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
+											os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
+					context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
+											'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+											os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+					context['has_draft_contigs'] = True
+			elif (os.path.exists(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))):
+				context['file_draft_reads_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_reads_abricate_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['has_draft_reads'] = True
+				
 			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
 			context['candidate_file_name_1'] = sample.candidate_file_name_1
@@ -1524,14 +1532,25 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
 		## first condition is to the ones without pangolin lineage
 		### need at least one sequence fasta to run pangolin
+		is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 		if (project.number_passed_sequences != 0 and \
-			(not os.path.exists(file_pangolin_result) and software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))) or \
+			(not os.path.exists(file_pangolin_result) and is_sars_cov_2) or \
 			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
 			context['update_pangolin'] = True
 			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
 			
 		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
 			context['pangolin_lineage'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_Pangolin_lineage)
+		
+		#### nextclade link
+		if (is_sars_cov_2 and \
+				os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
+				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+			context['nextclade_link'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK,
+				settings.WEB_SITE_HTTP_NAME,
+				get_current_site(self.request),
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
 			
 		return context
 
@@ -1813,6 +1832,17 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			### list of software to used
 			context['software_used'] = software_used	
 
+			#### nextclade link
+			software_pangolin = SoftwarePangolin()
+			if (software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)) and \
+					os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
+					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+				context['nextclade_link'] = "{}{}://{}{}".format(
+					Constants.NEXTCLADE_LINK,
+					settings.WEB_SITE_HTTP_NAME,
+					get_current_site(self.request),
+					project_sample.get_consensus_file(TypePath.MEDIA_URL))
+			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context

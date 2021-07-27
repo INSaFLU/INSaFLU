@@ -278,8 +278,8 @@ class Test(TestCase):
 		self.assertEqual("3,475,144.0", vect_soft[1].get_vect_key_values()[-1].value)
 		
 		sample = Sample.objects.get(name=sample_name)
-	#	self.assertEqual("A-H5N5", sample.type_subtype)
-		self.assertEqual("H5N5", sample.type_subtype)
+		self.assertEqual("A-H5N5", sample.type_subtype)
+	#	self.assertEqual("H5N5", sample.type_subtype)
 		self.assertEqual("No", sample.mixed_infections_tag.name)
 		self.assertEqual(0, sample.number_alerts)
 		

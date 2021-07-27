@@ -11,8 +11,10 @@ from utils.utils import Utils
 from django.conf import settings
 from .models import UploadFile, Tags, SeqVirus, IdentifyVirus
 from django.utils.translation import ugettext_lazy as _
-import os, re, logging
+from collections import OrderedDict
 from Bio import SeqIO
+import os, re, logging
+
 
 class UploadFiles(object):
 	'''
@@ -129,12 +131,21 @@ class UploadFiles(object):
 		
 		
 	@transaction.atomic
-	def uploadIdentifyVirus(self, vect_data, database_name):
-		
+	def uploadIdentifyVirus(self, dict_data, database_name):
+		"""
+		:in dict_data -> dictonary { 'Seq.id' : [dt_data, dt_data2, ...], 'Seq.id1' : [dt_data5, dt_data6, ...]
+		OrderedDict(sorted(dict_data_out.items(), reverse=True,
+#			key=lambda k: (k[1][0][self.COVERAGE],
+#			k[1][0][self.IDENTITY]) )), clean_abricate_file
+		"""
 		### first look for the type
 		### this is necessary because of the order
-		vect_data_out = self.__get_type_data__(vect_data)
-		vect_data_type_and_lineage = self.__get_sub_type_and_lineage__(vect_data)
+		dict_data_out = OrderedDict(sorted(dict_data.items(), reverse=True,
+								key=lambda k: (k[1][0][ParseOutFiles.COVERAGE],
+									k[1][0][ParseOutFiles.IDENTITY]) ))
+
+		vect_data_out = self.__get_type_data__(dict_data_out)
+		vect_data_type_and_lineage = self.__get_sub_type_and_lineage__(dict_data_out)
 		
 		vect_return = []
 		rank = 0
@@ -160,34 +171,36 @@ class UploadFiles(object):
 		return vect_return
 
 
-	def __get_type_data__(self, vect_data):
+	def __get_type_data__(self, dict_data_ordered):
 		"""
 		Get the best type
 		"""
 		vect_data_out = []
-		vect_out_type = []
-		for dt_data in vect_data:
-			if (ParseOutFiles.TYPE in dt_data):
-				split_type = dt_data[ParseOutFiles.TYPE].split("_")
-				if (len(split_type) == 2 and split_type[1].lower() in ConstantsVirus.VECT_SEQ_VIRUS_TYPE and\
-						not (dt_data[ParseOutFiles.GENE] in vect_out_type)):
-					vect_out_type.append(dt_data[ParseOutFiles.GENE])
-					vect_data_out.append(dt_data)
+		dict_out_type = {}
+		for key in dict_data_ordered:
+			for dict_info in dict_data_ordered[key]:
+				if (ParseOutFiles.TYPE in dict_info):
+					split_type = dict_info[ParseOutFiles.TYPE].split("_")
+					if (len(split_type) == 2 and not (dict_info[ParseOutFiles.GENE] in dict_out_type) and \
+						split_type[1].lower() in ConstantsVirus.VECT_SEQ_VIRUS_TYPE):
+						dict_out_type[dict_info[ParseOutFiles.GENE]] = 1
+						vect_data_out.append(dict_info)
 		return vect_data_out
 	
-	def __get_sub_type_and_lineage__(self, vect_data):
+	def __get_sub_type_and_lineage__(self, dict_data_ordered):
 		"""
 		Get the all subtype and lineage
 		"""
 		vect_data_out = []
-		vect_out_gene = []
-		for dt_data in vect_data:
-			if (ParseOutFiles.TYPE in dt_data):
-				type_result = self.__get_type__(dt_data[ParseOutFiles.TYPE])
-				if (type_result.lower() in ConstantsVirus.VECT_SEQ_VIRUS_SUB_TYPE):
-					if (dt_data[ParseOutFiles.GENE] not in vect_out_gene):
-						vect_data_out.append(dt_data)
-						vect_out_gene.append(dt_data[ParseOutFiles.GENE])
+		dict_out_gene = {}
+		for key in dict_data_ordered:
+			for dict_info in dict_data_ordered[key]:
+				if (ParseOutFiles.TYPE in dict_info):
+					type_result = self.__get_type__(dict_info[ParseOutFiles.TYPE])
+					if (type_result.lower() in ConstantsVirus.VECT_SEQ_VIRUS_SUB_TYPE and \
+						not dict_info[ParseOutFiles.GENE] in dict_out_gene):
+							vect_data_out.append(dict_info)
+							dict_out_gene[dict_info[ParseOutFiles.GENE]] = 1
 		return vect_data_out
 	
 	

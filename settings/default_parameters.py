@@ -28,6 +28,9 @@ class DefaultParameters(object):
 	### used in mask consensus
 	MASK_CONSENSUS_threshold = "Threshold"
 
+	### clean human reads
+	MASK_CLEAN_HUMAN_READS = software_names.SOFTWARE_CLEAN_HUMAN_READS_name
+	
 	### MINIMUN of MAX of NanoFilt
 	NANOFILT_MINIMUN_MAX = 100
 	
@@ -384,6 +387,33 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
+	def get_clean_human_reads_default(self, user, type_of_use):
+		"""
+		Threshold of mask not consensus coverage
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name
+		software.name_extended = SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_extended
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+		software.version = "1.0"
+		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = DefaultParameters.MASK_CLEAN_HUMAN_READS
+		parameter.parameter = SoftwareNames.SOFTWARE_TAG_no
+		parameter.type_data = Parameter.PARAMETER_char_list
+		parameter.software = software
+		parameter.union_char = ": "
+		parameter.can_change = True
+		parameter.sequence_out = 1
+		parameter.description = "Clean human reads from fastq files."
+		vect_parameters.append(parameter)
+		return vect_parameters
+	
 	def get_limit_coverage_ONT_threshold_default(self, user, type_of_use, project = None, project_sample = None):
 		"""
 		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)

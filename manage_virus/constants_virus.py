@@ -17,7 +17,7 @@ class ConstantsVirus(object):
 	####
 	####	first level
 	####	influenza_type~~~B~~~AF100378,
-	####	coronavirus_human~~~2019_nCoV~~~S_gene_MN908947
+	####	coronavirus_genus~~~BetaCoV~~~M_gene_MN908947
 	####
 	SEQ_VIRUS_TYPE = "Type"				### A
 	SEQ_VIRUS_GENUS = "Genus"
@@ -28,21 +28,25 @@ class ConstantsVirus(object):
 	####
 	####	SUBTYPE/LINEAGE/HUMAN/etc... identification
 	####
-	####	first level
+	####	second level
 	####	influenza_subtype~~~N11~~~CY125947
 	####	influenza_subtype~~~H2~~~L11142
 	####	influenza_lineage~~~Victoria~~~M58428
-	####	coronavirus_genus~~~BetaCoV~~~M_gene_MN908947
+	####	coronavirus_human~~~2019_nCoV~~~S_gene_MN908947
+	####	coronavirus_bat~~~bat_RaTG13~~~S_gene_MN996532
 	####
 	SEQ_VIRUS_SUB_TYPE = "Subtype"
 	SEQ_VIRUS_LINEAGE = "Lineage"		### B
 	SEQ_VIRUS_HUMAN = "Human"
-	VECT_SEQ_VIRUS_SUB_TYPE = [SEQ_VIRUS_SUB_TYPE.lower(), SEQ_VIRUS_LINEAGE.lower(), SEQ_VIRUS_HUMAN.lower()]
+	SEQ_VIRUS_BAT = "Bat"
+	VECT_SEQ_VIRUS_SUB_TYPE = [SEQ_VIRUS_SUB_TYPE.lower(), SEQ_VIRUS_LINEAGE.lower(),
+					SEQ_VIRUS_HUMAN.lower(), SEQ_VIRUS_BAT.lower()]
 	
 	### all possible tags available
 	### this tags came from the file db/type_identification/db_influenza_typing_v2.fasta
 	VECT_ALL_POSSIBLE_TAGS_lower = VECT_SEQ_VIRUS_TYPE + VECT_SEQ_VIRUS_SUB_TYPE
-	VECT_ALL_POSSIBLE_TAGS = [SEQ_VIRUS_TYPE, SEQ_VIRUS_GENUS, SEQ_VIRUS_SUB_TYPE, SEQ_VIRUS_LINEAGE, SEQ_VIRUS_HUMAN]
+	VECT_ALL_POSSIBLE_TAGS = [SEQ_VIRUS_TYPE, SEQ_VIRUS_GENUS, SEQ_VIRUS_SUB_TYPE, SEQ_VIRUS_LINEAGE,
+					SEQ_VIRUS_HUMAN, SEQ_VIRUS_BAT]
 	
 	TYPE_A = 'A'
 	TYPE_B = 'B'

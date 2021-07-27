@@ -39,7 +39,9 @@ class Command(BaseCommand):
 			sample = Sample.objects.get(pk=sample_id)
 			if (user_id == None): user = sample.owner
 			else: user = User.objects.get(pk=user_id)
-			b_return = software_minion.run_clean_minion(sample, user)
+			## identify species
+			b_make_identify_species = True
+			b_return = software_minion.run_clean_minion(sample, user, b_make_identify_species)
 			self.stdout.write("Resulting: " + str(b_return))
 			self.stdout.write("End")
 		except Sample.DoesNotExist as e:

@@ -83,6 +83,9 @@ class SoftwareForm(forms.ModelForm):
 				elif (parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip and \
 					parameter.software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
 					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available]
+				elif (parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS and \
+					parameter.software.name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name):
+					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available]
 				else:
 					list_data = [[parameter.parameter, parameter.parameter]]
 				dt_fields[parameter.get_unique_id()] = forms.ChoiceField(choices = list_data)

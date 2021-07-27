@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.4.4"
+APP_VERSION_NUMBER = "1.4.5"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -49,6 +49,10 @@ CSRF_COOKIE_DOMAIN = '.min-saude.pt'
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
+
+################### If you 
+### ADMIN  disable/disable django
+ADMIN_ENABLED = config('ADMIN_ENABLED', default=True, cast=bool)
 
 ### threads to use in several software
 THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## don't increase this because of the heap memory
@@ -92,6 +96,11 @@ SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 SHOW_IMAGES_MAIN_PAGE = config('SHOW_IMAGES_MAIN_PAGE', default=False, cast=bool)
 INSTITUTION_NAME = config('INSTITUTION_NAME', default="")
 INSTITUTION_WEB_SITE = config('INSTITUTION_WEB_SITE', default="")
+
+## true if show NextClade link for covid projects. Need to have https domain name
+## https://clades.nextstrain.org/?input-fasta=https://insaflu.insa.pt/media/projects/result/user_38/project_868/main_result/AllConsensus.fasta
+SHOW_NEXTCLADE_LINK = config('SHOW_NEXTCLADE_LINK', default=False, cast=bool)
+WEB_SITE_HTTP_NAME = config('WEB_SITE_HTTP_NAME', default="http")
 
 ## run process in SGE, otherwise run in qcluster
 RUN_SGE  = config('RUN_SGE', default=False, cast=bool)
@@ -250,8 +259,6 @@ DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look whic
 USE_L10N = False
 
 USE_TZ = False	## enable time zone
-
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

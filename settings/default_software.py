@@ -39,6 +39,12 @@ class DefaultSoftware(object):
 				self.default_parameters.get_snippy_default(user, Software.TYPE_OF_USE_global), user)
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				self.default_parameters.get_mask_consensus_threshold_default(user, Software.TYPE_OF_USE_global), user)
+		## both for minion and Illumina
+# 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+# 				self.default_parameters.get_clean_human_reads_default(user, Software.TYPE_OF_USE_global), user)
+# 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+# 				self.default_parameters.get_clean_human_reads_default(user, Software.TYPE_OF_USE_global), user,
+# 				SoftwareNames.TECHNOLOGY_minion)
 		
 		## ONT software
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
@@ -109,6 +115,10 @@ class DefaultSoftware(object):
 		result = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, user,
 					Software.TYPE_OF_USE_global, None, None, None, technology_name)
 		return "" if result is None else result
+	def get_clean_human_reads_parameters(self, user, technology_name):
+		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name, user,
+					Software.TYPE_OF_USE_global, None, None, None, technology_name)
+		return "" if result is None else result
 	def get_limit_coverage_ONT_parameters(self, user):
 		result = self.default_parameters.get_parameters(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, user,
 					Software.TYPE_OF_USE_global, None, None, None, SoftwareNames.TECHNOLOGY_minion)
@@ -135,6 +145,8 @@ class DefaultSoftware(object):
 			vect_parameters = self.default_parameters.get_nanofilt_default(user, Software.TYPE_OF_USE_global)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			vect_parameters = self.default_parameters.get_mask_consensus_threshold_default(user, Software.TYPE_OF_USE_global)
+		elif (software.name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name):
+			vect_parameters = self.default_parameters.get_clean_human_reads_default(user, Software.TYPE_OF_USE_global)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
 			vect_parameters = self.default_parameters.get_limit_coverage_ONT_threshold_default(user, Software.TYPE_OF_USE_global)
 		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
@@ -184,6 +196,11 @@ class DefaultSoftware(object):
 								self.default_parameters.get_mask_consensus_threshold_default(user, Software.TYPE_OF_USE_global),
 								user, technology_name)
 			return self.get_mask_consensus_threshold_parameters(user, technology_name)
+		if (software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name):
+			self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+								self.default_parameters.get_clean_human_reads_default(user, Software.TYPE_OF_USE_global),
+								user, technology_name)
+			return self.get_clean_human_reads_parameters(user, technology_name)
 		if (software_name == SoftwareNames.SOFTWARE_NanoFilt_name):
 			self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,
 								self.default_parameters.get_nanofilt_default(user, Software.TYPE_OF_USE_global), user,

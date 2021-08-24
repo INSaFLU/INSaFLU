@@ -14,7 +14,6 @@ from django.contrib.gis.geos import Point
 from constants.constants import FileExtensions
 import chardet, csv, os, re, time
 from django.conf import settings
-from utils.software import Software
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from datetime import datetime

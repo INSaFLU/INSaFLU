@@ -27,3 +27,4 @@ humanfriendly==8.1
 python-dateutil==2.7.3
 nanostat==1.4.0
 nanofilt==2.6.0
+chardet==3.0.4

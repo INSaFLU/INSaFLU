@@ -4,6 +4,7 @@ Created on 19/04/2021
 @author: mmp
 '''
 import os, logging
+from django.conf import settings
 from managing_files.models import Software as SoftwareModel
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 from constants.software_names import SoftwareNames
@@ -72,28 +73,29 @@ class SoftwarePangolin(object):
 		(pangolin_version, pangolin_learn_version) = self.software_names.get_pangolin_version(),\
 				self.software_names.get_pangolin_learn_version()
 		
-		temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-		cmd = "{} {} --update; {} -v > {}; {} -pv >> {}".format(self.software_names.get_pangolin_env(),
-			self.software_names.get_pangolin(), self.software_names.get_pangolin(),
-			temp_file, self.software_names.get_pangolin(), temp_file)
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run pangolin --update")
-		
-		vect_lines = self.utils.read_text_file(temp_file)
-		#$ pangolin --update
-		#pangolin updated to v2.3.8
-		#pangoLEARN updated to 2021-04-01
-		#$ pangolin --update
-		#pangolin already latest release (v2.3.8)
-		#pangoLEARN already latest release (2021-04-01)
-		for line in vect_lines:
-			lst_data = line.strip().split()
-			if (lst_data[0] == "pangolin"): pangolin_version = lst_data[-1].replace('(', '').replace(')', '')
-			if (lst_data[0] == "pangoLEARN"): pangolin_learn_version = lst_data[-1].replace('(', '').replace(')', '')
-		self.utils.remove_file(temp_file)
+		if (not settings.DEBUG):
+			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
+			cmd = "{} {} --update; {} -v > {}; {} -pv >> {}".format(self.software_names.get_pangolin_env(),
+				self.software_names.get_pangolin(), self.software_names.get_pangolin(),
+				temp_file, self.software_names.get_pangolin(), temp_file)
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to run pangolin --update")
+			
+			vect_lines = self.utils.read_text_file(temp_file)
+			#$ pangolin --update
+			#pangolin updated to v2.3.8
+			#pangoLEARN updated to 2021-04-01
+			#$ pangolin --update
+			#pangolin already latest release (v2.3.8)
+			#pangoLEARN already latest release (2021-04-01)
+			for line in vect_lines:
+				lst_data = line.strip().split()
+				if (lst_data[0] == "pangolin"): pangolin_version = lst_data[-1].replace('(', '').replace(')', '')
+				if (lst_data[0] == "pangoLEARN"): pangolin_learn_version = lst_data[-1].replace('(', '').replace(')', '')
+			self.utils.remove_file(temp_file)
 		return (pangolin_version, pangolin_learn_version)
 
 

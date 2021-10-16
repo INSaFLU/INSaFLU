@@ -1,6 +1,6 @@
 # Create your views here.
 
-import hashlib, ntpath, os, logging, sys, humanfriendly
+import ntpath, os, logging, sys, humanfriendly
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.urls import reverse_lazy
@@ -925,39 +925,66 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			context['virus_identify'] = sample.get_type_sub_type()
 			
+			### fastq original
 			file_name = sample.get_fastq(TypePath.MEDIA_ROOT, True)
 			if os.path.exists(file_name):
 				context['href_fastq_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, True) + '" download="' + sample.file_name_1 + '">' + sample.file_name_1 + '</a>')
-				if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
+			else: context['href_fastq_1'] = "Not available"
+			
+			### quality first step
+			if (sample.is_type_fastq_gz_sequencing()): file_name = sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)		## illumina default reads
+			else: file_name = sample.get_rabbitQC_output(TypePath.MEDIA_ROOT)
+			if os.path.exists(file_name):
+				if (sample.is_type_fastq_gz_sequencing()):
 					context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, True) + '">' + sample.file_name_1 + '.html</a>')
 				else:
 					context['href_fastq_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_output(TypePath.MEDIA_URL) + '">' + sample.file_name_1 + '.html</a>')
-			else: 
-				context['href_fastq_1'] = "Not available"
+			else:
 				context['href_fastq_quality_1'] = "Not available"
 			
 			### files to show
 			if (sample.is_type_fastq_gz_sequencing()):		## illumina default reads
-				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
-					+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
-				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
-					os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '.html</a>')
+				### trimmomatic 1
+				file_name = sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)
+				if os.path.exists(file_name):
+					context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, True) + '" download="'\
+						+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, True)) + '</a>')
+				else: context['href_trimmonatic_1'] = "Not available"
+				
+				### trimmomatic quality 1
+				file_name = sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)
+				if os.path.exists(file_name):
+					context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True) + '">' +\
+						os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, True)) + '.html</a>')
+				else: context['href_trimmonatic_quality_1'] = "Not available"
 				
 				### testing second file
 				trimmomatic_file_name = sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)
 				if (not trimmomatic_file_name is None):
-					context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
-						+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
-					context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
-												os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '.html</a>')
+					### trimmomatic fastq second
+					file_name = sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)
+					if os.path.exists(file_name):
+						context['href_trimmonatic_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_trimmomatic_file(TypePath.MEDIA_URL, False) + '" download="'\
+								+ os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '">' + os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_URL, False)) + '</a>')
+					else: context['href_trimmonatic_2'] = "Not available"
 					
+					### trimmomatic fastqc second
+					file_name = sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)
+					if os.path.exists(file_name):
+						context['href_trimmonatic_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False) + '">' +\
+												os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_URL, False)) + '.html</a>')
+					else: context['href_trimmonatic_quality_2'] = "Not available"
+					
+					### fastq second
 					file_name = sample.get_fastq(TypePath.MEDIA_ROOT, False)
 					if os.path.exists(file_name):
 						context['href_fastq_2'] = mark_safe('<a rel="nofollow" href="' + sample.get_fastq(TypePath.MEDIA_URL, False) + '" download="' + sample.file_name_2 + '">' + sample.file_name_2 + '</a>')
+					else: context['href_fastq_2'] = "Not available"
+					### fastqc second
+					file_name = sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)
+					if os.path.exists(file_name):
 						context['href_fastq_quality_2'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_fastqc_output(TypePath.MEDIA_URL, False) + '"">' + sample.file_name_2 + '.html</a>')
-					else: 
-						context['href_fastq_2'] = "Not available"
-						context['href_fastq_quality_2'] = "Not available"
+					else: context['href_fastq_quality_2'] = "Not available"
 				else:	## there's no second file
 					context['href_fastq_2'] = "Not available"
 					context['href_fastq_quality_2'] = "Not available"
@@ -965,10 +992,16 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					context['href_trimmonatic_quality_2'] = "Not available"
 				
 			else:	### other like Minion
-				context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_nanofilt_file(TypePath.MEDIA_URL) + '" download="'\
-					+ os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '">' + os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '</a>')
-				context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL) + '">' +\
-					os.path.basename(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL)) + '</a>')
+				file_name = sample.get_nanofilt_file(TypePath.MEDIA_ROOT)
+				if os.path.exists(file_name):
+					context['href_trimmonatic_1'] = mark_safe('<a rel="nofollow" href="' + sample.get_nanofilt_file(TypePath.MEDIA_URL) + '" download="'\
+							+ os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '">' + os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_URL)) + '</a>')
+				else: context['href_trimmonatic_1'] = "Not available"
+				file_name = sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT)
+				if os.path.exists(file_name):
+					context['href_trimmonatic_quality_1'] = mark_safe('<a rel="nofollow" target="_blank" href="' + sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL) + '">' +\
+						os.path.basename(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_URL)) + '</a>')
+				else: context['href_trimmonatic_quality_1'] = "Not available"
 			
 				#### data from nanoStat
 				list_meta = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
@@ -1018,7 +1051,6 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					decodeResult = DecodeObjects()
 					result = decodeResult.decode_result(meta_sample.description)
 					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-					if len(context['spades_software']) == 0: context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
 					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
 			else:	### Software Minion
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success)
@@ -1033,8 +1065,13 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					result = decodeResult.decode_result(meta_sample.description)
 					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoStat_name)
 					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
-				
-					
+
+				### abricate type/subtype				
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample != None):
+					lst_data = meta_sample.description.split(',')
+					context['abricate_software'] = lst_data[1].strip()
+						
 			##### extra data sample, columns added by the user
 			## [[header1, value1], [header2, value2], [header3, value3], ...]
 			### if it's to big expand button is better
@@ -1289,7 +1326,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		count_active_projects = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False).count()
 		samples_out = ProjectSample.objects.filter(Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)).values('sample__pk')
 		query_set = Sample.objects.filter(owner__id=self.request.user.id, is_obsolete=False, is_deleted=False,\
-					is_ready_for_projects=True).exclude(pk__in=samples_out)
+			is_deleted_processed_fastq=False, is_ready_for_projects=True).exclude(pk__in=samples_out)
 					
 		tag_search = 'search_add_project_sample'
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
@@ -1414,20 +1451,21 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					project_sample.save()
 					project_sample_add += 1
 					
-					### create a task to perform the analysis of snippy and freebayes
-					try:
-						if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-						if (sample.is_type_fastq_gz_sequencing()):
-							taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
-						else:
-							taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, job_name_wait)
-							
-						### set project sample queue ID
-						manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
-										metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
-										MetaKeyAndValue.META_VALUE_Queue, taskID)
-					except:
-						pass
+				### create a task to perform the analysis of snippy and freebayes
+				### Important, it is necessary to run again because can have some changes in the parameters.
+				try:
+					if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+					if (sample.is_type_fastq_gz_sequencing()):
+						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
+					else:
+						taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, job_name_wait)
+						
+					### set project sample queue ID
+					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
+									metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+									MetaKeyAndValue.META_VALUE_Queue, taskID)
+				except:
+					pass
 					
 			### necessary to calculate the global results again 
 			if (project_sample_add > 0):
@@ -1543,8 +1581,10 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			context['pangolin_lineage'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_Pangolin_lineage)
 		
 		#### nextclade link
-		if (is_sars_cov_2 and \
-				os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
+#		if (is_sars_cov_2 and \
+#				os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
+#				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+		if (os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
 				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
 			context['nextclade_link'] = "{}{}://{}{}".format(
 				Constants.NEXTCLADE_LINK,
@@ -1833,9 +1873,11 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['software_used'] = software_used	
 
 			#### nextclade link
-			software_pangolin = SoftwarePangolin()
-			if (software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)) and \
-					os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
+#			software_pangolin = SoftwarePangolin()
+#			if (software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)) and \
+#					os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
+#					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+			if (os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
 					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
 				context['nextclade_link'] = "{}{}://{}{}".format(
 					Constants.NEXTCLADE_LINK,

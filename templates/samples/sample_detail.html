@@ -83,7 +83,7 @@
 					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
 				</ul>
 	
-				{% if href_trimmonatic_2 %}
+				{% if href_trimmonatic_2 %}	<!-- has always info for illumina, in single end has "Not available" -->
 					<div class="tab-content">
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
 							<p class="title-box">Original fastq files and quality result</p>
@@ -121,72 +121,6 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
-						<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
-							<p class="title-box">Type and subtype/lineage</p>
-							
-							{% if has_type_subtype %}
-								{% for identify_virus in vect_identify_virus %}
-									<div class="row">
-										<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
-						  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
-						  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
-						  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
-						  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
-						  			</div>
-						  			<hr>
-								{% endfor %}
-								{% if has_draft_contigs %}
-									<div class="row draft_assembly">
-										<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
-										{% if file_draft_contigs_abricate %} 
-											<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
-										{% elif file_draft_reads_abricate %}
-											<div class="col-lg-6"><strong>Seg./Ref. to reads:</strong> {{ file_draft_reads_abricate }}</div>
-										{% endif %}
-									</div>
-									<p></p>
-									<div class="container h-100">
-	  									<div class="row h-100 justify-content-center">
-											<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
-										</div>
-									</div>
-									<hr>
-								{% endif %}
-								
-							{% else %}
-								<p class="software">No type/subtype has been assigned.</p>
-								
-								{% if has_draft_contigs %}
-									<hr>
-									<div class="row draft_assembly">
-										<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
-										<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
-									</div>
-									<p></p>
-									<div class="container h-100">
-	  									<div class="row h-100 justify-content-center">
-											<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
-										</div>
-									</div>
-									<hr>
-								{% endif %}
-							{% endif %}
-							<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
-						</div>
-						<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
-				    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>
-				    		{% if alerts  %}
-					    		{% for alert in alerts  %}
-					    			<div class="row">
-										<div class="col-lg-12 .alert-limit-text">{{ alert }}</div>
-						  			</div>
-						  			<hr>
-						  		{% endfor %}
-						  	{% else %}
-						  		<p class="software">There's no alerts.</p>
-							{% endif %}
-				  		</div>
-					</div>
 				{% else %}	<!-- data for Minion -->
 					<div class="tab-content">
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
@@ -234,26 +168,45 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
-						<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
-							<p class="title-box">Type and subtype/lineage</p>
+				 {% endif %}	<!--  Last </div> stops after this endif -->
+				 
+					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
+						<p class="title-box">Type and subtype/lineage /p>
+						
+						{% if has_type_subtype %}
+							{% for identify_virus in vect_identify_virus %}
+								<div class="row">
+									<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
+					  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
+					  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
+					  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
+					  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
+					  			</div>
+					  			<hr>
+							{% endfor %}
+							<div class="row draft_assembly">
+								<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
+								{% if file_draft_contigs_abricate %} 
+									<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
+								{% elif file_draft_reads_abricate %}
+									<div class="col-lg-6"><strong>Seg./Ref. to reads:</strong> {{ file_draft_reads_abricate }}</div>
+								{% endif %}
+							</div>
+							<p></p>
+							<div class="container h-100">
+ 									<div class="row h-100 justify-content-center">
+									<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
+								</div>
+							</div>
+							<hr>
 							
-							{% if has_type_subtype %}
-								{% for identify_virus in vect_identify_virus %}
-									<div class="row">
-										<div class="col-lg-2"><strong>Type:</strong> {{ identify_virus.seq_virus.kind_type.name }}</div>
-						  				<div class="col-lg-2"><strong>Name:</strong> {{ identify_virus.seq_virus.name }}</div>
-						  				<!-- <div class="col-lg-2"><strong>Coverage:</strong> {{ identify_virus.coverage }}</div>
-						  				<div class="col-lg-2"><strong>Identity:</strong> {{ identify_virus.identity }}</div>
-						  				<div class="col-lg-3"><strong>Accession:</strong> {{ identify_virus.seq_virus.accession }}</div> -->
-						  			</div>
-						  			<hr>
-								{% endfor %}
-							{% else %}
-								<p class="software">No type/subtype has been assigned.</p>
-							{% endif %}
+							<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} \
+									{% elif abricate_software %} {{ abricate_software }} {% endif %}</p>
+					    {% else %}
+							<p class="software">No type/subtype has been assigned.</p>
 							
-							<!-- Test draft contigs or reads, if it is ONT -->
 							{% if has_draft_contigs %}
+								<hr>
 								<div class="row draft_assembly">
 									<div class="col-lg-6"><strong>Draft assembly:</strong> {{ file_draft_contigs }}</div>
 									<div class="col-lg-6"><strong>Seg./Ref. to contigs:</strong> {{ file_draft_contigs_abricate }}</div>
@@ -265,36 +218,24 @@
 									</div>
 								</div>
 								<hr>
-								<p class="software"><strong>Software version: </strong> {% if spades_software %} {{ spades_software }}/{{ abricate_software }} {% endif %}</p>
-							{% elif has_draft_reads %} <!-- ONT technology -->
-								<div class="row draft_assembly">
-									<div class="col-lg-6"><strong>Draft assembly:</strong> Not appliable</div>
-									<div class="col-lg-6"><strong>Seg./Ref. to reads:</strong> {{ file_draft_reads_abricate }}</div>
-								</div>
-								<p></p>
-								<div class="container h-100">
-  									<div class="row h-100 justify-content-center">
-										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
-									</div>
-								</div>
-								<hr>
 							{% endif %}
-						</div>
-						<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
-				    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>
-				    		{% if alerts  %}
-					    		{% for alert in alerts  %}
-					    			<div class="row">
-										<div class="col-lg-12 .alert-limit-text">{{ alert }}</div>
-						  			</div>
-						  			<hr>
-						  		{% endfor %}
-						  	{% else %}
-						  		<p class="software">There's no alerts.</p>
-							{% endif %}
-				  		</div>
+						{% endif %}
 					</div>
-				{% endif %}
+					<div id="alerts" role="tabpanel" class="tab-pane fade box-blue">
+			    		<p class="title-box">Alerts for sample: '{{ sample.name }}'</p>
+			    		{% if alerts  %}
+				    		{% for alert in alerts  %}
+				    			<div class="row">
+									<div class="col-lg-12 .alert-limit-text">{{ alert }}</div>
+					  			</div>
+					  			<hr>
+					  		{% endfor %}
+					  	{% else %}
+					  		<p class="software">There's no alerts.</p>
+						{% endif %}
+			  		</div>
+				</div>
+				
 			</div>
 		</div>
 		  

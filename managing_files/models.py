@@ -335,8 +335,12 @@ class Sample(models.Model):
 	
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
-	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')	## this date has the time of deleted by web page
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date deleted')	## this date has the time of deleted by web page
 	
+	### deleted processed fastq, but not delete the sample (trimmomatic/Rabbit/etc)
+	is_deleted_processed_fastq = models.BooleanField(default=False)			## if this files were removed in file system
+	date_deleted_processed_fastq = models.DateTimeField(blank=True, null=True, verbose_name='Date fastq deleted')	## this date has the time of fastq deleted
+
 	def __str__(self):
 		return self.name
 
@@ -440,9 +444,12 @@ class Sample(models.Model):
 		"""
 		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
 	
+	def is_processed_fastq_deleted(self):
+		return self.is_deleted_processed_fastq
+
 	def get_fastqc_output(self, type_path, b_first_file):
 		"""
-		return fastq output second step
+		return fastqc output first quality control
 		can be generic, also for rabbitQC
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
@@ -701,7 +708,8 @@ class Sample(models.Model):
 		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina): return "Illumina";
 		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_minion): return "ONT"
 		return "Not defined"
-		
+
+
 class TagNames(models.Model):
 	value = models.CharField(max_length=150)
 	tag_name = models.ForeignKey(TagName, on_delete=models.CASCADE)

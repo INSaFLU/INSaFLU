@@ -10,6 +10,7 @@ from constants.constants import Constants
 from constants.software_names import SoftwareNames
 from django.urls import reverse
 from managing_files.models import ProjectSample
+from extend_user.models	import Profile
 from settings.models import Software
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -84,8 +85,11 @@ class SoftwaresTable(tables.Table):
 		## Edit
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
-		user = current_request.user
-		if (user.username == Constants.USER_ANONYMOUS): return "Options not available"
+		try:
+			profile = Profile.objects.get(user=current_request.user)
+			if (profile.only_view_project): return "Options not available"
+		except Profile.DoesNotExist:
+			pass
 		
 		if (not self.project is None):
 			str_links = '<a href=' + reverse('software-project-update', args=[record.pk, self.project.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
@@ -197,8 +201,11 @@ class INSaFLUParametersTable(tables.Table):
 		## Edit
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
-		user = current_request.user
-		if (user.username == Constants.USER_ANONYMOUS): return "Options not available"
+		try:
+			profile = Profile.objects.get(user=current_request.user)
+			if (profile.only_view_project): return "Options not available"
+		except Profile.DoesNotExist:
+			pass
 		
 		if (not self.project is None):
 			str_links = '<a href=' + reverse('software-project-update', args=[record.pk, self.project.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\

@@ -108,6 +108,20 @@ class DefaultParameters(object):
 			## set sequential number
 			dt_out_sequential[parameter.sequence_out] = 1
 	
+	#####################################
+	#### TODO
+	# update settings_parameter set software_id = 229 where software_id = 50
+	# update settings_parameter set software_id = 228 where software_id = 49
+	# delete from settings_software where id = 49
+	# delete from settings_software where id = 50
+	
+	# select * from settings_software where owner_id=38 and technology_id is not null order by name, type_of_use
+	#
+	# select * from settings_parameter where software_id = 50 order by id
+	# select * from settings_parameter where software_id = 229  order by id
+	# select * from settings_parameter where software_id = 49  order by id
+	# select * from settings_parameter where software_id = 228  order by id
+
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample,
 				sample, technology_name = SoftwareNames.TECHNOLOGY_illumina):
 		"""

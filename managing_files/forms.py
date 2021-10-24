@@ -16,7 +16,8 @@ from utils.parse_in_files import ParseInFiles
 from utils.software import Software
 from constants.constants import Constants, TypeFile
 from managing_files.models import Reference, Sample, DataSet, VaccineStatus, Project, UploadFiles
-import os, re, logging, humanfriendly
+from django.template.defaultfilters import filesizeformat
+import os, re, logging
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
 class ReferenceForm(forms.ModelForm):
@@ -274,23 +275,23 @@ class SampleForm(forms.ModelForm):
 		#### mesages
 		if (settings.DOWN_SIZE_FASTQ_FILES):
 			message_r1 = "Max raw file R1 with fastq gzip file (< {}). Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
 					)
 			message_r2 = "Max raw file R2 with fastq gzip file (< {}). Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
 					)
 		else:
 			message_r1 = "Max raw file R1 with fastq gzip file (< {}).".format(
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
 					)
 			message_r2 = "Max raw file R2 with fastq gzip file (< {}).".format(
-					humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+					filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
 					)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
@@ -746,11 +747,11 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 		if (settings.DOWN_SIZE_FASTQ_FILES):
 			if (path_name.size > settings.MAX_FASTQ_FILE_WITH_DOWNSIZE):
 				os.unlink(temp_file_name.name)
-				self.add_error('path_name', "Max file size is: {}".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)) ))
+				self.add_error('path_name', "Max file size is: {}".format( filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)) ))
 				return cleaned_data
 		elif (path_name.size > settings.MAX_FASTQ_FILE_UPLOAD):
 			os.unlink(temp_file_name.name)
-			self.add_error('path_name', "Max file size is: {}".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
+			self.add_error('path_name', "Max file size is: {}".format( filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 			return cleaned_data
 		
 		os.unlink(temp_file_name.name)

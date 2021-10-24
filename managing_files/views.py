@@ -1,6 +1,6 @@
 # Create your views here.
 
-import hashlib, ntpath, os, logging, sys, humanfriendly
+import hashlib, ntpath, os, logging, sys
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.urls import reverse_lazy
@@ -36,6 +36,7 @@ from utils.utils import ShowInfoMainPage
 from utils.software_pangolin import SoftwarePangolin
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
+from django.template.defaultfilters import filesizeformat
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -802,16 +803,16 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		if (settings.DOWN_SIZE_FASTQ_FILES):
 			context['show_note_message_down_size'] = True
 			context['message_note_2'] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD))
+				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+				filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
 				)		## show main information about the institute
 
 			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
-				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)))		## show main information about the institute
+				filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)))		## show main information about the institute
 		else:
 			context['message_note_1'] = "Maximum size per fastq.gz file is {}.".format(
-				humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)))		## show main information about the institute
+				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)))		## show main information about the institute
 			
 		### message_note_3, type of files that can be uploaded
 		
@@ -1800,7 +1801,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 				result = decode_result.decode_result(meta_key.description)
 				## only need to call first Pangolin, PangolinLearn is added automatically
 				software_used.append([SoftwareNames.SOFTWARE_Pangolin_name,
-						result.get_software(SoftwareNames.SOFTWARE_Pangolin_name)])
+						result.get_software(SoftwareNames.SOFTWARE_Pangolin_name_search_name)])
 				
 			### list of software to used
 			context['software_used'] = software_used	

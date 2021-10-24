@@ -61,8 +61,6 @@ ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
 
 ## to show login anonymous
 SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
-
-### Files sizes   https://pypi.org/project/humanfriendly/
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
 ## make the down size of the fastq files to 50MB

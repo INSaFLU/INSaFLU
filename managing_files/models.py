@@ -1081,7 +1081,7 @@ class Software(models.Model):
 	BREAK_TAG = "$$$"
 	name = models.CharField(max_length=100, blank=True, null=True)
 	path_to_run = models.CharField(max_length=300)
-	version = models.CharField(max_length=100)
+	version = models.CharField(max_length=200)
 
 	### last update of the software
 	last_update = models.DateTimeField(auto_now_add=True, null=True,
@@ -1095,10 +1095,24 @@ class Software(models.Model):
 
 	def set_last_update_today(self):
 		self.last_update = datetime.now()
-		
+
 	def set_dual_version(self, version_1, version_2):
+		"""
+		set only 
+		"""
 		self.version = "{}{}{}".format(version_1, Software.BREAK_TAG, version_2)
 		
+
+	def set_versions(self, dict_version):
+		"""
+		set several versions in the version field, separated by dollar
+		"""
+		software_names = SoftwareNames()
+		lst_version = []
+		for name in software_names.VECT_PANGOLIN_TO_TEST:
+			lst_version.append(dict_version.get(name, software_names.get_pangolin_version(name)))
+		self.version = Software.BREAK_TAG.join(lst_version)
+
 	def get_dual_version(self):
 		"""
 		return dual version
@@ -1106,6 +1120,19 @@ class Software(models.Model):
 		lst_data = self.version.split(Software.BREAK_TAG)
 		if len(lst_data) > 1: return (lst_data[0], lst_data[1])
 		return lst_data[0]
+
+	def get_versions(self):
+		"""
+		return dict ["soft name": "version", "soft1 name": "version"]
+		"""
+		software_names = SoftwareNames()
+		lst_data = self.version.split(Software.BREAK_TAG)
+		dt_result_version = {}
+		for i, name in enumerate(software_names.VECT_PANGOLIN_TO_TEST):
+			if i < len(lst_data): dt_result_version[name] = lst_data[i]
+			else: dt_result_version[name] = software_names.get_pangolin_version(name)
+		return dt_result_version
+	
 	
 class UploadFiles(models.Model):
 	"""

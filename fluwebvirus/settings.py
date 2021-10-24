@@ -55,7 +55,6 @@ THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## 
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
-### Files sizes   https://pypi.org/project/humanfriendly/
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
 ## make the down size of the fastq files to 50MB

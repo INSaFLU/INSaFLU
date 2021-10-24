@@ -3,7 +3,7 @@ Created on 01/01/2021
 
 @author: mmp
 '''
-import os, logging, humanfriendly, datetime
+import os, logging, datetime
 from constants.constants import Constants, TypePath, FileType
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -22,6 +22,7 @@ from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.result import KeyValue
 from settings.models import Software as SoftwareSettings
+from django.template.defaultfilters import filesizeformat
 
 ######################################
 ####   Minion methods
@@ -172,7 +173,7 @@ class SoftwareMinion(object):
 				### set the downsize message
 				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
 											MetaKeyAndValue.META_VALUE_Success,\
-											"Fastq files were down sized to values ~{}.".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
+											"Fastq files were down sized to values ~{}.".format( filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 		
 		### first run stat
 		try:

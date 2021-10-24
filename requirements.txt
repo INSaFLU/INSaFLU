@@ -23,7 +23,6 @@ pysam==0.15.2
 portalocker==1.4.0
 python-decouple==3.1
 bcbio-gff==0.6.6
-humanfriendly==8.1
 python-dateutil==2.7.3
 nanostat==1.4.0
 nanofilt==2.6.0

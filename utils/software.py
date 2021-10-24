@@ -3,7 +3,7 @@ Created on Oct 28, 2017
 
 @author: mmp
 '''
-import os, gzip, logging, cmd, re, humanfriendly, subprocess, datetime
+import os, gzip, logging, cmd, re, subprocess, datetime
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -26,7 +26,7 @@ from django.conf import settings
 from utils.process_SGE import ProcessSGE
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-
+from django.template.defaultfilters import filesizeformat
 
 class Software(object):
 	'''
@@ -1185,7 +1185,7 @@ class Software(object):
 				### set the downsize message
 				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_ALERT_DOWNSIZE_OF_FASTQ_FILES,\
 											MetaKeyAndValue.META_VALUE_Success,\
-											"Fastq files were down sized to values ~{}.".format( humanfriendly.format_size(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
+											"Fastq files were down sized to values ~{}.".format( filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 		
 		### first run fastqc
 		try:

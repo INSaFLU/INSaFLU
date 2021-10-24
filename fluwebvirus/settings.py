@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.4.5"
+APP_VERSION_NUMBER = "1.4.6"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -64,7 +64,6 @@ MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FA
 MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
 MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
 	
-### Files sizes   https://pypi.org/project/humanfriendly/
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
 ## make the down size of the fastq files to 50MB

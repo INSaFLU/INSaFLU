@@ -2587,9 +2587,10 @@ class Test(TestCase):
 		try:
 			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 			software.is_updated_today()
-			(version_1, version_2) = software.get_dual_version()
-			self.assertTrue(len(version_1.strip()) > 0)
-			self.assertTrue(len(version_2.strip()) > 0)
+			dt_softwares = software.get_versions()
+			self.assertEqual(len(self.software_names.VECT_PANGOLIN_TO_TEST), len(dt_softwares))
+			for names in self.software_names.VECT_PANGOLIN_TO_TEST:
+				self.assertTrue(len(dt_softwares[names].strip()) > 0)
 		except SoftwareModel.DoesNotExist:	## need to create with last version
 			self.fail("Must not exist software name")
 		
@@ -2599,12 +2600,17 @@ class Test(TestCase):
 		vect_data = self.utils.read_text_file(out_file)
 		self.assertEqual(3, len(vect_data))
 
-		cmd = "cp {} {}".format(out_file_consensus, "/home/mmp/temp.fasta")
-		os.system(cmd)
+		try:
+			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
+			dt_versions = software.get_versions()
+			for name in SoftwareNames.VECT_PANGOLIN_TO_TEST:
+				self.assertTrue(len(dt_versions.get(name)) > 5)
+							
+		except SoftwareModel.DoesNotExist:	## need to create with last version
+			self.fail("Must exist software name")
 		
 		os.unlink(out_file)
 		os.unlink(out_file_consensus)
-
 
 	def test_is_ref_sars_cov(self):
 		"""

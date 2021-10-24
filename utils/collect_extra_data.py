@@ -17,7 +17,6 @@ from utils.tree import CreateTree
 from plotly.offline import plot
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
-from django.db import transaction
 from utils.result import Coverage, Result, SoftwareDesc
 from utils.software_pangolin import SoftwarePangolin
 from utils.parse_out_files import ParseOutFiles
@@ -118,14 +117,16 @@ class CollectExtraData(object):
 					software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 					
 					### set last version of the Pangolin run in this project
-					(pangolin_version, pangolin_learn_version) = software.get_dual_version()
+					dt_result_version = software.get_versions()
 					result_all = Result()
 					manage_database = ManageDatabase()
 					software_names = SoftwareNames()
 					result_all.add_software(SoftwareDesc(software_names.get_pangolin_name(),
-							pangolin_version, ""))
+							dt_result_version.get(software_names.get_pangolin_name(), ""), ""))
 					result_all.add_software(SoftwareDesc(software_names.get_pangolin_learn_name(),
-							pangolin_learn_version, ""))
+							dt_result_version.get(software_names.get_pangolin_learn_name(), ""), ""))
+					result_all.add_software(SoftwareDesc(software_names.get_pangolin_designation_name(),
+							dt_result_version.get(software_names.get_pangolin_designation_name(), ""), ""))
 					manage_database.set_project_metakey(project, user,
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\
 							MetaKeyAndValue.META_VALUE_Success,\
@@ -627,15 +628,13 @@ class CollectExtraData(object):
 			if (not b_simple):
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
-					vect_out_header.append("Conflict (Pangolin)")
-					vect_out_header.append("Status (Pangolin)")
-					vect_out_header.append("Scorpio (Pangolin)")
+					vect_out_header.append("Scorpio call") 
 				vect_out_header.append("Technology")
 				vect_out_header.append("Sample Downsized")
 			else:	### simple, the one that goes to TreeView
 				if parse_pangolin.has_data():
 					vect_out_header.append("Lineage (Pangolin)")
-					vect_out_header.append("Scorpio (Pangolin)")
+					vect_out_header.append("Scorpio call")
 			
 			### all information about the softwares
 			if (not b_simple):
@@ -726,10 +725,8 @@ class CollectExtraData(object):
 				if (not b_simple):
 					### pangolin if exists, not simple
 					if parse_pangolin.has_data():
-						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
-						vect_out.append(parse_pangolin.get_conflict(project_sample.seq_name_all_consensus))
-						vect_out.append(parse_pangolin.get_status(project_sample.seq_name_all_consensus))
-						vect_out.append(parse_pangolin.get_scorpio_call(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_LINEAGE))
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_SCORPIO))
 
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
@@ -779,8 +776,8 @@ class CollectExtraData(object):
 				else: ## simple, for the tree
 					### pangolin if exists, simple
 					if parse_pangolin.has_data():
-						vect_out.append(parse_pangolin.get_lineage(project_sample.seq_name_all_consensus))
-						vect_out.append(parse_pangolin.get_scorpio_call(project_sample.seq_name_all_consensus))
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_LINEAGE))
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_SCORPIO))
 
 				### END save global parameters
 				csv_writer.writerow(vect_out)
@@ -880,8 +877,7 @@ class CollectExtraData(object):
 		if (not meta_sample is None):
 			result_pangolin = decode_result.decode_result(meta_sample.description)
 			for software_name in result_pangolin.get_all_software_names():
-				if not software_name in vect_tags_out_project_sample and \
-						software_name != SoftwareNames.SOFTWARE_Pangolin_learn_name:
+				if not software_name in vect_tags_out_project_sample:
 					vect_tags_out_project_sample.append(software_name)
 		## END pangolin
 	
@@ -967,50 +963,31 @@ class CollectExtraData(object):
 class ParsePangolinResult(object):
 	
 	utils = Utils()
-##	HEADER_PANGOLIN_file = "taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note"
-	HEADER_PANGOLIN_file_start = "taxon,lineage"
-	KEY_TO_FIND_taxon = "taxon"
-	KEY_TO_FIND_lineage = "lineage"
-	KEY_TO_FIND_conflict = "conflict"
-	KEY_TO_FIND_status = "status"
-	KEY_TO_FIND_scorpio_call = "scorpio_call"
-	vect_all_keys = [KEY_TO_FIND_taxon,
-				KEY_TO_FIND_scorpio_call,
-				KEY_TO_FIND_lineage,
-				KEY_TO_FIND_conflict,
-				KEY_TO_FIND_status] 
+	HEADER_PANGOLIN_file = "taxon,lineage"
+	KEY_LINEAGE = 'lineage'
+	KEY_SCORPIO = 'scorpio_call'
+	VECT_CALL = [KEY_LINEAGE, KEY_SCORPIO]
 	
 	def __init__(self, file_pangolin_output):
 		self.file_pangolin_output = file_pangolin_output
-		self.dt_data = {}	### SAmple : [lineage, conflict, status]
+		self.dt_data = {}	### SAmple : [lineage, probability, status]
+		self.dt_header = {}
 		self.process_file()
 		
 	def has_data(self):
 		return len(self.dt_data) > 0
 
-	def get_lineage(self, sample_name_starts_with):
+	def get_value(self, sample_name_starts_with, value_to_call):
 		if (sample_name_starts_with is None): return ""
 		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
-		return ";".join([self.dt_data.get(key, [""])[0] for key in vect_match ] )
-	def get_conflict(self, sample_name_starts_with):
-		if (sample_name_starts_with is None): return ""
-		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
-		return ";".join([self.dt_data.get(key, [""])[1] for key in vect_match ] )
-	def get_status(self, sample_name_starts_with):
-		if (sample_name_starts_with is None): return ""
-		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
-		return ";".join([self.dt_data.get(key, [""])[2] for key in vect_match ] )
-	def get_scorpio_call(self, sample_name_starts_with):
-		if (sample_name_starts_with is None): return ""
-		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
-		return ";".join([self.dt_data.get(key, [""])[3] for key in vect_match ] )
+		return ";".join([self.dt_data.get(key, [""]).get(value_to_call, "") for key in vect_match ] )
 	
 	def process_file(self):
 		"""
 		### pangolin ouput
-		'taxon,lineage,conflict,pangolin_version,pangoLEARN_version,pango_version,status,note
-		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
-		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
+		taxon,lineage,conflict,ambiguity_score,scorpio_call,scorpio_support,scorpio_conflict,version,pangolin_version,pangoLEARN_version,pango_version,status,note
+		ULSLA_1183718_2021_S16__MN908947,AY.4,0.0,1.0,Delta (AY.4-like),0.957400,0.000000,PLEARN-v1.2.86,3.1.15,2021-10-13,v1.2.86,passed_qc,scorpio call: Altalleles 45; Ref alleles 0; Amb alleles 2; Oth alleles 0
+		ULSLA_1183440_2021_S15__MN908947,B.1.617.2,0.0,1.0,Delta (B.1.617.2-like),1.000000,0.000000,PLEARN-v1.2.86,3.1.15,2021-10-13,v1.2.86,passed_qc,scorpiocall: Alt alleles 13; Ref alleles 0; Amb alleles 0; Oth alleles 0
 		"""
 
 		## start parsing
@@ -1019,23 +996,17 @@ class ParsePangolinResult(object):
 			vect_data = self.utils.read_text_file(self.file_pangolin_output)
 			b_header = False
 			for line in vect_data:
-				if not b_header and line.startswith(ParsePangolinResult.HEADER_PANGOLIN_file_start):
-					lst_data = line.strip().split(',')
-					for key in ParsePangolinResult.vect_all_keys:
-						for _, key_test in enumerate(lst_data):
-							if key.lower() == key_test.lower():
-								dt_positions[key] = _
-								break
-					if (len(dt_positions) == len(ParsePangolinResult.vect_all_keys)): b_header = True
-							
-				elif (b_header):	## start processing pangolin data
+				if not b_header:
+					if line.startswith(ParsePangolinResult.HEADER_PANGOLIN_file): b_header = True
+					for i, value in enumerate(line.split(',')):
+						if value.lower() in ParsePangolinResult.VECT_CALL: self.dt_header[value] = i
+				else:	## start processing pangolin data
 					lst_data = line.split(',')
-					if len(lst_data) > 5:
-						self.dt_data[lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_taxon]]] = [
-							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_lineage]],
-							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_conflict]],
-							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_status]],
-							lst_data[dt_positions[ParsePangolinResult.KEY_TO_FIND_scorpio_call]] ]
+					if len(lst_data) > 4:
+						dt_value = {}
+						for value in self.dt_header:
+							dt_value[value] = lst_data[self.dt_header[value]]
+						self.dt_data[lst_data[0]] = dt_value
 		
 		
 					

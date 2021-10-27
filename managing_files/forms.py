@@ -44,13 +44,13 @@ class ReferenceForm(forms.ModelForm):
 			('name', 'Name', 'Regular name for this reference', True),
 			('isolate_name', 'Isolate name', 'Isolate name for this reference', False),
 			('reference_fasta', 'Reference (FASTA)', "Reference file in fasta format.<br>" +\
-				"Max total sequence length: {}<br>".format(humanfriendly.format_size(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA))  +\
-				"Max FASTA file size: {}".format(humanfriendly.format_size(settings.MAX_REF_FASTA_FILE)), True),
+				"Max total sequence length: {}<br>".format(filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA))  +\
+				"Max FASTA file size: {}".format(filesizeformat(settings.MAX_REF_FASTA_FILE)), True),
 			('reference_genbank', 'Reference (Genbank) - Optional', 
 					"""Reference file in Genbank format.<br>
 					Locus designations in the multi-GenBank file must have the same name as in the respective fasta file.<br>
 					If you do not upload a Genbank file, INSaFLU will annotate the upload fasta file for you.<br>""" +\
-					"Max GenBank file size: {}".format(humanfriendly.format_size(settings.MAX_REF_GENBANK_FILE)), False),
+					"Max GenBank file size: {}".format(filesizeformat(settings.MAX_REF_GENBANK_FILE)), False),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]

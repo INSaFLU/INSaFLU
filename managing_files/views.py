@@ -36,6 +36,7 @@ from utils.utils import ShowInfoMainPage
 from utils.software_pangolin import SoftwarePangolin
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
+from django.template.defaultfilters import pluralize
 from django.template.defaultfilters import filesizeformat
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
@@ -1373,6 +1374,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		context['show_message_change_settings'] = (count_active_projects == 0 and
 					self.request.session[key_session_name_project_settings]) ## Show message to change settings to the project
+		context['add_all_samples_message'] = "Add {} sample{}".format(query_set.count(), pluralize(query_set.count(), ',s'))
 		if self.request.POST: 
 			context['project_sample'] = AddSampleProjectForm(self.request.POST)
 		else: 

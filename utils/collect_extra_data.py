@@ -625,16 +625,12 @@ class CollectExtraData(object):
 			vect_tags = self.get_tags_for_samples_in_projects(project)
 			vect_out_header.extend(vect_tags)
 			
-			if (not b_simple):
-				if parse_pangolin.has_data():
-					vect_out_header.append("Lineage (Pangolin)")
-					vect_out_header.append("Scorpio call") 
-				vect_out_header.append("Technology")
-				vect_out_header.append("Sample Downsized")
-			else:	### simple, the one that goes to TreeView
-				if parse_pangolin.has_data():
-					vect_out_header.append("Lineage (Pangolin)")
-					vect_out_header.append("Scorpio call")
+			if parse_pangolin.has_data():
+				vect_out_header.append("Lineage (Pangolin)")
+				vect_out_header.append("Scorpio (Pangolin)") 
+				if (not b_simple):
+					vect_out_header.append("Technology")
+					vect_out_header.append("Sample Downsized")
 			
 			### all information about the softwares
 			if (not b_simple):

@@ -585,7 +585,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			upload_files.owner = self.request.user
 			
 			upload_files.description = ""
-#			upload_files.save()
+			upload_files.save()
 		
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
@@ -671,7 +671,7 @@ class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMess
 			upload_files.owner = self.request.user
 			
 			upload_files.description = ""
-#			upload_files.save()
+			upload_files.save()				## need this save because of 
 		
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\

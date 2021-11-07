@@ -866,7 +866,7 @@ class Project(models.Model):
 		
 	def __get_user_result_global_directory_path__(self, element):
 		# file will be uploaded to MEDIA_ROOT/<filename>
-		if (element != None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
+		if (not element is None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
 				format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
 		return 'projects/result/user_{0}/project_{1}/{2}'.format(self.owner.id, self.pk, self.PATH_MAIN_RESULT)
 	
@@ -877,6 +877,7 @@ class Project(models.Model):
 		path_to_find = self.__get_user_result_global_directory_path__(element)
 		if (type_path == TypePath.MEDIA_ROOT): 
 			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		### URL
 		else: path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
 	

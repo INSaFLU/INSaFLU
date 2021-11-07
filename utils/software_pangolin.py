@@ -253,6 +253,7 @@ class SoftwarePangolin(object):
 							MetaKeyAndValue.META_VALUE_Success)
 		pangolin_version_run = None
 		pangolin_learn_version_run = None
+		pangolin_designation_version_run = None
 		if (not meta_sample is None):
 			software_names = SoftwareNames()
 			result_pangolin = decode_result.decode_result(meta_sample.description)

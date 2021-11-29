@@ -89,10 +89,31 @@
 {% endblock %}
 
  {% block js %}
+ 
+ 	<script>
+		/* wait button */
+		$(document).ready(function() { 
+		    $('#submit-id-save').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+	</script>
+	
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>
      		<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+     		<!-- BlockUI wait screen till reload page< -->
+	    	<script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
+	    	
  {% endblock %}
 

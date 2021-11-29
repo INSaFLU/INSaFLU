@@ -43,10 +43,10 @@
 		                            	{% csrf_token %}
 		                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected samples</button>
 		                            </form>
-<!-- 		                            <form method="post" id="id_add_all_samples" class="form-inline pull-left">
+ 		                            <form method="post" id="id_add_all_samples" class="form-inline pull-left">
 		                            	{% csrf_token %}
 		                              	<button type="submit" id="id_submit_all" name="submit_all" class="btn btn-small btn-primary dark" style="margin-left: 8px;"><i class="fa fa-plus-square"></i> {{ add_all_samples_message }}</button>
-		                            </form>  -->
+		                            </form>
 		                        </div> 
 		                        
 		                        <form method="get" action="" class="form-inline form-search pull-right">
@@ -139,6 +139,7 @@
  		
 	<script>
 		$(document).ready(function (){
+			$.unblockUI();
 			$('#modal_show_settings_allert').modal('show')
 		});
 		
@@ -148,11 +149,43 @@
 		    create_post();
 		}); */
 		
+		/* wait button */
+		$(document).ready(function() { 
+		    $('#id_submit_all').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+		
+		/* wait button */
+		$(document).ready(function() { 
+		    $('#id_submit_checked').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+		
 	</script>
  		
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+	    	<!-- BlockUI wait screen till reload page< -->
+	    	<script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
 	    	
 			
      

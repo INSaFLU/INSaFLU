@@ -230,7 +230,7 @@ class ParseInFiles(object):
 				sample_name = row[0].strip()
 				
 				## test clean name
-				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_-]+', '', sample_name)
 				if (len(result_filer_sample_name) != len(sample_name)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
 				else:
@@ -380,7 +380,7 @@ class ParseInFiles(object):
 				sample_name = row[0].strip()
 				
 				## test clean name
-				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_-]+', '', sample_name)
 				if (len(result_filer_sample_name) != len(sample_name)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
 				else:

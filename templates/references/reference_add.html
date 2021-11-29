@@ -69,14 +69,32 @@
 	{% load static from staticfiles %}
 		<!-- Custom scripts for all pages-->
 		<script type="text/javascript" src="{% static 'js/reference_add.js' %}"></script>
-
+		<!-- BlockUI wait screen till reload page< -->
+	    <script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
 
 	<script>
  		$("#id_reference_fasta").click( function(){
  			$('#error_1_id_reference_fasta').empty();
+ 			$.unblockUI();
  		});
  		$("#id_reference_genbank").click( function(){
  			$('#error_1_id_reference_genbank').empty();
+ 			$.unblockUI();
  		});
+ 		
+ 		/* wait button */
+ 		$(document).ready(function() { 
+		    $('#submit-id-save').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
 	</script>
 {% endblock js %}

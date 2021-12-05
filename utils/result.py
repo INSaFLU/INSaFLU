@@ -7,7 +7,6 @@ import json, os
 from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from Bio.SeqFeature import SeqFeature, CompoundLocation, FeatureLocation
-from future.backports.test.pystone import TRUE
 
 def is_integer(n_value):
 	try:

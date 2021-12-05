@@ -54,7 +54,7 @@ $(document).on("click", "a", function(e){
 					$("#id_tile_mask_consensus").text("Mask consensus: " + project_name);
 					document.getElementById("id_mask_sites").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_sites'];
 					document.getElementById("id_mask_from_beginning").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_beginning'];
-					document.getElementById("id_mask_till_ends").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_till_ends'];
+					document.getElementById("id_mask_till_ends").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_ends'];
 					document.getElementById("id_mask_regions").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_regions'];
 				}
 				$.unblockUI();
@@ -89,7 +89,7 @@ function change_mask_values() {
 	// keep the data thar was setted
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_sites'] = $('#id_mask_sites').val();
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_beginning'] = $('#id_mask_from_beginning').val();
-	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_till_ends'] = $('#id_mask_till_ends').val();
+	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_ends'] = $('#id_mask_till_ends').val();
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_regions'] = $('#id_mask_regions').val();
 
 	//// new data	
@@ -99,7 +99,7 @@ function change_mask_values() {
 	$("#id_select_length").text(" " + dict_mask['__GeneticElement__']['dt_elements_size'][element_selected] + " bases");
 	document.getElementById("id_mask_sites").value = dict_mask['__GeneticElement__']['dt_elements_mask'][element_selected]['__MaskingConsensus__']['mask_sites'];
 	document.getElementById("id_mask_from_beginning").value = dict_mask['__GeneticElement__']['dt_elements_mask'][element_selected]['__MaskingConsensus__']['mask_from_beginning'];
-	document.getElementById("id_mask_till_ends").value = dict_mask['__GeneticElement__']['dt_elements_mask'][element_selected]['__MaskingConsensus__']['mask_till_ends'];
+	document.getElementById("id_mask_till_ends").value = dict_mask['__GeneticElement__']['dt_elements_mask'][element_selected]['__MaskingConsensus__']['mask_from_ends'];
 	document.getElementById("id_mask_regions").value = dict_mask['__GeneticElement__']['dt_elements_mask'][element_selected]['__MaskingConsensus__']['mask_regions'];
 }
 
@@ -120,11 +120,12 @@ $('#id-mask-consensus').on('click', function(){
 	/// get data that was in the modal
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_sites'] = $('#id_mask_sites').val();
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_beginning'] = $('#id_mask_from_beginning').val();
-	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_till_ends'] = $('#id_mask_till_ends').val();
+	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_from_ends'] = $('#id_mask_till_ends').val();
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_regions'] = $('#id_mask_regions').val();
 	
-	
+	/// new to be post because of the size
 	$.ajax({
+		type: "POST",
         url: $('#id_set_positions_to_mask_regions').attr("mask-consensus-url"),
         data : {
 			all_data : JSON.stringify(dict_mask, null, 4),

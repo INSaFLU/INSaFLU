@@ -62,10 +62,10 @@ class Command(BaseCommand):
                 software.pipeline_step = vect_parameters[0].software.pipeline_step
                 software.help_text = vect_parameters[0].software.help_text
                 
-                ## test technology
-                if software.technology is None:
-                    vect_parameters[0].software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
-                    software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
+                ## test technology DON'T do this
+                # if software.technology is None:
+                #     vect_parameters[0].software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
+                #     software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
                 software.save()
             ## if only technology fail
             elif software.technology is None:

@@ -16,7 +16,7 @@ from utils.utils import Utils
 from utils.collect_extra_data import CollectExtraData
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from extend_user.models import Profile
@@ -1078,7 +1078,8 @@ def unlock_sample_file(request):
 
 		return JsonResponse(data)
 
-@csrf_protect
+## @csrf_protect
+@csrf_exempt
 def mask_consensus(request):
 	"""
 	mask consensus
@@ -1092,9 +1093,9 @@ def mask_consensus(request):
 		project_id_a = 'project_id'
 		all_data_a = 'all_data'
 		
-		if (project_id_a in request.GET):
+		if (project_id_a in request.POST):
 			
-			project_id = request.GET[project_id_a]
+			project_id = request.POST[project_id_a]
 			try:
 				project = Project.objects.get(pk=project_id)
 			except ProjectSample.DoesNotExist:
@@ -1107,7 +1108,7 @@ def mask_consensus(request):
 			if not meta_value is None:
 				masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
 
-			masking_consensus = decode_masking_consensus.decode_result(request.GET[all_data_a])
+			masking_consensus = decode_masking_consensus.decode_result(request.POST[all_data_a])
 			masking_consensus.cleaning_mask_results()	## clean data
 			
 			if masking_consensus_original is None or masking_consensus_original != masking_consensus:

@@ -23,6 +23,7 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.result import KeyValue
 from settings.models import Software as SoftwareSettings
 from django.template.defaultfilters import filesizeformat
+from settings.constants_settings import ConstantsSettings
 
 ######################################
 ####   Minion methods
@@ -212,7 +213,7 @@ class SoftwareMinion(object):
 				default_software_project = DefaultProjectSoftware()
 				default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, owner,
 								 	SoftwareSettings.TYPE_OF_USE_sample,
-									None, None, sample, SoftwareNames.TECHNOLOGY_minion)
+									None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
 				parameters = default_software_project.get_nanofilt_parameters_all_possibilities(owner, sample)
 			result_file = self.run_nanofilt(sample.get_fastq(TypePath.MEDIA_ROOT, True), parameters, owner)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(), parameters))
@@ -527,7 +528,7 @@ class SoftwareMinion(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
 			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
+							DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_minion))
 			msa_parameters = self.software.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),

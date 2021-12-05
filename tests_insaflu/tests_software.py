@@ -2220,6 +2220,17 @@ class Test(TestCase):
 		self.assertTrue(self.software_names.get_fasttree().endswith(self.software_names.get_fasttree_name()))
 		self.assertEquals(output_file, out_file)
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
+		
+		### reroot the tree with fake leaf name		
+		reroot_leaf = "EVA011_S54_"
+		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters(), reroot_leaf)
+		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
+		
+		### reroot the tree		
+		reroot_leaf = "EVA011_S54"
+		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters(), reroot_leaf)
+		expect_file_nwk = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "2_" + ConstantsTestsCase.FILE_FASTTREE_RESULT_NWK)
+		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)
 
 	### test single file in sample

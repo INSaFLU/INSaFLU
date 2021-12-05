@@ -103,7 +103,6 @@
 						  		<div id="tree_tree_id" class="col-lg-5"></div>
 	      					</div>
 	      					
-	      					
 	      					<!-- Show files to download, trees -->
 	      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
 	        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
@@ -377,6 +376,7 @@
 				{% endif %}
 				
 				<!-- The Modal -->
+				<!--  https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_modal_img -->
 				<div class="modal fade" id="coverageModal">
 					<div class="modal-dialog modal-lg">
 						<div class="modal-content">
@@ -389,9 +389,8 @@
 	       
 	       					<!-- Modal body -->
 	       					<div class="modal-body mx-auto mw-100">
-	       						<!-- <div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div> -->
-	       						<div id="modal-body-coverage" show-coverage-modal-url="{% url 'get_image_coverage' %}">
-	       						</div>
+	       						<div id='loader_coverage_image'><img src="{{ spinner_url }}"/></div>
+	       						<div id="modal-body-coverage" show-coverage-modal-url="{% url 'get_image_coverage' %}"> </div>
 	       					</div>
 	       					<!-- Modal footer -->
 	       					<div class="modal-footer">
@@ -401,7 +400,8 @@
 						</div>
 	   				</div>
 	 			</div>
-	 			
+
+
 	 			<!-- Update pangolin -->
 				<div class="modal fade" id="id_update_pangolin">
 					<div class="modal-dialog modal-lg">
@@ -456,8 +456,6 @@
 
  {% block js %}
  
-	
-    
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	
@@ -485,6 +483,7 @@
 			<!--  raphaelFS  SVG drawing -->
 			<script type="text/javascript" src="{% static 'vendor/raphael/raphael.min.js' %}"></script>
 			<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project-coverage.js' %}"></script>
+			
  {% endblock %}
 
 

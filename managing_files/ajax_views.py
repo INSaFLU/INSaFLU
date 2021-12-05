@@ -26,9 +26,10 @@ from django.db import transaction
 from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
-from utils.result import Coverage
+from utils.result import Coverage, MaskingConsensus
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
+from settings.constants_settings import ConstantsSettings
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -244,8 +245,8 @@ def show_coverage_as_a_table(request):
 					
 					### default parameters
 					limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-							if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+							DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+							if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 		
 					count_sequences = 1
 					for sequence_name in geneticElement.get_sorted_elements():
@@ -474,7 +475,7 @@ def get_image_coverage(request):
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
 				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
 				data['is_ok'] = True
-				data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
+				data['image'] = mark_safe('<img id="coverage_image_id" src="{}" style="width: 100%;">'.format(path_name))
 				data['image_download'] = path_name
 				data['image_download_name'] = os.path.basename(path_name)
 				data['text'] = _("Coverage for locus '{}'".format(request.GET.get(key_element)))
@@ -1077,7 +1078,110 @@ def unlock_sample_file(request):
 
 		return JsonResponse(data)
 
+@csrf_protect
+def mask_consensus(request):
+	"""
+	mask consensus
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		
+		## some pre-requisites
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+		
+		project_id_a = 'project_id'
+		all_data_a = 'all_data'
+		
+		if (project_id_a in request.GET):
+			
+			project_id = request.GET[project_id_a]
+			try:
+				project = Project.objects.get(pk=project_id)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
 
+			manageDatabase = ManageDatabase()
+			decode_masking_consensus = DecodeObjects()
+			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			masking_consensus_original = None
+			if not meta_value is None:
+				masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
+
+			masking_consensus = decode_masking_consensus.decode_result(request.GET[all_data_a])
+			masking_consensus.cleaning_mask_results()	## clean data
+			
+			if masking_consensus_original is None or masking_consensus_original != masking_consensus:
+				manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+							MetaKeyAndValue.META_VALUE_Success, masking_consensus.to_json())
+				data['message'] = "The project '{}' is going to mask/unmask consensus. ".format(project.name)
+				data['is_going_to_mask'] = True
+			else: 
+				data['message'] = "Masking regions are the same, nothing to do for project '{}'".format(project.name)
+				data['is_going_to_mask'] = False
+			
+			data['new_title_i'] = masking_consensus.get_message_mask_to_show_in_web_site()
+			data['new_class_i'] = "padding-button-table {} fa fa-superpowers padding-button-table tip".format(
+					"warning_fa_icon" if masking_consensus.has_masking_data() else "")
+
+			## check if they have projects			
+			count = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
+			if count > 0:	### need to send a message to recalculate the global files
+				metaKeyAndValue = MetaKeyAndValue()
+				manageDatabase = ManageDatabase()
+				try:
+					process_SGE = ProcessSGE()
+					taskID = process_SGE.set_collect_global_files(project, request.user)
+					manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
+								MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+								MetaKeyAndValue.META_VALUE_Queue, taskID)
+					data['is_ok'] = True
+				except:
+					data = { 'is_ok' : False }
+			else:	### there's no projects to apply 
+				data['is_ok'] = True
+				data['message'] = "Mask/unmask consensus for the project '{}' are set.".format(project.name)
+				
+		return JsonResponse(data)
+
+
+@csrf_protect
+def get_mask_consensus_actual_values(request):
+	"""
+	return mask consensus of actual values
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		
+		## some pre-requisites
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+		
+		project_id_a = 'project_id'
+		
+		if (project_id_a in request.GET):
+			
+			project_id = request.GET[project_id_a]
+			try:
+				project = Project.objects.get(pk=project_id)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+
+			manageDatabase = ManageDatabase()
+			genetic_element = DecodeObjects()
+			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			if meta_value is None:
+				meta_value = manageDatabase.get_reference_metakey_last(project.reference, MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference,
+														MetaKeyAndValue.META_VALUE_Success)
+				masking_consensus_original = genetic_element.decode_result(meta_value.description)
+				for element in masking_consensus_original.get_sorted_elements():
+					masking_consensus_original.dt_elements_mask[element] = MaskingConsensus()
+			else:
+				masking_consensus_original = genetic_element.decode_result(meta_value.description)
+			
+			### passing data
+			data['all_data'] = masking_consensus_original.to_json()
+			data['is_ok'] = True
+		return JsonResponse(data)
+	
 @csrf_protect
 def get_process_running(request):
 	"""

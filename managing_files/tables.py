@@ -12,6 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from django.conf import settings
 from django.db.models import F
+from settings.constants_settings import ConstantsSettings
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -178,7 +179,7 @@ class SampleTable(tables.Table):
 		""" shows if it is Illumina or Minion """
 		### is not processed yet
 		if (record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined): return "Undefined"
-		return SoftwareNames.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion
+		return ConstantsSettings.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -372,18 +373,37 @@ class ProjectTable(tables.Table):
 		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
 		count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
 		
+		## START masking consensus
+		manageDatabase = ManageDatabase()
+		meta_value = manageDatabase.get_project_metakey_last(record, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+		
+		### reference
+		masking_consensus = None
+		toolpit_masking = "No mask is applied to consensus in this project"
+		if not meta_value is None:
+			decode_masking_consensus = DecodeObjects()
+			masking_consensus = decode_masking_consensus.decode_result(meta_value.description)
+			toolpit_masking = masking_consensus.get_message_mask_to_show_in_web_site()
+		sz_project_sample_masking = '<a href="#id_set_positions_to_mask_regions" id="showMaskModal" data-toggle="modal" project_id="{}" '.format(record.id) + \
+				'reference_name="{}" id_image=icon_mask_consensus_{} project_name="{}" >'.format(record.reference.name, record.pk, record.name) + \
+				'<span><i id=icon_mask_consensus_{} class="padding-button-table {} fa fa-superpowers padding-button-table tip" title="{}"></i></span></a>'.format(\
+				record.pk, "warning_fa_icon" if not masking_consensus is None and masking_consensus.has_masking_data() else "", toolpit_masking)
+		## END masking consensus
+		
 		sz_project_sample = ""
 		if (count > 0):
-			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results">' +\
-				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a>'
+			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
+				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
+			sz_project_sample += sz_project_sample_masking
 			## only can change settings when has projects finished
 			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
 		elif (count_not_finished > 0): 
 			sz_project_sample = _("{} processing ".format(count_not_finished))
-		else:
+		else:	## can change settings
 			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+			sz_project_sample += sz_project_sample_masking
 		
 		return mark_safe(sz_project_sample)
 	
@@ -442,18 +462,19 @@ class ShowProjectSamplesResults(tables.Table):
 		### default parameters
 		default_software = DefaultProjectSoftware()
 		limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(record,\
-				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-				if record.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+				DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+				if record.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
-			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
-					record.id, key, coverage.get_message_to_show_in_web_site(record.sample.name, key), coverage.get_icon(key, limit_to_mask_consensus))
+			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(record.id) +\
+					'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
+					key, coverage.get_message_to_show_in_web_site(record.sample.name, key), coverage.get_icon(key, limit_to_mask_consensus))
 		return mark_safe(return_html)
 
 	def render_technology(self, record):
 		""" shows if it is Illumina or Minion """
-		return SoftwareNames.TECHNOLOGY_illumina if record.sample.is_type_fastq_gz_sequencing()\
-			else SoftwareNames.TECHNOLOGY_minion
+		return ConstantsSettings.TECHNOLOGY_illumina if record.sample.is_type_fastq_gz_sequencing()\
+			else ConstantsSettings.TECHNOLOGY_minion
 
 	def render_alerts(self, record):
 		"""

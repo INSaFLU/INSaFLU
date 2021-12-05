@@ -22,6 +22,9 @@ from utils.software_pangolin import SoftwarePangolin
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
 from django.conf import settings
+from settings.constants_settings import ConstantsSettings
+from utils.result import MaskingConsensus
+from Bio import SeqIO
 
 class CollectExtraData(object):
 	'''
@@ -212,6 +215,9 @@ class CollectExtraData(object):
 			b_calculate_again = True
 			manage_database.get_max_length_label(project, user, b_calculate_again)
 			
+			## masks all consensus first, must be before of merge AllConsensus (Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_mask_all_consensus, project, user)
+			
 			## collect all consensus files for a project_sample
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
 			
@@ -389,8 +395,10 @@ class CollectExtraData(object):
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus):
-			out_file = self.merge_all_consesnsus_files(project)
+			out_file = self.merge_all_consensus_files(project)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_mask_all_consensus):
+			self.mask_all_consensus_files(project)	## mask all consensus for all projects, defined by user
 			
 		if (not out_file is None):
 			self.utils.copy_file(out_file, out_file_file_system)
@@ -535,7 +543,50 @@ class CollectExtraData(object):
 			return None
 		return out_file
 	
-	def merge_all_consesnsus_files(self, project):
+	def mask_all_consensus_files(self, project):
+		"""
+		merge all consensus files
+		"""
+		### read masking consensus
+		manageDatabase = ManageDatabase()
+		decode_masking_consensus = DecodeObjects()
+		meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+		masking_consensus_original = None
+		if not meta_value is None:
+			masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
+		
+		### if exist masking data
+		if not masking_consensus_original is None and masking_consensus_original.has_masking_data():
+			for project_sample in project.project_samples.all():
+				if (not project_sample.get_is_ready_to_proccess() or project_sample.is_deleted): continue
+				if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+
+				""" check if exist backup """
+				if (not os.path.exists(project_sample.get_backup_consensus_file())):
+					self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+										project_sample.get_backup_consensus_file())
+
+				vect_record_out = []
+				## always work with the backup	
+				with open(project_sample.get_backup_consensus_file(), "rU") as handle_fasta:
+					for record in SeqIO.parse(handle_fasta, "fasta"):
+						masking_consensus = masking_consensus_original.dt_elements_mask.get(record.id, MaskingConsensus())
+						if masking_consensus.has_data():
+							vect_record_out.append(self.utils.mask_sequence(record,
+								masking_consensus.mask_sites, masking_consensus.mask_from_beginning, 
+								masking_consensus.mask_from_ends, masking_consensus.mask_regions))
+						else: vect_record_out.append(record)
+				if (len(vect_record_out) > 0):
+					temp_file = self.utils.get_temp_file("masked_seq_", ".fasta")
+					with open(temp_file, "w") as handle_fasta_out:
+						SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+
+					### move temp consensus to original position, if has info
+					if os.stat(temp_file).st_size > 0:
+						self.utils.move_file(temp_file, project_sample.get_consensus_file(TypePath.MEDIA_ROOT))
+					else: os.unlink(temp_file)
+	
+	def merge_all_consensus_files(self, project):
 		"""
 		merge all consensus files
 		"""
@@ -603,7 +654,7 @@ class CollectExtraData(object):
 		collect sample table
 		column_separator : COMMA or TAB
 		id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
-		:param b_simple == True, doesn't have fastq1,fastq2 and all software information, Good for the tree
+		:param b_simple == True, doesn't have fastq1,fastq2 and all software information, created for the tree view
 		
 		"""
 		manage_database = ManageDatabase()
@@ -628,9 +679,9 @@ class CollectExtraData(object):
 			if parse_pangolin.has_data():
 				vect_out_header.append("Lineage (Pangolin)")
 				vect_out_header.append("Scorpio (Pangolin)") 
-				if (not b_simple):
-					vect_out_header.append("Technology")
-					vect_out_header.append("Sample Downsized")
+			if (not b_simple):
+				vect_out_header.append("Technology")
+				vect_out_header.append("Sample Downsized")
 			
 			### all information about the softwares
 			if (not b_simple):
@@ -763,8 +814,8 @@ class CollectExtraData(object):
 							if (project_sample.is_mask_consensus_sequences):
 								vect_out.append(default_software.get_mask_consensus_single_parameter(project_sample,\
 									DefaultParameters.MASK_CONSENSUS_threshold,
-									SoftwareNames.TECHNOLOGY_illumina \
-									if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+									ConstantsSettings.TECHNOLOGY_illumina \
+									if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 							else:
 								vect_out.append("Not applied")
 						else:
@@ -778,6 +829,29 @@ class CollectExtraData(object):
 				### END save global parameters
 				csv_writer.writerow(vect_out)
 				n_count += 1
+			
+			### if there are previous lines add masking consensus regions
+			if (n_count > 0 and not b_simple):
+				### save masking limits
+				manageDatabase = ManageDatabase()
+				decode_masking_consensus = DecodeObjects()
+				meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+				masking_consensus_original = None
+				if not meta_value is None:
+					masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
+			
+					masking_consensus = MaskingConsensus()
+					csv_writer.writerow([])
+					csv_writer.writerow(["Masking consensus regions"])
+					csv_writer.writerow(["Elements"] + masking_consensus.get_vect_header())
+					for element in masking_consensus_original.get_sorted_elements(): 
+						vect_out = [element]
+						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_sites)
+						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_from_beginning)
+						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_from_ends)
+						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_regions)
+						csv_writer.writerow(vect_out)
+
 		if (n_count == 0):
 			os.unlink(out_file)
 			return None

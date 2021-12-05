@@ -66,7 +66,7 @@ class Test(unittest.TestCase):
 
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_create_alignement_for_element(self):
+	def test_create_alignment_for_element(self):
 		"""
  		test global method
  		"""
@@ -219,7 +219,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(meta_sample != None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_sample.value)
 		self.assertEquals('4', meta_sample.description)
-		self.assertEquals(105, os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)))
+		self.assertEquals(99, os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)))
 		
 		meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Tree_Count_Protein_By_Element, 'sequence_name')
 		meta_sample = manageDatabase.get_project_metakey(project, meta_key, MetaKeyAndValue.META_VALUE_Success)
@@ -228,7 +228,6 @@ class Test(unittest.TestCase):
 		### get all elements and gene names
 		for type_files in project.vect_clean_file:
 			if (type_files in project.vect_exclude_clean_file_from_proteins): continue
-			print(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', type_files))
 			self.assertTrue(os.path.exists(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', type_files)))
 		self.assertTrue(os.path.getsize(project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 'M', project.PROJECT_FILE_NAME_FASTTREE)) > 80)
 

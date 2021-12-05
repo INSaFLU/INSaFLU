@@ -14,6 +14,8 @@ from utils.result import Coverage, FeatureLocationSimple
 from constants.constants import Constants, FileExtensions
 from managing_files.models import ProjectSample
 from utils.result import Gene
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 class Test(unittest.TestCase):
 
@@ -1158,4 +1160,35 @@ class Test(unittest.TestCase):
 			self.fail("must throw exception")
 		except Exception as e:
 			pass
+
+	def test_mask_sequences(self):
+		""" mask sequences """
+		
+		utils = Utils()
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "3"
+		mask_from_end = "2"
+		mask_range = "10-12,14-16"
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("NNNCNNTAANNNANNNTATTTAATNN", str(seq_changed.seq))
+		
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = ""
+		mask_from_end = ""
+		mask_range = ""
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("AACCTTTAATTTAATTTATTTAATTT", str(seq_changed.seq))
+		
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = None
+		mask_from_beginning = None
+		mask_from_end = None
+		mask_range = None
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("AACCTTTAATTTAATTTATTTAATTT", str(seq_changed.seq))
+
+
+
 

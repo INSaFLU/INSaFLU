@@ -4,6 +4,7 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 import os, gzip, logging, cmd, re, subprocess, datetime
+from ete3 import Tree
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -18,6 +19,7 @@ from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
+from settings.constants_settings import ConstantsSettings
 from constants.software_names import SoftwareNames
 from settings.models import Software as SoftwareSettings
 from Bio import SeqIO
@@ -585,9 +587,9 @@ class Software(object):
 			raise Exception("Fail to run seqret")
 		return out_file
 
-	def run_fasttree(self, input_file, out_file, parameters):
+	def run_fasttree(self, input_file, out_file, parameters, root_leaf = None):
 		"""
-		run fasttree
+		run fasttree, can pass a root leaf
 		out: out_file
 		"""
 		cmd = "{} {} {} > {}".format(self.software_names.get_fasttree(), parameters, input_file, out_file)
@@ -596,6 +598,14 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run fasttree")
+		
+		## reroot the tree
+		if (not root_leaf is None):
+			tree = Tree(out_file)
+			if len(tree.get_leaves_by_name(root_leaf)) > 0:
+				leaf = tree.get_leaves_by_name(root_leaf)[0]
+				tree.set_outgroup(leaf)
+				tree.write(outfile=out_file)
 		return out_file
 	
 	def run_trimmomatic(self, file_name_1, file_name_2, sample, user = None):
@@ -618,7 +628,7 @@ class Software(object):
 			default_software_project = DefaultProjectSoftware()
 			default_software_project.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, sample.owner,
 								 	SoftwareSettings.TYPE_OF_USE_sample,
-									None, None, sample, SoftwareNames.TECHNOLOGY_illumina)
+									None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
 			parameters = default_software_project.get_trimmomatic_parameters_all_possibilities(user, sample)
 
 		### run software
@@ -1387,7 +1397,7 @@ class Software(object):
 				snippy_parameters = default_software.get_snippy_parameters_all_possibilities(user, project_sample)
 				default_software.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.sample.owner,
 								 	SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None, SoftwareNames.TECHNOLOGY_illumina)
+									None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 				out_put_path = self.run_snippy(project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True),\
 						project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
@@ -1492,10 +1502,10 @@ class Software(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER 
 			limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina))
+				DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina))
 			default_software.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.sample.owner,
 								 	SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None, SoftwareNames.TECHNOLOGY_illumina)
+									None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 			msa_parameters = self.make_mask_consensus( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),

@@ -7,6 +7,15 @@ import json, os
 from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from Bio.SeqFeature import SeqFeature, CompoundLocation, FeatureLocation
+from future.backports.test.pystone import TRUE
+
+def is_integer(n_value):
+	try:
+		int(n_value)
+		return True
+	except ValueError: 
+		return False
+
 
 class DecodeObjects(object):
 
@@ -20,6 +29,10 @@ class DecodeObjects(object):
 		if '__Coverage__' in o:
 			a = Coverage()
 			a.__dict__.update(o['__Coverage__'])
+			return a
+		elif '__MaskingConsensus__' in o:
+			a = MaskingConsensus()
+			a.__dict__.update(o['__MaskingConsensus__'])
 			return a
 		elif '__CountHits__' in o:
 			a = CountHits()
@@ -717,6 +730,7 @@ class GeneticElement(object):
 		self.name = ""
 		self.dt_elements = {}
 		self.dt_elements_size = {}
+		self.dt_elements_mask = {}
 		
 	def add_gene(self, element_name, length, gene):
 		if (element_name in self.dt_elements):
@@ -747,6 +761,14 @@ class GeneticElement(object):
 		if (element_name in self.dt_elements_size): return self.dt_elements_size[element_name]
 		return None
 	
+	def get_mask_consensus_element(self, element_name):
+		if (element_name in self.dt_elements_mask): return self.dt_elements_mask[element_name]
+		return None
+	
+	def set_mask_consensus_element(self, element_name, mask_consensus):
+		""" MaskingConsensus """
+		self.dt_elements_mask[element_name] = mask_consensus
+	
 	def get_vect_gene_names(self, element_name):
 		if (element_name in self.dt_elements): 
 			return [gene.name for gene in self.dt_elements[element_name]]
@@ -755,6 +777,24 @@ class GeneticElement(object):
 	def get_sorted_elements(self):
 		return sorted(self.dt_elements.keys())
 	
+	def has_masking_data(self):
+		""" testing if has masking data """
+		for element in self.get_sorted_elements():
+			if element in self.dt_elements_mask and self.dt_elements_mask[element].has_data(): return True
+		return False
+	
+	def get_message_mask_to_show_in_web_site(self):
+		sz_return = ""
+		for element in self.get_sorted_elements():
+			if (len(sz_return) > 0): sz_return += "\n#####################\n"
+			sz_return += self.dt_elements_mask[element].get_message_to_show_in_web_site(element)
+		return sz_return
+	
+	def cleaning_mask_results(self):
+		""" cleaning masking values """			
+		for element in self.get_sorted_elements():
+			self.dt_elements_mask[element].cleaning_mask_results()
+			
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
@@ -762,6 +802,10 @@ class GeneticElement(object):
 		if (other == None or len(other.dt_elements) != len(self.dt_elements)): return False
 		for value_ in self.dt_elements:
 			if (value_ not in other.dt_elements or other.dt_elements[value_] != self.dt_elements[value_]): return False
+		for value_ in self.dt_elements_size:
+			if (value_ not in other.dt_elements_size or other.dt_elements_size[value_] != self.dt_elements_size[value_]): return False
+		for value_ in self.dt_elements_mask:
+			if (value_ not in other.dt_elements_mask or other.dt_elements_mask[value_] != self.dt_elements_mask[value_]): return False
 		return True
 		
 	def __str__(self):
@@ -861,5 +905,128 @@ class ProcessResults(object):
 
 	def __str__(self):
 		return '\n'.join([str(a) for a in self.vect_results])
+
+
+class MaskingConsensus(object):
+	"""
+	Mask Consensus sequences...
+	"""
+	def __init__(self):
+		self.mask_sites = "" 			### <number>,<number>,...
+		self.mask_from_beginning = ""	### <number>
+		self.mask_from_ends = ""		### <number>
+		self.mask_regions = ""			### [<number>-<number>],[<number>-<number>],...
+		
+	def set_mask_sites(self, mask_sites):
+		lst_data = mask_sites.split(',')
+		vect_data = []
+		for data_ in lst_data:
+			if (is_integer(data_) and not abs(int(data_)) in vect_data): vect_data.append(abs(int(data_)))
+		vect_data = sorted(vect_data)
+		self.mask_sites = ",".join([str(_) for _ in vect_data])
+	
+	def set_mask_from_beginning(self, mask_from_beginning):
+		if (is_integer(mask_from_beginning)):
+			self.mask_from_beginning = "{}".format(abs(int(mask_from_beginning)))
+		else: self.mask_from_beginning = ""
+	
+	def set_mask_from_ends(self, mask_from_ends):
+		if (is_integer(mask_from_ends)):
+			self.mask_from_ends = "{}".format(abs(int(mask_from_ends)))
+		else: self.mask_from_ends = ""
+	
+	def set_mask_regions(self, mask_regions):
+		self._clean_mask_regions(mask_regions)
+	
+	def _clean_mask_regions(self, mask_regions):
+		lst_data = mask_regions.split(',')
+		vect_data = []
+		for data_ in lst_data:
+			lst_positions = data_.strip().replace('[','').replace(']','').split('-')
+			if len(lst_positions) == 2 and is_integer(lst_positions[0]) and \
+				is_integer(lst_positions[1]):
+				pos_1 = abs(int(lst_positions[0]))
+				pos_2 = abs(int(lst_positions[1]))
+				if pos_1 > pos_2: vect_data.append([pos_2, pos_1])
+				elif pos_1 < pos_2: vect_data.append([pos_1, pos_2])
+		
+		## merge data
+		if len(vect_data) > 0:
+			vect_data = self._merge(vect_data)
+			self.mask_regions = ",".join(["{}-{}".format(data_[0], data_[1]) for data_ in vect_data])
+		else: self.mask_regions = ""
+	
+	def cleaning_mask_results(self):
+		""" cleaning all results """
+		self.set_mask_sites(self.mask_sites)
+		self.set_mask_from_beginning(self.mask_from_beginning)
+		self.set_mask_from_ends(self.mask_from_ends)
+		self._clean_mask_regions(self.mask_regions)
+		
+	# if the two intervals overlaps
+	def _is_overlaping(self, a, b):
+		""" is overlapping """
+		if b[0] >= a[0] and b[0] <= a[1]: return True
+		else: return False
+
+	# merge the intervals
+	def _merge(self, vect_data):
+		""" merge intervals """
+		#sort the intervals by its first value
+		vect_data = sorted(vect_data, key = lambda x: x[0])
+		merged_list= []
+		merged_list.append(vect_data[0])
+		for i in range(1, len(vect_data)):
+			pop_element = merged_list.pop()
+			if self._is_overlaping(pop_element, vect_data[i]):
+				new_element = pop_element[0], max(pop_element[1], vect_data[i][1])
+				merged_list.append(new_element)
+			else:
+				merged_list.append(pop_element)
+				merged_list.append(vect_data[i])
+		return merged_list
+	
+	def get_header(self, separator = ","):
+		""" return header """	
+		return "Mask sites{}Mask from beginning{}Mask from end{}Mask regions".format(separator,
+				separator, separator)
+	def get_vect_header(self):
+		""" return header """	
+		return ["Mask sites", "Mask from beginning", "Mask from end", "Mask regions"]
+		
+	def get_mask_sites(self):
+		return self.mask_sites
+	
+	def get_mask_from_beginning(self):
+		return self.mask_from_beginning
+	
+	def get_mask_from_ends(self):
+		return self.mask_from_ends
+	
+	def get_mask_regions(self):
+		return self.mask_regions
+
+	def get_message_to_show_in_web_site(self, element_name):
+		"""  get message for web site about regions to be masked  """
+		if not self.has_data(): return "No mask is applied to consensus in this project"
+		return "Element:{}\n\nMask sites:{}  Mask regions:{}\nMask from beginning:{}  Mask from ends:{}".format(
+			element_name, self.mask_sites, self.mask_regions,
+			self.mask_from_beginning, self.mask_from_ends)
+	
+	def has_data(self):
+		return len(self.mask_sites) > 0 or len(self.mask_from_beginning) > 0 or \
+			len(self.mask_from_ends) > 0 or len(self.mask_regions) > 0
+		
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
+
+	def __eq__(self, other):
+		return other != None and other.mask_regions == self.mask_regions and other.mask_from_ends == self.mask_from_ends\
+			and other.mask_from_beginning == self.mask_from_beginning and other.mask_sites == self.mask_sites
+
+	def __str__(self):
+		return "mask_sites: {}  mask_from_beginning: {}   mask_from_ends: {}".format(self.mask_sites, self.mask_from_beginning, self.mask_from_ends) + \
+			"  mask_regions: {}".format(self.mask_regions)
+
 
 

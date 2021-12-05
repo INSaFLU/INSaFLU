@@ -20,6 +20,7 @@ from django.test.utils import override_settings
 from settings.models import Software, Parameter
 from settings.default_software_project_sample import DefaultProjectSoftware
 from manage_virus.uploadFiles import UploadFiles
+from settings.constants_settings import ConstantsSettings
 
 class Test(TestCase):
 
@@ -185,7 +186,7 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_NanoFilt_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_sample,
-							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion,
 							is_obsolete = False)
 		except Software.DoesNotExist:
 			self.fail("Must must exist")
@@ -389,7 +390,7 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion,
 							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
@@ -414,7 +415,7 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion,
 							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
@@ -439,7 +440,7 @@ class Test(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = SoftwareNames.TECHNOLOGY_minion,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion,
 							is_obsolete = False)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())

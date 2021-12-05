@@ -20,6 +20,7 @@ from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
 from utils.result import DecodeObjects, Result
 from utils.result import SoftwareDesc
+from settings.constants_settings import ConstantsSettings
 
 class Proteins(object):
 	'''
@@ -69,8 +70,8 @@ class Proteins(object):
 			### get consensus
 			if (project_sample.is_mask_consensus_sequences): 
 				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-						DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-						if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+						DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+						if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
 			## test the coverage
@@ -126,10 +127,13 @@ class Proteins(object):
 			return False
 		
 		### save the reference protein
+		dt_reference_name_saved = {}
 		for gene in geneticElement.get_genes(sequence_name):
-			self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+			reference_name_saved = self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
 							project.reference.display_name, sequence_name, gene,\
 							dt_out_files[gene.name], dict_out_sample_name)
+			## keep the names of the reference saved in file
+			dt_reference_name_saved[gene.name] = reference_name_saved
 			
 		### start processing the data
 		result_all = Result()
@@ -170,7 +174,8 @@ class Proteins(object):
 			### run fastTree
 			try:
 				out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree_proteins", FileExtensions.FILE_NWK)
-				self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters_protein())
+				self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters_protein(),
+										dt_reference_name_saved[gene_name])
 				if (b_first): result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
 								self.software_names.get_fasttree_parameters_protein()))
 			except Exception:
@@ -227,9 +232,10 @@ class Proteins(object):
 		## if not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
 		coding_protein = seq_ref.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 		with open(out_file, 'a') as handle:
-			out_name = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
-			if (out_name in dict_out_sample_name): out_name += 'Ref_' + out_name
-			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
+			reference_name_saved = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
+			if (reference_name_saved in dict_out_sample_name): reference_name_saved += 'Ref_' + reference_name_saved
+			handle.write('>{}\n{}\n'.format(reference_name_saved, str(coding_protein)))
+		return reference_name_saved
 
 
 	def save_protein_by_sequence_name_and_cds(self, record_dict_consensus, generic_element_consensus,

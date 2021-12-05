@@ -33,7 +33,7 @@
 	{% elif sample %}
 		{% breadcrumb "Samples" "samples" %}
 		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
-	{% else %}
+	{% else %}	<!-- Default settings -->
 		{% breadcrumb "Settings" "settings" %}
 	{% endif %}
 {% endblock %}

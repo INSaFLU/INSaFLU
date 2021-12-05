@@ -7,6 +7,7 @@ Created on Nov 26, 2017
 import os
 from constants.constants import Constants
 from django.conf import settings
+from settings.constants_settings import ConstantsSettings
 
 class SoftwareNames(object):
 	'''
@@ -54,6 +55,7 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"
 	SOFTWARE_ABRICATE = os.path.join(settings.DIR_SOFTWARE, "abricate/bin/abricate")
 	SOFTWARE_ABRICATE_name = "Abricate"
+	SOFTWARE_ABRICATE_name_extended = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(settings.DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
@@ -287,12 +289,6 @@ class SoftwareNames(object):
 	### genebank to perl
 	SOFTWARE_genbank_to_perl = os.path.join(settings.DIR_SOFTWARE, "scripts/bp_genbank2gff3.pl")
 	
-	###############################
-	### technology available
-	TECHNOLOGY_illumina = "Illumina"
-	TECHNOLOGY_minion = "ONT"
-	TECHNOLOGY_Undefined = "Undefined"
-
 	###################################
 	###################################
 	#####
@@ -341,20 +337,22 @@ class SoftwareNames(object):
 	###		Relation between Technology -> Software 
 	###
 	DICT_SOFTWARE_RELATION = {
-		TECHNOLOGY_illumina : [
+		ConstantsSettings.TECHNOLOGY_illumina : [
 				SOFTWARE_TRIMMOMATIC_name,
 				SOFTWARE_SNIPPY_name,
 				SOFTWARE_FREEBAYES_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
+				SOFTWARE_ABRICATE_name,
 			],
-		TECHNOLOGY_minion : [
+		ConstantsSettings.TECHNOLOGY_minion : [
 				SOFTWARE_NanoFilt_name, 
 				SOFTWARE_Medaka_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
 				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
 				INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
+				SOFTWARE_ABRICATE_name,
 			],
 		}
 	###
@@ -650,18 +648,6 @@ class SoftwareNames(object):
 	###
 	###### END minion software
 	
-	###### Relation between software and technology
-	def get_list_software_names_by_technology(self, technology_name):
-		"""
-		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
-		"""
-		return self.DICT_SOFTWARE_RELATION.get(technology_name, [])
-	
-	def is_software_in_technology(self, technology_name, software_name):
-		"""
-		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
-		"""
-		return software_name in self.get_list_software_names_by_technology(technology_name)
 	
 	###################################
 	#####

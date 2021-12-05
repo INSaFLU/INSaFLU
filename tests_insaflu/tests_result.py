@@ -6,7 +6,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
 from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, KeyValue
-from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, FeatureLocationSimple
+from utils.result import ProcessResults, SingleResult, FeatureLocationSimple, MaskingConsensus
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -243,3 +243,34 @@ class Test(TestCase):
 		self.assertEquals(process_results, process_results_2)
 		self.assertEquals("Error - xprto errroer\nSuccess - xprto", str(process_results_2))
 
+	def test_masking_consensus(self):
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("cf")
+		masking_consensus.set_mask_from_beginning("e")
+		masking_consensus.set_mask_from_ends("2s3")
+		masking_consensus.set_mask_regions("4")
+		self.assertFalse(masking_consensus.has_data())
+		self.assertEqual("No mask is applied to consensus in this project", masking_consensus.get_message_to_show_in_web_site("xpto"))
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("[2-4],[4-30],[1-2], [500-320], [50-32]")
+		self.assertTrue(masking_consensus.has_data())
+		
+		self.assertEqual("mask_sites: 2,5  mask_from_beginning: 2   mask_from_ends: 2  mask_regions: 1-30,32-50,320-500", str(masking_consensus))
+		json = masking_consensus.to_json()
+		
+		decode_consensus = DecodeObjects()
+		masking_consensus_2 = decode_consensus.decode_result(json)
+		self.assertEquals(masking_consensus, masking_consensus_2)
+		self.assertEqual("mask_sites: 2,5  mask_from_beginning: 2   mask_from_ends: 2  mask_regions: 1-30,32-50,320-500", str(masking_consensus_2))
+		self.assertEqual("Element:xpto\n\nMask sites:2,5  Mask regions:1-30,32-50,320-500\nMask from beginning:2  Mask from ends:2", masking_consensus_2.get_message_to_show_in_web_site("xpto"))
+		self.assertEqual("Mask sites,Mask from beginning,Mask from end,Mask regions", masking_consensus.get_header(','))
+		
+		
+		
+		
+		

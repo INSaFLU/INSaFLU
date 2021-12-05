@@ -181,6 +181,11 @@ p.software {
       height: 36em;
 }
 
+.extra_info{
+	margin: 0 0 8px;
+    font-size: 20px;
+    color: #05264c;
+}
 .regular_info_box{
 	padding: 5px;
     border-radius: 3px;

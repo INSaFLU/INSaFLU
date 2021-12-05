@@ -3,8 +3,6 @@ Created on Dec 6, 2017
 
 @author: mmp
 '''
-
-
 from settings.models import Software
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -14,8 +12,9 @@ from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
+from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
-from constants.software_names import SoftwareNames
+
 
 @csrf_protect
 def set_default_parameters(request):
@@ -41,8 +40,6 @@ def set_default_parameters(request):
 			software_id = request.GET[software_id_a]
 			try:
 				software = Software.objects.get(pk=software_id)
-				technology_name = SoftwareNames.TECHNOLOGY_illumina if software.technology is None else\
-								software.technology.name
 				if (project_id_a in request.GET):
 					project_id = request.GET[project_id_a]
 					project = Project.objects.get(pk=project_id)
@@ -52,7 +49,7 @@ def set_default_parameters(request):
 											None, None)
 					## set a new default
 					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
-													project, None, None, technology_name)
+													project, None, None, software.technology.name)
 				elif (project_sample_id_a in request.GET):
 					project_sample_id = request.GET[project_sample_id_a]
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)
@@ -62,11 +59,11 @@ def set_default_parameters(request):
 										None, project_sample, None)
 					## set a new default
 					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample,\
-													None, project_sample, None, technology_name)
+													None, project_sample, None, software.technology.name)
 					
 					### need to re-run this sample with snippy if the values change
-					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
-								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion)):
+					if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
+								if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion)):
 						### re-run data
 						metaKeyAndValue = MetaKeyAndValue()
 						manageDatabase = ManageDatabase()
@@ -106,11 +103,11 @@ def set_default_parameters(request):
 										None, None, sample)
 					## set a new default
 					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_sample,\
-													None, None, sample, technology_name)
+													None, None, sample, software.technology.name)
 					
 					### need to re-run this sample with NanoFilt if the values change
-					if (default_project_software.is_change_values_for_software(software.name, SoftwareNames.TECHNOLOGY_illumina \
-								if sample.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion)):
+					if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
+								if sample.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion)):
 						### re-run data
 						manageDatabase = ManageDatabase()
 						process_SGE = ProcessSGE()
@@ -135,12 +132,51 @@ def set_default_parameters(request):
 					
 				else:
 					default_software = DefaultSoftware()
-					default_software.set_default_software(software, request.user)
-					
+					default_software.set_default_software(software)
 					
 					## set a new default
 					data['default'] = default_software.get_parameters(software.name, request.user,
-												technology_name)
+												software.technology.name)
+					
+			except Software.DoesNotExist:
+				return JsonResponse(data)
+			except Project.DoesNotExist:
+				return JsonResponse(data)
+			data['is_ok'] = True
+		return JsonResponse(data)
+
+
+@csrf_protect
+def on_off_software_in_pipeline(request):
+	"""
+	Denies is_to_run in main software description.
+	Don't do this if the software already run
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		software_id_a = 'software_id'
+		project_id_a = 'project_id'
+		project_sample_id_a = 'project_sample_id'
+		sample_id_a = 'sample_id'
+		
+		## some pre-requisites
+		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+		try:
+			profile = Profile.objects.get(user__pk=request.user.pk)
+		except Profile.DoesNotExist:
+			return JsonResponse(data)
+		if (profile.only_view_project): return JsonResponse(data)
+			
+		if (software_id_a in request.GET):
+			software_id = request.GET[software_id_a]
+			try:
+				software = Software.objects.get(pk=software_id)
+				if software.can_be_on_off_in_pipeline:
+					software.is_to_run = not software.is_to_run 
+					software.save()
+					
+					## set a new default
+					data['is_to_run'] = software.is_to_run
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)

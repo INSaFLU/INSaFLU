@@ -56,16 +56,16 @@ class MetaKeyAndValue(object):
 	
 	#### KEYS to remove if we run Snippy And FreeBayes Again
 	VECT_TO_REMOVE_RUN_PROJECT_SAMPLE = [META_KEY_ALERT_COVERAGE,\
-							META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
-							META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
-							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
+						META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+						META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+						META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
 
 	#### KEYS to remove if we run trimmomatic or NanoFilt again
 	VECT_TO_REMOVE_RUN_SAMPLE = [
-							META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
-							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-							META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
-							META_KEY_Identify_Sample]
+						META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+						META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+						META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
+						META_KEY_Identify_Sample]
 
 	### VECT message for show in web page
 	VECT_MESSAGE_ALERT_COVERAGE = [META_KEY_ALERT_COVERAGE_value_defined_by_user,\
@@ -100,7 +100,10 @@ class MetaKeyAndValue(object):
 # 	}
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
-																	
+								
+	## tag for masking consensus values
+	META_KEY_Masking_consensus = "Masking consensus"
+										
 	### Task ID by Job
 	META_KEY_Queue_TaskID = "QueueTaskID"		### Global queueTaskID
 	

@@ -191,7 +191,7 @@ class SoftwarePangolin(object):
 		for identify_virus in vect_data:
 			if (identify_virus.seq_virus.name == "BetaCoV" and
 				identify_virus.seq_virus.kind_type.name == "Genus"): number_right += 1
-			elif (identify_virus.seq_virus.name == "SARS_CoV_2" and
+			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SC2_Omicron_like", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
 				identify_virus.seq_virus.kind_type.name == "Human"): number_right += 1
 
 		## if right at least two		

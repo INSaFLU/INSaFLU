@@ -214,7 +214,7 @@ class Test(unittest.TestCase):
 		for sequence_name in self.utils.get_elements_from_db(reference, user):
 			for type_files in project.vect_clean_file:
 				self.assertTrue(os.path.exists(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, type_files)))
-			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)) > 100)
+			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTTREE)) > 98)
 			self.assertTrue(os.path.getsize(project.get_global_file_by_element(TypePath.MEDIA_ROOT, sequence_name, project.PROJECT_FILE_NAME_FASTA)) > 100)
 
 			meta_key = metaKeyAndValue.get_meta_key(MetaKeyAndValue.META_KEY_Run_Tree_By_Element, sequence_name)

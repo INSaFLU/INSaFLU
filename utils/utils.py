@@ -11,6 +11,7 @@ from managing_files.models import ProjectSample
 from utils.result import GeneticElement, Gene, FeatureLocationSimple
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.Seq import MutableSeq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
@@ -1466,7 +1467,52 @@ class Utils(object):
 		
 		return -1
 	
+	def mask_sequence(self, sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range):
+		"""Mask characters at the given sites in a single sequence record, modifying the
+		record in place.
+		Parameters
+		----------
+		sequence : Bio.SeqIO.SeqRecord
+		    A sequence to be masked
+		mask_sites: list[int]
+		    A list of site indexes to exclude from the FASTA.
+		mask_from_beginning: int
+		    Number of sites to mask from the beginning of each sequence (default 0)
+		mask_from_end: int
+		    Number of sites to mask from the end of each sequence (default 0)
+		mask_invalid: bool
+		    Mask invalid nucleotides (default False)
+		Returns
+		-------
+		Bio.SeqIO.SeqRecord
+		    Masked sequence in its original record object
+		"""
+		# Convert to a mutable sequence to enable masking with Ns.
+		sequence_length = len(sequence.seq)
+		beginning = int(mask_from_beginning) if not mask_from_beginning is None and len(mask_from_beginning) > 0 else 0 
+		end = int(mask_from_end) if not mask_from_end is None and len(mask_from_end) > 0 else 0
 		
+		if beginning + end > sequence_length:
+			beginning, end = sequence_length, 0
+		
+		seq = str(sequence.seq)[beginning:-end or None]
+		masked_sequence = MutableSeq("N" * beginning + seq + "N" * end)
+		
+		# Replace all excluded sites with Ns.
+		if not mask_sites is None and  len(mask_sites.split(',')[0]) > 0:
+			for site in [int(_) - 1 for _ in mask_sites.split(',')]:
+				if site < sequence_length:
+					masked_sequence[site] = "N"
+		
+		if not mask_range is None:
+			for data_ in mask_range.split(','):
+				if (len(data_) > 0):
+					for site in range(int(data_.split('-')[0]) - 1, int(data_.split('-')[1])):
+						if site < sequence_length: masked_sequence[site] = "N"
+			
+		sequence.seq = masked_sequence
+		return sequence
+	
 class ShowInfoMainPage(object):
 	"""
 	only a help class

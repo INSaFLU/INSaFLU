@@ -5,8 +5,9 @@ Created on 10/04/2021
 '''
 import os
 from django.conf import settings
-from settings.models import Software, Parameter, Technology
+from settings.models import Software, Parameter, PipelineStep, Technology
 from constants.software_names import SoftwareNames
+from settings.constants_settings import ConstantsSettings
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 class DefaultParameters(object):
@@ -53,7 +54,7 @@ class DefaultParameters(object):
 		"""
 		Return all softwares/parameters version obsolete 
 		"""
-		vect_return = []
+		vect_return = []	## [[name, version], [name, version], ...]
 		vect_return.append([SoftwareNames.SOFTWARE_TRIMMOMATIC_name, 0])
 		return vect_return
 	
@@ -71,22 +72,9 @@ class DefaultParameters(object):
 					software.save()
 		
 			
-	def get_technology_instance(self, technology_name):
+	def persist_parameters(self, vect_parameters, type_of_use):
 		"""
-		:out return an instance with technology name
-		"""
-		with LockedAtomicTransaction(Technology):
-			try:
-				technology = Technology.objects.get(name=technology_name)
-			except Technology.DoesNotExist:
-				technology = Technology()
-				technology.name = technology_name
-				technology.save()
-			return technology
-
-	def persist_parameters(self, vect_parameters, type_of_use, technology_name):
-		"""
-		presist a specific software by default
+		persist a specific software by default
 		param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
 		"""
 		software = None
@@ -96,11 +84,10 @@ class DefaultParameters(object):
 			if software is None:
 				try:
 					software = Software.objects.get(name=parameter.software.name, owner=parameter.software.owner,
-						type_of_use=type_of_use, technology__name=technology_name,
+						type_of_use=type_of_use, technology=parameter.software.technology,
 						version_parameters = parameter.software.version_parameters)
 				except Software.DoesNotExist:
 					software = parameter.software
-					software.technology = self.get_technology_instance(technology_name)
 					software.save()
 			parameter.software = software
 			parameter.save()
@@ -123,9 +110,9 @@ class DefaultParameters(object):
 	# select * from settings_parameter where software_id = 228  order by id
 
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name = SoftwareNames.TECHNOLOGY_illumina):
+				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina):
 		"""
-		get software_name parameters
+		get software_name parameters, if it saved in database...
 		"""
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
@@ -182,7 +169,66 @@ class DefaultParameters(object):
 		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
 		return return_parameter.strip()
 
-	def get_snippy_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_vect_parameters(self, software):
+		""" return all parameters, by software instance """
+		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name):
+			return self.get_snippy_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina)
+		elif (software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
+			return self.get_trimmomatic_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina)
+		elif (software.name == SoftwareNames.SOFTWARE_NanoFilt_name):
+			return self.get_nanofilt_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_minion)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
+			return self.get_mask_consensus_threshold_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name):
+			return self.get_clean_human_reads_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
+			return self.get_limit_coverage_ONT_threshold_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_minion)
+		elif (software.name == SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name):
+			return self.get_vcf_freq_ONT_threshold_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_minion)
+		elif (software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
+			return self.get_medaka_model_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_minion)
+		elif (software.name == SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT):
+			return self.get_samtools_depth_default_ONT(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_minion)
+		elif (software.name == SoftwareNames.SOFTWARE_ABRICATE_name):
+			return self.get_abricate_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		else: return None
+
+
+	def _get_pipeline(self, pipeline_name):
+		""" return a record for a pipeline step name """
+		if pipeline_name is None: return None
+		
+		try:
+			pipeline_step = PipelineStep.objects.get(name=pipeline_name)
+		except PipelineStep.DoesNotExist as e:
+			pipeline_step = PipelineStep()
+			pipeline_step.name = pipeline_name
+			pipeline_step.save()
+		return pipeline_step
+
+	def get_technology(self, technology_name):
+		""" return a record for a pipeline step name """
+		if technology_name is None: return None
+		
+		try:
+			technology = Technology.objects.get(name=technology_name)
+		except Technology.DoesNotExist:
+			technology = Technology()
+			technology.name = technology_name
+			technology.save()
+		return technology
+		
+	def get_snippy_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		–mapqual: minimum mapping quality to allow (–mapqual 20)
 		—mincov: minimum coverage of variant site (–mincov 10)
@@ -195,6 +241,15 @@ class DefaultParameters(object):
 		software.type_of_use = type_of_use
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -249,7 +304,7 @@ class DefaultParameters(object):
 		
 		return vect_parameters
 
-	def get_freebayes_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_freebayes_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		–min-mapping-quality: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)
 		—min-base-quality: excludes alleles from iSNV analysis if their supporting base quality is less than Q (–min-base-quality 20)
@@ -264,6 +319,15 @@ class DefaultParameters(object):
 		software.type_of_use = type_of_use
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -369,7 +433,7 @@ class DefaultParameters(object):
 		
 		return vect_parameters
 
-	def get_mask_consensus_threshold_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_mask_consensus_threshold_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		Threshold of mask not consensus coverage
 		"""
@@ -380,6 +444,15 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
 		software.version = "1.0"
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -401,7 +474,7 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
-	def get_clean_human_reads_default(self, user, type_of_use):
+	def get_clean_human_reads_default(self, user, type_of_use, technology_name):
 		"""
 		Threshold of mask not consensus coverage
 		"""
@@ -412,6 +485,15 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
 		software.version = "1.0"
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_read_quality_analysis)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -428,7 +510,7 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 	
-	def get_limit_coverage_ONT_threshold_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_limit_coverage_ONT_threshold_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)
 		Where to use this cut-off:
@@ -442,6 +524,15 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
 		software.version = "1.0"
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -463,7 +554,7 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
-	def get_vcf_freq_ONT_threshold_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_vcf_freq_ONT_threshold_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		MINFRAC: minumum proportion for variant evidence (–minfrac 51) Range: [10:100]
 		
@@ -475,6 +566,15 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
 		software.version = "1.0"
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -496,7 +596,7 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
-	def get_medaka_model_default(self, user, type_of_use, project = None, project_sample = None):
+	def get_medaka_model_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		Minimum depth of coverage per site to validate the sequence (default: –mincov 30)
 		Where to use this cut-off:
@@ -510,6 +610,15 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version = SoftwareNames.SOFTWARE_Medaka_VERSION
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -534,7 +643,7 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
-	def get_nanofilt_default(self, user, type_of_use, sample = None):
+	def get_nanofilt_default(self, user, type_of_use, technology_name, sample = None):
 		"""
 		-l <LENGTH>, Filter on a minimum read length. Range: [50:1000].
 		--maxlength Filter on a maximum read length
@@ -547,6 +656,15 @@ class DefaultParameters(object):
 		software.type_of_use = type_of_use
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_read_quality_analysis)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -631,7 +749,7 @@ class DefaultParameters(object):
 		
 		return vect_parameters
 
-	def get_samtools_depth_default_ONT(self, user, type_of_use, project = None, project_sample = None):
+	def get_samtools_depth_default_ONT(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""
 		samtools depth for ONT
 		"""
@@ -642,6 +760,16 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version = SoftwareNames.SOFTWARE_SAMTOOLS_VERSION
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run; NEED TO CHECK
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_coverage_analysis)
+
 		software.owner = user
 		
 		vect_parameters =  []
@@ -695,7 +823,7 @@ class DefaultParameters(object):
 		
 		return vect_parameters
 	
-	def get_trimmomatic_default(self, user, type_of_use, sample = None):
+	def get_trimmomatic_default(self, user, type_of_use, technology_name, sample = None):
 		
 		software = Software()
 		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
@@ -704,6 +832,15 @@ class DefaultParameters(object):
 		software.type_of_use = type_of_use
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_read_quality_analysis)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -862,3 +999,57 @@ class DefaultParameters(object):
 		parameter.description = "This (re)encodes the quality part of the FASTQ file to base 33."
 		vect_parameters.append(parameter)
 		return vect_parameters
+	
+	def get_abricate_default(self, user, type_of_use, technology_name, sample = None):
+		
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_ABRICATE_name
+		software.name_extended = SoftwareNames.SOFTWARE_ABRICATE_name_extended
+		software.version = SoftwareNames.SOFTWARE_ABRICATE_VERSION
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True
+		
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_type_and_subtype_analysis)
+		software.owner = user
+		
+		vect_parameters = []
+		parameter = Parameter()
+		parameter.name = "--minid"
+		parameter.parameter = "70"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = " "
+		parameter.can_change = False
+		parameter.sequence_out = 1
+		parameter.range_available = "[1:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "1"
+		parameter.description = "Minimum DNA %identity."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "--mincov"
+		parameter.parameter = "30"
+		parameter.type_data = Parameter.PARAMETER_int
+		parameter.software = software
+		parameter.sample = sample
+		parameter.union_char = " "
+		parameter.can_change = False
+		parameter.sequence_out = 2
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
+		parameter.description = "Minimum DNA %coverage."
+		vect_parameters.append(parameter)
+		return vect_parameters
+	
+

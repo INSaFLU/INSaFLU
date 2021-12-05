@@ -56,7 +56,6 @@ function show_coverage_table() {
 	    				var draw_x = x_size * value_coverage / 100;
 	    				
 	    				var paper = Raphael(id_to_search, x_size, y_size);
-	    				var rectangle_full = paper.rect(0, 0, x_size, y_size, 5);
 	    				if (draw_x > 1){
 				            var rectangle = paper.rect(0, 0, draw_x, y_size, 5);
 				            var filler = { fill: color_graphic, cursor: 'pointer' };

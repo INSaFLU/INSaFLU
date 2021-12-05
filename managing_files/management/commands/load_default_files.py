@@ -10,7 +10,6 @@ from managing_files.models import MixedInfectionsTag
 from manage_virus.uploadFiles import UploadFiles
 from django.contrib.auth.models import User
 from managing_files.models import DataSet
-from settings.default_parameters import DefaultParameters
 from extend_user.models	import Profile
 from utils.software import Software
 from utils.software import Contigs2Sequences
@@ -165,11 +164,6 @@ class Command(BaseCommand):
 		#### set default references
 		self.stdout.write("Upload References")
 		self.upload_default_references()
-		
-		#### set obsolete some softwares because of parameters
-		self.stdout.write("Set obsolete softwares because of parameters ")
-		default_parameters = DefaultParameters()
-		default_parameters.set_software_obsolete()
 		
 		self.stdout.write("End")
 		

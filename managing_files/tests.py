@@ -8,7 +8,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample, MetaKey, ProjectSample, Project, Reference, MetaKeyProject, UploadFiles, ProcessControler
 from constants.meta_key_and_values import MetaKeyAndValue
-from utils.result import DecodeObjects
+from utils.result import DecodeObjects, MaskingConsensus
 import os, time
 
 class testsReferenceFiles(TestCase):
@@ -900,6 +900,69 @@ class testsReferenceFiles(TestCase):
 		self.assertEqual(None, meta_reference)
 	
 		utils = Utils()
+		## if not exist create in database
+		vect_data = utils.get_elements_from_db(reference, user)
+		self.assertEqual(8, len(vect_data))
+		self.assertEqual('HA', vect_data[0])
+		self.assertEqual('PB2', vect_data[-1])
+
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertFalse(meta_reference == None)
+		self.assertEqual('HA,MP,NA,NP,NS,PA,PB1,PB2', meta_reference.description)
+		
+		geneticElement = utils.get_elements_and_cds_from_db(reference, user)
+		meta_key = MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference
+		decodeCoverage = DecodeObjects()
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertFalse(meta_reference == None)
+		geneticElement_2 = decodeCoverage.decode_result(meta_reference.description)
+		
+		self.assertEquals(geneticElement, geneticElement_2)
+		self.assertEqual(8, len(geneticElement.get_sorted_elements()))
+		self.assertEqual('HA', geneticElement.get_sorted_elements()[0])
+		self.assertEqual('HA', geneticElement.get_genes('HA')[0].name)
+		self.assertEqual(1701, geneticElement.get_size_element('HA'))
+		self.assertEqual('PB2', geneticElement.get_sorted_elements()[-1])
+		
+		self.assertEquals(['HA'], geneticElement.get_vect_gene_names('HA'))
+		self.assertEquals(['HA'], utils.get_vect_cds_from_element_from_db('HA', reference, user))
+		self.assertEquals(['PB2'], utils.get_vect_cds_from_element_from_db('PB2', reference, user))
+		self.assertEquals(None, utils.get_vect_cds_from_element_from_db('xpto', reference, user))
+	
+	def test_get_elements_and_genes_from_db_masking_consensus(self):
+		
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stage_te_tree"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+		
+		manage_database = ManageDatabase()
+		meta_key = MetaKeyAndValue.META_KEY_Elements_Reference
+		meta_reference = manage_database.get_reference_metakey(reference, meta_key, MetaKeyAndValue.META_VALUE_Success)
+		self.assertEqual(None, meta_reference)
+	
+		utils = Utils()
+		## if not exist create in database
 		vect_data = utils.get_elements_from_db(reference, user)
 		self.assertEqual(8, len(vect_data))
 		self.assertEqual('HA', vect_data[0])
@@ -928,6 +991,26 @@ class testsReferenceFiles(TestCase):
 		self.assertEquals(['PB2'], utils.get_vect_cds_from_element_from_db('PB2', reference, user))
 		self.assertEquals(None, utils.get_vect_cds_from_element_from_db('xpto', reference, user))
 
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("[2-4],[4-30],[1-2], [500-320], [50-32]")
+		geneticElement_2.set_mask_consensus_element('HA', masking_consensus)
+		geneticElement_2.set_mask_consensus_element('PB2', masking_consensus)
+		json = geneticElement_2.to_json()
+		
+		geneticElement_3 = decodeCoverage.decode_result(json)
+		self.assertEquals(geneticElement_2, geneticElement_3)
+		self.assertEqual(8, len(geneticElement_3.get_sorted_elements()))
+		self.assertEqual('HA', geneticElement_3.get_sorted_elements()[0])
+		self.assertEqual('HA', geneticElement_3.get_genes('HA')[0].name)
+		self.assertEqual(1701, geneticElement_3.get_size_element('HA'))
+		self.assertEqual('PB2', geneticElement_3.get_sorted_elements()[-1])
+		
+		self.assertEqual(masking_consensus, geneticElement_3.get_mask_consensus_element("HA"))
+		self.assertEqual(masking_consensus, geneticElement_3.get_mask_consensus_element("PB2"))
+		self.assertEqual(None, geneticElement_3.get_mask_consensus_element("PB22"))
 
 	def test_process_controller(self):
 		

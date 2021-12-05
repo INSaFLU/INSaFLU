@@ -14,7 +14,25 @@ class Technology(models.Model):
 	def __str__(self):
 		return self.name
 	
+
+class PipelineStep(models.Model):
+	"""
+	Pipeline step
+	Each software must belong to a Pipeline...
+	"""
+	name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+	name_extended = models.CharField(max_length=100, db_index=True, blank=True, null=True)	## extra name to show in the settings HTML table
 	
+	###  small description of this pipeline step
+	help_text = models.TextField(default="")			## show in a modal dialog
+	
+	class Meta:
+		ordering = ['name', ]
+	
+	def __str__(self):
+		return self.name
+
+
 class Software(models.Model):
 	"""
 	Each user has it software parameters 
@@ -38,6 +56,16 @@ class Software(models.Model):
 	is_obsolete = models.BooleanField(default=False)							## set to True if it's obsolete
 	owner = models.ForeignKey(User, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	technology = models.ForeignKey(Technology, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
+	
+	### if this software is to run (also if the software can be ON/OFF in pipelines)
+	can_be_on_off_in_pipeline = models.BooleanField(default=False)	## set to True if can be ON/OFF in pipeline, otherwise always ON
+	is_to_run = models.BooleanField(default=True)					## set to True if it is going to run, for example Trimmomatic can run or not
+	
+	###  small description of software
+	help_text = models.TextField(default="")
+	
+	###  which part of pipeline is going to run
+	pipeline_step = models.ForeignKey(PipelineStep, related_name='software_settings', blank=True, null=True, on_delete=models.PROTECT)
 	
 	class Meta:
 		ordering = ['name', ]
@@ -99,7 +127,7 @@ class Parameter(models.Model):
 	range_max = models.CharField(max_length=50, default="")				## only used in int and float fields
 	range_min = models.CharField(max_length=50, default="")				## only used in int and float fields
 	description = models.CharField(max_length=500, default="")			## description of this size
-	not_set_value = models.CharField(max_length=50, db_index=True, blank=True, null=True)  ## dont set value if not this value
+	not_set_value = models.CharField(max_length=50, db_index=True, blank=True, null=True)  ## don't define value, in execution string, if this value
 	
 	def __str__(self):
 		return self.name

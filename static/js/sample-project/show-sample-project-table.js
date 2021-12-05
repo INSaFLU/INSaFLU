@@ -1,7 +1,6 @@
 //
 //	This test on the name change
 //
-//$("#phylocanvas").on("change paste keyup", function () {
 
 $('#collapseTwo_1').on('shown.bs.collapse', function () {
 	show_variants_as_a_table();

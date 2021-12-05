@@ -1,6 +1,7 @@
 from django.views.generic import ListView, UpdateView
 from braces.views import LoginRequiredMixin
 from settings.models import Software, Parameter
+from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
 from settings.forms import SoftwareForm
@@ -11,7 +12,6 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from extend_user.models import Profile
 from constants.meta_key_and_values import MetaKeyAndValue
-from constants.software_names import SoftwareNames
 from managing_files.manage_database import ManageDatabase
 from utils.process_SGE import ProcessSGE
 
@@ -31,16 +31,16 @@ class SettingsView(LoginRequiredMixin, ListView):
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(self.request.user) ## the user can have defaults yet
 		
-		### IMPORTANT, must have technology__name__in, because old versions
+		### IMPORTANT, must have technology__name__in, because old versions don't
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
 				is_obsolete = False)
 		
 		table = SoftwaresTable(query_set)
 		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
 				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[SoftwareNames.TECHNOLOGY_illumina, SoftwareNames.TECHNOLOGY_minion],
+				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
 				is_obsolete = False )
 		table_insaflu = INSaFLUParametersTable(query_set_insaflu)
 		context['nav_settings'] = True

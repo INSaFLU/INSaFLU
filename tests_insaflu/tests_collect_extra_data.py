@@ -17,7 +17,7 @@ from django.test.utils import override_settings
 from utils.parse_coverage_file import GetCoverage
 from constants.constants import TypePath, FileType, Constants
 from constants.software_names import SoftwareNames
-from utils.result import Result, SoftwareDesc, KeyValues, KeyValue
+from utils.result import Result, SoftwareDesc, KeyValues, KeyValue, GeneticElement, Gene, MaskingConsensus
 
 class Test(unittest.TestCase):
 
@@ -314,6 +314,19 @@ class Test(unittest.TestCase):
 					MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		
+		### masking data
+		manageDatabase = ManageDatabase()
+		geneticElement = GeneticElement()
+		geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("[2-4],[4-30],[1-2], [500-320], [50-32]")
+		geneticElement.dt_elements_mask['element_name'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		
 		### test group set tag names
 		self.assertTrue(project_sample.sample.get_tag_names().count() == 1) 
 		
@@ -378,6 +391,25 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
+		### masking data
+		manageDatabase = ManageDatabase()
+		geneticElement = GeneticElement()
+		geneticElement.add_gene('PB2', 100, Gene('name', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("3")
+		geneticElement.dt_elements_mask['PB2'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		
+		collect_extra_data.mask_all_consensus_files(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "Consensus_EVA001_S66.fasta")
+		print(expected_file_samples)
+		self.assertTrue(os.path.exists(expected_file_samples))
+		for project_sample in project.project_samples.all():
+			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))
+			
 		### get sample result file
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))

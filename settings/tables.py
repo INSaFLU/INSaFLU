@@ -14,6 +14,7 @@ from extend_user.models	import Profile
 from settings.models import Software
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.constants_settings import ConstantsSettings
 
 class SoftwaresTable(tables.Table):
 	
@@ -57,7 +58,7 @@ class SoftwaresTable(tables.Table):
 		user = current_request.user
 		
 		record = kwargs.pop("record")
-		technology_name = SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
+		technology_name = ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 		if (self.project is None and self.project_sample is None and self.sample is None):
 			default_software = DefaultSoftware()
 			return default_software.get_parameters(record.name, user, technology_name)
@@ -77,7 +78,7 @@ class SoftwaresTable(tables.Table):
 
 	def render_technology(self, record):
 		""" return technology names """
-		return SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
+		return ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 	
 	def render_options(self, record):
 		
@@ -170,7 +171,7 @@ class INSaFLUParametersTable(tables.Table):
 
 	def render_technology(self, record):
 		""" return technology names """
-		return SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
+		return ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 
 	def render_parameters(self, **kwargs):
 		"""
@@ -181,7 +182,7 @@ class INSaFLUParametersTable(tables.Table):
 		user = current_request.user
 		
 		record = kwargs.pop("record")
-		technology_name = SoftwareNames.TECHNOLOGY_illumina if record.technology is None else record.technology.name
+		technology_name = ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name
 		if (self.project is None and self.project_sample is None):
 			default_software = DefaultSoftware()
 			return default_software.get_parameters(record.name, user, technology_name)

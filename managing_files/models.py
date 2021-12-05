@@ -764,6 +764,7 @@ class Project(models.Model):
 																			### this file is only used for to show the manging_files.views.ShowSampleProjectsView
 	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
 	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
+	PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = "mask_all_consensus" 		### masking all consensus, defined by user
 	
 	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
 	
@@ -1018,6 +1019,13 @@ class ProjectSample(models.Model):
 		get clean consensus file name
 		"""
 		return os.path.join(self.__get_path__(type_path, ProjectSample.PATH_MAIN_RESULT), "{}{}{}".format(\
+					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
+
+	def get_backup_consensus_file(self):
+		"""
+		get clean consensus file name
+		"""
+		return os.path.join(self.__get_path__(TypePath.MEDIA_ROOT, ProjectSample.PATH_MAIN_RESULT), "{}{}_backup{}".format(\
 					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
 	
 	def get_consensus_file_web(self):

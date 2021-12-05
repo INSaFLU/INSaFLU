@@ -4,3 +4,7 @@ EVA011_S54,EVA011_S54_L001_R1_001.fastq.gz,EVA011_S54_L001_R2_001.fastq.gz,,,,,,
 EVA003_S91,EVA003_S91_L001_R1_001.fastq.gz,EVA003_S91_L001_R2_001.fastq.gz,,,,,,,,,"xpto, zpto",,xpto xpto,Illumina,False,FastQC-0.11.9; (let's go again),Trimmomatic-0.39; (let's go again)/Trimmomatic-0.39; (let's go againsecond version trimmomatic),SPAdes-3.11.1; (let's go),Snippy-3.2-dev; (let's go_2222),Not applied
 EVA002_S52,EVA002_S52_L001_R1_001.fastq.gz,EVA002_S52_L001_R2_001.fastq.gz,,,,,,,,,"xpto, zpto",,xpto xpto,Illumina,False,FastQC-0.11.9; (let's go again),Trimmomatic-0.39; (let's go again)/Trimmomatic-0.39; (let's go againsecond version trimmomatic),SPAdes-3.11.1; (let's go),Snippy-3.2-dev; (let's go_2222),Not applied
 EVA001_S66,EVA001_S66_L001_R1_001.fastq.gz,EVA001_S66_L001_R2_001.fastq.gz,,,,,,,,,"xpto, zpto",,xpto xpto,Illumina,False,FastQC-0.11.9; (let's go again),Trimmomatic-0.39; (let's go again)/Trimmomatic-0.39; (let's go againsecond version trimmomatic),SPAdes-3.11.1; (let's go),Snippy-3.2-dev; (let's go_2222),Not applied
+
+Masking consensus regions
+Elements,Mask sites,Mask from beginning,Mask from end,Mask regions
+element_name,"2,5",2,2,"1-30,32-50,320-500"

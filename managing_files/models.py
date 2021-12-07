@@ -964,7 +964,8 @@ class ProjectSample(models.Model):
 		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
 		"""
 		constants = Constants()
-		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
+		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None),
+				constants.get_extensions_by_file_type(self.sample.name, file_type))
 
 	def get_file_output_human(self, type_path, file_type, software, b_second_choice = False):
 		"""

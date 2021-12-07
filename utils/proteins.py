@@ -80,9 +80,7 @@ class Proteins(object):
 				continue
 			
 			### get consensus file name
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
-						SoftwareNames.SOFTWARE_SNIPPY_name \
-						if project_sample.is_sample_illumina() else SoftwareNames.SOFTWARE_Medaka_name)
+			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
 			if (not os.path.exists(consensus_fasta)):
 				manageDatabase.set_project_metakey(project, user, meta_key,\
 						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)

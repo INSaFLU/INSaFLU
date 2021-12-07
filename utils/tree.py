@@ -92,9 +92,7 @@ class CreateTree(object):
 								if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
-					SoftwareNames.SOFTWARE_SNIPPY_name if project_sample.is_sample_illumina() else\
-					SoftwareNames.SOFTWARE_Medaka_name)
+			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
 			if (not os.path.exists(consensus_fasta)):
 				manageDatabase.set_project_metakey(project, owner, meta_key,\
 						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist - " + consensus_fasta)

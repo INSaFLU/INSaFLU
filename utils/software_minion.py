@@ -624,6 +624,10 @@ class SoftwareMinion(object):
 			if (os.path.exists(consensus_fasta)):
 				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)		### this is going to main path
 				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, limit_to_mask_consensus, False)
+				
+				## make a backup of this file to use has a starter of second stage analysis
+				self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file())
 			
 			### set the tag of result OK 
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Medaka, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())

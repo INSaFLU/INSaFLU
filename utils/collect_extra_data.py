@@ -940,6 +940,8 @@ class CollectExtraData(object):
 		b_nanostat_sats = False		### test if has NanoFilt statistics
 		
 		### START First, test pangolin version, if exist
+		## /usr/local/web_site/INSaFLU/media/projects/result/user_3
+		## vi ./project_231/main_result/PangolinLineage.csv
 		result_pangolin = None
 		meta_sample = manage_database.get_project_metakey_last(project,
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\

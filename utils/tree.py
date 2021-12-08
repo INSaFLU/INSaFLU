@@ -7,7 +7,7 @@ from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Result
-from constants.constants import TypePath, FileType, FileExtensions
+from constants.constants import TypePath, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.result import SoftwareDesc
 from utils.software import Software

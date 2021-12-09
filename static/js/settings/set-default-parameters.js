@@ -53,7 +53,7 @@ $('#id-set-default-button').on('click', function(){
         	  /// add message with informaton
         	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-success">' +
         		'The ' + $('#id-modal-body-set-default').attr('type_software') + 
-        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was set to default values.' +
+        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' ' + data['message'] +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
         	  var element_to_update = document.getElementById($('#id-modal-body-set-default').attr('td_to_update'))
@@ -68,7 +68,7 @@ $('#id-set-default-button').on('click', function(){
         	/// add message with informaton
         	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
         		'The ' + $('#id-modal-body-set-default').attr('type_software') + 
-        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was not set to default values.' +
+        		' \'' + $('#id-modal-body-set-default').attr('ref_name') + '\' was NOT set to default values.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }

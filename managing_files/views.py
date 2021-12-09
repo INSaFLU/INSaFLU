@@ -1621,7 +1621,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project, project, None, None) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
 		
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
@@ -1677,8 +1677,7 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_project_sample, None,
-					project_sample, None) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, None, project_sample, None) ## the user can have defaults yet
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
 				parameter__project=None, parameter__project_sample=project_sample,

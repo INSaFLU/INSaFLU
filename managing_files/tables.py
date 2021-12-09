@@ -1,6 +1,5 @@
 import django_tables2 as tables
 from managing_files.models import Reference, Sample, Project, ProjectSample
-from constants.software_names import SoftwareNames
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -373,28 +372,10 @@ class ProjectTable(tables.Table):
 		count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
 		count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
 		
-		## START masking consensus
-		manageDatabase = ManageDatabase()
-		meta_value = manageDatabase.get_project_metakey_last(record, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
-		
-		### reference
-		masking_consensus = None
-		toolpit_masking = "No mask is applied to consensus in this project"
-		if not meta_value is None:
-			decode_masking_consensus = DecodeObjects()
-			masking_consensus = decode_masking_consensus.decode_result(meta_value.description)
-			toolpit_masking = masking_consensus.get_message_mask_to_show_in_web_site()
-		sz_project_sample_masking = '<a href="#id_set_positions_to_mask_regions" id="showMaskModal" data-toggle="modal" project_id="{}" '.format(record.id) + \
-				'reference_name="{}" id_image=icon_mask_consensus_{} project_name="{}" >'.format(record.reference.name, record.pk, record.name) + \
-				'<span><i id=icon_mask_consensus_{} class="padding-button-table {} fa fa-superpowers padding-button-table tip" title="{}"></i></span></a>'.format(\
-				record.pk, "warning_fa_icon" if not masking_consensus is None and masking_consensus.has_masking_data() else "", toolpit_masking)
-		## END masking consensus
-		
 		sz_project_sample = ""
 		if (count > 0):
 			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
 				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
-			sz_project_sample += sz_project_sample_masking
 			## only can change settings when has projects finished
 			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
@@ -403,7 +384,6 @@ class ProjectTable(tables.Table):
 		else:	## can change settings
 			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-			sz_project_sample += sz_project_sample_masking
 		
 		return mark_safe(sz_project_sample)
 	

@@ -118,93 +118,14 @@
  		</div>
 	</div>
 	
-	<!-- Define limits to mask sequences -->
-	<div class="modal fade" id="id_set_positions_to_mask_regions" mask-consensus-url="{% url 'mask_consensus' %}" \
-				mask-consensus-actual-values-url="{% url 'mask_consensus_actual_values' %}" >
-		<div class="modal-dialog">
-			<div class="modal-content">
-   
-					<!-- Modal Header -->
-					<div class="modal-header alert alert-primary">
-						<h4 id="id_tile_mask_consensus" class="modal-title-remove">Set positions to mask consensus</h4>
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
-  
-					<!-- Modal body -->
-					<div class="modal-body mx-auto mw-100">
-						<div class="row"> 
-	  						<div class="col-sm-12">
-	  							<label id="id-label-name" class="col-form-label extra_info">Reference</label>
-	  						</div>
-	  					</div>
-	  					<div class="row"> 
-	  						<div class="col-sm-12">
-	  							<label id="id_select_sites" class="col-form-label"> Element: </label>
-	  							<select id="combo_select_elements_mask_id" class="custom-select mx-sm-3">
-			      				</select>
-			      				<label id="id_select_length" class="col-form-label"> </label>
-	  						</div>
-	  					</div>
-	  					<div class="row"> 
-	  						<div class="col-sm-6"> 
-	  							<div id="div_id_mask_sites" class="form-group"> 
-	  								<label for="id_mask_sites" class="col-form-label"> Mask sites </label>
-	  								<div class=""> <input type="text" name="mask sites" maxlength="200" class="textinput textInput form-control"
-	  									id="id_mask_sites"  value="" placeholder="34,67,4" > <!--  value="3232,23,23" pattern="([0-9]{1,},){1,}"--> 
-	  									<small id="hint_id_mask_sites" class="form-text text-muted">Mask consensus in a specific positions. Positions separated by comma. Positions are 1-indexed. Ex: 34,67,4</small> 
-	  								</div> 
-	  								<div id="id_mask_sites_error"></div>
-	  							</div> 
-	  						</div>
-							<div class="col-sm-6">
-								<div id="div_id_mask_regions" class="form-group">
-									<label for="id_mask_regions" class="col-form-label "> Mask regions </label>
-									<div class=""> <input type="text" name="mask_regions" maxlength="200" class="textinput textInput form-control"
-										id="id_mask_regions" value="" placeholder="30-60,100-453"> 
-										<small id="hint_id_mask_regions" class="form-text text-muted">Mask consensus by regions. Region limits separated by dash. More than one region separated by comma. Positions are 1-indexed. Ex: 30-60,100-453</small>
-									</div>
-									<div id="id_mask_regions_error"></div>
-								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-sm-6">
-								<div id="div_id_mask_from_beginning" class="form-group">
-									<label for="id_mask_from_beginning" class="col-form-label "> Mask from beginning </label>
-									<div class=""> <input type="text" name="mask_from_beginning" maxlength="200" class="textinput textInput form-control"
-										id="id_mask_from_beginning" value="" placeholder="110"> 
-										<small id="hint_id_mask_from_beginning" class="form-text text-muted">Mask consensus from beginning till this position. Positions are 1-indexed.</small>
-									</div>
-									<div id="id_mask_from_beginning_error"></div>
-								</div>
-							</div> 
-	  						<div class="col-sm-6"> 
-	  							<div id="div_id_mask_till_ends" class="form-group"> 
-	  								<label for="id_mask_till_ends" class="col-form-label"> Mask from end </label>
-	  								<div class=""> <input type="text" name="mask from ends" maxlength="200" class="textinput textInput form-control"
-	  									id="id_mask_till_ends" value="" placeholder="453"> 
-	  									<small id="hint_id_mask_from_ends" class="form-text text-muted">Mask consensus from end to this position. Positions are 1-indexed.</small> 
-	  								</div> 
-	  								<div id="id_mask_from_till_error"></div>
-	  							</div> 
-	  						</div>
-						</div>
-  					</div>
-  					<!-- Modal footer -->
-  					<div class="modal-footer" id="id-modal-footer-remove">
-    					<button id="id-mask-consensus" type="button" class="btn btn-primary" data-dismiss="modal">Mask Consensus</button>
-    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
-  					</div>
-			</div>
- 		</div>
-	</div>
 {% endblock content %}
 
 
 {% block js %}
+
+
 	{% load static from staticfiles %}
-	    <script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
-	    <script type="text/javascript" src="{% static 'js/project/mask_consensus.js' %}"></script>
 	    <script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
+	    <script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
 {% endblock js %}
 

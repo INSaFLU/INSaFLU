@@ -8,6 +8,7 @@ from django.conf import settings
 from settings.models import Software, Parameter, PipelineStep, Technology
 from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
+from constants.meta_key_and_values import MetaKeyAndValue
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 class DefaultParameters(object):
@@ -28,6 +29,10 @@ class DefaultParameters(object):
 	
 	### used in mask consensus
 	MASK_CONSENSUS_threshold = "Threshold"
+	
+	### used when the parameters are passed in other way
+	### parameters values has the META_KEY of the metakey_projectsample/metakey_project 
+	MASK_DONT_care = "dont_care"
 
 	### clean human reads
 	MASK_CLEAN_HUMAN_READS = software_names.SOFTWARE_CLEAN_HUMAN_READS_name
@@ -320,14 +325,14 @@ class DefaultParameters(object):
 		software.type_of_software = Software.TYPE_SOFTWARE
 		software.version_parameters = self.get_software_parameters_version(software.name)
 		software.technology = self.get_technology(technology_name)
-		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
 		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
 	
 		###  small description of software
 		software.help_text = ""
 	
 		###  which part of pipeline is going to run
-		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_intra_host_minor_variant_detection)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -340,7 +345,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 1
 		parameter.range_available = "[10:50]"
 		parameter.range_max = "50"
@@ -357,7 +362,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 2
 		parameter.range_available = "[10:50]"
 		parameter.range_max = "50"
@@ -374,7 +379,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 3
 		parameter.range_available = "[20:500]"
 		parameter.range_max = "500"
@@ -390,7 +395,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 4
 		parameter.range_available = "[5:100]"
 		parameter.range_max = "100"
@@ -407,7 +412,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 5
 		parameter.range_available = "[0.01:0.5]"
 		parameter.range_max = "0.5"
@@ -423,7 +428,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 6
 		parameter.range_available = "[1:5]"
 		parameter.range_max = "5"
@@ -452,7 +457,7 @@ class DefaultParameters(object):
 		software.help_text = ""
 	
 		###  which part of pipeline is going to run
-		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_coverage_analysis)
 		software.owner = user
 		
 		vect_parameters =  []
@@ -782,7 +787,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 1
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"
@@ -799,7 +804,7 @@ class DefaultParameters(object):
 		parameter.project = project
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
-		parameter.can_change = True
+		parameter.can_change = False
 		parameter.sequence_out = 2
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"
@@ -1052,4 +1057,45 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 	
+
+	def get_mask_consensus_by_site_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
+		"""
+		Mask consensus by site
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name
+		software.name_extended = SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended
+		software.type_of_use = type_of_use
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version = "1.0"
+		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(technology_name)
+		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = DefaultParameters.MASK_DONT_care
+		parameter.parameter = MetaKeyAndValue.META_KEY_Masking_consensus
+		parameter.type_data = Parameter.PARAMETER_char
+		parameter.software = software
+		parameter.project = project
+		parameter.project_sample = project_sample
+		parameter.union_char = ""
+		parameter.can_change = False
+		parameter.sequence_out = 1
+		parameter.range_available = ""
+		parameter.range_max = ""
+		parameter.range_min = ""
+		parameter.description = ""
+		vect_parameters.append(parameter)
+		return vect_parameters
 

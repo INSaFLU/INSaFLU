@@ -22,104 +22,111 @@ class DefaultProjectSoftware(object):
 		self.default_parameters = DefaultParameters()
 		self.change_values_software = {}	### the key is the name of the software
 		
-	def test_all_defaults(self, user, type_of_use, project, project_sample, sample):
+	def test_all_defaults(self, user, project, project_sample, sample):
 		"""
 		test all defaults for all software available
 		"""
 		
 		## only for project and for all technology
 		if (not project is None):
-			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project,
-						project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
-	## Not in used yet
-	##		self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, project)
-	
+			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, Software.TYPE_OF_USE_project, 
+							project, None, None, ConstantsSettings.TECHNOLOGY_illumina)
+			self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, Software.TYPE_OF_USE_project, 
+							project, None, None, ConstantsSettings.TECHNOLOGY_illumina)
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_illumina)
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_minion)
 			self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
-# 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
-# 							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_minion)
+			
+			### SOFTWARE_MASK_CONSENSUS_BY_SITE_name can be both
+			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_minion)
+			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
+							user, Software.TYPE_OF_USE_project, project, None, None,
+							ConstantsSettings.TECHNOLOGY_illumina)
+			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
+ 							user, Software.TYPE_OF_USE_project, project, None, None,
+ 							ConstantsSettings.TECHNOLOGY_minion)
 		## only for project sample and by technology
 		elif (not project_sample is None):
 			
 			if (project_sample.sample.is_type_fastq_gz_sequencing()): ### illumina
-				self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, type_of_use, project,
+				self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, Software.TYPE_OF_USE_project_sample, None,
 						project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
-	## Not in used yet
-	##		self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, project)
-	
+				self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, Software.TYPE_OF_USE_project_sample,
+						None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
-							user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_illumina)
+				self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_illumina)
 			else:
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
-								user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,\
-								user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name,\
-								user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
-								user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
-# 				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
-# 								user, type_of_use, project, project_sample, None, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
+				self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
+				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
+						user, project, None, None, ConstantsSettings.TECHNOLOGY_minion)
 		
 		### only for sample and ONT technology
-		if (not sample is None):
+		elif (not sample is None):
 			if (sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_minion)):
 				self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,\
-						user, Software.TYPE_OF_USE_sample, None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_sample, None, None, sample,
+						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name,\
-						user, Software.TYPE_OF_USE_sample, None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_sample, None, None, sample,
+						ConstantsSettings.TECHNOLOGY_minion)
 			if (sample.is_type_fastq_gz_sequencing(Sample.TYPE_OF_FASTQ_illumina)):
 				self.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,\
-						user, Software.TYPE_OF_USE_sample, None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
+						user, Software.TYPE_OF_USE_sample, None, None, sample,
+						ConstantsSettings.TECHNOLOGY_illumina)
 				self.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name,\
-						user, Software.TYPE_OF_USE_sample, None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
-
+						user, Software.TYPE_OF_USE_sample, None, None, sample,
+						ConstantsSettings.TECHNOLOGY_illumina)
 
 	def test_default_db(self, software_name, user, type_of_use, project, project_sample, 
 					sample, technology_name):
 		"""
 		test if exist, if not persist in database
 		"""
-		list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
+		## lock because more than one process can duplicate software names
+		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+			list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
 					parameter__project=project, parameter__project_sample=project_sample,
 					parameter__sample=sample,
 					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
 					technology__name = technology_name).distinct("name")
-		if len(list_software) == 0:
-			### if it is Minion is because that does not exist at all. 
-			### Previous versions didn't have TechnologyName
-			vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project,
+			### if not exist need to save
+			if len(list_software) == 0:
+				vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project,
 					project_sample, sample, technology_name)
-			if (technology_name == ConstantsSettings.TECHNOLOGY_illumina):
-				list_software = Software.objects.filter(name=software_name, owner=user,
-					type_of_use = type_of_use,
-					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
-					parameter__project=project,
-					parameter__project_sample=project_sample,
-					parameter__sample=sample).distinct("name")
-
-				### if exist set illumina in technology					
-				if (len(list_software) == 1):
-					list_software[0].technology = self.default_parameters.get_technology(technology_name)
-					list_software[0].save()
-				else:
-					with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-						self.default_parameters.persist_parameters(vect_parameters, type_of_use)
-			else:			
-				### create a default one for this user
-				with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-					### persist 
-					if (len(vect_parameters) > 0):
-						self.default_parameters.persist_parameters(vect_parameters, type_of_use)
-
+				if (len(vect_parameters) > 0): ### persist
+					self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
 	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample,
 					sample, technology_name):
@@ -133,15 +140,27 @@ class DefaultProjectSoftware(object):
 					technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name):
-			return self.default_parameters.get_freebayes_default(user, type_of_use, technology_name, project, project_sample)
+			vect_parameters = self.default_parameters.get_freebayes_default(user, type_of_use, technology_name, project, project_sample)
+			if (not project is None): vect_parameters = self._get_default_project(user,\
+				SoftwareNames.SOFTWARE_FREEBAYES_name, None, vect_parameters, technology_name)		### base values
+			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
+				SoftwareNames.SOFTWARE_FREEBAYES_name, project_sample.project, vect_parameters,\
+				technology_name)		### base values
+			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			vect_parameters = self.default_parameters.get_mask_consensus_threshold_default(user, type_of_use, technology_name, project, project_sample)
 			if (not project is None): vect_parameters = self._get_default_project(user,\
-				software_name, None, vect_parameters,
-				technology_name)		### base values
+				software_name, None, vect_parameters, technology_name)		### base values
 			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
-				software_name, project_sample.project,
-				vect_parameters, technology_name)		### base values
+				software_name, project_sample.project, vect_parameters, technology_name)		### base values
+			return vect_parameters
+		elif (software_name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name):
+			vect_parameters = self.default_parameters.get_mask_consensus_by_site_default(
+				user, type_of_use, technology_name, project, project_sample)
+			if (not project is None): vect_parameters = self._get_default_project(user,\
+				software_name, None, vect_parameters, technology_name)		### base values
+			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
+				software_name, project_sample.project, vect_parameters, technology_name)		### base values
 			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
 			vect_parameters = self.default_parameters.get_limit_coverage_ONT_threshold_default(user, type_of_use, technology_name, project, project_sample)
@@ -1303,7 +1322,7 @@ class DefaultProjectSoftware(object):
 		vect_software.append(self.software_names.get_insaflu_parameter_limit_coverage_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_freq_vcf_name())
 		vect_software.append(self.software_names.get_abricate_name())
-#		vect_software.append(self.software_names.get_freebayes_name())
+		vect_software.append(self.software_names.get_freebayes_name())
 		return vect_software
 
 	def _get_default_project(self, user, software_name, project, vect_parameters, technology_name):

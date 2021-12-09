@@ -14,5 +14,10 @@ urlpatterns = [
 	url(r'software_project_sample_update/soft_(?P<pk>\d+)/proj_sample_(?P<pk_proj_sample>\d+)', views.UpdateParametersProjSampleView.as_view(), name='software-project-sample-update'),
 	url(r'software_sample_update/soft_(?P<pk>\d+)/sample_(?P<pk_sample>\d+)', views.UpdateParametersSampleView.as_view(), name='software-sample-update'),
 	
-	url(r'^ajax/default_parameters', ajax_views.set_default_parameters, name='default_parameters'),			## remove a project
+	url(r'^ajax/default_parameters$', ajax_views.set_default_parameters, name='default_parameters'),
+	url(r'^ajax/turn_on_off_software$', ajax_views.turn_on_off_software, name='turn_on_off_software'),
+	url(r'^ajax/mask_consensus$', ajax_views.mask_consensus, name='mask_consensus'),					## set positions to mask consensus
+	url(r'^ajax/mask_consensus_actual_values$', ajax_views.get_mask_consensus_actual_values, name='mask_consensus_actual_values'),	## get positions to mask consensus
+	url(r'^ajax/get_software_name_to_turn_on_off$', ajax_views.get_software_name_to_turn_on_off, name='get_software_name_to_turn_on_off'),	## message to toggle on/off software
+
 ]

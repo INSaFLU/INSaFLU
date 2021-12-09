@@ -16,10 +16,34 @@ from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.constants_settings import ConstantsSettings
 
+		## START masking consensus
+# manageDatabase = ManageDatabase()
+# meta_value = manageDatabase.get_project_metakey_last(record, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+
+# ### reference
+# masking_consensus = None
+# toolpit_masking = "No mask is applied to consensus in this project"
+# if not meta_value is None:
+# 	decode_masking_consensus = DecodeObjects()
+# 	masking_consensus = decode_masking_consensus.decode_result(meta_value.description)
+# 	toolpit_masking = masking_consensus.get_message_mask_to_show_in_web_site()
+# sz_project_sample_masking = '<a href="#id_set_positions_to_mask_regions" id="showMaskModal" data-toggle="modal" project_id="{}" '.format(record.id) + \
+# 		'reference_name="{}" id_image=icon_mask_consensus_{} project_name="{}" >'.format(record.reference.name, record.pk, record.name) + \
+# 		'<span><i id=icon_mask_consensus_{} class="padding-button-table {} fa fa-superpowers padding-button-table tip" title="{}"></i></span></a>'.format(\
+# 		record.pk, "warning_fa_icon" if not masking_consensus is None and masking_consensus.has_masking_data() else "", toolpit_masking)
+# ## END masking consensus
+		
+class CheckBoxColumnWithName(tables.CheckBoxColumn):
+	@property
+	def header(self):
+		default = {'type': 'checkbox'}
+		return self.verbose_name
+
 class SoftwaresTable(tables.Table):
 	
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
+	select_to_run = CheckBoxColumnWithName(verbose_name=('To Run'), accessor="pk", orderable=False)
 	software = tables.Column('Software', orderable=False, empty_values=())
 	version = tables.Column('Version', orderable=False, empty_values=())
 	parameters = tables.Column('Parameters', orderable=False, empty_values=())
@@ -42,13 +66,21 @@ class SoftwaresTable(tables.Table):
 
 	class Meta:
 		model = Software()
-		fields = ('software', 'technology', 'version', 'parameters', 'options')
+		fields = ('select_to_run', 'software', 'technology', 'version', 'parameters', 'options')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no Softwares to show..."
 
 	def render_software(self, record):
 		return record.name if record.name_extended is None else record.name_extended
 
+	def render_select_to_run(self, value, record):
+		sz_href = '<a href="#id_turn_software_on_off" id="id_show_turn_on_off_modal" data-toggle="modal" software_id="{}">'.format(record.id) +\
+			'<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/> </a>'.format(
+			Constants.CHECK_BOX, record.id, record.id,
+			"checked" if record.is_to_run else "",
+			"" if record.can_be_on_off_in_pipeline else "disabled")
+		return mark_safe(sz_href)
+		
 	def render_parameters(self, **kwargs):
 		"""
 		render parameters for the software
@@ -143,6 +175,7 @@ class INSaFLUParametersTable(tables.Table):
 	
 #   Renders a normal value as an internal hyperlink to another page.
 #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
+	select_to_run = CheckBoxColumnWithName(verbose_name=('To Run'), accessor="pk", orderable=False)
 	software = tables.Column('Software', orderable=False, empty_values=())
 	parameters = tables.Column('Parameters', orderable=False, empty_values=())
 	options = tables.Column('Options', orderable=False, empty_values=())
@@ -162,13 +195,19 @@ class INSaFLUParametersTable(tables.Table):
 
 	class Meta:
 		model = Software()
-		fields = ('software', 'technology', 'parameters', 'options')
+		fields = ('select_to_run', 'software', 'technology', 'parameters', 'options')
 		attrs = {"class": "table-striped table-bordered"}
 		empty_text = "There are no INSaFLU parameters to show..."
 
 	def render_software(self, record):
 		return record.name if record.name_extended is None else record.name_extended
 
+	def render_select_to_run(self, value, record):
+		return mark_safe('<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/>'.format(
+			Constants.CHECK_BOX, record.id, record.id,
+			"checked" if record.is_to_run else "",
+			"" if record.can_be_on_off_in_pipeline else "disabled"))
+		
 	def render_technology(self, record):
 		""" return technology names """
 		return ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name

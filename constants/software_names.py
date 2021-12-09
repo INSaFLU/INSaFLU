@@ -288,7 +288,12 @@ class SoftwareNames(object):
 	
 	### genebank to perl
 	SOFTWARE_genbank_to_perl = os.path.join(settings.DIR_SOFTWARE, "scripts/bp_genbank2gff3.pl")
-	
+
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_name = "Mask consensus by sites"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended = "Mask consensus by sites"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion = "1"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters = ""	## don't have anything by default
+		
 	###################################
 	###################################
 	#####
@@ -300,12 +305,12 @@ class SoftwareNames(object):
 	INSAFLU_PARAMETER_MASK_CONSENSUS_vesion = "1"
 	INSAFLU_PARAMETER_MASK_CONSENSUS_parameters = "Threshold:70"
 
-
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name = "Minimum depth of coverage per site to validate the sequence"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended = "Minimum depth of coverage per site to validate the sequence (mincov)"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion = "1"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters = "Threshold:30"
 	
+	### It also put Ns on positions where variations are below this threshold (masking consensus on ONT)
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_name = "Minimum proportion for variant evidence"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended = "Minimum proportion for variant evidence (minfrac)"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion = "1"
@@ -342,6 +347,7 @@ class SoftwareNames(object):
 				SOFTWARE_SNIPPY_name,
 				SOFTWARE_FREEBAYES_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
 				SOFTWARE_ABRICATE_name,
 			],
@@ -351,6 +357,7 @@ class SoftwareNames(object):
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
 				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+				SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
 				INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
 				SOFTWARE_ABRICATE_name,
 			],
@@ -608,6 +615,15 @@ class SoftwareNames(object):
 	def get_create_new_reference_to_snippy_name(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_name
 	def get_create_new_reference_to_snippy_version(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion
 	def get_create_new_reference_to_snippy_parameters(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters
+
+	"""
+	return mask consensus by sites
+	"""
+	def get_software_mask_consensus_by_site(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name
+	def get_software_mask_consensus_by_site_name(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name
+	def get_software_mask_consensus_by_site_name_extended(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended
+	def get_software_mask_consensus_by_site_version(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion
+	def get_software_mask_consensus_by_site_parameters(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters
 
 	###### START minion software
 	###

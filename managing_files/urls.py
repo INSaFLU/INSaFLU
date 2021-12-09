@@ -50,8 +50,6 @@ urlpatterns = [
 	url(r'^ajax/remove_uploaded_file$', ajax_views.remove_uploaded_file, name='remove_uploaded_file'),	## remove remove_uploaded_file
 	url(r'^ajax/remove_uploaded_files$', ajax_views.remove_uploaded_files, name='remove_uploaded_files'),	## remove remove_uploaded_files, several at once 
 	url(r'^ajax/unlock_sample_file$', ajax_views.unlock_sample_file, name='unlock_sample_file'),	## unlock sample list files
-	url(r'^ajax/mask_consensus$', ajax_views.mask_consensus, name='mask_consensus'),					## set positions to mask consensus
-	url(r'^ajax/mask_consensus_actual_values$', ajax_views.get_mask_consensus_actual_values, name='mask_consensus_actual_values'),	## get positions to mask consensus
 	url(r'^ajax/get_process_running$', ajax_views.get_process_running, name='get_process_running'),		## get process to run
 	url(r'^ajax/submit_sge$', ajax_views.submit_sge, name='submit-sge'),		## only for tests because of sge/apache in centos
 ] 

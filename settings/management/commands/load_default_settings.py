@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 pipeline_step = PipelineStep.objects.get(name=name)
             except PipelineStep.DoesNotExist as e:
                 pipeline_step = PipelineStep()
-                pipeline_step.name = PipelineStep
+                pipeline_step.name = name
                 pipeline_step.save()
         
         ### Technology Name
@@ -61,16 +61,14 @@ class Command(BaseCommand):
                 software.is_to_run = vect_parameters[0].software.is_to_run
                 software.pipeline_step = vect_parameters[0].software.pipeline_step
                 software.help_text = vect_parameters[0].software.help_text
-                
-                ## test technology DON'T do this
-                # if software.technology is None:
-                #     vect_parameters[0].software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
-                #     software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
                 software.save()
-            ## if only technology fail
-            elif software.technology is None:
-                software.technology = Technology.objects.get(name=ConstantsSettings.TECHNOLOGY_illumina)
-                software.save()
+            else:   ### if PipelineStep not none, test if it is correct
+                vect_parameters = default_parameters.get_vect_parameters(software)
+                if (software.pipeline_step.name != vect_parameters[0].software.pipeline_step.name):
+                    software.pipeline_step = vect_parameters[0].software.pipeline_step
+                    software.save()
+                    
+           
 
     # A command must define handle()
     def handle(self, *args, **options):

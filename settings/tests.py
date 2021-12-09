@@ -29,11 +29,12 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(9, len(vect_software))
+		self.assertEqual(10, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
-		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[2])
-		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[3])
+		self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[2])
+		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[3])
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[4])
 		
 		### test all defaults
 		default_software.test_all_defaults(user)
@@ -99,11 +100,12 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(9, len(vect_software))
+		self.assertEqual(10, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, vect_software[0])
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[1])
-		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[2])
-		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[3])
+		self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[2])
+		self.assertEqual(SoftwareNames.SOFTWARE_NanoFilt_name, vect_software[3])
+		self.assertEqual(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, vect_software[4])
 		
 		### test all defaults
 		default_software.test_all_defaults(user)
@@ -333,44 +335,44 @@ class testsDefaultSoftwares(TestCase):
 		
 		##########################
 		### test Samtools  ONT
-# 		try:
-# 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-# 							type_of_use = Software.TYPE_OF_USE_global,
-# 							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
-# 			self.fail("Must fail")
-# 		except Software.DoesNotExist:
-# 			pass
-# 			
-# 		try:
-# 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-# 							type_of_use = Software.TYPE_OF_USE_global,
-# 							technology__name = ConstantsSettings.TECHNOLOGY_minion)
-# 			self.assertFalse(software.is_used_in_project_sample())
-# 			self.assertFalse(software.is_used_in_project())
-# 			self.assertFalse(software.is_used_in_sample())
-# 			self.assertTrue(software.is_used_in_global())
-# 		except Software.DoesNotExist:
-# 			self.fail("Must exist this software name")
-# 
-# 		parameters = Parameter.objects.filter(software=software)
-# 		self.assertTrue(1, len(parameters))
-# 		
-# 		### test set default
-# 		self.assertEqual("0", parameters[0].parameter)
-# 		self.assertEqual("-q", parameters[0].name)
-# 		self.assertEqual("-aa", default_software.get_samtools_parameters_depth_ONT(user))
-# 		parameter = parameters[0]
-# 		parameter.parameter = "20"
-# 		parameter.save()
-# 		parameter = parameters[1]
-# 		parameter.parameter = "40"
-# 		parameter.save()
-# 		self.assertEqual("-q 20 -Q 40 -aa", default_software.get_samtools_parameters_depth_ONT(user))
-# 		
-# 		parameter = parameters[1]
-# 		parameter.parameter = "0"
-# 		parameter.save()
-# 		self.assertEqual("-q 20 -aa", default_software.get_samtools_parameters_depth_ONT(user))
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+			self.fail("must fail")
+		except Software.DoesNotExist:
+			pass
+			
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertFalse(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_sample())
+			self.assertTrue(software.is_used_in_global())
+		except Software.DoesNotExist:
+			self.fail("must exist this software name")
+
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		### test set default
+		self.assertEqual("0", parameters[0].parameter)
+		self.assertEqual("-q", parameters[0].name)
+		self.assertEqual("-aa", default_software.get_samtools_parameters_depth_ONT(user))
+		parameter = parameters[0]
+		parameter.parameter = "20"
+		parameter.save()
+		parameter = parameters[1]
+		parameter.parameter = "40"
+		parameter.save()
+		self.assertEqual("-q 20 -Q 40 -aa", default_software.get_samtools_parameters_depth_ONT(user))
+		
+		parameter = parameters[1]
+		parameter.parameter = "0"
+		parameter.save()
+		self.assertEqual("-q 20 -aa", default_software.get_samtools_parameters_depth_ONT(user))
 		
 				### Test Abricate
 		try:
@@ -454,8 +456,8 @@ class testsDefaultSoftwares(TestCase):
 			
 		#### save a project_sample
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_sample, None, None, sample)
+		default_software.test_all_defaults(user, project, None, None)
+		default_software.test_all_defaults(user, None, None, sample)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51",\
 				default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		self.assertEqual("Threshold:70",\
@@ -668,48 +670,49 @@ class testsDefaultSoftwares(TestCase):
 		
 		##########################
 		### test samtools ONT
-# 		try:
-# 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-# 							type_of_use = Software.TYPE_OF_USE_global,
-# 							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
-# 			self.fail("Must fail")
-# 		except Software.DoesNotExist:
-# 			pass
-# 			
-# 		try:
-# 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-# 							type_of_use = Software.TYPE_OF_USE_project,
-# 							technology__name = ConstantsSettings.TECHNOLOGY_minion)
-# 			self.assertFalse(software.is_used_in_project_sample())
-# 			self.assertTrue(software.is_used_in_project())
-# 			self.assertFalse(software.is_used_in_sample())
-# 			self.assertFalse(software.is_used_in_global())
-# 		except Software.DoesNotExist:
-# 			self.fail("Must exist this software name")
-# 
-# 		parameters = Parameter.objects.filter(software=software)
-# 		self.assertTrue(1, len(parameters))
-# 		
-# 		### test set default
-# 		self.assertEqual("0", parameters[0].parameter)
-# 		self.assertEqual("-q", parameters[0].name)
-# 		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
-# 											project_sample, "-q"))
-# 		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
-# 											project_sample, "-Q"))
-# 		parameter = parameters[0]
-# 		parameter.parameter = "20"
-# 		parameter.save()
-# 		parameter = parameters[1]
-# 		parameter.parameter = "30"
-# 		parameter.save()
-# 		
-# 		self.assertEqual("-q 20 -Q 30 -aa", default_software.get_samtools_parameters_ONT(user,
-# 										Software.TYPE_OF_USE_project, project, None))
-# 		self.assertFalse(default_software.is_samtools_single_parameter_default_for_project_ONT(
-# 					project, "-q"))
-# 		self.assertEqual("20", default_software.get_samtools_single_parameter_ONT(
-# 					project_sample, "-q"))
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_global,
+							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+			self.fail("Must fail")
+		except Software.DoesNotExist:
+			pass
+			
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertTrue(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_sample())
+			self.assertFalse(software.is_used_in_global())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(1, len(parameters))
+		
+		### test set default
+		self.assertEqual("0", parameters[0].parameter)
+		self.assertEqual("-q", parameters[0].name)
+		self.assertEqual(False, parameters[0].can_change)
+		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
+											project_sample, "-q"))
+		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
+											project_sample, "-Q"))
+		parameter = parameters[0]
+		parameter.parameter = "20"
+		parameter.save()
+		parameter = parameters[1]
+		parameter.parameter = "30"
+		parameter.save()
+		
+		self.assertEqual("-q 20 -Q 30 -aa", default_software.get_samtools_parameters_ONT(user,
+										Software.TYPE_OF_USE_project, project, None))
+		self.assertFalse(default_software.is_samtools_single_parameter_default_for_project_ONT(
+					project, "-q"))
+		self.assertEqual("20", default_software.get_samtools_single_parameter_ONT(
+					project_sample, "-q"))
 
 
 	def test_default_software_2(self):
@@ -779,7 +782,7 @@ class testsDefaultSoftwares(TestCase):
 			
 		#### save a project_sample
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, project, None, None)
+		default_software.test_all_defaults(user, project, None, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 42334", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		self.assertEqual(ConstantsSettings.PIPELINE_NAME_variant_detection, software.pipeline_step.name)
 
@@ -816,15 +819,15 @@ class testsDefaultSoftwares(TestCase):
 			
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(9, len(vect_software))
+		self.assertEqual(10, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
 	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
 		
 		### test all defaults
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
+		default_software.test_all_defaults(user, project, None, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project, project, None))
-#		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-#				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, project))
+		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
+				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project, ConstantsSettings.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project, ConstantsSettings.TECHNOLOGY_minion))
 
@@ -888,10 +891,10 @@ class testsDefaultSoftwares(TestCase):
 		default_software = DefaultProjectSoftware()
 		
 		### test all defaults
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
+		default_software.test_all_defaults(user, project, None, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project, project, None))
-# 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-# 				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, project))
+		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
+				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project,\
@@ -924,7 +927,7 @@ class testsDefaultSoftwares(TestCase):
 
 		
 		### must pass
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
+		default_software.test_all_defaults(user, project, None, None)
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project,\
 							parameter__project=project).distinct()
@@ -938,7 +941,7 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("0.222", parameters[2].parameter)
 		
 		#### save a project_sample
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		default_software.set_default_software(software[0], user, Software.TYPE_OF_USE_project, project, None, None)
@@ -996,6 +999,23 @@ class testsDefaultSoftwares(TestCase):
 			project.owner = user
 			project.save()
 		
+		##############################
+		### test mask site consensus
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project,
+							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+			self.assertFalse(software.is_used_in_project_sample())
+			self.assertTrue(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_global())
+			self.assertFalse(software.is_used_in_sample())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+		self.assertEqual(ConstantsSettings.PIPELINE_NAME_variant_detection, software.pipeline_step.name)
+		self.assertEqual(False, software.can_be_on_off_in_pipeline)
+		
+		######################################################################
+		######################################################################
 		###  save project sample
 		project_sample = ProjectSample()
 		project_sample.project = project
@@ -1003,14 +1023,14 @@ class testsDefaultSoftwares(TestCase):
 		project_sample.save()
 
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_all_possibilities(user,
 				project_sample, ConstantsSettings.TECHNOLOGY_illumina))
 		self.assertEqual("70", default_software.get_mask_consensus_single_parameter(project_sample,\
 				DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina))
 		
 		### for project sample
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		### test extra mask maker
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
@@ -1032,10 +1052,24 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("Threshold:90", default_software.get_mask_consensus_parameters_all_possibilities(user,
 				project_sample, ConstantsSettings.TECHNOLOGY_illumina))
 		
+		##############################
+		### test mask site consensus
+		try:
+			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
+							type_of_use = Software.TYPE_OF_USE_project_sample,
+							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+			self.assertTrue(software.is_used_in_project_sample())
+			self.assertFalse(software.is_used_in_project())
+			self.assertFalse(software.is_used_in_global())
+			self.assertFalse(software.is_used_in_sample())
+		except Software.DoesNotExist:
+			self.fail("Must exist this software name")
+		self.assertEqual(ConstantsSettings.PIPELINE_NAME_variant_detection, software.pipeline_step.name)
+		self.assertEqual(False, software.can_be_on_off_in_pipeline)
 		
 		##########################
 		### test Trimmomatic
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_sample, None, None, sample)
+		default_software.test_all_defaults(user, None, None, sample)
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_sample,
@@ -1099,6 +1133,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		self.assertEqual(ConstantsSettings.PIPELINE_NAME_type_and_subtype_analysis, software.pipeline_step.name)
 		
+
 	def test_default_software_project_sample(self):
 		
 		try:
@@ -1142,15 +1177,15 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
 		
 		vect_software = default_software.get_all_software()
-		self.assertEqual(9, len(vect_software))
+		self.assertEqual(10, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
-	#	self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
+		self.assertEqual(SoftwareNames.SOFTWARE_Medaka_name_consensus, vect_software[1])
 		
 		### test all defaults
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
-#		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-#				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, project))
+		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
+				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project_sample,\
@@ -1209,15 +1244,15 @@ class testsDefaultSoftwares(TestCase):
 		
 		default_software = DefaultProjectSoftware()
 		vect_software = default_software.get_all_software()
-		self.assertEqual(9, len(vect_software))
+		self.assertEqual(10, len(vect_software))
 		self.assertEqual(SoftwareNames.SOFTWARE_SNIPPY_name, vect_software[0])
-#		self.assertEqual(SoftwareNames.SOFTWARE_FREEBAYES_name, vect_software[1])
+		self.assertEqual(SoftwareNames.SOFTWARE_Medaka_name_consensus, vect_software[1])
 		
 		### test all defaults
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
-# 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-# 				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, project))
+		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
+				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project_sample,\
@@ -1237,7 +1272,7 @@ class testsDefaultSoftwares(TestCase):
 		parameter.save()
 		
 		### must pass
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project_sample, None, project_sample, None)
+		default_software.test_all_defaults(user, None, project_sample, None)
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project_sample,\
 							parameter__project_sample=project_sample).distinct()

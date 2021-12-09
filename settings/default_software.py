@@ -40,6 +40,9 @@ class DefaultSoftware(object):
 		self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name,
 				self.default_parameters.get_snippy_default(user, Software.TYPE_OF_USE_global,
 				ConstantsSettings.TECHNOLOGY_illumina), user)
+		self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name,
+				self.default_parameters.get_freebayes_default(user, Software.TYPE_OF_USE_global,
+				ConstantsSettings.TECHNOLOGY_illumina), user)
 		self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				self.default_parameters.get_mask_consensus_threshold_default(user,
 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina), user)
@@ -63,12 +66,15 @@ class DefaultSoftware(object):
 		self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,
 				self.default_parameters.get_medaka_model_default(user,
 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
-# 		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
-# 				self.default_parameters.get_samtools_depth_default_ONT(user), user,
-# 				ConstantsSettings.TECHNOLOGY_minion)
+		
+		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+ 				self.default_parameters.get_samtools_depth_default_ONT(user,
+				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+		
 		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,
 				self.default_parameters.get_nanofilt_default(user,
 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+		
 		self.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name,
 				self.default_parameters.get_abricate_default(user,
 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
@@ -81,32 +87,16 @@ class DefaultSoftware(object):
 		test if exist, if not persist in database
 		"""
 		type_of_use = Software.TYPE_OF_USE_global
-		try:
-			Software.objects.get(name=software_name, owner=user,\
-						type_of_use = type_of_use,
-						technology__name = vect_parameters[0].software.technology.name,
-						version_parameters = \
-						self.default_parameters.get_software_parameters_version(software_name))
-		except Software.DoesNotExist:
-			
-			### if it is Minion is because that does not exist at all. 
-			### Previous versions didn't have TechnologyName
-			if (vect_parameters[0].software.technology.name == ConstantsSettings.TECHNOLOGY_illumina):
-				try:
-					software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use = type_of_use,
-						version_parameters = \
-						self.default_parameters.get_software_parameters_version(software_name))
-					### if exist set illumina in technology
-					software.technology = vect_parameters[0].software.technology
-					software.save()
-				except Software.DoesNotExist:
-					with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-						self.default_parameters.persist_parameters(vect_parameters, type_of_use)
-			else:	### do this all the time for 
-				### create a default one for this user TECHNOLOGY_minion
-				with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-					self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+		## lock because more than one process can duplicate software names
+		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+			try:
+				Software.objects.get(name=software_name, owner=user,\
+							type_of_use = type_of_use,
+							technology__name = vect_parameters[0].software.technology.name,
+							version_parameters = \
+							self.default_parameters.get_software_parameters_version(software_name))
+			except Software.DoesNotExist: ### if not exist save it
+				self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
 	def get_trimmomatic_parameters(self, user):
 		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,
@@ -114,6 +104,10 @@ class DefaultSoftware(object):
 		return "" if result is None else result
 	def get_snippy_parameters(self, user):
 		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_SNIPPY_name, user,
+					Software.TYPE_OF_USE_global, None, None, None, ConstantsSettings.TECHNOLOGY_illumina)
+		return "" if result is None else result
+	def get_freebayes_parameters(self, user):
+		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user,
 					Software.TYPE_OF_USE_global, None, None, None, ConstantsSettings.TECHNOLOGY_illumina)
 		return "" if result is None else result
 	def get_nanofilt_parameters(self, user):
@@ -170,7 +164,7 @@ class DefaultSoftware(object):
 						break
 
 	def is_change_values_for_software(self, software):
-		""" Return if the software has a value changed"""
+		""" Return if the software has a value changed """
 		key_value = "{}_{}".format(software.name, software.technology.name)
 		return self.change_values_software.get(key_value, False)
 
@@ -185,6 +179,11 @@ class DefaultSoftware(object):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name,
 				self.default_parameters.get_snippy_default(user, Software.TYPE_OF_USE_global,
+				ConstantsSettings.TECHNOLOGY_illumina), user)
+			return self.get_snippy_parameters(user)
+		if (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name):
+			self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name,
+				self.default_parameters.get_freebayes_default(user, Software.TYPE_OF_USE_global,
 				ConstantsSettings.TECHNOLOGY_illumina), user)
 			return self.get_snippy_parameters(user)
 		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
@@ -234,6 +233,7 @@ class DefaultSoftware(object):
 		vect_software = []
 		vect_software.append(self.software_names.get_trimmomatic_name())
 		vect_software.append(self.software_names.get_snippy_name())
+		vect_software.append(self.software_names.get_freebayes_name())
 		vect_software.append(self.software_names.get_NanoFilt_name())
 		vect_software.append(self.software_names.get_insaflu_parameter_mask_consensus_name())
 		vect_software.append(self.software_names.get_medaka_name_extended_consensus())

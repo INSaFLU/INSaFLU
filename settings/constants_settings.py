@@ -8,9 +8,9 @@ class ConstantsSettings(object):
 	'''
 	classdocs
 	'''
-	PIPELINE_NAME_read_quality_analysis = 'Read quality analysis'
-	PIPELINE_NAME_type_and_subtype_analysis = 'Type and sub-type detection'
-	PIPELINE_NAME_variant_detection = 'Variant detection and consensus generation'
+	PIPELINE_NAME_read_quality_analysis = 'Read quality analysis and improvement'
+	PIPELINE_NAME_type_and_subtype_analysis = 'Classification'
+	PIPELINE_NAME_variant_detection = 'Mutation detection and consensus generation'
 	PIPELINE_NAME_coverage_analysis = 'Coverage analysis'
 	PIPELINE_NAME_alignment = 'Alignment/Phylogeny'
 	PIPELINE_NAME_intra_host_minor_variant_detection = 'Intra-host minor variant detection'
@@ -29,13 +29,15 @@ class ConstantsSettings(object):
 	### technology available
 	TECHNOLOGY_illumina = "Illumina"
 	TECHNOLOGY_minion = "ONT"
+	TECHNOLOGY_all = "All"
 	TECHNOLOGY_Undefined = "Undefined"
 
 	### technology names
 	vect_technology = [
 					TECHNOLOGY_illumina,
 					TECHNOLOGY_minion,
-					TECHNOLOGY_Undefined
+					TECHNOLOGY_Undefined,
+					TECHNOLOGY_all,
 				]
 	
 	

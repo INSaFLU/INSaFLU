@@ -69,7 +69,7 @@ $(document).on("click", "a", function(e){
 		});
 	}
 	else if (attr === 'id_add_sample_message'){
-		$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+		$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
         		'It is not possible for now to add samples to the projects because there is a big backlog. We are solving this problem right now.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
@@ -142,13 +142,13 @@ $('#id-mask-consensus').on('click', function(){
         	  
         	  /// add message with informaton
 			  if (data['is_going_to_mask']){
-        	  	$('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
+        	  	$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-success">' +
         			data['message'] +
 					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 					'</div>');
 			  }
 			  else{
-				$('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+				$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
         			data['message'] +
 					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 					'</div>');
@@ -156,7 +156,7 @@ $('#id-mask-consensus').on('click', function(){
           }
           else{
         	/// add message with informaton
-        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
         		'The project \'' + $('#id_set_positions_to_mask_regions').attr('name') + '\' was not masked consensus.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');

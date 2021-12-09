@@ -720,7 +720,10 @@ class Gene(object):
 			vect_compound_location = []
 			for feature_location in self.vect_feature_locations:
 				vect_compound_location.append(feature_location.get_feature_location())
-			return SeqFeature(CompoundLocation(vect_compound_location), type="CDS")
+			try:	## some files doesn't have this well formated
+				return SeqFeature(CompoundLocation(vect_compound_location), type="CDS")
+			except:
+				pass
 		return SeqFeature(FeatureLocation(self.start, self.end, strand=self.strand), type="CDS")
 		
 class GeneticElement(object):

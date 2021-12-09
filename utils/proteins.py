@@ -104,7 +104,7 @@ class Proteins(object):
 				## get file name
 				if (gene.name not in dt_out_files): 
 					dt_out_files[gene.name] = self.utils.get_temp_file_from_dir(temp_dir,\
-							"{}_{}".format(sequence_name, self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
+							"{}_{}".format(sequence_name.replace('/', '_'), self.utils.clean_name(gene.name)), FileExtensions.FILE_FAA)
 				
 				if (self.save_protein_by_sequence_name_and_cds(record_dict_consensus,
 							self.dt_alignments_genes_consensus[project_sample.id],
@@ -357,11 +357,17 @@ class Proteins(object):
 					### can had some feature locations like join{[265:13468](+), [13467:21555](+)}
 					vect_feature_location = []
 					dt_positions = {}		## only for speed
-					for feature in gene.get_feature_locations():
-						dt_positions[feature.start] = 1
-						dt_positions[feature.end] = 1
-						vect_feature_location.append(FeatureLocationSimple(feature.start,
-								feature.end, strand=feature.strand))
+					if (len(gene.get_feature_locations()) > 0):
+						for feature in gene.get_feature_locations():
+							dt_positions[feature.start] = 1
+							dt_positions[feature.end] = 1
+							vect_feature_location.append(FeatureLocationSimple(feature.start,
+									feature.end, strand=feature.strand))
+					else:
+						dt_positions[gene.start] = 1
+						dt_positions[gene.end] = 1
+						vect_feature_location.append(FeatureLocationSimple(gene.start,
+									gene.end, strand=gene.strand))
 					
 					###  let's start
 					if (len(seq_ref) > 0 and len(seq_other) > 0):

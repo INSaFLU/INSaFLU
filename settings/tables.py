@@ -124,7 +124,7 @@ class SoftwaresTable(tables.Table):
 		except Profile.DoesNotExist:
 			pass
 		
-		if (not self.project is None):
+		if (not self.project is None):		## for projects
 			str_links = '<a href=' + reverse('software-project-update', args=[record.pk, self.project.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
@@ -135,7 +135,7 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
-		elif (not self.project_sample is None):
+		elif (not self.project_sample is None):		## for project samples
 			str_links = '<a href=' + reverse('software-project-sample-update', args=[record.pk, self.project_sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
@@ -147,7 +147,7 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
-		elif (not self.sample is None):
+		elif (not self.sample is None):		## for samples
 			str_links = '<a href=' + reverse('software-sample-update', args=[record.pk, self.sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
@@ -158,7 +158,7 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.sample.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
-		else:
+		else:								## for all
 			str_links = '<a href=' + reverse('software-update', args=[record.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
 				'"></i></span></a>'

@@ -403,8 +403,7 @@ class SoftwareMinion(object):
 	
 			## process medaka
 			default_project_software = DefaultProjectSoftware()
-			default_project_software.test_all_defaults(user, SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None)
+			default_project_software.test_all_defaults(user, None, project_sample, None)
 			try:
 				#### need to check the models
 				parameters_medaka_consensus = default_project_software.get_medaka_parameters_all_possibilities(user, project_sample)

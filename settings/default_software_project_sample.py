@@ -90,7 +90,8 @@ class DefaultProjectSoftware(object):
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
-						user, project, None, None, ConstantsSettings.TECHNOLOGY_minion)
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_minion)
 		
 		### only for sample and ONT technology
 		elif (not sample is None):

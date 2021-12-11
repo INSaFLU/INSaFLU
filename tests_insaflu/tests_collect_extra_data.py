@@ -405,7 +405,6 @@ class Test(unittest.TestCase):
 		
 		collect_extra_data.mask_all_consensus_files(project)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "Consensus_EVA001_S66.fasta")
-		print(expected_file_samples)
 		self.assertTrue(os.path.exists(expected_file_samples))
 		for project_sample in project.project_samples.all():
 			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))

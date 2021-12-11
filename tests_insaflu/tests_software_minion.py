@@ -386,7 +386,7 @@ class Test(TestCase):
 		
 		### set 60 to mask consensus
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(user, Software.TYPE_OF_USE_project, project, None, None)
+		default_software.test_all_defaults(user, project, None, None)
 		try:
 			software = Software.objects.get(name=SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,

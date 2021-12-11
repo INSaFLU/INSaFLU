@@ -472,7 +472,8 @@ def get_image_coverage(request):
 		if (key_with_project_sample_id in request.GET and key_element in request.GET):
 			try:
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
-				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
+				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE,
+						request.GET.get(key_element).replace('/', '_'), FileExtensions.FILE_PNG)
 				data['is_ok'] = True
 				data['image'] = mark_safe('<img id="coverage_image_id" src="{}" style="width: 100%;">'.format(path_name))
 				data['image_download'] = path_name

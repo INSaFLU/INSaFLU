@@ -1726,8 +1726,7 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, Software.TYPE_OF_USE_sample, None,
-					None, sample) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, None, None, sample) ## the user can have defaults yet
 		### regular software
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_sample,
 				parameter__sample=sample, type_of_software=Software.TYPE_SOFTWARE, technology__name__in=

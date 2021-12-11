@@ -70,7 +70,8 @@ class DrawAllCoverage(object):
 					dict_more_90.get(sequence_name, []),\
 					dict_more_50.get(sequence_name, []),\
 					dict_less_50.get(sequence_name, []),\
-					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, sequence_name, FileExtensions.FILE_PNG),\
+					project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE,
+					sequence_name.replace('/', '_'), FileExtensions.FILE_PNG),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_ALL),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_0),\
 					coverage.get_coverage(sequence_name, Coverage.COVERAGE_MORE_DEFINED_BY_USER) if\

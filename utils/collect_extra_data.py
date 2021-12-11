@@ -628,9 +628,9 @@ class CollectExtraData(object):
 			if parse_pangolin.has_data():
 				vect_out_header.append("Lineage (Pangolin)")
 				vect_out_header.append("Scorpio (Pangolin)") 
-				if (not b_simple):
-					vect_out_header.append("Technology")
-					vect_out_header.append("Sample Downsized")
+			if (not b_simple):
+				vect_out_header.append("Technology")
+				vect_out_header.append("Sample Downsized")
 			
 			### all information about the softwares
 			if (not b_simple):

@@ -73,33 +73,36 @@ class SoftwarePangolin(object):
 		if (not settings.DEBUG):
 			## default version
 			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-			cmd = "{} {} --update > {} 2>&1; {} --decompress-model".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), temp_file, self.software_names.get_pangolin())
+			cmd = "{} {} --update; {} --decompress-model".format(self.software_names.get_pangolin_env(),
+				self.software_names.get_pangolin(), self.software_names.get_pangolin())
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to run pangolin --update")
 			
+			### check all versions installed 
+			cmd = "{} {} --all-versions > {} 2>&1".format(self.software_names.get_pangolin_env(),
+				self.software_names.get_pangolin(), temp_file)
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to run pangolin --update")
+
 			vect_lines = self.utils.read_text_file(temp_file)
-			#$ pangolin --update
-			#pangolin updated to v3.1.14
-			#pangolearn updated to 2021-09-28
-			#constellations updated to v0.0.16
-			#scorpio already latest release (v0.3.12)
-			#pango-designation (vv1.2.13) is newer than latest stable release (v1.2.86), not updating.
-			#### NEW again
-			#$ pangolin --update
-			#pangolin already latest release (v3.1.14)
-			#pangolearn already latest release (2021-09-28)
-			#constellations already latest release (v0.0.16)
-			#scorpio already latest release (v0.3.12)
-			#pango-designation (vv1.2.13) is newer than latest stable release (v1.2.86), not updating.
+			## Important, go through pangolin --all-versions
+			#$ pangolin --all-versions
+			# pangolin already latest release (v3.1.16)
+			# pangolearn already latest release (2021-11-25)
+			# constellations already latest release (v0.0.27)
+			# scorpio already latest release (v0.3.14)
+			# pango-designation already latest release (v1.2.106)
 			dt_result_version = {}
 			for line in vect_lines:
-				lst_data = line.strip().split()
+				lst_data = line.replace(':', '').strip().split()
 				for test_name in SoftwareNames.VECT_PANGOLIN_TO_TEST:
-					if (lst_data[0].lower() == test_name.lower()):
+					if (lst_data[0].lower() == test_name.lower() and not test_name in dt_result_version):
 						dt_result_version[test_name] = self._get_verion_tag(line.strip()).replace('(', '').replace(')', '')
 						break
 			self.utils.remove_file(temp_file)
@@ -191,7 +194,7 @@ class SoftwarePangolin(object):
 		for identify_virus in vect_data:
 			if (identify_virus.seq_virus.name == "BetaCoV" and
 				identify_virus.seq_virus.kind_type.name == "Genus"): number_right += 1
-			elif (identify_virus.seq_virus.name == "SARS_CoV_2" and
+			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
 				identify_virus.seq_virus.kind_type.name == "Human"): number_right += 1
 
 		## if right at least two		

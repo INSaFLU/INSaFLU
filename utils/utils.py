@@ -28,6 +28,7 @@ from pysam import pysam
 from django.conf import settings
 from statistics import mean
 from django.db import transaction
+from utils.result import MaskingConsensus
 
 class Utils(object):
 	'''
@@ -726,11 +727,11 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
-	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, coverage_limit,
-									freq_vcf_limit):
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, vcf_file_out_removed_by_filter,
+					coverage_limit, freq_vcf_limit):
 		""" add FREQ, AO, AF and TYPE to VCF, FREQ=AO/DP
 		This case is used in MEDAKA only
-		
+		:param vcf_file_out_removed_by_filter -> can be None, keep the variants that are filter by  freq_vcf_limit
 		vcffile must be gzip and tbi included
 		:param coverage_limit -> filter by this coverage (this is necessary because medaka doesn't have)
 		:param cut off for VCF freq
@@ -751,6 +752,8 @@ class Utils(object):
 			return
 		
 		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
+		if not vcf_file_out_removed_by_filter is None:
+			vcf_hanlder_write_removed_by_filter = pysam.VariantFile(vcf_file_out_removed_by_filter, "w")
 		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/(DPSP-AR)')
 		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)')
 		if (not RO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(RO, number='1', type='Integer', description='Reference allele observation count, SR (ref fwd + ref rev)')
@@ -762,10 +765,14 @@ class Utils(object):
 		## write the header
 		for variant_header_records in vcf_hanlder.header.records:
 			vcf_hanlder_write.header.add_record(variant_header_records)
-		
+			if not vcf_file_out_removed_by_filter is None:
+				vcf_hanlder_write_removed_by_filter.header.add_record(variant_header_records)
+				
 		for variant_sample in vcf_hanlder.header.samples:
 			vcf_hanlder_write.header.add_sample(variant_sample)
-			
+			if not vcf_file_out_removed_by_filter is None:
+				vcf_hanlder_write_removed_by_filter.header.add_sample(variant_sample)
+
 		for variant in vcf_hanlder:
 			### DP must be replaced by DPSP. DPSP is the sum of all reads Span and Ambiguous
 			if ("SR" in variant.info and "DPSP" in variant.info and "AR" in variant.info):	## SR=0,0,15,6
@@ -784,6 +791,7 @@ class Utils(object):
 				out_ro = -1			### RO
 				vect_out_af = []	### AF
 				vect_out_freq = []	### FREQ
+				vect_out_freq_filtered = []	### FREQ
 				vect_out_type = []	### TYPE
 				
 				for value_ in range(0, len(variant.info['SR']), 2):
@@ -798,7 +806,8 @@ class Utils(object):
 								freq_value = allele_count/float(total_deep)
 								if (freq_value >= freq_vcf_limit): 
 									vect_out_freq.append(float("{:.1f}".format(freq_value * 100)))
-								else: continue
+								elif (not vcf_file_out_removed_by_filter is None): 
+									vect_out_freq_filtered.append(float("{:.1f}".format(freq_value * 100)))
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
 						
 						vect_out_ao.append(allele_count)
@@ -813,13 +822,26 @@ class Utils(object):
 					variant.info[AF] = tuple(vect_out_af)
 					variant.info[TYPE] = tuple(vect_out_type)	
 					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, total_deep_samtools)])
-					if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
+					variant.info[FREQ] = tuple(vect_out_freq)
 					
 					### Only save the ones with FREQ
 					vcf_hanlder_write.write(variant)
+				
+				### save the filtered
+				if (len(vect_out_freq_filtered) > 0):
+					if (out_ro > -1): variant.info[RO] = tuple([out_ro])
+					variant.info[AO] = tuple(vect_out_ao)
+					variant.info[AF] = tuple(vect_out_af)
+					variant.info[TYPE] = tuple(vect_out_type)	
+					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, total_deep_samtools)])
+					variant.info[FREQ] = tuple(vect_out_freq_filtered)
+					
+					### Only save the ones with FREQ
+					vcf_hanlder_write_removed_by_filter.write(variant)
 			
 		vcf_hanlder_write.close()
 		vcf_hanlder.close()
+		if not vcf_file_out_removed_by_filter is None: vcf_hanlder_write_removed_by_filter.close()
 		return vcf_file_out
 
 	def _get_type_variation(self, ref, alt):
@@ -1512,6 +1534,28 @@ class Utils(object):
 			
 		sequence.seq = masked_sequence
 		return sequence
+	
+	def mask_sequence_by_sites(self, consensus_from, consensus_to, genetic_elemets):
+		vect_record_out = []
+		## always work with the backup	
+		with open(consensus_from, "rU") as handle_fasta:
+			for record in SeqIO.parse(handle_fasta, "fasta"):
+				masking_consensus = genetic_elemets.dt_elements_mask.get(record.id, MaskingConsensus())
+				if masking_consensus.has_data():
+					vect_record_out.append(self.mask_sequence(record,
+						masking_consensus.mask_sites, masking_consensus.mask_from_beginning, 
+						masking_consensus.mask_from_ends, masking_consensus.mask_regions))
+				else: vect_record_out.append(record)
+		if (len(vect_record_out) > 0):
+			temp_file = self.get_temp_file("masked_seq_", ".fasta")
+			with open(temp_file, "w") as handle_fasta_out:
+				SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+
+			### move temp consensus to original position, if has info
+			if os.stat(temp_file).st_size > 0:
+				self.move_file(temp_file, consensus_to)
+			else: os.unlink(temp_file)
+
 	
 class ShowInfoMainPage(object):
 	"""

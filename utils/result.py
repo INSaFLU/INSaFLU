@@ -781,8 +781,8 @@ class GeneticElement(object):
 	
 	def has_masking_data(self):
 		""" testing if has masking data """
-		for element in self.get_sorted_elements():
-			if element in self.dt_elements_mask and self.dt_elements_mask[element].has_data(): return True
+		for element in self.dt_elements_mask:
+			if self.dt_elements_mask[element].has_data(): return True
 		return False
 	
 	def get_message_mask_to_show_in_web_site(self):

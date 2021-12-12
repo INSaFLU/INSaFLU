@@ -24,7 +24,6 @@ from utils.process_SGE import ProcessSGE
 from django.conf import settings
 from settings.constants_settings import ConstantsSettings
 from utils.result import MaskingConsensus
-from Bio import SeqIO
 
 class CollectExtraData(object):
 	'''
@@ -566,26 +565,10 @@ class CollectExtraData(object):
 					self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
 										project_sample.get_backup_consensus_file())
 
-				vect_record_out = []
-				## always work with the backup	
-				with open(project_sample.get_backup_consensus_file(), "rU") as handle_fasta:
-					for record in SeqIO.parse(handle_fasta, "fasta"):
-						masking_consensus = masking_consensus_original.dt_elements_mask.get(record.id, MaskingConsensus())
-						if masking_consensus.has_data():
-							vect_record_out.append(self.utils.mask_sequence(record,
-								masking_consensus.mask_sites, masking_consensus.mask_from_beginning, 
-								masking_consensus.mask_from_ends, masking_consensus.mask_regions))
-						else: vect_record_out.append(record)
-				if (len(vect_record_out) > 0):
-					temp_file = self.utils.get_temp_file("masked_seq_", ".fasta")
-					with open(temp_file, "w") as handle_fasta_out:
-						SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
-
-					### move temp consensus to original position, if has info
-					if os.stat(temp_file).st_size > 0:
-						self.utils.move_file(temp_file, project_sample.get_consensus_file(TypePath.MEDIA_ROOT))
-					else: os.unlink(temp_file)
-	
+				### masking consensus file
+				self.utils.mask_sequence_by_sites(project_sample.get_backup_consensus_file(),
+					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original)
+					
 	def merge_all_consensus_files(self, project):
 		"""
 		merge all consensus files

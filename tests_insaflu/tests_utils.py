@@ -1005,18 +1005,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_2(self):
 
@@ -1027,18 +1031,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_3_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_3(self):
 
@@ -1049,18 +1057,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_4_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_4(self):
 
@@ -1076,13 +1088,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 		
 	def test_add_freq_ao_ad_and_type_to_vcf_5(self):
 
@@ -1098,13 +1112,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 		
 	def test_medaka_models(self):
 		

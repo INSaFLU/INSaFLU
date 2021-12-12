@@ -103,6 +103,7 @@ class MetaKeyAndValue(object):
 								
 	## tag for masking consensus values
 	META_KEY_Masking_consensus = "Masking consensus"
+	META_KEY_Masking_consensus_by_minfrac_VCF_medaka = "Masking consensus by Minfrac VCF medaka"
 										
 	### Task ID by Job
 	META_KEY_Queue_TaskID = "QueueTaskID"		### Global queueTaskID

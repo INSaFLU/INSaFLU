@@ -20,10 +20,11 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, Coun
 from utils.software import Software
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
-from utils.result import KeyValue
+from utils.result import KeyValue, GeneticElement, MaskingConsensus, DecodeObjects
 from settings.models import Software as SoftwareSettings
 from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings
+from pysam import pysam
 
 ######################################
 ####   Minion methods
@@ -419,8 +420,7 @@ class SoftwareMinion(object):
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
-						freq_vcf_limit)
-				#		freq_vcf_limit, project_sample.id)
+						freq_vcf_limit, project_sample)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
  								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
 				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\
@@ -451,6 +451,7 @@ class SoftwareMinion(object):
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
 	
+			### Also copy the file "{}.consensus.fa".format(sample_name)
 			## copy the files to the project sample directories
 			self.software.copy_files_to_project(project_sample, self.software_names.get_medaka_name(), out_put_path)
 			self.utils.remove_dir(out_put_path)
@@ -647,7 +648,7 @@ class SoftwareMinion(object):
 
 	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name,
 				parameters_consensus, parameters_depth, coverage_limit, freq_vcf_limit,
-				project_sample_id = -1):
+				project_sample):
 		"""
 		run medaka
 		return output directory of snippy, try to do something most close possible
@@ -705,16 +706,10 @@ class SoftwareMinion(object):
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
 		self.utils.copy_file(reference_fasta, reference_fasta_medaka)
 		
-		if (project_sample_id != -1):
-			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {} > /tmp/insaFlu/medaka_project_sample_{}.txt 2>&1".format(
-					self.software_names.get_medaka_env(),
-					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
-					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus, project_sample_id)
-		else:
-			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
-					self.software_names.get_medaka_env(),
-					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
-					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
+		cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
+				self.software_names.get_medaka_env(),
+				self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
+				temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -804,22 +799,71 @@ class SoftwareMinion(object):
 				
 			### add FREQ to VCF file
 			final_vcf = os.path.join(temp_dir, sample_name + '_2.vcf')
-			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf, coverage_limit,
-													freq_vcf_limit)
+			final_vcf_with_removed_variants = os.path.join(temp_dir, sample_name + '_removed.vcf')
+			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf,
+						final_vcf_with_removed_variants, coverage_limit, freq_vcf_limit)
 			self.utils.move_file(final_vcf, vcf_file)
 			self.software.test_bgzip_and_tbi_in_vcf(vcf_file)
+
+			### IF YOU mask CONSENSUS the positions on VCF are not real for consensus
+			### mask REFERENCE for variants below minfrac, with vcf_removed_variants,
+			genetic_element = GeneticElement()
+			vcf_hanlder = pysam.VariantFile(final_vcf_with_removed_variants, "r")
+			mask_consensus = MaskingConsensus()
+			element_name_old = ""
+			vect_sites = []
+			vect_ranges = []
+			for variant in vcf_hanlder:
+				if (element_name_old != variant.chrom):
+					if (len(element_name_old) > 0):
+						mask_consensus = MaskingConsensus()
+						mask_consensus.set_mask_sites(",".join(vect_sites))
+						mask_consensus.set_mask_regions(",".join(vect_ranges))
+						genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+					
+					## new one
+					element_name_old = variant.chrom
+					vect_sites = []
+					vect_ranges = []
+				### MEDAKA output must have "TYPE" in info
+				if (variant.info['TYPE'][0] == 'snp'): vect_sites.append(str(variant.pos))
+				elif (variant.info['TYPE'][0] == 'ins'): vect_sites.append(str(variant.pos))
+				elif (variant.info['TYPE'][0] == 'del'): vect_ranges.append("{}-{}".format(variant.pos + len(variant.alts[0]),
+									variant.pos - len(variant.alts[0]) + len(variant.ref)))
+				else: vect_ranges.append("{}-{}".format(variant.pos, variant.pos + len(variant.ref) - 1))
 			
+			## last one
+			if len(element_name_old) > 0:
+				mask_consensus = MaskingConsensus()
+				mask_consensus.set_mask_sites(",".join(vect_sites))
+				mask_consensus.set_mask_regions(",".join(vect_ranges))
+				mask_consensus.cleaning_mask_results()
+				genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+			## mask
+			temp_reference = os.path.join(temp_dir, sample_name + '_consensus.vcf')
+			self.utils.copy_file(reference_fasta_medaka, temp_reference) 
+			self.utils.mask_sequence_by_sites(temp_reference, temp_reference, genetic_element)
+			
+			### save positions that are going to be masked by MinFrac
+			if (genetic_element.has_masking_data()):
+				manageDatabase = ManageDatabase()
+				manageDatabase.set_project_sample_metakey(project_sample, project_sample.project.owner,
+						MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
+						MetaKeyAndValue.META_VALUE_Success, genetic_element.to_json())
+			
+			####################	
 			### run BCF tools to get the consensus
 			if (not os.path.exists(vcf_file + ".gz")):
 				self.logger_production.error('Fail to find: ' + vcf_file + ".gz")
 				self.logger_debug.error('Fail to find: ' + vcf_file + ".gz")
 				self.utils.remove_dir(temp_dir)
 				raise Exception("Fail to find VCF file: " + vcf_file + ".gz")
+
 			
 			## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 			cmd =  "{} consensus -s SAMPLE -f {} {} -o {}".format(
 				self.software_names.get_bcftools(),
-				reference_fasta_medaka,
+				temp_reference,
 				vcf_file + ".gz",
 				os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 			exist_status = os.system(cmd)
@@ -828,7 +872,8 @@ class SoftwareMinion(object):
 				self.logger_debug.error('Fail to run: ' + cmd)
 				self.utils.remove_dir(temp_dir)
 				raise Exception("Fail to run bcftools consensus")
-		
+
+			########################		
 			### create TAB file
 			self.software.run_snippy_vcf_to_tab_freq_and_evidence(reference_fasta_medaka,\
 								reference_gbk, vcf_file,\

@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from managing_files.models import Sample, Reference, Project, ProjectSample, MixedInfectionsTag
 from constants.constants import Constants, TypePath, FileType, FileExtensions
 from managing_files.manage_database import ManageDatabase
-from utils.result import DecodeObjects, Coverage
+from utils.result import DecodeObjects, Coverage, MaskingConsensus
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software_minion import SoftwareMinion
 from utils.utils import Utils
@@ -350,7 +350,7 @@ class Test(TestCase):
 		temp_dir = self.utils.get_temp_dir()
 		self.utils.copy_file(file_fasta, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 			
-		sample_name = "run_snippyis_single_covid"
+		sample_name = "run_ont_covid"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -507,8 +507,22 @@ class Test(TestCase):
 		
 		## test consensus file
 		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
-		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
+		expected_file_consensus = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "medaka_output_consensus.fasta")
+		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_consensus))
+#		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
 
+		manageDatabase = ManageDatabase()
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
+						MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(not meta_value is None)
+		decode_masking_vcf = DecodeObjects()
+		masking_consensus = decode_masking_vcf.decode_result(meta_value.description)
+		self.assertTrue(masking_consensus.has_masking_data())
+		mask_consensus = MaskingConsensus()
+		mask_consensus.set_mask_sites("5788,11521,13642,13875,15272,21369,23816,24389,24643,29573")
+		self.assertEqual(mask_consensus, masking_consensus.get_mask_consensus_element('MN908947'))
+				
 		### human file name, snippy tab
 #		Check the ones with zero coverage		
 #		print(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name))

@@ -550,24 +550,34 @@ class CollectExtraData(object):
 		manageDatabase = ManageDatabase()
 		decode_masking_consensus = DecodeObjects()
 		meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
-		masking_consensus_original = None
+		masking_consensus_original_project = None
 		if not meta_value is None:
-			masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
+			masking_consensus_original_project = decode_masking_consensus.decode_result(meta_value.description)
 		
-		### if exist masking data
-		if not masking_consensus_original is None and masking_consensus_original.has_masking_data():
-			for project_sample in project.project_samples.all():
-				if (not project_sample.get_is_ready_to_proccess() or project_sample.is_deleted): continue
-				if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+		### need to check all because can have some project_sample with masking values
+		for project_sample in project.project_samples.all():
+			if (not project_sample.get_is_ready_to_proccess() or project_sample.is_deleted): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 
-				""" check if exist backup """
-				if (not os.path.exists(project_sample.get_backup_consensus_file())):
-					self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
-										project_sample.get_backup_consensus_file())
-
-				### masking consensus file
+			## backup of consensus file
+			if (not os.path.exists(project_sample.get_backup_consensus_file())):
+				self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+						project_sample.get_backup_consensus_file())
+			
+			### test project sample, has priority from project
+			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+				MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			if not meta_value is None:
+				masking_consensus_original_project_sample = decode_masking_consensus.decode_result(meta_value.description)
 				self.utils.mask_sequence_by_sites(project_sample.get_backup_consensus_file(),
-					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original)
+					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project_sample)
+				continue
+			
+			## if exist for the project
+			if not masking_consensus_original_project is None and masking_consensus_original_project.has_masking_data():
+				self.utils.mask_sequence_by_sites(project_sample.get_backup_consensus_file(),
+					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project)
+
 					
 	def merge_all_consensus_files(self, project):
 		"""

@@ -9,6 +9,7 @@ $(document).on("click", "a", function(e){
 	var i_to_change_id = $(this).attr('id_image');		// image in the table, to change color is has data...
 	var reference_name = $(this).attr('reference_name');
 	var project_name = $(this).attr('project_name');
+	var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'showMaskModal'){
@@ -23,16 +24,19 @@ $(document).on("click", "a", function(e){
 		            color: '#fff' 
 		        } }); 
 
-		$('#id_set_positions_to_mask_regions').attr('pk', $(this).attr('project_id'));
+		$('#id_set_positions_to_mask_regions').attr('project_id', $(this).attr('project_id'));
+		$('#id_set_positions_to_mask_regions').attr('project_sample_id', $(this).attr('project_sample_id'));
 		$('#id_set_positions_to_mask_regions').attr('reference_name', reference_name);
 		$('#id_set_positions_to_mask_regions').attr('project_name', project_name);
+		$('#id_set_positions_to_mask_regions').attr('td_to_update', td_to_update);
 		$('#id_set_positions_to_mask_regions').attr('i_to_change_id', i_to_change_id);	// image in the table, to change color is has data...
 		$('#id-label-name').text('Reference: ' + reference_name);
 		
 		$.ajax({
 	        url: $('#id_set_positions_to_mask_regions').attr("mask-consensus-actual-values-url"),
 	        data : {
-				project_id : $('#id_set_positions_to_mask_regions').attr('pk'),
+				project_id : $('#id_set_positions_to_mask_regions').attr('project_id'),
+				project_sample_id : $('#id_set_positions_to_mask_regions').attr('project_sample_id'),
 				csrfmiddlewaretoken: '{{ csrf_token }}',
 	        }, // data sent with the post request
 			success: function (data) {
@@ -129,7 +133,8 @@ $('#id-mask-consensus').on('click', function(){
         url: $('#id_set_positions_to_mask_regions').attr("mask-consensus-url"),
         data : {
 			all_data : JSON.stringify(dict_mask, null, 4),
-			project_id : $('#id_set_positions_to_mask_regions').attr('pk'),
+			project_id : $('#id_set_positions_to_mask_regions').attr('project_id'),
+			project_sample_id : $('#id_set_positions_to_mask_regions').attr('project_sample_id'),
 			csrfmiddlewaretoken: '{{ csrf_token }}',
         }, // data sent with the post request
         		
@@ -152,16 +157,27 @@ $('#id-mask-consensus').on('click', function(){
         			data['message'] +
 					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 					'</div>');
-			}
-          }
-          else{
-        	/// add message with informaton
-        	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The project \'' + $('#id_set_positions_to_mask_regions').attr('name') + '\' was not masked consensus.' +
-				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-				'</div>');
-          }
-		  $.unblockUI();
+				}
+				var element_to_update = document.getElementById($('#id_set_positions_to_mask_regions').attr('td_to_update'))
+				element_to_update.getElementsByTagName("td")[4].textContent = data['default']
+          	}
+          	else{
+				/// add message with informaton
+				var project_sample_id = $('#id_set_positions_to_mask_regions').attr('project_sample_id');
+				if ( project_sample_id !== null){
+	        	  	$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
+	        			'A project sample inside project \'' + $('#id_set_positions_to_mask_regions').attr('project_name') + '\' was not going to masked consensus.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+						'</div>');
+				}
+				else{
+					$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
+	        			'The project \'' + $('#id_set_positions_to_mask_regions').attr('project_name') + '\' was not going to masked consensus.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+						'</div>');
+				}
+          	}
+		  	$.unblockUI();
         },
         
         // handle a non-successful response

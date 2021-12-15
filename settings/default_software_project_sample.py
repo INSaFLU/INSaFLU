@@ -52,15 +52,17 @@ class DefaultProjectSoftware(object):
 			### SOFTWARE_MASK_CONSENSUS_BY_SITE_name can be both
 			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
 							user, Software.TYPE_OF_USE_project, project, None, None,
-							ConstantsSettings.TECHNOLOGY_minion)
-			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
-							user, Software.TYPE_OF_USE_project, project, None, None,
-							ConstantsSettings.TECHNOLOGY_illumina)
+							ConstantsSettings.TECHNOLOGY_all)
 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
  							user, Software.TYPE_OF_USE_project, project, None, None,
  							ConstantsSettings.TECHNOLOGY_minion)
 		## only for project sample and by technology
 		elif (not project_sample is None):
+			
+			### both technologies
+			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_all)
 			
 			if (project_sample.sample.is_type_fastq_gz_sequencing()): ### illumina
 				self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, Software.TYPE_OF_USE_project_sample, None,
@@ -70,9 +72,7 @@ class DefaultProjectSoftware(object):
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_illumina)
-				self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
-						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
-						ConstantsSettings.TECHNOLOGY_illumina)
+				
 			else:
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
@@ -84,9 +84,6 @@ class DefaultProjectSoftware(object):
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_Medaka_name_consensus,\
-						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
-						ConstantsSettings.TECHNOLOGY_minion)
-				self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_minion)
 				self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\

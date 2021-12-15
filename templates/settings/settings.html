@@ -199,12 +199,6 @@
 			too restrictive depending on design of your tiling amplicon multiplex PCR method and on
 			your sequencing protocol (if reads are or not already trimmed/clipped).</p>
 			
-		<!--  in project view you cannot change settings if it has one or more sample add -->
-		{% if message_not_change_settings %}
-			<br>
-			<div class="alert alert-warning" role="alert">{{message_not_change_settings}}</div>
-		{% endif %}
-		
 		<!--  Go back  function -->	
 		{% if project_settings %}
 			<br>
@@ -224,7 +218,7 @@
 	   
 	  					<!-- Modal Header -->
 	  					<div class="modal-header alert alert-warning">
-	    					<h4 class="modal-title-remove">Set default parameters</h4>
+	    					<h4 id="id-modal-title-remove" class="modal-title-remove">Set default parameters</h4>
 	    					<button type="button" class="close" data-dismiss="modal">&times;</button>
 	  					</div>
 	  
@@ -354,8 +348,28 @@
 
 {% block js %}
 	{% load static %}
-		<script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/set-default-parameters.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/software-check-box.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/mask_consensus.js' %}"></script>
+	
+	<script>	
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			
+			var attr = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (attr !== '#id_set_default_modal' && onclick !== 'return false;'){
+				$.blockUI({ css: { 
+			        border: 'none', 
+			        padding: '15px', 
+			        backgroundColor: '#000', 
+			        '-webkit-border-radius': '10px', 
+			        '-moz-border-radius': '10px', 
+			        opacity: .5, 
+			        color: '#fff' 
+			    } });
+			}
+		});
+	</script>
+	
 {% endblock %}

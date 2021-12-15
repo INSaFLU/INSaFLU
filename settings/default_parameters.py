@@ -137,6 +137,10 @@ class DefaultParameters(object):
 		## get parameters for a specific user
 		parameters = Parameter.objects.filter(software=software, project=project,
 						project_sample=project_sample, sample=sample)
+	
+		### if only one parameter and it is don't care, return dont_care 
+		if len(list(parameters)) == 1 and list(parameters)[0].name == DefaultParameters.MASK_DONT_care:
+			return DefaultParameters.MASK_DONT_care
 		
 		### parse them
 		dict_out = {}
@@ -152,7 +156,7 @@ class DefaultParameters(object):
 			else:
 				vect_order_ouput.append(parameter.name) 
 				dict_out[parameter.name] = [[parameter.union_char], [parameter.parameter]]
-			
+		
 		return_parameter = ""
 		for par_name in vect_order_ouput:
 			if (len(dict_out[par_name][1]) == 1 and len(dict_out[par_name][1][0]) == 0):

@@ -48,6 +48,16 @@
 
 
 {% block js %}
+	{% load static %}
+	
+	<script>	
+		/// set wait screen 
+		$(document).ready(function() { 
+			$.unblockUI();
+		});
+	</script>
+    
+	
 {% endblock %}
 
 

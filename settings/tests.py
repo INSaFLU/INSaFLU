@@ -1004,7 +1004,7 @@ class testsDefaultSoftwares(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+							technology__name = ConstantsSettings.TECHNOLOGY_all)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -1057,7 +1057,7 @@ class testsDefaultSoftwares(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project_sample,
-							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+							technology__name = ConstantsSettings.TECHNOLOGY_all)
 			self.assertTrue(software.is_used_in_project_sample())
 			self.assertFalse(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())

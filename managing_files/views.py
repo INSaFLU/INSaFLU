@@ -1627,15 +1627,12 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
 				parameter__project=project, parameter__project_sample=None,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
+				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion,
+				ConstantsSettings.TECHNOLOGY_all],
 				is_obsolete = False).distinct()
 		
+		### get number of project samples in a specific project
 		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
-		if (count_project_sample > 0):
-			context['message_not_change_settings'] = mark_safe("You can not change settings because there {} '{}' sample{} associated to this project.<br>".format(
-					'is' if count_project_sample == 1 else 'are', count_project_sample, 's' if count_project_sample > 1 else '') +\
-								"You can only change settings on a specific sample inside of this project.")
-		context['count_project_sample'] = count_project_sample
 		table = SoftwaresTable(query_set, project, None, None, count_project_sample == 0)
 		
 		### INSaFLU parameters
@@ -1651,6 +1648,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		context['table_insaflu'] = table_insaflu
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		context['project'] = project
+		context['project_settings'] = True
 		context['show_paginatior_table'] = False
 		context['show_paginatior_table_insaflu'] = False
 		return context
@@ -1682,7 +1680,8 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
 				parameter__project=None, parameter__project_sample=project_sample,
 				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
+				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion,
+				ConstantsSettings.TECHNOLOGY_all],
 				is_obsolete = False).distinct()
 		table = SoftwaresTable(query_set, None, project_sample, None)
 		

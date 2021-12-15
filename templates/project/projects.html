@@ -123,9 +123,28 @@
 
 {% block js %}
 
-
 	{% load static from staticfiles %}
-	    <script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
 	    <script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
+
+	<script>	
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			
+			var attr = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (attr !== '#id_set_default_modal' && onclick !== 'return false;'){
+				$.blockUI({ css: { 
+			        border: 'none', 
+			        padding: '15px', 
+			        backgroundColor: '#000', 
+			        '-webkit-border-radius': '10px', 
+			        '-moz-border-radius': '10px', 
+			        opacity: .5, 
+			        color: '#fff' 
+			    } });
+			}
+		});
+	</script>
+
 {% endblock js %}
 

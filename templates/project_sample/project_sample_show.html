@@ -369,7 +369,7 @@
 					<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 				{% endif %}
 		
-				<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 				<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 				{% if update_pangolin %}
 					<a href="#id_update_pangolin" id="id-button-update-pangolin" class="btn btn-small btn-primary dark" data-toggle="modal"><i class="fa fa-refresh"></i> Update Pango lineage</a>
@@ -484,6 +484,19 @@
 			<script type="text/javascript" src="{% static 'vendor/raphael/raphael.min.js' %}"></script>
 			<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project-coverage.js' %}"></script>
 			
+	<script>	
+		$('#id_go_back_button').on('click', function(){
+			$.blockUI({ css: { 
+		        border: 'none', 
+		        padding: '15px', 
+		        backgroundColor: '#000', 
+		        '-webkit-border-radius': '10px', 
+		        '-moz-border-radius': '10px', 
+		        opacity: .5, 
+		        color: '#fff' 
+		    } });
+		});
+	</script>	
  {% endblock %}
 
 

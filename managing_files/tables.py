@@ -379,6 +379,8 @@ class ProjectTable(tables.Table):
 			## only can change settings when has projects finished
 			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 		elif (count_not_finished > 0): 
 			sz_project_sample = _("{} processing ".format(count_not_finished))
 		else:	## can change settings

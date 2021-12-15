@@ -15,6 +15,7 @@ from managing_files.manage_database import ManageDatabase
 from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
 from utils.result import MaskingConsensus, DecodeObjects
+from constants.software_names import SoftwareNames
 
 
 @csrf_protect
@@ -36,7 +37,8 @@ def set_default_parameters(request):
 		except Profile.DoesNotExist:
 			return JsonResponse(data)
 		if (profile.only_view_project): return JsonResponse(data)
-			
+		project, project_sample = None, None
+
 		if (software_id_a in request.GET):
 			software_id = request.GET[software_id_a]
 			b_change = False
@@ -46,59 +48,71 @@ def set_default_parameters(request):
 					project_id = request.GET[project_id_a]
 					project = Project.objects.get(pk=project_id)
 					
-					default_project_software = DefaultProjectSoftware()
-					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project, project,
-											None, None)
-					## set a new default
-					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
-													project, None, None, software.technology.name)
-					
-					b_change = default_project_software.is_change_values_for_software(software.name, software.technology.name)
+					if software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
+						masking_consensus_original = get_fresh_masking_consensus(project.reference)
+						if change_mask_consensus_in_project(project, masking_consensus_original): b_change = True
+						else: b_change = False
+						data['default'] = "Has no values, yet"
+					else:
+						default_project_software = DefaultProjectSoftware()
+						default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project, project,
+												None, None)
+						## set a new default
+						data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
+														project, None, None, software.technology.name)
+						
+						b_change = default_project_software.is_change_values_for_software(software.name, software.technology.name)
 				elif (project_sample_id_a in request.GET):
 					project_sample_id = request.GET[project_sample_id_a]
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)
 					
-					default_project_software = DefaultProjectSoftware()
-					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project_sample,
-										None, project_sample, None)
-					## set a new default
-					data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample,\
-													None, project_sample, None, software.technology.name)
-					
-					### need to re-run this sample with snippy if the values change
-					if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
-								if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion)):
-						b_change = True
+					if software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
+						masking_consensus_original = get_fresh_masking_consensus(project_sample.project.reference)
+						if change_mask_consensus_in_project_sample(project_sample, masking_consensus_original): b_change = True
+						else: b_change = False
+						data['default'] = "Has no values, yet"
+					else:
+						default_project_software = DefaultProjectSoftware()
+						default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_project_sample,
+											None, project_sample, None)
+						## set a new default
+						data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project_sample,\
+														None, project_sample, None, software.technology.name)
 						
-						### re-run data
-						metaKeyAndValue = MetaKeyAndValue()
-						manageDatabase = ManageDatabase()
-						process_SGE = ProcessSGE()
-						
-						### change flag to nor finished
-						project_sample.is_finished = False
-						project_sample.save()
-		
-						### create a task to perform the analysis of snippy and freebayes
-						try:
-							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-							if (project_sample.is_sample_illumina()):
-								taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
-							else:
-								taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, job_name_wait)
-								
-							### set project sample queue ID
-							manageDatabase.set_project_sample_metakey(project_sample, request.user,\
-											metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
-											MetaKeyAndValue.META_VALUE_Queue, taskID)
+						### need to re-run this sample with snippy if the values change
+						if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
+									if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion)):
+							b_change = True
 							
-							### need to collect global files again
-							taskID = process_SGE.set_collect_global_files(project, request.user)
-							manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
-									MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
-									MetaKeyAndValue.META_VALUE_Queue, taskID)
-						except:
-							pass
+							### re-run data
+							metaKeyAndValue = MetaKeyAndValue()
+							manageDatabase = ManageDatabase()
+							process_SGE = ProcessSGE()
+							
+							### change flag to nor finished
+							project_sample.is_finished = False
+							project_sample.save()
+			
+							### create a task to perform the analysis of snippy and freebayes
+							try:
+								(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+								if (project_sample.is_sample_illumina()):
+									taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
+								else:
+									taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, job_name_wait)
+									
+								### set project sample queue ID
+								manageDatabase.set_project_sample_metakey(project_sample, request.user,\
+												metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+												MetaKeyAndValue.META_VALUE_Queue, taskID)
+								
+								### need to collect global files again
+								taskID = process_SGE.set_collect_global_files(project, request.user)
+								manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
+										MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+										MetaKeyAndValue.META_VALUE_Queue, taskID)
+							except:
+								pass
 						
 				elif (sample_id_a in request.GET):
 					sample_id = request.GET[sample_id_a]
@@ -146,17 +160,44 @@ def set_default_parameters(request):
 					data['default'] = default_software.get_parameters(software.name, request.user,
 												software.technology.name)
 					b_change = default_software.is_change_values_for_software(software)
-					
-				### message to show
-				if b_change: data['message'] = "were set to default values."
-				else: data['message'] = "already had the default values."
+				
+				### clean values in mask site consensus
+				if software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
+					if (project is None and not project_sample is None): project = project_sample.project
+		
+					if (not project is None and b_change):
+						## check if they have projects			
+						count = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
+						if count > 0:	### need to send a message to recalculate the global files
+							metaKeyAndValue = MetaKeyAndValue()
+							manageDatabase = ManageDatabase()
+							try:
+								process_SGE = ProcessSGE()
+								taskID = process_SGE.set_collect_global_files(project, request.user)
+								manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
+											MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+											MetaKeyAndValue.META_VALUE_Queue, taskID)
+								data['is_ok'] = True
+								data['message'] = " clean all sites."
+							except:
+								data = { 'is_ok' : False }
+					else: data['message'] = " already has no sites to mask."
+				else:
+					### message to show
+					if b_change: data['message'] = "were set to default values."
+					else: data['message'] = "already had the default values."
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)
 			except Project.DoesNotExist:
 				return JsonResponse(data)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+			except Sample.DoesNotExist:
+				return JsonResponse(data)
 			data['is_ok'] = True
 		return JsonResponse(data)
+
 
 ## @csrf_protect
 @csrf_exempt
@@ -175,40 +216,69 @@ def mask_consensus(request):
 			return JsonResponse(data)
 		if (profile.only_view_project): return JsonResponse(data)
 		
-		project_id_a = 'project_id'
 		all_data_a = 'all_data'
+		project_id_a = 'project_id'
+		project_sample_id_a = 'project_sample_id'
 		
-		if (project_id_a in request.POST):
-			
-			project_id = request.POST[project_id_a]
+		project_id = None
+		project_sample_id = None
+		if (project_id_a in request.POST): project_id = request.POST[project_id_a]
+		elif (project_sample_id_a in request.POST): project_sample_id = request.POST[project_sample_id_a]
+		project, project_sample = None, None
+		b_change_data = False
+		
+		manageDatabase = ManageDatabase()
+		genetic_element = DecodeObjects()
+		## only for project
+		if (not project_id is None):
 			try:
 				project = Project.objects.get(pk=project_id)
 			except ProjectSample.DoesNotExist:
 				return JsonResponse(data)
 
-			manageDatabase = ManageDatabase()
-			decode_masking_consensus = DecodeObjects()
-			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
-			masking_consensus_original = None
-			if not meta_value is None:
-				masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
-
-			masking_consensus = decode_masking_consensus.decode_result(request.POST[all_data_a])
-			masking_consensus.cleaning_mask_results()	## clean data
+			masking_consensus_proposed = genetic_element.decode_result(request.POST[all_data_a])
+			masking_consensus_proposed.cleaning_mask_results()	## clean data
 			
-			if masking_consensus_original is None or masking_consensus_original != masking_consensus:
-				manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
-							MetaKeyAndValue.META_VALUE_Success, masking_consensus.to_json())
+			if change_mask_consensus_in_project(project, masking_consensus_proposed):
+				b_change_data = True
 				data['message'] = "The project '{}' is going to mask/unmask consensus. ".format(project.name)
 				data['is_going_to_mask'] = True
 			else: 
 				data['message'] = "Masking regions are the same, nothing to do for project '{}'".format(project.name)
 				data['is_going_to_mask'] = False
 			
-			data['new_title_i'] = masking_consensus.get_message_mask_to_show_in_web_site()
-			data['new_class_i'] = "padding-button-table {} fa fa-superpowers padding-button-table tip".format(
-					"warning_fa_icon" if masking_consensus.has_masking_data() else "")
-
+			data['new_title_i'] = masking_consensus_proposed.get_message_mask_to_show_in_web_site()
+			data['new_class_i'] = "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
+					"warning_fa_icon" if masking_consensus_proposed.has_masking_data() else "")
+			data['default'] = "Has positions masked" if masking_consensus_proposed.has_masking_data() else \
+					"Has no values, yet"
+		## only for project sample
+		if (not project_sample_id is None):		## for project sample
+			try:
+				project_sample = ProjectSample.objects.get(pk=project_sample_id)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+			
+			masking_consensus_proposed = genetic_element.decode_result(request.POST[all_data_a])
+			masking_consensus_proposed.cleaning_mask_results()	## clean data
+			
+			if change_mask_consensus_in_project_sample(project_sample, masking_consensus_proposed):
+				b_change_data = True
+				data['message'] = "The project sample is going to mask/unmask consensus. "
+				data['is_going_to_mask'] = True
+			else: 
+				data['message'] = "Masking regions are the same, nothing to do for project sample"
+				data['is_going_to_mask'] = False
+			
+			data['new_title_i'] = masking_consensus_proposed.get_message_mask_to_show_in_web_site()
+			data['new_class_i'] = "padding-button-table {} fa fa-2x fa-pencil padding-button-table tip".format(
+					"warning_fa_icon" if masking_consensus_proposed.has_masking_data() else "")
+			data['default'] = "Has positions masked" if masking_consensus_proposed.has_masking_data() else \
+					"Has no values, yet"
+		## define project if not set
+		if (project is None and not project_sample is None): project = project_sample.project
+		
+		if (not project is None and b_change_data):
 			## check if they have projects			
 			count = ProjectSample.objects.filter(project=project, is_deleted=False, is_error=False, is_finished=True).count()
 			if count > 0:	### need to send a message to recalculate the global files
@@ -229,6 +299,58 @@ def mask_consensus(request):
 				
 		return JsonResponse(data)
 
+def change_mask_consensus_in_project(project, masking_consensus_proposed):
+	""" change mask in project """
+	manageDatabase = ManageDatabase()
+	genetic_element = DecodeObjects()
+	
+	meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+	masking_consensus_original = None
+	if not meta_value is None:
+		masking_consensus_original = genetic_element.decode_result(meta_value.description)
+
+	if masking_consensus_original is None or masking_consensus_original != masking_consensus_proposed:
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+					MetaKeyAndValue.META_VALUE_Success, masking_consensus_proposed.to_json())
+		## need to mask all the project_sample if exist
+		for project_sample in project.project_samples.all():
+			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+				MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			if not meta_value is None:
+				manageDatabase.set_project_sample_metakey(project_sample, project.owner,
+					MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success,
+					masking_consensus_proposed.to_json())
+		return True
+	return False
+
+def change_mask_consensus_in_project_sample(project_sample, masking_consensus_proposed):
+	""" change mask in project sample """
+	
+	manageDatabase = ManageDatabase()
+	genetic_element = DecodeObjects()
+	meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+		MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+	masking_consensus_original = None
+	if not meta_value is None:
+		masking_consensus_original = genetic_element.decode_result(meta_value.description)
+
+	if masking_consensus_original is None or masking_consensus_original != masking_consensus_proposed:
+		manageDatabase.set_project_sample_metakey(project_sample, project_sample.project.owner,
+					MetaKeyAndValue.META_KEY_Masking_consensus,
+					MetaKeyAndValue.META_VALUE_Success, masking_consensus_proposed.to_json())
+		return True
+	return False
+
+def get_fresh_masking_consensus(reference):
+	""" get fresh masking consensus """
+	manageDatabase = ManageDatabase()
+	genetic_element = DecodeObjects()
+	meta_value = manageDatabase.get_reference_metakey_last(reference, MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference,
+														MetaKeyAndValue.META_VALUE_Success)
+	masking_consensus_original = genetic_element.decode_result(meta_value.description)
+	for element in masking_consensus_original.get_sorted_elements():
+		masking_consensus_original.dt_elements_mask[element] = MaskingConsensus()
+	return masking_consensus_original
 
 @csrf_protect
 def get_mask_consensus_actual_values(request):
@@ -247,27 +369,44 @@ def get_mask_consensus_actual_values(request):
 		if (profile.only_view_project): return JsonResponse(data)
 		
 		project_id_a = 'project_id'
+		project_sample_id_a = 'project_sample_id'
 		
-		if (project_id_a in request.GET):
+		project_id = None
+		project_sample_id = None
+		if (project_id_a in request.GET): project_id = request.GET[project_id_a]
+		elif (project_sample_id_a in request.GET): project_sample_id = request.GET[project_sample_id_a]
 			
-			project_id = request.GET[project_id_a]
+		manageDatabase = ManageDatabase()
+		genetic_element = DecodeObjects()
+		if (not project_id is None):
 			try:
 				project = Project.objects.get(pk=project_id)
 			except ProjectSample.DoesNotExist:
 				return JsonResponse(data)
 
-			manageDatabase = ManageDatabase()
-			genetic_element = DecodeObjects()
-			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus,
+											MetaKeyAndValue.META_VALUE_Success)
+			if meta_value is None: masking_consensus_original = get_fresh_masking_consensus(project.reference)
+			else: masking_consensus_original = genetic_element.decode_result(meta_value.description)
+			
+			### passing data
+			data['all_data'] = masking_consensus_original.to_json()
+			data['is_ok'] = True
+		elif (not project_sample_id is None):
+			try:
+				project_sample = ProjectSample.objects.get(pk=project_sample_id)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+			
+			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
 			if meta_value is None:
-				meta_value = manageDatabase.get_reference_metakey_last(project.reference, MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference,
-														MetaKeyAndValue.META_VALUE_Success)
-				masking_consensus_original = genetic_element.decode_result(meta_value.description)
-				for element in masking_consensus_original.get_sorted_elements():
-					masking_consensus_original.dt_elements_mask[element] = MaskingConsensus()
+				### test project
+				meta_value = manageDatabase.get_project_metakey_last(project_sample.project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+				if meta_value is None: masking_consensus_original = get_fresh_masking_consensus(project_sample.project.reference)
+				else: masking_consensus_original = genetic_element.decode_result(meta_value.description)
 			else:
 				masking_consensus_original = genetic_element.decode_result(meta_value.description)
-			
+		
 			### passing data
 			data['all_data'] = masking_consensus_original.to_json()
 			data['is_ok'] = True
@@ -304,7 +443,7 @@ def turn_on_off_software(request):
 					data['is_to_run'] = software.is_to_run
 					data['message'] = "The '{}' in '{}' technology was turned '{}'.".format(
 						software.name_extended, software.technology.name,
-						"OFF" if software.is_to_run else "ON")
+						"ON" if software.is_to_run else "OFF")
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)

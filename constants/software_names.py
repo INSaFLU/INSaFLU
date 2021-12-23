@@ -286,6 +286,15 @@ class SoftwareNames(object):
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
+	### software to produce alignments
+	## nextalign --sequences sequences.fasta --reference SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947.fasta --genemap covid.gff3 --genes S --output-dir output
+	## output/sequences.aligned.fasta
+	## output/sequences.gene.S.fasta
+	SOFTWARE_NEXTALIGN = os.path.join(settings.DIR_SOFTWARE, "nextalign/1.7.0/nextalign")
+	SOFTWARE_NEXTALIGN_name = "nextalign"
+	SOFTWARE_NEXTALIGN_vesion = "1.7.0"
+	SOFTWARE_NEXTALIGN_parameters = ""
+	
 	### genebank to perl
 	SOFTWARE_genbank_to_perl = os.path.join(settings.DIR_SOFTWARE, "scripts/bp_genbank2gff3.pl")
 
@@ -624,6 +633,15 @@ class SoftwareNames(object):
 	def get_software_mask_consensus_by_site_name_extended(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended
 	def get_software_mask_consensus_by_site_version(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion
 	def get_software_mask_consensus_by_site_parameters(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters
+
+	"""
+	return 
+	### nextalign
+	"""
+	def get_nextalign(self): return self.SOFTWARE_NEXTALIGN
+	def get_nextalign_name(self): return self.SOFTWARE_NEXTALIGN_name
+	def get_nextalign_version(self): return self.SOFTWARE_NEXTALIGN_vesion
+	def get_nextalign_parameters(self): return self.SOFTWARE_NEXTALIGN_parameters
 
 	###### START minion software
 	###

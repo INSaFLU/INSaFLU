@@ -20,7 +20,7 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, Coun
 from utils.software import Software
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
-from utils.result import KeyValue, GeneticElement, MaskingConsensus, DecodeObjects
+from utils.result import KeyValue, MaskingConsensus, DecodeObjects
 from settings.models import Software as SoftwareSettings
 from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings
@@ -529,7 +529,7 @@ class SoftwareMinion(object):
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
 			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
 							DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_minion))
-			msa_parameters = self.software.make_mask_consensus( 
+			msa_parameters = self.software.make_mask_consensus_by_deep( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, self.software_names.get_medaka_name()),
@@ -807,49 +807,54 @@ class SoftwareMinion(object):
 
 			### IF YOU mask CONSENSUS the positions on VCF are not real for consensus
 			### mask REFERENCE for variants below minfrac, with vcf_removed_variants,
-			genetic_element = GeneticElement()
-			vcf_hanlder = pysam.VariantFile(final_vcf_with_removed_variants, "r")
-			mask_consensus = MaskingConsensus()
-			element_name_old = ""
-			vect_sites = []
-			vect_ranges = []
-			for variant in vcf_hanlder:
-				if (element_name_old != variant.chrom):
-					if (len(element_name_old) > 0):
-						mask_consensus = MaskingConsensus()
-						mask_consensus.set_mask_sites(",".join(vect_sites))
-						mask_consensus.set_mask_regions(",".join(vect_ranges))
-						genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
-					
-					## new one
-					element_name_old = variant.chrom
-					vect_sites = []
-					vect_ranges = []
-				### MEDAKA output must have "TYPE" in info
-				if (variant.info['TYPE'][0] == 'snp'): vect_sites.append(str(variant.pos))
-				elif (variant.info['TYPE'][0] == 'ins'): vect_sites.append(str(variant.pos))
-				elif (variant.info['TYPE'][0] == 'del'): vect_ranges.append("{}-{}".format(variant.pos + len(variant.alts[0]),
-									variant.pos - len(variant.alts[0]) + len(variant.ref)))
-				else: vect_ranges.append("{}-{}".format(variant.pos, variant.pos + len(variant.ref) - 1))
-			
-			## last one
-			if len(element_name_old) > 0:
+			manageDatabase = ManageDatabase()
+			decode_results = DecodeObjects()
+			meta_value = manageDatabase.get_reference_metakey_last(project_sample.project.reference,
+										MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference,
+										MetaKeyAndValue.META_VALUE_Success)
+			if (not meta_value is None):
+				genetic_element = decode_results.decode_result(meta_value.description)
+				
+				vcf_hanlder = pysam.VariantFile(final_vcf_with_removed_variants, "r")
 				mask_consensus = MaskingConsensus()
-				mask_consensus.set_mask_sites(",".join(vect_sites))
-				mask_consensus.set_mask_regions(",".join(vect_ranges))
-				mask_consensus.cleaning_mask_results()
-				genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
-			## mask
-			temp_reference = os.path.join(temp_dir, sample_name + '_consensus.vcf')
-			self.utils.copy_file(reference_fasta_medaka, temp_reference) 
-			self.utils.mask_sequence_by_sites(temp_reference, temp_reference, genetic_element)
-			
-			### save positions that are going to be masked by MinFrac
-			if (genetic_element.has_masking_data()):
-				manageDatabase = ManageDatabase()
+				element_name_old = ""
+				vect_sites = []
+				vect_ranges = []
+				for variant in vcf_hanlder:
+					if (element_name_old != variant.chrom):
+						if (len(element_name_old) > 0):
+							mask_consensus = MaskingConsensus()
+							mask_consensus.set_mask_sites(",".join(vect_sites))
+							mask_consensus.set_mask_regions(",".join(vect_ranges))
+							genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+						
+						## new one
+						element_name_old = variant.chrom
+						vect_sites = []
+						vect_ranges = []
+					### MEDAKA output must have "TYPE" in info
+					if (variant.info['TYPE'][0] == 'snp'): vect_sites.append(str(variant.pos))
+					elif (variant.info['TYPE'][0] == 'ins'): vect_sites.append(str(variant.pos))
+					elif (variant.info['TYPE'][0] == 'del'): vect_ranges.append("{}-{}".format(variant.pos + len(variant.alts[0]),
+										variant.pos - len(variant.alts[0]) + len(variant.ref)))
+					else: vect_ranges.append("{}-{}".format(variant.pos, variant.pos + len(variant.ref) - 1))
+				
+				## last one
+				if len(element_name_old) > 0:
+					mask_consensus = MaskingConsensus()
+					mask_consensus.set_mask_sites(",".join(vect_sites))
+					mask_consensus.set_mask_regions(",".join(vect_ranges))
+					mask_consensus.cleaning_mask_results()
+					genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+				## mask
+				temp_reference = os.path.join(temp_dir, sample_name + '_consensus.vcf')
+				self.utils.copy_file(reference_fasta_medaka, temp_reference) 
+				self.utils.mask_sequence_by_sites(temp_reference, temp_reference, genetic_element)
+				
+				### save positions that are going to be masked by MinFrac, even if there's not...
 				manageDatabase.set_project_sample_metakey(project_sample, project_sample.project.owner,
-						MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
-						MetaKeyAndValue.META_VALUE_Success, genetic_element.to_json())
+							MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
+							MetaKeyAndValue.META_VALUE_Success, genetic_element.to_json())
 			
 			####################	
 			### run BCF tools to get the consensus

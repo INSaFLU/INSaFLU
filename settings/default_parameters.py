@@ -52,6 +52,7 @@ class DefaultParameters(object):
 		Add one every time that is necessary to add or remove parameters in software 
 		"""
 		if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name): return 1
+		if (software_name == SoftwareNames.SOFTWARE_FREEBAYES_name): return 1
 		## all others remain zero, didn't change anything
 		return 0
 	
@@ -61,6 +62,7 @@ class DefaultParameters(object):
 		"""
 		vect_return = []	## [[name, version], [name, version], ...]
 		vect_return.append([SoftwareNames.SOFTWARE_TRIMMOMATIC_name, 0])
+		vect_return.append([SoftwareNames.SOFTWARE_FREEBAYES_name, 0])
 		return vect_return
 	
 	def set_software_obsolete(self):
@@ -209,6 +211,12 @@ class DefaultParameters(object):
 					ConstantsSettings.TECHNOLOGY_minion)
 		elif (software.name == SoftwareNames.SOFTWARE_ABRICATE_name):
 			return self.get_abricate_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name):
+			return self.get_mask_consensus_by_site_default(software.owner, Software.TYPE_OF_USE_global,
+					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.SOFTWARE_FREEBAYES_name):
+			return self.get_freebayes_default(software.owner, Software.TYPE_OF_USE_global,
 					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
 		else: return None
 
@@ -410,7 +418,7 @@ class DefaultParameters(object):
 		
 		parameter = Parameter()
 		parameter.name = "--min-alternate-fraction"
-		parameter.parameter = "100"
+		parameter.parameter = "0.01"
 		parameter.type_data = Parameter.PARAMETER_float
 		parameter.software = software
 		parameter.project = project
@@ -437,7 +445,20 @@ class DefaultParameters(object):
 		parameter.range_available = "[1:5]"
 		parameter.range_max = "5"
 		parameter.range_min = "1"
-		parameter.description = "ploidy:  Sets the default ploidy for the analysis to N.  default: 2"
+		parameter.description = "ploidy: Sets the default ploidy for the analysis to N. (--ploidy 2)."
+		vect_parameters.append(parameter)
+		
+		parameter = Parameter()
+		parameter.name = "-V"
+		parameter.parameter = ""
+		parameter.type_data = Parameter.PARAMETER_null
+		parameter.software = software
+		parameter.project = project
+		parameter.project_sample = project_sample
+		parameter.union_char = ""
+		parameter.can_change = False
+		parameter.sequence_out = 7
+		parameter.description = "binomial-obs-priors-off: Disable incorporation of prior expectations about observations."
 		vect_parameters.append(parameter)
 		
 		return vect_parameters

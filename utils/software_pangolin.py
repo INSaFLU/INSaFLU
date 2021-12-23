@@ -187,8 +187,12 @@ class SoftwarePangolin(object):
 				SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
 		uploadFiles = UploadFiles()
-		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
-		if (len(vect_data) == 0):
+		try:
+			## could fail some identification, so, return False if it occurs
+			vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
+			if (len(vect_data) == 0):
+				return False
+		except Exception as e:
 			return False
 		
 		### test number of right segments

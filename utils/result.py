@@ -144,15 +144,18 @@ class Softwares(object):
 	def add_software(self, software):
 		self.list_software.append(software)
 
-	def get_software(self, sz_name):
+	def get_software(self, sz_name, b_not_add_software_name = False):
 		"""   return software name, version and parameters"""
 		list_return = []
 		for software_desc in self.list_software:
 			if (software_desc.name.startswith(sz_name)):
 				version_data = ""
+				## version
 				if (len(software_desc.version) > 0): version_data = "-{}".format(software_desc.version)
+				###
 				if (not software_desc.parameters is None and len(software_desc.parameters) > 0):
-					description = "{}{}; ({})".format(software_desc.name, version_data, software_desc.parameters)
+					if b_not_add_software_name: description = "{}".format(software_desc.parameters)
+					else: description = "{}{}; ({})".format(software_desc.name, version_data, software_desc.parameters)
 					if (not description in list_return): list_return.append(description)
 				else:
 					description = "{}{}".format(software_desc.name, version_data)
@@ -275,8 +278,8 @@ class Result(object):
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ResultEncoder)
 
-	def get_software(self, sz_name):
-		return self.softwares.get_software(sz_name)
+	def get_software(self, sz_name, b_not_add_software_name = False):
+		return self.softwares.get_software(sz_name, b_not_add_software_name)
 	
 	def get_software_instance(self, sz_name):
 		return self.softwares.get_software_instance(sz_name)
@@ -791,6 +794,15 @@ class GeneticElement(object):
 			if (len(sz_return) > 0): sz_return += "\n#####################\n"
 			sz_return += self.dt_elements_mask[element].get_message_to_show_in_web_site(element)
 		return sz_return
+
+	def get_message_to_show_in_csv_file(self):
+		sz_return = ""
+		for element in self.get_sorted_elements():
+			sz_out = self.dt_elements_mask[element].get_message_to_show_in_csv_file(element)
+			if (len(sz_out) > 0):
+				if (len(sz_return) > 0): sz_return += " "
+				sz_return += sz_out
+		return sz_return
 	
 	def cleaning_mask_results(self):
 		""" cleaning masking values """			
@@ -1014,6 +1026,24 @@ class MaskingConsensus(object):
 		return "Element:{}\n\nMask sites:{}  Mask regions:{}\nMask from beginning:{}  Mask from ends:{}".format(
 			element_name, self.mask_sites, self.mask_regions,
 			self.mask_from_beginning, self.mask_from_ends)
+		
+	def get_message_to_show_in_csv_file(self, element_name):
+		"""  get message for web site about regions to be masked  """
+		if not self.has_data(): return ""
+		sz_out = "Element:{} -> ".format(element_name)
+		b_add = False
+		if len(self.mask_sites) > 0:
+			sz_out += "{}Mask sites:{}".format(" " if b_add else "(", self.mask_sites)
+			b_add = True
+		if len(self.mask_regions) > 0:
+			sz_out += "{}Mask regions:{}".format(" " if b_add else "(", self.mask_regions)
+			b_add = True
+		if len(self.mask_from_beginning) > 0:
+			sz_out += "{}Mask from beginning:{}".format(" " if b_add else "(", self.mask_from_beginning)
+			b_add = True
+		if len(self.mask_from_ends) > 0:
+			sz_out += "{}Mask from end:{}".format(" " if b_add else "(", self.mask_from_ends)
+		return sz_out + ")"
 	
 	def has_data(self):
 		return len(self.mask_sites) > 0 or len(self.mask_from_beginning) > 0 or \

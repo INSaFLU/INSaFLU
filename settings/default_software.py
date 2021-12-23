@@ -185,7 +185,7 @@ class DefaultSoftware(object):
 			self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name,
 				self.default_parameters.get_freebayes_default(user, Software.TYPE_OF_USE_global,
 				ConstantsSettings.TECHNOLOGY_illumina), user)
-			return self.get_snippy_parameters(user)
+			return self.get_freebayes_parameters(user)
 		if (software_name == SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name):
 			self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				self.default_parameters.get_mask_consensus_threshold_default(user, Software.TYPE_OF_USE_global,

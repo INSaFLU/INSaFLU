@@ -14,7 +14,7 @@ from manage_virus.models import UploadFile
 from managing_files.models import Sample, ProjectSample, MixedInfectionsTag, ProcessControler
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
-from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits, KeyValue
+from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, CountHits, KeyValue, MaskingConsensus
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -22,11 +22,12 @@ from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
 from constants.software_names import SoftwareNames
 from settings.models import Software as SoftwareSettings
-from Bio import SeqIO
 from BCBio import GFF
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
+from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.Seq import MutableSeq
 from Bio.SeqRecord import SeqRecord
 from django.template.defaultfilters import filesizeformat
 
@@ -732,10 +733,39 @@ class Software(object):
 							os.path.join(temp_dir, sample_name + '.tab'))
 		return temp_dir
 
-
-	def run_genbank2gff3(self, genbank, out_file):
+	def run_nextalign(self, reference_fasta, sequences, gff_file, genes_to_process, output_path):
+		"""
+		:reference_fasta only one sequence
+		:param genes_to_process -> has the name of the genes to process, if has no values don't produce these files
+		output path: has all files (align, genes.fasta)
+		nextalign --sequences sequences.fasta --reference SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947.fasta --genemap covid.gff3 --genes S --output-dir output
+		:out output path, alignment file, [gene file names]  
 		"""
 		
+		if len(gff_file) > 0 and len(genes_to_process) > 0:
+			cmd = "%s --reference %s --sequences %s --genemap %s --genes %s --output-dir %s" %\
+				(self.software_names.get_nextalign(), reference_fasta, sequences,
+				gff_file, genes_to_process, output_path)
+		else:
+			cmd = "%s --reference %s --sequences %s --output-dir %s" %\
+				(self.software_names.get_nextalign(), reference_fasta, sequences,
+				output_path)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run nextalign")
+		
+		### return file names
+		vect_file_gene_out = []
+		if (len(genes_to_process) > 0):
+			vect_file_gene_out = [sequences.replace(".fasta", ".gene.{}.fasta".format(gene_name)) for gene_name in genes_to_process.split(',')]
+		return sequences.replace(".fasta", ".aligned.fasta"), vect_file_gene_out,\
+				sequences.replace(".fasta", ".insertions.csv")
+		
+	def run_genbank2gff3(self, genbank, out_file, for_nextclade = False):
+		"""
+		for_nextclade = True; need to add gene annotation and gene_name in INFO
 		"""
 		temp_file = self.utils.get_temp_file("gbk_to_gff3", ".txt")
 		
@@ -764,7 +794,7 @@ class Software(object):
 		##### CAVEAT...
 		### If you lead ID= in the gff the orf1ab will be continued (Transcript_Exon_MN908947_13468_21555|Coding|1/1|c.395C>T|p.Thr132Ile|p.T132I)
 		### if it is removed ID=  is going like (Transcript_orf1ab|Coding|1/1|c.13597C>T|p.His4533Tyr|p.H4533Y)
-		### the last one is equal to SNIPPY 
+		### the last one is equal to SNIPPY
 		vect_remove_info = ['ID=']
 		with open(temp_file) as handle, open(out_file, "w") as handle_write:
 			for line in handle:
@@ -776,13 +806,18 @@ class Software(object):
 					lst_data = sz_temp.split('\t')
 					if (len(lst_data) > 8):
 						lst_data_info = lst_data[8].split(";")
-						has_gene = False
-						gene = ""
+						has_gene, has_gene_name = False, False
+						gene, gene_name = "", ""
 						vect_remove_index = []
 						for _, data_ in enumerate(lst_data_info):
 							if (data_.lower().startswith('gene=')):	has_gene = True
 							if (data_.lower().startswith('name=')):
 								gene = "gene={}".format('='.join(data_.split('=')[1:]))
+							
+							### for next clade
+							if (data_.lower().startswith('gene_name=')):	has_gene_name = True
+							if (data_.lower().startswith('gene=') or data_.lower().startswith('name=')):
+								gene_name = "gene_name={}".format('='.join(data_.split('=')[1:]))
 							for to_remove in vect_remove_info:
 								if (data_.lower().startswith(to_remove.lower())):
 									vect_remove_index.append(_)
@@ -801,6 +836,13 @@ class Software(object):
 						if (not has_gene and len(gene) > 0):
 							lst_data[8] = gene + ";" + ";".join(lst_data_info)
 							sz_temp = "\t".join(lst_data)
+							
+						### only for nextclade, that need to add gene
+						if (for_nextclade):
+							if (not has_gene_name and len(gene_name) > 0):
+								lst_data[8] = gene_name + ";" + ";".join(lst_data_info)
+							lst_data[2] = "gene"
+							handle_write.write("\t".join(lst_data) + "\n")
 					handle_write.write(sz_temp + "\n")
 		os.unlink(temp_file)
 		return out_file
@@ -1506,7 +1548,7 @@ class Software(object):
 			default_software.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.sample.owner,
 								 	SoftwareSettings.TYPE_OF_USE_project_sample,
 									None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
-			msa_parameters = self.make_mask_consensus( 
+			msa_parameters = self.make_mask_consensus_by_deep( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, self.software_names.get_snippy_name()),
@@ -1814,10 +1856,12 @@ class Software(object):
 		return(False, path_1, path_2)
 
 
-	def make_mask_consensus(self, consensus_file, reference_fasta, deep_file, coverage, sample_name, limit_make_mask):
+	def make_mask_consensus_by_deep(self, consensus_file, reference_fasta, deep_file, coverage, sample_name, limit_make_mask):
 		"""
 		:param limit_to_mask_consensus, default 70%
-		/usr/local/software/insaflu/snippy/bin/msa_masker.py -i /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.consensus.fa -df /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.depth.gz -o /tmp/insaFlu/insa_flu_path_86811930/temp.fasta --c 200
+		/usr/local/software/insaflu/snippy/bin/msa_masker.py -i /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.consensus.fa 
+			-df /tmp/insaFlu/insa_flu_path_86811930/run_snippy1_sdfs/run_snippy1_sdfs.depth.gz 
+			-o /tmp/insaFlu/insa_flu_path_86811930/temp.fasta --c 200
 		"""
 		## run all elements in reference
 		temp_masked = self.utils.get_temp_file("masked_file", ".fasta")
@@ -1890,6 +1934,147 @@ class Software(object):
 			raise Exception("Fail to run msa_masker") 
 		
 		return msa_parameters
+
+	def mask_sequence(self, sequence_ref, sequence_consensus, mask_sites,
+					mask_from_beginning, mask_from_end, mask_range):
+		"""Mask characters at the given sites in a single sequence record, modifying the
+		record in place.
+		Parameters
+		----------
+		sequence_ref : Bio.SeqIO.SeqRecord
+		    A sequence that act like a reference. All the positions are referent to this seq.
+		sequence_consensus : Bio.SeqIO.SeqRecord
+		    A sequence to be masked
+		mask_sites: list[int]
+		    A list of site indexes to exclude from the FASTA.
+		mask_from_beginning: int
+		    Number of sites to mask from the beginning of each sequence (default 0)
+		mask_from_end: int
+		    Number of sites to mask from the end of each sequence (default 0)
+		mask_invalid: bool
+		    Mask invalid nucleotides (default False)
+		Returns
+		-------
+		Bio.SeqIO.SeqRecord
+		    Masked sequence in its original record object
+		"""
+		if len(sequence_ref.seq) == 0 or len(sequence_consensus.seq) == 0: return sequence_consensus
+		# need to align
+		sequence_length = len(sequence_ref.seq)
+		seq_ref, seq_consensus = self.align_two_sequences(str(sequence_ref.seq), str(sequence_consensus.seq))
+		
+		# Convert to a mutable sequence to enable masking with Ns.
+		beginning = int(mask_from_beginning) if not mask_from_beginning is None and len(mask_from_beginning) > 0 else -1 
+		end = int(mask_from_end) if not mask_from_end is None and len(mask_from_end) > 0 else -1
+		
+		## collecting all positions to maks
+		dt_positions = {}
+		if beginning != -1:
+			for _ in range(0, beginning): dt_positions[_] = 1
+		if end != -1:
+			if ( (len(str(sequence_ref.seq)) - end) < 0): pos_from = 0
+			else: pos_from = len(str(sequence_ref.seq)) - end
+			for _ in range(pos_from, len(str(sequence_ref.seq))): dt_positions[_] = 1
+
+		## several sites
+		if not mask_sites is None and  len(mask_sites.split(',')[0]) > 0:
+			for site in [int(_) - 1 for _ in mask_sites.split(',')]:
+				if site < sequence_length: dt_positions[site] = 1
+		## several ranges
+		if not mask_range is None:
+			for data_ in mask_range.split(','):
+				if (len(data_) > 0 and len(data_.split('-')) == 2):
+					for site in range(int(data_.split('-')[0]) - 1, int(data_.split('-')[1])):
+						if site < sequence_length: dt_positions[site] = 1
+		
+		## mask positions
+		masked_sequence = MutableSeq(seq_consensus)
+		ref_insertions = 0
+		ref_pos = 0
+		for _ in range(len(seq_ref)):
+			if (seq_ref[_] == '-'):
+				ref_insertions += 1
+				continue
+			if ref_pos in dt_positions:
+				masked_sequence[ref_pos + ref_insertions] = 'N'
+			ref_pos += 1
+			if ((ref_pos + ref_insertions) >= len(seq_consensus)): break
+			
+		sequence_consensus.seq = Seq(str(masked_sequence).replace('-', ''))
+		return sequence_consensus
+	
+	def mask_sequence_by_sites(self, reference_fasta_file, consensus_fasta_file, genetic_elemets):
+		""" masking consensus file with positions related with reference elements  """
+		vect_record_out = []
+		## always work with the backup	
+		with open(reference_fasta_file, "rU") as handle_ref, open(consensus_fasta_file, "rU") as handle_consensus:
+			dict_record_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+			for record_consensus in SeqIO.parse(handle_consensus, "fasta"):
+				masking_consensus = genetic_elemets.dt_elements_mask.get(record_consensus.id, MaskingConsensus())
+				if masking_consensus.has_data() and record_consensus.id in dict_record_ref:
+					vect_record_out.append(self.mask_sequence(
+						dict_record_ref[record_consensus.id], record_consensus,
+						masking_consensus.mask_sites, masking_consensus.mask_from_beginning, 
+						masking_consensus.mask_from_ends, masking_consensus.mask_regions))
+				else: vect_record_out.append(record_consensus)
+
+		if (len(vect_record_out) > 0):
+			temp_file = self.utils.get_temp_file("masked_seq_", ".fasta")
+			with open(temp_file, "w") as handle_fasta_out:
+				SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+
+			### move temp consensus to original position, if has info
+			if os.stat(temp_file).st_size > 0:
+				self.utils.move_file(temp_file, consensus_fasta_file)
+			else: os.unlink(temp_file)
+
+	def align_two_sequences(self, ref_seq, consensus_seq):
+		"""
+		:param  ref_seq: sequence with nucleotides
+		:param  consensus_seq: sequence with nucleotides
+		:out (ref_seq, consensus_seq)
+		"""
+		
+		out_dir = self.utils.get_temp_dir()
+		temp_file_name = self.utils.get_temp_file_from_dir(out_dir, "to_align", ".fasta")
+		temp_file_name_out = self.utils.get_temp_file_from_dir(out_dir, "to_align_out", ".fasta")
+		records = []
+		ref_seq_name = "ref"
+		records.append(SeqRecord( Seq(ref_seq), id = ref_seq_name, description=""))
+		records.append(SeqRecord( Seq(consensus_seq), id = "consensus", description=""))
+		
+		### save file
+		with open(temp_file_name, 'w') as handle_write:
+			SeqIO.write(records, handle_write, "fasta")
+			
+		try:
+			#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
+			self.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
+#			self.software.run_clustalo(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_CLUSTALO_PARAMETERS)
+		except Exception as a:
+			return "", ""
+		
+		## test if the output is in fasta
+		try:
+			self.utils.is_fasta(temp_file_name_out)
+		except IOError as e:
+			return "", ""
+		
+		## read file
+		record_dict = SeqIO.index(temp_file_name_out, "fasta")
+		if (len(record_dict) != 2): return "", ""
+		
+		## get both sequences
+		seq_ref = ""
+		seq_other = ""
+		for seq in record_dict:
+			if (seq == ref_seq_name):	## ref seq
+				seq_ref = str(record_dict[seq].seq).upper()
+			else:
+				seq_other = str(record_dict[seq].seq).upper()
+						
+		self.utils.remove_dir(out_dir)
+		return seq_ref, seq_other
 
 	
 class Contigs2Sequences(object):
@@ -1993,5 +2178,7 @@ class Contigs2Sequences(object):
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		return (out_file_fasta, clean_abricate_file)
 
-	
-			
+
+
+
+

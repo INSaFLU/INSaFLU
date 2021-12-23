@@ -317,7 +317,7 @@ class Test(TestCase):
 		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
-
+		
 		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
 		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
 		file_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_nanopore)
@@ -346,7 +346,9 @@ class Test(TestCase):
 			reference.reference_genbank_name = os.path.basename(gb_file)
 			reference.owner = user
 			reference.save()
-			
+		
+		### set genetic generic element
+		self.utils.get_elements_and_cds_from_db(reference, user)
 		temp_dir = self.utils.get_temp_dir()
 		self.utils.copy_file(file_fasta, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 			
@@ -509,7 +511,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
 		expected_file_consensus = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "medaka_output_consensus.fasta")
 		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_consensus))
-#		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
+		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file()))
 
 		manageDatabase = ManageDatabase()
 		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
@@ -522,6 +525,8 @@ class Test(TestCase):
 		mask_consensus = MaskingConsensus()
 		mask_consensus.set_mask_sites("5788,11521,13642,13875,15272,21369,23816,24389,24643,29573")
 		self.assertEqual(mask_consensus, masking_consensus.get_mask_consensus_element('MN908947'))
+		self.assertEqual("Element:MN908947 -> (Mask sites:5788,11521,13642,13875,15272,21369,23816,24389,24643,29573)",
+						masking_consensus.get_message_to_show_in_csv_file())
 				
 		### human file name, snippy tab
 #		Check the ones with zero coverage		

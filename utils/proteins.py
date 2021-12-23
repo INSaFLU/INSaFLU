@@ -5,7 +5,7 @@ Created on Dec 15, 2017
 '''
 
 import os
-from constants.constants import TypePath, FileType, FileExtensions, Constants
+from constants.constants import TypePath, FileExtensions, Constants
 from utils.utils import Utils
 from utils.software import Software
 from constants.software_names import SoftwareNames
@@ -14,7 +14,6 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from utils.result import GeneticElement, Gene, FeatureLocationSimple
-from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
@@ -309,43 +308,9 @@ class Proteins(object):
 				( (limit_to_mask_consensus == -1 and coverage.is_100_more_9(sequence_name)) or\
 				(limit_to_mask_consensus > 0 and coverage.ratio_value_coverage_bigger_limit(sequence_name, limit_to_mask_consensus)) ):
 				
-				temp_file_name = self.utils.get_temp_file_from_dir(out_dir, "to_align", ".fasta")
-				temp_file_name_out = self.utils.get_temp_file_from_dir(out_dir, "to_align_out", ".fasta")
-				records = []
-				ref_seq_name = "ref"
-				records.append(SeqRecord( Seq(str(record_dict_ref[sequence_name].seq)),
-										id = ref_seq_name, description=""))
-				records.append(SeqRecord( Seq(str(record_dict_consensus[sequence_name].seq)),
-										id = "consensus", description=""))
-				
-				### save file
-				with open(temp_file_name, 'w') as handle_write:
-					SeqIO.write(records, handle_write, "fasta")
-				try:
-					#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
-					self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
-#					self.software.run_clustalo(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_CLUSTALO_PARAMETERS)
-				except Exception as a:
-					continue
-				
-				## test if the output is in fasta
-				try:
-					self.utils.is_fasta(temp_file_name_out)
-				except IOError as e:
-					continue
-				
-				## read file
-				record_dict = SeqIO.index(temp_file_name_out, "fasta")
-				if (len(record_dict) != 2): continue
-				
-				## get both sequences
-				seq_ref = ""
-				seq_other = ""
-				for seq in record_dict:
-					if (seq == ref_seq_name):	## ref seq
-						seq_ref = str(record_dict[seq].seq).upper()
-					else:
-						seq_other = str(record_dict[seq].seq).upper()
+				### align two sequences
+				seq_ref, seq_other = self.software.align_two_sequences(str(record_dict_ref[sequence_name].seq),
+												str(record_dict_consensus[sequence_name].seq))
 				
 				#### get positions for genes				
 				for gene in genetic_element.get_genes(sequence_name):

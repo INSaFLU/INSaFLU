@@ -150,7 +150,20 @@ class Reference(models.Model):
 		else:
 			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
-	
+
+	def get_gff3_with_gene_annotation(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + ".gene_annotation" + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+		
 	def get_gff3_comulative_positions(self, type_path):
 		"""
 		get GFF3 obtain form genbank

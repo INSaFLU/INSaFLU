@@ -15,7 +15,7 @@ from utils.software_pangolin import SoftwarePangolin
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from utils.result import DecodeObjects, Coverage
+from utils.result import DecodeObjects, Coverage, MaskingConsensus, GeneticElement
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from manage_virus.uploadFiles import UploadFiles
@@ -27,6 +27,9 @@ from settings.default_software import DefaultSoftware
 from settings.models import Software as Software2, Parameter
 from utils.parse_coverage_file import GetCoverage
 from managing_files.models import Software as SoftwareModel
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 import os, filecmp
 
 class Test(TestCase):
@@ -1486,6 +1489,8 @@ class Test(TestCase):
 		## test consensus file
 		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
 		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
+		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file()))
 
 		### human file name, snippy tab
 		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
@@ -1943,6 +1948,33 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 
+	def test_run_genbank2gff3_for_nextclade(self):
+		"""
+		test genbank2gff3 method
+		"""
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid_for_nextclade.gff3")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name_rim", ".txt")
+		for_nextclade = True
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file, for_nextclade)
+		print(out_file_2, gff_file)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		os.unlink(out_file)
+
+	def test_run_genbank2gff3_for_nextclade_2(self):
+		"""
+		test genbank2gff3 method
+		"""
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid_for_nextclade_2.gff3")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name", ".txt")
+		run_for_nextstrain = True
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file, run_for_nextstrain)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		os.unlink(out_file)
+		
 	def test_run_genbank2gff3_positions_comulative(self):
 		"""
 		test genbank2gff3 method
@@ -2233,6 +2265,56 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)
 
+
+	def test_run_nextalign(self):
+		
+		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		sequence_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_snippy1_sdfs.consensus.fa")
+		
+		temp_dir = self.utils.get_temp_dir()
+		gff_file = self.utils.get_temp_file_from_dir(temp_dir, "file_name", ".gff3")
+		self.software.run_genbank2gff3(gb_file, gff_file, True)
+		genes_to_process = "PA"
+		
+		ref_file = self.utils.get_temp_file_from_dir(temp_dir, "reference", ".fasta")
+		records = []
+		with open(reference_fasta) as handle_ref: 
+			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+
+			if genes_to_process in record_dict_ref:
+				records.append(record_dict_ref[genes_to_process])
+				records[-1].id = "reference"
+				### save file
+				with open(ref_file, 'w') as handle_write:
+					SeqIO.write(records, handle_write, "fasta")
+			self.assertTrue(len(records) > 0)
+					
+		seq_file = self.utils.get_temp_file_from_dir(temp_dir, "sequence", ".fasta")
+		records = []
+		with open(sequence_fasta) as handle_ref: 
+			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+
+			if genes_to_process in record_dict_ref:
+				records.append(record_dict_ref[genes_to_process])
+				### save file
+				with open(seq_file, 'w') as handle_write:
+					SeqIO.write(records, handle_write, "fasta")
+			self.assertTrue(len(records) > 0)
+		
+		
+		alignment_file, vect_protein_file, insert_positions_file = \
+			self.software.run_nextalign(ref_file, seq_file, gff_file, genes_to_process, temp_dir)
+		self.assertEqual(1, len(vect_protein_file))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.aligned.fasta")
+		self.assertTrue(filecmp.cmp(alignment_file, expect_result))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.PA.fasta")
+		self.assertTrue(filecmp.cmp(vect_protein_file[0], expect_result))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.insertions.csv")
+		self.assertTrue(filecmp.cmp(insert_positions_file, expect_result))
+		self.utils.remove_dir(temp_dir)
+
+
 	### test single file in sample
 	def test_identify_type_and_sub_type_single_file(self):
 		"""
@@ -2443,7 +2525,7 @@ class Test(TestCase):
 		self.assertEquals(is_downsized, False)
 
 
-	def test_make_mask_consensus(self):
+	def test_make_mask_consensus_by_deep(self):
 		"""
 		run make mask consensus
 		"""
@@ -2529,7 +2611,8 @@ class Test(TestCase):
 		self.assertEqual(49.0, coverage.ratio_value_defined_by_user)	
 
 		limit_make_mask = 70
-		msa_parameters = self.software.make_mask_consensus(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
+		msa_parameters = self.software.make_mask_consensus_by_deep(os.path.join(out_put_path,
+			os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
  			project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
  			os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, ""))), 
  			coverage, sample_name, limit_make_mask)
@@ -2541,7 +2624,7 @@ class Test(TestCase):
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
-
+		self.utils.remove_dir(temp_dir)
 
 	def test_run_snippy_vcf_to_tab_freq_and_evidence(self):
 		
@@ -2641,3 +2724,134 @@ class Test(TestCase):
 		
 		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_A_Hong_Kong_4801_2014.fasta")
 		self.assertFalse(self.software_pangolin.is_ref_sars_cov_2(consensus_file_1))
+	
+	def test_align_two_sequences(self):
+		
+		seq_ref, seq_consensus = self.software.align_two_sequences(
+			"ATGGAAGATTTTGTGCGACAATGCTTCAACCCGATGATTGTCGAACTTGCAGAAAAAGCAATGAAAGAGTATGGGGAGGATCGAAAATTGAAACCAACAAATTT",
+			"ATGGAAGATTTTGTGCGACAATGCTTCAACCGATGATTGTCGAACTTGCAGACGAAAAGCAATGAAAGAGTATGGGGAGGATCTGAAAATTGAAACCAACAAATTT")
+		self.assertEqual("ATGGAAGATTTTGTGCGACAATGCTTCAACCCGATGATTGTCGAACTTGCAGA--AAAAGCAATGAAAGAGTATGGGGAGGATC-GAAAATTGAAACCAACAAATTT",
+						seq_ref)
+		self.assertEqual("ATGGAAGATTTTGTGCGACAATGCTTCAA-CCGATGATTGTCGAACTTGCAGACGAAAAGCAATGAAAGAGTATGGGGAGGATCTGAAAATTGAAACCAACAAATTT",
+						seq_consensus)
+
+
+	def test_mask_sequences_by_position(self):
+		
+		seq_ref =       SeqRecord(Seq("AACA-AC--AAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AA-AAACAC--C"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "20"
+		mask_from_end = "20"
+		mask_range = "1-20"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(12, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNNNNNNNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACA-AC--AAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AA-AAACAC--C"), id="xpto")
+		mask_sites = "1,2"
+		mask_from_beginning = "-1"
+		mask_from_end = "-1"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNCACC", str(sequence_consensus.seq))
+
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AAAAACACC"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(11, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNCACCNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("NNCAACANN", str(sequence_consensus.seq))
+			
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = "0-40"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("NNNNNNNNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAACCAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAA", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAAAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAA", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAAAAAAAAAAAAAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAAAAAAAAAAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(19, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAAAAAAAAAAAA", str(sequence_consensus.seq))
+
+		temp_ref_file = self.utils.get_temp_file("ref_test", ".fasta")
+		temp_consensus_file = self.utils.get_temp_file("consensus_test", ".fasta")
+		vect_record_out = [SeqRecord(Seq("AACAAAAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_ref_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		vect_record_out = [SeqRecord(Seq("AACAACAAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_consensus_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("7")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("10-11")
+		genetic_element = GeneticElement()
+		genetic_element.set_mask_consensus_element("xpto", masking_consensus)
+		self.software.mask_sequence_by_sites(temp_ref_file, temp_consensus_file, genetic_element)
+		dt_records = SeqIO.to_dict(SeqIO.parse(temp_consensus_file, "fasta"))
+		self.assertEqual("NNCAACNAANNAAAAANNA", str(dt_records["xpto"].seq))
+		
+		vect_record_out = [SeqRecord(Seq("AACAACAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_consensus_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("7")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("3")
+		masking_consensus.set_mask_regions("10-14")
+		genetic_element = GeneticElement()
+		genetic_element.set_mask_consensus_element("xpto", masking_consensus)
+		self.software.mask_sequence_by_sites(temp_ref_file, temp_consensus_file, genetic_element)
+		dt_records = SeqIO.to_dict(SeqIO.parse(temp_consensus_file, "fasta"))
+		self.assertEqual("NNCAACNAANNNNNANNN", str(dt_records["xpto"].seq))
+		
+		os.unlink(temp_consensus_file)
+		os.unlink(temp_ref_file)
+

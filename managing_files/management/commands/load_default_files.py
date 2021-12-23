@@ -13,9 +13,12 @@ from managing_files.models import DataSet
 from extend_user.models	import Profile
 from utils.software import Software
 from utils.software import Contigs2Sequences
+from managing_files.models import Reference
+from constants.constants import TypePath, FileExtensions
+from utils.utils import Utils
 from django.db import transaction
 from django.conf import settings
-import logging
+import logging, os
 
 class Command(BaseCommand):
 	'''
@@ -65,7 +68,37 @@ class Command(BaseCommand):
 		### first create database
 		if (not software.is_exist_database_abricate(database_name)):
 			software.create_database_abricate(database_name, database_file_name)
+	
+	### A command must define handle()
+	def test_gff_and_bed_files(self):
+		
+		utils = Utils()
+		software = Software()
+		count = 0
+		for reference in Reference.objects.all():
+			count += 1
+		
+			### create bed and index for genbank
+			test_file = reference.get_reference_bed(TypePath.MEDIA_ROOT)
+			if not os.path.exists(test_file): utils.from_genbank_to_bed(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file)
 			
+			test_file = reference.get_gff3(TypePath.MEDIA_ROOT)
+			if not os.path.exists(test_file): software.run_genbank2gff3(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file)
+			
+			test_file = reference.get_gff3_with_gene_annotation(TypePath.MEDIA_ROOT)
+			if not os.path.exists(test_file): 
+				with_gene_annotation = True
+				software.run_genbank2gff3(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file, with_gene_annotation)
+			
+			test_file = reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT)
+			if not os.path.exists(test_file):
+				software.run_genbank2gff3_positions_comulative(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file)
+			
+			test_file = reference.get_reference_bed(TypePath.MEDIA_ROOT) + FileExtensions.FILE_IDX
+			if not os.path.exists(test_file):
+				software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
+		self.stdout.write("Number of references processed: {}".format(count))
+
 	@transaction.atomic
 	def upload_default_references(self):
 		"""
@@ -164,6 +197,10 @@ class Command(BaseCommand):
 		#### set default references
 		self.stdout.write("Upload References")
 		self.upload_default_references()
+		
+		#### set default references
+		self.stdout.write("Test bed and gff files for all references")
+		self.test_gff_and_bed_files()
 		
 		self.stdout.write("End")
 		

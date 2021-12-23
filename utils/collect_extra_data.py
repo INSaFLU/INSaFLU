@@ -23,7 +23,7 @@ from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
 from django.conf import settings
 from settings.constants_settings import ConstantsSettings
-from utils.result import MaskingConsensus
+from utils.software import Software
 
 class CollectExtraData(object):
 	'''
@@ -34,6 +34,7 @@ class CollectExtraData(object):
 	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 
 	utils = Utils()
+	software = Software()
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
 	
@@ -563,19 +564,24 @@ class CollectExtraData(object):
 			if (not os.path.exists(project_sample.get_backup_consensus_file())):
 				self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
 						project_sample.get_backup_consensus_file())
-			
+			else: ## if exist backup, copy from backup to the one that is going to be changed
+				self.utils.copy_file(project_sample.get_backup_consensus_file(),
+					project_sample.get_consensus_file(TypePath.MEDIA_ROOT))
+				
 			### test project sample, has priority from project
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
 				MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
 			if not meta_value is None:
 				masking_consensus_original_project_sample = decode_masking_consensus.decode_result(meta_value.description)
-				self.utils.mask_sequence_by_sites(project_sample.get_backup_consensus_file(),
-					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project_sample)
-				continue
+				### it can not have data, so it's necessary to pass and project takes place
+				if (masking_consensus_original_project_sample.has_masking_data()):
+					self.software.mask_sequence_by_sites(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
+						project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project_sample)
+					continue
 			
 			## if exist for the project
 			if not masking_consensus_original_project is None and masking_consensus_original_project.has_masking_data():
-				self.utils.mask_sequence_by_sites(project_sample.get_backup_consensus_file(),
+				self.software.mask_sequence_by_sites(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project)
 
 					
@@ -680,8 +686,8 @@ class CollectExtraData(object):
 			if (not b_simple):
 				### set software names and versions
 				### array with software names
-				(vect_tags_out_sample, vect_tags_out_project_sample, b_trimmomatic_stats, 
-					b_nanostat_sats, dict_all_results) = self.get_list_of_softwares_used(project)
+				(vect_tags_out_sample, vect_tags_out_project_sample, vect_not_add_software_name_output,
+					b_trimmomatic_stats, b_nanostat_sats, dict_all_results) = self.get_list_of_softwares_used(project)
 				
 				star_stats_tag = 0
 				if (b_trimmomatic_stats):
@@ -791,7 +797,8 @@ class CollectExtraData(object):
 	
 						### samples NAME_project_sample
 						self._get_info_for_software(MetaKeyAndValue.NAME_project_sample, vect_out, dict_all_results,
-							project_sample.id, vect_tags_out_project_sample)
+							project_sample.id, vect_tags_out_project_sample,
+							vect_not_add_software_name_output)
 						
 					else: vect_out.extend([''] * (len(vect_tags_out_sample) +\
 						len(vect_tags_out_project_sample) +\
@@ -823,42 +830,22 @@ class CollectExtraData(object):
 				csv_writer.writerow(vect_out)
 				n_count += 1
 			
-			### if there are previous lines add masking consensus regions
-			if (n_count > 0 and not b_simple):
-				### save masking limits
-				manageDatabase = ManageDatabase()
-				decode_masking_consensus = DecodeObjects()
-				meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
-				masking_consensus_original = None
-				if not meta_value is None:
-					masking_consensus_original = decode_masking_consensus.decode_result(meta_value.description)
-			
-					masking_consensus = MaskingConsensus()
-					csv_writer.writerow([])
-					csv_writer.writerow(["Masking consensus regions"])
-					csv_writer.writerow(["Elements"] + masking_consensus.get_vect_header())
-					for element in masking_consensus_original.get_sorted_elements(): 
-						vect_out = [element]
-						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_sites)
-						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_from_beginning)
-						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_from_ends)
-						vect_out.append(masking_consensus_original.dt_elements_mask[element].mask_regions)
-						csv_writer.writerow(vect_out)
-
 		if (n_count == 0):
 			os.unlink(out_file)
 			return None
 		return out_file
 
 	
-	def _get_info_for_software(self, tag_to_search, vect_out, dict_all_results, project_sample_id, vect_tags_info):
+	def _get_info_for_software(self, tag_to_search, vect_out, dict_all_results, project_sample_id,
+					vect_tags_info, vect_not_add_software_name = []):
 		"""
 		"""
 		if tag_to_search in dict_all_results[project_sample_id]:
 			for software_name in vect_tags_info:
 				software_result = ""
 				for result in dict_all_results[project_sample_id][tag_to_search]:
-					software_result = result.get_software(software_name)
+					software_result = result.get_software(software_name,
+						software_name in vect_not_add_software_name)
 					if (len(software_result) > 0): break
 				vect_out.append(software_result)
 		else: vect_out.extend([''] * len(vect_tags_info))
@@ -929,6 +916,7 @@ class CollectExtraData(object):
 		dict_all_results = {}		### all results in for project_sample
 		vect_tags_out_sample = []
 		vect_tags_out_project_sample = []
+		vect_not_add_software_name_output = []
 		b_trimmomatic_tags = False	### test if has trimmomatic statistics
 		b_nanostat_sats = False		### test if has NanoFilt statistics
 		
@@ -946,6 +934,14 @@ class CollectExtraData(object):
 					vect_tags_out_project_sample.append(software_name)
 		## END pangolin
 	
+		### START mask consensus by position
+		meta_value = manage_database.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus,
+											MetaKeyAndValue.META_VALUE_Success)
+		masking_consensus_original_project = None
+		if not meta_value is None:
+			masking_consensus_original_project = decode_result.decode_result(meta_value.description)
+		### END mask consensus by position
+		
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			### return software name, illumina and ONT
@@ -986,12 +982,48 @@ class CollectExtraData(object):
 						for software_name in result.get_all_software_names():
 							if not software_name in vect_tags_out_project_sample: vect_tags_out_project_sample.append(software_name)
 
+			### START mask consensus by position
+			meta_value = manage_database.get_project_sample_metakey_last(project_sample,
+					MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
+			if not meta_value is None: masking_consensus_original_project_sample = decode_result.decode_result(meta_value.description)
+			else: masking_consensus_original_project_sample = masking_consensus_original_project
+			if not masking_consensus_original_project_sample is None and masking_consensus_original_project_sample.has_masking_data():
+				result_process = Result()
+				result_process.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
+							"",
+							masking_consensus_original_project_sample.get_message_to_show_in_csv_file()))
+				
+				dt_out[MetaKeyAndValue.NAME_project_sample].append(result_process)
+				if not SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name in vect_tags_out_project_sample:
+					vect_tags_out_project_sample.append(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name)
+					vect_not_add_software_name_output.append(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name)
+			### END mask consensus by position
+			
+			### START mask consensus by MinFrac in minion
+			meta_value = manage_database.get_project_sample_metakey_last(project_sample,
+					MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka, MetaKeyAndValue.META_VALUE_Success)
+			if not meta_value is None: 
+				masking_minfrac_project_sample = decode_result.decode_result(meta_value.description)
+				if masking_minfrac_project_sample.has_masking_data():
+					result_process = Result()
+					result_process.add_software(SoftwareDesc(MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
+								"",
+								masking_minfrac_project_sample.get_message_to_show_in_csv_file()))
+					
+					dt_out[MetaKeyAndValue.NAME_project_sample].append(result_process)
+					if not MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka in vect_tags_out_project_sample:
+						vect_tags_out_project_sample.append(MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka)
+						vect_not_add_software_name_output.append(MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka)
+			### END mask consensus by MinFrac in minion
+			
 			## add pangolin if exists...
 			if (not result_pangolin is None): dt_out[MetaKeyAndValue.NAME_project_sample].append(result_pangolin)
+			
 			## add everything to all	
 			dict_all_results[project_sample.id] = dt_out
 			
-		return (vect_tags_out_sample, vect_tags_out_project_sample, b_trimmomatic_tags, b_nanostat_sats, dict_all_results)
+		return (vect_tags_out_sample, vect_tags_out_project_sample, vect_not_add_software_name_output,
+			b_trimmomatic_tags, b_nanostat_sats, dict_all_results)
 
 
 	def calculate_count_variations(self, project):

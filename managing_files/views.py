@@ -193,6 +193,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		
 		### create some gff3  essential to run other tools
 		software.run_genbank2gff3(sz_file_to, reference.get_gff3(TypePath.MEDIA_ROOT))
+		software.run_genbank2gff3(sz_file_to, reference.get_gff3_with_gene_annotation(TypePath.MEDIA_ROOT), True)
 		software.run_genbank2gff3_positions_comulative(sz_file_to,
 								reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT))
 
@@ -1422,11 +1423,21 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 							vect_sample_id_add.append(int(key.split('_')[2]))
 			elif ("submit_all" in self.request.POST):
 				vect_sample_id_add = vect_sample_id_add_temp
-	
+			
+			### get samples already out
+			dt_sample_out = {}
+			for project_sample in ProjectSample.objects.filter(project__id=project.id, is_deleted=False, is_error=False, 
+											is_deleted_in_file_system=False):
+				dt_sample_out[project_sample.sample.id] = 1
+
 			### start adding...
 			(job_name_wait, job_name) = ("", "")
 			project_sample_add = 0
 			for id_sample in vect_sample_id_add:
+				## keep track of samples out
+				if id_sample in dt_sample_out: continue
+				dt_sample_out[id_sample] = 1
+				
 				try:
 					sample = Sample.objects.get(pk=id_sample)
 				except Sample.DoesNotExist:
@@ -1445,6 +1456,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					### if exist can be deleted, pass to active
 					if (project_sample.is_deleted and not project_sample.is_error and not project_sample.is_deleted_in_file_system):
 						project_sample.is_deleted = False
+						project_sample.is_finished = False
 						project_sample.save()
 						project_sample_add += 1
 					

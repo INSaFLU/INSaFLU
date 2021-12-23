@@ -408,6 +408,28 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expected_file_samples))
 		for project_sample in project.project_samples.all():
 			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))
+			self.assertTrue(os.path.exists(project_sample.get_backup_consensus_file()))
+			self.assertFalse(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), project_sample.get_backup_consensus_file()))
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("10")
+		geneticElement.dt_elements_mask['PB2'] = masking_consensus
+		geneticElement.add_gene('MP', 100, Gene('MP', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_regions("20-30,35-40")
+		masking_consensus.set_mask_from_beginning("10")
+		masking_consensus.set_mask_from_ends("8")
+		geneticElement.dt_elements_mask['MP'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		collect_extra_data.mask_all_consensus_files(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "Consensus_EVA001_S66_second_mask.fasta")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		for project_sample in project.project_samples.all():
+			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))
+			self.assertTrue(os.path.exists(project_sample.get_backup_consensus_file()))
+			self.assertFalse(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), project_sample.get_backup_consensus_file()))
 			
 		### get sample result file
 		self.utils.remove_dir(temp_dir)
@@ -579,7 +601,7 @@ class Test(unittest.TestCase):
 				
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 						software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-			meta_value = manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,
+			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,
 					MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		

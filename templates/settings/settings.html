@@ -356,9 +356,10 @@
 		/// set wait screen
 		$(document).on("click", "a", function(e){
 			
+			var id_ = $(this).attr('id');
 			var attr = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
-			if (attr !== '#id_set_default_modal' && onclick !== 'return false;'){
+			if (attr !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler'){
 				$.blockUI({ css: { 
 			        border: 'none', 
 			        padding: '15px', 

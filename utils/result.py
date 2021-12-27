@@ -163,6 +163,14 @@ class Softwares(object):
 		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
 	
+	def is_software_present(self, sz_name):
+		"""   test if a specific software is present in the list.
+			This is useful to test if the software it runs or Not. 
+		"""
+		for software_desc in self.list_software:
+			if (software_desc.name.startswith(sz_name)): return True
+		return False
+	
 	def get_software_instance(self, sz_name):
 		""" return software instance """
 		for software_desc in self.list_software:
@@ -296,6 +304,9 @@ class Result(object):
 	
 	def get_all_software_names(self):
 		return self.softwares.get_all_software_names()
+	
+	def is_software_present(self, sz_name):
+		return self.softwares.is_software_present(sz_name)
 	
 	def is_success(self):
 		return self.result == Result.SUCCESS

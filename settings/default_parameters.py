@@ -180,6 +180,77 @@ class DefaultParameters(object):
 		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
 		return return_parameter.strip()
 
+	def is_software_to_run(self, software_name, user, type_of_use, project, project_sample,
+				sample, technology_name):
+		""" Test if it is necessary to run this software, By default return True """
+		try:
+			software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use = type_of_use,
+						technology__name = technology_name,
+						version_parameters = self.get_software_parameters_version(software_name))
+		except Software.DoesNotExist:
+			if (type_of_use == Software.TYPE_OF_USE_global):
+				try:
+					software = Software.objects.get(name=software_name, owner=user,\
+							type_of_use=type_of_use,
+							version_parameters = self.get_software_parameters_version(software_name))
+				except Software.DoesNotExist:
+					return True
+			else: return True
+
+		### if it is Global it is software that is mandatory
+		if (type_of_use == Software.TYPE_OF_USE_global):
+			return software.is_to_run
+		
+		## get parameters for a specific sample, project or project_sample
+		parameters = Parameter.objects.filter(software=software, project=project,
+						project_sample=project_sample, sample=sample)
+	
+		### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+		for parameter in parameters:
+			if (parameter.sequence_out == 1): return parameter.is_to_run 
+		return True
+	
+	def set_software_to_run(self, software_name, user, type_of_use, project, project_sample,
+				sample, technology_name, is_to_run):
+		""" set software to run ON/OFF 
+		:output True if the is_to_run is changed"""
+		
+		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+			try:
+				software = Software.objects.get(name=software_name, owner=user,\
+							type_of_use = type_of_use,
+							technology__name = technology_name,
+							version_parameters = self.get_software_parameters_version(software_name))
+			except Software.DoesNotExist:
+				if (type_of_use == Software.TYPE_OF_USE_global):
+					try:
+						software = Software.objects.get(name=software_name, owner=user,\
+								type_of_use=type_of_use,
+								version_parameters = self.get_software_parameters_version(software_name))
+					except Software.DoesNotExist:
+						return False
+				else: return False
+	
+			## if the software can not be change return False
+			if not software.can_be_on_off_in_pipeline: return False
+	
+			### if it is Global it is software that is mandatory
+			### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
+			if (type_of_use == Software.TYPE_OF_USE_global):
+				software.is_to_run = is_to_run
+				software.save()
+	
+			## get parameters for a specific sample, project or project_sample
+			parameters = Parameter.objects.filter(software=software, project=project,
+								project_sample=project_sample, sample=sample)
+			
+			### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+			for parameter in parameters:
+				parameter.is_to_run = is_to_run
+				parameter.save()
+			return True
+
 	def get_vect_parameters(self, software):
 		""" return all parameters, by software instance """
 		if (software.name == SoftwareNames.SOFTWARE_SNIPPY_name):
@@ -280,6 +351,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[5:100]"
 		parameter.range_max = "50"
@@ -358,6 +430,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
 		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[10:50]"
 		parameter.range_max = "50"
@@ -496,6 +569,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = ":"
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[50:100]"
 		parameter.range_max = "100"
@@ -535,6 +609,7 @@ class DefaultParameters(object):
 		parameter.software = software
 		parameter.union_char = ": "
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.description = "Clean human reads from fastq files."
 		vect_parameters.append(parameter)
@@ -576,6 +651,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = ":"
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[4:100]"
 		parameter.range_max = "100"
@@ -618,6 +694,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = ":"
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[0.10:1.0]"
 		parameter.range_max = "1.0"
@@ -662,6 +739,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.description = "Medaka models are named to indicate: " +\
 			"i) the pore type; " +\
@@ -707,6 +785,7 @@ class DefaultParameters(object):
 		parameter.sample = sample
 		parameter.union_char = " "
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[5:30]"
 		parameter.range_max = "30"
@@ -813,6 +892,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = " "
 		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"
@@ -885,6 +965,7 @@ class DefaultParameters(object):
 		parameter.not_set_value = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
 		parameter.union_char = ":"
 		parameter.can_change = True
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.description = "To clip the Illumina adapters from the input file using the adapter sequences.\n" +\
 			"ILLUMINACLIP:<ADAPTER_FILE>:3:30:10:6:true"
@@ -1059,6 +1140,7 @@ class DefaultParameters(object):
 		parameter.sample = sample
 		parameter.union_char = " "
 		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = "[1:100]"
 		parameter.range_max = "100"
@@ -1116,6 +1198,7 @@ class DefaultParameters(object):
 		parameter.project_sample = project_sample
 		parameter.union_char = ""
 		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
 		parameter.range_available = ""
 		parameter.range_max = ""

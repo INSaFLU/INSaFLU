@@ -1447,10 +1447,11 @@ class Utils(object):
 		return last_name
 	
 	def get_number_sequences_fastq(self, file_name):
-		""" return number of sequences """
+		""" return average and number of sequences """
 		
 		temp_file = self.get_temp_file("get_number_fastq", ".txt")
-		cmd = "gzip -cd {} | wc -l > {}".format(file_name, temp_file)
+		cmd = "gzip -cd {}".format(file_name) + \
+			" | awk 'NR%4==2 {sum+=length($0)} END {print sum/(NR/4) " + ', " ", ' + " (NR/4)}' > " + temp_file
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -1461,8 +1462,9 @@ class Utils(object):
 		### get number
 		vect_lines = self.read_text_file(temp_file)
 		self.remove_file(temp_file)
-		if len(vect_lines) == 1 and self.is_integer(vect_lines[0]): return int(vect_lines[0]) // 4
-		return 0
+		if len(vect_lines) == 1 and len(vect_lines[0].split()) == 2: 
+			return float(vect_lines[0].split()[0]), int(vect_lines[0].split()[1])
+		return 0, 0
 
 	def get_coverage_by_pos(self, file_coverage, chr_name, position_start, position_end):
 		"""

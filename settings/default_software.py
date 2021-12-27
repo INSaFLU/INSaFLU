@@ -9,16 +9,6 @@ from utils.lock_atomic_transaction import LockedAtomicTransaction
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
 
-""""
---mapqual is the minimum mapping quality to accept in variant calling. BWA MEM using 60 to mean a read is "uniquely mapped".
-
---basequal is minimum quality a nucleotide needs to be used in variant calling. We use 13 which corresponds to error probability of ~5%. It is a traditional SAMtools value.
-
---maxsoft is how many bases of an alignment to allow to be soft-clipped before discarding the alignment. This is to encourage global over local alignment, and is passed to the samclip tool.
-
---mincov and --minfrac are used to apply hard thresholds to the variant calling beyond the existing statistical measure.. The optimal values depend on your sequencing depth and contamination rate. Values of 10 and 0.9 are commonly used.
-"""
-
 class DefaultSoftware(object):
 	'''
 	classdocs
@@ -242,4 +232,16 @@ class DefaultSoftware(object):
 		vect_software.append(self.software_names.get_insaflu_parameter_freq_vcf_name())
 		vect_software.append(self.software_names.get_abricate_name())
 		return vect_software
+
+	def is_software_to_run(self, software_name, user, technology_name):
+		""" Test if it is necessary to run this software, By default return True """
+		return self.default_parameters.is_software_to_run(software_name, user,
+			Software.TYPE_OF_USE_global, None, None, None, technology_name) 
+
+	def set_software_to_run(self, software_name, user, technology_name, is_to_run):
+		""" Set True/False on software
+		:output True if the is_to_run is changed"""
+		return self.default_parameters.set_software_to_run(software_name, user,
+			Software.TYPE_OF_USE_global, None, None, None, technology_name, is_to_run)
+
 

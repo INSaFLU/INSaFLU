@@ -1298,7 +1298,11 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 			project.reference = reference
 			project.owner = self.request.user
 			project.save()
-
+			
+		### test all defaults first, if exist in database
+		default_software = DefaultProjectSoftware()
+		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
+		
 		messages.success(self.request, "Project '" + name + "' was created successfully", fail_silently=True)
 		return super(ProjectCreateView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty

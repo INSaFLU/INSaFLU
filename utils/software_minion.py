@@ -76,18 +76,26 @@ class SoftwareMinion(object):
 		try:
 			print("Start run_clean_minion")
 			### run stat and rabbit for Images
-			b_return = self.run_nanofilt_and_stat(sample, user)
+			b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
 			
-			print("Result run_clean_minion: " + str(b_return))
+			print("Result run_clean_minion: " + str(b_has_data))
 			
+			### test Abricate ON/OFF
+			default_software_project = DefaultProjectSoftware()
+			default_software_project.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name, sample.owner,
+ 											SoftwareSettings.TYPE_OF_USE_sample,
+ 			 								None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
+			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
+												ConstantsSettings.TECHNOLOGY_minion)
+
 			### queue the quality check and
-			if (b_return and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
-				self.software.identify_type_and_sub_type(sample, sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
+			if (b_has_data and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
+				self.software.identify_type_and_sub_type(sample, sample.get_fastq_available(TypePath.MEDIA_ROOT),\
 					None, user)
 	
 			## set the flag that is ready for process
 			sample_to_update = Sample.objects.get(pk=sample.id)
-			if (b_return):
+			if (b_has_data):
 				sample_to_update.is_ready_for_projects = True
 				
 				### make identify species
@@ -127,7 +135,7 @@ class SoftwareMinion(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
-					message = "Info: Classification using Nanopore sequences is under development."
+					message = "Info: Abricate turn OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
 			else:
@@ -137,6 +145,7 @@ class SoftwareMinion(object):
 				
 				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
 				else: sample_to_update.number_alerts += 1
+				sample_to_update.is_ready_for_projects = False
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 			sample_to_update.save()
 			
@@ -152,12 +161,13 @@ class SoftwareMinion(object):
 		
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
-		return b_return
+		return b_has_data
 	
 
 	def run_nanofilt_and_stat(self, sample, owner):
 		"""
 		run clean and stat before and after
+		:output (Has data?, Is NanoFilt run?)
 		"""
 		manage_database = ManageDatabase()
 		result_all = Result()
@@ -188,7 +198,7 @@ class SoftwareMinion(object):
 			result.set_error("Fail to run nanostat software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(), self.software_names.get_NanoStat_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
 		### run rabbitQC, only to have a image of the data
 		try:
@@ -203,7 +213,28 @@ class SoftwareMinion(object):
 			result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
 					self.software_names.get_rabbitQC_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
+		
+		default_software_project = DefaultProjectSoftware()
+		default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, sample.owner,
+ 			SoftwareSettings.TYPE_OF_USE_sample,
+ 			None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
+		
+		### test if the software ran
+		if not default_software_project.is_to_run_nanofilt(sample.owner, sample):
+			### collect numbers
+			(lines_1, average_1) = self.software.get_lines_and_average_reads(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+			result_average = ResultAverageAndNumberReads(lines_1, average_1, None, None)
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads,
+								MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+	
+			## save everything OK
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+								MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s)" %\
+								(self.software_names.get_NanoStat_version()))
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software,
+							MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+			return (result_average.has_reads(), False)
 		
 		### run nanoflit
 		try:
@@ -228,7 +259,7 @@ class SoftwareMinion(object):
 			result.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(),
 						self.software_names.get_NanoFilt_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
 		### run start again
 		try:
@@ -242,7 +273,7 @@ class SoftwareMinion(object):
 			result.set_error("Fail to run nanostat software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(), self.software_names.get_NanoStat_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
 		### run rabbitQC, only to have a image of the data
 		try:
@@ -257,7 +288,7 @@ class SoftwareMinion(object):
 			result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
 					self.software_names.get_rabbitQC_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
 		### collect numbers
 		(lines_1, average_1) = self.software.get_lines_and_average_reads(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
@@ -268,7 +299,7 @@ class SoftwareMinion(object):
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s), NanoFilt(%s)" %\
 							(self.software_names.get_NanoStat_version(), self.software_names.get_NanoFilt_version()))
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		return result_average.has_reads()
+		return result_average.has_reads(), True
 
 	
 	def run_nanostat(self, file_name):
@@ -293,7 +324,7 @@ class SoftwareMinion(object):
 		"""
 		
 		### get number of lines
-		number_sequences = self.utils.get_number_sequences_fastq(file_name)
+		(average_length, number_sequences) = self.utils.get_number_sequences_fastq(file_name)
 		if (number_sequences == 0):
 			result = Result()
 			for key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
@@ -416,7 +447,7 @@ class SoftwareMinion(object):
 				## deactivate, rigth now
 				parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
 				
-				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
+				out_put_path = self.run_medaka(project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,

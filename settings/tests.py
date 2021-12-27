@@ -118,7 +118,13 @@ class testsDefaultSoftwares(TestCase):
 				default_software.get_parameters(SoftwareNames.SOFTWARE_NanoFilt_name, user))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user, ConstantsSettings.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_threshold_parameters(user, ConstantsSettings.TECHNOLOGY_minion))
-		
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name,
+							user, ConstantsSettings.TECHNOLOGY_minion))
+		is_to_run = False
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name,
+							user, ConstantsSettings.TECHNOLOGY_minion, is_to_run)
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name,
+							user, ConstantsSettings.TECHNOLOGY_minion))
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_TRIMMOMATIC_name, owner=user,
 							type_of_use = Software.TYPE_OF_USE_global,
@@ -184,6 +190,15 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("0.51", parameters[2].parameter)
 		self.assertNotEqual("42334", parameters[2].parameter)
 
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_SNIPPY_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		## this software can not be ON/OFF
+		is_to_run = False
+		self.assertFalse(default_software.set_software_to_run(SoftwareNames.SOFTWARE_SNIPPY_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina, is_to_run))
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_SNIPPY_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		
 		##########################
 		### test nanofilt
 		try:
@@ -827,7 +842,9 @@ class testsDefaultSoftwares(TestCase):
 		default_software.test_all_defaults(user, project, None, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project, project, None))
 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
+				"--min-alternate-fraction 0.01 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
+		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
+				"--min-alternate-fraction 0.01 --ploidy 2 -V", SoftwareNames.SOFTWARE_FREEBAYES_PARAMETERS)
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project, ConstantsSettings.TECHNOLOGY_illumina))
 		self.assertEqual("Threshold:70", default_software.get_mask_consensus_parameters_for_project(user, project, ConstantsSettings.TECHNOLOGY_minion))
 
@@ -894,7 +911,7 @@ class testsDefaultSoftwares(TestCase):
 		default_software.test_all_defaults(user, project, None, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project, project, None))
 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
+				"--min-alternate-fraction 0.01 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project, project, None))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project,\
@@ -1185,7 +1202,7 @@ class testsDefaultSoftwares(TestCase):
 		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
+				"--min-alternate-fraction 0.01 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project_sample,\
@@ -1252,7 +1269,7 @@ class testsDefaultSoftwares(TestCase):
 		default_software.test_all_defaults(user, None, project_sample, None)
 		self.assertEqual("--mapqual 20 --mincov 10 --minfrac 0.51", default_software.get_snippy_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		self.assertEqual("--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 " +\
-				"--min-alternate-fraction 100 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
+				"--min-alternate-fraction 0.01 --ploidy 2 -V", default_software.get_freebayes_parameters(user, Software.TYPE_OF_USE_project_sample, None, project_sample))
 		
 		try:
 			software = Software.objects.filter(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user, type_of_use=Software.TYPE_OF_USE_project_sample,\

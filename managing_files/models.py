@@ -310,6 +310,8 @@ class Sample(models.Model):
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
 	geo_manager = GeoManager()
+	
+	### Type/Subtype Virus
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
 	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
@@ -427,7 +429,7 @@ class Sample(models.Model):
 
 	def get_fastq_trimmomatic(self, type_path, b_first_file):
 		"""
-		return fastq output first step
+		return fastQC output first step
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		
@@ -451,6 +453,17 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
 
+	def get_fastq_available(self, type_path, b_first_file = True):
+		"""
+		gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
+		try first trimmomatic/nanofilt, then return fastq
+		"""
+		file_name = self.get_trimmomatic_file(type_path, b_first_file)
+		if os.path.exists(file_name): return file_name
+		file_name = self.get_nanofilt_file(type_path)
+		if os.path.exists(file_name): return file_name
+		return self.get_fastq(type_path, b_first_file)
+		
 	def is_original_fastq_removed(self):
 		"""
 		Test if original fastq were removed already

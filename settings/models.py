@@ -59,6 +59,7 @@ class Software(models.Model):
 	
 	### if this software is to run (also if the software can be ON/OFF in pipelines)
 	can_be_on_off_in_pipeline = models.BooleanField(default=False)	## set to True if can be ON/OFF in pipeline, otherwise always ON
+	### this flag is only used on global settings. For sample, project and project_sample is on parameters...
 	is_to_run = models.BooleanField(default=True)					## set to True if it is going to run, for example Trimmomatic can run or not
 	
 	###  small description of software
@@ -128,6 +129,10 @@ class Parameter(models.Model):
 	range_min = models.CharField(max_length=50, default="")				## only used in int and float fields
 	description = models.CharField(max_length=500, default="")			## description of this size
 	not_set_value = models.CharField(max_length=50, db_index=True, blank=True, null=True)  ## don't define value, in execution string, if this value
+	
+	## if the software it run or not for the sample, project or project_sample
+	## The first parameter is mandatory, the others don't be take into account
+	is_to_run = models.BooleanField(default=True)					## set to True if it is going to run, for example Trimmomatic can run or not
 	
 	def __str__(self):
 		return self.name

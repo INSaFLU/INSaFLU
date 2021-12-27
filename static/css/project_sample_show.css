@@ -5,6 +5,14 @@
     text-align:center;
 }
 
+/**
+80 % of the window size
+
+.card_height{
+    height: 2000px;
+}
+***/
+
 /***
 CSS used in coverage graphics
 ***/

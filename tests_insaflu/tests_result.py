@@ -78,6 +78,9 @@ class Test(TestCase):
 		
 		self.assertEqual("Trimmomatic-0.39; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
 		self.assertEqual("SPAdes-3.11.1; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertFalse(result.is_software_present(SoftwareNames.SOFTWARE_ABRICATE_name))
 		
 		self.assertEqual(KeyValue("key", "value"), result.get_key_value()[0])
 		self.assertEqual(KeyValue("key1", "value1"), result.get_key_value()[1])

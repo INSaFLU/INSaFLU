@@ -211,7 +211,7 @@ class SoftwareNames(object):
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_name_extended = "Mapping (Freebayes)"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
-	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
+	SOFTWARE_FREEBAYES_PARAMETERS = "--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V"
 	
 	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/fasta_generate_regions.py")
 	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"

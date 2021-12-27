@@ -333,6 +333,43 @@ class DefaultProjectSoftware(object):
 	
 	#####################################################
 	#####
+	#####		BEGIN -- Freebayes
+	#####
+	
+	def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
+		"""
+		get freebayes parameters
+		Add extra -V to the end
+		"""
+		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project,
+				project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
+	
+	def is_to_run_freebayes(self, user, project_sample):
+		"""
+		test if freebayes is to run
+		"""
+		
+		### Test project_sample first
+		return self.default_parameters.is_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name, user,\
+				Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+				ConstantsSettings.TECHNOLOGY_illumina)
+	
+
+	def set_freebayes_to_run(self, user, project_sample, is_to_run):
+		"""
+		test if abricate is to run
+		"""
+		return self.default_parameters.set_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
+				Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+				ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		
+	#####
+	#####		END -- Freebayes
+	#####
+	#####################################################
+	
+	#####################################################
+	#####
 	#####		nanofilt
 	#####
 	
@@ -362,7 +399,24 @@ class DefaultProjectSoftware(object):
 		software_names = SoftwareNames()
 		return software_names.get_nanofilt_parameters()
 	
+	def is_to_run_nanofilt(self, user, sample):
+		"""
+		test if nanofilt is to run
+		"""
+		
+		### Test project_sample first
+		return self.default_parameters.is_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				ConstantsSettings.TECHNOLOGY_minion)
 	
+	def set_nanofilt_to_run(self,user, sample, is_to_run):
+		"""
+		test if abricate is to run
+		"""
+		return self.default_parameters.set_software_to_run(SoftwareNames.SOFTWARE_NanoFilt_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				ConstantsSettings.TECHNOLOGY_minion, is_to_run)
+		
 	def get_nanofilt_parameters_for_sample(self, user, sample):
 		"""
 		get nanofilt parameters only for project or default
@@ -474,7 +528,24 @@ class DefaultProjectSoftware(object):
 		software_names = SoftwareNames()
 		return software_names.get_trimmomatic_parameters()
 	
+	def is_to_run_trimmomatic(self, user, sample):
+		"""
+		test if trimmomatic is to run
+		"""
+		
+		### Test project_sample first
+		return self.default_parameters.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				ConstantsSettings.TECHNOLOGY_illumina)
 	
+	def set_trimmomatic_to_run(self,user, sample, is_to_run):
+		"""
+		test if trimmomatic is to run
+		"""
+		return self.default_parameters.set_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		
 	def get_trimmomatic_parameters_for_sample(self, user, sample):
 		"""
 		get trimmomatic parameters only for project or default
@@ -567,6 +638,26 @@ class DefaultProjectSoftware(object):
 		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_ABRICATE_name, user, type_of_use,
 			None, None, sample, technology_name)
 	
+	def is_to_run_abricate(self, user, sample, technology_name):
+		"""
+		test if abricate is to run
+		"""
+		
+		### Test project_sample first
+		return self.default_parameters.is_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				technology_name)
+		
+	def set_abricate_to_run(self, user, sample, technology_name, is_to_run):
+		"""
+		test if abricate is to run
+		"""
+		
+		### Test project_sample first
+		return self.default_parameters.set_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name, user,\
+				Software.TYPE_OF_USE_sample, None, None, sample,
+				technology_name, is_to_run)
+			
 	def get_abricate_parameters_all_possibilities(self, user, sample, technology_name):
 		"""
 		get abricate parameters for sample
@@ -1261,16 +1352,6 @@ class DefaultProjectSoftware(object):
 	#####################################################
 	
 	
-	def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
-		"""
-		get freebayes parameters
-		Add extra -V to the end
-		"""
-		return self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_FREEBAYES_name, user, type_of_use, project,
-				project_sample, None, ConstantsSettings.TECHNOLOGY_illumina) + " -V"
-	
-	
-
 	def set_default_software(self, software, user, type_of_use, project, project_sample, sample):
 		"""
 		Set default parameters for a software
@@ -1351,11 +1432,13 @@ class DefaultProjectSoftware(object):
 		
 		### parse them
 		for parameter in parameters:
-			### don't set the not set parameters
-			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
-			
 			for previous_parameter in vect_parameters:
 				if previous_parameter.sequence_out == parameter.sequence_out:
+					previous_parameter.is_to_run = parameter.is_to_run
+					previous_parameter.software.is_to_run = parameter.is_to_run
+					
+					### don't set the not set parameters
+					if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): break
 					previous_parameter.parameter = parameter.parameter
 					break
 		return vect_parameters

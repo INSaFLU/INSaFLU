@@ -19,6 +19,7 @@ from settings.default_parameters import DefaultParameters
 from managing_files.manage_database import ManageDatabase
 from utils.result import DecodeObjects
 from constants.meta_key_and_values import MetaKeyAndValue
+from settings.models import Parameter
 
 ## START masking consensus
 # manageDatabase = ManageDatabase()
@@ -78,10 +79,21 @@ class SoftwaresTable(tables.Table):
 		return record.name if record.name_extended is None else record.name_extended
 
 	def render_select_to_run(self, value, record):
-		sz_href = '<a href="#id_turn_software_on_off" id="id_show_turn_on_off_modal" data-toggle="modal" software_id="{}">'.format(record.id) +\
+		sz_ids = ""
+		if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project.id)
+		if (not self.project_sample is None): sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
+		if (not self.sample is None): sz_ids += ' sample_id="{}"'.format(self.sample.id)
+			
+		is_to_run = record.is_to_run
+		if len(sz_ids) > 0:
+			parameters = Parameter.objects.filter(software=record, project=self.project,
+							project_sample=self.project_sample, sample=self.sample)
+			if len(parameters) > 0: is_to_run = parameters[0].is_to_run
+			
+		sz_href = '<a href="#id_turn_software_on_off" id="id_show_turn_on_off_modal" data-toggle="modal" software_id="{}" {}>'.format(record.id, sz_ids) +\
 			'<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/> </a>'.format(
 			Constants.CHECK_BOX, record.id, record.id,
-			"checked" if record.is_to_run else "",
+			"checked" if is_to_run else "",
 			"" if record.can_be_on_off_in_pipeline and self.b_enable_options else "disabled")
 		return mark_safe(sz_href)
 		
@@ -289,10 +301,15 @@ class INSaFLUParametersTable(tables.Table):
 		return record.name if record.name_extended is None else record.name_extended
 
 	def render_select_to_run(self, value, record):
-		return mark_safe('<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/>'.format(
+		sz_ids = ""
+		if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project)
+		if (not self.project_sample is None): sz_ids += ' project_sample_id="{}"'.format(self.project_sample)
+		
+		return mark_safe('<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {} {}/>'.format(
 			Constants.CHECK_BOX, record.id, record.id,
 			"checked" if record.is_to_run else "",
-			"" if record.can_be_on_off_in_pipeline else "disabled"))
+			"" if record.can_be_on_off_in_pipeline else "disabled",
+			sz_ids))
 		
 	def render_technology(self, record):
 		""" return technology names """

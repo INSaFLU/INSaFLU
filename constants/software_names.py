@@ -69,7 +69,6 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.39"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
-
 	SOFTWARE_TRIMMOMATIC_vect_info_to_collect = ["Input Read Pairs:",
 					"Both Surviving:",
 					"Forward Only Surviving:",
@@ -91,6 +90,16 @@ class SoftwareNames(object):
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
 					'TruSeq3-SE.fa']
+	### collect stat data for ILLUMINA, in form of key value
+	SOFTWARE_ILLUMINA_stat = "illumina_stat"
+	SOFTWARE_ILLUMINA_stat_collect = [
+					"Number of reads R1", "Number of reads R2",
+					"Average read length R1", "Average read length R2",
+					"STDEV read length R1", "STDEV read length R2",
+					"Total bases",]
+	SOFTWARE_ILLUMINA_stat_collect_show_percentage = [
+					"Number of reads R1", "Number of reads R2",
+					"Total bases",]
 	
 	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
 	SOFTWARE_RabbitQC_name = "RabbitQC"
@@ -121,7 +130,6 @@ class SoftwareNames(object):
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
 	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 70 --tailcrop 70"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
 	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
-#	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka.1.2.3/bin/activate"))
 	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
 	SOFTWARE_Medaka_name_consensus = "Medaka consensus"

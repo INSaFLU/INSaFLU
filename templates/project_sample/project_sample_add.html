@@ -139,7 +139,6 @@
  		
 	<script>
 		$(document).ready(function (){
-			$.unblockUI();
 			$('#modal_show_settings_allert').modal('show')
 		});
 		
@@ -161,11 +160,8 @@
 		            opacity: .5, 
 		            color: '#fff' 
 		        } }); 
-		    }); 
-		});
-		
-		/* wait button */
-		$(document).ready(function() { 
+		    });
+		    
 		    $('#id_submit_checked').click(function() { 
 		        $.blockUI({ css: { 
 		            border: 'none', 

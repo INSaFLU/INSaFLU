@@ -1,18 +1,19 @@
 ///
 $(document).on("click", "a", function(e){
 	var attr = $(this).attr('id');
-	var ref_name = $(this).attr('ref_name');
-	var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
-	var proj_name = $(this).attr('proj_name');
-	var pk_proj = $(this).attr('pk_proj');
-	var pk_proj_sample = $(this).attr('pk_proj_sample');
-	var pk_sample = $(this).attr('pk_sample');
-	var type_software = $(this).attr('type_software');
-	var tooltip_title = $(this).attr('title');
-	var id_image = $(this).attr('id_image');
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'id_default_parameter'){
+		var ref_name = $(this).attr('ref_name');
+		var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
+		var proj_name = $(this).attr('proj_name');
+		var pk_proj = $(this).attr('pk_proj');
+		var pk_proj_sample = $(this).attr('pk_proj_sample');
+		var pk_sample = $(this).attr('pk_sample');
+		var type_software = $(this).attr('type_software');
+		var tooltip_title = $(this).attr('title');
+		var id_image = $(this).attr('id_image');
+	
 		var message = 'Do you want to ' + tooltip_title.toLowerCase() + ' for \'' + ref_name + '\'?';
 		/// Only show this message in projects
 		if (ref_name === 'Mask consensus by sites' && typeof pk_proj_sample === typeof undefined) {

@@ -67,6 +67,7 @@ class Test(TestCase):
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
 			sample.is_valid_2 = False
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
 			sample.owner = user
 			sample.save()
 		
@@ -356,6 +357,7 @@ class Test(TestCase):
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
 			sample.is_valid_2 = False
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
 			sample.owner = user
 			sample.save()
 		
@@ -488,6 +490,7 @@ class Test(TestCase):
 			sample.is_valid_2 = False
 			sample.file_name_2 = None
 			sample.path_name_2.name = None
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
 			sample.owner = user
 			sample.save()
 

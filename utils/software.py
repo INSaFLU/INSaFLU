@@ -30,6 +30,7 @@ from Bio.Seq import Seq
 from Bio.Seq import MutableSeq
 from Bio.SeqRecord import SeqRecord
 from django.template.defaultfilters import filesizeformat
+from utils.result import DecodeObjects
 
 class Software(object):
 	'''
@@ -250,53 +251,6 @@ class Software(object):
 		return cmd
 
 
-	def get_lines_and_average_reads(self, file_name):
-		"""
-		return (lines, average)
-		
-		raise Exception
-		"""
-		temp_file =  self.utils.get_temp_file("lines_and_average_", ".txt")
-		cmd = "gzip -cd " + file_name + " | wc -l > " + temp_file
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			self.utils.remove_temp_file(temp_file)
-			raise Exception("Fail to run get_lines_and_average_reads")
-		
-		###
-		vect_out = self.utils.read_text_file(temp_file)
-		if (len(vect_out) == 0): return (0, 0)
-		if (int(vect_out[0]) == 0): return (0, 0)
-		
-		cmd = "gzip -cd " + file_name + " | awk '{ s++; if ((s % 4) == 0) { count ++; size += length($0); }  } END { print \"sequences: \", count,  \"average: \", size/count }' > " + temp_file
-		exist_status = os.system(cmd)
-		if (exist_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			self.utils.remove_temp_file(temp_file)
-			raise Exception("Fail to run get_lines_and_average_reads")
-		
-		###
-		vect_out = self.utils.read_text_file(temp_file)
-		if (len(vect_out) == 0):
-			self.logger_production.error('can not read any data: ' + temp_file)
-			self.logger_debug.error('can not read any data: ' + temp_file)
-			self.utils.remove_temp_file(temp_file)
-			raise Exception("Can't read any data")
-		vect_data = vect_out[0].split()
-		if (len(vect_data) != 4):
-			self.logger_production.error('can not parse this data: ' + vect_out[0])
-			self.logger_debug.error('can not parse this data: ' + vect_out[0])
-			self.utils.remove_temp_file(temp_file)
-			raise Exception("Can't read any data")
-		if (self.utils.is_float(vect_data[3])): average_value = "%.1f" % (float(vect_data[3]))
-		else: average_value = vect_data[3]
-		
-		self.utils.remove_temp_file(temp_file)
-		return (vect_data[1], average_value)
-	
 	"""
 	Global processing
 	"""
@@ -627,9 +581,6 @@ class Software(object):
 			parameters = self.software_names.get_trimmomatic_parameters()
 		else:
 			default_software_project = DefaultProjectSoftware()
-			default_software_project.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, sample.owner,
-								 	SoftwareSettings.TYPE_OF_USE_sample,
-									None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
 			parameters = default_software_project.get_trimmomatic_parameters_all_possibilities(user, sample)
 
 		### run software
@@ -1257,29 +1208,38 @@ class Software(object):
 			return (False, False)
 		
 		### get number of sequences and average length
-		(average_length_1, number_sequences_1) = self.utils.get_number_sequences_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-		(average_length_2, number_sequences_2) = (None, None)
-		if sample.exist_file_2():
-			(average_length_2, number_sequences_2) = self.utils.get_number_sequences_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, False))
-		result_average = ResultAverageAndNumberReads(str(number_sequences_1), "{:.1f}".format(average_length_1),
-						None if number_sequences_2 is None else str(number_sequences_2),
-						None if average_length_2 is None else "{:.1f}".format(average_length_2))
-		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore,
-						MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+		(number_1, average_1, std1) = self.get_number_sequences_in_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+		if (sample.exist_file_2()): (number_2, average_2, std_2) = self.get_number_sequences_in_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, False))
+		else: (number_2, average_2, std_2) = (None, None, None)
+
+		### create key/values for stat in Illumina
+		result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_ILLUMINA_stat, "", "",
+					self.get_key_values_stats_illumina(number_1, average_1, std1,
+									number_2, average_2, std_2)))
 		
 		### get software parameters
 		default_software_project = DefaultProjectSoftware()
-		default_software_project.test_default_db(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, sample.owner,
- 			SoftwareSettings.TYPE_OF_USE_sample,
- 			None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
+		default_software_project.test_all_defaults(sample.owner, None, None, sample)
 
 		### test if the software ran
 		if not default_software_project.is_to_run_trimmomatic(sample.owner, sample):
+			## set software run
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic,
 							MetaKeyAndValue.META_VALUE_Success, "Success, Fastq({})".format(
 							self.software_names.get_fastq_version()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software,
 											MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+			
+			### set number of reads to show on the table
+			result_average = ResultAverageAndNumberReads(number_1, average_1, number_2, average_2)
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads,
+						MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+		
+			## remove trimmomatic result files
+			self.utils.remove_file(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+			self.utils.remove_file(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+			self.utils.remove_file(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+			self.utils.remove_file(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
 			return (result_average.has_reads(), False)
 						
 		### run trimmomatic
@@ -1321,12 +1281,17 @@ class Software(object):
 		
 
 		### collect numbers
-		(lines_1, average_1) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
-		if (sample.exist_file_2()): (lines_2, average_2) = self.get_lines_and_average_reads(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
-		else: (lines_2, average_2) = (None, None)
-		result_average = ResultAverageAndNumberReads(lines_1, average_1, lines_2, average_2)
+		(number_1, average_1, std1) = self.get_number_sequences_in_fastq(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		if (sample.exist_file_2()): (number_2, average_2, std2) = self.get_number_sequences_in_fastq(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+		else: (number_2, average_2, std2) = (None, None, None)
+		
+		result_average = ResultAverageAndNumberReads(number_1, average_1, number_2, average_2)
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 
+		### create key/values for stat in Illumina
+		result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_ILLUMINA_stat, "", "",
+					self.get_key_values_stats_illumina(number_1, average_1, std1, number_2, average_2, std2)))
+											
 		## save everything OK
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic,
 							MetaKeyAndValue.META_VALUE_Success, "Success, Fastq(%s), Trimmomatic(%s)" %\
@@ -1335,6 +1300,85 @@ class Software(object):
 							MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		return result_average.has_reads(), True
 
+	def get_number_sequences_in_fastq(self, fastq_file):
+		""" return number of sequences, average and std""" 
+		(number_sequences, average_length, std) = (0, 0, 0)
+		try:
+			(number_sequences, average_length, std) = self.utils.get_number_sequences_fastq(fastq_file)
+		except Exception as e:
+			pass
+		return (number_sequences, average_length, std)
+
+
+	def get_key_values_stats_illumina(self, number_1, average_1, std1, number_2, average_2, std2):
+		"""
+		return key values for illumina
+		Check the keys in the SoftwareNames.SOFTWARE_ILLUMINA_stat_collect
+			"Number of reads R1", "Number of reads R2",
+			"Average read length R1", "Average read length R2",
+			"STDEV read length R1", "STDEV read length R2",
+		"""
+		result = Result()
+		total_bases = 0
+		if not number_1 is None:
+			result.add_key_value(KeyValue("Number of reads R1", "{:,.0f}".format(number_1)))
+			total_bases += number_1
+		if not average_1 is None: result.add_key_value(KeyValue("Average read length R1", str(average_1)))
+		if not std1 is None: result.add_key_value(KeyValue("STDEV read length R1", str(std1)))
+		if not number_2 is None:
+			result.add_key_value(KeyValue("Number of reads R2", "{:,.0f}".format(number_2)))
+			total_bases += number_2
+		if not average_2 is None: result.add_key_value(KeyValue("Average read length R2", str(average_2)))
+		if not std2 is None: result.add_key_value(KeyValue("STDEV read length R2", str(std2)))
+		result.add_key_value(KeyValue("Total bases", "{:,.0f}".format(total_bases)))
+		return result.key_values
+	
+	def get_stats_from_sample_reads(self, sample):
+		"""
+		Return stats to show on sample details
+		"""
+		if sample.is_type_fastq_gz_sequencing():
+			meta_key_software = MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software
+			software_name = SoftwareNames.SOFTWARE_ILLUMINA_stat
+			show_percentage = SoftwareNames.SOFTWARE_ILLUMINA_stat_collect_show_percentage
+		else: 
+			meta_key_software = MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software
+			software_name = SoftwareNames.SOFTWARE_NanoStat_name
+			show_percentage = SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect_show_percentage
+		
+		manageDatabase = ManageDatabase()
+		meta_data = manageDatabase.get_sample_metakey_last(sample, meta_key_software, None)
+		decode_nanostat = DecodeObjects()
+		result_data = decode_nanostat.decode_result(meta_data.description)
+		vect_soft = result_data.get_list_software_instance(software_name)
+		if (len(vect_soft) == 2):		## has data
+			data_nanostat = []
+			key_data_0 = vect_soft[0].get_vect_key_values()
+			key_data_1 = vect_soft[1].get_vect_key_values()
+			for _ in range(len(key_data_0)):
+				percentage = "--"
+				value_0 = key_data_0[_].value.replace(',','')
+				value_1 = key_data_1[_].value.replace(',','')
+				if key_data_0[_].key in show_percentage and \
+						(len(value_0) > 0 and self.utils.is_float(value_0) and \
+						float(value_0) > 0 and len(value_1) > 0):
+					percentage = "{:,.1f}".format(float(value_1) / float(value_0) * 100)
+				data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value,
+							"{:,.1f}".format(float(value_1) - float(value_0)), percentage])
+			return data_nanostat
+		elif (len(vect_soft) == 1):		## only has the fist analysis
+			data_nanostat = []
+			key_data_0 = vect_soft[0].get_vect_key_values()
+			for _ in range(len(key_data_0)):
+				percentage = "--"
+				value_0 = key_data_0[_].value.replace(',','')
+				if key_data_0[_].key in show_percentage and \
+						(len(value_0) > 0 and self.utils.is_float(value_0) and \
+						float(value_0) > 0):
+					percentage = "100"
+				data_nanostat.append([key_data_0[_].key, key_data_0[_].value, '--', '0.0', percentage])
+			return data_nanostat
+		
 	"""
 	Global processing, fastQ, trimmomatic and GetSpecies
 	"""
@@ -1372,9 +1416,6 @@ class Software(object):
 			
 			### test Abricate ON/OFF
 			default_software_project = DefaultProjectSoftware()
-			default_software_project.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name, sample.owner,
- 											SoftwareSettings.TYPE_OF_USE_sample,
- 			 								None, None, sample, ConstantsSettings.TECHNOLOGY_illumina)
 			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
 											ConstantsSettings.TECHNOLOGY_illumina)
 			
@@ -1426,7 +1467,7 @@ class Software(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
-					message = "Info: Abricate turn OFF by the user."
+					message = "Info: Abricate turned OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
 				sample_to_update.save()
@@ -1496,9 +1537,6 @@ class Software(object):
 			try:
 				### get snippy parameters
 				snippy_parameters = default_project_software.get_snippy_parameters_all_possibilities(user, project_sample)
-				default_project_software.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, project_sample.sample.owner,
-								 	SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 				out_put_path = self.run_snippy(project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, True),\
 						project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
@@ -1604,9 +1642,6 @@ class Software(object):
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER 
 			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
 				DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina))
-			default_project_software.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name, project_sample.sample.owner,
-								 	SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 			msa_parameters = self.make_mask_consensus_by_deep( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_snippy_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
@@ -1627,13 +1662,9 @@ class Software(object):
 			################
 			################
 			## run freebayes if at least one segment has some coverage
-			default_software_project = DefaultProjectSoftware()
-			default_software_project.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, project_sample.sample.owner,
-	 			SoftwareSettings.TYPE_OF_USE_project_sample,
-	 			None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 			## test if it is necessary to run freebayes
 			count_hits = CountHits()
-			if default_software_project.is_to_run_freebayes(user, project_sample):
+			if default_project_software.is_to_run_freebayes(user, project_sample):
 				try:
 					out_put_path = self.run_freebayes_parallel(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name()),\
 								project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
@@ -1723,8 +1754,9 @@ class Software(object):
 					return False
 			else:
 				### set count hits to zero
+				mixed_infections_management = MixedInfectionsManagement()
+				mixed_infection = mixed_infections_management.get_mixed_infections_empty_value()
 				manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Count_Hits, MetaKeyAndValue.META_VALUE_Success, count_hits.to_json())
-				mixed_infection = None
 				
 				### remove several files that can exist form previous interactions
 				tab_freebayes_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
@@ -1762,7 +1794,6 @@ class Software(object):
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
 			
-			print("111########################")
 			### get again
 			manage_database = ManageDatabase()
 			project_sample = ProjectSample.objects.get(pk=project_sample.id)
@@ -1775,7 +1806,6 @@ class Software(object):
 			project_sample.count_variations = manage_database.get_variation_count(count_hits)
 			project_sample.mixed_infections = mixed_infection
 			project_sample.save()
-			
 			### add today date, last change
 			project = project_sample.project
 			project.last_change_date = datetime.datetime.now()
@@ -1794,7 +1824,7 @@ class Software(object):
 				b_second_choice = True
 				file_out = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
 				collect_extra_data.collect_variations_freebayes_only_one_file(tab_freebayes_file, file_out, vect_type_remove)
-				
+			
 			### get clean consensus file
 			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)
 			if (os.path.exists(consensus_fasta)):

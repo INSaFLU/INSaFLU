@@ -20,9 +20,6 @@ class MetaKeyAndValue(object):
 	META_KEY_NanoStat_NanoFilt_Software = "NanoStatNanoFiltSoftware"	## Used to run NanoStat and NanoFilt 
 	META_KEY_Number_And_Average_Reads = "NumberAndAverageReads"  		## Used to count the number of the reads on run software.Software.get_lines_and_average_reads 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
-	META_KEY_Number_And_Average_ReadsBefore = "NumberAndAverageReadsBefore"  ## Used to count the number of the reads on run software.Software.get_lines_and_average_reads before trimmomatic 
-																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
-
 	META_KEY_Snippy_Freebayes = "SnippyFreeBayes"						## Used to run snippy and freebayes 
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Identify_pangolin = "IdentifyPangolin"						## Tag to use in pangolin

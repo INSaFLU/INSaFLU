@@ -6,13 +6,14 @@ var mask_element_was_selected = "";
 ///
 $(document).on("click", "a", function(e){
 	var attr = $(this).attr('id');
-	var i_to_change_id = $(this).attr('id_image');		// image in the table, to change color is has data...
-	var reference_name = $(this).attr('reference_name');
-	var project_name = $(this).attr('project_name');
-	var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'showMaskModal'){
+		var i_to_change_id = $(this).attr('id_image');		// image in the table, to change color is has data...
+		var reference_name = $(this).attr('reference_name');
+		var project_name = $(this).attr('project_name');
+		var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
+	
 		//block all page
 		$.blockUI({ css: { 
 		            border: 'none', 

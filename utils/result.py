@@ -329,10 +329,10 @@ class ResultAverageAndNumberReads(object):
 	Only have the number of reads and average
 	"""
 	def __init__(self, number_file_1, average_file_1, number_file_2, average_file_2):
-		self.number_file_1 = number_file_1
-		self.average_file_1 = average_file_1
-		self.number_file_2 = number_file_2
-		self.average_file_2 = average_file_2
+		self.number_file_1 = None if number_file_1 is None else str(number_file_1)
+		self.average_file_1 = None if average_file_1 is None else str(average_file_1)
+		self.number_file_2 = None if number_file_2 is None else str(number_file_2)
+		self.average_file_2 = None if average_file_2 is None else str(average_file_2)
 	
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
@@ -348,9 +348,8 @@ class ResultAverageAndNumberReads(object):
 		"""
 		Test if has reads
 		"""
-		if ((self.number_file_1 == 0 and self.average_file_1 == 0) and
-			((self.number_file_2 == 0 and self.average_file_2 == 0) or 
-			(self.number_file_2 is None and self.average_file_2 is None))): return False
+		if (self.number_file_1 == '0' and
+			(self.number_file_2 == '0' or self.number_file_2 is None)): return False
 		return True
 
 class CoverageElement(object):

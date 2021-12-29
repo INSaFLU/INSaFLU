@@ -82,9 +82,6 @@ class SoftwareMinion(object):
 			
 			### test Abricate ON/OFF
 			default_software_project = DefaultProjectSoftware()
-			default_software_project.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name, sample.owner,
- 											SoftwareSettings.TYPE_OF_USE_sample,
- 			 								None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
 			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
 												ConstantsSettings.TECHNOLOGY_minion)
 
@@ -135,7 +132,7 @@ class SoftwareMinion(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
-					message = "Info: Abricate turn OFF by the user."
+					message = "Info: Abricate turned OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
 			else:
@@ -187,9 +184,12 @@ class SoftwareMinion(object):
 											MetaKeyAndValue.META_VALUE_Success,\
 											"Fastq files were down sized to values ~{}.".format( filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 		
+		### get number of sequences in fastq
+		(number_of_sequences, average_1, std1) = self.utils.get_number_sequences_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+		
 		### first run stat
 		try:
-			(result_nano_stat, number_sequences)  = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+			result_nano_stat  = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True), number_of_sequences)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -200,31 +200,30 @@ class SoftwareMinion(object):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			return False, False
 		
-		### run rabbitQC, only to have a image of the data
-		try:
-			out_file_html = self.run_rabbitQC(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-			result_all.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
-					self.software_names.get_rabbitQC_parameters()))
-			self.utils.copy_file(out_file_html, sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
-			self.utils.remove_file(out_file_html)
-		except Exception as e:
-			result = Result()
-			result.set_error("Fail to run rabbitQC software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
-					self.software_names.get_rabbitQC_parameters()))
-			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False, False
+		## if they are sequences
+		if (number_of_sequences > 0):
+			### run rabbitQC, only to have a image of the data
+			try:
+				out_file_html = self.run_rabbitQC(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+				result_all.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
+						self.software_names.get_rabbitQC_parameters()))
+				self.utils.copy_file(out_file_html, sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+				self.utils.remove_file(out_file_html)
+			except Exception as e:
+				result = Result()
+				result.set_error("Fail to run rabbitQC software: " + e.args[0])
+				result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
+						self.software_names.get_rabbitQC_parameters()))
+				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				return False, False
 		
 		default_software_project = DefaultProjectSoftware()
-		default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, sample.owner,
- 			SoftwareSettings.TYPE_OF_USE_sample,
- 			None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
+		default_software_project.test_all_defaults(sample.owner, None, None, sample)
 		
 		### test if the software ran
-		if not default_software_project.is_to_run_nanofilt(sample.owner, sample):
-			### collect numbers
-			(lines_1, average_1) = self.software.get_lines_and_average_reads(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-			result_average = ResultAverageAndNumberReads(lines_1, average_1, None, None)
+		if number_of_sequences == 0 or not default_software_project.is_to_run_nanofilt(sample.owner, sample):
+			### collect numbers to show on the sample table
+			result_average = ResultAverageAndNumberReads(number_of_sequences, average_1, None, None)
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads,
 								MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 	
@@ -234,6 +233,10 @@ class SoftwareMinion(object):
 								(self.software_names.get_NanoStat_version()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software,
 							MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+			
+			### remove nanofilt and rabiQC 
+			self.utils.remove_file(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+			self.utils.remove_file(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
 			return (result_average.has_reads(), False)
 		
 		### run nanoflit
@@ -242,10 +245,6 @@ class SoftwareMinion(object):
 			if (owner is None):
 				parameters = self.software_names.get_NanoFilt_parameters()
 			else:
-				default_software_project = DefaultProjectSoftware()
-				default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, owner,
-								 	SoftwareSettings.TYPE_OF_USE_sample,
-									None, None, sample, ConstantsSettings.TECHNOLOGY_minion)
 				parameters = default_software_project.get_nanofilt_parameters_all_possibilities(owner, sample)
 			result_file = self.run_nanofilt(sample.get_fastq(TypePath.MEDIA_ROOT, True), parameters, owner)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(), parameters))
@@ -261,10 +260,15 @@ class SoftwareMinion(object):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			return False, False
 		
+		### collect numbers
+		(number_1, average_1, std1) = self.utils.get_number_sequences_fastq(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+		result_average = ResultAverageAndNumberReads(number_1, average_1, None, None)
+		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+
 		### run start again
 		try:
 			## if the user set a high coverage it can get no reads to process
-			(result_nano_stat, number_sequences) = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+			result_nano_stat = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT), number_1)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -290,11 +294,6 @@ class SoftwareMinion(object):
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			return False, False
 		
-		### collect numbers
-		(lines_1, average_1) = self.software.get_lines_and_average_reads(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
-		result_average = ResultAverageAndNumberReads(lines_1, average_1, None, None)
-		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
-
 		## save everything OK
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s), NanoFilt(%s)" %\
 							(self.software_names.get_NanoStat_version(), self.software_names.get_NanoFilt_version()))
@@ -302,7 +301,7 @@ class SoftwareMinion(object):
 		return result_average.has_reads(), True
 
 	
-	def run_nanostat(self, file_name):
+	def run_nanostat(self, file_name, number_sequences):
 		"""
 		run nanoStat, return result with keys
 		crate a text file with output
@@ -323,8 +322,6 @@ class SoftwareMinion(object):
 			>Q15:	16830 (8.0%) 8.2Mb
 		"""
 		
-		### get number of lines
-		(average_length, number_sequences) = self.utils.get_number_sequences_fastq(file_name)
 		if (number_sequences == 0):
 			result = Result()
 			for key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
@@ -360,7 +357,7 @@ class SoftwareMinion(object):
 			
 			### remove dir
 			self.utils.remove_dir(temp_dir)
-		return (result, number_sequences)
+		return result
 	
 	
 	def run_rabbitQC(self, file_name):

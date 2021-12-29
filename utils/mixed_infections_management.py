@@ -23,6 +23,29 @@ class MixedInfectionsManagement(object):
 		'''
 		pass
 	
+	def get_mixed_infections_empty_value(self):
+		""" return empty value for mixed infection """
+		tag = Constants.EMPTY_VALUE_NA
+			
+		### get tag
+		with LockedAtomicTransaction(MixedInfectionsTag):
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag)
+			except MixedInfectionsTag.DoesNotExist as e:
+				mixed_infections_tag = MixedInfectionsTag()
+				mixed_infections_tag.name = tag
+				mixed_infections_tag.save()
+		
+		lst_mixed_infections = MixedInfections.objects.filter(tag = mixed_infections_tag,
+						average_value = 0.0, description = "{}", has_master_vector = False).order_by('-pk')[:1]
+		if len(lst_mixed_infections) > 0: return lst_mixed_infections[0]
+		mixed_infections = MixedInfections()
+		mixed_infections.tag = mixed_infections_tag
+		mixed_infections.average_value = 0.0
+		mixed_infections.description = "{}"
+		mixed_infections.save()
+		return mixed_infections
+				
 	def get_mixed_infections(self, project_sample, user, count_hits):
 		"""
 		return a MixedInfections instance and set an alert if necessary

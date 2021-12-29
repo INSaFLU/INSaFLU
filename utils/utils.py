@@ -1447,24 +1447,38 @@ class Utils(object):
 		return last_name
 	
 	def get_number_sequences_fastq(self, file_name):
-		""" return average and number of sequences """
-		
-		temp_file = self.get_temp_file("get_number_fastq", ".txt")
-		cmd = "gzip -cd {}".format(file_name) + \
-			" | awk 'NR%4==2 {sum+=length($0)} END {print sum/(NR/4) " + ', " ", ' + " (NR/4)}' > " + temp_file
+		""" return average and number of sequences
+		:output (number seqs, average, std)
+		"""
+		temp_file =  self.get_temp_file("lines_and_average_", ".txt")
+		cmd = "gzip -cd " + file_name + " | awk '{ s++; if ((s % 4) == 0) { count ++; size += length($0); " + \
+			" sumsq += (length($0))^2; }  } END " + \
+			" { print \"sequences: \", count,  \"average: \", size/count,  \"std: \", sqrt(sumsq/count - (size/count)^2) }' > " + temp_file
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			self.remove_file(temp_file)
-			raise Exception("Fail to run gzip")
+			self.remove_temp_file(temp_file)
+			raise Exception("Fail to run get_number of sequences in fastq file")
 		
-		### get number
-		vect_lines = self.read_text_file(temp_file)
-		self.remove_file(temp_file)
-		if len(vect_lines) == 1 and len(vect_lines[0].split()) == 2: 
-			return float(vect_lines[0].split()[0]), int(vect_lines[0].split()[1])
-		return 0, 0
+		###
+		vect_out = self.read_text_file(temp_file)
+		if (len(vect_out) == 0):
+			self.logger_production.error('can not read any data: ' + temp_file)
+			self.logger_debug.error('can not read any data: ' + temp_file)
+			self.remove_temp_file(temp_file)
+			raise Exception("Can't read any data")
+		vect_data = vect_out[0].split()
+		if (len(vect_data) != 6):
+			self.logger_production.error('can not parse this data: ' + vect_out[0])
+			self.logger_debug.error('can not parse this data: ' + vect_out[0])
+			self.remove_temp_file(temp_file)
+			raise Exception("Can't read any data")
+		average_value = "%.1f" % (float(vect_data[3]))
+		std = "%.1f" % (float(vect_data[5]))
+		
+		self.remove_temp_file(temp_file)
+		return (int(vect_data[1]), float(average_value), float(std))
 
 	def get_coverage_by_pos(self, file_coverage, chr_name, position_start, position_end):
 		"""

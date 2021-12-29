@@ -192,17 +192,6 @@ class Test(TestCase):
 		self.assertTrue(exist_status == 0)
 		self.utils.remove_dir(out_dir)
 
-	def test_get_lines_and_average_reads(self):
-		"""
-		test lines and average reads
-		"""
-		software = Software()
-		fastq = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		(lines, average) = software.get_lines_and_average_reads(fastq)
-		self.assertEquals("44425", lines)
-		self.assertEquals("143.6", average)
-
-
 	def test_run_fastq(self):
 		"""
 		run fastq
@@ -347,7 +336,6 @@ class Test(TestCase):
 		## remove all files
 		self.utils.remove_dir(temp_dir);
 
-
 	def test_run_fastq_and_trimmomatic(self):
 		"""
 		Test run fastq and trimmomatic all together
@@ -381,6 +369,7 @@ class Test(TestCase):
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
 			sample.owner = user
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.save()
 		
 		### set the job
@@ -417,20 +406,30 @@ class Test(TestCase):
 		self.assertEqual('41254', result_average.number_file_2)
 		self.assertEqual('139.1', result_average.average_file_2)
 		
-		meta_value = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, None)
-		result_average = decodeResultAverageAndNumberReads.decode_result(meta_value.description)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_value.value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, meta_value.meta_tag.name)
-		self.assertEqual('44425', result_average.number_file_1)
-		self.assertEqual('143.6', result_average.average_file_1)
-		self.assertEqual('44425', result_average.number_file_2)
-		self.assertEqual('143.6', result_average.average_file_2)
-
+		### get key values of data
+		stats_illumina = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Number of reads R1', stats_illumina[0][0])
+		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual('41,254', stats_illumina[0][2])
+		self.assertEqual('-3,171.0', stats_illumina[0][3])
+		self.assertEqual('92.9', stats_illumina[0][4])
+		self.assertEqual('Average read length R1', stats_illumina[1][0])
+		self.assertEqual('143.6', stats_illumina[1][1])
+		self.assertEqual('142.0', stats_illumina[1][2])
+		self.assertEqual('-1.6', stats_illumina[1][3])
+		self.assertEqual('--', stats_illumina[1][4])
+		self.assertEqual('Total bases', stats_illumina[-1][0])
+		self.assertEqual('88,850', stats_illumina[-1][1])
+		self.assertEqual('82,508', stats_illumina[-1][2])
+		self.assertEqual('-6,342.0', stats_illumina[-1][3])
+		self.assertEqual('92.9', stats_illumina[-1][4])
+		
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
 		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
+		
 		
 		decodeResult = DecodeObjects()
 		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
@@ -472,6 +471,7 @@ class Test(TestCase):
 			sample.is_valid_2 = True
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.owner = user
 			sample.save()
 		
@@ -506,19 +506,34 @@ class Test(TestCase):
 		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 0)
-		
 		decodeResultAverageAndNumberReads = DecodeObjects()
-		meta_value = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, None)
+		meta_value = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_value.value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, meta_value.meta_tag.name)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, meta_value.meta_tag.name)
 		result_average = decodeResultAverageAndNumberReads.decode_result(meta_value.description)
 		self.assertEqual('44425', result_average.number_file_1)
 		self.assertEqual('143.6', result_average.average_file_1)
 		self.assertEqual('44425', result_average.number_file_2)
 		self.assertEqual('143.6', result_average.average_file_2)
 
+		### get key values of data
+		stats_illumina = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Number of reads R1', stats_illumina[0][0])
+		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual('--', stats_illumina[0][2])
+		self.assertEqual('0.0', stats_illumina[0][3])
+		self.assertEqual('100', stats_illumina[0][4])
+		self.assertEqual('Average read length R1', stats_illumina[1][0])
+		self.assertEqual('143.6', stats_illumina[1][1])
+		self.assertEqual('--', stats_illumina[1][2])
+		self.assertEqual('0.0', stats_illumina[1][3])
+		self.assertEqual('--', stats_illumina[1][4])
+		self.assertEqual('Total bases', stats_illumina[-1][0])
+		self.assertEqual('88,850', stats_illumina[-1][1])
+		self.assertEqual('--', stats_illumina[-1][2])
+		self.assertEqual('0.0', stats_illumina[-1][3])
+		self.assertEqual('100', stats_illumina[-1][4])
+		
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertEqual(1, len(list_meta))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
@@ -617,10 +632,10 @@ class Test(TestCase):
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, None)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_ReadsBefore, list_meta[0].meta_tag.name)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
@@ -1181,7 +1196,7 @@ class Test(TestCase):
 		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success)
 		self.assertTrue(meta_data != None)
-		self.assertEqual("Info: Abricate turn OFF by the user.", meta_data.description)
+		self.assertEqual("Info: Abricate turned OFF by the user.", meta_data.description)
 		
 		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success)
@@ -2112,7 +2127,7 @@ class Test(TestCase):
 		self.assertEquals(0, project_sample.alert_second_level)
 		
 		### test mixed infections
-		self.assertEquals(None, project_sample.mixed_infections)
+		self.assertEquals(Constants.EMPTY_VALUE_NA, project_sample.mixed_infections.tag.name)
 		
 		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
 		self.assertEquals(1, len(list_meta))
@@ -2554,7 +2569,6 @@ class Test(TestCase):
 		out_file = self.utils.get_temp_file("file_name_rim", ".txt")
 		for_nextclade = True
 		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file, for_nextclade)
-		print(out_file_2, gff_file)
 		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 

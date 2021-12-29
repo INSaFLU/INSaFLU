@@ -349,13 +349,13 @@
 {% block js %}
 	{% load static %}
 		<script type="text/javascript" src="{% static 'js/settings/set-default-parameters.js' %}"></script>
-		<script type="text/javascript" src="{% static 'js/settings/software-check-box.js' %}"></script>
+		<script type="text/javascript" src="{% static 'js/settings/turn-on-off-software.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/mask_consensus.js' %}"></script>
 	
-	<script>	
+	<script>
+		
 		/// set wait screen
 		$(document).on("click", "a", function(e){
-			
 			var id_ = $(this).attr('id');
 			var attr = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
@@ -371,6 +371,10 @@
 			    } });
 			}
 		});
+		
+		
+		/// set wait screen
+		$.unblockUI();
 	</script>
 	
 {% endblock %}

@@ -76,7 +76,7 @@
 				<ul class="nav nav-tabs" role="tablist">
 					<li class="nav-item active"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
-					{% if not href_trimmonatic_2 %}
+					{% if data_illuminastat or data_nanostat %}
 						<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
 					{% endif %}
 					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
@@ -121,6 +121,29 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
+				  		{% if data_illuminastat %}
+					  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
+					    		<p class="title-box">Reads Statistics</p>
+					    		<div class="row">
+					    			<div class="col-lg-4"></div>
+									<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Trimmomatic</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
+						  		</div>
+						  		{% for name, value_1, value_2, value_3, value_4 in data_illuminastat %}
+							  		<div class="row">
+					    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
+					    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+							  		</div>
+							  	{% endfor %}
+						  		<hr>
+						  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
+					  		</div>
+					  	{% endif %}
 				{% else %}	<!-- data for Minion -->
 					<div class="tab-content">
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
@@ -147,31 +170,33 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
-				  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
-				    		<p class="title-box">NanoStat results</p>
-				    		<div class="row">
-				    			<div class="col-lg-4"></div>
-								<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Processed</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
-					  		</div>
-					  		{% for name, value_1, value_2, value_3, value_4 in data_nanostat %}
-						  		<div class="row">
-				    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
-				    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+				  		{% if data_nanostat %}
+					  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
+					    		<p class="title-box">NanoStat results</p>
+					    		<div class="row">
+					    			<div class="col-lg-4"></div>
+									<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Processed</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
 						  		</div>
-						  	{% endfor %}
-					  		<hr>
-					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
-				  		</div>
+						  		{% for name, value_1, value_2, value_3, value_4 in data_nanostat %}
+							  		<div class="row">
+					    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
+					    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+							  		</div>
+							  	{% endfor %}
+						  		<hr>
+						  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
+					  		</div>
+				  		{% endif %}
 				 {% endif %}	<!--  Last </div> stops after this endif -->
 				 
 					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
-						<p class="title-box">Type and subtype/lineage /p>
+						<p class="title-box">Type and subtype/lineage </p>
 						
 						{% if has_type_subtype %}
 							{% for identify_virus in vect_identify_virus %}
@@ -292,3 +317,27 @@
 	
 {% endblock %}
 
+
+{% block js %}
+
+	<script>
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			
+			var id_ = $(this).attr('id');
+			var attr = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (attr !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler'){
+				$.blockUI({ css: { 
+			        border: 'none', 
+			        padding: '15px', 
+			        backgroundColor: '#000', 
+			        '-webkit-border-radius': '10px', 
+			        '-moz-border-radius': '10px', 
+			        opacity: .5, 
+			        color: '#fff' 
+			    } });
+			}
+		});
+	</script>
+{% endblock js %}

@@ -7,6 +7,9 @@
 $('#id-set-turn-on-off-button').on('click', function(){
 
 	var software_id = $('#id-set-turn-on-off-button').attr('software_id');
+	var project_id = $('#id-set-turn-on-off-button').attr('project_id');
+	var project_sample_id = $('#id-set-turn-on-off-button').attr('project_sample_id');
+	var sample_id = $('#id-set-turn-on-off-button').attr('sample_id');
 	//block all page
 	$.blockUI({ css: { 
 	            border: 'none', 
@@ -22,6 +25,9 @@ $('#id-set-turn-on-off-button').on('click', function(){
         url: '/settings/ajax/turn_on_off_software',
         data : {
         	software_id : software_id,
+        	project_id : project_id,
+        	project_sample_id : project_sample_id,
+        	sample_id : sample_id,
     		csrfmiddlewaretoken: '{{ csrf_token }}'
         }, // data sent with the post request
         		
@@ -59,10 +65,14 @@ $('#id-set-turn-on-off-button').on('click', function(){
 ///
 $(document).on("click", "a", function(e){
 	var attr = $(this).attr('id');
-	var software_id = $(this).attr('software_id');
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'id_show_turn_on_off_modal'){
+		var software_id = $(this).attr('software_id');
+		var project_id = $('#id_show_turn_on_off_modal').attr('project_id');
+		var project_sample_id = $('#id_show_turn_on_off_modal').attr('project_sample_id');
+		var sample_id = $('#id_show_turn_on_off_modal').attr('sample_id');
+	
 		//block all page
 		$.blockUI({ css: { 
 		            border: 'none', 
@@ -78,12 +88,18 @@ $(document).on("click", "a", function(e){
 	        url: '/settings/ajax/get_software_name_to_turn_on_off',
 	        data : {
 	        	software_id : software_id,
+				project_id : project_id,
+        		project_sample_id : project_sample_id,
+        		sample_id : sample_id,
 	    		csrfmiddlewaretoken: '{{ csrf_token }}'
 	        }, // data sent with the post request
 	        		
 	        success: function (data) {
 	          	if (data['is_ok']) {
 					$('#id-set-turn-on-off-button').attr('software_id', software_id);
+					$('#id-set-turn-on-off-button').attr('project_id', project_id);
+					$('#id-set-turn-on-off-button').attr('project_sample_id', project_sample_id);
+					$('#id-set-turn-on-off-button').attr('sample_id', sample_id);
 					$('#id-label-tur-on-off').text(data['message']);
 					$('#id-set-turn-on-off-button').removeAttr('disabled');
 	         	}

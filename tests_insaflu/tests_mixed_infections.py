@@ -14,6 +14,7 @@ from constants.constantsTestsCase import ConstantsTestsCase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from constants.meta_key_and_values import MetaKeyAndValue
+from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from manage_virus.constants_virus import ConstantsVirus
@@ -27,6 +28,12 @@ class Test(unittest.TestCase):
 		self.baseDirectory = os.path.join(getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS)
 		pass
 
+	def test_get_mixed_infection_empty_value(self):
+	
+		mixed_infections_management = MixedInfectionsManagement()
+		mixed_infections = mixed_infections_management.get_mixed_infections_empty_value()
+		self.assertEqual(Constants.EMPTY_VALUE_NA, mixed_infections.tag.name)
+		
 	def test_get_mixed_infection_main_vector(self):
 		
 		try:

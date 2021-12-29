@@ -13,10 +13,11 @@ from extend_user.models import Profile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from settings.constants_settings import ConstantsSettings
+from settings.default_parameters import DefaultParameters
 from utils.process_SGE import ProcessSGE
 from utils.result import MaskingConsensus, DecodeObjects
 from constants.software_names import SoftwareNames
-
+from settings.models import Parameter
 
 @csrf_protect
 def set_default_parameters(request):
@@ -422,6 +423,9 @@ def turn_on_off_software(request):
 	if request.is_ajax():
 		data = { 'is_ok' : False }
 		software_id_a = 'software_id'
+		sample_id_a = 'sample_id'
+		project_id_a = 'project_id'
+		project_sample_id_a = 'project_sample_id'
 		
 		## some pre-requisites
 		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
@@ -430,27 +434,43 @@ def turn_on_off_software(request):
 		except Profile.DoesNotExist:
 			return JsonResponse(data)
 		if (profile.only_view_project): return JsonResponse(data)
-			
+		
+		sample_id = None
+		project_id = None
+		project_sample_id = None
+		if (sample_id_a in request.GET): sample_id = request.GET[project_id_a]
+		if (project_id_a in request.GET): project_id = request.GET[project_id_a]
+		elif (project_sample_id_a in request.GET): project_sample_id = request.GET[project_sample_id_a]
+		
+		default_parameters = DefaultParameters()
 		if (software_id_a in request.GET):
 			software_id = request.GET[software_id_a]
 			try:
+				project, project_sample, sample = None, None, None
 				software = Software.objects.get(pk=software_id)
-				if software.can_be_on_off_in_pipeline:
-					software.is_to_run = not software.is_to_run 
-					software.save()
-					
-					## set a new default
-					data['is_to_run'] = software.is_to_run
-					data['message'] = "The '{}' in '{}' technology was turned '{}'.".format(
-						software.name_extended, software.technology.name,
-						"ON" if software.is_to_run else "OFF")
+				if not project_id is None: project = Project.objects.get(pk=project_id)
+				if not project_sample_id is None: project_sample = ProjectSample.objects.get(pk=project_sample_id)
+				if not sample_id is None: sample = Sample.objects.get(pk=sample_id)
+				is_to_run = default_parameters.set_software_to_run_by_software(software,
+					project, project_sample, sample)
+				
+				## set a new default
+				data['is_to_run'] = is_to_run
+				data['message'] = "The '{}' in '{}' technology was turned '{}'.".format(
+					software.name_extended, software.technology.name,
+					"ON" if software.is_to_run else "OFF")
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)
 			except Project.DoesNotExist:
 				return JsonResponse(data)
+			except ProjectSample.DoesNotExist:
+				return JsonResponse(data)
+			except Sample.DoesNotExist:
+				return JsonResponse(data)
 			data['is_ok'] = True
 		return JsonResponse(data)
+
 
 @csrf_protect
 def get_software_name_to_turn_on_off(request):
@@ -460,6 +480,9 @@ def get_software_name_to_turn_on_off(request):
 	if request.is_ajax():
 
 		software_id_a = 'software_id'
+		sample_id_a = 'sample_id'
+		project_id_a = 'project_id'
+		project_sample_id_a = 'project_sample_id'
 		
 		## some pre-requisites
 		if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
@@ -469,14 +492,34 @@ def get_software_name_to_turn_on_off(request):
 			return JsonResponse(data)
 		if (profile.only_view_project): return JsonResponse(data)
 			
+		sample_id = None
+		project_id = None
+		project_sample_id = None
+		if (sample_id_a in request.GET): sample_id = request.GET[project_id_a]
+		if (project_id_a in request.GET): project_id = request.GET[project_id_a]
+		elif (project_sample_id_a in request.GET): project_sample_id = request.GET[project_sample_id_a]
+		
 		if (software_id_a in request.GET):
 			software_id = request.GET[software_id_a]
 			try:
+				project, project_sample, sample = None, None, None
 				software = Software.objects.get(pk=software_id)
+				if not project_id is None: project = Project.objects.get(pk=project_id)
+				if not project_sample_id is None: project_sample = ProjectSample.objects.get(pk=project_sample_id)
+				if not sample_id is None: sample = Sample.objects.get(pk=sample_id)
+				
 				if software.can_be_on_off_in_pipeline:
+					## get parameters for a specific sample, project or project_sample
+					parameters = Parameter.objects.filter(software=software, project=project,
+							project_sample=project_sample, sample=sample)
+
+					if (software.type_of_use == Software.TYPE_OF_USE_global): is_to_run = software.is_to_run
+					elif len(parameters) > 0: is_to_run = parameters[0].is_to_run
+					else: is_to_run = software.is_to_run 
+				
 					data['is_ok'] = True
 					data['message'] = "Do you want to turn '{}' the '{}' in '{}' technology?.".format(
-						"OFF" if software.is_to_run else "ON",
+						"OFF" if is_to_run else "ON",
 						software.name_extended, software.technology.name)
 				else:
 					data['message'] = "The '{}' in '{}' technology can not be ON/OFF.".format(software.name_extended, software.technology.name)

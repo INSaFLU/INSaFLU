@@ -1165,14 +1165,14 @@ class Test(unittest.TestCase):
 		utils = Utils()
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		self.assertTrue(os.path.exists(path_file))
-		self.assertEqual((143.561, 44425), utils.get_number_sequences_fastq(path_file))
+		self.assertEqual((44425, 143.6, 20.9), utils.get_number_sequences_fastq(path_file))
 		
 		fasta_file_out = utils.get_temp_file("fasta_data", ".fasta")
 		with open(fasta_file_out, 'w') as handle_write:
 			handle_write.write(">2\nAAAAAAAAAAAAAAAAAAAAAA\n")
 			handle_write.write(">1\nAAAAAAAAAA\n")
 		try:
-			self.assertEqual((44425, 10.5), utils.get_number_sequences_fastq(path_file))
+			self.assertEqual((44425, 10.5, 20.9), utils.get_number_sequences_fastq(path_file))
 			self.fail("must throw exception")
 		except Exception as e:
 			pass

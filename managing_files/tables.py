@@ -202,8 +202,13 @@ class SampleTable(tables.Table):
 		number of quality sequences and average
 		"""
 		manageDatabase = ManageDatabase()
+		
+		## test ready to show
+		if (not record.get_is_ready_for_projects()): return _('Not yet')
+		
+		## get all stats
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
+		if (not list_meta is None and list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 			if (result_average.number_file_2 is None):
@@ -224,7 +229,7 @@ class SampleTable(tables.Table):
 			return mark_safe(tip_info + ' (%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_2,\
 					result_average.average_file_2, int(result_average.number_file_1) + int(result_average.number_file_2)) )
-		elif (list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
+		elif (not list_meta is None and list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
 			return _("Error")
 		return _('Not yet')
 
@@ -474,7 +479,7 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return number
 		"""
-		return record.mixed_infections.tag.name
+		return "" if record.mixed_infections is None else record.mixed_infections.tag.name
 	
 	def render_dataset(self, record):
 		"""

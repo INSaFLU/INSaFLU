@@ -216,28 +216,54 @@ class DefaultParameters(object):
 		""" set software to run ON/OFF 
 		:output True if the is_to_run is changed"""
 		
-		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-			try:
-				software = Software.objects.get(name=software_name, owner=user,\
-							type_of_use = type_of_use,
-							technology__name = technology_name,
+		try:
+			software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use = type_of_use,
+						technology__name = technology_name,
+						version_parameters = self.get_software_parameters_version(software_name))
+		except Software.DoesNotExist:
+			if (type_of_use == Software.TYPE_OF_USE_global):
+				try:
+					software = Software.objects.get(name=software_name, owner=user,\
+							type_of_use=type_of_use,
 							version_parameters = self.get_software_parameters_version(software_name))
-			except Software.DoesNotExist:
-				if (type_of_use == Software.TYPE_OF_USE_global):
-					try:
-						software = Software.objects.get(name=software_name, owner=user,\
-								type_of_use=type_of_use,
-								version_parameters = self.get_software_parameters_version(software_name))
-					except Software.DoesNotExist:
-						return False
-				else: return False
+				except Software.DoesNotExist:
+					return False
+			else: return False
+
+		## if the software can not be change return False
+		if not software.can_be_on_off_in_pipeline: return False
+
+		self.set_software_to_run_by_software(software, project, project_sample,
+								sample, is_to_run)
+		return True
+		
+	def set_software_to_run_by_software(self, software, project, project_sample,
+				sample, is_to_run = None):
+		""" set software to run ON/OFF 
+		:output True if the is_to_run is changed"""
+		
+		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 	
+			## get parameters for a specific sample, project or project_sample
+			parameters = Parameter.objects.filter(software=software, project=project,
+					project_sample=project_sample, sample=sample)
+
+			## if None need to take the value from database
+			if is_to_run is None:
+				if (software.type_of_use == Software.TYPE_OF_USE_global): is_to_run = not software.is_to_run
+				elif len(parameters) > 0: is_to_run = not parameters[0].is_to_run
+				else: is_to_run = not software.is_to_run 
+					
 			## if the software can not be change return False
-			if not software.can_be_on_off_in_pipeline: return False
+			if not software.can_be_on_off_in_pipeline:
+				if software.type_of_use == Software.TYPE_OF_USE_global: return software.is_to_run
+				elif len(parameters) > 0: return parameters[0].is_to_run
+				return True
 	
 			### if it is Global it is software that is mandatory
 			### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
-			if (type_of_use == Software.TYPE_OF_USE_global):
+			if (software.type_of_use == Software.TYPE_OF_USE_global):
 				software.is_to_run = is_to_run
 				software.save()
 	
@@ -249,7 +275,7 @@ class DefaultParameters(object):
 			for parameter in parameters:
 				parameter.is_to_run = is_to_run
 				parameter.save()
-			return True
+			return is_to_run
 
 	def get_vect_parameters(self, software):
 		""" return all parameters, by software instance """

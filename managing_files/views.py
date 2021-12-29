@@ -34,6 +34,7 @@ from extend_user.models import Profile
 from django.http import HttpResponseRedirect
 from utils.utils import ShowInfoMainPage
 from utils.software_pangolin import SoftwarePangolin
+from utils.software import Software
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.tables import SoftwaresTable, INSaFLUParametersTable
 from django.template.defaultfilters import pluralize
@@ -910,6 +911,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 	Sample detail view
 	"""
 	utils = Utils()
+	software = Software()
 	model = Sample
 	template_name = "samples/sample_detail.html"
 
@@ -995,6 +997,10 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					context['href_trimmonatic_2'] = "Not available"
 					context['href_trimmonatic_quality_2'] = "Not available"
 				
+				#### data from illumina stat
+				stat_data = self.software.get_stats_from_sample_reads(sample)
+				if not stat_data is None: context['data_illuminastat'] = stat_data
+				
 			else:	### other like Minion
 				file_name = sample.get_nanofilt_file(TypePath.MEDIA_ROOT)
 				if os.path.exists(file_name):
@@ -1008,30 +1014,13 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				else: context['href_trimmonatic_quality_1'] = "Not available"
 			
 				#### data from nanoStat
-				list_meta = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
-				decode_nanostat = DecodeObjects()
-				result_data = decode_nanostat.decode_result(list_meta.description)
-				vect_soft = result_data.get_list_software_instance(SoftwareNames.SOFTWARE_NanoStat_name)
-				if (len(vect_soft) == 2):		## has data
-					data_nanostat = []
-					key_data_0 = vect_soft[0].get_vect_key_values()
-					key_data_1 = vect_soft[1].get_vect_key_values()
-					for _ in range(len(key_data_0)):
-						percentage = "--"
-						value_0 = key_data_0[_].value.replace(',','')
-						value_1 = key_data_1[_].value.replace(',','')
-						if key_data_0[_].key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect_show_percentage and \
-								(len(value_0) > 0 and self.utils.is_float(value_0) and \
-								float(value_0) > 0 and len(value_1) > 0):
-							percentage = "{:,.1f}".format(float(value_1) / float(value_0) * 100)
-						data_nanostat.append([key_data_0[_].key, value_0, value_1,
-									"{:,.1f}".format(float(value_1) - float(value_0)), percentage])
-					context['data_nanostat'] = data_nanostat
+				stat_data = self.software.get_stats_from_sample_reads(sample)
+				if not stat_data is None: context['data_nanostat'] = stat_data
 
 			### software
 			if (sample.is_type_fastq_gz_sequencing()):  ### for illumina
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample == None):
+				if (meta_sample is None):
 					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
 					if (not meta_sample is None):
 						lst_data = meta_sample.description.split(',')
@@ -1041,8 +1030,10 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					decodeResult = DecodeObjects()
 					result = decodeResult.decode_result(meta_sample.description)
 					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
-					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
-	
+					trimmomatic_software = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+					context['trimmomatic_software'] = trimmomatic_software if len(trimmomatic_software) > 0 \
+							else "Trimmomatic not ran."
+							
 				### species identification, only in Illumina
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_sample is None):
@@ -1068,13 +1059,15 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					decodeResult = DecodeObjects()
 					result = decodeResult.decode_result(meta_sample.description)
 					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoStat_name)
-					context['trimmomatic_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
+					nanofilt_software = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
+					context['trimmomatic_software'] = nanofilt_software if len(nanofilt_software) > 0 \
+							else "Nanofilt not ran."
 
 				### abricate type/subtype				
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample != None):
+				if (not meta_sample is None):
 					lst_data = meta_sample.description.split(',')
-					context['abricate_software'] = lst_data[1].strip()
+					if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
 						
 			##### extra data sample, columns added by the user
 			## [[header1, value1], [header2, value2], [header3, value3], ...]
@@ -1123,6 +1116,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
+
 
 
 class ProjectsView(LoginRequiredMixin, ListView):

@@ -54,11 +54,12 @@ class Test(TestCase):
 
 	def test_ResultAverageAndNumberReads(self):
 		resultAverageAndNumberReads = ResultAverageAndNumberReads(21, 43, 53, 12)
-		self.assertEqual(21, resultAverageAndNumberReads.number_file_1)
-		self.assertEqual(43, resultAverageAndNumberReads.average_file_1)
-		self.assertEqual(53, resultAverageAndNumberReads.number_file_2)
-		self.assertEqual(12, resultAverageAndNumberReads.average_file_2)
-		
+		self.assertEqual('21', resultAverageAndNumberReads.number_file_1)
+		self.assertEqual('43', resultAverageAndNumberReads.average_file_1)
+		self.assertEqual('53', resultAverageAndNumberReads.number_file_2)
+		self.assertEqual('12', resultAverageAndNumberReads.average_file_2)
+		self.assertTrue(resultAverageAndNumberReads.has_reads())
+
 		sz_return = resultAverageAndNumberReads.to_json()
 		self.assertTrue(sz_return.find('"number_file_1": "21"') != 0)
 		self.assertTrue(sz_return.find('"average_file_1": "43"') != 0)
@@ -66,6 +67,9 @@ class Test(TestCase):
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_2 = decodeResultAverageAndNumberReads.decode_result(sz_return)
 		self.assertEqual(result_2, resultAverageAndNumberReads)
+		
+		resultAverageAndNumberReads = ResultAverageAndNumberReads(0, 0, None, None)
+		self.assertFalse(resultAverageAndNumberReads.has_reads())
 		
 	def test_ResultSoftware(self):
 		result = Result()

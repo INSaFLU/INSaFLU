@@ -194,4 +194,18 @@
 			
 			<!-- <script src="https://igv.org/web/release/1.0.1/igv-1.0.1.js"></script> -->
 			<script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
+			
+	<script>	
+		$('#id_go_back_button').on('click', function(){
+			$.blockUI({ css: { 
+		        border: 'none', 
+		        padding: '15px', 
+		        backgroundColor: '#000', 
+		        '-webkit-border-radius': '10px', 
+		        '-moz-border-radius': '10px', 
+		        opacity: .5, 
+		        color: '#fff' 
+		    } });
+		});
+	</script>
 {% endblock %}

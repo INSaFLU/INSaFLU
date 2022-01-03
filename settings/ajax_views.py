@@ -62,7 +62,8 @@ def set_default_parameters(request):
 						data['default'] = default_project_software.get_parameters(software.name, request.user, Software.TYPE_OF_USE_project,
 														project, None, None, software.technology.name)
 						
-						b_change = default_project_software.is_change_values_for_software(software.name, software.technology.name)
+						b_change = default_project_software.is_change_values_for_software(software.name,
+													software.technology.name, request.user.username)
 				elif (project_sample_id_a in request.GET):
 					project_sample_id = request.GET[project_sample_id_a]
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)
@@ -82,7 +83,8 @@ def set_default_parameters(request):
 						
 						### need to re-run this sample with snippy if the values change
 						if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
-									if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion)):
+									if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion,
+									request.user.username)):
 							b_change = True
 							
 							### re-run data
@@ -119,6 +121,12 @@ def set_default_parameters(request):
 					sample_id = request.GET[sample_id_a]
 					sample = Sample.objects.get(pk=sample_id)
 					
+					### can not do anything because the sample is running
+					if (not sample.is_ready_for_projects):
+						data = { 'is_ok' : False }
+						data['message'] = "Sample '{}' is in the queue to process. Anything was changed...".format(sample.name)
+						return JsonResponse(data)
+					
 					default_project_software = DefaultProjectSoftware()
 					default_project_software.set_default_software(software, request.user, Software.TYPE_OF_USE_sample,
 										None, None, sample)
@@ -128,7 +136,8 @@ def set_default_parameters(request):
 					
 					### need to re-run this sample with NanoFilt if the values change
 					if (default_project_software.is_change_values_for_software(software.name, ConstantsSettings.TECHNOLOGY_illumina \
-								if sample.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion)):
+								if sample.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion,
+								request.user.username)):
 						b_change = True
 						
 						### re-run data
@@ -160,7 +169,7 @@ def set_default_parameters(request):
 					## set a new default
 					data['default'] = default_software.get_parameters(software.name, request.user,
 												software.technology.name)
-					b_change = default_software.is_change_values_for_software(software)
+					b_change = default_software.is_change_values_for_software(software, request.user.username)
 				
 				### clean values in mask site consensus
 				if software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:

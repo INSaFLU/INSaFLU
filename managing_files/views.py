@@ -40,6 +40,7 @@ from settings.tables import SoftwaresTable, INSaFLUParametersTable
 from django.template.defaultfilters import pluralize
 from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings
+from settings.models import Software as SoftwareSettings
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -1618,7 +1619,6 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 	context_object_name = 'project'
 	
 	def get_context_data(self, **kwargs):
-		from settings.models import Software
 		
 		context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
 		project = Project.objects.get(pk=self.kwargs['pk'])
@@ -1633,34 +1633,41 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
 		
-		### regular software
-		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
-				parameter__project=project, parameter__project_sample=None,
-				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion,
-				ConstantsSettings.TECHNOLOGY_all],
-				is_obsolete = False).distinct()
-		
-		### get number of project samples in a specific project
+		all_tables = []	## order by Technology, PipelineStep, table
+						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+						## Mix parameters with software
+
+		### count samples already assigned to Project
 		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
-		table = SoftwaresTable(query_set, project, None, None, count_project_sample == 0)
-		
-		### INSaFLU parameters
-		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project,
-				parameter__project=project, parameter__project_sample=None,
-				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
-				is_obsolete = False).distinct()
-		table_insaflu = INSaFLUParametersTable(query_set_insaflu, project, None, count_project_sample == 0)
+		### IMPORTANT, must have technology__name, because old versions don't
+		for technology in ConstantsSettings.vect_technology:	## run over all technology
+			vect_pipeline_step = [ ] 
+			for pipeline_step in ConstantsSettings.vect_pipeline_names:
+				query_set = SoftwareSettings.objects.filter(owner=self.request.user, type_of_use=SoftwareSettings.TYPE_OF_USE_project,
+					parameter__project=project, parameter__project_sample=None,
+					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE, SoftwareSettings.TYPE_INSAFLU_PARAMETER],
+					technology__name=technology,
+					pipeline_step__name=pipeline_step,
+					is_obsolete = False).distinct()
 				
-		context['nav_project'] = True
-		context['table'] = table
-		context['table_insaflu'] = table_insaflu
+				### if there are software
+				if query_set.count() > 0:
+					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
+								technology.replace(' ', '').replace('/', '')),
+								pipeline_step,
+								SoftwaresTable(query_set,project, None, None, count_project_sample == 0)])
+			## if there is software for the pipeline step
+			if len(vect_pipeline_step) > 0:
+				all_tables.append([technology.replace(' ', '').replace('/', ''),
+								technology, vect_pipeline_step])
+		
+		context['all_softwares'] = all_tables
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		context['project'] = project
+		context['main_settings'] = False
 		context['project_settings'] = True
-		context['show_paginatior_table'] = False
-		context['show_paginatior_table_insaflu'] = False
 		return context
 
 class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
@@ -1672,7 +1679,6 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 	context_object_name = 'project_sample'
 	
 	def get_context_data(self, **kwargs):
-		from settings.models import Software
 		
 		context = super(SampleProjectsSettingsView, self).get_context_data(**kwargs)
 		project_sample = ProjectSample.objects.get(pk=self.kwargs['pk'])
@@ -1686,30 +1692,39 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, None, project_sample, None) ## the user can have defaults yet
-		### regular software
-		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
-				parameter__project=None, parameter__project_sample=project_sample,
-				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion,
-				ConstantsSettings.TECHNOLOGY_all],
-				is_obsolete = False).distinct()
-		table = SoftwaresTable(query_set, None, project_sample, None)
 		
-		### INSaFLU parameters
-		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_project_sample,
-				parameter__project=None, parameter__project_sample=project_sample,
-				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
-				is_obsolete = False).distinct()
-		table_insaflu = INSaFLUParametersTable(query_set_insaflu, None, project_sample)
-		
-		context['nav_project'] = True
-		context['table'] = table
-		context['table_insaflu'] = table_insaflu
+		all_tables = []	## order by Technology, PipelineStep, table
+						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+						## Mix parameters with software
+
+		### IMPORTANT, must have technology__name, because old versions don't
+		for technology in ConstantsSettings.vect_technology:	## run over all technology
+			vect_pipeline_step = [ ] 
+			for pipeline_step in ConstantsSettings.vect_pipeline_names:
+				query_set = SoftwareSettings.objects.filter(owner=self.request.user, type_of_use=SoftwareSettings.TYPE_OF_USE_project_sample,
+					parameter__project=None, parameter__project_sample=project_sample,
+					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE, SoftwareSettings.TYPE_INSAFLU_PARAMETER],
+					technology__name=technology,
+					pipeline_step__name=pipeline_step,
+					is_obsolete = False).distinct()
+				
+				### if there are software
+				if query_set.count() > 0:
+					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
+								technology.replace(' ', '').replace('/', '')),
+								pipeline_step,
+								SoftwaresTable(query_set, None, project_sample, None)])
+			## if there is software for the pipeline step
+			if len(vect_pipeline_step) > 0:
+				all_tables.append([technology.replace(' ', '').replace('/', ''),
+								technology, vect_pipeline_step])
+				
+		context['all_softwares'] = all_tables
 		context['project_sample'] = project_sample
-		context['sample_project_settings'] = True
-		context['show_paginatior_table'] = False
-		context['show_paginatior_table_insaflu'] = False
+		context['project_sample_settings'] = True
+		context['main_settings'] = False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	
@@ -1722,8 +1737,6 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 	context_object_name = 'sample'
 	
 	def get_context_data(self, **kwargs):
-		from settings.models import Software
-		
 		context = super(SampleSettingsView, self).get_context_data(**kwargs)
 		sample = Sample.objects.get(pk=self.kwargs['pk'])
 		
@@ -1736,20 +1749,40 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, None, None, sample) ## the user can have defaults yet
-		### regular software
-		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_sample,
-				parameter__sample=sample, type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
-				is_obsolete = False).distinct()
-		table = SoftwaresTable(query_set, None, None, sample)
 		
-		context['nav_sample'] = True
-		context['table'] = table
-		## context['table_insaflu'] = None	## doen't have info
+		all_tables = []	## order by Technology, PipelineStep, table
+						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+						## Mix parameters with software
+						
+		### IMPORTANT, must have technology__name, because old versions don't
+		for technology in ConstantsSettings.vect_technology:	## run over all technology
+			vect_pipeline_step = [ ] 
+			for pipeline_step in ConstantsSettings.vect_pipeline_names:
+				query_set = SoftwareSettings.objects.filter(owner=self.request.user,
+					type_of_use=SoftwareSettings.TYPE_OF_USE_sample,
+					parameter__sample=sample,
+					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE],
+					technology__name=technology,
+					pipeline_step__name=pipeline_step,
+					is_obsolete = False).distinct()
+				
+				### if there are software
+				if query_set.count() > 0:
+					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
+								technology.replace(' ', '').replace('/', '')),
+								pipeline_step,
+								SoftwaresTable(query_set, None, None, sample)])
+			## if there is software for the pipeline step
+			if len(vect_pipeline_step) > 0:
+				all_tables.append([technology.replace(' ', '').replace('/', ''),
+								technology, vect_pipeline_step])
+				
+		context['all_softwares'] = all_tables
 		context['sample'] = sample
 		context['sample_settings'] = True
-		context['show_paginatior_table'] = False
-		context['show_paginatior_table_insaflu'] = False
+		context['main_settings'] = False
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 	

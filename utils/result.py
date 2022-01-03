@@ -802,6 +802,7 @@ class GeneticElement(object):
 		sz_return = ""
 		for element in self.get_sorted_elements():
 			if (len(sz_return) > 0): sz_return += "\n#####################\n"
+			else: sz_return += "#####################\n"
 			sz_return += self.dt_elements_mask[element].get_message_to_show_in_web_site(element)
 		return sz_return
 
@@ -1032,7 +1033,7 @@ class MaskingConsensus(object):
 
 	def get_message_to_show_in_web_site(self, element_name):
 		"""  get message for web site about regions to be masked  """
-		if not self.has_data(): return "No mask is applied to consensus in this project"
+		if not self.has_data(): return "Element:{} -> No mask".format(element_name)
 		return "Element:{}\n\nMask sites:{}  Mask regions:{}\nMask from beginning:{}  Mask from ends:{}".format(
 			element_name, self.mask_sites, self.mask_regions,
 			self.mask_from_beginning, self.mask_from_ends)

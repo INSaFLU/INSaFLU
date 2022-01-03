@@ -48,15 +48,7 @@ $(document).on("click", "a", function(e){
 $('#id-set-default-button').on('click', function(){
 
 	/// set wait screen 
-	$.blockUI({ css: { 
-        border: 'none', 
-        padding: '15px', 
-        backgroundColor: '#000', 
-        '-webkit-border-radius': '10px', 
-        '-moz-border-radius': '10px', 
-        opacity: .5, 
-        color: '#fff' 
-    } }); 
+	wait_screen();
 
 	$.ajax({
         url: $('#id-modal-body-set-default').attr("remove-single-value-url"),
@@ -101,6 +93,10 @@ $('#id-set-default-button').on('click', function(){
 							element_image.setAttribute('class', class_data.replace("warning_fa_icon", ""));
 						}
 					}
+					
+					// clean the tooltip
+					document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id')).setAttribute('title', 'Edit parameters');
+					
 				}
 				/// END clean yellow from the icon in edit MaskConsensus
           	}

@@ -955,12 +955,12 @@ class CollectExtraData(object):
 						result = decode_result.decode_result(meta_sample.description)
 						dt_out[MetaKeyAndValue.NAME_sample].append(result)
 						
-						if (not b_trimmomatic_tags and technology == MetaKeyAndValue.TECHNOLOGY_illumina):
+						if (not b_trimmomatic_tags and technology == ConstantsSettings.TECHNOLOGY_illumina):
 							soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
 							if (not soft_desc is None and not soft_desc.get_vect_key_values() is None and\
 									len(soft_desc.get_vect_key_values()) > 0):
 								b_trimmomatic_tags = True
-						if (not b_nanostat_sats and technology == MetaKeyAndValue.TECHNOLOGY_ONT):
+						if (not b_nanostat_sats and technology == ConstantsSettings.TECHNOLOGY_minion):
 							soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_NanoStat_name)
 							if (not soft_desc is None and not soft_desc.get_vect_key_values() is None and\
 									len(soft_desc.get_vect_key_values()) > 0):

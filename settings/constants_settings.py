@@ -27,9 +27,10 @@ class ConstantsSettings(object):
 
 	###############################
 	### technology available
-	TECHNOLOGY_illumina = "Illumina"
+	TECHNOLOGY_illumina_old = "Illumina"
+	TECHNOLOGY_illumina = "Illumina/IonTorrent"
 	TECHNOLOGY_minion = "ONT"
-	TECHNOLOGY_all = "All"
+	TECHNOLOGY_generic = "Generic"
 	TECHNOLOGY_Undefined = "Undefined"
 
 	### technology names
@@ -37,7 +38,7 @@ class ConstantsSettings(object):
 					TECHNOLOGY_illumina,
 					TECHNOLOGY_minion,
 					TECHNOLOGY_Undefined,
-					TECHNOLOGY_all,
+					TECHNOLOGY_generic,
 				]
 	
 	

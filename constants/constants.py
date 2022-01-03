@@ -111,6 +111,7 @@ class Constants(object):
 	
 	### NextClade link
 	NEXTCLADE_LINK = "https://clades.nextstrain.org/?input-fasta="
+	AUSPICE_LINK = "https://auspice.us/"
 	
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 12

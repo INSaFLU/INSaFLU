@@ -57,9 +57,9 @@ class DefaultSoftware(object):
 				self.default_parameters.get_medaka_model_default(user,
 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 		
-		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
- 				self.default_parameters.get_samtools_depth_default_ONT(user,
-				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+#		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+# 				self.default_parameters.get_samtools_depth_default_ONT(user,
+#				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 		
 		self.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name,
 				self.default_parameters.get_nanofilt_default(user,
@@ -153,9 +153,9 @@ class DefaultSoftware(object):
 							parameter.save()
 						break
 
-	def is_change_values_for_software(self, software):
+	def is_change_values_for_software(self, software, user_name):
 		""" Return if the software has a value changed """
-		key_value = "{}_{}".format(software.name, software.technology.name)
+		key_value = "{}_{}_{}".format(software.name, software.technology.name, user_name)
 		return self.change_values_software.get(key_value, False)
 
 	def get_parameters(self, software_name, user, technology_name = ConstantsSettings.TECHNOLOGY_illumina):

@@ -21,23 +21,6 @@ from utils.result import DecodeObjects
 from constants.meta_key_and_values import MetaKeyAndValue
 from settings.models import Parameter
 
-## START masking consensus
-# manageDatabase = ManageDatabase()
-# meta_value = manageDatabase.get_project_metakey_last(record, MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
-
-# ### reference
-# masking_consensus = None
-# toolpit_masking = "No mask is applied to consensus in this project"
-# if not meta_value is None:
-# 	decode_masking_consensus = DecodeObjects()
-# 	masking_consensus = decode_masking_consensus.decode_result(meta_value.description)
-# 	toolpit_masking = masking_consensus.get_message_mask_to_show_in_web_site()
-# sz_project_sample_masking = '<a href="#id_set_positions_to_mask_regions" id="showMaskModal" data-toggle="modal" project_id="{}" '.format(record.id) + \
-# 		'reference_name="{}" id_image=icon_mask_consensus_{} project_name="{}" >'.format(record.reference.name, record.pk, record.name) + \
-# 		'<span><i id=icon_mask_consensus_{} class="padding-button-table {} fa fa-superpowers padding-button-table tip" title="{}"></i></span></a>'.format(\
-# 		record.pk, "warning_fa_icon" if not masking_consensus is None and masking_consensus.has_masking_data() else "", toolpit_masking)
-# ## END masking consensus
-		
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
 	def header(self):
@@ -79,24 +62,24 @@ class SoftwaresTable(tables.Table):
 		return record.name if record.name_extended is None else record.name_extended
 
 	def render_select_to_run(self, value, record):
-		sz_ids = ""
-		if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project.id)
-		if (not self.project_sample is None): sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
-		if (not self.sample is None): sz_ids += ' sample_id="{}"'.format(self.sample.id)
-			
-		is_to_run = record.is_to_run
-		if len(sz_ids) > 0:
-			parameters = Parameter.objects.filter(software=record, project=self.project,
-							project_sample=self.project_sample, sample=self.sample)
-			if len(parameters) > 0: is_to_run = parameters[0].is_to_run
-			
-		sz_href = '<a href="#id_turn_software_on_off" id="id_show_turn_on_off_modal" data-toggle="modal" software_id="{}" {}>'.format(record.id, sz_ids) +\
+		## test if its to run and get IDs from others			
+		is_to_run, sz_ids = self._is_to_run(record)
+		
+		### When in sample you can not turn ON|OFF the software
+		b_enable_options = self.b_enable_options
+		if not self.sample is None: b_enable_options = False
+
+		## need to remove # in href, otherwise still active
+		sz_href = '<a href="{}id_turn_software_on_off" {} '.format(
+			"#" if record.can_be_on_off_in_pipeline and b_enable_options else "",
+			'id="id_show_turn_on_off_modal"' if record.can_be_on_off_in_pipeline and b_enable_options else '') +\
+			'data-toggle="modal" software_id="{}" {}>'.format(record.id, sz_ids) +\
 			'<input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/> </a>'.format(
 			Constants.CHECK_BOX, record.id, record.id,
 			"checked" if is_to_run else "",
-			"" if record.can_be_on_off_in_pipeline and self.b_enable_options else "disabled")
+			"" if record.can_be_on_off_in_pipeline and b_enable_options else "disabled")
 		return mark_safe(sz_href)
-		
+
 	def render_parameters(self, **kwargs):
 		"""
 		render parameters for the software
@@ -154,11 +137,14 @@ class SoftwaresTable(tables.Table):
 			tooltip_reset = "Clean all positions"
 			
 		## start define links
+		b_enable_options = self.b_enable_options
 		if (not self.project is None):		## for projects
 			### turn on/off buttons
-			b_enable_options = self.b_enable_options
 			if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:	### allways true for this software
 				b_enable_options = True
+			elif (b_enable_options):	## If b_enable_options is False it's false to All
+				default_software_projects = DefaultProjectSoftware()
+				b_enable_options = default_software_projects.can_change_values_for_this_software(record, self.project, None, None)
 			
 			if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
 				has_data, toolpit_masking = self.get_tooltip_about_mask_consensus_by_sites()
@@ -179,6 +165,10 @@ class SoftwaresTable(tables.Table):
 				'" proj_name="' + str(self.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		elif (not self.project_sample is None):		## for project samples
+			if (b_enable_options): ## If b_enable_options is False it's false to All
+				default_software_projects = DefaultProjectSoftware()
+				b_enable_options = default_software_projects.can_change_values_for_this_software(record, None, self.project_sample, None)
+			
 			if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:
 				has_data, toolpit_masking = self.get_tooltip_about_mask_consensus_by_sites()
 				str_links = '<a href="#id_set_positions_to_mask_regions" id="showMaskModal" data-toggle="modal" project_sample_id="{}" '.format(self.project_sample.id) + \
@@ -186,42 +176,73 @@ class SoftwaresTable(tables.Table):
 					self.project_sample.pk, self.project_sample.project.name) + \
 					'<span><i id=icon_mask_consensus_{} class="padding-button-table {} fa fa-2x fa-pencil padding-button-table tip" title="{}"></i></span></a>'.format(\
 					self.project_sample.pk, "warning_fa_icon" if has_data else "", toolpit_masking)
+				b_enable_options = True		## because for MaskConsensusBySite is always active
 			else:
 				str_links = '<a href=' + reverse('software-project-sample-update', args=[record.pk, self.project_sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
-					'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
-					'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+					'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
+					'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 				
-			str_links += '<a href="{}"'.format('#id_set_default_modal' if self.b_enable_options else '') +\
+			str_links += '<a href="{}"'.format('#id_set_default_modal' if b_enable_options else '') +\
 				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(tooltip_reset) +\
 				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') +\
 				' ref_name="' + record.name + '" pk="' + str(record.pk) + '" pk_proj_sample="' + str(self.project_sample.pk) +\
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
-				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		elif (not self.sample is None):		## for samples
+			if (b_enable_options): ## If b_enable_options is False it's false to All
+				default_software_projects = DefaultProjectSoftware()
+				b_enable_options = default_software_projects.can_change_values_for_this_software(record, None, None, self.sample)
 			str_links = '<a href=' + reverse('software-sample-update', args=[record.pk, self.sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
-				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
-				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
-			str_links += '<a href="{}"'.format('#id_set_default_modal' if self.b_enable_options else '') +\
+				'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+			str_links += '<a href="{}"'.format('#id_set_default_modal' if b_enable_options else '') +\
 				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(tooltip_reset) +\
-				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') +\
+				'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') +\
 				' ref_name="' + record.name + '" pk="' + str(record.pk) + '" pk_sample="' + str(self.sample.pk) +\
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.sample.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
-				'{}'.format("" if self.b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		else:								## for all
-			str_links = '<a href=' + reverse('software-update', args=[record.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
+			### test if all parameters are ON/OFF
+			if (b_enable_options): ## If b_enable_options is False it's false to All
+				default_software_projects = DefaultProjectSoftware()
+				b_enable_options = default_software_projects.can_change_values_for_this_software(record, None, None, None)
+			str_links = '<a href=' + reverse('software-update', args=[record.pk]) + ' data-toggle="tooltip" title="Edit parameters" '+\
+				'{}'.format("" if b_enable_options else 'onclick="return false;" disable') +\
 				'><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
-				'"></i></span></a>'
-				## Remove
-			str_links += '<a href="{}"'.format('#id_set_default_modal' if self.b_enable_options else '') +\
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+			## set default values
+			str_links += '<a href="{}"'.format('#id_set_default_modal' if b_enable_options else '') +\
 				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(tooltip_reset) +\
-				' ref_name="' + record.name +\
-				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
+				' ref_name="' + record.name + '"'\
+				'{}'.format("" if b_enable_options else 'onclick=\'return false;\'') +\
+				' type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" pk="' + str(record.pk) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
-				'"></i></span></a>'
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		return mark_safe(str_links)
 
+	def has_change_parameters(self, record):
+		""" test if has some parameters that can be changed """
+		for parameter in Parameter.objects.filter(software=record, project=self.project,
+							project_sample=self.project_sample, sample=self.sample):
+			if parameter.can_change: return True
+		return False
+	
+	def _is_to_run(self, record):
+		""" test if a software is to run and return the ids """
+		sz_ids = ""
+		if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project.id)
+		if (not self.project_sample is None): sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
+		if (not self.sample is None): sz_ids += ' sample_id="{}"'.format(self.sample.id)
+		
+		is_to_run = record.is_to_run
+		if len(sz_ids) > 0:
+			parameters = Parameter.objects.filter(software=record, project=self.project,
+							project_sample=self.project_sample, sample=self.sample)
+			if len(parameters) > 0: is_to_run = parameters[0].is_to_run
+		return is_to_run, sz_ids
+			
 	def get_info_about_mask_consensus_by_sites(self):
 		""" get info """
 		

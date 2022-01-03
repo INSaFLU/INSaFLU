@@ -52,7 +52,7 @@ class DefaultProjectSoftware(object):
 			### SOFTWARE_MASK_CONSENSUS_BY_SITE_name can be both
 			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
 							user, Software.TYPE_OF_USE_project, project, None, None,
-							ConstantsSettings.TECHNOLOGY_all)
+							ConstantsSettings.TECHNOLOGY_generic)
 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
  							user, Software.TYPE_OF_USE_project, project, None, None,
  							ConstantsSettings.TECHNOLOGY_minion)
@@ -62,7 +62,7 @@ class DefaultProjectSoftware(object):
 			### both technologies
 			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
-						ConstantsSettings.TECHNOLOGY_all)
+						ConstantsSettings.TECHNOLOGY_generic)
 			
 			if (project_sample.sample.is_type_fastq_gz_sequencing()): ### illumina
 				self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, Software.TYPE_OF_USE_project_sample, None,
@@ -1360,8 +1360,9 @@ class DefaultProjectSoftware(object):
 					project_sample, sample, software.technology.name)
 		parameters = Parameter.objects.filter(software=software, project=project,
 					project_sample=project_sample, sample=sample)
-		key_value = "{}_{}".format(software.name, ConstantsSettings.TECHNOLOGY_illumina if\
-					software.technology is None else software.technology.name)
+		key_value = "{}_{}_{}".format(software.name, ConstantsSettings.TECHNOLOGY_illumina if\
+					software.technology is None else software.technology.name,
+					user.username)
 		self.change_values_software[key_value] = False
 		for parameter in parameters:
 			if parameter.can_change:
@@ -1374,11 +1375,18 @@ class DefaultProjectSoftware(object):
 							parameter.save()
 						break
 
-	def is_change_values_for_software(self, software_name, technology_name):
+	def is_change_values_for_software(self, software_name, technology_name, user_name):
 		""" Return if the software has a value changed"""
-		key_value = "{}_{}".format(software_name, technology_name)
+		key_value = "{}_{}_{}".format(software_name, technology_name, user_name)
 		return self.change_values_software.get(key_value, False)
 
+	def can_change_values_for_this_software(self, software, project, project_sample, sample):
+		""" Return True if some of can_change is True """
+		parameters = Parameter.objects.filter(software=software, project=project,
+					project_sample=project_sample, sample=sample)
+		for parameter in parameters:
+			if parameter.can_change: return True
+		return False
 
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample, sample,
 				technology_name = ConstantsSettings.TECHNOLOGY_illumina):

@@ -350,44 +350,44 @@ class testsDefaultSoftwares(TestCase):
 		
 		##########################
 		### test Samtools  ONT
-		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-							type_of_use = Software.TYPE_OF_USE_global,
-							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
-			self.fail("must fail")
-		except Software.DoesNotExist:
-			pass
-			
-		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-							type_of_use = Software.TYPE_OF_USE_global,
-							technology__name = ConstantsSettings.TECHNOLOGY_minion)
-			self.assertFalse(software.is_used_in_project_sample())
-			self.assertFalse(software.is_used_in_project())
-			self.assertFalse(software.is_used_in_sample())
-			self.assertTrue(software.is_used_in_global())
-		except Software.DoesNotExist:
-			self.fail("must exist this software name")
-
-		parameters = Parameter.objects.filter(software=software)
-		self.assertTrue(1, len(parameters))
-		
-		### test set default
-		self.assertEqual("0", parameters[0].parameter)
-		self.assertEqual("-q", parameters[0].name)
-		self.assertEqual("-aa", default_software.get_samtools_parameters_depth_ONT(user))
-		parameter = parameters[0]
-		parameter.parameter = "20"
-		parameter.save()
-		parameter = parameters[1]
-		parameter.parameter = "40"
-		parameter.save()
-		self.assertEqual("-q 20 -Q 40 -aa", default_software.get_samtools_parameters_depth_ONT(user))
-		
-		parameter = parameters[1]
-		parameter.parameter = "0"
-		parameter.save()
-		self.assertEqual("-q 20 -aa", default_software.get_samtools_parameters_depth_ONT(user))
+# try:
+# 	software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+# 					type_of_use = Software.TYPE_OF_USE_global,
+# 					technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+# 	self.fail("must fail")
+# except Software.DoesNotExist:
+# 	pass
+#
+# try:
+# 	software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+# 					type_of_use = Software.TYPE_OF_USE_global,
+# 					technology__name = ConstantsSettings.TECHNOLOGY_minion)
+# 	self.assertFalse(software.is_used_in_project_sample())
+# 	self.assertFalse(software.is_used_in_project())
+# 	self.assertFalse(software.is_used_in_sample())
+# 	self.assertTrue(software.is_used_in_global())
+# except Software.DoesNotExist:
+# 	self.fail("must exist this software name")
+#
+# parameters = Parameter.objects.filter(software=software)
+# self.assertTrue(1, len(parameters))
+#
+# ### test set default
+# self.assertEqual("0", parameters[0].parameter)
+# self.assertEqual("-q", parameters[0].name)
+# self.assertEqual("-aa", default_software.get_samtools_parameters_depth_ONT(user))
+# parameter = parameters[0]
+# parameter.parameter = "20"
+# parameter.save()
+# parameter = parameters[1]
+# parameter.parameter = "40"
+# parameter.save()
+# self.assertEqual("-q 20 -Q 40 -aa", default_software.get_samtools_parameters_depth_ONT(user))
+#
+# parameter = parameters[1]
+# parameter.parameter = "0"
+# parameter.save()
+# self.assertEqual("-q 20 -aa", default_software.get_samtools_parameters_depth_ONT(user))
 		
 				### Test Abricate
 		try:
@@ -521,7 +521,8 @@ class testsDefaultSoftwares(TestCase):
 				default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample, ConstantsSettings.TECHNOLOGY_minion))
 		self.assertEqual("Threshold:20",\
 				default_software.get_mask_consensus_parameters_all_possibilities(user, project_sample, ConstantsSettings.TECHNOLOGY_illumina))
-
+		self.assertTrue(default_software.can_change_values_for_this_software(software, project, None, None))
+		
 		##########################
 		### test nanofilt
 		try:
@@ -562,6 +563,7 @@ class testsDefaultSoftwares(TestCase):
 		
 		self.assertFalse(default_software.is_nanofilt_single_parameter_default_for_project(sample,
 									DefaultParameters.NANOfilt_quality_read))
+		self.assertTrue(default_software.can_change_values_for_this_software(software, None, None, sample))
 		
 		##########################
 		### test medaka
@@ -685,49 +687,50 @@ class testsDefaultSoftwares(TestCase):
 		
 		##########################
 		### test samtools ONT
-		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-							type_of_use = Software.TYPE_OF_USE_global,
-							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
-			self.fail("Must fail")
-		except Software.DoesNotExist:
-			pass
-			
-		try:
-			software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
-							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = ConstantsSettings.TECHNOLOGY_minion)
-			self.assertFalse(software.is_used_in_project_sample())
-			self.assertTrue(software.is_used_in_project())
-			self.assertFalse(software.is_used_in_sample())
-			self.assertFalse(software.is_used_in_global())
-		except Software.DoesNotExist:
-			self.fail("Must exist this software name")
-
-		parameters = Parameter.objects.filter(software=software)
-		self.assertTrue(1, len(parameters))
-		
-		### test set default
-		self.assertEqual("0", parameters[0].parameter)
-		self.assertEqual("-q", parameters[0].name)
-		self.assertEqual(False, parameters[0].can_change)
-		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
-											project_sample, "-q"))
-		self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
-											project_sample, "-Q"))
-		parameter = parameters[0]
-		parameter.parameter = "20"
-		parameter.save()
-		parameter = parameters[1]
-		parameter.parameter = "30"
-		parameter.save()
-		
-		self.assertEqual("-q 20 -Q 30 -aa", default_software.get_samtools_parameters_ONT(user,
-										Software.TYPE_OF_USE_project, project, None))
-		self.assertFalse(default_software.is_samtools_single_parameter_default_for_project_ONT(
-					project, "-q"))
-		self.assertEqual("20", default_software.get_samtools_single_parameter_ONT(
-					project_sample, "-q"))
+# try:
+# 	software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+# 					type_of_use = Software.TYPE_OF_USE_global,
+# 					technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+# 	self.fail("Must fail")
+# except Software.DoesNotExist:
+# 	pass
+#
+# try:
+# 	software = Software.objects.get(name=SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT, owner=user,\
+# 					type_of_use = Software.TYPE_OF_USE_project,
+# 					technology__name = ConstantsSettings.TECHNOLOGY_minion)
+# 	self.assertFalse(software.is_used_in_project_sample())
+# 	self.assertTrue(software.is_used_in_project())
+# 	self.assertFalse(software.is_used_in_sample())
+# 	self.assertFalse(software.is_used_in_global())
+# except Software.DoesNotExist:
+# 	self.fail("Must exist this software name")
+#
+# parameters = Parameter.objects.filter(software=software)
+# self.assertTrue(1, len(parameters))
+# self.assertFalse(default_software.can_change_values_for_this_software(software, None, None, None))
+#
+# ### test set default
+# self.assertEqual("0", parameters[0].parameter)
+# self.assertEqual("-q", parameters[0].name)
+# self.assertEqual(False, parameters[0].can_change)
+# self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
+# 									project_sample, "-q"))
+# self.assertEqual(None, default_software.get_samtools_single_parameter_ONT(
+# 									project_sample, "-Q"))
+# parameter = parameters[0]
+# parameter.parameter = "20"
+# parameter.save()
+# parameter = parameters[1]
+# parameter.parameter = "30"
+# parameter.save()
+#
+# self.assertEqual("-q 20 -Q 30 -aa", default_software.get_samtools_parameters_ONT(user,
+# 								Software.TYPE_OF_USE_project, project, None))
+# self.assertFalse(default_software.is_samtools_single_parameter_default_for_project_ONT(
+# 			project, "-q"))
+# self.assertEqual("20", default_software.get_samtools_single_parameter_ONT(
+# 			project_sample, "-q"))
 
 
 	def test_default_software_2(self):
@@ -966,10 +969,12 @@ class testsDefaultSoftwares(TestCase):
 		self.assertTrue(3, len(parameters))
 		self.assertEqual("0.51", parameters[2].parameter)
 		self.assertNotEqual("0.222", parameters[2].parameter)
-		self.assertTrue(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina))
+		self.assertTrue(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina,
+												ConstantsTestsCase.TEST_USER_NAME))
 		
 		default_software.set_default_software(software[0], user, Software.TYPE_OF_USE_project, project, None, None)
-		self.assertFalse(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina))
+		self.assertFalse(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina,
+												ConstantsTestsCase.TEST_USER_NAME))
 
 		#### save a project_sample
 		self.assertEqual("--mapqual 20 --mincov 30 --minfrac 0.222", default_software.get_snippy_parameters_all_possibilities(user, project_sample))
@@ -1021,7 +1026,7 @@ class testsDefaultSoftwares(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project,
-							technology__name = ConstantsSettings.TECHNOLOGY_all)
+							technology__name = ConstantsSettings.TECHNOLOGY_generic)
 			self.assertFalse(software.is_used_in_project_sample())
 			self.assertTrue(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -1074,7 +1079,7 @@ class testsDefaultSoftwares(TestCase):
 		try:
 			software = Software.objects.get(name=SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name, owner=user,\
 							type_of_use = Software.TYPE_OF_USE_project_sample,
-							technology__name = ConstantsSettings.TECHNOLOGY_all)
+							technology__name = ConstantsSettings.TECHNOLOGY_generic)
 			self.assertTrue(software.is_used_in_project_sample())
 			self.assertFalse(software.is_used_in_project())
 			self.assertFalse(software.is_used_in_global())
@@ -1308,11 +1313,14 @@ class testsDefaultSoftwares(TestCase):
 		self.assertEqual("0.51", parameters[2].parameter)
 		self.assertNotEqual("0.222", parameters[2].parameter)
 		
-		self.assertTrue(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina))
+		self.assertTrue(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina,
+														ConstantsTestsCase.TEST_USER_NAME))
 		default_software.set_default_software(software[0], user, Software.TYPE_OF_USE_project, None, project_sample, None)
-		self.assertFalse(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina))
+		self.assertFalse(default_software.is_change_values_for_software(software[0].name, ConstantsSettings.TECHNOLOGY_illumina,
+														ConstantsTestsCase.TEST_USER_NAME))
 		
 		software_names = SoftwareNames()
-		self.assertFalse(default_software.is_change_values_for_software(software_names.get_freebayes_name(), ConstantsSettings.TECHNOLOGY_illumina))
+		self.assertFalse(default_software.is_change_values_for_software(software_names.get_freebayes_name(),
+												ConstantsSettings.TECHNOLOGY_illumina, ConstantsTestsCase.TEST_USER_NAME))
 
 

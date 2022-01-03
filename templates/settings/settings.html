@@ -5,6 +5,7 @@
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
+{% load define_action %}
 
 {% block css %}
 	{% load static from staticfiles %}
@@ -26,11 +27,11 @@
 	{% if project_settings %}
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Project settings" "project-settings" %}
-	{% elif sample_project_settings %}
+	{% elif project_sample_settings %}
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.pk %}
 		{% breadcrumb "Project sample settings" "sample-project-settings" %}
-	{% elif sample %}
+	{% elif sample_settings %}
 		{% breadcrumb "Samples" "samples" %}
 		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
 	{% else %}	<!-- Default settings -->
@@ -45,170 +46,125 @@
 		<p><strong>Project sample settings not available</strong></p>
 	{% else %}
 		
-		<!-- Info settings -->
-		<hr>
-		<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> 
-				before uploading new samples to your account.</p>
+		<!-- test if there's any software -->
+		{% if all_softwares|length == 0 %}
+			<hr>
+			<p class="insa-description-process" style="text-align: center;">There's no software to show</p>
+		{% else %}
+			<!-- Info settings -->
+			<hr>
+			{% if main_settings %}
+				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong> 
+					before uploading new samples to your account.</p>
+			{% else %}
+				<p class="insa-description-process" style="text-align: center;">Please choose <strong>your software settings</strong></p>
+			{% endif %}
 		
-		<!-- Table only of software -->
-		{% if table %}
-			{% if table.page and show_paginatior_table %}
-			  <div class="table-container">
-			{% endif %}
+			<!-- NAV tabs -->
+			<div >
+				<ul id="main_tab" class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
+					{% for unique_software_id, software, vect_pipeline in all_softwares %}
+						<li class="nav-item"><a class="nav-link fa fa-align-justify"
+							href="#{{unique_software_id}}" role="tab" data-toggle="tab"
+							index_main="{{forloop.counter0}}" number_indexes="{{all_softwares|length}}"> {{ software }}</a></li>
+	                {% endfor %}
+				</ul>
+				
+				<div class="tab-content">
+					{% for unique_software_id, software, vect_pipeline in all_softwares %}
+						<div id="{{unique_software_id}}" role="tabpanel" class="tab-pane fade box-blue">
+							<hr>
+							<div >
+								<ul id="second_tab_{{forloop.counter0}}" number_pipelines="{{vect_pipeline|length}}"
+									class="nav nav-tabs p-0 justify-content-end justify-content-md-center" role="tablist">
+									{% for unique_pipeline_id, pipeline_name, table in vect_pipeline %}
+										<li class="nav-item"><a class="nav-link fa fa-align-justify" 
+											href="#{{unique_pipeline_id}}" role="tab" data-toggle="tab" > {{ pipeline_name }}</a></li>
+					                {% endfor %}
+								</ul>
+								
+								<div class="tab-content">
+									<!--  for each pipeline -->
+									{% for unique_pipeline_id, pipeline_name, table in vect_pipeline %}
+										<div id="{{unique_pipeline_id}}" role="tabpanel" class="tab-pane fade box-blue">
+											<hr>
+											<div class="table-responsive">  <!-- start table -->
+									        	<table class="table table-hover table-bordered table-striped"{% if table.attrs %} {{ table.attrs.as_html }} {% endif %}>
+										            {% block table.thead %}
+										            <thead>                 
+										                <tr class="alert alert-primary">
+										                    <th colspan="7">
+										                    	{% if project_settings %}
+										                    		<div class="header-software-settings">Software parameters for project: '{{project.name}}'</div>
+										                    	{% elif project_sample_settings %}
+										                    		<div class="header-software-settings">Software parameters for project: '{{project_sample.project.name}}' and sample: '{{project_sample.sample.name}}'</div>
+										                    	{% elif sample_settings %}
+										                    		<div class="header-software-settings">Software parameters for sample: '{{sample.name}}'</div>
+										                    	{% else %}
+										                    		<div class="header-software-settings">Global software parameters</div>
+										                    	{% endif %}
+										                    </th>                  
+										                </tr>
+										             
+										              	<tr>
+										                	{% for column in table.columns %}
+										                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+										               	 	{% endfor %}
+										              	</tr>
+										            </thead>
+										            {% endblock table.thead %}
+										            {% block table.tbody %}
+										            <tbody>
+										                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+										                  	{% block table.tbody.row %}
+										                  	<tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+										                      	{% for column, cell in row.items %}
+										                          	<td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+										                      	{% endfor %}
+										                  	</tr>
+										                  	{% endblock table.tbody.row %}
+										                		{% empty %}
+										                  		{% if table.empty_text %}
+											                		{% block table.tbody.empty_text %}
+											                  			<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+											                  		{% endblock table.tbody.empty_text %}
+										                  		{% endif %}
+										                {% endfor %}
+										            </tbody>
+										            {% endblock table.tbody %}
+										            {% block table.tfoot %}
+										            	<tfoot></tfoot>
+										            {% endblock table.tfoot %}
+										        </table>
+											</div>	<!-- end table -->
+									    </div>	<!-- end tabpanel -->
+										
+									{% endfor %}
+								</div>
+							</div>	
+						</div>	<!-- robpanel -->
+					{% endfor %}
+				</div>	<!-- tab-content -->
+			</div> <!-- container -->
 			
-			{% block table %}
-			    <div class="table-responsive">
-			        <table class="table table-hover table-bordered table-striped"{% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
-			            {% block table.thead %}
-			            <thead>                 
-			                <tr class="alert alert-primary">
-			                    <th colspan="7">
-			                    	{% if project_settings %}
-			                    		<div class="header-software-settings">Software parameters for project: {{project.name}}</div>
-			                    	{% elif sample_project_settings %}
-			                    		<div class="header-software-settings">Software parameters for project: {{project_sample.project.name}} and sample: {{project_sample.sample.name}}</div>
-			                    	{% elif sample %}
-			                    		<div class="header-software-settings">Software parameters for sample: {{sample.name}}</div>
-			                    	{% else %}
-			                    		<div class="header-software-settings">Global software parameters</div>
-			                    	{% endif %}
-			                    </th>                  
-			                </tr>
-			             
-			              <tr>
-			                {% for column in table.columns %}
-			                    {% if column.orderable %}
-			                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-			                    {% else %}
-			                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-			                    {% endif %}
-			                {% endfor %}
-			              </tr>
-			            </thead>
-			            {% endblock table.thead %}
-			            {% block table.tbody %}
-			            <tbody>
-			                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
-			                  {% block table.tbody.row %}
-			                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-			                      {% for column, cell in row.items %}
-			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-			                      {% endfor %}
-			                  </tr>
-			                  {% endblock table.tbody.row %}
-			                {% empty %}
-			                  {% if table.empty_text %}
-				                  {% block table.tbody.empty_text %}
-				                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
-				                  {% endblock table.tbody.empty_text %}
-			                  {% endif %}
-			                {% endfor %}
-			            </tbody>
-			            {% endblock table.tbody %}
-			            {% block table.tfoot %}
-			            	<tfoot></tfoot>
-			            {% endblock table.tfoot %}
-			        </table>
-			    </div>
-			{% endblock table %}
-			
-			{% if table.page and show_paginatior_table %}
-			    {% block pagination %}
-			        {% bootstrap_pagination table.page url=request.get_full_path %}
-			    {% endblock pagination %}
-			  </div>
-			{% endif %}
+			<br>
+			<p class="insa-description bg-insa-fixed-top" style=""><strong>Note:</strong> you should fit the parameters
+				to the conditions you are working with, e.g., default end’s trimming size for ONT may be
+				too restrictive depending on design of your tiling amplicon multiplex PCR method and on
+				your sequencing protocol (if reads are or not already trimmed/clipped).</p>
 		{% endif %}
-		<!-- END Table only of software -->
-
-		<!-- Table for INSaFLU (GLOBAL) parameters -->
-		{% if table_insaflu %}
-			{% if table_insaflu.page and show_paginatior_table_insaflu %}
-			  <div class="table-container">
-			{% endif %}
-			
-			{% block table_insaflu %}
-				<br>
-			    <div class="table-responsive">
-			        <table class="table table-hover table-bordered table-striped"{% if table_insaflu.attrs %} {{ table_insaflu.attrs.as_html }}{% endif %}>
-			            {% block table_insaflu.thead %}
-			            <thead>                 
-			                <tr class="alert alert-primary">
-			                    <th colspan="7">
-			                    	{% if project_settings %}
-			                    		<div class="header-software-settings">INSaFLU parameters for project: {{project.name}}</div>
-			                    	{% elif sample_project_settings %}
-			                    		<div class="header-software-settings">INSaFLU parameters for project: {{project_sample.project.name}} and sample: {{project_sample.sample.name}}</div>
-			                    	{% elif sample %}
-			                    		<div class="header-software-settings">Software parameters for sample: {{sample.name}}</div>
-			                    	{% else %}
-			                    		<div class="header-software-settings">Global INSaFLU parameters</div>
-			                    	{% endif %}
-			                    </th>                  
-			                </tr>
-			             
-			              <tr>
-			                {% for column in table_insaflu.columns %}
-			                    {% if column.orderable %}
-			                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
-			                    {% else %}
-			                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
-			                    {% endif %}
-			                {% endfor %}
-			              </tr>
-			            </thead>
-			            {% endblock table_insaflu.thead %}
-			            {% block table_insaflu.tbody %}
-			            <tbody>
-			                {% for row in table_insaflu.page.object_list|default:table_insaflu.rows %} {# support pagination #}
-			                  {% block table_insaflu.tbody.row %}
-			                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
-			                      {% for column, cell in row.items %}
-			                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
-			                      {% endfor %}
-			                  </tr>
-			                  {% endblock table_insaflu.tbody.row %}
-			                {% empty %}
-			                  {% if table_insaflu.empty_text %}
-				                  {% block table_insaflu.tbody.empty_text %}
-				                  	<tr><td colspan="{{ table.columns|length }}">{{ table_insaflu.empty_text }}</td></tr>
-				                  {% endblock table_insaflu.tbody.empty_text %}
-			                  {% endif %}
-			                {% endfor %}
-			            </tbody>
-			            {% endblock table_insaflu.tbody %}
-			            {% block table_insaflu.tfoot %}
-			            	<tfoot></tfoot>
-			            {% endblock table_insaflu.tfoot %}
-			        </table>
-			    </div>
-			{% endblock table_insaflu %}
-			
-			{% if table_insaflu.page and show_paginatior_table_insaflu %}
-			    {% block table_insaflu_pagination %}
-			        {% bootstrap_pagination table_insaflu.page url=request.get_full_path %}
-			    {% endblock table_insaflu_pagination %}
-			  </div>
-			{% endif %}
-		{% endif %}
-		<!-- END Table for INSaFLU (GLOBAL) parameters-->
+		<!-- End length softwares to show -->
 		
-		<br>
-		<p class="insa-description bg-insa-fixed-top" style=""><strong>Note:</strong> you should fit the parameters
-			to the conditions you are working with, e.g., default end’s trimming size for ONT may be
-			too restrictive depending on design of your tiling amplicon multiplex PCR method and on
-			your sequencing protocol (if reads are or not already trimmed/clipped).</p>
-			
 		<!--  Go back  function -->	
 		{% if project_settings %}
 			<br>
-			<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-		{% elif sample_project_settings %}
+			<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+		{% elif project_sample_settings %}
 			<br>
-			<a href="{% url 'show-sample-project-results' project_sample.project.pk %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+			<a id="id_go_back_button" href="{% url 'show-sample-project-results' project_sample.project.pk %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 		{% elif sample_settings %}
 			<br>
-			<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+			<a id="id_go_back_button" href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 		{% endif %}
 		
 		<!-- Set default Modal -->
@@ -351,30 +307,14 @@
 		<script type="text/javascript" src="{% static 'js/settings/set-default-parameters.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/turn-on-off-software.js' %}"></script>
 		<script type="text/javascript" src="{% static 'js/settings/mask_consensus.js' %}"></script>
+		<script type="text/javascript" src="{% static 'js/settings/set_nav_tab.js' %}"></script>
 	
 	<script>
 		
 		/// set wait screen
-		$(document).on("click", "a", function(e){
-			var id_ = $(this).attr('id');
-			var attr = $(this).attr('href');
-			var onclick = $(this).attr('onclick');
-			if (attr !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler'){
-				$.blockUI({ css: { 
-			        border: 'none', 
-			        padding: '15px', 
-			        backgroundColor: '#000', 
-			        '-webkit-border-radius': '10px', 
-			        '-moz-border-radius': '10px', 
-			        opacity: .5, 
-			        color: '#fff' 
-			    } });
-			}
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
 		});
-		
-		
-		/// set wait screen
-		$.unblockUI();
 	</script>
 	
 {% endblock %}

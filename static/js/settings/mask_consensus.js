@@ -15,15 +15,7 @@ $(document).on("click", "a", function(e){
 		var td_to_update = e.target.parentNode.parentNode.parentNode.parentNode.id;
 	
 		//block all page
-		$.blockUI({ css: { 
-		            border: 'none', 
-		            padding: '15px', 
-		            backgroundColor: '#000', 
-		            '-webkit-border-radius': '10px', 
-		            '-moz-border-radius': '10px', 
-		            opacity: .5, 
-		            color: '#fff' 
-		        } }); 
+		wait_screen();
 
 		$('#id_set_positions_to_mask_regions').attr('project_id', $(this).attr('project_id'));
 		$('#id_set_positions_to_mask_regions').attr('project_sample_id', $(this).attr('project_sample_id'));
@@ -112,15 +104,7 @@ function change_mask_values() {
 $('#id-mask-consensus').on('click', function(){
 
 	/// set wait screen 
-	$.blockUI({ css: { 
-        border: 'none', 
-        padding: '15px', 
-        backgroundColor: '#000', 
-        '-webkit-border-radius': '10px', 
-        '-moz-border-radius': '10px', 
-        opacity: .5, 
-        color: '#fff' 
-    } }); 
+	wait_screen();
 
 	/// get data that was in the modal
 	dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_sites'] = $('#id_mask_sites').val();

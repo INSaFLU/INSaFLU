@@ -106,7 +106,7 @@
 			<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 		{% endif %}
 	
-		<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		{% if show_message_change_settings %}
 			<div class="modal fade" id="modal_show_settings_allert">
@@ -148,31 +148,17 @@
 		    create_post();
 		}); */
 		
-		/* wait button */
-		$(document).ready(function() { 
-		    $('#id_submit_all').click(function() { 
-		        $.blockUI({ css: { 
-		            border: 'none', 
-		            padding: '15px', 
-		            backgroundColor: '#000', 
-		            '-webkit-border-radius': '10px', 
-		            '-moz-border-radius': '10px', 
-		            opacity: .5, 
-		            color: '#fff' 
-		        } }); 
-		    });
+		/// set wait screen
+	    $('#id_submit_all').click(function() { 
+	    	wait_screen();
+	    });
 		    
-		    $('#id_submit_checked').click(function() { 
-		        $.blockUI({ css: { 
-		            border: 'none', 
-		            padding: '15px', 
-		            backgroundColor: '#000', 
-		            '-webkit-border-radius': '10px', 
-		            '-moz-border-radius': '10px', 
-		            opacity: .5, 
-		            color: '#fff' 
-		        } }); 
-		    }); 
+	    $('#id_submit_checked').click(function() { 
+	    	wait_screen();
+	    }); 
+		
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
 		});
 		
 	</script>

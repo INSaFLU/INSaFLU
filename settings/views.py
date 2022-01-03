@@ -3,7 +3,7 @@ from braces.views import LoginRequiredMixin
 from settings.models import Software, Parameter
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
-from settings.tables import SoftwaresTable, INSaFLUParametersTable
+from settings.tables import SoftwaresTable
 from settings.forms import SoftwareForm
 from utils.utils import ShowInfoMainPage
 from managing_files.models import Project, ProjectSample, Sample
@@ -20,9 +20,13 @@ class SettingsView(LoginRequiredMixin, ListView):
 	"""
 	Home page
 	"""
-	model = Software
+#	model = Software
+#	context_object_name = 'software'
 	template_name = 'settings/settings.html'
-	context_object_name = 'software'
+	
+	def get_queryset(self):
+		""" overwrite queryset to not get all software itens available in Software table """
+		return []
 	
 	def get_context_data(self, **kwargs):
 		context = super(SettingsView, self).get_context_data(**kwargs)
@@ -31,23 +35,34 @@ class SettingsView(LoginRequiredMixin, ListView):
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(self.request.user) ## the user can have defaults yet
 		
-		### IMPORTANT, must have technology__name__in, because old versions don't
-		query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
-				type_of_software=Software.TYPE_SOFTWARE, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
-				is_obsolete = False)
-		
-		table = SoftwaresTable(query_set)
-		query_set_insaflu = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
-				type_of_software=Software.TYPE_INSAFLU_PARAMETER, technology__name__in=
-				[ConstantsSettings.TECHNOLOGY_illumina, ConstantsSettings.TECHNOLOGY_minion],
-				is_obsolete = False )
-		table_insaflu = INSaFLUParametersTable(query_set_insaflu)
+		all_tables = []	## order by Technology, PipelineStep, table
+						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+						## Mix parameters with software
+		### IMPORTANT, must have technology__name, because old versions don't
+		for technology in ConstantsSettings.vect_technology:	## run over all technology
+			vect_pipeline_step = [ ] 
+			for pipeline_step in ConstantsSettings.vect_pipeline_names:
+				query_set = Software.objects.filter(owner=self.request.user, type_of_use=Software.TYPE_OF_USE_global,
+					type_of_software__in=[Software.TYPE_SOFTWARE, Software.TYPE_INSAFLU_PARAMETER],
+					technology__name=technology,
+					pipeline_step__name=pipeline_step,
+					is_obsolete = False)
+				
+				### if there are software
+				if query_set.count() > 0:
+					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
+								technology.replace(' ', '').replace('/', '')),
+								pipeline_step, SoftwaresTable(query_set)])
+			## if there is software for the pipeline step
+			if len(vect_pipeline_step) > 0:
+				all_tables.append([technology.replace(' ', '').replace('/', ''),
+								technology, vect_pipeline_step])
+
+		context['all_softwares'] = all_tables
 		context['nav_settings'] = True
-		context['table'] = table	
-		context['table_insaflu'] = table_insaflu	
-		context['show_paginatior_table'] = False
-		context['show_paginatior_table_insaflu'] = False
+		context['main_settings'] = True		## True for global softwares
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
 		return context
 
@@ -331,7 +346,6 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 		"""
 		form update 
 		"""
-
 		## save it...
 		with transaction.atomic():
 			software = form.save(commit=False)
@@ -342,9 +356,15 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 				try:
 					sample = Sample.objects.get(pk=sample_id)
 				except Sample.DoesNotExist:
-					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					messages.error(self.request, "Software '" + software.name + "' parameters were not updated")
 					return super(UpdateParametersSampleView, self).form_valid(form)
 				
+				### can not do anything because the sample is running
+				if (not sample.is_ready_for_projects):
+					messages.error(self.request, "Sample '{}' is in the queue to process. Software '{}' parameters were not updated".\
+							format(sample.name, software.name))
+					return super(UpdateParametersSampleView, self).form_valid(form)
+					
 			paramers = Parameter.objects.filter(software=software, sample=sample)
 			b_change_value = False
 			for parameter in paramers:

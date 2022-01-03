@@ -258,7 +258,7 @@ class Test(TestCase):
 		masking_consensus.set_mask_from_ends("2s3")
 		masking_consensus.set_mask_regions("4")
 		self.assertFalse(masking_consensus.has_data())
-		self.assertEqual("No mask is applied to consensus in this project", masking_consensus.get_message_to_show_in_web_site("xpto"))
+		self.assertEqual("Element:xpto -> No mask", masking_consensus.get_message_to_show_in_web_site("xpto"))
 		
 		masking_consensus = MaskingConsensus()
 		masking_consensus.set_mask_sites("2,5,-5,5,cf")

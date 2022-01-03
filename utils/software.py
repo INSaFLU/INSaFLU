@@ -2162,7 +2162,6 @@ class Software(object):
 		### save file
 		with open(temp_file_name, 'w') as handle_write:
 			SeqIO.write(records, handle_write, "fasta")
-			
 		try:
 			#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
 			self.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)

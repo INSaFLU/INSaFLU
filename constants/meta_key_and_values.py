@@ -3,6 +3,7 @@ Created on Nov 10, 2017
 
 @author: mmp
 '''
+from settings.constants_settings import ConstantsSettings
 
 class MetaKeyAndValue(object):
 	'''
@@ -78,18 +79,17 @@ class MetaKeyAndValue(object):
 	### }
 	NAME_sample = "Sample"						### if the software was used in sample
 	NAME_project_sample = "ProjectSample"		### if the software was used in project sample
-	TECHNOLOGY_illumina = "illumina"
-	TECHNOLOGY_ONT = "ONT"
 	
 	### order out
-	VECT_TECHNOLOGIES_OUT_REPORT = [TECHNOLOGY_illumina , TECHNOLOGY_ONT]
+	VECT_TECHNOLOGIES_OUT_REPORT = [ConstantsSettings.TECHNOLOGY_illumina,
+								ConstantsSettings.TECHNOLOGY_minion]
 	### key to show in report
 	DICT_SOFTWARE_SHOW_IN_RESULTS = {
-		TECHNOLOGY_illumina : {
+		ConstantsSettings.TECHNOLOGY_illumina : {
 			NAME_sample : [META_KEY_Fastq_Trimmomatic_Software, META_KEY_Identify_Sample_Software, ],
 			NAME_project_sample : [META_KEY_Snippy_Freebayes, ],
 		},
-		TECHNOLOGY_ONT : {
+		ConstantsSettings.TECHNOLOGY_minion : {
 			NAME_sample : [	META_KEY_NanoStat_NanoFilt_Software, ],
 			NAME_project_sample : [ META_KEY_Medaka, ],
 		}

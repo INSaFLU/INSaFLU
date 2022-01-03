@@ -111,14 +111,14 @@
 	  	
 			<!-- NAV tabs -->
 			<div class="container">
-				<ul class="nav nav-tabs" role="tablist">
-					<li class="nav-item active"><a class="nav-link fa fa-download" href="#download_files" role="tab" data-toggle="tab" > Download files</a></li>
+				<ul id="main_tab" class="nav nav-tabs" role="tablist">
+					<li class="nav-item"><a class="nav-link fa fa-download" href="#download_files" role="tab" data-toggle="tab" > Download files</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-gears" href="#software" role="tab" data-toggle="tab"> Software</a></li>
 				</ul>
 	
 				<div class="tab-content">
-					<div id="download_files" role="tabpanel" class="tab-pane fade active box-blue">
+					<div id="download_files" role="tabpanel" class="tab-pane fade box-blue">
 						<p class="title-box">Files available to download</p>
 						<hr>
 						<!--   Download consensus for each element   -->	
@@ -181,7 +181,7 @@
 		</div>
 		
   		<br>
-		<a href="{% url 'show-sample-project-results' pk=project_sample.project.id %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" href="{% url 'show-sample-project-results' pk=project_sample.project.id %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 	{% endif %}
 	
 {% endblock content %}
@@ -195,17 +195,15 @@
 			<!-- <script src="https://igv.org/web/release/1.0.1/igv-1.0.1.js"></script> -->
 			<script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
 			
-	<script>	
+	<script>
+		/// set wait screen
 		$('#id_go_back_button').on('click', function(){
-			$.blockUI({ css: { 
-		        border: 'none', 
-		        padding: '15px', 
-		        backgroundColor: '#000', 
-		        '-webkit-border-radius': '10px', 
-		        '-moz-border-radius': '10px', 
-		        opacity: .5, 
-		        color: '#fff' 
-		    } });
+			wait_screen();
 		});
+		
+		/// made a click in the nav tab, this is a caveat
+		$(document).ready(function(){
+			$('#main_tab li:first-child a').tab('show') // Select first tab
+		});	
 	</script>
 {% endblock %}

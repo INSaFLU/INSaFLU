@@ -11,15 +11,7 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	var project_sample_id = $('#id-set-turn-on-off-button').attr('project_sample_id');
 	var sample_id = $('#id-set-turn-on-off-button').attr('sample_id');
 	//block all page
-	$.blockUI({ css: { 
-	            border: 'none', 
-	            padding: '15px', 
-	            backgroundColor: '#000', 
-	            '-webkit-border-radius': '10px', 
-	            '-moz-border-radius': '10px', 
-	            opacity: .5, 
-	            color: '#fff' 
-	        } }); 
+	wait_screen();
 	
 	$.ajax({
         url: '/settings/ajax/turn_on_off_software',
@@ -74,15 +66,7 @@ $(document).on("click", "a", function(e){
 		var sample_id = $('#id_show_turn_on_off_modal').attr('sample_id');
 	
 		//block all page
-		$.blockUI({ css: { 
-		            border: 'none', 
-		            padding: '15px', 
-		            backgroundColor: '#000', 
-		            '-webkit-border-radius': '10px', 
-		            '-moz-border-radius': '10px', 
-		            opacity: .5, 
-		            color: '#fff' 
-		        } });
+		wait_screen();
 		
 		$.ajax({
 	        url: '/settings/ajax/get_software_name_to_turn_on_off',

@@ -1182,6 +1182,7 @@ class DefaultParameters(object):
 		parameter.sample = sample
 		parameter.union_char = " "
 		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 2
 		parameter.range_available = "[0:100]"
 		parameter.range_max = "100"

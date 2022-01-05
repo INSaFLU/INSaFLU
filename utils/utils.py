@@ -291,7 +291,7 @@ class Utils(object):
 		
 		### if read something in last SeqIO.parse
 		if (len(vect_length) > 1):
-			if (max(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
+			if (mean(sorted(vect_length, reverse=True)[:5]) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
 			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_ont
 			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		

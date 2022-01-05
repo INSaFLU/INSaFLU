@@ -79,7 +79,7 @@ class Constants(object):
 	FORMAT_FASTQ_illumina = "fastq_illumina"	### if is lower than 302 is illumina 
 	FORMAT_FASTQ_ont = "fastq_other"
 	EXTENSION_ZIP = ".gz"
-	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 302
+	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 310		## because of IONtorrent
 	MIN_LENGHT_MINION_FASQC_SEQ = 100
 	
 	## vect with keys to get the ID

@@ -43,29 +43,29 @@ class Test(unittest.TestCase):
 
 	def test_is_fastq_gz(self):
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		self.assertTrue((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
+		self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_FAKE_GZ)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_ont), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ10_1_test)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 		
@@ -79,18 +79,22 @@ class Test(unittest.TestCase):
 	
 		### IONtorrent
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_1)
+		self.assertTrue(os.path.exists(path_file))
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_2)
+		self.assertTrue(os.path.exists(path_file))
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_3)
+		self.assertTrue(os.path.exists(path_file))
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 			
@@ -856,7 +860,7 @@ class Test(unittest.TestCase):
 		last_value = int(os.path.getmtime(file_2))
 		time.sleep(2)
 		utils.touch_file(file_2)
-		self.assertEqual(2, int(os.path.getmtime(file_2)) - last_value)
+		self.assertTrue((int(os.path.getmtime(file_2)) - last_value) in [2,3])
 		self.assertTrue(os.path.exists(file_2))
 		utils.remove_dir(main_path)
 

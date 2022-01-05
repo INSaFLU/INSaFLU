@@ -283,7 +283,7 @@ class Utils(object):
 			for record in SeqIO.parse(handle, "fastq"):
 				vect_length.append(len(str(record.seq)))
 				count += 1
-				if (count > 50): break
+				if (count > 100): break
 			handle.close()
 #			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:

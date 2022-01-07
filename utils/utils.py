@@ -974,8 +974,9 @@ class Utils(object):
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
-		### doesn't have the same size, sequences in consensus/coverage
-		if (locus_fasta != len(coverage.get_dict_data())): return None
+		### if it has more than coverage, some problem exist
+		### the number can be smaller because of consensus filter 
+		if (locus_fasta > len(coverage.get_dict_data())): return None
 		
 		### need to have all with 100 more 9
 		if (test_all_locus_good_coverage):
@@ -1016,8 +1017,9 @@ class Utils(object):
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
-		### doesn't have the same size, sequences in consensus/coverage
-		if (not coverage is None and locus_fasta != len(coverage.get_dict_data())): return None
+		### if it has more than coverage, some problem exist
+		### the number can be smaller because of consensus filter
+		if (not coverage is None and locus_fasta > len(coverage.get_dict_data())): return None
 		
 		file_name = os.path.join(out_dir, sample_name + FileExtensions.FILE_FASTA)
 #		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)

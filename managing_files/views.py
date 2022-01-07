@@ -36,7 +36,7 @@ from utils.utils import ShowInfoMainPage
 from utils.software_pangolin import SoftwarePangolin
 from utils.software import Software
 from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.tables import SoftwaresTable, INSaFLUParametersTable
+from settings.tables import SoftwaresTable
 from django.template.defaultfilters import pluralize
 from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings

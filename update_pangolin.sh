@@ -1,3 +1,4 @@
+#!/bin/bash
 ## Upadte pangolin
 ##
 ## $ crontab -e

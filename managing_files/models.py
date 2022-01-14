@@ -347,6 +347,8 @@ class Sample(models.Model):
 	
 	###	has the flag indicating that the sample can be processed by projects
 	is_ready_for_projects = models.BooleanField(default=False)
+	###	has the flag indicating that the sample has end of processing, if False it is ready for process
+	is_sample_in_the_queue = models.BooleanField(default=False)
 	
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system

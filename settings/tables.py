@@ -67,7 +67,7 @@ class SoftwaresTable(tables.Table):
 		
 		### When in sample you can not turn ON|OFF the software
 		b_enable_options = self.b_enable_options
-		if not self.sample is None: b_enable_options = False
+		if not self.sample is None: b_enable_options = True
 
 		## need to remove # in href, otherwise still active
 		sz_href = '<a href="{}id_turn_software_on_off" {} '.format(
@@ -190,9 +190,12 @@ class SoftwaresTable(tables.Table):
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
 		elif (not self.sample is None):		## for samples
-			if (b_enable_options): ## If b_enable_options is False it's false to All
+			is_to_run, sz_ids = self._is_to_run(record)
+			if (b_enable_options and is_to_run): ## If b_enable_options is False it's false to All
 				default_software_projects = DefaultProjectSoftware()
 				b_enable_options = default_software_projects.can_change_values_for_this_software(record, None, None, self.sample)
+			else:
+				b_enable_options = False
 			str_links = '<a href=' + reverse('software-sample-update', args=[record.pk, self.sample.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
 				'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'

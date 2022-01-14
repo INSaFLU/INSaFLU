@@ -57,6 +57,14 @@ class Utils(object):
 		"""
 		return os.path.join(Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id), "sampleId_{0}".format(sample_id))
 
+	def get_sample_list_by_user(self, user_id, extension):
+		"""
+		get the path to sample
+		"""
+		return os.path.join(getattr(settings, "MEDIA_ROOT", None),
+					Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id),
+					Constants.SAMPLE_LIST_all_samples + extension)
+	
 	def get_path_to_projec_file(self, user_id, project_id):
 		"""
 		get the path to project

@@ -59,6 +59,8 @@ class Proteins(object):
 		n_count_samples_processed = 0
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+			
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue
@@ -80,11 +82,6 @@ class Proteins(object):
 			
 			### get consensus file name
 			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-			if (not os.path.exists(consensus_fasta)):
-				manageDatabase.set_project_metakey(project, user, meta_key,\
-						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)
-				self.utils.remove_dir(temp_dir)
-				return False
 			
 			### get dict consensus file
 			with open(consensus_fasta) as handle_consensus: 
@@ -297,6 +294,7 @@ class Proteins(object):
 		get position where genes consensus from sample matches in the reference
 		"""
 		generic_consensus_element = GeneticElement()
+		temp_dir = self.utils.get_temp_dir()
 		with open(reference_fasta_file) as handle_ref: 
 			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
 			if (record_dict_ref is None): return generic_consensus_element
@@ -310,7 +308,7 @@ class Proteins(object):
 				
 				### align two sequences
 				seq_ref, seq_other = self.software.align_two_sequences(str(record_dict_ref[sequence_name].seq),
-												str(record_dict_consensus[sequence_name].seq))
+												str(record_dict_consensus[sequence_name].seq), temp_dir)
 				
 				#### get positions for genes				
 				for gene in genetic_element.get_genes(sequence_name):
@@ -363,5 +361,8 @@ class Proteins(object):
 									len(seq_other.replace('-', '')), Gene(
 									gene.name, cons_start, pos_con,
 									gene.strand, vect_feature_location))
+		### remove dir
+		self.utils.remove_dir(temp_dir)
+		
 		return generic_consensus_element
 

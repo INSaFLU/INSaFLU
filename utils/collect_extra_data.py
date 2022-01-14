@@ -7,8 +7,8 @@ import os, csv, time, json, logging
 import plotly.graph_objs as go
 from utils.utils import Utils 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, TagNames, ProcessControler
-from managing_files.models import Software as SoftwareModel
+from managing_files.models import Project, TagNames, ProcessControler, Sample
+from managing_files.models import Software as SoftwareModel, ProjectSample
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
 from constants.constants import TypePath, Constants, FileType, FileExtensions
@@ -31,6 +31,7 @@ class CollectExtraData(object):
 	'''
 
 	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV_for_sample = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype"
 	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 
 	utils = Utils()
@@ -594,6 +595,7 @@ class CollectExtraData(object):
 		vect_to_process = []
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 			vect_to_process.append([
 				project_sample.get_consensus_file(TypePath.MEDIA_ROOT),\
 				project_sample.sample.name, project_sample.id])
@@ -675,12 +677,9 @@ class CollectExtraData(object):
 			vect_tags = self.get_tags_for_samples_in_projects(project)
 			vect_out_header.extend(vect_tags)
 			
-			if parse_pangolin.has_data():
-				vect_out_header.append("Lineage (Pangolin)")
-				vect_out_header.append("Scorpio (Pangolin)") 
-			if (not b_simple):
-				vect_out_header.append("Technology")
-				vect_out_header.append("Sample Downsized")
+			## some extra headers
+			if parse_pangolin.has_data(): vect_out_header.extend(["Lineage (Pangolin)", "Scorpio (Pangolin)"]) 
+			if (not b_simple): vect_out_header.extend(["Technology", "Sample Down sized", "Available Reads/Mapped Reads/Mapped Percentage"])
 			
 			### all information about the softwares
 			if (not b_simple):
@@ -776,8 +775,12 @@ class CollectExtraData(object):
 
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
+					
 					### downsized
 					vect_out.append("True" if manage_database.is_sample_downsized(project_sample.sample) else "False")
+					
+					### print info about mapped stats
+					vect_out.append(self._get_mapped_stats_info(project_sample))
 					
 					###  BEGIN info about software versions  ####
 					if project_sample.id in dict_all_results:
@@ -835,6 +838,36 @@ class CollectExtraData(object):
 			return None
 		return out_file
 
+	def _get_mapped_stats_info(self, project_sample):
+		""" return mapped stats about this project_sample """
+		
+		manage_database = ManageDatabase()
+		meta_value = manage_database.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_bam_stats,
+						MetaKeyAndValue.META_VALUE_Success)
+		
+		## it is not available yet
+		if meta_value is None:
+			
+			### get mapped stast reads
+			if (project_sample.is_sample_illumina()):
+				bam_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)
+			else:
+				bam_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_Medaka_name)
+			result = Result()
+			if os.path.exists(bam_file):
+				result = self.software.get_statistics_bam(bam_file)
+			manage_database.set_project_sample_metakey(project_sample, project_sample.sample.owner, MetaKeyAndValue.META_KEY_bam_stats, 
+					MetaKeyAndValue.META_VALUE_Success, result.to_json())
+		else:
+			decode_stats = DecodeObjects()
+			result = decode_stats.decode_result(meta_value.description)
+		mapped_reads = result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads)
+		total_reads = result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads)
+		if not mapped_reads is None and not total_reads is None and self.utils.is_integer(mapped_reads) and self.utils.is_integer(total_reads):
+			if int(total_reads) > 0: return "{}/{}/{:.1f}".format(total_reads, mapped_reads, (int(mapped_reads)/float(total_reads))* 100)
+			return "{}/{}/nan".format(total_reads, mapped_reads)
+		return "0/0/0"
 	
 	def _get_info_for_software(self, tag_to_search, vect_out, dict_all_results, project_sample_id,
 					vect_tags_info, vect_not_add_software_name = []):
@@ -899,6 +932,19 @@ class CollectExtraData(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			for tag_name in project_sample.sample.tag_names.all():
+				if (tag_name.name in dict_tags_out): continue
+				dict_tags_out[tag_name.name] = 1
+				vect_tags_out.append(tag_name.name)
+		return vect_tags_out
+
+	def get_tags_for_samples(self, list_samples):
+		"""
+		tags for samples in projects
+		"""
+		dict_tags_out = {}
+		vect_tags_out = []
+		for sample in list_samples:
+			for tag_name in sample.tag_names.all():
 				if (tag_name.name in dict_tags_out): continue
 				dict_tags_out[tag_name.name] = 1
 				vect_tags_out.append(tag_name.name)
@@ -1055,6 +1101,223 @@ class CollectExtraData(object):
 			return destination_file
 		else: self.utils.remove_file(destination_file)
 		return None
+
+#######################################################################################################
+#######################################################################################################
+## For Sample
+##
+	def get_list_of_softwares_used_for_sample(self, lst_samples):
+		"""
+		get list of software in a sample
+		out: [Software_name, Software_name_1, Software_name_2, ...]
+				all results by id project_sample and key software
+		"""
+		manage_database = ManageDatabase()
+		decode_result = DecodeObjects()
+		
+		dict_all_results = {}		### all results in for project_sample
+		vect_tags_out_sample = []
+		b_trimmomatic_tags = False	### test if has trimmomatic statistics
+		b_nanostat_sats = False		### test if has NanoFilt statistics
+		
+		### return software name, illumina and ONT
+		for sample in lst_samples:
+			dt_out = {MetaKeyAndValue.NAME_sample: []}
+			for technology in MetaKeyAndValue.VECT_TECHNOLOGIES_OUT_REPORT:
+				if (MetaKeyAndValue.NAME_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_RESULTS[technology]):
+					for keys_for_sample in MetaKeyAndValue.DICT_SOFTWARE_SHOW_IN_RESULTS[technology].get(MetaKeyAndValue.NAME_sample):
+						meta_sample = manage_database.get_sample_metakey_last(sample,
+								keys_for_sample, MetaKeyAndValue.META_VALUE_Success)
+						if (meta_sample is None): continue
+						result = decode_result.decode_result(meta_sample.description)
+						dt_out[MetaKeyAndValue.NAME_sample].append(result)
+						
+						if (not b_trimmomatic_tags and technology == ConstantsSettings.TECHNOLOGY_illumina):
+							soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+							if (not soft_desc is None and not soft_desc.get_vect_key_values() is None and\
+									len(soft_desc.get_vect_key_values()) > 0):
+								b_trimmomatic_tags = True
+						if (not b_nanostat_sats and technology == ConstantsSettings.TECHNOLOGY_minion):
+							soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_NanoStat_name)
+							if (not soft_desc is None and not soft_desc.get_vect_key_values() is None and\
+									len(soft_desc.get_vect_key_values()) > 0):
+								b_nanostat_sats = True
+							
+						for software_name in result.get_all_software_names():
+							if not software_name in vect_tags_out_sample: vect_tags_out_sample.append(software_name)
+				
+			## add everything to all	
+			dict_all_results[sample.id] = dt_out
+		return (vect_tags_out_sample, b_trimmomatic_tags, b_nanostat_sats, dict_all_results)
+
+	def collect_sample_list(self, user, b_test = False):
+		""" write both files with list of all samples for a user """
+		
+		## get all samples at one step
+		lst_samples = Sample.objects.filter(owner=user, is_deleted=False,\
+							is_ready_for_projects=True, is_obsolete=False).order_by('-creation_date')
+			
+		out_file = self._collect_sample_list(lst_samples, Constants.SEPARATOR_COMMA, b_test)
+		csv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_CSV))
+		if out_file is None: self.utils.remove_file(csv_file)
+		else: self.utils.move_file(out_file, csv_file)
+		
+		out_file = self._collect_sample_list(lst_samples, Constants.SEPARATOR_TAB, b_test)
+		tsv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_TSV))
+		if out_file is None: self.utils.remove_file(tsv_file)
+		else: self.utils.move_file(out_file, tsv_file)
+		
+
+	def _collect_sample_list(self, lst_samples, column_separator, b_test = False):
+		"""
+		Create a file with all samples owned by user
+		:user user 
+		:output file name
+		"""
+		manage_database = ManageDatabase()
+		out_file = self.utils.get_temp_file('sample_list_out', FileExtensions.FILE_CSV if\
+					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
+		
+		### header
+		vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV_for_sample.split(',')
+		### extra tags
+		vect_tags = self.get_tags_for_samples(lst_samples)
+		vect_out_header.extend(vect_tags)
+		## some extra headers
+		vect_out_header.extend(["Technology", "Sample Down sized"])
+		
+		## get list of softwares
+		(vect_tags_out_sample, b_trimmomatic_stats, b_nanostat_sats, dict_all_results) = \
+			self.get_list_of_softwares_used_for_sample(lst_samples)
+			
+		star_stats_tag = 0
+		if (b_trimmomatic_stats):
+			star_stats_tag = len(vect_out_header)
+			vect_out_header.extend([tag_name.replace(":", "")\
+				for tag_name in SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect]) 
+		
+		if (b_nanostat_sats):
+			if (star_stats_tag == 0): star_stats_tag = len(vect_out_header)
+			vect_out_header.extend([tag_name + " - ONT"\
+				for tag_name in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect])
+		
+		vect_out_header.extend(vect_tags_out_sample)
+				
+		### write reference name for this project name on a single line
+		if (not b_trimmomatic_stats and not b_nanostat_sats):
+			vect_out = [''] * (len(vect_out_header) - 2)
+		else: 
+			vect_out = [''] * (star_stats_tag - 2)
+			if (b_trimmomatic_stats): vect_out.extend(["Trimmo. stats."] * len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect))
+			if (b_nanostat_sats): vect_out.extend(["NanoStat stats."] * len(SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect))
+			vect_out.extend([''] * len(vect_tags_out_sample))
+		
+		### add Info about projects
+		extra_data = ['Uploaded Date', '#Projects', 'Project Names']
+		vect_out.extend([''] * len(extra_data))
+		vect_out_header.extend(extra_data)
+		
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
+						quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
+			### write first line of header
+			csv_writer.writerow(vect_out)
+				
+			### write second lint of header
+			csv_writer.writerow(vect_out_header)
+			
+			n_count = 0
+			for sample in lst_samples:
+				vect_out = [sample.name]
+				
+				### don't include file names, don't go to show in the tree
+				### fastq1
+				vect_out.append(sample.file_name_1)
+				### fastq2
+				vect_out.append(sample.file_name_2 if sample.file_name_2 != None and len(sample.file_name_2) > 0 else '')
+				### dataset
+				vect_out.append(sample.data_set.name if sample.data_set != None else '')
+				### vaccine status
+				vect_out.append(sample.vaccine_status.name if sample.vaccine_status != None else '')
+				### week
+				vect_out.append(str(sample.week) if sample.week != None else '')
+				### onset date
+				vect_out.append(sample.date_of_onset.strftime('%Y-%m-%d') if sample.date_of_onset != None else '')
+				### collection date
+				vect_out.append(sample.date_of_collection.strftime('%Y-%m-%d') if sample.date_of_collection != None else '')
+				### lab reception date
+				vect_out.append(sample.date_of_receipt_lab.strftime('%Y-%m-%d') if sample.date_of_receipt_lab != None else '')
+				### latitude
+				vect_out.append(str(sample.geo_local.coords[0]) if sample.geo_local != None else '')
+				### longitude
+				vect_out.append(str(sample.geo_local.coords[1]) if sample.geo_local != None else '')
+				### type_subtype
+				vect_out.append(sample.type_subtype if sample.type_subtype != None else '')
+
+				### print extra informations
+				query_set = TagNames.objects.filter(sample=sample)
+				for tag_name_to_test in vect_tags:
+					b_print = False
+					for tag_names in query_set:
+						if (tag_names.tag_name.name == tag_name_to_test):
+							vect_out.append(tag_names.value)
+							b_print = True
+							break
+					if (not b_print): vect_out.append('')
+
+				### information about the software
+
+				### print info about technology	
+				vect_out.append(sample.get_type_technology())
+				### downsized
+				vect_out.append("True" if manage_database.is_sample_downsized(sample) else "False")
+				
+				###  BEGIN info about software versions  ####
+				if sample.id in dict_all_results:
+				
+					### trimmomatic stats	
+					if (b_trimmomatic_stats):
+						self._get_info_from_trimmomatic_stats(vect_out,
+							sample.id, dict_all_results)
+					### nanostat stats	
+					if (b_nanostat_sats):
+						self._get_info_from_nanostats_stats(vect_out,
+							sample.id, dict_all_results)
+					
+					### samples NAME_sample
+					self._get_info_for_software(MetaKeyAndValue.NAME_sample, vect_out, dict_all_results,
+						sample.id, vect_tags_out_sample)
+
+				else: vect_out.extend([''] * (len(vect_tags_out_sample) +\
+					len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect if b_trimmomatic_stats else 0) +\
+					len(SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect if b_nanostat_sats else 0)))
+				###		second project_sample
+				###  END info about software versions  ####
+				
+				## creation date
+				if b_test: vect_out.append("Date")
+				else: vect_out.append(sample.creation_date.strftime("%d %m %Y %H:%M"))
+				
+				## info about projects
+				vect_out.append("{}".format(ProjectSample.objects.filter(sample=sample, is_deleted=False, project__is_deleted=False).count()))
+				
+				## get project names
+				sz_out = ""
+				for project in Project.objects.filter(is_deleted=False, project_samples__sample=sample).distinct():
+					if len(sz_out) == 0: sz_out += project.name 
+					else: sz_out += ";{}".format(project.name)
+				vect_out.append(sz_out)
+				
+				### END save global parameters
+				csv_writer.writerow(vect_out)
+				n_count += 1
+		
+		## remove file if None	
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
+		
+		return out_file
 
 
 class ParsePangolinResult(object):

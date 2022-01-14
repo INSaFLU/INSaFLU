@@ -1931,6 +1931,16 @@ class Test(TestCase):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))
 
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_bam_stats,
+						MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(not meta_value is None)
+		decode_masking_vcf = DecodeObjects()
+		result = decode_masking_vcf.decode_result(meta_value.description)
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+		
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
@@ -2167,6 +2177,16 @@ class Test(TestCase):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))
 
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_bam_stats,
+						MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(not meta_value is None)
+		decode_masking_vcf = DecodeObjects()
+		result = decode_masking_vcf.decode_result(meta_value.description)
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+		
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
@@ -3464,4 +3484,17 @@ class Test(TestCase):
 		
 		os.unlink(temp_consensus_file)
 		os.unlink(temp_ref_file)
+
+
+	def test_get_statistics_bam(self):
+		""" test stasts in bam file """
+		bam_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_BAM, "run_snippy1.bam")
+		self.assertTrue(os.path.exists(bam_file))
+		result = self.software.get_statistics_bam(bam_file)
+		self.assertEqual('43909', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('43909', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+
+
+
 

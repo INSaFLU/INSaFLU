@@ -90,6 +90,12 @@
 
  {% block js %}
  
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>
+     		<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+
  	<script>
 		/* wait button */
 		$(document).ready(function() { 
@@ -106,12 +112,6 @@
 		    }); 
 		});
 	</script>
-	
- 	 {% load static from staticfiles %}
- 	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/gijgo_1.6.1.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'js/sample_add.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-	    	
+		    	
  {% endblock %}
 

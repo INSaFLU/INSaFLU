@@ -4,6 +4,7 @@ Created on 29/11/2021
 @author: mmp
 '''
 from django.core.management import BaseCommand
+from constants.software_names import SoftwareNames
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
 from settings.models import PipelineStep, Software, Technology
@@ -70,10 +71,18 @@ class Command(BaseCommand):
                     
     def replace_old_technology_names(self):
         """   replace old technology names  """
-        for technology in Technology.objects.filter(name=ConstantsSettings.TECHNOLOGY_illumina_old):
-            technology.name = ConstantsSettings.TECHNOLOGY_illumina
-            technology.save()
+        vect_change = [[ConstantsSettings.TECHNOLOGY_illumina_old, ConstantsSettings.TECHNOLOGY_illumina],
+                    [ConstantsSettings.TECHNOLOGY_generic_old, ConstantsSettings.TECHNOLOGY_generic]]
+        for vect_data in vect_change:
+            for technology in Technology.objects.filter(name=vect_data[0]):
+                technology.name = vect_data[1]
+                technology.save()
         
+    def refresh_software_names(self):
+        """   replace old software names  """
+        Software.objects.filter(name=SoftwareNames.SOFTWARE_Medaka_name_consensus).update(
+            name_extended=SoftwareNames.SOFTWARE_Medaka_name_extended_consensus)
+
     # A command must define handle()
     def handle(self, *args, **options):
 
@@ -94,6 +103,9 @@ class Command(BaseCommand):
         self.stdout.write("Set pipelines in previous softwares...")
         self.set_pipelines_in_previous_softwares()
         
-        self.stdout.write("End")
+        #### set obsolete some softwares because of parameters
+        self.stdout.write("Refresh software names...")
+        self.refresh_software_names()
 
+        self.stdout.write("End")
 

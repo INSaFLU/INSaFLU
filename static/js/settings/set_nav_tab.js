@@ -1,7 +1,7 @@
 /// set wait screen
 $(document).on("click", "a", function(e){
 	var id_ = $(this).attr('id');
-	var attr = $(this).attr('href');
+	var href = $(this).attr('href');
 	var onclick = $(this).attr('onclick');
 	var class_ = $(this).attr('class');
 	/// if undefined set empty
@@ -10,7 +10,8 @@ $(document).on("click", "a", function(e){
 	}
 	
 	// test conditions
-	if (attr !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' && !class_.startsWith("nav-")){
+	if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' && !class_.startsWith("nav-") &&
+		href !== 'id_turn_software_on_off'){
 		wait_screen();
 	}
 });

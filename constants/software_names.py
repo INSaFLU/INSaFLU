@@ -136,7 +136,7 @@ class SoftwareNames(object):
 	SOFTWARE_Medaka_name_variants = "Medaka variants"
 	SOFTWARE_Medaka_default_model = "r941_min_high_g360"
 	SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
-	SOFTWARE_Medaka_name_extended_consensus = "Mapping (Medaka)"
+	SOFTWARE_Medaka_name_extended_consensus = "Consensus Generation (Medaka)"
 	SOFTWARE_Medaka_name_extended_variant = "Call Variants (Medaka)"
 	SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
 	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)

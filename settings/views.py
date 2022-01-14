@@ -360,7 +360,7 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 					return super(UpdateParametersSampleView, self).form_valid(form)
 				
 				### can not do anything because the sample is running
-				if (not sample.is_ready_for_projects):
+				if (sample.is_sample_in_the_queue):
 					messages.error(self.request, "Sample '{}' is in the queue to process. Software '{}' parameters were not updated".\
 							format(sample.name, software.name))
 					return super(UpdateParametersSampleView, self).form_valid(form)
@@ -382,10 +382,6 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 			manageDatabase = ManageDatabase()
 			process_SGE = ProcessSGE()
 			
-			### change flag to nor finished
-			sample.is_ready_for_projects = False
-			sample.save()
-			
 			### get the user
 			user = sample.owner
 			
@@ -401,6 +397,8 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 				manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
 								MetaKeyAndValue.META_VALUE_Queue, taskID)
 			except:
+				sample.is_sample_in_the_queue = False
+				sample.save()
 				pass
 
 			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\

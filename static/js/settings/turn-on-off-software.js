@@ -33,15 +33,17 @@ $('#id-set-turn-on-off-button').on('click', function(){
 	        		data['message'] +
 					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 					'</div>');
-	          	}
-	          	else{
-	        	/// add message with informaton
-	        	  $('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
-	        		'Something went rong.' +
+	        }
+	        else{
+	        	/// add message with warning
+				$('#id_messages_set_default').append('<div class="alert alert-dismissible alert-warning">' +
+        			data['message'] +
 					'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 					'</div>');
-	          	}
-				$.unblockUI();
+	        		$('#id-label-tur-on-off').text(data['message']);
+					$('#id-set-turn-on-off-button').attr('disabled','disabled');
+	         }
+			 $.unblockUI();
 	        },
 	        
 	        // handle a non-successful response
@@ -84,11 +86,11 @@ $(document).on("click", "a", function(e){
 					$('#id-set-turn-on-off-button').attr('project_id', project_id);
 					$('#id-set-turn-on-off-button').attr('project_sample_id', project_sample_id);
 					$('#id-set-turn-on-off-button').attr('sample_id', sample_id);
-					$('#id-label-tur-on-off').text(data['message']);
+					$('#id-label-turn-on-off').text(data['message']);
 					$('#id-set-turn-on-off-button').removeAttr('disabled');
 	         	}
 				else{
-					$('#id-label-tur-on-off').text(data['message']);
+					$('#id-label-turn-on-off').text(data['message']);
 					$('#id-set-turn-on-off-button').attr('disabled','disabled');			
 				}
 				$.unblockUI();

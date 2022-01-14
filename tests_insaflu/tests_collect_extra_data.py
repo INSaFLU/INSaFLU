@@ -7,7 +7,7 @@ import unittest, os, filecmp
 from django.conf import settings 
 from utils.utils import Utils
 from constants.constantsTestsCase import ConstantsTestsCase
-from utils.result import CountHits 
+from utils.result import CountHits
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames, CountVariations
@@ -15,7 +15,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData, ParsePangolinResult
 from django.test.utils import override_settings
 from utils.parse_coverage_file import GetCoverage
-from constants.constants import TypePath, FileType, Constants
+from constants.constants import TypePath, FileType, Constants, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.result import Result, SoftwareDesc, KeyValues, KeyValue, GeneticElement, Gene, MaskingConsensus
 
@@ -662,6 +662,20 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		## test collect samples
+		collect_extra_data.collect_sample_list(user, True)
+		csv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_CSV))
+		self.assertTrue(os.path.exists(csv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.csv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
+		
+		tsv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_TSV))
+		self.assertTrue(os.path.exists(tsv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.tsv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(tsv_file, expected_file_samples))
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)

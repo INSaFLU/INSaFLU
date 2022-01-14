@@ -74,6 +74,8 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_METADATA_data_csv = "template_input_metadata_data.csv"
 	FILE_TEMPLATE_INPUT_METADATA_data_tsv = "template_input_metadata_data.tsv"
 	
+	SAMPLE_LIST_all_samples = "AllSamples"		### has all sample list by user, file extension is added after
+
 	FORMAT_FASTA = "fasta"
 	## https://support.illumina.com/bulletins/2020/04/maximum-read-length-for-illumina-sequencing-platforms.html
 	FORMAT_FASTQ_illumina = "fastq_illumina"	### if is lower than 302 is illumina 

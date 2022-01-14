@@ -47,6 +47,18 @@ $(document).on("click", "a", function(e){
 							$("#id_select_length").text(" " + dict_mask['__GeneticElement__']['dt_elements_size'][mask_element_was_selected] + " bases");
 						}
 					}
+					// warning project, it clean all data in project samples
+					const parent = document.getElementById("id_message_warning_project")
+					while (parent.firstChild) {
+    					parent.firstChild.remove()
+					}
+					$('#id_message_warning_project')
+					if (data['warning_project']){
+						$('#id_message_warning_project').append('<div class="alert alert-dismissible alert-warning">' +
+        					data['warning_project'] +
+						'</div>');
+					}
+					
 					$("#id_select_length").text(" " + dict_mask['__GeneticElement__']['dt_elements_size'][mask_element_was_selected] + " bases");
 					$("#id_tile_mask_consensus").text("Mask consensus: " + project_name);
 					document.getElementById("id_mask_sites").value = dict_mask['__GeneticElement__']['dt_elements_mask'][mask_element_was_selected]['__MaskingConsensus__']['mask_sites'];

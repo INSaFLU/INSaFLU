@@ -92,6 +92,7 @@ class SoftwareMinion(object):
 	
 			## set the flag that is ready for process
 			sample_to_update = Sample.objects.get(pk=sample.id)
+			sample_to_update.is_sample_in_the_queue = False
 			if (b_has_data):
 				sample_to_update.is_ready_for_projects = True
 				
@@ -763,7 +764,15 @@ class SoftwareMinion(object):
 		## get from BCFtools
 		## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 		bam_file = os.path.join(os.path.dirname(bam_file), sample_name + ".bam")
-				
+		
+		### get mapped stast reads
+		result = Result()
+		if os.path.exists(bam_file):
+			result = self.software.get_statistics_bam(bam_file)
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_project_sample_metakey(project_sample, project_sample.sample.owner,
+				MetaKeyAndValue.META_KEY_bam_stats, MetaKeyAndValue.META_VALUE_Success, result.to_json())
+			
 		### create depth
 		depth_file = os.path.join(temp_dir, sample_name + ".depth.gz")
 ##		cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality

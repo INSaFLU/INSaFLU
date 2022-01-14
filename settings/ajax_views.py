@@ -122,9 +122,10 @@ def set_default_parameters(request):
 					sample = Sample.objects.get(pk=sample_id)
 					
 					### can not do anything because the sample is running
-					if (not sample.is_ready_for_projects):
+					if (sample.is_sample_in_the_queue):
 						data = { 'is_ok' : False }
-						data['message'] = "Sample '{}' is in the queue to process. Anything was changed...".format(sample.name)
+						data['message'] = "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
+							sample.name)
 						return JsonResponse(data)
 					
 					default_project_software = DefaultProjectSoftware()
@@ -144,10 +145,6 @@ def set_default_parameters(request):
 						manageDatabase = ManageDatabase()
 						process_SGE = ProcessSGE()
 						
-						### change flag to nor finished
-						sample.is_ready_for_projects = False
-						sample.save()
-		
 						### create a task to perform the analysis of NanoFilt
 						try:
 							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
@@ -160,7 +157,10 @@ def set_default_parameters(request):
 							manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
 											MetaKeyAndValue.META_VALUE_Queue, taskID)
 						except:
-							pass
+							sample.is_sample_in_the_queue = False
+							sample.save()
+							data['message'] = "Error in the queue system."
+							return JsonResponse(data)
 					
 				else:
 					default_software = DefaultSoftware()
@@ -391,7 +391,7 @@ def get_mask_consensus_actual_values(request):
 		if (not project_id is None):
 			try:
 				project = Project.objects.get(pk=project_id)
-			except ProjectSample.DoesNotExist:
+			except Project.DoesNotExist:
 				return JsonResponse(data)
 
 			meta_value = manageDatabase.get_project_metakey_last(project, MetaKeyAndValue.META_KEY_Masking_consensus,
@@ -401,6 +401,8 @@ def get_mask_consensus_actual_values(request):
 			
 			### passing data
 			data['all_data'] = masking_consensus_original.to_json()
+			if ProjectSample.objects.filter(project=project, is_deleted=False, is_finished=True).count() > 0:
+				data['warning_project'] = "If you modify mask values it will change all the masks in the samples associated to the this project."
 			data['is_ok'] = True
 		elif (not project_sample_id is None):
 			try:
@@ -447,8 +449,8 @@ def turn_on_off_software(request):
 		sample_id = None
 		project_id = None
 		project_sample_id = None
-		if (sample_id_a in request.GET): sample_id = request.GET[project_id_a]
-		if (project_id_a in request.GET): project_id = request.GET[project_id_a]
+		if (sample_id_a in request.GET): sample_id = request.GET[sample_id_a]
+		elif (project_id_a in request.GET): project_id = request.GET[project_id_a]
 		elif (project_sample_id_a in request.GET): project_sample_id = request.GET[project_sample_id_a]
 		
 		default_parameters = DefaultParameters()
@@ -458,10 +460,40 @@ def turn_on_off_software(request):
 				project, project_sample, sample = None, None, None
 				software = Software.objects.get(pk=software_id)
 				if not project_id is None: project = Project.objects.get(pk=project_id)
-				if not project_sample_id is None: project_sample = ProjectSample.objects.get(pk=project_sample_id)
-				if not sample_id is None: sample = Sample.objects.get(pk=sample_id)
+				elif not project_sample_id is None:		## project sample 
+					project_sample = ProjectSample.objects.get(pk=project_sample_id)
+				
+				elif not sample_id is None:	## for Sample 
+					sample = Sample.objects.get(pk=sample_id)
+				
+					## sample is not ready for run again
+					if sample.is_sample_in_the_queue:
+						data['message'] = "You cannot do this operation. The sample '{}' is in pipeline to run.".format(
+							sample.name)
+						return JsonResponse(data)
+				
+					### re-run data
+					manageDatabase = ManageDatabase()
+					process_SGE = ProcessSGE()
+					
+					### create a task to perform the analysis again
+					try:
+						(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+						if (sample.is_type_fastq_gz_sequencing()):
+							taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
+						else:
+							taskID = process_SGE.set_run_clean_minion(sample, request.user, job_name)
+							
+						### set sample queue ID
+						manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
+										MetaKeyAndValue.META_VALUE_Queue, taskID)
+					except:
+						sample.is_sample_in_the_queue = False
+						sample.save()
+						data['message'] = "Error in the queue system."
+						return JsonResponse(data)
 				is_to_run = default_parameters.set_software_to_run_by_software(software,
-					project, project_sample, sample)
+						project, project_sample, sample)
 				
 				## set a new default
 				data['is_to_run'] = is_to_run
@@ -504,8 +536,8 @@ def get_software_name_to_turn_on_off(request):
 		sample_id = None
 		project_id = None
 		project_sample_id = None
-		if (sample_id_a in request.GET): sample_id = request.GET[project_id_a]
-		if (project_id_a in request.GET): project_id = request.GET[project_id_a]
+		if (sample_id_a in request.GET): sample_id = request.GET[sample_id_a]
+		elif (project_id_a in request.GET): project_id = request.GET[project_id_a]
 		elif (project_sample_id_a in request.GET): project_sample_id = request.GET[project_sample_id_a]
 		
 		if (software_id_a in request.GET):
@@ -514,8 +546,8 @@ def get_software_name_to_turn_on_off(request):
 				project, project_sample, sample = None, None, None
 				software = Software.objects.get(pk=software_id)
 				if not project_id is None: project = Project.objects.get(pk=project_id)
-				if not project_sample_id is None: project_sample = ProjectSample.objects.get(pk=project_sample_id)
-				if not sample_id is None: sample = Sample.objects.get(pk=sample_id)
+				elif not project_sample_id is None: project_sample = ProjectSample.objects.get(pk=project_sample_id)
+				elif not sample_id is None: sample = Sample.objects.get(pk=sample_id)
 				
 				if software.can_be_on_off_in_pipeline:
 					## get parameters for a specific sample, project or project_sample

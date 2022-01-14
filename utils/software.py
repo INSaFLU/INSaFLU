@@ -21,7 +21,6 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
 from constants.software_names import SoftwareNames
-from settings.models import Software as SoftwareSettings
 from BCBio import GFF
 from django.conf import settings
 from utils.process_SGE import ProcessSGE
@@ -126,6 +125,62 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run samtools")
 		return cmd
+	
+	def get_statistics_bam(self, bam_file):
+		"""
+		Create stats from bam
+		### ONT
+		33022 + 0 in total (QC-passed reads + QC-failed reads)
+		0 + 0 secondary
+		0 + 0 supplementary
+		0 + 0 duplicates
+		33022 + 0 mapped (100.00% : N/A)
+		0 + 0 paired in sequencing
+		0 + 0 read1
+		0 + 0 read2
+		0 + 0 properly paired (N/A : N/A)
+		0 + 0 with itself and mate mapped
+		0 + 0 singletons (N/A : N/A)
+		0 + 0 with mate mapped to a different chr
+		0 + 0 with mate mapped to a different chr (mapQ>=5)
+		### Illumina
+		40714 + 0 in total (QC-passed reads + QC-failed reads)
+		0 + 0 secondary
+		0 + 0 supplementary
+		0 + 0 duplicates
+		40714 + 0 mapped (100.00% : N/A)
+		40714 + 0 paired in sequencing
+		20367 + 0 read1
+		20347 + 0 read2
+		36712 + 0 properly paired (90.17% : N/A)
+		40676 + 0 with itself and mate mapped
+		38 + 0 singletons (0.09% : N/A)
+		0 + 0 with mate mapped to a different chr
+		0 + 0 with mate mapped to a different chr (mapQ>=5)
+		"""
+		temp_file = self.utils.get_temp_file("bam_stat", FileExtensions.FILE_TXT)
+		cmd = "%s flagstat %s > %s" % (self.software_names.get_samtools(), bam_file, temp_file)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run samtools")
+		
+		## 
+		result = Result()
+		if os.path.exists(temp_file):
+			vect_result = self.utils.read_text_file(temp_file)
+			self.utils.remove_file(temp_file)
+			
+			### parse result
+			for line in vect_result:
+				sz_temp = line.strip()
+				if len(sz_temp) == 0: continue
+				if sz_temp.find('in total') != -1: result.add_key_value(
+					[MetaKeyAndValue.SAMTOOLS_flagstat_total_reads, sz_temp.split('+')[0].strip()])
+				if sz_temp.find('mapped (') != -1: result.add_key_value(
+					[MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads, sz_temp.split('+')[0].strip()])
+		return result
 	
 	def creat_new_reference_to_snippy(self, project_sample):
 		
@@ -1300,6 +1355,7 @@ class Software(object):
 							MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		return result_average.has_reads(), True
 
+
 	def get_number_sequences_in_fastq(self, fastq_file):
 		""" return number of sequences, average and std""" 
 		(number_sequences, average_length, std) = (0, 0, 0)
@@ -1426,6 +1482,7 @@ class Software(object):
 	
 			## set the flag that is ready for process
 			sample_to_update = Sample.objects.get(pk=sample.id)
+			sample_to_update.is_sample_in_the_queue = False
 			if (b_has_data):
 				sample_to_update.is_ready_for_projects = True
 				
@@ -1564,11 +1621,20 @@ class Software(object):
 			self.copy_files_to_project(project_sample, self.software_names.get_snippy_name(), out_put_path)
 			self.utils.remove_dir(out_put_path)
 	
+	
 			### make the link for the new tab file name
 			path_snippy_tab = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
 			if (os.path.exists(path_snippy_tab)):
 				sz_file_to = project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB, self.software_names.get_snippy_name())
 				self.utils.link_file(path_snippy_tab, sz_file_to)
+			
+			### get mapped stast reads
+			bam_file = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, self.software_names.get_snippy_name())
+			result = Result()
+			if os.path.exists(bam_file):
+				result = self.get_statistics_bam(bam_file)
+			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_bam_stats, 
+					MetaKeyAndValue.META_VALUE_Success, result.to_json())
 			
 			## get coverage from deep file
 			get_coverage = GetCoverage()
@@ -2144,14 +2210,17 @@ class Software(object):
 				self.utils.move_file(temp_file, consensus_fasta_file)
 			else: os.unlink(temp_file)
 
-	def align_two_sequences(self, ref_seq, consensus_seq):
+	def align_two_sequences(self, ref_seq, consensus_seq, out_dir_temp = None):
 		"""
 		:param  ref_seq: sequence with nucleotides
 		:param  consensus_seq: sequence with nucleotides
 		:out (ref_seq, consensus_seq)
 		"""
 		
-		out_dir = self.utils.get_temp_dir()
+		### set temp dir
+		if (out_dir_temp is None): out_dir = self.utils.get_temp_dir()
+		else: out_dir = out_dir_temp
+
 		temp_file_name = self.utils.get_temp_file_from_dir(out_dir, "to_align", ".fasta")
 		temp_file_name_out = self.utils.get_temp_file_from_dir(out_dir, "to_align_out", ".fasta")
 		records = []
@@ -2188,7 +2257,7 @@ class Software(object):
 			else:
 				seq_other = str(record_dict[seq].seq).upper()
 						
-		self.utils.remove_dir(out_dir)
+		if (out_dir_temp is None): self.utils.remove_dir(out_dir)
 		return seq_ref, seq_other
 
 	

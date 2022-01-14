@@ -130,6 +130,7 @@
 	    <script type="text/javascript" src="{% static 'js/remove_samples.js' %}"></script>
 
 	<script>
+	
 		$(document).ready(function() { 
 			$('#id-cancel-button').click(function() { 
 				$.unblockUI();
@@ -143,18 +144,11 @@
 		$(document).on("click", "a", function(e){
 			
 			var id_ = $(this).attr('id');
-			var attr = $(this).attr('href');
+			var href = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
-			if (attr !== '#id_set_default_modal' && attr !== '#' && onclick !== 'return false;' && id_ !== 'sidenavToggler'){
-				$.blockUI({ css: { 
-			        border: 'none', 
-			        padding: '15px', 
-			        backgroundColor: '#000', 
-			        '-webkit-border-radius': '10px', 
-			        '-moz-border-radius': '10px', 
-			        opacity: .5, 
-			        color: '#fff' 
-			    } });
+			if (href !== '#id_set_default_modal' && href !== '#' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+				!href.startsWith('/media') && !href.startsWith('http') ){
+				wait_screen();
 			}
 		});
 	</script>

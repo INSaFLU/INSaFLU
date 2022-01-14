@@ -249,7 +249,12 @@ class KeyValues(object):
 
 	def get_key_value(self):
 		return self.list_key_value
-
+	
+	def get_value_by_key(self, key):
+		for data_ in self.list_key_value:
+			if data_[0] == key: return data_[1]
+		return None
+	
 class Result(object):
 	'''
 	classdocs
@@ -314,6 +319,9 @@ class Result(object):
 	def get_key_value(self):
 		return self.key_values.get_key_value()
 
+	def get_value_by_key(self, key):
+		return self.key_values.get_value_by_key(key)
+	
 class ResultEncoder(json.JSONEncoder):
 
 	def default(self, o):
@@ -809,6 +817,7 @@ class GeneticElement(object):
 	def get_message_to_show_in_csv_file(self):
 		sz_return = ""
 		for element in self.get_sorted_elements():
+			if not element in self.dt_elements_mask: continue
 			sz_out = self.dt_elements_mask[element].get_message_to_show_in_csv_file(element)
 			if (len(sz_out) > 0):
 				if (len(sz_return) > 0): sz_return += " "

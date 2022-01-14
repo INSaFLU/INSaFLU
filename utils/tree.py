@@ -55,7 +55,7 @@ class CreateTree(object):
 		"""
 		create the tree and the alignments
 		:param sequence_name Element name to process, None if they are all
-		return: path to results, or None if some error
+		:out path to results, or None if some error
 		"""
 		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
@@ -75,6 +75,7 @@ class CreateTree(object):
 		dict_out_sample_name = {}
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue
@@ -93,19 +94,14 @@ class CreateTree(object):
 			else: limit_to_mask_consensus = -1
 			
 			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-			if (not os.path.exists(consensus_fasta)):
-				manageDatabase.set_project_metakey(project, owner, meta_key,\
-						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist - " + consensus_fasta)
-				self.utils.remove_dir(temp_dir)
-				return False
 			if (sequence_name is None):		### join all elements
 				if (self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name] = 1
 					n_files_with_sequences += 1
 			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, None,\
 					limit_to_mask_consensus, temp_dir)):
-					dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
-					n_files_with_sequences += 1
+				dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
+				n_files_with_sequences += 1
 			n_count_samples_processed += 1
 		
 		### error, there's no enough files to create tree file

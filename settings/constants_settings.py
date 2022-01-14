@@ -30,15 +30,16 @@ class ConstantsSettings(object):
 	TECHNOLOGY_illumina_old = "Illumina"
 	TECHNOLOGY_illumina = "Illumina/IonTorrent"
 	TECHNOLOGY_minion = "ONT"
-	TECHNOLOGY_generic = "Generic"
+	TECHNOLOGY_generic_old = "Generic"
+	TECHNOLOGY_generic = "Extra"
 	TECHNOLOGY_Undefined = "Undefined"
 
 	### technology names
 	vect_technology = [
+					TECHNOLOGY_generic,		## must be first to appear on first in NavTab on Settings
 					TECHNOLOGY_illumina,
 					TECHNOLOGY_minion,
 					TECHNOLOGY_Undefined,
-					TECHNOLOGY_generic,
 				]
 	
 	

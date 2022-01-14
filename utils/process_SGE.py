@@ -368,6 +368,11 @@ class ProcessSGE(object):
 			self._remove_files_create_by_fastq_and_trimmomatic(sample)
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
+			
+			### change flag to not finished
+			sample.is_ready_for_projects = False
+			sample.is_sample_in_the_queue = True
+			sample.save()
 		except:
 			raise Exception('Fail to submit the job.')
 		return sge_id
@@ -390,6 +395,11 @@ class ProcessSGE(object):
 			self._remove_files_create_by_nanofilt_and_stat(sample)
 			sge_id = self.submitte_job(path_file)
 			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_sample(sample), sge_id)
+			
+			### change flag to not finished
+			sample.is_ready_for_projects = False
+			sample.is_sample_in_the_queue = True
+			sample.save()
 		except:
 			raise Exception('Fail to submit the job.')
 		return sge_id	

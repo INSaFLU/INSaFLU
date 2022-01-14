@@ -26,6 +26,7 @@ class MetaKeyAndValue(object):
 	META_KEY_Identify_pangolin = "IdentifyPangolin"						## Tag to use in pangolin
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
+	META_KEY_bam_stats = "Bam statistics"								## Has the bam statistics, reads available, mapped
 	META_KEY_Tree_Count_All_Sequences = "Tree_Count_All_Sequences"		## has the number of samples processed to build the tree
 	META_KEY_Tree_Count_By_Element = "Tree_Count_By_Element"			## has the number of samples processed to build the tree by element
 	META_KEY_Tree_Count_Protein_By_Element = "Tree_Count_Protein By_Element"			## has the number of samples processed to build the tree by protein element
@@ -127,6 +128,11 @@ class MetaKeyAndValue(object):
 	META_VALUE_Success = "Success"
 	META_VALUE_Queue = "Queue"
 
+	## Keys for statistics samtools mapped reads
+	SAMTOOLS_flagstat_total_reads = "Total reads"
+	SAMTOOLS_flagstat_mapped_reads = "Mapped reads"
+	
+	
 	def __init__(self):
 		'''
 		Constructor

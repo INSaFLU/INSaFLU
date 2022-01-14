@@ -113,8 +113,15 @@
 {% block js %}
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/project-add.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/project/project-add.js' %}"></script>
      
+     <script>
+     	$(document).ready(function() { 
+			$('#submit-id-save').click(function() { 
+				wait_screen();
+			}); 
+     	});
+	 </script>
 {% endblock %}
 
 

@@ -277,7 +277,7 @@ class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 			
 			### create a task to perform the analysis of snippy and freebayes
 			try:
-				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
 				if (project_sample.is_sample_illumina()):
 					taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
 				else:
@@ -382,16 +382,13 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 			manageDatabase = ManageDatabase()
 			process_SGE = ProcessSGE()
 			
-			### get the user
-			user = sample.owner
-			
 			### create a task to perform the analysis of NanoFilt
 			try:
-				(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+				(job_name_wait, job_name) = sample.owner.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
 				if (sample.is_type_fastq_gz_sequencing()):
-					taskID = process_SGE.set_run_trimmomatic_species(sample, user, job_name)
+					taskID = process_SGE.set_run_trimmomatic_species(sample, sample.owner, job_name)
 				else:
-					taskID = process_SGE.set_run_clean_minion(sample, user, job_name)
+					taskID = process_SGE.set_run_clean_minion(sample, sample.owner, job_name)
 					
 				### set sample queue ID
 				manageDatabase.set_sample_metakey(sample, sample.owner, MetaKeyAndValue.META_KEY_Queue_TaskID,
@@ -401,6 +398,10 @@ class UpdateParametersSampleView(LoginRequiredMixin, UpdateView):
 				sample.save()
 				pass
 
+			## refresh sample list for this user
+			if not job_name is None:
+				process_SGE.set_create_sample_list_by_user(sample.owner, [job_name])
+			
 			messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
 					software.name + "' parameters were successfully updated " +\
 					"for sample '" + sample.name + "'.", fail_silently=True)

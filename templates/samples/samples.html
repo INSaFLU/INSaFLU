@@ -34,10 +34,29 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="9">
-	                    	<a href="{% url "sample-add" %}" data-title="Add one sample and metadata at a time" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample metadata</span></a>
-	                    	<a href="{% url "sample-add-file" %}" data-title="Add metadata for multiple samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Samples from csv/tsv file</span></a>
-	                    	<a href="{% url "sample-add-fastq" %}" data-title="Upload fastq files to match with uploaded samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Fastq Files</span></a>
-	                    	<a href="{% url "sample-update-metadata" %}" data-title="Upload metadata to update on samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Update metadata</span></a>
+							<div class="btn-group">
+								<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    								Add Samples
+  								</button>
+  								<div class="dropdown-menu">
+    								<a href="{% url 'sample-add' %}" data-title="Add one sample and metadata at a time" class="dropdown-item"><span class="hidden-phone"> Add Sample metadata</span></a>
+    								<div class="dropdown-divider"></div>
+	                    			<a href="{% url 'sample-add-file' %}" data-title="Add metadata for multiple samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Add Samples from csv/tsv file</span></a>
+	                    			<a href="{% url 'sample-add-fastq' %}" data-title="Upload fastq files to match with uploaded samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Add Fastq Files</span></a>
+	                    			<a href="{% url 'sample-update-metadata' %}" data-title="Upload metadata to update on samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Update metadata</span></a>
+								</div>
+							</div>
+							{% if list_samples_file_csv or list_samples_file_tsv %}
+								<div class="btn-group">
+									<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	    								Download
+	  								</button>
+	  								<div class="dropdown-menu">
+	  									{% if list_samples_file_csv %} {{ list_samples_file_csv }} {% endif %}
+	    								{% if list_samples_file_tsv %} {{ list_samples_file_tsv }} {% endif %}
+									</div>
+								</div>
+							{% endif %}
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>

@@ -115,7 +115,11 @@ class Test(TestCase):
 			if (n_count == 100):
 				self.fail('Wait to much time until end of the SGE process')
 
-		self.assertFalse(os.path.exists(temp_file))
+		self.assertTrue(os.path.exists(temp_file))
+		vact_data = self.utils.read_text_file(temp_file)
+		self.assertEqual(5, len(vact_data))
+		self.assertTrue(vact_data[-1].startswith("end"))
+		os.unlink(temp_file)
 
 
 	def test_submitte_job_2(self):
@@ -158,8 +162,8 @@ class Test(TestCase):
 		get the status of the number of runs
 		"""
 		data = {}
-		data['process_running'] = ProcessControler.objects.filter(owner__id=user.pk, is_finished=False, is_error=False, is_running=True).count()
-		data['process_to_run'] = ProcessControler.objects.filter(owner__id=user.pk, is_finished=False, is_error=False, is_running=False).count()
+		data['process_running'] = ProcessControler.objects.filter(owner=user, is_finished=False, is_error=False, is_running=True).count()
+		data['process_to_run'] = ProcessControler.objects.filter(owner=user, is_finished=False, is_error=False, is_running=False).count()
 		data['process_to_run_total'] = ProcessControler.objects.filter(is_finished=False, is_error=False).count()
 		return data
 
@@ -293,6 +297,8 @@ class Test(TestCase):
 		self.assertEqual(0, dt_running['process_to_run_total'])
 		self.assertTrue(settings.RUN_TEST_IN_COMMAND_LINE)
 		
+		print(settings.DATABASES['default'])
+		print(list(Project.objects.all()))
 		vect_command = ['python3 {} collect_global_files --project_id {} --user_id {} --settings fluwebvirus.settings_test'.format(\
 			os.path.join(settings.BASE_DIR, 'manage.py'), project.pk, user.pk)]
 		path_file = process_SGE.set_script_run_sge(out_dir, Constants.QUEUE_SGE_NAME_GLOBAL, vect_command, "job_name")

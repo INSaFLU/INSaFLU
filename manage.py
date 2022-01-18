@@ -3,7 +3,9 @@ import os
 import sys
 
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fluwebvirus.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE",
+        "fluwebvirus.settings_test" if 'test' in sys.argv else
+        "fluwebvirus.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError:

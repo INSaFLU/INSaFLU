@@ -9,9 +9,21 @@ class Profile(models.Model):
 	"""
 	has the name of the institution of the account
 	"""
-	SGE_GLOBAL = "g"
+	### three types of numbering
+	SGE_GLOBAL = "g"	## runs on projects
+	SGE_SAMPLE = "s"	## runs on samples
 	SGE_LINK = "l"
 	SGE_REGULAR = "r"
+	
+	### Type of process, it is possible to track the process by this name
+	SGE_PROCESS_dont_care = "d";
+	SGE_PROCESS_clean_sample = "c";	## set_run_trimmomatic_species; set_run_clean_minion
+	SGE_PROCESS_collect_all_samples = "sl";		## set_create_sample_list_by_user
+	SGE_PROCESS_collect_all_projects = "pl";	## set_create_project_list_by_user
+	## related with projects...
+	SGE_PROCESS_projects = "ps";	## set_second_stage_snippy; set_second_stage_medaka;
+			## collect_global_files
+	SGE_PROCESS_link_files = "l";	## set_link_files
 	
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	institution = models.TextField(max_length=100, blank=True)
@@ -29,13 +41,18 @@ class Profile(models.Model):
 	max_file_size_fastq = models.IntegerField(default=50000000)
 	max_length_reference_fasta = models.IntegerField(default=20000)
 	max_sequence_reference = models.IntegerField(default=20)
-	sge_seq_id_g = models.IntegerField(default=1)	### global
+	sge_seq_id_g = models.IntegerField(default=1)	### projects
+	sge_seq_id_s = models.IntegerField(default=1)	### samples
 	sge_seq_id_l = models.IntegerField(default=1)	### link
 	sge_seq_id_r = models.IntegerField(default=1)	### regular
 	
 	def add_sge_seq_id(self, key_):
 		if (key_ == self.SGE_GLOBAL):
 			self.sge_seq_id_g += 1
+			self.save()
+			return self.sge_seq_id_g
+		elif (key_ == self.SGE_SAMPLE):
+			self.sge_seq_id_s += 1
 			self.save()
 			return self.sge_seq_id_g
 		elif (key_ == self.SGE_LINK):
@@ -46,14 +63,22 @@ class Profile(models.Model):
 		self.sge_seq_id_r += 1
 		self.save()
 		return self.sge_seq_id_r
-		
-	def get_name_sge_seq(self, key_ = "name"):
+	
+	def get_prefix_name(self, type_of_process, key_):
+		"""
+		Key Name: job_<Type of process>_<user id>_<Type of job>
+		Example: job_d_2_l -> job_<SGE_PROCESS_dont_care>_2030_<SGE_LINK>
+		return prefix name """
+		return "job_{}_{}_{}".format(type_of_process, self.user.pk, key_)
+
+	def get_name_sge_seq(self, type_of_process = SGE_PROCESS_dont_care, key_ = "name"):
 		"""
 		job_name = "job_name_<user_id>_<seq_id>"
 		return, (current name, next name)
 		"""
 		progression_number = self.add_sge_seq_id(key_)
-		return ("job_{}_{}_{}".format(key_, self.user.pk, progression_number - 1), "job_{}_{}_{}".format(key_, self.user.pk, progression_number))
+		return ("{}_{}".format(self.get_prefix_name(type_of_process, key_), progression_number - 1), 
+			"{}_{}".format(self.get_prefix_name(type_of_process, key_), progression_number))
 
 
 @receiver(post_save, sender=User)

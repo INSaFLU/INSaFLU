@@ -839,6 +839,9 @@ def remove_sample(request):
 						upload_file.save()
 						break
 
+			## refresh sample list for this user
+			process_SGE = ProcessSGE()
+			process_SGE.set_create_sample_list_by_user(sample.owner, [])
 			data = { 'is_ok' : True }
 		return JsonResponse(data)
 
@@ -885,8 +888,11 @@ def remove_project(request):
 				project_sample.date_deleted = datetime.now()
 				project_sample.save()
 			
+			## refresh sample and project list for this user
+			process_SGE = ProcessSGE()
+			process_SGE.set_create_sample_list_by_user(request.user, [])
+			process_SGE.set_create_project_list_by_user(request.user)
 			data = { 'is_ok' : True }
-		
 		return JsonResponse(data)
 
 @transaction.atomic
@@ -933,6 +939,10 @@ def remove_project_sample(request):
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id),
 							MetaKeyAndValue.META_VALUE_Queue, taskID)
+				
+				## refresh sample list for this user
+				## project list is updated in collect global files
+				process_SGE.set_create_sample_list_by_user(request.user, [])
 				data = { 'is_ok' : True }
 			except:
 				data = { 'is_ok' : False }

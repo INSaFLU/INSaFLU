@@ -895,9 +895,11 @@ class Project(models.Model):
 		
 	def __get_user_result_global_directory_path__(self, element):
 		# file will be uploaded to MEDIA_ROOT/<filename>
-		if (not element is None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
-				format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
-		return 'projects/result/user_{0}/project_{1}/{2}'.format(self.owner.id, self.pk, self.PATH_MAIN_RESULT)
+		if (not element is None and len(element) > 0): return Constants.DIR_PROCESSED_FILES_PROJECT + \
+			'/user_{0}/project_{1}/{2}/{3}'.\
+			format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
+		return Constants.DIR_PROCESSED_FILES_PROJECT + '/user_{0}/project_{1}/{2}'.format(
+			self.owner.id, self.pk, self.PATH_MAIN_RESULT)
 	
 	def __get_global_path__(self, type_path, element):
 		"""
@@ -1255,6 +1257,8 @@ class ProcessControler(models.Model):
 	PREFIX_PROJECT = "project_"
 	PREFIX_UPLOAD_FILES = "upload_files_"
 	PREFIX_LINK_FILES_USER = "link_files_user_"
+	PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
+	PREFIX_COLLECT_ALL_PROJECTS_USER = "collect_all_projects_user_"
 	
 	### flags of status
 	FLAG_FINISHED = 'flag_finished'
@@ -1285,6 +1289,10 @@ class ProcessControler(models.Model):
 		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
 	def get_name_link_files_user(self, user):
 		return "{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk)
+	def get_name_collect_all_samples_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_SAMPLES_USER, user.pk)
+	def get_name_collect_all_projects_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
 	def __str__(self):
 		return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(self.pk, self.name, self.is_finished, self.is_running, self.is_error)

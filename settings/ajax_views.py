@@ -98,7 +98,7 @@ def set_default_parameters(request):
 			
 							### create a task to perform the analysis of snippy and freebayes
 							try:
-								(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+								(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL)
 								if (project_sample.is_sample_illumina()):
 									taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
 								else:
@@ -147,7 +147,7 @@ def set_default_parameters(request):
 						
 						### create a task to perform the analysis of NanoFilt
 						try:
-							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
 							if (sample.is_type_fastq_gz_sequencing()):
 								taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
 							else:
@@ -161,7 +161,10 @@ def set_default_parameters(request):
 							sample.save()
 							data['message'] = "Error in the queue system."
 							return JsonResponse(data)
-					
+						
+						## refresh sample list for this user
+						if not job_name is None:
+							process_SGE.set_create_sample_list_by_user(request.user, [job_name])
 				else:
 					default_software = DefaultSoftware()
 					default_software.set_default_software(software)
@@ -478,7 +481,7 @@ def turn_on_off_software(request):
 					
 					### create a task to perform the analysis again
 					try:
-						(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+						(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
 						if (sample.is_type_fastq_gz_sequencing()):
 							taskID = process_SGE.set_run_trimmomatic_species(sample, request.user, job_name)
 						else:
@@ -492,6 +495,11 @@ def turn_on_off_software(request):
 						sample.save()
 						data['message'] = "Error in the queue system."
 						return JsonResponse(data)
+					
+					## refresh sample list for this user
+					if not job_name is None:
+						process_SGE.set_create_sample_list_by_user(request.user, [job_name])
+			
 				is_to_run = default_parameters.set_software_to_run_by_software(software,
 						project, project_sample, sample)
 				

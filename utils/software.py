@@ -1267,7 +1267,7 @@ class Software(object):
 		if (sample.exist_file_2()): (number_2, average_2, std_2) = self.get_number_sequences_in_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, False))
 		else: (number_2, average_2, std_2) = (None, None, None)
 
-		### create key/values for stat in Illumina
+		### create key/values for stat in Illumina, before trimmomatic
 		result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_ILLUMINA_stat, "", "",
 					self.get_key_values_stats_illumina(number_1, average_1, std1,
 									number_2, average_2, std_2)))
@@ -1343,7 +1343,7 @@ class Software(object):
 		result_average = ResultAverageAndNumberReads(number_1, average_1, number_2, average_2)
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
 
-		### create key/values for stat in Illumina
+		### create key/values for stat in Illumina, after trimmomatic
 		result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_ILLUMINA_stat, "", "",
 					self.get_key_values_stats_illumina(number_1, average_1, std1, number_2, average_2, std2)))
 											

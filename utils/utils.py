@@ -3,6 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
+import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
@@ -23,7 +24,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from pysam import pysam
 from django.conf import settings
 from statistics import mean
@@ -57,19 +57,21 @@ class Utils(object):
 		"""
 		return os.path.join(Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id), "sampleId_{0}".format(sample_id))
 
-	def get_sample_list_by_user(self, user_id, extension):
+	def get_sample_list_by_user(self, user_id, type_path, extension):
 		"""
 		get the path to sample
 		"""
-		return os.path.join(getattr(settings, "MEDIA_ROOT", None),
+		return os.path.join(getattr(settings, type_path, None),
 					Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id),
 					Constants.SAMPLE_LIST_all_samples + extension)
-	
-	def get_path_to_projec_file(self, user_id, project_id):
+		
+	def get_project_list_by_user(self, user_id, type_path, extension):
 		"""
-		get the path to project
+		get the path to sample
 		"""
-		return os.path.join(Constants.DIR_PROCESSED_FILES_PROJECT, "userId_{0}".format(user_id), "projectId_{0}".format(project_id))
+		return os.path.join(getattr(settings, type_path, None),
+					Constants.DIR_PROCESSED_FILES_PROJECT, "user_{0}".format(user_id),
+					Constants.PROJECTS_LIST_all_samples + extension)
 	
 	def get_path_upload_file(self, user_id, type_file):
 		"""
@@ -139,7 +141,8 @@ class Utils(object):
 		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		self.touch_file(main_path)		## up to date main path to not be removed by file system
 		while 1:
-			return_path = os.path.join(main_path, "insa_flu_path_" + str(random.randrange(10000000, 99999999, 10)))
+			return_path = os.path.join(main_path, "influ_path_{}_{}".format(
+				str(os.getpid()), str(random.randrange(10000000, 99999999, 10))) )
 			if (not os.path.exists(return_path)):
 				os.makedirs(return_path, exist_ok=True)
 				return return_path

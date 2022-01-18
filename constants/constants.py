@@ -56,7 +56,7 @@ class Constants(object):
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
-	DIR_PROCESSED_FILES_PROJECT = DIR_PROCESSED_FILES_UPLOADS + "/project"
+	DIR_PROCESSED_FILES_PROJECT = "projects/result"
 	DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
 
 	DIR_ICONS = "icons"
@@ -74,7 +74,8 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_METADATA_data_csv = "template_input_metadata_data.csv"
 	FILE_TEMPLATE_INPUT_METADATA_data_tsv = "template_input_metadata_data.tsv"
 	
-	SAMPLE_LIST_all_samples = "AllSamples"		### has all sample list by user, file extension is added after
+	SAMPLE_LIST_all_samples = "AllSamples"			### has all sample list by user, file extension is added after
+	PROJECTS_LIST_all_samples = "AllProjects"		### has all projects list by user, file extension is added after
 
 	FORMAT_FASTA = "fasta"
 	## https://support.illumina.com/bulletins/2020/04/maximum-read-length-for-illumina-sequencing-platforms.html

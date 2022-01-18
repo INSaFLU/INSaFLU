@@ -218,6 +218,7 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 
 class SamplesView(LoginRequiredMixin, ListView):
 	model = Sample
+	utils = Utils()
 	template_name = 'samples/samples.html'
 	context_object_name = 'samples'
 		
@@ -249,6 +250,21 @@ class SamplesView(LoginRequiredMixin, ListView):
 		table = SampleTable(query_set)
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (not tag_search is None): context[search_key] = tag_search
+
+		## list of all samples in CSV and TSV
+		csv_file = self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		if os.path.exists(csv_file):
+			context['list_samples_file_csv'] = mark_safe('<a rel="nofollow" href="' + \
+				self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV) +\
+				'" download="' + os.path.basename(csv_file) + '" class="dropdown-item"> Download - ' +\
+				os.path.basename(csv_file) + '</a>')
+		tsv_file = self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		if os.path.exists(tsv_file):
+			context['list_samples_file_tsv'] = mark_safe('<a rel="nofollow" href="' + \
+							self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV) +\
+							'" download="' + os.path.basename(tsv_file) + '" class="dropdown-item"> Download - ' +\
+							os.path.basename(tsv_file) + '</a>')
+
 		context['table'] = table
 		context['nav_sample'] = True
 		context['total_itens'] = query_set.count()
@@ -357,14 +373,19 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 		### create a task to perform the analysis of fastq and trimmomatic
 		try:
 			process_SGE = ProcessSGE()
+			(job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
 			if sample.is_type_fastq_gz_sequencing():	### default is Illumina
-				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user)
+				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user, job_name)
 			else:										### Minion, codify with other
-				taskID = process_SGE.set_run_clean_minion(sample, self.request.user)
+				taskID = process_SGE.set_run_clean_minion(sample, self.request.user, job_name)
 		except Exception as e:
 			self.logger_production.error('Fail to run: ProcessSGE - ' + str(e))
 			self.logger_debug.error('Fail to run: ProcessSGE - ' + str(e))
 			return super(SamplesAddView, self).form_invalid(form)
+		
+		## refresh sample list for this user
+		if not job_name is None:
+			process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
 		### 
 		manageDatabase = ManageDatabase()
 		manageDatabase.set_sample_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
@@ -1121,6 +1142,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
 
 class ProjectsView(LoginRequiredMixin, ListView):
+	utils = Utils()
 	model = Project
 	template_name = 'project/projects.html'
 	context_object_name = 'projects'
@@ -1151,6 +1173,22 @@ class ProjectsView(LoginRequiredMixin, ListView):
 		context['nav_project'] = True
 		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
 		context['query_set_count'] = query_set.count()
+		
+		## project list
+		## list of all samples in CSV and TSV
+		csv_file = self.utils.get_project_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		if os.path.exists(csv_file):
+			context['list_project_file_csv'] = mark_safe('<a rel="nofollow" href="' + \
+				self.utils.get_project_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV) +\
+				'" download="' + os.path.basename(csv_file) + '" class="dropdown-item"> Download - ' +\
+				os.path.basename(csv_file) + '</a>')
+		tsv_file = self.utils.get_project_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		if os.path.exists(tsv_file):
+			context['list_project_file_tsv'] = mark_safe('<a rel="nofollow" href="' + \
+							self.utils.get_project_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV) +\
+							'" download="' + os.path.basename(tsv_file) + '" class="dropdown-item"> Download - ' +\
+							os.path.basename(tsv_file) + '</a>')
+			
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
@@ -1298,6 +1336,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
 		default_software = DefaultProjectSoftware()
 		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
 		
+		process_SGE = ProcessSGE()
+		process_SGE.set_create_project_list_by_user(self.request.user)
+			
 		messages.success(self.request, "Project '" + name + "' was created successfully", fail_silently=True)
 		return super(ProjectCreateView, self).form_valid(form)
 	form_valid_message = ""		## need to have this, even empty
@@ -1469,11 +1510,12 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				### create a task to perform the analysis of snippy and freebayes
 				### Important, it is necessary to run again because can have some changes in the parameters.
 				try:
-					if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
+					if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
+						Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
 					if (sample.is_type_fastq_gz_sequencing()):
-						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, job_name_wait)
+						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, [job_name_wait])
 					else:
-						taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, job_name_wait)
+						taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, [job_name_wait])
 						
 					### set project sample queue ID
 					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\

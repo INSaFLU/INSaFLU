@@ -4,6 +4,7 @@ Created on Nov 27, 2017
 @author: mmp
 '''
 import unittest, os, filecmp
+from datetime import datetime
 from django.conf import settings 
 from utils.utils import Utils
 from constants.constantsTestsCase import ConstantsTestsCase
@@ -487,6 +488,8 @@ class Test(unittest.TestCase):
 			project.name = project_name
 			project.reference = reference
 			project.owner = user
+			project.creation_date = datetime(2002, 12, 4, 20, 30, 40)
+			project.last_change_date = datetime(2002, 12, 14, 20, 30, 40)
 			project.save()
 		
 		## get all fastq files
@@ -663,17 +666,33 @@ class Test(unittest.TestCase):
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
+		#################################3
 		## test collect samples
 		collect_extra_data.collect_sample_list(user, True)
-		csv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_CSV))
+		csv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
 		self.assertTrue(os.path.exists(csv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.csv")
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
 		
-		tsv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_TSV))
+		tsv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
 		self.assertTrue(os.path.exists(tsv_file))
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.tsv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(tsv_file, expected_file_samples))
+		
+		#########################################
+		## test collect projects
+		collect_extra_data.collect_project_list(user, True)
+		csv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		self.assertTrue(os.path.exists(csv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.csv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
+		
+		tsv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		self.assertTrue(os.path.exists(tsv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.tsv")
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(tsv_file, expected_file_samples))
 		
@@ -742,6 +761,8 @@ class Test(unittest.TestCase):
 			project.name = project_name
 			project.reference = reference
 			project.owner = user
+			project.creation_date = datetime(2002, 12, 4, 20, 30, 40)
+			project.last_change_date = datetime(2002, 12, 14, 20, 30, 40)
 			project.save()
 		
 		## get all fastq files

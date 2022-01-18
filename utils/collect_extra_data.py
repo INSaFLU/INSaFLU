@@ -31,7 +31,7 @@ class CollectExtraData(object):
 	'''
 
 	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
-	HEADER_SAMPLE_OUT_CSV_for_sample = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype"
+	HEADER_SAMPLE_OUT_CSV_for_sample = "sample,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype"
 	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
 
 	utils = Utils()
@@ -255,6 +255,12 @@ class CollectExtraData(object):
 				manage_database.set_project_metakey(project, user, metaKeyAndValue.get_meta_key(\
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
 						MetaKeyAndValue.META_VALUE_Success, meta_project.description)
+				
+			### collect all project data for the user, and set for the user
+			self.collect_project_list(user)
+			
+			### Refresh sample list, something can would change
+			self.collect_sample_list(user)
 		except:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
@@ -1144,6 +1150,8 @@ class CollectExtraData(object):
 								b_nanostat_sats = True
 							
 						for software_name in result.get_all_software_names():
+							## don't put his information
+							if (software_name == SoftwareNames.SOFTWARE_ILLUMINA_stat): continue
 							if not software_name in vect_tags_out_sample: vect_tags_out_sample.append(software_name)
 				
 			## add everything to all	
@@ -1158,12 +1166,12 @@ class CollectExtraData(object):
 							is_ready_for_projects=True, is_obsolete=False).order_by('-creation_date')
 			
 		out_file = self._collect_sample_list(lst_samples, Constants.SEPARATOR_COMMA, b_test)
-		csv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_CSV))
+		csv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
 		if out_file is None: self.utils.remove_file(csv_file)
 		else: self.utils.move_file(out_file, csv_file)
 		
 		out_file = self._collect_sample_list(lst_samples, Constants.SEPARATOR_TAB, b_test)
-		tsv_file = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_sample_list_by_user(user.id, FileExtensions.FILE_TSV))
+		tsv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
 		if out_file is None: self.utils.remove_file(tsv_file)
 		else: self.utils.move_file(out_file, tsv_file)
 		
@@ -1296,14 +1304,17 @@ class CollectExtraData(object):
 				
 				## creation date
 				if b_test: vect_out.append("Date")
-				else: vect_out.append(sample.creation_date.strftime("%d %m %Y %H:%M"))
+				else: vect_out.append(sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE))
 				
 				## info about projects
-				vect_out.append("{}".format(ProjectSample.objects.filter(sample=sample, is_deleted=False, project__is_deleted=False).count()))
+				vect_out.append("{}".format(ProjectSample.objects.filter(sample=sample, 
+						is_deleted=False, is_error=False,
+						sample__is_deleted=False, project__is_deleted=False).count()))
 				
 				## get project names
 				sz_out = ""
-				for project in Project.objects.filter(is_deleted=False, project_samples__sample=sample).distinct():
+				for project in Project.objects.filter(is_deleted=False, project_samples__sample=sample,
+												project_samples__is_deleted=False).distinct():
 					if len(sz_out) == 0: sz_out += project.name 
 					else: sz_out += ";{}".format(project.name)
 				vect_out.append(sz_out)
@@ -1311,12 +1322,79 @@ class CollectExtraData(object):
 				### END save global parameters
 				csv_writer.writerow(vect_out)
 				n_count += 1
-		
+			
+			## Total	
+			vect_out = ["Total Samples", "{}".format(n_count)]
+			csv_writer.writerow(vect_out)
+			
 		## remove file if None	
 		if (n_count == 0):
 			os.unlink(out_file)
 			return None
+		return out_file
+
+
+	def collect_project_list(self, user, b_test = False):
+		""" write both files with list of all projects for a user """
 		
+		## get all samples at one step
+		lst_projects = Project.objects.filter(owner=user, is_deleted=False).order_by('-creation_date')
+			
+		out_file = self._collect_project_list(lst_projects, Constants.SEPARATOR_COMMA, b_test)
+		csv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		if out_file is None: self.utils.remove_file(csv_file)
+		else: self.utils.move_file(out_file, csv_file)
+		
+		out_file = self._collect_project_list(lst_projects, Constants.SEPARATOR_TAB, b_test)
+		tsv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		if out_file is None: self.utils.remove_file(tsv_file)
+		else: self.utils.move_file(out_file, tsv_file)
+
+	def _collect_project_list(self, lst_projects, column_separator, b_test = False):
+		"""
+		Create a file with all samples owned by user
+		“Project_list.csv e Project_list.tsv” com lista de projectos, 
+			lista e número de de amostras por projecto, 
+			referência usada em cada projecto,
+			Last Change Date,
+			Creation Date
+		:user user 
+		:output file name
+		"""
+		out_file = self.utils.get_temp_file('project_list_out', FileExtensions.FILE_CSV if\
+					column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
+		
+		vect_out = ['Name', '#samples', 'Reference', 'Last access', 'Created']
+		with open(out_file, 'w', newline='') as handle_out:
+			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
+						quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
+			### write first line of header
+			csv_writer.writerow(vect_out)
+				
+			n_count = 0
+			for project in lst_projects:
+				vect_out = [project.name]
+				vect_out.append(str(ProjectSample.objects.filter(project=project, is_deleted=False,
+									 is_error=False).count()))
+				vect_out.append(project.reference.name)
+				vect_out.append("" if project.last_change_date is None else \
+							project.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE) )
+				if not b_test:
+					vect_out.append("" if project.creation_date is None else \
+							project.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE) )
+				
+				### END save global parameters
+				csv_writer.writerow(vect_out)
+				n_count += 1
+				
+			## Total	
+			vect_out = ["Total Projects", "{}".format(n_count)]
+			csv_writer.writerow(vect_out)
+			
+		## remove file if None	
+		if (n_count == 0):
+			os.unlink(out_file)
+			return None
 		return out_file
 
 

@@ -1,6 +1,7 @@
 # Create your views here.
 
 import ntpath, os, logging, sys
+from datetime import datetime
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.urls import reverse_lazy
@@ -41,6 +42,7 @@ from django.template.defaultfilters import pluralize
 from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings
 from settings.models import Software as SoftwareSettings
+from utils.support_django_template import get_link_for_dropdown_item
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -254,16 +256,12 @@ class SamplesView(LoginRequiredMixin, ListView):
 		## list of all samples in CSV and TSV
 		csv_file = self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
 		if os.path.exists(csv_file):
-			context['list_samples_file_csv'] = mark_safe('<a rel="nofollow" href="' + \
-				self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV) +\
-				'" download="' + os.path.basename(csv_file) + '" class="dropdown-item"> Download - ' +\
-				os.path.basename(csv_file) + '</a>')
+			context['list_samples_file_csv'] = get_link_for_dropdown_item(
+				self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_CSV))
 		tsv_file = self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
 		if os.path.exists(tsv_file):
-			context['list_samples_file_tsv'] = mark_safe('<a rel="nofollow" href="' + \
-							self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV) +\
-							'" download="' + os.path.basename(tsv_file) + '" class="dropdown-item"> Download - ' +\
-							os.path.basename(tsv_file) + '</a>')
+			context['list_samples_file_tsv'] = get_link_for_dropdown_item(
+				self.utils.get_sample_list_by_user(self.request.user.id, "MEDIA_URL", FileExtensions.FILE_TSV))
 
 		context['table'] = table
 		context['nav_sample'] = True
@@ -1020,7 +1018,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					context['href_trimmonatic_quality_2'] = "Not available"
 				
 				#### data from illumina stat
-				stat_data = self.software.get_stats_from_sample_reads(sample)
+				stat_data, total_reads = self.software.get_stats_from_sample_reads(sample)
 				if not stat_data is None: context['data_illuminastat'] = stat_data
 				
 			else:	### other like Minion
@@ -1036,7 +1034,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				else: context['href_trimmonatic_quality_1'] = "Not available"
 			
 				#### data from nanoStat
-				stat_data = self.software.get_stats_from_sample_reads(sample)
+				stat_data, total_reads = self.software.get_stats_from_sample_reads(sample)
 				if not stat_data is None: context['data_nanostat'] = stat_data
 
 			### software
@@ -1598,9 +1596,43 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		## Files
 		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
 		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		context['sample_file_result_csv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)
-		context['sample_file_result_tsv'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)
-		context['sample_file_all_consensus'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
+		
+		## coverage
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)):
+			context['samples_file_coverage'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_COVERAGE))
+		## variants
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)):
+			context['samples_file_variants'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY))
+		## minor intra host
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
+			context['samples_file_minor_intra_host'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
+		## all files zipped
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped)):
+			context['download_all_files'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
+				"{}_{}_{}".format(os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
+				project.get_clean_project_name(), datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
+		
+		
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
+			context['sample_file_result_csv'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)):
+			context['sample_file_result_tsv'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV)):
+			context['samples_file_settings_statistics_csv'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV)):
+			context['samples_file_settings_statistics_tsv'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV))
+		
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)):
+			context['sample_file_all_consensus'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
 		
 		### need to test because in the past this file was not created
 		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
@@ -1633,21 +1665,17 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
 			context['update_pangolin'] = True
 			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
-			
+
+		## pangolin file			
 		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
-			context['pangolin_lineage'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_Pangolin_lineage)
+			context['pangolin_lineage'] = get_link_for_dropdown_item(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage))
 		
 		#### nextclade link
-#		if (is_sars_cov_2 and \
-#				os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
-#				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
 		if (os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
 				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
-			context['nextclade_link'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK,
-				settings.WEB_SITE_HTTP_NAME,
-				get_current_site(self.request),
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
+			context = _get_constext_nextclade(
+					project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus),
+					context, get_current_site(self.request), is_sars_cov_2)
 			
 		return context
 
@@ -1959,22 +1987,48 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['software_used'] = software_used	
 
 			#### nextclade link
-#			software_pangolin = SoftwarePangolin()
-#			if (software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT)) and \
-#					os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
-#					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+			software_pangolin = SoftwarePangolin()
+			is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 			if (os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
 					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
-				context['nextclade_link'] = "{}{}://{}{}".format(
-					Constants.NEXTCLADE_LINK,
-					settings.WEB_SITE_HTTP_NAME,
-					get_current_site(self.request),
-					project_sample.get_consensus_file(TypePath.MEDIA_URL))
+				context = _get_constext_nextclade(project_sample.get_consensus_file(TypePath.MEDIA_URL),
+						context, get_current_site(self.request), is_sars_cov_2)
 			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context
 
+def _get_constext_nextclade(media_url_path, context, current_site, is_sars_cov_2):
+	
+	## sarscov 2
+	if (is_sars_cov_2):
+		context['nextclade_link_covid'] = "{}{}://{}{}".format(
+			Constants.NEXTCLADE_LINK_sars_cov_2,
+			settings.WEB_SITE_HTTP_NAME,
+			current_site,
+			media_url_path)
+	else:
+		context['nextclade_link_a_h3n2'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H3N2,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+		context['nextclade_link_a_h1n1'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_A_H1N1,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+		context['nextclade_link_b_yamagata'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_B_Yamagata,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+		context['nextclade_link_b_victoria'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_B_Victoria,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+	return context
 
 def is_all_check_box_in_session(vect_check_to_test, request):
 	"""

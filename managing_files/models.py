@@ -788,6 +788,8 @@ class Project(models.Model):
 	PERCENTAGE_validated_minor_variants = 51		## only pass <= 50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV = "Sample_list_settings.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV = "Sample_list_settings.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv" 	### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
 																			### this file is only used for to show the manging_files.views.ShowSampleProjectsView
 	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
@@ -795,6 +797,8 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = "mask_all_consensus" 		### masking all consensus, defined by user
 	
 	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
+	
+	PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"					### Several files zipped
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
@@ -876,6 +880,9 @@ class Project(models.Model):
 		for key in dict_to_clean:
 			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
 		return name_to_clean
+	
+	def get_clean_project_name(self):
+		return self._clean_name(self.name)
 	
 	def get_global_file_by_project(self, type_path, file_name):
 		"""

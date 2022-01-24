@@ -407,9 +407,10 @@ class Test(TestCase):
 		self.assertEqual('139.1', result_average.average_file_2)
 		
 		### get key values of data
-		stats_illumina = self.software.get_stats_from_sample_reads(sample)
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
 		self.assertEqual('Number of reads R1', stats_illumina[0][0])
 		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual(82508, total_reads)
 		self.assertEqual('41,254', stats_illumina[0][2])
 		self.assertEqual('-3,171.0', stats_illumina[0][3])
 		self.assertEqual('92.9', stats_illumina[0][4])
@@ -418,7 +419,7 @@ class Test(TestCase):
 		self.assertEqual('142.0', stats_illumina[1][2])
 		self.assertEqual('-1.6', stats_illumina[1][3])
 		self.assertEqual('--', stats_illumina[1][4])
-		self.assertEqual('Total bases', stats_illumina[-1][0])
+		self.assertEqual('Total reads', stats_illumina[-1][0])
 		self.assertEqual('88,850', stats_illumina[-1][1])
 		self.assertEqual('82,508', stats_illumina[-1][2])
 		self.assertEqual('-6,342.0', stats_illumina[-1][3])
@@ -517,9 +518,10 @@ class Test(TestCase):
 		self.assertEqual('143.6', result_average.average_file_2)
 
 		### get key values of data
-		stats_illumina = self.software.get_stats_from_sample_reads(sample)
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
 		self.assertEqual('Number of reads R1', stats_illumina[0][0])
 		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual(88850, total_reads)
 		self.assertEqual('--', stats_illumina[0][2])
 		self.assertEqual('0.0', stats_illumina[0][3])
 		self.assertEqual('100', stats_illumina[0][4])
@@ -528,7 +530,7 @@ class Test(TestCase):
 		self.assertEqual('--', stats_illumina[1][2])
 		self.assertEqual('0.0', stats_illumina[1][3])
 		self.assertEqual('--', stats_illumina[1][4])
-		self.assertEqual('Total bases', stats_illumina[-1][0])
+		self.assertEqual('Total reads', stats_illumina[-1][0])
 		self.assertEqual('88,850', stats_illumina[-1][1])
 		self.assertEqual('--', stats_illumina[-1][2])
 		self.assertEqual('0.0', stats_illumina[-1][3])

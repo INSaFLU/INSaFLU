@@ -30,10 +30,17 @@ class CollectExtraData(object):
 	classdocs
 	'''
 
-	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
-	HEADER_SAMPLE_OUT_CSV_for_sample = "sample,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype"
-	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV_statistics = "id,fastq1,fastq2,sample date created"
+	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	## this is used for global sample list. It has all samples per user
+	HEADER_SAMPLE_OUT_CSV_for_sample = "sample,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification"
 
+	## Type of sample list
+	SAMPLE_LIST_simple = 0			## used in the tree
+	SAMPLE_LIST_list = 1			## list of samples with metadata
+	SAMPLE_LIST_list_settings = 2	## list of samples with settings
+	
 	utils = Utils()
 	software = Software()
 	logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -153,6 +160,7 @@ class CollectExtraData(object):
 	def __collect_update_extra_metadata_for_project(self, project, user):
 		"""
 		Only for update metadata
+		It is not necessary 
 		"""
 		### get the taskID and seal it
 		process_controler = ProcessControler()
@@ -167,6 +175,9 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
+			
+			### zip several files to download 
+			self.zip_several_files(project)
 		except:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
@@ -237,8 +248,10 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels, project, user)
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
 		
@@ -261,6 +274,9 @@ class CollectExtraData(object):
 			
 			### Refresh sample list, something can would change
 			self.collect_sample_list(user)
+			
+			### zip several files to download 
+			self.zip_several_files(project)
 		except:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
@@ -382,18 +398,27 @@ class CollectExtraData(object):
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV):
 			## samples csv
-			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA)
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV):
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list_settings)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 			
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple):
 			## samples csv, simple version
-			b_simple = True		## doesn't have software information and fastq1, fastq2
-			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA, b_simple)
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_simple)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 		
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV):
 			## samples tsv
-			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB)
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV):
+			## samples tsv
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list)
+			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
+		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV):
+			out_file = self.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list_settings)
 			out_file_file_system = project.get_global_file_by_project(TypePath.MEDIA_ROOT, type_file)
 			
 		elif (type_file == Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json):
@@ -613,6 +638,50 @@ class CollectExtraData(object):
 		self.utils.merge_fasta_files(vect_to_process, out_file)
 		return out_file
 
+	def zip_several_files(self, project):
+		
+		temp_dir = self.utils.get_temp_dir()
+		
+		## coverage
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_COVERAGE))
+		## variants
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY))
+		## minor intra host
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
+		## sample file result
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
+		
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
+		
+		### pangolin data
+		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
+		## pangolin file			
+		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Pangolin_lineage))
+			
+		## all files zipped
+		zip_out = self.software.zip_files_in_path(temp_dir)
+		if os.path.exists(zip_out):
+			self.utils.move_file(zip_out, 
+				project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped))
+		else:
+			self.utils.remove_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped))
+			
+			
 	def collect_variations_freebayes(self, project, vect_type_remove):
 		"""
 		collect freebayes variations
@@ -656,12 +725,15 @@ class CollectExtraData(object):
 		return file_out
 
 
-	def collect_sample_table(self, project, column_separator, b_simple = False):
+	def collect_sample_table(self, project, column_separator, type_list):
 		"""
 		collect sample table
 		column_separator : COMMA or TAB
 		id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
-		:param b_simple == True, doesn't have fastq1,fastq2 and all software information, created for the tree view
+		:param type_list
+		0) simple, used to upload in the tree
+		1) sample list, used to upload in the tree
+		2) sample list with settings, used to upload in the tree
 		
 		"""
 		manage_database = ManageDatabase()
@@ -676,19 +748,24 @@ class CollectExtraData(object):
 		with open(out_file, 'w', newline='') as handle_out:
 			csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
 						quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
-			if (b_simple): vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV_simple.split(',')
-			else: vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
+			if (type_list == CollectExtraData.SAMPLE_LIST_list): vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV.split(',')
+			elif (type_list == CollectExtraData.SAMPLE_LIST_simple): vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV_simple.split(',')
+			## settings
+			else: vect_out_header = CollectExtraData.HEADER_SAMPLE_OUT_CSV_statistics.split(',')
 			
 			### extra tags
-			vect_tags = self.get_tags_for_samples_in_projects(project)
-			vect_out_header.extend(vect_tags)
+			if type_list in [CollectExtraData.SAMPLE_LIST_simple, CollectExtraData.SAMPLE_LIST_list]:
+				vect_tags = self.get_tags_for_samples_in_projects(project)
+				vect_out_header.extend(vect_tags)
 			
-			## some extra headers
-			if parse_pangolin.has_data(): vect_out_header.extend(["Lineage (Pangolin)", "Scorpio (Pangolin)"]) 
-			if (not b_simple): vect_out_header.extend(["Technology", "Sample Down sized", "Available Reads/Mapped Reads/Mapped Percentage"])
+				## some extra headers
+				if parse_pangolin.has_data(): vect_out_header.extend(["Lineage Pangolin", "Scorpio Pangolin"]) 
+			if type_list == CollectExtraData.SAMPLE_LIST_list_settings:
+				vect_out_header.extend(["Technology", "Sample Down sized",
+					"Available Reads for Mapping", "Mapped Reads", "Mapped Percentage"])
 			
 			### all information about the softwares
-			if (not b_simple):
+			if (type_list == CollectExtraData.SAMPLE_LIST_list_settings):
 				### set software names and versions
 				### array with software names
 				(vect_tags_out_sample, vect_tags_out_project_sample, vect_not_add_software_name_output,
@@ -723,11 +800,17 @@ class CollectExtraData(object):
 									len(SoftwareNames.VECT_INSAFLU_PARAMETER)))
 				csv_writer.writerow(vect_out)
 			
+			## add reference name to the file
+			elif (type_list in [CollectExtraData.SAMPLE_LIST_list]):
+				vect_out = ["Reference name", project.reference.name] + [''] * (len(vect_out_header) - 2)
+				csv_writer.writerow(vect_out)
+				
 			### write header
 			csv_writer.writerow(vect_out_header)
 			
 			### if file to need to have the reference under the header
-			if (b_simple): csv_writer.writerow([project.reference.name] + [''] * (len(vect_out_header) - 1))
+			if (type_list == CollectExtraData.SAMPLE_LIST_simple):
+				csv_writer.writerow([project.reference.name] + [''] * (len(vect_out_header) - 1))
 			
 			n_count = 0
 			for project_sample in project.project_samples.all():
@@ -735,50 +818,63 @@ class CollectExtraData(object):
 				vect_out = [project_sample.sample.name]
 				
 				### don't include file names, don't go to show in the tree
-				if (not b_simple):
+				if (type_list in [CollectExtraData.SAMPLE_LIST_simple, CollectExtraData.SAMPLE_LIST_list]):
+				
+					## file names	
+					if type_list == CollectExtraData.SAMPLE_LIST_list:
+						### fastq1
+						vect_out.append(project_sample.sample.file_name_1)
+						### fastq2
+						vect_out.append(project_sample.sample.file_name_2 if project_sample.sample.file_name_2 != None and len(project_sample.sample.file_name_2) > 0 else '')
+						
+					### dataset
+					vect_out.append(project_sample.sample.data_set.name if project_sample.sample.data_set != None else '')
+					### vaccine status
+					vect_out.append(project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
+					### week
+					vect_out.append(str(project_sample.sample.week) if project_sample.sample.week != None else '')
+					### onset date
+					vect_out.append(project_sample.sample.date_of_onset.strftime(settings.DATE_FORMAT_FOR_SHOW) if project_sample.sample.date_of_onset != None else '')
+					### collection date
+					vect_out.append(project_sample.sample.date_of_collection.strftime(settings.DATE_FORMAT_FOR_SHOW) if project_sample.sample.date_of_collection != None else '')
+					### lab reception date
+					vect_out.append(project_sample.sample.date_of_receipt_lab.strftime(settings.DATE_FORMAT_FOR_SHOW) if project_sample.sample.date_of_receipt_lab != None else '')
+					### latitude
+					vect_out.append(str(project_sample.sample.geo_local.coords[0]) if project_sample.sample.geo_local != None else '')
+					### longitude
+					vect_out.append(str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
+					### type_subtype
+					vect_out.append(project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
+					### mixedinfection
+					vect_out.append(project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
+	
+					### print extra informations
+					query_set = TagNames.objects.filter(sample=project_sample.sample)
+					for tag_name_to_test in vect_tags:
+						b_print = False
+						for tag_names in query_set:
+							if (tag_names.tag_name.name == tag_name_to_test):
+								vect_out.append(tag_names.value)
+								b_print = True
+								break
+						if (not b_print): vect_out.append('')
+
+					### pangolin if exists, simple
+					if parse_pangolin.has_data():
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_LINEAGE))
+						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_SCORPIO))
+						
+				### information about the software, CollectExtraData.SAMPLE_LIST_list_settings
+				else:
 					### fastq1
 					vect_out.append(project_sample.sample.file_name_1)
 					### fastq2
 					vect_out.append(project_sample.sample.file_name_2 if project_sample.sample.file_name_2 != None and len(project_sample.sample.file_name_2) > 0 else '')
-				### dataset
-				vect_out.append(project_sample.sample.data_set.name if project_sample.sample.data_set != None else '')
-				### vaccine status
-				vect_out.append(project_sample.sample.vaccine_status.name if project_sample.sample.vaccine_status != None else '')
-				### week
-				vect_out.append(str(project_sample.sample.week) if project_sample.sample.week != None else '')
-				### onset date
-				vect_out.append(project_sample.sample.date_of_onset.strftime('%Y-%m-%d') if project_sample.sample.date_of_onset != None else '')
-				### collection date
-				vect_out.append(project_sample.sample.date_of_collection.strftime('%Y-%m-%d') if project_sample.sample.date_of_collection != None else '')
-				### lab reception date
-				vect_out.append(project_sample.sample.date_of_receipt_lab.strftime('%Y-%m-%d') if project_sample.sample.date_of_receipt_lab != None else '')
-				### latitude
-				vect_out.append(str(project_sample.sample.geo_local.coords[0]) if project_sample.sample.geo_local != None else '')
-				### longitude
-				vect_out.append(str(project_sample.sample.geo_local.coords[1]) if project_sample.sample.geo_local != None else '')
-				### type_subtype
-				vect_out.append(project_sample.sample.type_subtype if project_sample.sample.type_subtype != None else '')
-				### mixedinfection
-				vect_out.append(project_sample.mixed_infections.tag.name if project_sample.mixed_infections != None else '')
 
-				### print extra informations
-				query_set = TagNames.objects.filter(sample=project_sample.sample)
-				for tag_name_to_test in vect_tags:
-					b_print = False
-					for tag_names in query_set:
-						if (tag_names.tag_name.name == tag_name_to_test):
-							vect_out.append(tag_names.value)
-							b_print = True
-							break
-					if (not b_print): vect_out.append('')
-
-				### information about the software
-				if (not b_simple):
-					### pangolin if exists, not simple
-					if parse_pangolin.has_data():
-						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_LINEAGE))
-						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_SCORPIO))
-
+					### set date created
+					if settings.RUNNING_TEST: vect_out.append("2010-10-23")
+					else: vect_out.append(project_sample.sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_SHOW))
+					
 					### print info about technology	
 					vect_out.append(project_sample.get_type_technology())
 					
@@ -786,7 +882,7 @@ class CollectExtraData(object):
 					vect_out.append("True" if manage_database.is_sample_downsized(project_sample.sample) else "False")
 					
 					### print info about mapped stats
-					vect_out.append(self._get_mapped_stats_info(project_sample))
+					vect_out.extend(self._get_mapped_stats_info(project_sample))
 					
 					###  BEGIN info about software versions  ####
 					if project_sample.id in dict_all_results:
@@ -829,11 +925,6 @@ class CollectExtraData(object):
 								vect_out.append("Not applied")
 						else:
 							vect_out.append("")
-				else: ## simple, for the tree
-					### pangolin if exists, simple
-					if parse_pangolin.has_data():
-						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_LINEAGE))
-						vect_out.append(parse_pangolin.get_value(project_sample.seq_name_all_consensus, ParsePangolinResult.KEY_SCORPIO))
 
 				### END save global parameters
 				csv_writer.writerow(vect_out)
@@ -865,15 +956,18 @@ class CollectExtraData(object):
 				result = self.software.get_statistics_bam(bam_file)
 			manage_database.set_project_sample_metakey(project_sample, project_sample.sample.owner, MetaKeyAndValue.META_KEY_bam_stats, 
 					MetaKeyAndValue.META_VALUE_Success, result.to_json())
-		else:
+		else:	## it's available yet
 			decode_stats = DecodeObjects()
 			result = decode_stats.decode_result(meta_value.description)
+			
+		### get data from sample, original data
+		dt_data, total_reads = self.software.get_stats_from_sample_reads(project_sample.sample)
 		mapped_reads = result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads)
-		total_reads = result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads)
 		if not mapped_reads is None and not total_reads is None and self.utils.is_integer(mapped_reads) and self.utils.is_integer(total_reads):
-			if int(total_reads) > 0: return "{}/{}/{:.1f}".format(total_reads, mapped_reads, (int(mapped_reads)/float(total_reads))* 100)
-			return "{}/{}/nan".format(total_reads, mapped_reads)
-		return "0/0/0"
+			if int(total_reads) > 0: return [str(total_reads), 
+				mapped_reads, "{:.1f}".format((int(mapped_reads)/float(total_reads)) * 100)]
+			return [str(total_reads), str(mapped_reads), "nan"]
+		return ['-'] * 3
 	
 	def _get_info_for_software(self, tag_to_search, vect_out, dict_all_results, project_sample_id,
 					vect_tags_info, vect_not_add_software_name = []):
@@ -1215,7 +1309,7 @@ class CollectExtraData(object):
 		if (not b_trimmomatic_stats and not b_nanostat_sats):
 			vect_out = [''] * (len(vect_out_header) - 2)
 		else: 
-			vect_out = [''] * (star_stats_tag - 2)
+			vect_out = [''] * star_stats_tag
 			if (b_trimmomatic_stats): vect_out.extend(["Trimmo. stats."] * len(SoftwareNames.SOFTWARE_TRIMMOMATIC_vect_info_to_collect))
 			if (b_nanostat_sats): vect_out.extend(["NanoStat stats."] * len(SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect))
 			vect_out.extend([''] * len(vect_tags_out_sample))
@@ -1250,11 +1344,11 @@ class CollectExtraData(object):
 				### week
 				vect_out.append(str(sample.week) if sample.week != None else '')
 				### onset date
-				vect_out.append(sample.date_of_onset.strftime('%Y-%m-%d') if sample.date_of_onset != None else '')
+				vect_out.append(sample.date_of_onset.strftime(settings.DATE_FORMAT_FOR_SHOW) if sample.date_of_onset != None else '')
 				### collection date
-				vect_out.append(sample.date_of_collection.strftime('%Y-%m-%d') if sample.date_of_collection != None else '')
+				vect_out.append(sample.date_of_collection.strftime(settings.DATE_FORMAT_FOR_SHOW) if sample.date_of_collection != None else '')
 				### lab reception date
-				vect_out.append(sample.date_of_receipt_lab.strftime('%Y-%m-%d') if sample.date_of_receipt_lab != None else '')
+				vect_out.append(sample.date_of_receipt_lab.strftime(settings.DATE_FORMAT_FOR_SHOW) if sample.date_of_receipt_lab != None else '')
 				### latitude
 				vect_out.append(str(sample.geo_local.coords[0]) if sample.geo_local != None else '')
 				### longitude
@@ -1304,7 +1398,7 @@ class CollectExtraData(object):
 				
 				## creation date
 				if b_test: vect_out.append("Date")
-				else: vect_out.append(sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE))
+				else: vect_out.append(sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW))
 				
 				## info about projects
 				vect_out.append("{}".format(ProjectSample.objects.filter(sample=sample, 
@@ -1378,10 +1472,10 @@ class CollectExtraData(object):
 									 is_error=False).count()))
 				vect_out.append(project.reference.name)
 				vect_out.append("" if project.last_change_date is None else \
-							project.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE) )
+							project.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW) )
 				if not b_test:
 					vect_out.append("" if project.creation_date is None else \
-							project.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE) )
+							project.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW) )
 				
 				### END save global parameters
 				csv_writer.writerow(vect_out)

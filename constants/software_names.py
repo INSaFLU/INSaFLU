@@ -96,10 +96,10 @@ class SoftwareNames(object):
 					"Number of reads R1", "Number of reads R2",
 					"Average read length R1", "Average read length R2",
 					"STDEV read length R1", "STDEV read length R2",
-					"Total bases",]
+					"Total reads",]
 	SOFTWARE_ILLUMINA_stat_collect_show_percentage = [
 					"Number of reads R1", "Number of reads R2",
-					"Total bases",]
+					"Total reads",]
 	
 	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
 	SOFTWARE_RabbitQC_name = "RabbitQC"

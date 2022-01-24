@@ -113,7 +113,11 @@ class Constants(object):
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	
 	### NextClade link
-	NEXTCLADE_LINK = "https://clades.nextstrain.org/?input-fasta="
+	NEXTCLADE_LINK_sars_cov_2 = "https://clades.nextstrain.org/?dataset-name=sars-cov-2&input-fasta="
+	NEXTCLADE_LINK_A_H3N2 = "https://clades.nextstrain.org/?dataset-name=flu_h3n2_ha&input-fasta="
+	NEXTCLADE_LINK_A_H1N1 = "https://clades.nextstrain.org/?dataset-name=flu_h1n1pdm_ha&input-fasta="
+	NEXTCLADE_LINK_B_Yamagata = "https://clades.nextstrain.org/?dataset-name=flu_yam_ha&input-fasta="
+	NEXTCLADE_LINK_B_Victoria = "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
 	AUSPICE_LINK = "https://auspice.us/"
 	
 	## NUMBER OF SETs to paginate

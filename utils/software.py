@@ -1375,23 +1375,27 @@ class Software(object):
 			"STDEV read length R1", "STDEV read length R2",
 		"""
 		result = Result()
-		total_bases = 0
+		total_reads = 0
 		if not number_1 is None:
 			result.add_key_value(KeyValue("Number of reads R1", "{:,.0f}".format(number_1)))
-			total_bases += number_1
+			total_reads += number_1
 		if not average_1 is None: result.add_key_value(KeyValue("Average read length R1", str(average_1)))
 		if not std1 is None: result.add_key_value(KeyValue("STDEV read length R1", str(std1)))
 		if not number_2 is None:
 			result.add_key_value(KeyValue("Number of reads R2", "{:,.0f}".format(number_2)))
-			total_bases += number_2
+			total_reads += number_2
 		if not average_2 is None: result.add_key_value(KeyValue("Average read length R2", str(average_2)))
 		if not std2 is None: result.add_key_value(KeyValue("STDEV read length R2", str(std2)))
-		result.add_key_value(KeyValue("Total bases", "{:,.0f}".format(total_bases)))
+		result.add_key_value(KeyValue("Total reads", "{:,.0f}".format(total_reads)))
 		return result.key_values
 	
 	def get_stats_from_sample_reads(self, sample):
 		"""
 		Return stats to show on sample details
+		:out data_stat -> [[key name, value before filtering, value before filtering, percentage],
+					[key name, value before filtering, value before filtering, percentage],
+					[key name, value before filtering, value before filtering, percentage],... ] 
+		:out total_reads_start -> number of reads before mapping 
 		"""
 		if sample.is_type_fastq_gz_sequencing():
 			meta_key_software = MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software
@@ -1402,13 +1406,16 @@ class Software(object):
 			software_name = SoftwareNames.SOFTWARE_NanoStat_name
 			show_percentage = SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect_show_percentage
 		
+		## return variables
+		data_stat, total_reads_start = [], -1
+		decode_nanostat = DecodeObjects()
 		manageDatabase = ManageDatabase()
 		meta_data = manageDatabase.get_sample_metakey_last(sample, meta_key_software, None)
-		decode_nanostat = DecodeObjects()
+		if (meta_data is None): return data_stat, total_reads_start
+		
 		result_data = decode_nanostat.decode_result(meta_data.description)
 		vect_soft = result_data.get_list_software_instance(software_name)
 		if (len(vect_soft) == 2):		## has data
-			data_nanostat = []
 			key_data_0 = vect_soft[0].get_vect_key_values()
 			key_data_1 = vect_soft[1].get_vect_key_values()
 			for _ in range(len(key_data_0)):
@@ -1419,11 +1426,17 @@ class Software(object):
 						(len(value_0) > 0 and self.utils.is_float(value_0) and \
 						float(value_0) > 0 and len(value_1) > 0):
 					percentage = "{:,.1f}".format(float(value_1) / float(value_0) * 100)
-				data_nanostat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value,
+				data_stat.append([key_data_0[_].key, key_data_0[_].value, key_data_1[_].value,
 							"{:,.1f}".format(float(value_1) - float(value_0)), percentage])
-			return data_nanostat
+				
+				### get total reads
+				if (key_data_1[_].key in ("Number of reads R1", "Number of reads R2",
+										"Number of reads") and \
+						self.utils.is_float(value_1)):
+					if total_reads_start == -1: total_reads_start = 0 
+					total_reads_start += int(float(value_1))
+				
 		elif (len(vect_soft) == 1):		## only has the fist analysis
-			data_nanostat = []
 			key_data_0 = vect_soft[0].get_vect_key_values()
 			for _ in range(len(key_data_0)):
 				percentage = "--"
@@ -1432,9 +1445,17 @@ class Software(object):
 						(len(value_0) > 0 and self.utils.is_float(value_0) and \
 						float(value_0) > 0):
 					percentage = "100"
-				data_nanostat.append([key_data_0[_].key, key_data_0[_].value, '--', '0.0', percentage])
-			return data_nanostat
-		
+				data_stat.append([key_data_0[_].key, key_data_0[_].value, '--', '0.0', percentage])
+				
+				### get total reads
+				if (key_data_0[_].key in ("Number of reads", "Number of reads R1",
+									"Number of reads R2") and \
+						self.utils.is_float(value_0)):
+					if total_reads_start == -1: total_reads_start = 0 
+					total_reads_start += int(float(value_0))
+		return data_stat, None if total_reads_start == -1 else total_reads_start
+
+
 	"""
 	Global processing, fastQ, trimmomatic and GetSpecies
 	"""
@@ -1973,6 +1994,26 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index")
+		
+	def zip_files_in_path(self, path_name):
+		"""
+		zip all files inside a directory and return a file
+		:out os.path.join(path_name, "zip_file_out.zip")
+		"""
+		if (not os.path.exists(path_name)): return
+		current_dir = os.getcwd()
+		os.chdir(path_name)		## change to path that will be compressed
+		
+		file_name_zip = "zip_file_out.zip"
+		cmd = "zip {} *".format(file_name_zip)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			os.chdir(current_dir)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to zip files in '{}'".format(path_name))
+		os.chdir(current_dir)
+		return os.path.join(path_name, file_name_zip)
 
 	def fasta_2_upper(self, file_name):
 		"""

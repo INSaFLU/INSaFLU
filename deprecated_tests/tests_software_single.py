@@ -63,20 +63,19 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 	
-	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_process_second_stage_analysis_single_file(self):
+	def test_run_clean_minion_2(self):
 		"""
- 		test global method
+		Test run fastq and trimmomatic all together
  		"""
-		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
-		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
-		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
-
-		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
-
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		file_name = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, "covid/test_minion_seq.fastq.gz")
+		self.assertTrue(file_name)
 		try:
 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
 		except User.DoesNotExist:
@@ -86,24 +85,10 @@ class Test(TestCase):
 			user.password = ConstantsTestsCase.TEST_USER_NAME
 			user.save()
 
-		ref_name = "second_stagis_single_file2"
-		try:
-			reference = Reference.objects.get(name=ref_name)
-		except Reference.DoesNotExist:
-			reference = Reference()
-			reference.name = ref_name
-			reference.reference_fasta.name = fasta_file
-			reference.reference_fasta_name = os.path.basename(fasta_file)
-			reference.reference_genbank.name = gb_file
-			reference.reference_genbank_name = os.path.basename(gb_file)
-			reference.owner = user
-			reference.save()
-			
 		temp_dir = self.utils.get_temp_dir()
-		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
-		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+		self.utils.copy_file(file_name, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
 			
-		sample_name = "run_snippyis_single_file1"
+		sample_name = "run_nanofilt"
 		try:
 			sample = Sample.objects.get(name=sample_name)
 		except Sample.DoesNotExist:
@@ -113,408 +98,163 @@ class Test(TestCase):
 			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
 			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
 			sample.is_valid_2 = False
-			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
-			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
-			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina) 
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
 			sample.owner = user
 			sample.save()
-
-		project_name = "file_naais_single_filee_3"
-		try:
-			project = Project.objects.get(name=project_name)
-		except Project.DoesNotExist:
-			project = Project()
-			project.name = project_name
-			project.reference = reference
-			project.owner = user
-			project.save()
 		
-		## create project_sample
-		project_sample = ProjectSample()
-		project_sample.sample = sample
-		project_sample.project = project
-		project_sample.save()
-		
-		### copy to trimmomatic files
-		self.utils.copy_file(file_1, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
-		self.utils.copy_file(file_2, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
-		
-		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
-		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
-		self.assertTrue(self.software.process_second_stage_snippy_coverage_freebayes(project_sample, user))
-		try:
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-		except ProjectSample.DoesNotExist:
-			self.fail("Must exist")
-		self.assertTrue(project_sample.is_finished)
-		self.assertTrue(project_sample.is_mask_consensus_sequences)
-		
-		### test the files
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name).index(SoftwareNames.SOFTWARE_SNIPPY_name.lower()) != -1)
-		
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		
-		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_snippyis_single_file1.tab")
-		self.assertTrue(filecmp.cmp(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name),
-				expected_file))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		
-		## freebayes
-		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_freebayes_single_file1.tab")
-		self.assertTrue(filecmp.cmp(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name),
-				expected_file))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-
-		## test freebayes clean
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertTrue(os.path.getsize(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)) > 10)
-
-		## test consensus file
-		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
-		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
-		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
-							project_sample.get_backup_consensus_file()))
-
-		### human file name, snippy tab
-		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
-		self.assertTrue(os.path.getsize(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())) > 10)
-		
-		### set flag that is finished
-		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Count_Hits, list_meta[0].meta_tag.name)
-		
-		### get the hits value
-		decode_coverage = DecodeObjects()
-		count_hits = decode_coverage.decode_result(list_meta[0].description)
-		self.assertEquals(0, count_hits.get_hits_50_90())
-		self.assertEquals(3, count_hits.get_hits_less_50())
-		self.assertEquals(3, count_hits.get_total_50_50_90())
-		self.assertEquals(125, count_hits.get_total())
-		
-		self.assertEquals(3, project_sample.count_variations.var_less_50)
-		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
-		self.assertEquals(122, project_sample.count_variations.var_bigger_90)
-		self.assertEquals(0, project_sample.alert_first_level)
-		self.assertEquals(0, project_sample.alert_second_level)
-		
-		### test mixed infections
-		self.assertEquals('0.815100969586423', '{}'.format(project_sample.mixed_infections.average_value))
-		self.assertEquals('No', project_sample.mixed_infections.tag.name)
-		self.assertFalse(project_sample.mixed_infections.has_master_vector)
-		
-		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
-		self.assertEquals(1, len(list_meta))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
-		
-		decode_result = DecodeObjects()
-		result = decode_result.decode_result(list_meta[0].description)
-		self.assertTrue(result is not None)
-		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
-		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V)",\
- 						result.get_software(self.software_names.get_freebayes_name()))
-		self.assertTrue(result.is_software_present(self.software_names.get_freebayes_name()))
-		self.assertFalse(result.is_software_present(self.software_names.get_trimmomatic_name()))
-		
-		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-		decode_coverage = DecodeObjects()
-		coverage = decode_coverage.decode_result(meta_value.description)
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "527.4")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "2198.8")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_ALL), "1449.3")
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_0), "100.0")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
-		
-		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
-		self.assertEquals(2, len(lst_meta_sample))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Queue, lst_meta_sample[1].value)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
-		
-		### check if the images exist
-		for gene in self.utils.get_elements_from_db(reference, user):
-			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
-			self.assertTrue(os.path.exists(output_image))
-
-		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
-						MetaKeyAndValue.META_KEY_bam_stats,
-						MetaKeyAndValue.META_VALUE_Success)
-		self.assertTrue(not meta_value is None)
-		result = decode_coverage.decode_result(meta_value.description)
-		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
-		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
-		self.assertEqual(None, result.get_value_by_key('xpto'))
-		
-		self.utils.remove_dir(temp_dir)
-		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
-
-
-	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_process_second_stage_analysis_single_file_no_freebayes(self):
-		"""
- 		test global method
- 		"""
-		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
-		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
-		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
-
-		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
-		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
-
-		try:
-			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-		except User.DoesNotExist:
-			user = User()
-			user.username = ConstantsTestsCase.TEST_USER_NAME
-			user.is_active = False
-			user.password = ConstantsTestsCase.TEST_USER_NAME
-			user.save()
-
-		ref_name = "second_stagis_single_file2"
-		try:
-			reference = Reference.objects.get(name=ref_name)
-		except Reference.DoesNotExist:
-			reference = Reference()
-			reference.name = ref_name
-			reference.reference_fasta.name = fasta_file
-			reference.reference_fasta_name = os.path.basename(fasta_file)
-			reference.reference_genbank.name = gb_file
-			reference.reference_genbank_name = os.path.basename(gb_file)
-			reference.owner = user
-			reference.save()
-			
-		temp_dir = self.utils.get_temp_dir()
-		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
-		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
-			
-		sample_name = "run_snippyis_single_file1"
-		try:
-			sample = Sample.objects.get(name=sample_name)
-		except Sample.DoesNotExist:
-			sample = Sample()
-			sample.name = sample_name
-			sample.is_valid_1 = True
-			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
-			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
-			sample.is_valid_2 = False
-			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
-			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
-			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina) 
-			sample.owner = user
-			sample.save()
-
-		project_name = "file_naais_single_filee_3"
-		try:
-			project = Project.objects.get(name=project_name)
-		except Project.DoesNotExist:
-			project = Project()
-			project.name = project_name
-			project.reference = reference
-			project.owner = user
-			project.save()
-		
-		## create project_sample
-		project_sample = ProjectSample()
-		project_sample.sample = sample
-		project_sample.project = project
-		project_sample.save()
-		
-		### copy to trimmomatic files, don't copy trimmommatic files to project
-		##self.utils.copy_file(file_1, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
-		##self.utils.copy_file(file_2, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
-		
-		### turn off freebayes
+		### turn off abricate
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(user)
-		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name,
-							user, ConstantsSettings.TECHNOLOGY_illumina))
-		### turn off freebayes
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name,
+							user, ConstantsSettings.TECHNOLOGY_minion))
 		is_to_run = False
-		default_software.set_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name, user,
-							ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
-		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name,
-							user, ConstantsSettings.TECHNOLOGY_illumina))
-		### set mincov 30 for snippy
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name, user,
+							ConstantsSettings.TECHNOLOGY_minion, is_to_run)
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name,
+							user, ConstantsSettings.TECHNOLOGY_minion))
+
+		b_make_identify_species = False
+		self.assertTrue(self.software_minion.run_clean_minion(sample, user, b_make_identify_species))
+		default_project_software = DefaultProjectSoftware()
+		self.assertFalse(default_project_software.is_to_run_abricate(user, sample,
+				ConstantsSettings.TECHNOLOGY_minion))
+		
 		try:
-			software = SoftwareSettings.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,
-							type_of_use = SoftwareSettings.TYPE_OF_USE_global,
-							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
-			self.assertTrue(software.is_used_in_global())
+			software = SoftwareSettings.objects.get(name=SoftwareNames.SOFTWARE_NanoFilt_name, owner=user,\
+							type_of_use = SoftwareSettings.TYPE_OF_USE_sample,
+							technology__name = ConstantsSettings.TECHNOLOGY_minion,
+							is_obsolete = False)
 		except SoftwareSettings.DoesNotExist:
-			self.fail("Must exist this software name")
+			self.fail("Must must exist")
 		
 		parameters = Parameter.objects.filter(software=software)
-		self.assertTrue(3, len(parameters))
+		self.assertTrue(5, len(parameters))
+		for parameter in parameters:
+			if (parameter.name == "-q"):
+				parameter.parameter = "5"
+				parameter.save()
+				break
 		
-		### test set default
-		self.assertEqual("10", parameters[1].parameter)
-		parameter = parameters[1]
-		parameter.parameter = 5
-		parameter.save()
-		self.assertEqual("--mapqual 20 --mincov 5 --minfrac 0.51", default_software.get_snippy_parameters(user))
+		tag_name_mixed= "No"
+		sample = Sample.objects.get(name=sample_name)
+		if (b_make_identify_species):
+			self.fail("Must have b_make_identify_species FALSE")
+			self.assertEqual(tag_name_mixed, sample.mixed_infections_tag.name)
+			self.assertEqual("A-H5N5", sample.type_subtype)
+			
+			sample.mixed_infections_tag = None
+			sample.save()
+			
+			sample = Sample.objects.get(name=sample_name)
+			self.assertEqual(None, sample.mixed_infections_tag)
+			
+			try:
+				mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_name_mixed)
+			except MixedInfectionsTag.DoesNotExist as e:
+				self.fail("Must have tag mixed")
+							
+			if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag.delete()
+		else:
+			self.assertEqual(Constants.EMPTY_VALUE_NA, sample.mixed_infections_tag.name)
+			self.assertEqual(Constants.EMPTY_VALUE_NA, sample.type_subtype)
 		
-		default_software_project = DefaultProjectSoftware()
-		default_software_project.test_all_defaults(user, project, None, None) ## the user can have defaults yet		
-		default_software_project.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user,
-	 			SoftwareSettings.TYPE_OF_USE_project_sample,
-	 			None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
-	
-		## test if it is necessary to run freebayes
-		self.assertFalse(default_software_project.is_to_run_freebayes(user, project_sample))
-				
+		self.assertEqual(0, sample.number_alerts)
+		
+		### run again
+		default_project_software.set_abricate_to_run(user, sample,
+				ConstantsSettings.TECHNOLOGY_minion, True)
+		## global
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name,
+							user, ConstantsSettings.TECHNOLOGY_minion))
+		### project sample
+		self.assertTrue(default_project_software.is_to_run_abricate(user, 
+					sample, ConstantsSettings.TECHNOLOGY_minion))
+		self.assertTrue(self.software_minion.run_clean_minion(sample, user,
+					default_project_software.is_to_run_abricate(user,
+					sample, ConstantsSettings.TECHNOLOGY_minion) ))
+		
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(5, len(parameters))
+		for parameter in parameters:
+			if (parameter.name == "-q"):
+				self.assertEqual("5", parameter.parameter)
+				break;
+
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_nanofilt_file(TypePath.MEDIA_ROOT)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT)))))
+		
 		manageDatabase = ManageDatabase()
-		metaKeyAndValue = MetaKeyAndValue()
-		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
-		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
-		self.assertTrue(self.software.process_second_stage_snippy_coverage_freebayes(project_sample, user))
-		## test if freebays run
-		default_project_software = DefaultProjectSoftware()
-		self.assertFalse(default_project_software.is_to_run_freebayes(user, project_sample))
-		
-		try:
-			project_sample = ProjectSample.objects.get(pk=project_sample.id)
-		except ProjectSample.DoesNotExist:
-			self.fail("Must exist")
-		self.assertTrue(project_sample.is_finished)
-		self.assertTrue(project_sample.is_mask_consensus_sequences)
-		
-		### test the files
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name).index(SoftwareNames.SOFTWARE_SNIPPY_name.lower()) != -1)
-		
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		
-		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_snippyis_single_file1.tab")
-		self.assertTrue(filecmp.cmp(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name),
-				expected_file))
-		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
-		
-		## freebayes
-		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_freebayes_single_file1.tab")
-		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
-
-		## test consensus file
-		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
-		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
-		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
-							project_sample.get_backup_consensus_file()))
-
-		### human file name, snippy tab
-		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
-		self.assertTrue(os.path.getsize(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())) > 10)
-		
-		### set flag that is finished
-		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, None)
-		self.assertTrue(len(list_meta) == 1)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertEqual(2, len(list_meta))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Count_Hits, list_meta[0].meta_tag.name)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
-		### get the hits value
-		decode_coverage = DecodeObjects()
-		count_hits = decode_coverage.decode_result(list_meta[0].description)
-		self.assertEquals(0, count_hits.get_hits_50_90())
-		self.assertEquals(0, count_hits.get_hits_less_50())
-		self.assertEquals(0, count_hits.get_total_50_50_90())
-		self.assertEquals(0, count_hits.get_total())
-		
-		self.assertEquals(0, project_sample.count_variations.var_less_50)
-		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
-		self.assertEquals(0, project_sample.count_variations.var_bigger_90)
-		self.assertEquals(0, project_sample.alert_first_level)
-		self.assertEquals(0, project_sample.alert_second_level)
-		
-		### test mixed infections
-		self.assertEquals(Constants.EMPTY_VALUE_NA, project_sample.mixed_infections.tag.name)
-		
-		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
-		self.assertEquals(1, len(list_meta))
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		self.assertEqual('3000', result_average.number_file_1)
+		self.assertEqual('1158.4', result_average.average_file_1)
+		self.assertEqual(None, result_average.number_file_2)
+		self.assertEqual(None, result_average.average_file_2)
+
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertTrue(len(list_meta) == 0)
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
+		self.assertEqual(2, len(list_meta))
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
+		self.assertEquals(MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, NanoStat(1.4.0), NanoFilt(2.6.0)", list_meta[0].description)
+		self.assertEquals("Success, NanoStat(1.4.0), NanoFilt(2.6.0)", list_meta[1].description)
+		
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
+		self.assertEqual(2, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, list_meta[0].meta_tag.name)
+		result_data = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		vect_soft = result_data.get_list_software_instance(self.software_names.get_NanoStat_name())
+		self.assertEqual(2, len(vect_soft))
+
+		self.assertEqual("Mean read length", vect_soft[0].get_vect_key_values()[0].key)
+		self.assertEqual("1,298.4", vect_soft[0].get_vect_key_values()[0].value)
+		self.assertEqual("Total bases", vect_soft[0].get_vect_key_values()[-1].key)
+		self.assertEqual("3,895,144.0", vect_soft[0].get_vect_key_values()[-1].value)
+		self.assertEqual("Mean read length", vect_soft[1].get_vect_key_values()[0].key)
+		self.assertEqual("1,158.4", vect_soft[1].get_vect_key_values()[0].value)
+		self.assertEqual("Total bases", vect_soft[1].get_vect_key_values()[-1].key)
+		self.assertEqual("3,475,144.0", vect_soft[1].get_vect_key_values()[-1].value)
+		
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Mean read length', stats_illumina[0][0])
+		self.assertEqual('1,298.4', stats_illumina[0][1])
+		self.assertEqual(3000, total_reads)
+		
+		sample = Sample.objects.get(name=sample_name)
+		self.assertEqual("A-H5N5", sample.type_subtype)
+	#	self.assertEqual("H5N5", sample.type_subtype)
+		self.assertEqual("No", sample.mixed_infections_tag.name)
+		self.assertEqual(0, sample.number_alerts)
+		
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, None)
+		self.assertEquals(2, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals("Success, NanoStat(1.4.0), NanoFilt(2.6.0)", list_meta[0].description)
+		
+		### software
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, None)
+		self.assertEquals(2, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, list_meta[0].meta_tag.name)
 		
 		decode_result = DecodeObjects()
 		result = decode_result.decode_result(list_meta[0].description)
-		self.assertTrue(result is not None)
-		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 5 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
-		self.assertEquals("MSA Masker-1.0; (--c 4; for coverages less than 5 in 30% of the regions.)", result.get_software(self.software_names.get_msa_masker_name()))
-		self.assertEquals("", result.get_software(self.software_names.get_freebayes_name()))
-		self.assertTrue(result.is_software_present(self.software_names.get_snippy_name()))
-		self.assertFalse(result.is_software_present(self.software_names.get_freebayes_name()))
-		self.assertFalse(result.is_software_present(self.software_names.get_trimmomatic_name()))
+		self.assertTrue(not result is None)
+		self.assertEquals("NanoStat-1.4.0",
+				result.get_software(self.software_names.get_NanoStat_name()))
+		self.assertEquals("NanoFilt-2.6.0; (-q 5 -l 50 --headcrop 70 --tailcrop 70)",\
+ 						result.get_software(self.software_names.get_NanoFilt_name()))
+		self.assertEquals("RabbitQC-0.0.1; (-w 3 -D)",\
+ 						result.get_software(self.software_names.get_rabbitQC_name()))
 		
-		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
-		decode_coverage = DecodeObjects()
-		coverage = decode_coverage.decode_result(meta_value.description)
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "527.4")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "2198.8")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_ALL), "1449.3")
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_9), "100.0")
-		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_0), "100.0")
-		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
-		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
-		
-		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
-		self.assertEquals(2, len(lst_meta_sample))
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Queue, lst_meta_sample[1].value)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
-		
-		### check if the images exist
-		for gene in self.utils.get_elements_from_db(reference, user):
-			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
-			self.assertTrue(os.path.exists(output_image))
-
-		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
-						MetaKeyAndValue.META_KEY_bam_stats,
-						MetaKeyAndValue.META_VALUE_Success)
-		self.assertTrue(not meta_value is None)
-		decode_masking_vcf = DecodeObjects()
-		result = decode_masking_vcf.decode_result(meta_value.description)
-		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
-		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
-		self.assertEqual(None, result.get_value_by_key('xpto'))
-		
-		self.utils.remove_dir(temp_dir)
-		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
-
-
+		## remove all files
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)

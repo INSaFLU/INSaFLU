@@ -14,6 +14,7 @@ from managing_files.manage_database import ManageDatabase
 from utils.result import DecodeObjects, Coverage, MaskingConsensus
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.software_minion import SoftwareMinion
+from utils.software import Software
 from utils.utils import Utils
 from constants.software_names import SoftwareNames
 from django.test.utils import override_settings
@@ -27,6 +28,7 @@ from settings.default_software import DefaultSoftware
 class Test(TestCase):
 
 	software_minion = SoftwareMinion()
+	software = Software()
 	utils = Utils()
 	constants = Constants()
 	software_names = SoftwareNames()
@@ -297,6 +299,11 @@ class Test(TestCase):
 		self.assertEqual("1,158.4", vect_soft[1].get_vect_key_values()[0].value)
 		self.assertEqual("Total bases", vect_soft[1].get_vect_key_values()[-1].key)
 		self.assertEqual("3,475,144.0", vect_soft[1].get_vect_key_values()[-1].value)
+		
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Mean read length', stats_illumina[0][0])
+		self.assertEqual('1,298.4', stats_illumina[0][1])
+		self.assertEqual(3000, total_reads)
 		
 		sample = Sample.objects.get(name=sample_name)
 		self.assertEqual("A-H5N5", sample.type_subtype)

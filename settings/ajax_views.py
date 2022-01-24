@@ -100,9 +100,9 @@ def set_default_parameters(request):
 							try:
 								(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL)
 								if (project_sample.is_sample_illumina()):
-									taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, job_name_wait)
+									taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, [job_name_wait])
 								else:
-									taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, job_name_wait)
+									taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, [job_name_wait])
 									
 								### set project sample queue ID
 								manageDatabase.set_project_sample_metakey(project_sample, request.user,\

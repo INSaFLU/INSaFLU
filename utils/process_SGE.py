@@ -6,8 +6,6 @@ from constants.constants import Constants, FileExtensions, TypePath
 from django.conf import settings
 from managing_files.models import ProcessControler
 from extend_user.models import Profile
-from django.contrib.auth.models import User
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 from datetime import datetime
 
 

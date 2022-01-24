@@ -212,7 +212,7 @@ class TestMultiProcess(TransactionTestCase):
 			
 			if len(job_name_wait) == 0: (job_name_wait, job_name) = user.profile.get_name_sge_seq(
 				Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
-			taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
+			taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, [job_name_wait])
 				
 			### set project sample queue ID
 			manageDatabase.set_project_sample_metakey(project_sample, user,\

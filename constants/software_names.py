@@ -7,6 +7,7 @@ Created on Nov 26, 2017
 import os
 from constants.constants import Constants
 from django.conf import settings
+from settings.constants_settings import ConstantsSettings
 
 class SoftwareNames(object):
 	'''
@@ -54,6 +55,7 @@ class SoftwareNames(object):
 	SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE = 3									## clean the values bellow of this value "NODE_128_length_572_cov_3.682785"
 	SOFTWARE_ABRICATE = os.path.join(settings.DIR_SOFTWARE, "abricate/bin/abricate")
 	SOFTWARE_ABRICATE_name = "Abricate"
+	SOFTWARE_ABRICATE_name_extended = "Abricate"
 	SOFTWARE_ABRICATE_DB = os.path.join(settings.DIR_SOFTWARE, "abricate/db")
 	SOFTWARE_ABRICATE_VERSION = "0.8-dev"
 	SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
@@ -67,7 +69,6 @@ class SoftwareNames(object):
 	SOFTWARE_TRIMMOMATIC_name_extended = "Quality analysis and control (Trimmomatic)"
 	SOFTWARE_TRIMMOMATIC_VERSION = "0.39"
 	SOFTWARE_TRIMMOMATIC_PARAMETERS = "SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33"
-
 	SOFTWARE_TRIMMOMATIC_vect_info_to_collect = ["Input Read Pairs:",
 					"Both Surviving:",
 					"Forward Only Surviving:",
@@ -89,6 +90,16 @@ class SoftwareNames(object):
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
 					'TruSeq3-SE.fa']
+	### collect stat data for ILLUMINA, in form of key value
+	SOFTWARE_ILLUMINA_stat = "illumina_stat"
+	SOFTWARE_ILLUMINA_stat_collect = [
+					"Number of reads R1", "Number of reads R2",
+					"Average read length R1", "Average read length R2",
+					"STDEV read length R1", "STDEV read length R2",
+					"Total reads",]
+	SOFTWARE_ILLUMINA_stat_collect_show_percentage = [
+					"Number of reads R1", "Number of reads R2",
+					"Total reads",]
 	
 	SOFTWARE_RabbitQC = os.path.join(settings.DIR_SOFTWARE, "RabbitQC/rabbit_qc")
 	SOFTWARE_RabbitQC_name = "RabbitQC"
@@ -119,14 +130,13 @@ class SoftwareNames(object):
 	SOFTWARE_NanoFilt_VERSION = "2.6.0"
 	SOFTWARE_NanoFilt_PARAMETERS = "-l 50 -q 10 --headcrop 70 --tailcrop 70"	## gzip -cd ERR4082025_1.fastq.gz | NanoFilt -q 10 --headcrop 40 --tailcrop 50 | gzip > trimmed-reads.fastq.gz
 	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka/bin/activate"))
-#	SOFTWARE_Medaka_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "medaka.1.2.3/bin/activate"))
 	SOFTWARE_Medaka = "medaka"
 	SOFTWARE_Medaka_name = "Medaka"
 	SOFTWARE_Medaka_name_consensus = "Medaka consensus"
 	SOFTWARE_Medaka_name_variants = "Medaka variants"
 	SOFTWARE_Medaka_default_model = "r941_min_high_g360"
 	SOFTWARE_Medaka_remove_tags_model = ["_snp_", "_fast_"]
-	SOFTWARE_Medaka_name_extended_consensus = "Mapping (Medaka)"
+	SOFTWARE_Medaka_name_extended_consensus = "Consensus Generation (Medaka)"
 	SOFTWARE_Medaka_name_extended_variant = "Call Variants (Medaka)"
 	SOFTWARE_Medaka_PARAMETERS_variant = "--verbose"
 	SOFTWARE_Medaka_PARAMETERS_consensus = "-m {}".format(SOFTWARE_Medaka_default_model)
@@ -209,7 +219,7 @@ class SoftwareNames(object):
 	SOFTWARE_FREEBAYES_name = "Freebayes"
 	SOFTWARE_FREEBAYES_name_extended = "Mapping (Freebayes)"
 	SOFTWARE_FREEBAYES_VERSION = "v1.1.0-54-g49413aa"
-	SOFTWARE_FREEBAYES_PARAMETERS = "-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V"
+	SOFTWARE_FREEBAYES_PARAMETERS = "--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V"
 	
 	SOFTWARE_FASTA_GENERATE_REGIONS = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/fasta_generate_regions.py")
 	SOFTWARE_FASTA_GENERATE_REGIONS_name = "Fasta Generate Regions"
@@ -284,15 +294,23 @@ class SoftwareNames(object):
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion = "1"
 	SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters = ""
 	
+	### software to produce alignments
+	## nextalign --sequences sequences.fasta --reference SARS_CoV_2_COVID_19_Wuhan_Hu_1_MN908947.fasta --genemap covid.gff3 --genes S --output-dir output
+	## output/sequences.aligned.fasta
+	## output/sequences.gene.S.fasta
+	SOFTWARE_NEXTALIGN = os.path.join(settings.DIR_SOFTWARE, "nextalign/1.7.0/nextalign")
+	SOFTWARE_NEXTALIGN_name = "nextalign"
+	SOFTWARE_NEXTALIGN_vesion = "1.7.0"
+	SOFTWARE_NEXTALIGN_parameters = ""
+	
 	### genebank to perl
 	SOFTWARE_genbank_to_perl = os.path.join(settings.DIR_SOFTWARE, "scripts/bp_genbank2gff3.pl")
-	
-	###############################
-	### technology available
-	TECHNOLOGY_illumina = "Illumina"
-	TECHNOLOGY_minion = "ONT"
-	TECHNOLOGY_Undefined = "Undefined"
 
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_name = "Mask consensus by sites"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended = "Mask consensus by sites"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion = "1"
+	SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters = ""	## don't have anything by default
+		
 	###################################
 	###################################
 	#####
@@ -304,12 +322,12 @@ class SoftwareNames(object):
 	INSAFLU_PARAMETER_MASK_CONSENSUS_vesion = "1"
 	INSAFLU_PARAMETER_MASK_CONSENSUS_parameters = "Threshold:70"
 
-
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name = "Minimum depth of coverage per site to validate the sequence"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended = "Minimum depth of coverage per site to validate the sequence (mincov)"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_vesion = "1"
 	INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_parameters = "Threshold:30"
 	
+	### It also put Ns on positions where variations are below this threshold (masking consensus on ONT)
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_name = "Minimum proportion for variant evidence"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended = "Minimum proportion for variant evidence (minfrac)"
 	INSAFLU_PARAMETER_VCF_FREQ_ONT_vesion = "1"
@@ -341,20 +359,24 @@ class SoftwareNames(object):
 	###		Relation between Technology -> Software 
 	###
 	DICT_SOFTWARE_RELATION = {
-		TECHNOLOGY_illumina : [
+		ConstantsSettings.TECHNOLOGY_illumina : [
 				SOFTWARE_TRIMMOMATIC_name,
 				SOFTWARE_SNIPPY_name,
 				SOFTWARE_FREEBAYES_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
+				SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
+				SOFTWARE_ABRICATE_name,
 			],
-		TECHNOLOGY_minion : [
+		ConstantsSettings.TECHNOLOGY_minion : [
 				SOFTWARE_NanoFilt_name, 
 				SOFTWARE_Medaka_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
 				INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name,
+				SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
 				INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
+				SOFTWARE_ABRICATE_name,
 			],
 		}
 	###
@@ -611,6 +633,24 @@ class SoftwareNames(object):
 	def get_create_new_reference_to_snippy_version(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_vesion
 	def get_create_new_reference_to_snippy_parameters(self): return self.SOFTWARE_CREATE_NEW_REFERENCE_TO_SNIPPY_parameters
 
+	"""
+	return mask consensus by sites
+	"""
+	def get_software_mask_consensus_by_site(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name
+	def get_software_mask_consensus_by_site_name(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name
+	def get_software_mask_consensus_by_site_name_extended(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended
+	def get_software_mask_consensus_by_site_version(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion
+	def get_software_mask_consensus_by_site_parameters(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters
+
+	"""
+	return 
+	### nextalign
+	"""
+	def get_nextalign(self): return self.SOFTWARE_NEXTALIGN
+	def get_nextalign_name(self): return self.SOFTWARE_NEXTALIGN_name
+	def get_nextalign_version(self): return self.SOFTWARE_NEXTALIGN_vesion
+	def get_nextalign_parameters(self): return self.SOFTWARE_NEXTALIGN_parameters
+
 	###### START minion software
 	###
 	def get_rabbitQC(self): return self.SOFTWARE_RabbitQC
@@ -650,18 +690,6 @@ class SoftwareNames(object):
 	###
 	###### END minion software
 	
-	###### Relation between software and technology
-	def get_list_software_names_by_technology(self, technology_name):
-		"""
-		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
-		"""
-		return self.DICT_SOFTWARE_RELATION.get(technology_name, [])
-	
-	def is_software_in_technology(self, technology_name, software_name):
-		"""
-		:param technology_name TECHNOLOGY_illumina, TECHNOLOGY_minion
-		"""
-		return software_name in self.get_list_software_names_by_technology(technology_name)
 	
 	###################################
 	#####
@@ -716,7 +744,7 @@ class SoftwareNames(object):
 	def get_pangolin_constellations_version(self): return self.SOFTWARE_Pangolin_constellations_VERSION
 	def get_pangolin_all_names_version(self):
 		dt_return_version = {}
-		for name in self.VECT_INSAFLU_PARAMETER:
+		for name in self.VECT_PANGOLIN_TO_TEST:
 			dt_return_version[name] = self.get_pangolin_version(name)
 		return dt_return_version
 	

@@ -125,6 +125,9 @@ class ConstantsTestsCase(object):
 	FASTQ10_2 = "EVA082_S12_L001_R2_001.fastq.gz"
 	FASTQ10_1_test = "EVA082_S12_L001_R2_001_test.fastq.gz"
 	FASTQ1_nanopore = "nanopore.fastq.gz"
+	FASTQ1_ion_torrent_1 = "ion_torrent_1.fastq.gz"
+	FASTQ1_ion_torrent_2 = "ion_torrent_2.fastq.gz"
+	FASTQ1_ion_torrent_3 = "ion_torrent_3.fastq.gz"
 	
 	FASTQ11_1 = "EVA174_S64_L001_R1_001.fastq.gz"
 	FASTQ11_2 = "EVA174_S64_L001_R2_001.fastq.gz"

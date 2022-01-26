@@ -1,6 +1,5 @@
 import django_tables2 as tables
 from managing_files.models import Reference, Sample, Project, ProjectSample
-from constants.software_names import SoftwareNames
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -12,6 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from django.conf import settings
 from django.db.models import F
+from settings.constants_settings import ConstantsSettings
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 	@property
@@ -178,7 +178,7 @@ class SampleTable(tables.Table):
 		""" shows if it is Illumina or Minion """
 		### is not processed yet
 		if (record.type_of_fastq == Sample.TYPE_OF_FASTQ_not_defined): return "Undefined"
-		return SoftwareNames.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else SoftwareNames.TECHNOLOGY_minion
+		return ConstantsSettings.TECHNOLOGY_illumina if record.is_type_fastq_gz_sequencing() else ConstantsSettings.TECHNOLOGY_minion
 	
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")
@@ -202,8 +202,13 @@ class SampleTable(tables.Table):
 		number of quality sequences and average
 		"""
 		manageDatabase = ManageDatabase()
+		
+		## test ready to show
+		if (not record.get_is_ready_for_projects()): return _('Not yet')
+		
+		## get all stats
 		list_meta = manageDatabase.get_sample_metakey(record, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		if (list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
+		if (not list_meta is None and list_meta.count() > 0 and list_meta[0].value == MetaKeyAndValue.META_VALUE_Success):
 			decodeResultAverageAndNumberReads = DecodeObjects()
 			result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
 			if (result_average.number_file_2 is None):
@@ -224,7 +229,7 @@ class SampleTable(tables.Table):
 			return mark_safe(tip_info + ' (%s/%s)-(%s/%s) (%d)' % (result_average.number_file_1,\
 					result_average.average_file_1, result_average.number_file_2,\
 					result_average.average_file_2, int(result_average.number_file_1) + int(result_average.number_file_2)) )
-		elif (list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
+		elif (not list_meta is None and list_meta.count() > 0 and list_meta[0].value.equals(MetaKeyAndValue.META_VALUE_Error)):
 			return _("Error")
 		return _('Not yet')
 
@@ -374,14 +379,16 @@ class ProjectTable(tables.Table):
 		
 		sz_project_sample = ""
 		if (count > 0):
-			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results">' +\
-				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a>'
+			sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
+				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
 			## only can change settings when has projects finished
 			#sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 			#	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 		elif (count_not_finished > 0): 
 			sz_project_sample = _("{} processing ".format(count_not_finished))
-		else:
+		else:	## can change settings
 			sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
 				'<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
 		
@@ -442,18 +449,19 @@ class ShowProjectSamplesResults(tables.Table):
 		### default parameters
 		default_software = DefaultProjectSoftware()
 		limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(record,\
-				DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-				if record.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+				DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+				if record.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 		return_html = ""
 		for key in coverage.get_sorted_elements_name():
-			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
-					record.id, key, coverage.get_message_to_show_in_web_site(record.sample.name, key), coverage.get_icon(key, limit_to_mask_consensus))
+			return_html += '<a href="#coverageModal" id="showImageCoverage" data-toggle="modal" project_sample_id="{}" '.format(record.id) +\
+					'sequence="{}"><img title="{}" class="tip" src="{}"></a>'.format(\
+					key, coverage.get_message_to_show_in_web_site(record.sample.name, key), coverage.get_icon(key, limit_to_mask_consensus))
 		return mark_safe(return_html)
 
 	def render_technology(self, record):
 		""" shows if it is Illumina or Minion """
-		return SoftwareNames.TECHNOLOGY_illumina if record.sample.is_type_fastq_gz_sequencing()\
-			else SoftwareNames.TECHNOLOGY_minion
+		return ConstantsSettings.TECHNOLOGY_illumina if record.sample.is_type_fastq_gz_sequencing()\
+			else ConstantsSettings.TECHNOLOGY_minion
 
 	def render_alerts(self, record):
 		"""
@@ -471,7 +479,7 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return number
 		"""
-		return record.mixed_infections.tag.name
+		return "" if record.mixed_infections is None else record.mixed_infections.tag.name
 	
 	def render_dataset(self, record):
 		"""

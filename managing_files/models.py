@@ -150,7 +150,20 @@ class Reference(models.Model):
 		else:
 			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
 		return path_to_find
-	
+
+	def get_gff3_with_gene_annotation(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + ".gene_annotation" + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+		
 	def get_gff3_comulative_positions(self, type_path):
 		"""
 		get GFF3 obtain form genbank
@@ -297,6 +310,8 @@ class Sample(models.Model):
 	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
 	geo_manager = GeoManager()
+	
+	### Type/Subtype Virus
 	identify_virus = models.ManyToManyField(IdentifyVirus)
 	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
 	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
@@ -332,6 +347,8 @@ class Sample(models.Model):
 	
 	###	has the flag indicating that the sample can be processed by projects
 	is_ready_for_projects = models.BooleanField(default=False)
+	###	has the flag indicating that the sample has end of processing, if False it is ready for process
+	is_sample_in_the_queue = models.BooleanField(default=False)
 	
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
@@ -414,7 +431,7 @@ class Sample(models.Model):
 
 	def get_fastq_trimmomatic(self, type_path, b_first_file):
 		"""
-		return fastq output first step
+		return fastQC output first step
 		"""
 		if (not b_first_file and not self.exist_file_2()): return None
 		
@@ -438,6 +455,17 @@ class Sample(models.Model):
 		if (not b_first_file and not self.exist_file_2()): return None
 		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
 
+	def get_fastq_available(self, type_path, b_first_file = True):
+		"""
+		gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
+		try first trimmomatic/nanofilt, then return fastq
+		"""
+		file_name = self.get_trimmomatic_file(type_path, b_first_file)
+		if os.path.exists(file_name): return file_name
+		file_name = self.get_nanofilt_file(type_path)
+		if os.path.exists(file_name): return file_name
+		return self.get_fastq(type_path, b_first_file)
+		
 	def is_original_fastq_removed(self):
 		"""
 		Test if original fastq were removed already
@@ -760,12 +788,17 @@ class Project(models.Model):
 	PERCENTAGE_validated_minor_variants = 51		## only pass <= 50
 	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV = "Sample_list_settings.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV = "Sample_list_settings.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
 	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv" 	### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
 																			### this file is only used for to show the manging_files.views.ShowSampleProjectsView
 	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
 	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
+	PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = "mask_all_consensus" 		### masking all consensus, defined by user
 	
 	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
+	
+	PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"					### Several files zipped
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
 	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
@@ -848,6 +881,9 @@ class Project(models.Model):
 			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
 		return name_to_clean
 	
+	def get_clean_project_name(self):
+		return self._clean_name(self.name)
+	
 	def get_global_file_by_project(self, type_path, file_name):
 		"""
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
@@ -866,9 +902,11 @@ class Project(models.Model):
 		
 	def __get_user_result_global_directory_path__(self, element):
 		# file will be uploaded to MEDIA_ROOT/<filename>
-		if (not element is None and len(element) > 0): return 'projects/result/user_{0}/project_{1}/{2}/{3}'.\
-				format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
-		return 'projects/result/user_{0}/project_{1}/{2}'.format(self.owner.id, self.pk, self.PATH_MAIN_RESULT)
+		if (not element is None and len(element) > 0): return Constants.DIR_PROCESSED_FILES_PROJECT + \
+			'/user_{0}/project_{1}/{2}/{3}'.\
+			format(self.owner.id, self.pk, self.PATH_MAIN_RESULT, element)
+		return Constants.DIR_PROCESSED_FILES_PROJECT + '/user_{0}/project_{1}/{2}'.format(
+			self.owner.id, self.pk, self.PATH_MAIN_RESULT)
 	
 	def __get_global_path__(self, type_path, element):
 		"""
@@ -963,7 +1001,8 @@ class ProjectSample(models.Model):
 		software: SoftwareNames.SOFTWARE_FREEBAYES_name, SoftwareNames.SOFTWARE_SNIPPY_name
 		"""
 		constants = Constants()
-		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None), constants.get_extensions_by_file_type(self.sample.name, file_type))
+		return os.path.join(self.__get_path__(type_path, software.lower() if not software is None else None),
+				constants.get_extensions_by_file_type(self.sample.name, file_type))
 
 	def get_file_output_human(self, type_path, file_type, software, b_second_choice = False):
 		"""
@@ -1018,6 +1057,13 @@ class ProjectSample(models.Model):
 		get clean consensus file name
 		"""
 		return os.path.join(self.__get_path__(type_path, ProjectSample.PATH_MAIN_RESULT), "{}{}{}".format(\
+					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
+
+	def get_backup_consensus_file(self):
+		"""
+		get clean consensus file name
+		"""
+		return os.path.join(self.__get_path__(TypePath.MEDIA_ROOT, ProjectSample.PATH_MAIN_RESULT), "{}{}_backup{}".format(\
 					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
 	
 	def get_consensus_file_web(self):
@@ -1108,7 +1154,7 @@ class Software(models.Model):
 		ordering = ['name', 'version__name']
 
 	def is_updated_today(self):
-		return self.last_update.date() == datetime.now().date()
+		return not self.last_update is None and self.last_update.date() == datetime.now().date()
 
 	def set_last_update_today(self):
 		self.last_update = datetime.now()
@@ -1218,6 +1264,8 @@ class ProcessControler(models.Model):
 	PREFIX_PROJECT = "project_"
 	PREFIX_UPLOAD_FILES = "upload_files_"
 	PREFIX_LINK_FILES_USER = "link_files_user_"
+	PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
+	PREFIX_COLLECT_ALL_PROJECTS_USER = "collect_all_projects_user_"
 	
 	### flags of status
 	FLAG_FINISHED = 'flag_finished'
@@ -1248,6 +1296,10 @@ class ProcessControler(models.Model):
 		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
 	def get_name_link_files_user(self, user):
 		return "{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk)
+	def get_name_collect_all_samples_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_SAMPLES_USER, user.pk)
+	def get_name_collect_all_projects_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
 	def __str__(self):
 		return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(self.pk, self.name, self.is_finished, self.is_running, self.is_error)

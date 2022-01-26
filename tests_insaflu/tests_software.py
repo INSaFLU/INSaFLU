@@ -15,7 +15,7 @@ from utils.software_pangolin import SoftwarePangolin
 from constants.software_names import SoftwareNames
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
-from utils.result import DecodeObjects, Coverage
+from utils.result import DecodeObjects, Coverage, MaskingConsensus, GeneticElement
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference
 from manage_virus.uploadFiles import UploadFiles
@@ -24,9 +24,14 @@ from managing_files.manage_database import ManageDatabase
 from django.test.utils import override_settings
 from manage_virus.constants_virus import ConstantsVirus
 from settings.default_software import DefaultSoftware
-from settings.models import Software as Software2, Parameter
+from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Software as SoftwareSettings, Parameter
 from utils.parse_coverage_file import GetCoverage
 from managing_files.models import Software as SoftwareModel
+from settings.constants_settings import ConstantsSettings
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 import os, filecmp
 
 class Test(TestCase):
@@ -187,17 +192,6 @@ class Test(TestCase):
 		self.assertTrue(exist_status == 0)
 		self.utils.remove_dir(out_dir)
 
-	def test_get_lines_and_average_reads(self):
-		"""
-		test lines and average reads
-		"""
-		software = Software()
-		fastq = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		(lines, average) = software.get_lines_and_average_reads(fastq)
-		self.assertEquals("44425", lines)
-		self.assertEquals("143.6", average)
-
-
 	def test_run_fastq(self):
 		"""
 		run fastq
@@ -342,7 +336,6 @@ class Test(TestCase):
 		## remove all files
 		self.utils.remove_dir(temp_dir);
 
-
 	def test_run_fastq_and_trimmomatic(self):
 		"""
 		Test run fastq and trimmomatic all together
@@ -376,6 +369,7 @@ class Test(TestCase):
 			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
 			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
 			sample.owner = user
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
 			sample.save()
 		
 		### set the job
@@ -384,7 +378,11 @@ class Test(TestCase):
 		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
 
 		### run software
-		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
+		self.assertEqual((True, True), self.software.run_fastq_and_trimmomatic(sample, user))
+
+		default_software = DefaultSoftware()
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))		
 		
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
@@ -401,6 +399,239 @@ class Test(TestCase):
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		self.assertEqual('41254', result_average.number_file_1)
+		self.assertEqual('142.0', result_average.average_file_1)
+		self.assertEqual('41254', result_average.number_file_2)
+		self.assertEqual('139.1', result_average.average_file_2)
+		
+		### get key values of data
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Number of reads R1', stats_illumina[0][0])
+		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual(82508, total_reads)
+		self.assertEqual('41,254', stats_illumina[0][2])
+		self.assertEqual('-3,171.0', stats_illumina[0][3])
+		self.assertEqual('92.9', stats_illumina[0][4])
+		self.assertEqual('Average read length R1', stats_illumina[1][0])
+		self.assertEqual('143.6', stats_illumina[1][1])
+		self.assertEqual('142.0', stats_illumina[1][2])
+		self.assertEqual('-1.6', stats_illumina[1][3])
+		self.assertEqual('--', stats_illumina[1][4])
+		self.assertEqual('Total reads', stats_illumina[-1][0])
+		self.assertEqual('88,850', stats_illumina[-1][1])
+		self.assertEqual('82,508', stats_illumina[-1][2])
+		self.assertEqual('-6,342.0', stats_illumina[-1][3])
+		self.assertEqual('92.9', stats_illumina[-1][4])
+		
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
+		
+		
+		decodeResult = DecodeObjects()
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		result = decodeResult.decode_result(meta_sample.description)
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_FASTQ_name))
+		## remove all files
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+
+	def test_run_fastq_and_trimmomatic_2(self):
+		"""
+		Test run fastq and trimmomatic all together
+ 		"""
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_fastq_and_trimmomatic_1"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = True
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
+			sample.owner = user
+			sample.save()
+		
+		### set the job
+		taskID = "xpto_task" 
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+
+		### turn off trimmomatic
+		default_software = DefaultSoftware()
+		default_software.test_all_defaults(user)
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		is_to_run = False
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,
+							ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		
+		### run software
+		self.assertEqual((True, False), self.software.run_fastq_and_trimmomatic(sample, user))
+		default_project_software = DefaultProjectSoftware()
+		self.assertFalse(default_project_software.is_to_run_trimmomatic(user, sample))
+		
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		
+		manageDatabase = ManageDatabase()
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		meta_value = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, meta_value.value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, meta_value.meta_tag.name)
+		result_average = decodeResultAverageAndNumberReads.decode_result(meta_value.description)
+		self.assertEqual('44425', result_average.number_file_1)
+		self.assertEqual('143.6', result_average.average_file_1)
+		self.assertEqual('44425', result_average.number_file_2)
+		self.assertEqual('143.6', result_average.average_file_2)
+
+		### get key values of data
+		stats_illumina, total_reads = self.software.get_stats_from_sample_reads(sample)
+		self.assertEqual('Number of reads R1', stats_illumina[0][0])
+		self.assertEqual('44,425', stats_illumina[0][1])
+		self.assertEqual(88850, total_reads)
+		self.assertEqual('--', stats_illumina[0][2])
+		self.assertEqual('0.0', stats_illumina[0][3])
+		self.assertEqual('100', stats_illumina[0][4])
+		self.assertEqual('Average read length R1', stats_illumina[1][0])
+		self.assertEqual('143.6', stats_illumina[1][1])
+		self.assertEqual('--', stats_illumina[1][2])
+		self.assertEqual('0.0', stats_illumina[1][3])
+		self.assertEqual('--', stats_illumina[1][4])
+		self.assertEqual('Total reads', stats_illumina[-1][0])
+		self.assertEqual('88,850', stats_illumina[-1][1])
+		self.assertEqual('--', stats_illumina[-1][2])
+		self.assertEqual('0.0', stats_illumina[-1][3])
+		self.assertEqual('100', stats_illumina[-1][4])
+		
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertEqual(1, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Fastq(0.11.9)", list_meta[0].description)
+		
+		decodeResult = DecodeObjects()
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		result = decodeResult.decode_result(meta_sample.description)
+		self.assertFalse(result.is_software_present(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_FASTQ_name))
+		
+		## remove all files
+		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
+	
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_run_fastq_and_trimmomatic_and_identify_species(self):
+		"""
+		Test run fastq and trimmomatic all together
+		"""
+
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_fastq_and_trimmomatic"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = True
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
+			sample.owner = user
+			sample.save()
+		
+		self.assertFalse(sample.is_ready_for_projects)
+		
+		### set the job
+		taskID = "xpto_task" 
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+
+		### turn off trimmomatic
+		default_software = DefaultSoftware()
+		default_software.test_all_defaults(user)
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		is_to_run = False
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, user,
+							ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		
+		### run software
+		self.assertTrue(self.software.run_fastq_and_trimmomatic_and_identify_species(sample, user))
+		default_project_software = DefaultProjectSoftware()
+		self.assertFalse(default_project_software.is_to_run_trimmomatic(user, sample))
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_sample != None)
+		self.assertEquals(taskID, meta_sample.description)
+
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertFalse(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		
 		### number of sequences
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -410,21 +641,57 @@ class Test(TestCase):
 
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
-		self.assertEqual('41254', result_average.number_file_1)
-		self.assertEqual('142.0', result_average.average_file_1)
-		self.assertEqual('41254', result_average.number_file_2)
-		self.assertEqual('139.1', result_average.average_file_2)
+		self.assertEqual('44425', result_average.number_file_1)
+		self.assertEqual('143.6', result_average.average_file_1)
+		self.assertEqual('44425', result_average.number_file_2)
+		self.assertEqual('143.6', result_average.average_file_2)
 
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
 		self.assertTrue(len(list_meta) == 1)
 		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
 		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
-		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
+		self.assertEquals("Success, Fastq(0.11.9)", list_meta[0].description)
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		decodeResult = DecodeObjects()
+		result = decodeResult.decode_result(meta_sample.description)
+		soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+		self.assertTrue(soft_desc is None)
+		
+		sample = Sample.objects.get(pk=sample.id)
+		self.assertTrue(sample.is_ready_for_projects)
+		self.assertTrue(sample.get_is_ready_for_projects())
+		
+		file_abricate = sample.get_abricate_output(TypePath.MEDIA_ROOT)
+		self.assertTrue(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Identify_Sample, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Spades(3.11.1), Abricate(0.8-dev)", list_meta[0].description)
+		self.assertEquals("A-H3N2", sample.type_subtype)
+		self.assertEquals("A-H3N2", sample.get_type_sub_type())
+		if (os.path.exists(file_abricate)): os.unlink(file_abricate)
+		
+		### mixed infections
+		self.assertEquals(0, sample.number_alerts)
+		self.assertEquals(ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, sample.mixed_infections_tag.name)
+		
+		manage_database = ManageDatabase()
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data == None)
+		
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertTrue(meta_data.description == ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO)
 		
 		## remove all files
-		cmd = "rm -r %s*" % (temp_dir); os.system(cmd)
-
-
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+		
 	def test_run_fastq_and_trimmomatic_single_file(self):
 		"""
 		Test run fastq and trimmomatic all together
@@ -457,18 +724,12 @@ class Test(TestCase):
 			sample.save()
 		
 		### run software
-		self.assertTrue(self.software.run_fastq_and_trimmomatic(sample, user))
+		self.assertEqual((True, True), self.software.run_fastq_and_trimmomatic(sample, user))
 		
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
-		
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
@@ -671,7 +932,7 @@ class Test(TestCase):
 
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
-	def test_run_fastq_and_trimmomatic_and_identify_species(self):
+	def test_run_fastq_and_trimmomatic_and_identify_species_other(self):
 		"""
 		Test run fastq and trimmomatic all together
 		"""
@@ -737,12 +998,6 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
-		
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
@@ -811,6 +1066,147 @@ class Test(TestCase):
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_run_fastq_and_trimmomatic_and_identify_species_no_abricate(self):
+		"""
+		Test run fastq and trimmomatic all together
+		"""
+
+		uploadFiles = UploadFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		self.assertEqual("2", version)
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_fastq_and_trimmomatic_no_abricate"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = True
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina)
+			sample.owner = user
+			sample.save()
+		
+		self.assertFalse(sample.is_ready_for_projects)
+		
+		### set the job
+		taskID = "xpto_task" 
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
+
+		### turn off abricate
+		default_software = DefaultSoftware()
+		default_software.test_all_defaults(user)
+		
+		default_project_software = DefaultProjectSoftware()
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		is_to_run = False
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_ABRICATE_name, user,
+							ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		
+		### run software
+		self.assertTrue(self.software.run_fastq_and_trimmomatic_and_identify_species(sample, user))
+		self.assertFalse(default_project_software.is_to_run_abricate(user, sample,
+				ConstantsSettings.TECHNOLOGY_illumina))
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_sample != None)
+		self.assertEquals(taskID, meta_sample.description)
+
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastq(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
+		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
+		
+		### number of sequences
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
+
+		decodeResultAverageAndNumberReads = DecodeObjects()
+		result_average = decodeResultAverageAndNumberReads.decode_result(list_meta[0].description)
+		self.assertEqual('41254', result_average.number_file_1)
+		self.assertEqual('142.0', result_average.average_file_1)
+		self.assertEqual('41254', result_average.number_file_2)
+		self.assertEqual('139.1', result_average.average_file_2)
+
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, list_meta[0].meta_tag.name)
+		self.assertEquals("Success, Fastq(0.11.9), Trimmomatic(0.39)", list_meta[0].description)
+		
+		meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
+		decodeResult = DecodeObjects()
+		result = decodeResult.decode_result(meta_sample.description)
+		soft_desc = result.get_software_instance(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
+		self.assertEqual(SoftwareNames.SOFTWARE_TRIMMOMATIC_name, soft_desc.name)
+		self.assertEqual("Quality encoding detected:", soft_desc.get_vect_key_values()[0].key)
+		self.assertEqual("phred33", soft_desc.get_vect_key_values()[0].value)
+		self.assertEqual("Input Read Pairs:", soft_desc.get_vect_key_values()[1].key)
+		self.assertEqual("44425", soft_desc.get_vect_key_values()[1].value)
+		self.assertEqual("Dropped:", soft_desc.get_vect_key_values()[-1].key)
+		self.assertEqual("434 (0,98%)", soft_desc.get_vect_key_values()[-1].value)
+		self.assertNotEqual("434 (0,98%)_", soft_desc.get_vect_key_values()[-1].value)
+		
+		sample = Sample.objects.get(pk=sample.id)
+		self.assertTrue(sample.is_ready_for_projects)
+		self.assertTrue(sample.get_is_ready_for_projects())
+		
+		self.assertFalse(os.path.exists(sample.get_abricate_output(TypePath.MEDIA_ROOT)))
+		manageDatabase = ManageDatabase()
+		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Identify_Sample, None)
+		self.assertTrue(len(list_meta) == 0)
+		
+		### mixed infections
+		self.assertEquals(0, sample.number_alerts)
+		self.assertEqual(Constants.EMPTY_VALUE_NA, sample.mixed_infections_tag.name)
+		self.assertEqual(Constants.EMPTY_VALUE_NA, sample.type_subtype)
+		
+		manage_database = ManageDatabase()
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data != None)
+		self.assertEqual("Info: Abricate turned OFF by the user.", meta_data.description)
+		
+		meta_data = manage_database.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(meta_data is None)
+		
+		## remove all files
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_run_fastq_and_trimmomatic_and_identify_species_2(self):
@@ -879,12 +1275,6 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
-		
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
@@ -1009,12 +1399,6 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
 		
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
-		
 		### number of sequences
 		manageDatabase = ManageDatabase()
 		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
@@ -1137,12 +1521,6 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, os.path.basename(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))))
 		self.assertTrue(os.path.exists(os.path.join(temp_dir, Constants.DIR_PROCESSED_PROCESSED, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False)))))
-		
-		manageDatabase = ManageDatabase()
-		list_meta = manageDatabase.get_sample_metakey(sample, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, None)
-		self.assertTrue(len(list_meta) == 1)
-		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
-		self.assertEquals(MetaKeyAndValue.META_KEY_Number_And_Average_Reads, list_meta[0].meta_tag.name)
 		
 		### number of sequences
 		manageDatabase = ManageDatabase()
@@ -1486,6 +1864,8 @@ class Test(TestCase):
 		## test consensus file
 		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
 		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
+		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file()))
 
 		### human file name, snippy tab
 		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
@@ -1525,9 +1905,11 @@ class Test(TestCase):
 		result = decode_result.decode_result(list_meta[0].description)
 		self.assertTrue(result is not None)
 		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
-		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V)",\
+		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V)",\
  						result.get_software(self.software_names.get_freebayes_name()))
-
+		self.assertTrue(result.is_software_present(self.software_names.get_freebayes_name()))
+		self.assertFalse(result.is_software_present(self.software_names.get_trimmomatic_name()))
+		
 		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 		decode_coverage = DecodeObjects()
 		coverage = decode_coverage.decode_result(meta_value.description)
@@ -1551,6 +1933,262 @@ class Test(TestCase):
 			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
 			self.assertTrue(os.path.exists(output_image))
 
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_bam_stats,
+						MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(not meta_value is None)
+		decode_masking_vcf = DecodeObjects()
+		result = decode_masking_vcf.decode_result(meta_value.description)
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+		
+		self.utils.remove_dir(temp_dir)
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
+
+
+	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
+	def test_process_second_stage_analysis_single_file_no_freebayes(self):
+		"""
+ 		test global method
+ 		"""
+		self.assertEquals(getattr(settings, "MEDIA_ROOT_TEST", None), getattr(settings, "MEDIA_ROOT", None))
+		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT_TEST", None))
+		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
+
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
+		file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_2)
+
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		ref_name = "second_stagis_single_file2"
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = fasta_file
+			reference.reference_fasta_name = os.path.basename(fasta_file)
+			reference.reference_genbank.name = gb_file
+			reference.reference_genbank_name = os.path.basename(gb_file)
+			reference.owner = user
+			reference.save()
+			
+		temp_dir = self.utils.get_temp_dir()
+		self.utils.copy_file(file_1, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+		self.utils.copy_file(file_2, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2))
+			
+		sample_name = "run_snippyis_single_file1"
+		try:
+			sample = Sample.objects.get(name=sample_name)
+		except Sample.DoesNotExist:
+			sample = Sample()
+			sample.name = sample_name
+			sample.is_valid_1 = True
+			sample.file_name_1 = ConstantsTestsCase.FASTQ1_1
+			sample.path_name_1.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
+			sample.is_valid_2 = False
+			sample.file_name_2 = ConstantsTestsCase.FASTQ1_2
+			sample.path_name_2.name = os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_2)
+			sample.set_type_of_fastq_sequencing(Constants.FORMAT_FASTQ_illumina) 
+			sample.owner = user
+			sample.save()
+
+		project_name = "file_naais_single_filee_3"
+		try:
+			project = Project.objects.get(name=project_name)
+		except Project.DoesNotExist:
+			project = Project()
+			project.name = project_name
+			project.reference = reference
+			project.owner = user
+			project.save()
+		
+		## create project_sample
+		project_sample = ProjectSample()
+		project_sample.sample = sample
+		project_sample.project = project
+		project_sample.save()
+		
+		### copy to trimmomatic files, don't copy trimmommatic files to project
+		##self.utils.copy_file(file_1, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
+		##self.utils.copy_file(file_2, project_sample.sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
+		
+		### turn off freebayes
+		default_software = DefaultSoftware()
+		default_software.test_all_defaults(user)
+		self.assertTrue(default_software.is_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		### turn off freebayes
+		is_to_run = False
+		default_software.set_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name, user,
+							ConstantsSettings.TECHNOLOGY_illumina, is_to_run)
+		self.assertFalse(default_software.is_software_to_run(SoftwareNames.SOFTWARE_FREEBAYES_name,
+							user, ConstantsSettings.TECHNOLOGY_illumina))
+		### set mincov 30 for snippy
+		try:
+			software = SoftwareSettings.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,
+							type_of_use = SoftwareSettings.TYPE_OF_USE_global,
+							technology__name = ConstantsSettings.TECHNOLOGY_illumina)
+			self.assertTrue(software.is_used_in_global())
+		except SoftwareSettings.DoesNotExist:
+			self.fail("Must exist this software name")
+		
+		parameters = Parameter.objects.filter(software=software)
+		self.assertTrue(3, len(parameters))
+		
+		### test set default
+		self.assertEqual("10", parameters[1].parameter)
+		parameter = parameters[1]
+		parameter.parameter = 5
+		parameter.save()
+		self.assertEqual("--mapqual 20 --mincov 5 --minfrac 0.51", default_software.get_snippy_parameters(user))
+		
+		default_software_project = DefaultProjectSoftware()
+		default_software_project.test_all_defaults(user, project, None, None) ## the user can have defaults yet		
+		default_software_project.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user,
+	 			SoftwareSettings.TYPE_OF_USE_project_sample,
+	 			None, project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
+	
+		## test if it is necessary to run freebayes
+		self.assertFalse(default_software_project.is_to_run_freebayes(user, project_sample))
+				
+		manageDatabase = ManageDatabase()
+		metaKeyAndValue = MetaKeyAndValue()
+		meta_key_project_sample = metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id)
+		manageDatabase.set_project_sample_metakey(project_sample, user, meta_key_project_sample, MetaKeyAndValue.META_VALUE_Queue, "meta_sample.description")
+		self.assertTrue(self.software.process_second_stage_snippy_coverage_freebayes(project_sample, user))
+		## test if freebays run
+		default_project_software = DefaultProjectSoftware()
+		self.assertFalse(default_project_software.is_to_run_freebayes(user, project_sample))
+		
+		try:
+			project_sample = ProjectSample.objects.get(pk=project_sample.id)
+		except ProjectSample.DoesNotExist:
+			self.fail("Must exist")
+		self.assertTrue(project_sample.is_finished)
+		self.assertTrue(project_sample.is_mask_consensus_sequences)
+		
+		### test the files
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name).index(SoftwareNames.SOFTWARE_SNIPPY_name.lower()) != -1)
+		
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_BAM_BAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CSV, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_REF_FASTA_FAI, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		
+		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_snippyis_single_file1.tab")
+		self.assertTrue(filecmp.cmp(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name),
+				expected_file))
+		self.assertTrue(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)))
+		
+		## freebayes
+		self.assertTrue(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name).index(SoftwareNames.SOFTWARE_FREEBAYES_name.lower()) != -1)
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+		expected_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_freebayes_single_file1.tab")
+		self.assertFalse(os.path.exists(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_VCF_GZ, SoftwareNames.SOFTWARE_FREEBAYES_name)))
+
+		## test consensus file
+		self.assertTrue(os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)))
+		self.assertTrue(os.path.getsize(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) > 10)
+		self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file()))
+
+		### human file name, snippy tab
+		self.assertTrue(os.path.exists(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())))
+		self.assertTrue(os.path.getsize(project_sample.get_file_output_human(TypePath.MEDIA_ROOT, FileType.FILE_TAB,  self.software_names.get_snippy_name())) > 10)
+		
+		### set flag that is finished
+		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Count_Hits, None)
+		self.assertTrue(len(list_meta) == 1)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Count_Hits, list_meta[0].meta_tag.name)
+		
+		### get the hits value
+		decode_coverage = DecodeObjects()
+		count_hits = decode_coverage.decode_result(list_meta[0].description)
+		self.assertEquals(0, count_hits.get_hits_50_90())
+		self.assertEquals(0, count_hits.get_hits_less_50())
+		self.assertEquals(0, count_hits.get_total_50_50_90())
+		self.assertEquals(0, count_hits.get_total())
+		
+		self.assertEquals(0, project_sample.count_variations.var_less_50)
+		self.assertEquals(0, project_sample.count_variations.var_bigger_50_90)
+		self.assertEquals(0, project_sample.count_variations.var_bigger_90)
+		self.assertEquals(0, project_sample.alert_first_level)
+		self.assertEquals(0, project_sample.alert_second_level)
+		
+		### test mixed infections
+		self.assertEquals(Constants.EMPTY_VALUE_NA, project_sample.mixed_infections.tag.name)
+		
+		list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
+		self.assertEquals(1, len(list_meta))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, list_meta[0].value)
+		self.assertEquals(MetaKeyAndValue.META_KEY_Snippy_Freebayes, list_meta[0].meta_tag.name)
+		
+		decode_result = DecodeObjects()
+		result = decode_result.decode_result(list_meta[0].description)
+		self.assertTrue(result is not None)
+		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 5 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
+		self.assertEquals("MSA Masker-1.0; (--c 4; for coverages less than 5 in 30% of the regions.)", result.get_software(self.software_names.get_msa_masker_name()))
+		self.assertEquals("", result.get_software(self.software_names.get_freebayes_name()))
+		self.assertTrue(result.is_software_present(self.software_names.get_snippy_name()))
+		self.assertFalse(result.is_software_present(self.software_names.get_freebayes_name()))
+		self.assertFalse(result.is_software_present(self.software_names.get_trimmomatic_name()))
+		
+		meta_value = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
+		decode_coverage = DecodeObjects()
+		coverage = decode_coverage.decode_result(meta_value.description)
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_ALL), "527.4")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_ALL), "2198.8")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_ALL), "1449.3")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_9), "100.0")
+		self.assertEqual(coverage.get_coverage('PA', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('MP', Coverage.COVERAGE_MORE_0), "100.0")
+		self.assertEqual(coverage.get_coverage('HA', Coverage.COVERAGE_MORE_0), "100.0")
+		
+		lst_meta_sample = manageDatabase.get_project_sample_metakey(project_sample, meta_key_project_sample, None)
+		self.assertEquals(2, len(lst_meta_sample))
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Queue, lst_meta_sample[1].value)
+		self.assertEquals(MetaKeyAndValue.META_VALUE_Success, lst_meta_sample[0].value)
+		
+		### check if the images exist
+		for gene in self.utils.get_elements_from_db(reference, user):
+			output_image = project_sample.get_global_file_by_element(TypePath.MEDIA_ROOT, ProjectSample.PREFIX_FILE_COVERAGE, gene, FileExtensions.FILE_PNG)
+			self.assertTrue(os.path.exists(output_image))
+
+		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
+						MetaKeyAndValue.META_KEY_bam_stats,
+						MetaKeyAndValue.META_VALUE_Success)
+		self.assertTrue(not meta_value is None)
+		decode_masking_vcf = DecodeObjects()
+		result = decode_masking_vcf.decode_result(meta_value.description)
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('87818', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+		
 		self.utils.remove_dir(temp_dir)
 		self.utils.remove_dir(getattr(settings, "MEDIA_ROOT", None))
 
@@ -1697,7 +2335,7 @@ class Test(TestCase):
 		result = decode_result.decode_result(list_meta[0].description)
 		self.assertTrue(result is not None)
 		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
-		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V)",\
+		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V)",\
  						result.get_software(self.software_names.get_freebayes_name()))
 
 		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
@@ -1730,10 +2368,10 @@ class Test(TestCase):
 		default_software = DefaultSoftware()
 		default_software.test_all_defaults(user)
 		try:
-			software = Software2.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
-							type_of_use = Software2.TYPE_OF_USE_global)
+			software = SoftwareSettings.objects.get(name=SoftwareNames.SOFTWARE_SNIPPY_name, owner=user,\
+							type_of_use = SoftwareSettings.TYPE_OF_USE_global)
 			self.assertTrue(software.is_used_in_global())
-		except Software2.DoesNotExist:
+		except SoftwareSettings.DoesNotExist:
 			self.fail("Must exist this software name")
 
 		parameters = Parameter.objects.filter(software=software)
@@ -1825,7 +2463,7 @@ class Test(TestCase):
 		result = decode_result.decode_result(list_meta[0].description)
 		self.assertTrue(result is not None)
 		self.assertEquals("Snippy-3.2-dev; (--mapqual 20 --mincov 10 --minfrac 0.51)", result.get_software(self.software_names.get_snippy_name()))
-		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (-p 2 -q 20 -m 20 --min-coverage 100 --min-alternate-fraction 0.01 --min-alternate-count 10 -V)",\
+		self.assertEquals("Freebayes-v1.1.0-54-g49413aa; (--min-mapping-quality 20 --min-base-quality 20 --min-coverage 100 --min-alternate-count 10 --min-alternate-fraction 0.01 --ploidy 2 -V)",\
  						result.get_software(self.software_names.get_freebayes_name()))
 
 		meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
@@ -1943,6 +2581,32 @@ class Test(TestCase):
 		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
 		os.unlink(out_file)
 
+	def test_run_genbank2gff3_for_nextclade(self):
+		"""
+		test genbank2gff3 method
+		"""
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid_for_nextclade.gff3")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name_rim", ".txt")
+		for_nextclade = True
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file, for_nextclade)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		os.unlink(out_file)
+
+	def test_run_genbank2gff3_for_nextclade_2(self):
+		"""
+		test genbank2gff3 method
+		"""
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		gff_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "covid_for_nextclade_2.gff3")
+		self.assertTrue(os.path.exists(gb_file))
+		out_file = self.utils.get_temp_file("file_name", ".txt")
+		run_for_nextstrain = True
+		out_file_2 = self.software.run_genbank2gff3(gb_file, out_file, run_for_nextstrain)
+		self.assertTrue(filecmp.cmp(out_file_2, gff_file))
+		os.unlink(out_file)
+		
 	def test_run_genbank2gff3_positions_comulative(self):
 		"""
 		test genbank2gff3 method
@@ -2220,7 +2884,68 @@ class Test(TestCase):
 		self.assertTrue(self.software_names.get_fasttree().endswith(self.software_names.get_fasttree_name()))
 		self.assertEquals(output_file, out_file)
 		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
+		
+		### reroot the tree with fake leaf name		
+		reroot_leaf = "EVA011_S54_"
+		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters(), reroot_leaf)
+		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
+		
+		### reroot the tree		
+		reroot_leaf = "EVA011_S54"
+		output_file = self.software.run_fasttree(in_file, out_file, self.software_names.get_fasttree_parameters(), reroot_leaf)
+		expect_file_nwk = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "2_" + ConstantsTestsCase.FILE_FASTTREE_RESULT_NWK)
+		self.assertTrue(filecmp.cmp(out_file, expect_file_nwk))
 		os.unlink(out_file)
+
+
+	def test_run_nextalign(self):
+		
+		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		sequence_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "run_snippy1_sdfs.consensus.fa")
+		
+		temp_dir = self.utils.get_temp_dir()
+		gff_file = self.utils.get_temp_file_from_dir(temp_dir, "file_name", ".gff3")
+		self.software.run_genbank2gff3(gb_file, gff_file, True)
+		genes_to_process = "PA"
+		
+		ref_file = self.utils.get_temp_file_from_dir(temp_dir, "reference", ".fasta")
+		records = []
+		with open(reference_fasta) as handle_ref: 
+			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+
+			if genes_to_process in record_dict_ref:
+				records.append(record_dict_ref[genes_to_process])
+				records[-1].id = "reference"
+				### save file
+				with open(ref_file, 'w') as handle_write:
+					SeqIO.write(records, handle_write, "fasta")
+			self.assertTrue(len(records) > 0)
+					
+		seq_file = self.utils.get_temp_file_from_dir(temp_dir, "sequence", ".fasta")
+		records = []
+		with open(sequence_fasta) as handle_ref: 
+			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
+
+			if genes_to_process in record_dict_ref:
+				records.append(record_dict_ref[genes_to_process])
+				### save file
+				with open(seq_file, 'w') as handle_write:
+					SeqIO.write(records, handle_write, "fasta")
+			self.assertTrue(len(records) > 0)
+		
+		
+		alignment_file, vect_protein_file, insert_positions_file = \
+			self.software.run_nextalign(ref_file, seq_file, gff_file, genes_to_process, temp_dir)
+		self.assertEqual(1, len(vect_protein_file))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.aligned.fasta")
+		self.assertTrue(filecmp.cmp(alignment_file, expect_result))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.PA.fasta")
+		self.assertTrue(filecmp.cmp(vect_protein_file[0], expect_result))
+		expect_result = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextalign.insertions.csv")
+		self.assertTrue(filecmp.cmp(insert_positions_file, expect_result))
+		self.utils.remove_dir(temp_dir)
+
 
 	### test single file in sample
 	def test_identify_type_and_sub_type_single_file(self):
@@ -2432,7 +3157,7 @@ class Test(TestCase):
 		self.assertEquals(is_downsized, False)
 
 
-	def test_make_mask_consensus(self):
+	def test_make_mask_consensus_by_deep(self):
 		"""
 		run make mask consensus
 		"""
@@ -2518,7 +3243,8 @@ class Test(TestCase):
 		self.assertEqual(49.0, coverage.ratio_value_defined_by_user)	
 
 		limit_make_mask = 70
-		msa_parameters = self.software.make_mask_consensus(os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
+		msa_parameters = self.software.make_mask_consensus_by_deep(os.path.join(out_put_path,
+			os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_CONSENSUS_FA, ""))),
  			project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
  			os.path.join(out_put_path, os.path.basename(project_sample.get_file_output(TypePath.MEDIA_URL, FileType.FILE_DEPTH_GZ, ""))), 
  			coverage, sample_name, limit_make_mask)
@@ -2530,7 +3256,7 @@ class Test(TestCase):
 		remove_path = os.path.dirname(out_put_path)
 		if (len(remove_path.split('/')) > 2): self.utils.remove_dir(remove_path)
 		else: self.utils.remove_dir(out_put_path)
-
+		self.utils.remove_dir(temp_dir)
 
 	def test_run_snippy_vcf_to_tab_freq_and_evidence(self):
 		
@@ -2630,3 +3356,147 @@ class Test(TestCase):
 		
 		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_A_Hong_Kong_4801_2014.fasta")
 		self.assertFalse(self.software_pangolin.is_ref_sars_cov_2(consensus_file_1))
+	
+	def test_align_two_sequences(self):
+		
+		seq_ref, seq_consensus = self.software.align_two_sequences(
+			"ATGGAAGATTTTGTGCGACAATGCTTCAACCCGATGATTGTCGAACTTGCAGAAAAAGCAATGAAAGAGTATGGGGAGGATCGAAAATTGAAACCAACAAATTT",
+			"ATGGAAGATTTTGTGCGACAATGCTTCAACCGATGATTGTCGAACTTGCAGACGAAAAGCAATGAAAGAGTATGGGGAGGATCTGAAAATTGAAACCAACAAATTT")
+		self.assertEqual("ATGGAAGATTTTGTGCGACAATGCTTCAACCCGATGATTGTCGAACTTGCAGA--AAAAGCAATGAAAGAGTATGGGGAGGATC-GAAAATTGAAACCAACAAATTT",
+						seq_ref)
+		self.assertEqual("ATGGAAGATTTTGTGCGACAATGCTTCAA-CCGATGATTGTCGAACTTGCAGACGAAAAGCAATGAAAGAGTATGGGGAGGATCTGAAAATTGAAACCAACAAATTT",
+						seq_consensus)
+
+
+	def test_mask_sequences_by_position(self):
+		
+		seq_ref =       SeqRecord(Seq("AACA-AC--AAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AA-AAACAC--C"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "20"
+		mask_from_end = "20"
+		mask_range = "1-20"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(12, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNNNNNNNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACA-AC--AAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AA-AAACAC--C"), id="xpto")
+		mask_sites = "1,2"
+		mask_from_beginning = "-1"
+		mask_from_end = "-1"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNCACC", str(sequence_consensus.seq))
+
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AAAAACACC"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(11, len(str(sequence_consensus.seq)))
+		self.assertEqual("AAANNCACCNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = ""
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("NNCAACANN", str(sequence_consensus.seq))
+			
+		seq_ref =       SeqRecord(Seq("AACAACAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = "2"
+		mask_from_end = "2"
+		mask_range = "0-40"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("NNNNNNNNN", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAACCAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAA", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAAAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(9, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAA", str(sequence_consensus.seq))
+		
+		seq_ref =       SeqRecord(Seq("AACAAAAAAAAAAAAAAA"), id="xpto")
+		seq_consensus = SeqRecord(Seq("AACAACAAAAAAAAAAAAA"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "0"
+		mask_from_end = "0"
+		mask_range = "0"
+		sequence_consensus = self.software.mask_sequence(seq_ref, seq_consensus, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual(19, len(str(sequence_consensus.seq)))
+		self.assertEqual("AACANNAAAAAAAAAAAAA", str(sequence_consensus.seq))
+
+		temp_ref_file = self.utils.get_temp_file("ref_test", ".fasta")
+		temp_consensus_file = self.utils.get_temp_file("consensus_test", ".fasta")
+		vect_record_out = [SeqRecord(Seq("AACAAAAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_ref_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		vect_record_out = [SeqRecord(Seq("AACAACAAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_consensus_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("7")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("10-11")
+		genetic_element = GeneticElement()
+		genetic_element.set_mask_consensus_element("xpto", masking_consensus)
+		self.software.mask_sequence_by_sites(temp_ref_file, temp_consensus_file, genetic_element)
+		dt_records = SeqIO.to_dict(SeqIO.parse(temp_consensus_file, "fasta"))
+		self.assertEqual("NNCAACNAANNAAAAANNA", str(dt_records["xpto"].seq))
+		
+		vect_record_out = [SeqRecord(Seq("AACAACAAAAAAAAAAAA"), id="xpto")]
+		with open(temp_consensus_file, "w") as handle_fasta_out:
+			SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("7")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("3")
+		masking_consensus.set_mask_regions("10-14")
+		genetic_element = GeneticElement()
+		genetic_element.set_mask_consensus_element("xpto", masking_consensus)
+		self.software.mask_sequence_by_sites(temp_ref_file, temp_consensus_file, genetic_element)
+		dt_records = SeqIO.to_dict(SeqIO.parse(temp_consensus_file, "fasta"))
+		self.assertEqual("NNCAACNAANNNNNANNN", str(dt_records["xpto"].seq))
+		
+		os.unlink(temp_consensus_file)
+		os.unlink(temp_ref_file)
+
+
+	def test_get_statistics_bam(self):
+		""" test stasts in bam file """
+		bam_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_BAM, "run_snippy1.bam")
+		self.assertTrue(os.path.exists(bam_file))
+		result = self.software.get_statistics_bam(bam_file)
+		self.assertEqual('43909', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_mapped_reads))
+		self.assertEqual('43909', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
+		self.assertEqual(None, result.get_value_by_key('xpto'))
+
+
+
+

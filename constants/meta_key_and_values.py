@@ -3,6 +3,7 @@ Created on Nov 10, 2017
 
 @author: mmp
 '''
+from settings.constants_settings import ConstantsSettings
 
 class MetaKeyAndValue(object):
 	'''
@@ -25,6 +26,7 @@ class MetaKeyAndValue(object):
 	META_KEY_Identify_pangolin = "IdentifyPangolin"						## Tag to use in pangolin
 																		## Value: META_VALUE_Error|META_VALUE_Success; Description: result.Result
 	META_KEY_Count_Hits = "Count Hits"									## Has the hits (50-90) (<50)
+	META_KEY_bam_stats = "Bam statistics"								## Has the bam statistics, reads available, mapped
 	META_KEY_Tree_Count_All_Sequences = "Tree_Count_All_Sequences"		## has the number of samples processed to build the tree
 	META_KEY_Tree_Count_By_Element = "Tree_Count_By_Element"			## has the number of samples processed to build the tree by element
 	META_KEY_Tree_Count_Protein_By_Element = "Tree_Count_Protein By_Element"			## has the number of samples processed to build the tree by protein element
@@ -56,16 +58,16 @@ class MetaKeyAndValue(object):
 	
 	#### KEYS to remove if we run Snippy And FreeBayes Again
 	VECT_TO_REMOVE_RUN_PROJECT_SAMPLE = [META_KEY_ALERT_COVERAGE,\
-							META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
-							META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
-							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
+						META_KEY_ALERT_MIXED_INFECTION_RATIO_TEST,\
+						META_KEY_ALERT_MIXED_INFECTION_SUM_TEST,\
+						META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE]
 
 	#### KEYS to remove if we run trimmomatic or NanoFilt again
 	VECT_TO_REMOVE_RUN_SAMPLE = [
-							META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
-							META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
-							META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
-							META_KEY_Identify_Sample]
+						META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+						META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+						META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
+						META_KEY_Identify_Sample]
 
 	### VECT message for show in web page
 	VECT_MESSAGE_ALERT_COVERAGE = [META_KEY_ALERT_COVERAGE_value_defined_by_user,\
@@ -78,18 +80,17 @@ class MetaKeyAndValue(object):
 	### }
 	NAME_sample = "Sample"						### if the software was used in sample
 	NAME_project_sample = "ProjectSample"		### if the software was used in project sample
-	TECHNOLOGY_illumina = "illumina"
-	TECHNOLOGY_ONT = "ONT"
 	
 	### order out
-	VECT_TECHNOLOGIES_OUT_REPORT = [TECHNOLOGY_illumina , TECHNOLOGY_ONT]
+	VECT_TECHNOLOGIES_OUT_REPORT = [ConstantsSettings.TECHNOLOGY_illumina,
+								ConstantsSettings.TECHNOLOGY_minion]
 	### key to show in report
 	DICT_SOFTWARE_SHOW_IN_RESULTS = {
-		TECHNOLOGY_illumina : {
+		ConstantsSettings.TECHNOLOGY_illumina : {
 			NAME_sample : [META_KEY_Fastq_Trimmomatic_Software, META_KEY_Identify_Sample_Software, ],
 			NAME_project_sample : [META_KEY_Snippy_Freebayes, ],
 		},
-		TECHNOLOGY_ONT : {
+		ConstantsSettings.TECHNOLOGY_minion : {
 			NAME_sample : [	META_KEY_NanoStat_NanoFilt_Software, ],
 			NAME_project_sample : [ META_KEY_Medaka, ],
 		}
@@ -100,7 +101,11 @@ class MetaKeyAndValue(object):
 # 	}
 	## coverage about bam file
 	META_KEY_Coverage = "Coverage"
-																	
+								
+	## tag for masking consensus values
+	META_KEY_Masking_consensus = "Masking consensus"
+	META_KEY_Masking_consensus_by_minfrac_VCF_medaka = "Masking consensus by Minfrac VCF medaka"
+										
 	### Task ID by Job
 	META_KEY_Queue_TaskID = "QueueTaskID"		### Global queueTaskID
 	
@@ -123,6 +128,11 @@ class MetaKeyAndValue(object):
 	META_VALUE_Success = "Success"
 	META_VALUE_Queue = "Queue"
 
+	## Keys for statistics samtools mapped reads
+	SAMTOOLS_flagstat_total_reads = "Total reads"
+	SAMTOOLS_flagstat_mapped_reads = "Mapped reads"
+	
+	
 	def __init__(self):
 		'''
 		Constructor

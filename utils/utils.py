@@ -3,6 +3,7 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
+import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from constants.constants import Constants, FileExtensions, TypePath, TypeFile
 from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
@@ -11,6 +12,7 @@ from managing_files.models import ProjectSample
 from utils.result import GeneticElement, Gene, FeatureLocationSimple
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.Seq import MutableSeq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
@@ -22,11 +24,11 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.mail import send_mail
 from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
 from pysam import pysam
 from django.conf import settings
 from statistics import mean
 from django.db import transaction
+from utils.result import MaskingConsensus
 
 class Utils(object):
 	'''
@@ -55,11 +57,21 @@ class Utils(object):
 		"""
 		return os.path.join(Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id), "sampleId_{0}".format(sample_id))
 
-	def get_path_to_projec_file(self, user_id, project_id):
+	def get_sample_list_by_user(self, user_id, type_path, extension):
 		"""
-		get the path to project
+		get the path to sample
 		"""
-		return os.path.join(Constants.DIR_PROCESSED_FILES_PROJECT, "userId_{0}".format(user_id), "projectId_{0}".format(project_id))
+		return os.path.join(getattr(settings, type_path, None),
+					Constants.DIR_PROCESSED_FILES_FASTQ, "userId_{0}".format(user_id),
+					Constants.SAMPLE_LIST_all_samples + extension)
+		
+	def get_project_list_by_user(self, user_id, type_path, extension):
+		"""
+		get the path to sample
+		"""
+		return os.path.join(getattr(settings, type_path, None),
+					Constants.DIR_PROCESSED_FILES_PROJECT, "user_{0}".format(user_id),
+					Constants.PROJECTS_LIST_all_samples + extension)
 	
 	def get_path_upload_file(self, user_id, type_file):
 		"""
@@ -129,7 +141,8 @@ class Utils(object):
 		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		self.touch_file(main_path)		## up to date main path to not be removed by file system
 		while 1:
-			return_path = os.path.join(main_path, "insa_flu_path_" + str(random.randrange(10000000, 99999999, 10)))
+			return_path = os.path.join(main_path, "influ_path_{}_{}".format(
+				str(os.getpid()), str(random.randrange(10000000, 99999999, 10))) )
 			if (not os.path.exists(return_path)):
 				os.makedirs(return_path, exist_ok=True)
 				return return_path
@@ -281,7 +294,7 @@ class Utils(object):
 			for record in SeqIO.parse(handle, "fastq"):
 				vect_length.append(len(str(record.seq)))
 				count += 1
-				if (count > 50): break
+				if (count > 100): break
 			handle.close()
 #			print("mean(vect_length): {} ".format(mean(vect_length)))
 		except:
@@ -289,7 +302,7 @@ class Utils(object):
 		
 		### if read something in last SeqIO.parse
 		if (len(vect_length) > 1):
-			if (max(vect_length) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
+			if (mean(sorted(vect_length, reverse=True)[:5]) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
 			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_ont
 			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		
@@ -725,11 +738,11 @@ class Utils(object):
 		vcf_hanlder.close()
 		return vcf_file_out
 
-	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, coverage_limit,
-									freq_vcf_limit):
+	def add_freq_ao_ad_and_type_to_vcf(self, vcf_file, file_coverage, vcf_file_out, vcf_file_out_removed_by_filter,
+					coverage_limit, freq_vcf_limit):
 		""" add FREQ, AO, AF and TYPE to VCF, FREQ=AO/DP
 		This case is used in MEDAKA only
-		
+		:param vcf_file_out_removed_by_filter -> can be None, keep the variants that are filter by  freq_vcf_limit
 		vcffile must be gzip and tbi included
 		:param coverage_limit -> filter by this coverage (this is necessary because medaka doesn't have)
 		:param cut off for VCF freq
@@ -750,6 +763,8 @@ class Utils(object):
 			return
 		
 		vcf_hanlder_write = pysam.VariantFile(vcf_file_out, "w")
+		if not vcf_file_out_removed_by_filter is None:
+			vcf_hanlder_write_removed_by_filter = pysam.VariantFile(vcf_file_out_removed_by_filter, "w")
 		if (not FREQ in vcf_hanlder.header.info): vcf_hanlder.header.info.add(FREQ, number='A', type='Float', description='Ratio of AO/(DPSP-AR)')
 		if (not AO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(AO, number='A', type='Integer', description='Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)')
 		if (not RO in vcf_hanlder.header.info): vcf_hanlder.header.info.add(RO, number='1', type='Integer', description='Reference allele observation count, SR (ref fwd + ref rev)')
@@ -761,10 +776,14 @@ class Utils(object):
 		## write the header
 		for variant_header_records in vcf_hanlder.header.records:
 			vcf_hanlder_write.header.add_record(variant_header_records)
-		
+			if not vcf_file_out_removed_by_filter is None:
+				vcf_hanlder_write_removed_by_filter.header.add_record(variant_header_records)
+				
 		for variant_sample in vcf_hanlder.header.samples:
 			vcf_hanlder_write.header.add_sample(variant_sample)
-			
+			if not vcf_file_out_removed_by_filter is None:
+				vcf_hanlder_write_removed_by_filter.header.add_sample(variant_sample)
+
 		for variant in vcf_hanlder:
 			### DP must be replaced by DPSP. DPSP is the sum of all reads Span and Ambiguous
 			if ("SR" in variant.info and "DPSP" in variant.info and "AR" in variant.info):	## SR=0,0,15,6
@@ -783,6 +802,7 @@ class Utils(object):
 				out_ro = -1			### RO
 				vect_out_af = []	### AF
 				vect_out_freq = []	### FREQ
+				vect_out_freq_filtered = []	### FREQ
 				vect_out_type = []	### TYPE
 				
 				for value_ in range(0, len(variant.info['SR']), 2):
@@ -797,7 +817,8 @@ class Utils(object):
 								freq_value = allele_count/float(total_deep)
 								if (freq_value >= freq_vcf_limit): 
 									vect_out_freq.append(float("{:.1f}".format(freq_value * 100)))
-								else: continue
+								elif (not vcf_file_out_removed_by_filter is None): 
+									vect_out_freq_filtered.append(float("{:.1f}".format(freq_value * 100)))
 							#print(variant.pos, variant.ref, str(variant.alts), variant.info['DP'], vect_out_ao[-1], vect_out_freq[-1])
 						
 						vect_out_ao.append(allele_count)
@@ -812,13 +833,26 @@ class Utils(object):
 					variant.info[AF] = tuple(vect_out_af)
 					variant.info[TYPE] = tuple(vect_out_type)	
 					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, total_deep_samtools)])
-					if (len(vect_out_freq) > 0): variant.info[FREQ] = tuple(vect_out_freq)
+					variant.info[FREQ] = tuple(vect_out_freq)
 					
 					### Only save the ones with FREQ
 					vcf_hanlder_write.write(variant)
+				
+				### save the filtered
+				if (len(vect_out_freq_filtered) > 0):
+					if (out_ro > -1): variant.info[RO] = tuple([out_ro])
+					variant.info[AO] = tuple(vect_out_ao)
+					variant.info[AF] = tuple(vect_out_af)
+					variant.info[TYPE] = tuple(vect_out_type)	
+					variant.info[DP_COMPOSED] = tuple(["{}/{}".format(total_deep, total_deep_samtools)])
+					variant.info[FREQ] = tuple(vect_out_freq_filtered)
+					
+					### Only save the ones with FREQ
+					vcf_hanlder_write_removed_by_filter.write(variant)
 			
 		vcf_hanlder_write.close()
 		vcf_hanlder.close()
+		if not vcf_file_out_removed_by_filter is None: vcf_hanlder_write_removed_by_filter.close()
 		return vcf_file_out
 
 	def _get_type_variation(self, ref, alt):
@@ -951,8 +985,9 @@ class Utils(object):
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
-		### doesn't have the same size, sequences in consensus/coverage
-		if (locus_fasta != len(coverage.get_dict_data())): return None
+		### if it has more than coverage, some problem exist
+		### the number can be smaller because of consensus filter 
+		if (locus_fasta > len(coverage.get_dict_data())): return None
 		
 		### need to have all with 100 more 9
 		if (test_all_locus_good_coverage):
@@ -993,8 +1028,9 @@ class Utils(object):
 		"""
 		if (not os.path.exists(consensus_fasta)): return None
 		locus_fasta = self.is_fasta(consensus_fasta)
-		### doesn't have the same size, sequences in consensus/coverage
-		if (not coverage is None and locus_fasta != len(coverage.get_dict_data())): return None
+		### if it has more than coverage, some problem exist
+		### the number can be smaller because of consensus filter
+		if (not coverage is None and locus_fasta > len(coverage.get_dict_data())): return None
 		
 		file_name = os.path.join(out_dir, sample_name + FileExtensions.FILE_FASTA)
 #		file_name = os.path.join(out_dir, sample_name + "_" + sequence_name + FileExtensions.FILE_FASTA)
@@ -1424,22 +1460,38 @@ class Utils(object):
 		return last_name
 	
 	def get_number_sequences_fastq(self, file_name):
-		""" return number of sequences """
-		
-		temp_file = self.get_temp_file("get_number_fastq", ".txt")
-		cmd = "gzip -cd {} | wc -l > {}".format(file_name, temp_file)
+		""" return average and number of sequences
+		:output (number seqs, average, std)
+		"""
+		temp_file =  self.get_temp_file("lines_and_average_", ".txt")
+		cmd = "gzip -cd " + file_name + " | awk '{ s++; if ((s % 4) == 0) { count ++; size += length($0); " + \
+			" sumsq += (length($0))^2; }  } END " + \
+			" { print \"sequences: \", count,  \"average: \", size/count,  \"std: \", sqrt(sumsq/count - (size/count)^2) }' > " + temp_file
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			self.remove_file(temp_file)
-			raise Exception("Fail to run gzip")
+			self.remove_temp_file(temp_file)
+			raise Exception("Fail to run get_number of sequences in fastq file")
 		
-		### get number
-		vect_lines = self.read_text_file(temp_file)
-		self.remove_file(temp_file)
-		if len(vect_lines) == 1 and self.is_integer(vect_lines[0]): return int(vect_lines[0]) // 4
-		return 0
+		###
+		vect_out = self.read_text_file(temp_file)
+		if (len(vect_out) == 0):
+			self.logger_production.error('can not read any data: ' + temp_file)
+			self.logger_debug.error('can not read any data: ' + temp_file)
+			self.remove_temp_file(temp_file)
+			raise Exception("Can't read any data")
+		vect_data = vect_out[0].split()
+		if (len(vect_data) != 6):
+			self.logger_production.error('can not parse this data: ' + vect_out[0])
+			self.logger_debug.error('can not parse this data: ' + vect_out[0])
+			self.remove_temp_file(temp_file)
+			raise Exception("Can't read any data")
+		average_value = "%.1f" % (float(vect_data[3]))
+		std = "%.1f" % (float(vect_data[5]))
+		
+		self.remove_temp_file(temp_file)
+		return (int(vect_data[1]), float(average_value), float(std))
 
 	def get_coverage_by_pos(self, file_coverage, chr_name, position_start, position_end):
 		"""
@@ -1466,7 +1518,74 @@ class Utils(object):
 		
 		return -1
 	
+	def mask_sequence(self, sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range):
+		"""Mask characters at the given sites in a single sequence record, modifying the
+		record in place.
+		Parameters
+		----------
+		sequence : Bio.SeqIO.SeqRecord
+		    A sequence to be masked
+		mask_sites: list[int]
+		    A list of site indexes to exclude from the FASTA.
+		mask_from_beginning: int
+		    Number of sites to mask from the beginning of each sequence (default 0)
+		mask_from_end: int
+		    Number of sites to mask from the end of each sequence (default 0)
+		mask_invalid: bool
+		    Mask invalid nucleotides (default False)
+		Returns
+		-------
+		Bio.SeqIO.SeqRecord
+		    Masked sequence in its original record object
+		"""
+		# Convert to a mutable sequence to enable masking with Ns.
+		sequence_length = len(sequence.seq)
+		beginning = int(mask_from_beginning) if not mask_from_beginning is None and len(mask_from_beginning) > 0 else 0 
+		end = int(mask_from_end) if not mask_from_end is None and len(mask_from_end) > 0 else 0
 		
+		if beginning + end > sequence_length:
+			beginning, end = sequence_length, 0
+		
+		seq = str(sequence.seq)[beginning:-end or None]
+		masked_sequence = MutableSeq("N" * beginning + seq + "N" * end)
+		
+		# Replace all excluded sites with Ns.
+		if not mask_sites is None and  len(mask_sites.split(',')[0]) > 0:
+			for site in [int(_) - 1 for _ in mask_sites.split(',')]:
+				if site < sequence_length:
+					masked_sequence[site] = "N"
+		
+		if not mask_range is None:
+			for data_ in mask_range.split(','):
+				if (len(data_) > 0):
+					for site in range(int(data_.split('-')[0]) - 1, int(data_.split('-')[1])):
+						if site < sequence_length: masked_sequence[site] = "N"
+			
+		sequence.seq = masked_sequence
+		return sequence
+	
+	def mask_sequence_by_sites(self, consensus_from, consensus_to, genetic_elemets):
+		vect_record_out = []
+		## always work with the backup	
+		with open(consensus_from, "rU") as handle_fasta:
+			for record in SeqIO.parse(handle_fasta, "fasta"):
+				masking_consensus = genetic_elemets.dt_elements_mask.get(record.id, MaskingConsensus())
+				if masking_consensus.has_data():
+					vect_record_out.append(self.mask_sequence(record,
+						masking_consensus.mask_sites, masking_consensus.mask_from_beginning, 
+						masking_consensus.mask_from_ends, masking_consensus.mask_regions))
+				else: vect_record_out.append(record)
+		if (len(vect_record_out) > 0):
+			temp_file = self.get_temp_file("masked_seq_", ".fasta")
+			with open(temp_file, "w") as handle_fasta_out:
+				SeqIO.write(vect_record_out, handle_fasta_out, "fasta")
+
+			### move temp consensus to original position, if has info
+			if os.stat(temp_file).st_size > 0:
+				self.move_file(temp_file, consensus_to)
+			else: os.unlink(temp_file)
+
+	
 class ShowInfoMainPage(object):
 	"""
 	only a help class

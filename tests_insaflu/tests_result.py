@@ -6,7 +6,7 @@ Created on Oct 28, 2017
 from django.test import TestCase
 from utils.result import Output, SoftwareDesc, Result, ResultAverageAndNumberReads, CountHits, MixedInfectionMainVector
 from utils.result import Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, KeyValue
-from utils.result import ProcessResults, SingleResult, Coverage, DecodeObjects, TasksToProcess, GeneticElement, Gene, FeatureLocationSimple
+from utils.result import ProcessResults, SingleResult, FeatureLocationSimple, MaskingConsensus
 from constants.software_names import SoftwareNames
 
 class Test(TestCase):
@@ -54,11 +54,12 @@ class Test(TestCase):
 
 	def test_ResultAverageAndNumberReads(self):
 		resultAverageAndNumberReads = ResultAverageAndNumberReads(21, 43, 53, 12)
-		self.assertEqual(21, resultAverageAndNumberReads.number_file_1)
-		self.assertEqual(43, resultAverageAndNumberReads.average_file_1)
-		self.assertEqual(53, resultAverageAndNumberReads.number_file_2)
-		self.assertEqual(12, resultAverageAndNumberReads.average_file_2)
-		
+		self.assertEqual('21', resultAverageAndNumberReads.number_file_1)
+		self.assertEqual('43', resultAverageAndNumberReads.average_file_1)
+		self.assertEqual('53', resultAverageAndNumberReads.number_file_2)
+		self.assertEqual('12', resultAverageAndNumberReads.average_file_2)
+		self.assertTrue(resultAverageAndNumberReads.has_reads())
+
 		sz_return = resultAverageAndNumberReads.to_json()
 		self.assertTrue(sz_return.find('"number_file_1": "21"') != 0)
 		self.assertTrue(sz_return.find('"average_file_1": "43"') != 0)
@@ -66,6 +67,9 @@ class Test(TestCase):
 		decodeResultAverageAndNumberReads = DecodeObjects()
 		result_2 = decodeResultAverageAndNumberReads.decode_result(sz_return)
 		self.assertEqual(result_2, resultAverageAndNumberReads)
+		
+		resultAverageAndNumberReads = ResultAverageAndNumberReads(0, 0, None, None)
+		self.assertFalse(resultAverageAndNumberReads.has_reads())
 		
 	def test_ResultSoftware(self):
 		result = Result()
@@ -78,6 +82,9 @@ class Test(TestCase):
 		
 		self.assertEqual("Trimmomatic-0.39; (SLIDINGWINDOW:5:20 LEADING:3 TRAILING:3 MINLEN:35 TOPHRED33)", result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
 		self.assertEqual("SPAdes-3.11.1; (--only-assembler)", result.get_software(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_SPAdes_name))
+		self.assertTrue(result.is_software_present(SoftwareNames.SOFTWARE_TRIMMOMATIC_name))
+		self.assertFalse(result.is_software_present(SoftwareNames.SOFTWARE_ABRICATE_name))
 		
 		self.assertEqual(KeyValue("key", "value"), result.get_key_value()[0])
 		self.assertEqual(KeyValue("key1", "value1"), result.get_key_value()[1])
@@ -243,3 +250,34 @@ class Test(TestCase):
 		self.assertEquals(process_results, process_results_2)
 		self.assertEquals("Error - xprto errroer\nSuccess - xprto", str(process_results_2))
 
+	def test_masking_consensus(self):
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("cf")
+		masking_consensus.set_mask_from_beginning("e")
+		masking_consensus.set_mask_from_ends("2s3")
+		masking_consensus.set_mask_regions("4")
+		self.assertFalse(masking_consensus.has_data())
+		self.assertEqual("Element:xpto -> No mask", masking_consensus.get_message_to_show_in_web_site("xpto"))
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("[2-4],[4-30],[1-2], [500-320], [50-32]")
+		self.assertTrue(masking_consensus.has_data())
+		
+		self.assertEqual("mask_sites: 2,5  mask_from_beginning: 2   mask_from_ends: 2  mask_regions: 1-30,32-50,320-500", str(masking_consensus))
+		json = masking_consensus.to_json()
+		
+		decode_consensus = DecodeObjects()
+		masking_consensus_2 = decode_consensus.decode_result(json)
+		self.assertEquals(masking_consensus, masking_consensus_2)
+		self.assertEqual("mask_sites: 2,5  mask_from_beginning: 2   mask_from_ends: 2  mask_regions: 1-30,32-50,320-500", str(masking_consensus_2))
+		self.assertEqual("Element:xpto\n\nMask sites:2,5  Mask regions:1-30,32-50,320-500\nMask from beginning:2  Mask from ends:2", masking_consensus_2.get_message_to_show_in_web_site("xpto"))
+		self.assertEqual("Mask sites,Mask from beginning,Mask from end,Mask regions", masking_consensus.get_header(','))
+		
+		
+		
+		
+		

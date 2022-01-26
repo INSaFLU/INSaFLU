@@ -4,10 +4,11 @@ Created on Nov 27, 2017
 @author: mmp
 '''
 import unittest, os, filecmp
+from datetime import datetime
 from django.conf import settings 
 from utils.utils import Utils
 from constants.constantsTestsCase import ConstantsTestsCase
-from utils.result import CountHits 
+from utils.result import CountHits
 from managing_files.manage_database import ManageDatabase
 from django.contrib.auth.models import User
 from managing_files.models import Sample, Project, ProjectSample, Reference, TagName, TagNames, CountVariations
@@ -15,9 +16,9 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData, ParsePangolinResult
 from django.test.utils import override_settings
 from utils.parse_coverage_file import GetCoverage
-from constants.constants import TypePath, FileType, Constants
+from constants.constants import TypePath, FileType, Constants, FileExtensions
 from constants.software_names import SoftwareNames
-from utils.result import Result, SoftwareDesc, KeyValues, KeyValue
+from utils.result import Result, SoftwareDesc, KeyValues, KeyValue, GeneticElement, Gene, MaskingConsensus
 
 class Test(unittest.TestCase):
 
@@ -314,6 +315,19 @@ class Test(unittest.TestCase):
 					MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		
+		### masking data
+		manageDatabase = ManageDatabase()
+		geneticElement = GeneticElement()
+		geneticElement.add_gene('element_name', 100, Gene('name', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("2")
+		masking_consensus.set_mask_regions("[2-4],[4-30],[1-2], [500-320], [50-32]")
+		geneticElement.dt_elements_mask['element_name'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		
 		### test group set tag names
 		self.assertTrue(project_sample.sample.get_tag_names().count() == 1) 
 		
@@ -325,17 +339,25 @@ class Test(unittest.TestCase):
 		
 		### samples test
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.csv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA)
-		
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		self.utils.copy_file(out_file,
+			project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+
+		### samples test
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_settings.csv")
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list_settings)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		self.utils.copy_file(out_file,
+			project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### samples test CSV simple
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_simple.csv")
-		b_simple = True
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, b_simple)
-		
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_simple)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		self.utils.copy_file(out_file, 
@@ -344,8 +366,7 @@ class Test(unittest.TestCase):
 		
 		### samples test TSV
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output.tsv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB)
-		
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
@@ -353,7 +374,6 @@ class Test(unittest.TestCase):
 		### collect variations from snippy
 		out_file = collect_extra_data.collect_variations_snippy(project)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_snippy.tsv")
-		
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
@@ -361,6 +381,8 @@ class Test(unittest.TestCase):
 		vect_type_remove = ['ins', 'del']
 		out_file = collect_extra_data.collect_variations_freebayes(project, vect_type_remove)
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_variations_freebayes.tsv")
+		self.utils.copy_file(out_file,
+			project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
@@ -377,6 +399,52 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		### zip file, zip files change every time that are produced
+		collect_extra_data.zip_several_files(project)
+		out_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(os.path.getsize(out_file) > 1616)
+		
+		### masking data
+		manageDatabase = ManageDatabase()
+		geneticElement = GeneticElement()
+		geneticElement.add_gene('PB2', 100, Gene('name', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("2")
+		masking_consensus.set_mask_from_ends("3")
+		geneticElement.dt_elements_mask['PB2'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		
+		collect_extra_data.mask_all_consensus_files(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "Consensus_EVA001_S66.fasta")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		for project_sample in project.project_samples.all():
+			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))
+			self.assertTrue(os.path.exists(project_sample.get_backup_consensus_file()))
+			self.assertFalse(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), project_sample.get_backup_consensus_file()))
+		
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_sites("2,5,-5,5,cf")
+		masking_consensus.set_mask_from_beginning("10")
+		geneticElement.dt_elements_mask['PB2'] = masking_consensus
+		geneticElement.add_gene('MP', 100, Gene('MP', 12, 45, 1))
+		masking_consensus = MaskingConsensus()
+		masking_consensus.set_mask_regions("20-30,35-40")
+		masking_consensus.set_mask_from_beginning("10")
+		masking_consensus.set_mask_from_ends("8")
+		geneticElement.dt_elements_mask['MP'] = masking_consensus
+		manageDatabase.set_project_metakey(project, project.owner, MetaKeyAndValue.META_KEY_Masking_consensus,
+			MetaKeyAndValue.META_VALUE_Success, geneticElement.to_json())
+		collect_extra_data.mask_all_consensus_files(project)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "Consensus_EVA001_S66_second_mask.fasta")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		for project_sample in project.project_samples.all():
+			self.assertTrue(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), expected_file_samples))
+			self.assertTrue(os.path.exists(project_sample.get_backup_consensus_file()))
+			self.assertFalse(filecmp.cmp(project_sample.get_consensus_file(TypePath.MEDIA_ROOT), project_sample.get_backup_consensus_file()))
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)
@@ -434,6 +502,8 @@ class Test(unittest.TestCase):
 			project.name = project_name
 			project.reference = reference
 			project.owner = user
+			project.creation_date = datetime(2002, 12, 4, 20, 30, 40)
+			project.last_change_date = datetime(2002, 12, 14, 20, 30, 40)
 			project.save()
 		
 		## get all fastq files
@@ -488,14 +558,21 @@ class Test(unittest.TestCase):
 				manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 					MetaKeyAndValue.META_VALUE_Success, result_all_2.to_json())
 				
+				### set statistics of number of reads
+				key_values = KeyValues()
+				for _, key in enumerate(SoftwareNames.SOFTWARE_ILLUMINA_stat_collect):
+					key_values.add_key_value(KeyValue(key, str(_ + 10000)))
+				result_all_2.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_ILLUMINA_stat, "", "",
+											key_values))
+					
 				key_values = None
 				if (n_id < 6004):
 					key_values = KeyValues()
-					key_values.add_key_value(KeyValue("Input Read Pairs:", "xpto"))
-					key_values.add_key_value(KeyValue("Both Surviving:", "xpto1"))
-					key_values.add_key_value(KeyValue("Forward Only Surviving:", "xpto2"))
-					if (n_id == 6001): key_values.add_key_value(KeyValue("Reverse Only Surviving:", "xpto3"))
-					key_values.add_key_value(KeyValue("Dropped:", "xpto4"))
+					key_values.add_key_value(KeyValue("Input Read Pairs:", "10"))
+					key_values.add_key_value(KeyValue("Both Surviving:", "5"))
+					key_values.add_key_value(KeyValue("Forward Only Surviving:", "2"))
+					if (n_id == 6001): key_values.add_key_value(KeyValue("Reverse Only Surviving:", "33"))
+					key_values.add_key_value(KeyValue("Dropped:", "44"))
 				result_all_2.add_software(SoftwareDesc(software_names.get_trimmomatic_name(), 
 						software_names.get_trimmomatic_version(), parameters, key_values))
 				result_all_2.add_software(SoftwareDesc(software_names.get_trimmomatic_name(), 
@@ -548,7 +625,7 @@ class Test(unittest.TestCase):
 				
 			coverage = get_coverage.get_coverage(project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ,\
 						software_names.get_snippy_name()), project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-			meta_value = manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,
+			manage_database.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Coverage,
 					MetaKeyAndValue.META_VALUE_Success, coverage.to_json())
 			count += 1
 		
@@ -563,21 +640,27 @@ class Test(unittest.TestCase):
 		
 		### samples test
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2.csv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA)
-		
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_settings.csv")
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list_settings)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
-		b_simple = True
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, b_simple)
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_simple.csv")
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_simple)
 		self.assertTrue(os.path.exists(out_file))
 		self.utils.copy_file(out_file, 
 			project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2.tsv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB)
-		
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
@@ -609,6 +692,36 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expected_file_samples))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
+		
+		#################################3
+		## test collect samples
+		collect_extra_data.collect_sample_list(user, True)
+		csv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		self.assertTrue(os.path.exists(csv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.csv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
+		
+		tsv_file = self.utils.get_sample_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		self.assertTrue(os.path.exists(tsv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllSamples_1.tsv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(tsv_file, expected_file_samples))
+		
+		#########################################
+		## test collect projects
+		collect_extra_data.collect_project_list(user, True)
+		csv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_CSV)
+		self.assertTrue(os.path.exists(csv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.csv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(csv_file, expected_file_samples))
+		
+		tsv_file = self.utils.get_project_list_by_user(user.id, "MEDIA_ROOT", FileExtensions.FILE_TSV)
+		self.assertTrue(os.path.exists(tsv_file))
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "AllProjects_1.tsv")
+		self.assertTrue(os.path.exists(expected_file_samples))
+		self.assertTrue(filecmp.cmp(tsv_file, expected_file_samples))
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)
@@ -675,6 +788,8 @@ class Test(unittest.TestCase):
 			project.name = project_name
 			project.reference = reference
 			project.owner = user
+			project.creation_date = datetime(2002, 12, 4, 20, 30, 40)
+			project.last_change_date = datetime(2002, 12, 14, 20, 30, 40)
 			project.save()
 		
 		## get all fastq files
@@ -826,8 +941,8 @@ class Test(unittest.TestCase):
 				if (count_before < 6007):
 					key_values = KeyValues()
 					for _, key in enumerate(SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect):
-						key_values.add_key_value(KeyValue(key, _))
-						if (n_id == 6005): key_values.add_key_value(KeyValue(key, _ * 2))
+						key_values.add_key_value(KeyValue(key, str(_)))
+						if (n_id == 6005): key_values.add_key_value(KeyValue(key, str(_ * 2)))
 					result_all_2.add_software(SoftwareDesc(software_names.get_NanoStat_name(), software_names.get_NanoStat_version(),
 						software_names.get_NanoStat_parameters(), key_values))
 					result_all_2.add_software(SoftwareDesc(software_names.get_rabbitQC_name(), software_names.get_rabbitQC_version(),
@@ -916,23 +1031,28 @@ class Test(unittest.TestCase):
 		
 		### samples test
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_ont.csv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA)
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
+		if (os.path.exists(out_file)): os.unlink(out_file)
+
+		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_ont_settings.csv")
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_list_settings)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		### samples test
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_ont_simple.csv")
-		b_simple = True
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, b_simple)
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_COMMA, CollectExtraData.SAMPLE_LIST_simple)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
-		self.utils.copy_file(out_file, 
+		self.utils.copy_file(out_file,
 			project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple))
 		if (os.path.exists(out_file)): os.unlink(out_file)
 		
 		expected_file_samples = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_sample_output_2_ont.tsv")
-		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB)
+		out_file = collect_extra_data.collect_sample_table(project, Constants.SEPARATOR_TAB, CollectExtraData.SAMPLE_LIST_list)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_samples))
 		if (os.path.exists(out_file)): os.unlink(out_file)

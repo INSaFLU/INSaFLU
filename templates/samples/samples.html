@@ -34,10 +34,29 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="9">
-	                    	<a href="{% url "sample-add" %}" data-title="Add one sample and metadata at a time" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Sample metadata</span></a>
-	                    	<a href="{% url "sample-add-file" %}" data-title="Add metadata for multiple samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Samples from csv/tsv file</span></a>
-	                    	<a href="{% url "sample-add-fastq" %}" data-title="Upload fastq files to match with uploaded samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Add Fastq Files</span></a>
-	                    	<a href="{% url "sample-update-metadata" %}" data-title="Upload metadata to update on samples from csv/tsv file" class="btn btn-small btn-primary dark" ><span class="hidden-phone"><i class="fa fa-plus-square"></i> Update metadata</span></a>
+							<div class="btn-group">
+								<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    								Add Samples
+  								</button>
+  								<div class="dropdown-menu">
+    								<a href="{% url 'sample-add' %}" data-title="Add one sample and metadata at a time" class="dropdown-item"><span class="hidden-phone"> Add One Sample </span></a>
+    								<div class="dropdown-divider"></div>
+	                    			<a href="{% url 'sample-add-file' %}" data-title="Add metadata for multiple samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Add Multiple Samples</span></a>
+	                    			<a href="{% url 'sample-add-fastq' %}" data-title="Upload fastq files to match with uploaded samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Add Fastq Files</span></a>
+	                    			<a href="{% url 'sample-update-metadata' %}" data-title="Upload metadata to update on samples from csv/tsv file" class="dropdown-item" ><span class="hidden-phone"> Update metadata</span></a>
+								</div>
+							</div>
+							{% if list_samples_file_csv or list_samples_file_tsv %}
+								<div class="btn-group">
+									<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	    								Download
+	  								</button>
+	  								<div class="dropdown-menu">
+	  									{% if list_samples_file_csv %} {{ list_samples_file_csv }} {% endif %}
+	    								{% if list_samples_file_tsv %} {{ list_samples_file_tsv }} {% endif %}
+									</div>
+								</div>
+							{% endif %}
 	                        <form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>
@@ -117,7 +136,7 @@
   					<!-- Modal footer -->
   					<div class="modal-footer" id="id-modal-footer-remove">
     					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
-    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
   					</div>
 			</div>
  		</div>
@@ -128,4 +147,28 @@
 {% block js %}
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/remove_samples.js' %}"></script>
+
+	<script>
+	
+		$(document).ready(function() { 
+			$('#id-cancel-button').click(function() { 
+				$.unblockUI();
+			});
+			$('#id-remove-button').click(function() { 
+				$.unblockUI();
+			});
+		});
+	
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			
+			var id_ = $(this).attr('id');
+			var href = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (href !== '#id_set_default_modal' && href !== '#' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+				!href.startsWith('/media') && !href.startsWith('http') ){
+				wait_screen();
+			}
+		});
+	</script>
 {% endblock js %}

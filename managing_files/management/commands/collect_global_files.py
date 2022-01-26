@@ -7,7 +7,7 @@ from django.core.management import BaseCommand
 from managing_files.models import Project
 from utils.collect_extra_data import CollectExtraData
 from django.contrib.auth.models import User
-import logging
+import logging, datetime
 
 class Command(BaseCommand):
 	'''
@@ -38,11 +38,15 @@ class Command(BaseCommand):
 		self.stdout.write("Starting for project_id: " + str(project_id))
 		self.logger_production.info("Starting for project_id: " + str(project_id))
 		self.logger_debug.info("Starting for project_id: " + str(project_id))
-
 		try:
 			project = Project.objects.get(pk=project_id)
 			if (user_id == None): user = project.owner
 			else: user = User.objects.get(pk=user_id)
+			
+			### change date
+			project.last_change_date = datetime.datetime.now()
+			project.save()
+			
 			collect_extra_data.collect_extra_data_for_project(project, user)
 			self.stdout.write("End")
 		except Project.DoesNotExist as e:

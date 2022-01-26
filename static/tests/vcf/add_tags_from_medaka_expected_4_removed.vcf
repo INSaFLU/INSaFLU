@@ -1,0 +1,27 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##medaka_version=1.2.1
+##contig=<ID=MN908947,length=29903>
+##INFO=<ID=ref_seq,Number=1,Type=String,Description="Medaka reference sequence">
+##INFO=<ID=pred_seq,Number=1,Type=String,Description="Medaka predicted sequence">
+##INFO=<ID=ref_qs,Number=.,Type=Float,Description="Medaka quality score for reference">
+##INFO=<ID=pred_qs,Number=.,Type=Float,Description="Medaka quality score for prediction">
+##INFO=<ID=ref_q,Number=1,Type=Float,Description="Medaka per position quality score for reference">
+##INFO=<ID=pred_q,Number=1,Type=Float,Description="Medaka per position quality score for prediction">
+##INFO=<ID=n_cols,Number=1,Type=Integer,Description="Number of medaka pileup columns in variant call">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Medaka genotype.">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Medaka genotype quality score">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Depth of reads at pos">
+##INFO=<ID=DPS,Number=2,Type=Integer,Description="Depth of reads at pos by strand (fwd, rev)">
+##INFO=<ID=DPSP,Number=1,Type=Integer,Description="Depth of reads spanning pos +-25">
+##INFO=<ID=SR,Number=.,Type=Integer,Description="Depth of spanning reads by strand which best align to each allele (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.)">
+##INFO=<ID=AR,Number=2,Type=Integer,Description="Depth of ambiguous spanning reads by strand which align equally well to all alleles (fwd, rev)">
+##INFO=<ID=SC,Number=.,Type=Integer,Description="Total alignment score to each allele of spanning reads by strand (ref fwd, ref rev, alt1 fwd, alt1 rev, etc.) aligned with parasail match 5, mismatch -4, open 5, extend 3">
+##INFO=<ID=FREQ,Number=A,Type=Float,Description="Ratio of AO/(DPSP-AR)">
+##INFO=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count, SR (alt1 fwd + alt1 rev, etc.)">
+##INFO=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count, SR (ref fwd + ref rev)">
+##INFO=<ID=AF,Number=R,Type=Integer,Description="Number of observation for each allele, SR (ref fwd + ref rev, alt1 fwd + alt1 rev, etc.)">
+##INFO=<ID=TYPE,Number=A,Type=String,Description="The type of allele, either snp, mnp, ins, del, or complex">
+##INFO=<ID=DP_COMPOSED,Number=1,Type=String,Description="Coverage at position (DPSP-AR)/(samtools -aa). First is collected by Medaka, Second is collected by samtools.">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+MN908947	23816	.	C	CT	4.519	PASS	AR=0,0;DP=24;DPS=9,15;DPSP=26;SC=2048,4075,2053,4088;SR=5,11,4,6;n_cols=3;pred_q=98.236;pred_qs=49.552,5.832,42.852;pred_seq=CT*;ref_q=93.718;ref_qs=49.552,1.314,42.852;ref_seq=C**;RO=16;AO=10;AF=16,10;TYPE=ins;DP_COMPOSED=26/29;FREQ=38.5	GT:GQ	1:5

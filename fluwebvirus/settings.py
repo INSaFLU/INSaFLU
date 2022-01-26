@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.4.6"
+APP_VERSION_NUMBER = "1.5.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -250,6 +250,8 @@ TIME_ZONE = 'Europe/Lisbon'
 
 DATE_FORMAT_FOR_TABLE = '%d-%m-%Y'
 DATETIME_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
+DATE_FORMAT_FOR_SHOW = '%Y-%m-%d'
+DATETIME_FORMAT_FOR_SHOW = '%Y-%m-%d %H:%M'
 DATETIME_FORMAT = '%d-%m-%Y %H:%M'
 DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look which kind of date is returned from forms to correct the format
 

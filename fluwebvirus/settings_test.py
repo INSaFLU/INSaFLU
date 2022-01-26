@@ -13,11 +13,17 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 from decouple import config
 
+## define APP version
+APP_VERSION_NUMBER = "1.5.0"
+
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = True
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+####	if the tests are running
+RUNNING_TEST = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -31,7 +37,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 
 ## google recaptcha
-GOOGLE_RECAPTCHA_SECRET_KEY = config('GOOGLE_RECAPTCHA_SECRET_KEY', default = "")
+GOOGLE_RECAPTCHA_SECRET_KEY = config('GOOGLE_RECAPTCHA_SECRET_KEY', default="")
 SITE_KEY = config('SITE_KEY')
 
 ### crispy template
@@ -44,10 +50,33 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
+################### If you 
+### ADMIN  disable/disable django
+ADMIN_ENABLED = config('ADMIN_ENABLED', default=True, cast=bool)
+
 ### threads to use in several software
 THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## don't increase this because of the heap memory
 THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
 THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
+
+## MAX LENGTH_SEQUENCE_FROM_FASTA - REFERENCE
+## to show login anonymous
+SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
+MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA', default=50000, cast=int)
+MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
+MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
+	
+MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
+
+## make the down size of the fastq files to 50MB
+## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
+##   you can change the value in .env file
+DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
+MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
+
+### if NanoFilt runs on MEDAKA ENV, because of old < python3.5  
+RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV = config('RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV', default=False, cast=bool)		### 250M
 
 #https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
 #https://gist.github.com/bradmontgomery/6487319
@@ -58,17 +87,7 @@ if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
 
 ## add google analytics
 ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
-
-## to show login anonymous
-SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
-MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
-
-## make the down size of the fastq files to 50MB
-## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
-##   you can change the value in .env file
-DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
-## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
-MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
+SHOW_NEXTCLADE_LINK = config('SHOW_NEXTCLADE_LINK', default=False, cast=bool)
 
 ## run process in SGE, otherwise run in qcluster
 RUN_SGE  = config('RUN_SGE', default=False, cast=bool)
@@ -87,15 +106,16 @@ INSTALLED_APPS = [
     'crispy_forms_foundation',
     'django_tables2',
     'bootstrap4',
-    'django_q',
     'django_user_agents',
     'django_bootstrap_breadcrumbs',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
     'phylogeny.apps.PhylogenyConfig',
+    'settings.apps.SettingsConfig',
     'log_login.apps.LogLoginConfig',
     'extend_user.apps.ExtendUserConfig',
     'crequest',
+    'embed_video',
 ]
 
 MIDDLEWARE = [
@@ -108,6 +128,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
     'crequest.middleware.CrequestMiddleware',
+]
+
+FILE_UPLOAD_HANDLERS = [
+#   'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
 
 ROOT_URLCONF = 'fluwebvirus.urls'
@@ -128,6 +153,13 @@ TEMPLATES = [
         },
     },
 ]
+
+CACHES = {
+    'default': {
+		'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'djangoq-localmem',
+    }
+}
 
 ### default emails accounts
 DEFAULT_USER_EMAIL = config('DEFAULT_USER_EMAIL', "insaflu@insa.min-saude.pt")
@@ -162,6 +194,9 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST'),
         'PORT': '5432',
+        'TEST': {
+            'NAME': 'fluwebvirus_test',
+        },
     },
 }
 
@@ -195,6 +230,8 @@ TIME_ZONE = 'Europe/Lisbon'
 
 DATE_FORMAT_FOR_TABLE = '%d-%m-%Y'
 DATETIME_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
+DATE_FORMAT_FOR_SHOW = '%Y-%m-%d'
+DATETIME_FORMAT_FOR_SHOW = '%Y-%m-%d %H:%M'
 DATETIME_FORMAT = '%d-%m-%Y %H:%M'
 DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look which kind of date is returned from forms to correct the format
 

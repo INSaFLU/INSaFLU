@@ -51,5 +51,5 @@ urlpatterns = [
 	url(r'^ajax/remove_uploaded_files$', ajax_views.remove_uploaded_files, name='remove_uploaded_files'),	## remove remove_uploaded_files, several at once 
 	url(r'^ajax/unlock_sample_file$', ajax_views.unlock_sample_file, name='unlock_sample_file'),	## unlock sample list files
 	url(r'^ajax/get_process_running$', ajax_views.get_process_running, name='get_process_running'),		## get process to run
-	url(r'^ajax/submit_sge', ajax_views.submit_sge, name='submit-sge'),		## only for tests because of sge/apache in centos
+	url(r'^ajax/submit_sge$', ajax_views.submit_sge, name='submit-sge'),		## only for tests because of sge/apache in centos
 ] 

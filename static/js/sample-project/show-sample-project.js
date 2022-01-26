@@ -29,7 +29,7 @@ function draw_phylo_canvas() {
     		$('#loader_phylocanvas').show();
     	},
     	complete: function(){
-  //  		$('#loader_phylocanvas').hide();
+    		$('#loader_phylocanvas').hide();
     	},
     	
 	    data : { 
@@ -468,7 +468,6 @@ function draw_count_variations_chart(){
     });
 }
 
-
 // show coverage graphic 
 $(document).on("click", "a", function(e){
 	var attr = $(this).attr('id');
@@ -477,7 +476,7 @@ $(document).on("click", "a", function(e){
 		return;
 	}
 	
-	/// show coverage images
+	/// show coverage images, works for show images on tablr or in card elements
 	if (attr == 'showImageCoverage' || attr.startsWith("id_table-coverage_", 0)){
 		$('#modal-body-coverage').empty();
 		
@@ -502,6 +501,14 @@ $(document).on("click", "a", function(e){
 	  				$('#modal-body-coverage').prepend(data['image']);
 	  				$('#downlod_image_id').attr('href', data['image_download']);
 	  				$('#downlod_image_id').attr('download', data['image_download_name']);
+			
+					/*$(function(){
+				        $('#coverage_image_id').toggle(
+				              function() { $(this).animate({width: "200%"}, 500)},
+				              function() { $(this).animate({width: "100%"}, 500); }
+				        );
+				  	});  */
+
 	  			}
 	  		},
 		      
@@ -511,6 +518,7 @@ $(document).on("click", "a", function(e){
 	        	console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
 	        }
 		});
+
 	}
 	/// remove samples
 	else if (attr === 'id_remove_reference_modal'){
@@ -583,14 +591,14 @@ $('#id-update-pangolin-button').on('click', function(){
         	  
         	  /// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was successfully applied to pangolin identification.' +
+        		'The project \'' + $('#id-modal-body-upadate-pangolin').attr('ref_project') + '\' was successfully applied to pangolin identification.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }
           else{
         	/// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was NOT applied to pangolin identification.' +
+        		'The project \'' + $('#id-modal-body-upadate-pangolin').attr('ref_project') + '\' was NOT applied to pangolin identification.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }

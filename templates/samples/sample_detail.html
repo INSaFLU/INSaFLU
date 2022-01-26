@@ -73,19 +73,19 @@
 			
 			<!-- NAV tabs -->
 			<div class="container">
-				<ul class="nav nav-tabs" role="tablist">
-					<li class="nav-item active"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
+				<ul id="main_tab" class="nav nav-tabs" role="tablist">
+					<li class="nav-item"><a class="nav-link fa fa-align-justify" href="#original_fastq" role="tab" data-toggle="tab" > Original fastq</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-align-center" href="#trimmomatic" role="tab" data-toggle="tab"> Quality processed reads</a></li>
-					{% if not href_trimmonatic_2 %}
+					{% if data_illuminastat or data_nanostat %}
 						<li class="nav-item"><a class="nav-link fa fa-bar-chart" href="#nanostat" role="tab" data-toggle="tab"> Filter Stat.</a></li>
 					{% endif %}
 					<li class="nav-item"><a class="nav-link fa fa-list" href="#virus_identification" role="tab" data-toggle="tab"> Type and subtype/lineage</a></li>
 					<li class="nav-item"><a class="nav-link fa fa-warning" href="#alerts" role="tab" data-toggle="tab"> Alerts</a></li>
 				</ul>
 	
-				{% if href_trimmonatic_2 %}	<!-- has always info for illumina, in single end has "Not available" -->
-					<div class="tab-content">
-						<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
+				<div class="tab-content">
+					{% if href_trimmonatic_2 %}	<!-- has always info for illumina, in single end has "Not available" -->
+						<div id="original_fastq" role="tabpanel" class="tab-pane fade box-blue">
 							<p class="title-box">Original fastq files and quality result</p>
 							{% if candidate_file_name_1 %}
 								<div class="row">
@@ -121,8 +121,30 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
-				{% else %}	<!-- data for Minion -->
-					<div class="tab-content">
+				  		{% if data_illuminastat %}
+					  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
+					    		<p class="title-box">Reads Statistics</p>
+					    		<div class="row">
+					    			<div class="col-lg-4"></div>
+									<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Trimmomatic</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
+						  		</div>
+						  		{% for name, value_1, value_2, value_3, value_4 in data_illuminastat %}
+							  		<div class="row">
+					    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
+					    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+							  		</div>
+							  	{% endfor %}
+						  		<hr>
+						  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
+					  		</div>
+					  	{% endif %}
+					{% else %}	<!-- data for Minion -->
 						<div id="original_fastq" role="tabpanel" class="tab-pane fade active box-blue">
 							<p class="title-box">Original fastq files and quality result</p>
 							{% if candidate_file_name_1 %}
@@ -147,31 +169,33 @@
 					  		<hr>
 					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
 				  		</div>
-				  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
-				    		<p class="title-box">NanoStat results</p>
-				    		<div class="row">
-				    			<div class="col-lg-4"></div>
-								<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Processed</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
-								<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
-					  		</div>
-					  		{% for name, value_1, value_2, value_3, value_4 in data_nanostat %}
-						  		<div class="row">
-				    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
-				    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
-				    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+				  		{% if data_nanostat %}
+					  		<div id="nanostat" role="tabpanel" class="tab-pane fade box-blue">
+					    		<p class="title-box">NanoStat results</p>
+					    		<div class="row">
+					    			<div class="col-lg-4"></div>
+									<div class="col-lg-2 text-align-center"><strong>Original</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Processed</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Difference</strong></div>
+									<div class="col-lg-2 text-align-center"><strong>Remain %</strong></div>
 						  		</div>
-						  	{% endfor %}
-					  		<hr>
-					  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
-				  		</div>
-				 {% endif %}	<!--  Last </div> stops after this endif -->
+						  		{% for name, value_1, value_2, value_3, value_4 in data_nanostat %}
+							  		<div class="row">
+					    				<div class="col-lg-4"><strong>{{ name }}</strong></div>
+					    				<div class="col-lg-2 text-align-center">{{ value_1 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_2 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_3 }}</div>
+					    				<div class="col-lg-2 text-align-center">{{ value_4 }}</div>
+							  		</div>
+							  	{% endfor %}
+						  		<hr>
+						  		<p class="software"><strong>Software version: </strong> {% if trimmomatic_software %} {{ trimmomatic_software }}/{{ fastq_software }} {% endif %}</p>
+					  		</div>
+				  		{% endif %}
+					 {% endif %}	<!--  Last </div> stops after this endif -->
 				 
 					<div id="virus_identification" role="tabpanel" class="tab-pane fade box-blue">
-						<p class="title-box">Type and subtype/lineage /p>
+						<p class="title-box">Type and subtype/lineage </p>
 						
 						{% if has_type_subtype %}
 							{% for identify_virus in vect_identify_virus %}
@@ -194,7 +218,7 @@
 							</div>
 							<p></p>
 							<div class="container h-100">
- 									<div class="row h-100 justify-content-center">
+										<div class="row h-100 justify-content-center">
 									<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
 								</div>
 							</div>
@@ -213,7 +237,7 @@
 								</div>
 								<p></p>
 								<div class="container h-100">
-  									<div class="row h-100 justify-content-center">
+	 									<div class="row h-100 justify-content-center">
 										<p class="insa-title"><a class="btn btn-primary" data-toggle="modal" href="#id_assemblies_modal" aria-expanded="false" aria-controls="id_assemblies_modal">How to take advantage of draft assemblies</a></p>
 									</div>
 								</div>
@@ -234,12 +258,11 @@
 					  		<p class="software">There's no alerts.</p>
 						{% endif %}
 			  		</div>
-				</div>
-				
-			</div>
-		</div>
+			  	</div>	<!-- tab-content -->
+			</div> <!-- container -->
+		</div> <!-- container-fluid -->
 		  
-		<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		
 		<!-- The Modal Message  -->
@@ -292,3 +315,19 @@
 	
 {% endblock %}
 
+
+{% block js %}
+
+	<script>
+		/// set wait screen
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+		
+		/// made a click in the nav tab, this is a caveat
+		$(document).ready(function(){
+			$('#main_tab li:first-child a').tab('show') // Select first tab
+		});	
+	</script>
+
+{% endblock js %}

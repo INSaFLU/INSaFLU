@@ -88,6 +88,15 @@
 	  <p> </p>
 	{% endif %}
 
-	<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
-{% endblock content %} 
+	<a id="id_go_back_button" href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+{% endblock content %}
+
+{% block js %}
+ 	<script>
+ 		/// set wait screen
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+	</script>
+{% endblock js %}
 

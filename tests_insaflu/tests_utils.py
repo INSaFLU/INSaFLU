@@ -14,6 +14,8 @@ from utils.result import Coverage, FeatureLocationSimple
 from constants.constants import Constants, FileExtensions
 from managing_files.models import ProjectSample
 from utils.result import Gene
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 class Test(unittest.TestCase):
 
@@ -41,29 +43,29 @@ class Test(unittest.TestCase):
 
 	def test_is_fastq_gz(self):
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
-		self.assertTrue((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
+		self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, ConstantsTestsCase.MANAGING_TEST_ABRICATE)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_FAKE_GZ)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_ont), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ10_1_test)
 		try:
-			self.assertTrue(self.utils.is_fastq_gz(path_file))
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
 			self.assertEqual("File is not in fastq.gz format.", e.args[0])
 		
@@ -75,6 +77,27 @@ class Test(unittest.TestCase):
 		except Exception as e:
 			self.assertEqual("Can not detect file format. Ensure Illumina fastq file.", e.args[0])
 	
+		### IONtorrent
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_1)
+		self.assertTrue(os.path.exists(path_file))
+		try:
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
+		except Exception as e:
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+			
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_2)
+		self.assertTrue(os.path.exists(path_file))
+		try:
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
+		except Exception as e:
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_ion_torrent_3)
+		self.assertTrue(os.path.exists(path_file))
+		try:
+			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
+		except Exception as e:
+			self.assertEqual("File is not in fastq.gz format.", e.args[0])
+			
 	def test_read_text_file(self):
 		"""
 		"""
@@ -837,7 +860,7 @@ class Test(unittest.TestCase):
 		last_value = int(os.path.getmtime(file_2))
 		time.sleep(2)
 		utils.touch_file(file_2)
-		self.assertEqual(2, int(os.path.getmtime(file_2)) - last_value)
+		self.assertTrue((int(os.path.getmtime(file_2)) - last_value) in [2,3])
 		self.assertTrue(os.path.exists(file_2))
 		utils.remove_dir(main_path)
 
@@ -1003,18 +1026,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_2(self):
 
@@ -1025,18 +1052,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_3_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_3(self):
 
@@ -1047,18 +1078,22 @@ class Test(unittest.TestCase):
 		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.vcf")
 		depth_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "run_snippyis_single_covid.depth.gz")
 		expecteded_vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_2.vcf")
+		expecteded_vcf_file_removed = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "add_tags_from_medaka_expected_4_removed.vcf")
 		self.assertTrue(os.path.exists(vcf_file))
 		self.assertTrue(os.path.exists(depth_file))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
+		self.assertTrue(filecmp.cmp(vcf_file_removed_out, expecteded_vcf_file_removed))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 
 	def test_add_freq_ao_ad_and_type_to_vcf_4(self):
 
@@ -1074,13 +1109,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 		
 	def test_add_freq_ao_ad_and_type_to_vcf_5(self):
 
@@ -1096,13 +1133,15 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		
 		vcf_file_out = utils.get_temp_file("vcf_medaka", ".vcf")
-		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, coverage_limit,
+		vcf_file_removed_out = utils.get_temp_file("vcf_medaka", "_2.vcf")
+		utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, vcf_file_out, vcf_file_removed_out, coverage_limit,
 								freq_vcf_limit)
 		
 		self.assertTrue(os.path.exists(vcf_file_out))
 		self.assertTrue(os.path.exists(expecteded_vcf_file))
 		self.assertTrue(filecmp.cmp(vcf_file_out, expecteded_vcf_file))
 		if (os.path.exists(vcf_file_out)): os.unlink(vcf_file_out)
+		if (os.path.exists(vcf_file_removed_out)): os.unlink(vcf_file_removed_out)
 		
 	def test_medaka_models(self):
 		
@@ -1147,15 +1186,46 @@ class Test(unittest.TestCase):
 		utils = Utils()
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTQ, ConstantsTestsCase.FASTQ1_1)
 		self.assertTrue(os.path.exists(path_file))
-		self.assertEqual(44425, utils.get_number_sequences_fastq(path_file))
+		self.assertEqual((44425, 143.6, 20.9), utils.get_number_sequences_fastq(path_file))
 		
 		fasta_file_out = utils.get_temp_file("fasta_data", ".fasta")
 		with open(fasta_file_out, 'w') as handle_write:
 			handle_write.write(">2\nAAAAAAAAAAAAAAAAAAAAAA\n")
 			handle_write.write(">1\nAAAAAAAAAA\n")
 		try:
-			self.assertEqual(10, utils.get_number_sequences_fastq(path_file))
+			self.assertEqual((44425, 10.5, 20.9), utils.get_number_sequences_fastq(path_file))
 			self.fail("must throw exception")
 		except Exception as e:
 			pass
+
+	def test_mask_sequences(self):
+		""" mask sequences """
+		
+		utils = Utils()
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = "5,6"
+		mask_from_beginning = "3"
+		mask_from_end = "2"
+		mask_range = "10-12,14-16"
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("NNNCNNTAANNNANNNTATTTAATNN", str(seq_changed.seq))
+		
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = ""
+		mask_from_beginning = ""
+		mask_from_end = ""
+		mask_range = ""
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("AACCTTTAATTTAATTTATTTAATTT", str(seq_changed.seq))
+		
+		sequence = SeqRecord(Seq("AACCTTTAATTTAATTTATTTAATTT"), id="xpto")
+		mask_sites = None
+		mask_from_beginning = None
+		mask_from_end = None
+		mask_range = None
+		seq_changed = utils.mask_sequence(sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range)
+		self.assertEqual("AACCTTTAATTTAATTTATTTAATTT", str(seq_changed.seq))
+
+
+
 

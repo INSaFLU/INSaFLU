@@ -5,7 +5,7 @@ Created on Dec 15, 2017
 '''
 
 import os
-from constants.constants import TypePath, FileType, FileExtensions, Constants
+from constants.constants import TypePath, FileExtensions, Constants
 from utils.utils import Utils
 from utils.software import Software
 from constants.software_names import SoftwareNames
@@ -14,12 +14,12 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from utils.result import GeneticElement, Gene, FeatureLocationSimple
-from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
 from utils.result import DecodeObjects, Result
 from utils.result import SoftwareDesc
+from settings.constants_settings import ConstantsSettings
 
 class Proteins(object):
 	'''
@@ -59,6 +59,8 @@ class Proteins(object):
 		n_count_samples_processed = 0
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+			
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue
@@ -69,8 +71,8 @@ class Proteins(object):
 			### get consensus
 			if (project_sample.is_mask_consensus_sequences): 
 				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-						DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-						if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+						DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+						if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
 			## test the coverage
@@ -79,14 +81,7 @@ class Proteins(object):
 				continue
 			
 			### get consensus file name
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
-						SoftwareNames.SOFTWARE_SNIPPY_name \
-						if project_sample.is_sample_illumina() else SoftwareNames.SOFTWARE_Medaka_name)
-			if (not os.path.exists(consensus_fasta)):
-				manageDatabase.set_project_metakey(project, user, meta_key,\
-						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist: " + consensus_fasta)
-				self.utils.remove_dir(temp_dir)
-				return False
+			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
 			
 			### get dict consensus file
 			with open(consensus_fasta) as handle_consensus: 
@@ -126,10 +121,13 @@ class Proteins(object):
 			return False
 		
 		### save the reference protein
+		dt_reference_name_saved = {}
 		for gene in geneticElement.get_genes(sequence_name):
-			self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+			reference_name_saved = self.save_protein_reference_cds(project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),
 							project.reference.display_name, sequence_name, gene,\
 							dt_out_files[gene.name], dict_out_sample_name)
+			## keep the names of the reference saved in file
+			dt_reference_name_saved[gene.name] = reference_name_saved
 			
 		### start processing the data
 		result_all = Result()
@@ -170,7 +168,8 @@ class Proteins(object):
 			### run fastTree
 			try:
 				out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree_proteins", FileExtensions.FILE_NWK)
-				self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters_protein())
+				self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters_protein(),
+										dt_reference_name_saved[gene_name])
 				if (b_first): result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
 								self.software_names.get_fasttree_parameters_protein()))
 			except Exception:
@@ -227,9 +226,10 @@ class Proteins(object):
 		## if not gene.is_forward(): seq_ref = seq_ref.reverse_complement()
 		coding_protein = seq_ref.translate(table=Constants.TRANSLATE_TABLE_NUMBER, to_stop=False)
 		with open(out_file, 'a') as handle:
-			out_name = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
-			if (out_name in dict_out_sample_name): out_name += 'Ref_' + out_name
-			handle.write('>{}\n{}\n'.format(out_name, str(coding_protein)))
+			reference_name_saved = '{}_{}_{}'.format(reference_name.replace(' ', '_'), sequence_name, self.utils.clean_name(gene.name))
+			if (reference_name_saved in dict_out_sample_name): reference_name_saved += 'Ref_' + reference_name_saved
+			handle.write('>{}\n{}\n'.format(reference_name_saved, str(coding_protein)))
+		return reference_name_saved
 
 
 	def save_protein_by_sequence_name_and_cds(self, record_dict_consensus, generic_element_consensus,
@@ -294,6 +294,7 @@ class Proteins(object):
 		get position where genes consensus from sample matches in the reference
 		"""
 		generic_consensus_element = GeneticElement()
+		temp_dir = self.utils.get_temp_dir()
 		with open(reference_fasta_file) as handle_ref: 
 			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
 			if (record_dict_ref is None): return generic_consensus_element
@@ -305,43 +306,9 @@ class Proteins(object):
 				( (limit_to_mask_consensus == -1 and coverage.is_100_more_9(sequence_name)) or\
 				(limit_to_mask_consensus > 0 and coverage.ratio_value_coverage_bigger_limit(sequence_name, limit_to_mask_consensus)) ):
 				
-				temp_file_name = self.utils.get_temp_file_from_dir(out_dir, "to_align", ".fasta")
-				temp_file_name_out = self.utils.get_temp_file_from_dir(out_dir, "to_align_out", ".fasta")
-				records = []
-				ref_seq_name = "ref"
-				records.append(SeqRecord( Seq(str(record_dict_ref[sequence_name].seq)),
-										id = ref_seq_name, description=""))
-				records.append(SeqRecord( Seq(str(record_dict_consensus[sequence_name].seq)),
-										id = "consensus", description=""))
-				
-				### save file
-				with open(temp_file_name, 'w') as handle_write:
-					SeqIO.write(records, handle_write, "fasta")
-				try:
-					#self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES)
-					self.software.run_mafft(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
-#					self.software.run_clustalo(temp_file_name, temp_file_name_out, SoftwareNames.SOFTWARE_CLUSTALO_PARAMETERS)
-				except Exception as a:
-					continue
-				
-				## test if the output is in fasta
-				try:
-					self.utils.is_fasta(temp_file_name_out)
-				except IOError as e:
-					continue
-				
-				## read file
-				record_dict = SeqIO.index(temp_file_name_out, "fasta")
-				if (len(record_dict) != 2): continue
-				
-				## get both sequences
-				seq_ref = ""
-				seq_other = ""
-				for seq in record_dict:
-					if (seq == ref_seq_name):	## ref seq
-						seq_ref = str(record_dict[seq].seq).upper()
-					else:
-						seq_other = str(record_dict[seq].seq).upper()
+				### align two sequences
+				seq_ref, seq_other = self.software.align_two_sequences(str(record_dict_ref[sequence_name].seq),
+												str(record_dict_consensus[sequence_name].seq), temp_dir)
 				
 				#### get positions for genes				
 				for gene in genetic_element.get_genes(sequence_name):
@@ -394,5 +361,8 @@ class Proteins(object):
 									len(seq_other.replace('-', '')), Gene(
 									gene.name, cons_start, pos_con,
 									gene.strand, vect_feature_location))
+		### remove dir
+		self.utils.remove_dir(temp_dir)
+		
 		return generic_consensus_element
 

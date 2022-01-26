@@ -40,6 +40,17 @@
 	                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8" placeholder="Name, Reference, Sample"{% if search_projects %} value="{{ search_projects }}"{% endif %}>
 	                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
 	                        </form>
+	                        {% if list_project_file_csv or list_project_file_tsv %}
+								<div class="btn-group">
+									<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	    								Download
+	  								</button>
+	  								<div class="dropdown-menu">
+	  									{% if list_project_file_csv %} {{ list_project_file_csv }} {% endif %}
+	    								{% if list_project_file_tsv %} {{ list_project_file_tsv }} {% endif %}
+									</div>
+								</div>
+							{% endif %}
 	                    </th>                  
 	                </tr>
 	             
@@ -112,16 +123,42 @@
   					<!-- Modal footer -->
   					<div class="modal-footer" id="id-modal-footer-remove">
     					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
-    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
   					</div>
 			</div>
  		</div>
 	</div>
+	
 {% endblock content %}
 
 
 {% block js %}
+
 	{% load static from staticfiles %}
-	    <script type="text/javascript" src="{% static 'js/remove_projects.js' %}"></script>
+	    <script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
+
+	<script>
+	
+		$(document).ready(function() { 
+			$('#id-cancel-button').click(function() { 
+				$.unblockUI();
+			});
+			$('#id-remove-button').click(function() { 
+				$.unblockUI();
+			});
+		});
+		
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			var id_ = $(this).attr('id');
+			var href = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+					!href.startsWith('/media') && !href.startsWith('http') ){
+				wait_screen();
+			}
+		});
+	</script>
+
 {% endblock js %}
 

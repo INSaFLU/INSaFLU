@@ -20,9 +20,11 @@ from utils.result import Result, SoftwareDesc, ResultAverageAndNumberReads, Coun
 from utils.software import Software
 from utils.parse_coverage_file import GetCoverage
 from utils.mixed_infections_management import MixedInfectionsManagement
-from utils.result import KeyValue
+from utils.result import KeyValue, MaskingConsensus, DecodeObjects
 from settings.models import Software as SoftwareSettings
 from django.template.defaultfilters import filesizeformat
+from settings.constants_settings import ConstantsSettings
+from pysam import pysam
 
 ######################################
 ####   Minion methods
@@ -74,18 +76,24 @@ class SoftwareMinion(object):
 		try:
 			print("Start run_clean_minion")
 			### run stat and rabbit for Images
-			b_return = self.run_nanofilt_and_stat(sample, user)
+			b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
 			
-			print("Result run_clean_minion: " + str(b_return))
+			print("Result run_clean_minion: " + str(b_has_data))
 			
+			### test Abricate ON/OFF
+			default_software_project = DefaultProjectSoftware()
+			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
+												ConstantsSettings.TECHNOLOGY_minion)
+
 			### queue the quality check and
-			if (b_return and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
-				self.software.identify_type_and_sub_type(sample, sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
+			if (b_has_data and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
+				self.software.identify_type_and_sub_type(sample, sample.get_fastq_available(TypePath.MEDIA_ROOT),\
 					None, user)
 	
 			## set the flag that is ready for process
 			sample_to_update = Sample.objects.get(pk=sample.id)
-			if (b_return):
+			sample_to_update.is_sample_in_the_queue = False
+			if (b_has_data):
 				sample_to_update.is_ready_for_projects = True
 				
 				### make identify species
@@ -125,7 +133,7 @@ class SoftwareMinion(object):
 					sample_to_update.mixed_infections_tag = mixed_infections_tag
 					
 					manage_database = ManageDatabase()
-					message = "Info: Classification using Nanopore sequences is under development."
+					message = "Info: Abricate turned OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
 			else:
@@ -135,6 +143,7 @@ class SoftwareMinion(object):
 				
 				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
 				else: sample_to_update.number_alerts += 1
+				sample_to_update.is_ready_for_projects = False
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
 			sample_to_update.save()
 			
@@ -150,12 +159,13 @@ class SoftwareMinion(object):
 		
 		### finished
 		process_SGE.set_process_controler(user, process_controler.get_name_sample(sample), ProcessControler.FLAG_FINISHED)
-		return b_return
+		return b_has_data
 	
 
 	def run_nanofilt_and_stat(self, sample, owner):
 		"""
 		run clean and stat before and after
+		:output (Has data?, Is NanoFilt run?)
 		"""
 		manage_database = ManageDatabase()
 		result_all = Result()
@@ -175,9 +185,12 @@ class SoftwareMinion(object):
 											MetaKeyAndValue.META_VALUE_Success,\
 											"Fastq files were down sized to values ~{}.".format( filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)) ))
 		
+		### get number of sequences in fastq
+		(number_of_sequences, average_1, std1) = self.utils.get_number_sequences_fastq(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+		
 		### first run stat
 		try:
-			(result_nano_stat, number_sequences)  = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+			result_nano_stat  = self.run_nanostat(sample.get_fastq(TypePath.MEDIA_ROOT, True), number_of_sequences)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -186,22 +199,46 @@ class SoftwareMinion(object):
 			result.set_error("Fail to run nanostat software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(), self.software_names.get_NanoStat_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
-		### run rabbitQC, only to have a image of the data
-		try:
-			out_file_html = self.run_rabbitQC(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-			result_all.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
-					self.software_names.get_rabbitQC_parameters()))
-			self.utils.copy_file(out_file_html, sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
-			self.utils.remove_file(out_file_html)
-		except Exception as e:
-			result = Result()
-			result.set_error("Fail to run rabbitQC software: " + e.args[0])
-			result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
-					self.software_names.get_rabbitQC_parameters()))
-			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+		## if they are sequences
+		if (number_of_sequences > 0):
+			### run rabbitQC, only to have a image of the data
+			try:
+				out_file_html = self.run_rabbitQC(sample.get_fastq(TypePath.MEDIA_ROOT, True))
+				result_all.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
+						self.software_names.get_rabbitQC_parameters()))
+				self.utils.copy_file(out_file_html, sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+				self.utils.remove_file(out_file_html)
+			except Exception as e:
+				result = Result()
+				result.set_error("Fail to run rabbitQC software: " + e.args[0])
+				result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
+						self.software_names.get_rabbitQC_parameters()))
+				manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				return False, False
+		
+		default_software_project = DefaultProjectSoftware()
+		default_software_project.test_all_defaults(sample.owner, None, None, sample)
+		
+		### test if the software ran
+		if number_of_sequences == 0 or not default_software_project.is_to_run_nanofilt(sample.owner, sample):
+			### collect numbers to show on the sample table
+			result_average = ResultAverageAndNumberReads(number_of_sequences, average_1, None, None)
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads,
+								MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+	
+			## save everything OK
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+								MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s)" %\
+								(self.software_names.get_NanoStat_version()))
+			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software,
+							MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+			
+			### remove nanofilt and rabiQC 
+			self.utils.remove_file(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+			self.utils.remove_file(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+			return (result_average.has_reads(), False)
 		
 		### run nanoflit
 		try:
@@ -209,10 +246,6 @@ class SoftwareMinion(object):
 			if (owner is None):
 				parameters = self.software_names.get_NanoFilt_parameters()
 			else:
-				default_software_project = DefaultProjectSoftware()
-				default_software_project.test_default_db(SoftwareNames.SOFTWARE_NanoFilt_name, owner,
-								 	SoftwareSettings.TYPE_OF_USE_sample,
-									None, None, sample, SoftwareNames.TECHNOLOGY_minion)
 				parameters = default_software_project.get_nanofilt_parameters_all_possibilities(owner, sample)
 			result_file = self.run_nanofilt(sample.get_fastq(TypePath.MEDIA_ROOT, True), parameters, owner)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(), parameters))
@@ -226,12 +259,17 @@ class SoftwareMinion(object):
 			result.add_software(SoftwareDesc(self.software_names.get_NanoFilt_name(), self.software_names.get_NanoFilt_version(),
 						self.software_names.get_NanoFilt_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
+		### collect numbers
+		(number_1, average_1, std1) = self.utils.get_number_sequences_fastq(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+		result_average = ResultAverageAndNumberReads(number_1, average_1, None, None)
+		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
+
 		### run start again
 		try:
 			## if the user set a high coverage it can get no reads to process
-			(result_nano_stat, number_sequences) = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
+			result_nano_stat = self.run_nanostat(sample.get_nanofilt_file(TypePath.MEDIA_ROOT), number_1)
 			result_all.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(),
 					self.software_names.get_NanoStat_parameters(), result_nano_stat.key_values))
 			
@@ -240,7 +278,7 @@ class SoftwareMinion(object):
 			result.set_error("Fail to run nanostat software: " + e.args[0])
 			result.add_software(SoftwareDesc(self.software_names.get_NanoStat_name(), self.software_names.get_NanoStat_version(), self.software_names.get_NanoStat_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
 		### run rabbitQC, only to have a image of the data
 		try:
@@ -255,21 +293,16 @@ class SoftwareMinion(object):
 			result.add_software(SoftwareDesc(self.software_names.get_rabbitQC_name(), self.software_names.get_rabbitQC_version(),
 					self.software_names.get_rabbitQC_parameters()))
 			manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-			return False
+			return False, False
 		
-		### collect numbers
-		(lines_1, average_1) = self.software.get_lines_and_average_reads(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
-		result_average = ResultAverageAndNumberReads(lines_1, average_1, None, None)
-		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Number_And_Average_Reads, MetaKeyAndValue.META_VALUE_Success, result_average.to_json())
-
 		## save everything OK
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success, "Success, NanoStat(%s), NanoFilt(%s)" %\
 							(self.software_names.get_NanoStat_version(), self.software_names.get_NanoFilt_version()))
 		manage_database.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		return result_average.has_reads()
+		return result_average.has_reads(), True
 
 	
-	def run_nanostat(self, file_name):
+	def run_nanostat(self, file_name, number_sequences):
 		"""
 		run nanoStat, return result with keys
 		crate a text file with output
@@ -290,8 +323,6 @@ class SoftwareMinion(object):
 			>Q15:	16830 (8.0%) 8.2Mb
 		"""
 		
-		### get number of lines
-		number_sequences = self.utils.get_number_sequences_fastq(file_name)
 		if (number_sequences == 0):
 			result = Result()
 			for key in SoftwareNames.SOFTWARE_NANOSTAT_vect_info_to_collect:
@@ -327,7 +358,7 @@ class SoftwareMinion(object):
 			
 			### remove dir
 			self.utils.remove_dir(temp_dir)
-		return (result, number_sequences)
+		return result
 	
 	
 	def run_rabbitQC(self, file_name):
@@ -402,8 +433,7 @@ class SoftwareMinion(object):
 	
 			## process medaka
 			default_project_software = DefaultProjectSoftware()
-			default_project_software.test_all_defaults(user, SoftwareSettings.TYPE_OF_USE_project_sample,
-									None, project_sample, None)
+			default_project_software.test_all_defaults(user, None, project_sample, None)
 			try:
 				#### need to check the models
 				parameters_medaka_consensus = default_project_software.get_medaka_parameters_all_possibilities(user, project_sample)
@@ -411,16 +441,15 @@ class SoftwareMinion(object):
 							DefaultParameters.MASK_CONSENSUS_threshold))
 				freq_vcf_limit = float(default_project_software.get_freq_vcf_ONT_single_parameter(project_sample,\
 							DefaultParameters.MASK_CONSENSUS_threshold))
-				## deactivate, rigth now
-				#parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
-				parameters_depth = "-aa"
 				
-				out_put_path = self.run_medaka(project_sample.sample.get_nanofilt_file(TypePath.MEDIA_ROOT),\
+				## deactivate, rigth now
+				parameters_depth = default_project_software.get_samtools_parameters_all_possibilities_ONT(user, project_sample)
+				
+				out_put_path = self.run_medaka(project_sample.sample.get_fastq_available(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
 						project_sample.project.reference.get_reference_gbk(TypePath.MEDIA_ROOT),\
 						project_sample.sample.name, parameters_medaka_consensus, parameters_depth, coverage_limit,
-						freq_vcf_limit)
-				#		freq_vcf_limit, project_sample.id)
+						freq_vcf_limit, project_sample)
 				result_all.add_software(SoftwareDesc(self.software_names.get_medaka_name(),\
  								self.software_names.get_medaka_version(), "consensus " + parameters_medaka_consensus))
 				result_all.add_software(SoftwareDesc(self.software_names.get_samtools_name(),\
@@ -451,6 +480,7 @@ class SoftwareMinion(object):
 				process_SGE.set_process_controler(user, process_controler.get_name_project_sample(project_sample), ProcessControler.FLAG_ERROR)
 				return False
 	
+			### Also copy the file "{}.consensus.fa".format(sample_name)
 			## copy the files to the project sample directories
 			self.software.copy_files_to_project(project_sample, self.software_names.get_medaka_name(), out_put_path)
 			self.utils.remove_dir(out_put_path)
@@ -527,8 +557,8 @@ class SoftwareMinion(object):
 			###
 			### make mask the consensus SoftwareNames.SOFTWARE_MSA_MASKER
 			limit_to_mask_consensus = int(default_project_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_minion))
-			msa_parameters = self.software.make_mask_consensus( 
+							DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_minion))
+			msa_parameters = self.software.make_mask_consensus_by_deep( 
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA, self.software_names.get_medaka_name()), 
 				project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 				project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_DEPTH_GZ, self.software_names.get_medaka_name()),
@@ -623,6 +653,10 @@ class SoftwareMinion(object):
 			if (os.path.exists(consensus_fasta)):
 				file_out = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)		### this is going to main path
 				self.utils.filter_fasta_all_sequences_file(consensus_fasta, coverage, file_out, limit_to_mask_consensus, False)
+				
+				## make a backup of this file to use has a starter of second stage analysis
+				self.utils.copy_file(project_sample.get_consensus_file(TypePath.MEDIA_ROOT),
+							project_sample.get_backup_consensus_file())
 			
 			### set the tag of result OK 
 			manageDatabase.set_project_sample_metakey(project_sample, user, MetaKeyAndValue.META_KEY_Medaka, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
@@ -643,7 +677,7 @@ class SoftwareMinion(object):
 
 	def run_medaka(self, file_fastq, reference_fasta, reference_gbk, sample_name,
 				parameters_consensus, parameters_depth, coverage_limit, freq_vcf_limit,
-				project_sample_id = -1):
+				project_sample):
 		"""
 		run medaka
 		return output directory of snippy, try to do something most close possible
@@ -701,16 +735,10 @@ class SoftwareMinion(object):
 		reference_fasta_medaka = self.utils.get_temp_file_from_dir(temp_dir, "medaka_ref", ".fasta")
 		self.utils.copy_file(reference_fasta, reference_fasta_medaka)
 		
-		if (project_sample_id != -1):
-			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {} > /tmp/insaFlu/medaka_project_sample_{}.txt 2>&1".format(
-					self.software_names.get_medaka_env(),
-					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
-					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus, project_sample_id)
-		else:
-			cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
-					self.software_names.get_medaka_env(),
-					self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
-					temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
+		cmd = "{} {}_consensus -i {} -d {} -o {} -t {} {}".format(
+				self.software_names.get_medaka_env(),
+				self.software_names.get_medaka(), file_fastq, reference_fasta_medaka,
+				temp_dir, settings.THREADS_TO_RUN_SLOW, parameters_consensus)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -736,7 +764,15 @@ class SoftwareMinion(object):
 		## get from BCFtools
 		## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 		bam_file = os.path.join(os.path.dirname(bam_file), sample_name + ".bam")
-				
+		
+		### get mapped stast reads
+		result = Result()
+		if os.path.exists(bam_file):
+			result = self.software.get_statistics_bam(bam_file)
+		manageDatabase = ManageDatabase()
+		manageDatabase.set_project_sample_metakey(project_sample, project_sample.sample.owner,
+				MetaKeyAndValue.META_KEY_bam_stats, MetaKeyAndValue.META_VALUE_Success, result.to_json())
+			
 		### create depth
 		depth_file = os.path.join(temp_dir, sample_name + ".depth.gz")
 ##		cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
@@ -800,22 +836,76 @@ class SoftwareMinion(object):
 				
 			### add FREQ to VCF file
 			final_vcf = os.path.join(temp_dir, sample_name + '_2.vcf')
-			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf, coverage_limit,
-													freq_vcf_limit)
+			final_vcf_with_removed_variants = os.path.join(temp_dir, sample_name + '_removed.vcf')
+			self.utils.add_freq_ao_ad_and_type_to_vcf(vcf_file, depth_file, final_vcf,
+						final_vcf_with_removed_variants, coverage_limit, freq_vcf_limit)
 			self.utils.move_file(final_vcf, vcf_file)
 			self.software.test_bgzip_and_tbi_in_vcf(vcf_file)
+
+			### IF YOU mask CONSENSUS the positions on VCF are not real for consensus
+			### mask REFERENCE for variants below minfrac, with vcf_removed_variants,
+			manageDatabase = ManageDatabase()
+			decode_results = DecodeObjects()
+			meta_value = manageDatabase.get_reference_metakey_last(project_sample.project.reference,
+										MetaKeyAndValue.META_KEY_Elements_And_CDS_Reference,
+										MetaKeyAndValue.META_VALUE_Success)
+			if (not meta_value is None):
+				genetic_element = decode_results.decode_result(meta_value.description)
+				
+				vcf_hanlder = pysam.VariantFile(final_vcf_with_removed_variants, "r")
+				mask_consensus = MaskingConsensus()
+				element_name_old = ""
+				vect_sites = []
+				vect_ranges = []
+				for variant in vcf_hanlder:
+					if (element_name_old != variant.chrom):
+						if (len(element_name_old) > 0):
+							mask_consensus = MaskingConsensus()
+							mask_consensus.set_mask_sites(",".join(vect_sites))
+							mask_consensus.set_mask_regions(",".join(vect_ranges))
+							genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+						
+						## new one
+						element_name_old = variant.chrom
+						vect_sites = []
+						vect_ranges = []
+					### MEDAKA output must have "TYPE" in info
+					if (variant.info['TYPE'][0] == 'snp'): vect_sites.append(str(variant.pos))
+					elif (variant.info['TYPE'][0] == 'ins'): vect_sites.append(str(variant.pos))
+					elif (variant.info['TYPE'][0] == 'del'): vect_ranges.append("{}-{}".format(variant.pos + len(variant.alts[0]),
+										variant.pos - len(variant.alts[0]) + len(variant.ref)))
+					else: vect_ranges.append("{}-{}".format(variant.pos, variant.pos + len(variant.ref) - 1))
+				
+				## last one
+				if len(element_name_old) > 0:
+					mask_consensus = MaskingConsensus()
+					mask_consensus.set_mask_sites(",".join(vect_sites))
+					mask_consensus.set_mask_regions(",".join(vect_ranges))
+					mask_consensus.cleaning_mask_results()
+					genetic_element.set_mask_consensus_element(element_name_old, mask_consensus)
+				## mask
+				temp_reference = os.path.join(temp_dir, sample_name + '_consensus.vcf')
+				self.utils.copy_file(reference_fasta_medaka, temp_reference) 
+				self.utils.mask_sequence_by_sites(temp_reference, temp_reference, genetic_element)
+				
+				### save positions that are going to be masked by MinFrac, even if there's not...
+				manageDatabase.set_project_sample_metakey(project_sample, project_sample.project.owner,
+							MetaKeyAndValue.META_KEY_Masking_consensus_by_minfrac_VCF_medaka,
+							MetaKeyAndValue.META_VALUE_Success, genetic_element.to_json())
 			
+			####################	
 			### run BCF tools to get the consensus
 			if (not os.path.exists(vcf_file + ".gz")):
 				self.logger_production.error('Fail to find: ' + vcf_file + ".gz")
 				self.logger_debug.error('Fail to find: ' + vcf_file + ".gz")
 				self.utils.remove_dir(temp_dir)
 				raise Exception("Fail to find VCF file: " + vcf_file + ".gz")
+
 			
 			## self.utils.move_file(consensus_file, os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 			cmd =  "{} consensus -s SAMPLE -f {} {} -o {}".format(
 				self.software_names.get_bcftools(),
-				reference_fasta_medaka,
+				temp_reference,
 				vcf_file + ".gz",
 				os.path.join(os.path.dirname(bam_file), sample_name + ".consensus.fa"))
 			exist_status = os.system(cmd)
@@ -824,7 +914,8 @@ class SoftwareMinion(object):
 				self.logger_debug.error('Fail to run: ' + cmd)
 				self.utils.remove_dir(temp_dir)
 				raise Exception("Fail to run bcftools consensus")
-		
+
+			########################		
 			### create TAB file
 			self.software.run_snippy_vcf_to_tab_freq_and_evidence(reference_fasta_medaka,\
 								reference_gbk, vcf_file,\

@@ -18,6 +18,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from managing_files.manage_database import ManageDatabase
 from datetime import datetime
 from utils.process_SGE import ProcessSGE
+from extend_user.models import Profile
 
 class ParseInFiles(object):
 	'''
@@ -230,7 +231,7 @@ class ParseInFiles(object):
 				sample_name = row[0].strip()
 				
 				## test clean name
-				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_-]+', '', sample_name)
 				if (len(result_filer_sample_name) != len(sample_name)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
 				else:
@@ -380,7 +381,7 @@ class ParseInFiles(object):
 				sample_name = row[0].strip()
 				
 				## test clean name
-				result_filer_sample_name = re.sub('[^A-Za-z0-9_]+', '', sample_name)
+				result_filer_sample_name = re.sub('[^A-Za-z0-9_-]+', '', sample_name)
 				if (len(result_filer_sample_name) != len(sample_name)):
 					self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Sample name '{}' only letters, numbers and underscores are allowed. Line: {} Column: {}".format(sample_name, count_row, 1))))
 				else:
@@ -820,12 +821,16 @@ class ParseInFiles(object):
 					
 		
 		## samples that can proceed to trimmomatic
+		process_name = None
 		for sample in vect_sample_to_trimmomatic:
 			try:
+				if process_name is None:
+					(job_name_wait, process_name) = user.profile.get_name_sge_seq(
+						Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE) 
 				## here can be direct because came from a django
 				process_SGE = ProcessSGE()
-				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user)
-				else: taskID = process_SGE.set_run_clean_minion(sample, user)	### minion
+				if (sample.is_type_fastq_gz_sequencing()): taskID = process_SGE.set_run_trimmomatic_species(sample, user, process_name)
+				else: taskID = process_SGE.set_run_clean_minion(sample, user, process_name)	### minion
 				
 				### information that been queued 
 				manageDatabase = ManageDatabase()
@@ -833,7 +838,11 @@ class ParseInFiles(object):
 							MetaKeyAndValue.META_VALUE_Queue, taskID)
 			except:
 				pass
-					
+		
+		## create sample list for this user
+		if not process_name is None:
+			process_SGE.set_create_sample_list_by_user(user, [process_name])
+			
 		### set the files already processed
 		upload_files.number_files_processed = n_files_processed
 		if (upload_files.number_files_processed == upload_files.number_files_to_process): upload_files.is_processed = True

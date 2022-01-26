@@ -30,11 +30,22 @@ $(document).ready(function(){
 });
 
 /// made a click in the nav tab, this is a caveat
-$(document).ready(function(){
+/*$(document).ready(function(){
     $('.nav li.active').removeClass('active').find('a').trigger('click');
-});
+});*/
 
-
+/// set wait screen
+function wait_screen() {
+  $.blockUI({ css: { 
+	    border: 'none', 
+	    padding: '15px', 
+	    backgroundColor: '#000', 
+	    '-webkit-border-radius': '10px', 
+	    '-moz-border-radius': '10px', 
+	    opacity: .5, 
+	    color: '#fff' 
+	} });
+}
 //	START expanding logo
 //window.onscroll = function() {
 //	growShrinkLogo()

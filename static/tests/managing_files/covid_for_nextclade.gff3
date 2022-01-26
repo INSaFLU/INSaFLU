@@ -1,0 +1,29 @@
+##gff-version 3
+##sequence-region MN908947 1 29903
+# conversion-by bp_genbank2gff3.pl
+# organism Severe acute respiratory syndrome coronavirus 2
+# Note Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1, complete genome.
+# date 11-FEB-2020
+# working on region:MN908947, Severe acute respiratory syndrome coronavirus 2, Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1, complete genome., 11-FEB-2020
+MN908947	GenBank	gene	266	13468	.	+	0	gene_name=orf1ab;Name=orf1ab;Note=pp1ab%3B translated by -1 ribosomal frameshift;codon_start=1;product=orf1ab polyprotein;protein_id=QHD43415.1;ribosomal_slippage=_no_value;translation=length.7096
+MN908947	GenBank	CDS	266	13468	.	+	0	gene=orf1ab;Name=orf1ab;Note=pp1ab%3B translated by -1 ribosomal frameshift;codon_start=1;product=orf1ab polyprotein;protein_id=QHD43415.1;ribosomal_slippage=_no_value;translation=length.7096
+MN908947	GenBank	gene	13468	21555	.	+	0	gene_name=orf1ab;Name=orf1ab;Note=pp1ab%3B translated by -1 ribosomal frameshift;codon_start=1;product=orf1ab polyprotein;protein_id=QHD43415.1;ribosomal_slippage=_no_value;translation=length.7096
+MN908947	GenBank	CDS	13468	21555	.	+	0	gene=orf1ab;Name=orf1ab;Note=pp1ab%3B translated by -1 ribosomal frameshift;codon_start=1;product=orf1ab polyprotein;protein_id=QHD43415.1;ribosomal_slippage=_no_value;translation=length.7096
+MN908947	GenBank	gene	21563	25384	.	+	0	gene_name=S;Name=S;Note=structural protein;codon_start=1;product=surface glycoprotein;protein_id=QHD43416.1;translation=length.1273
+MN908947	GenBank	CDS	21563	25384	.	+	0	gene=S;Name=S;Note=structural protein;codon_start=1;product=surface glycoprotein;protein_id=QHD43416.1;translation=length.1273
+MN908947	GenBank	gene	25393	26220	.	+	0	gene_name=ORF3a;Name=ORF3a;codon_start=1;product=ORF3a protein;protein_id=QHD43417.1;translation=length.275
+MN908947	GenBank	CDS	25393	26220	.	+	0	gene=ORF3a;Name=ORF3a;codon_start=1;product=ORF3a protein;protein_id=QHD43417.1;translation=length.275
+MN908947	GenBank	gene	26245	26472	.	+	0	gene_name=E;Name=E;Note=structural protein%3B E protein;codon_start=1;product=envelope protein;protein_id=QHD43418.1;translation=length.75
+MN908947	GenBank	CDS	26245	26472	.	+	0	gene=E;Name=E;Note=structural protein%3B E protein;codon_start=1;product=envelope protein;protein_id=QHD43418.1;translation=length.75
+MN908947	GenBank	gene	26523	27191	.	+	0	gene_name=M;Name=M;Note=structural protein;codon_start=1;product=membrane glycoprotein;protein_id=QHD43419.1;translation=length.222
+MN908947	GenBank	CDS	26523	27191	.	+	0	gene=M;Name=M;Note=structural protein;codon_start=1;product=membrane glycoprotein;protein_id=QHD43419.1;translation=length.222
+MN908947	GenBank	gene	27202	27387	.	+	0	gene_name=ORF6;Name=ORF6;codon_start=1;product=ORF6 protein;protein_id=QHD43420.1;translation=length.61
+MN908947	GenBank	CDS	27202	27387	.	+	0	gene=ORF6;Name=ORF6;codon_start=1;product=ORF6 protein;protein_id=QHD43420.1;translation=length.61
+MN908947	GenBank	gene	27394	27759	.	+	0	gene_name=ORF7a;Name=ORF7a;codon_start=1;product=ORF7a protein;protein_id=QHD43421.1;translation=length.121
+MN908947	GenBank	CDS	27394	27759	.	+	0	gene=ORF7a;Name=ORF7a;codon_start=1;product=ORF7a protein;protein_id=QHD43421.1;translation=length.121
+MN908947	GenBank	gene	27894	28259	.	+	0	gene_name=ORF8;Name=ORF8;codon_start=1;product=ORF8 protein;protein_id=QHD43422.1;translation=length.121
+MN908947	GenBank	CDS	27894	28259	.	+	0	gene=ORF8;Name=ORF8;codon_start=1;product=ORF8 protein;protein_id=QHD43422.1;translation=length.121
+MN908947	GenBank	gene	28274	29533	.	+	0	gene_name=N;Name=N;Note=structural protein;codon_start=1;product=nucleocapsid phosphoprotein;protein_id=QHD43423.2;translation=length.419
+MN908947	GenBank	CDS	28274	29533	.	+	0	gene=N;Name=N;Note=structural protein;codon_start=1;product=nucleocapsid phosphoprotein;protein_id=QHD43423.2;translation=length.419
+MN908947	GenBank	gene	29558	29674	.	+	0	gene_name=ORF10;Name=ORF10;codon_start=1;product=ORF10 protein;protein_id=QHI42199.1;translation=length.38
+MN908947	GenBank	CDS	29558	29674	.	+	0	gene=ORF10;Name=ORF10;codon_start=1;product=ORF10 protein;protein_id=QHI42199.1;translation=length.38

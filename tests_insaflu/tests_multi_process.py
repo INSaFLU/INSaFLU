@@ -68,6 +68,7 @@ class TestMultiProcess(TransactionTestCase):
 		self.utils.make_path(getattr(settings, "MEDIA_ROOT_TEST", None))
 		self.utils.remove_dir(settings.MEDIA_ROOT_TEST)
 		self.utils.remove_dir(os.path.join(Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY))
+		self.assertTrue(settings.RUN_TEST_IN_COMMAND_LINE)
 		
 		csv_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_INPUT_FILES, ConstantsTestsCase.MANAGING_FILES_TEMPLATE_MULTIPLE_FILES_data_csv)
 		self.assertTrue(os.path.exists(csv_file))
@@ -118,16 +119,16 @@ class TestMultiProcess(TransactionTestCase):
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
 		upload_files.save()
 			
+		process_SGE = ProcessSGE()
 		vect_wait_sge_ids = []
 		try:
-			process_SGE = ProcessSGE()
 			b_test = True
 			vect_wait_sge_ids.append(process_SGE.set_read_sample_file(upload_files, user, b_test))
 		except:
 			self.fail("Upload process description file in SGE")
 		
 		### wait for all sge ids			
-		process_SGE.wait_until_finished(vect_wait_sge_ids)
+		vect_wait_sge_ids = process_SGE.wait_until_finished(vect_wait_sge_ids)
 		self.assertTrue(len(vect_wait_sge_ids) == 0)
 
 		### check samples
@@ -148,8 +149,8 @@ class TestMultiProcess(TransactionTestCase):
 		vect_wait_sge_ids.append(self.upload_file(ConstantsTestsCase.FASTQ11_1, user))
 		vect_wait_sge_ids.append(self.upload_file(ConstantsTestsCase.FASTQ11_2, user))
 
-		### wait for all sge ids
-		process_SGE.wait_until_finished(vect_wait_sge_ids)
+		### wait for all sge link ids
+		vect_wait_sge_ids = process_SGE.wait_until_finished(vect_wait_sge_ids)
 		self.assertTrue(len(vect_wait_sge_ids) == 0)
 		
 		### need to wait for all process for link
@@ -159,7 +160,7 @@ class TestMultiProcess(TransactionTestCase):
 		self.assertEqual(6, uploaf_file.number_files_processed)
 		
 		### test result trimmomatic
-		process_SGE.wait_until_finished([])
+		vect_wait_sge_ids = process_SGE.wait_until_finished([])
 		
 		### test if all of them processed
 		self.assertEqual(6, Sample.objects.all().filter(is_deleted=False, is_valid_1=True, is_valid_2=True, is_ready_for_projects=True, owner=user).count())
@@ -209,9 +210,9 @@ class TestMultiProcess(TransactionTestCase):
 			project_sample.sample = sample
 			project_sample.save()
 			
-			print(job_name_wait, job_name)
-			if len(job_name_wait) == 0: (job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_GLOBAL)
-			taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, job_name_wait)
+			if len(job_name_wait) == 0: (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+				Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
+			taskID = process_SGE.set_second_stage_snippy(project_sample, user, job_name, [job_name_wait])
 				
 			### set project sample queue ID
 			manageDatabase.set_project_sample_metakey(project_sample, user,\
@@ -223,7 +224,7 @@ class TestMultiProcess(TransactionTestCase):
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue, taskID)
 
 		### test result trimmomatic
-		process_SGE.wait_until_finished([])
+		vect_wait_sge_ids = process_SGE.wait_until_finished([])
 
 	def upload_file(self, file_name, user):
 		

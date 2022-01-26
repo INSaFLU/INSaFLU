@@ -92,7 +92,7 @@
 	  <p> </p>
 	{% endif %}
 
-	<a href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+	<a id="id_go_back_button" href="{% url 'samples' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 	
 	<!-- The unlock file -->
@@ -126,7 +126,13 @@
 {% block js %}
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/unlock_multiple_samples.js' %}"></script>
-	    
+	   
+	<script>
+		/// set wait screen
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+	</script>
 {% endblock js %}
 
 

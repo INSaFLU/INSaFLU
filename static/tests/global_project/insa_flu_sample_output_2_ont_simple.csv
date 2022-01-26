@@ -1,4 +1,4 @@
-id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,type-subtype,putative mixed-infection,xpto_1
+id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection,xpto_1
 second_stage_2_ test_create_tree,,,,,,,,,,,
 EVA011_S54_ONT,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1
 EVA003_S91_ONT,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1

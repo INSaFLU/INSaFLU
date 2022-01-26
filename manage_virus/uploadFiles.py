@@ -287,8 +287,9 @@ class UploadFiles(object):
 				self.utils.from_genbank_to_bed(sz_file_to, reference.get_reference_bed(TypePath.MEDIA_ROOT))
 				software.create_index_files_from_igv_tools(reference.get_reference_bed(TypePath.MEDIA_ROOT))
 				software.run_genbank2gff3(sz_file_to, reference.get_gff3(TypePath.MEDIA_ROOT))
-				software.run_genbank2gff3_positions_comulative(sz_file_to,
-								reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT))
+				with_gene_annotation = True
+				software.run_genbank2gff3(sz_file_to, reference.get_gff3_with_gene_annotation(TypePath.MEDIA_ROOT), with_gene_annotation)
+				software.run_genbank2gff3_positions_comulative(sz_file_to, reference.get_gff3_comulative_positions(TypePath.MEDIA_ROOT))
 				### save in database the elements and coordinates
 				self.utils.get_elements_from_db(reference, user)
 				self.utils.get_elements_and_cds_from_db(reference, user)

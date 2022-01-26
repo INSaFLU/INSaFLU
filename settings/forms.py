@@ -58,9 +58,8 @@ class SoftwareForm(forms.ModelForm):
 		vect_divs = []
 		for parameter in paramers:
 			if (not parameter.can_change or parameter.is_null()):
-				dt_fields[parameter.get_unique_id()] = forms.CharField(disabled=True, required = False)
-				help_text = parameter.description
-				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
+				dt_fields[parameter.get_unique_id()] = forms.CharField(disabled=True, required = False,)
+				dt_fields[parameter.get_unique_id()].help_text = escape(parameter.description) 
 			elif (parameter.is_integer()):
 				dt_fields[parameter.get_unique_id()] = forms.IntegerField(max_value=int(parameter.range_max),\
 							min_value=int(parameter.range_min), required = True)
@@ -101,11 +100,9 @@ class SoftwareForm(forms.ModelForm):
 				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
 			dt_fields[parameter.get_unique_id()].label = parameter.name
-			if (not parameter.can_change): dt_fields[parameter.get_unique_id()].initial = parameter.name
+			if (not parameter.can_change and len(parameter.parameter) == 0): dt_fields[parameter.get_unique_id()].initial = parameter.name
 			else: dt_fields[parameter.get_unique_id()].initial = parameter.parameter
-			vect_divs.append(
-					Div(parameter.get_unique_id(),
-						css_class = "col-sm-4"))
+			vect_divs.append(Div(parameter.get_unique_id(), css_class = "col-sm-4"))
 		### set all fields
 		self.fields.update(dt_fields)
 

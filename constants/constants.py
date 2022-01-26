@@ -56,7 +56,7 @@ class Constants(object):
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
-	DIR_PROCESSED_FILES_PROJECT = DIR_PROCESSED_FILES_UPLOADS + "/project"
+	DIR_PROCESSED_FILES_PROJECT = "projects/result"
 	DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
 
 	DIR_ICONS = "icons"
@@ -74,12 +74,15 @@ class Constants(object):
 	FILE_TEMPLATE_INPUT_METADATA_data_csv = "template_input_metadata_data.csv"
 	FILE_TEMPLATE_INPUT_METADATA_data_tsv = "template_input_metadata_data.tsv"
 	
+	SAMPLE_LIST_all_samples = "AllSamples"			### has all sample list by user, file extension is added after
+	PROJECTS_LIST_all_samples = "AllProjects"		### has all projects list by user, file extension is added after
+
 	FORMAT_FASTA = "fasta"
 	## https://support.illumina.com/bulletins/2020/04/maximum-read-length-for-illumina-sequencing-platforms.html
 	FORMAT_FASTQ_illumina = "fastq_illumina"	### if is lower than 302 is illumina 
 	FORMAT_FASTQ_ont = "fastq_other"
 	EXTENSION_ZIP = ".gz"
-	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 302
+	MAX_LENGHT_ILLUMINA_FASQC_SEQ = 500		## because of IONtorrent
 	MIN_LENGHT_MINION_FASQC_SEQ = 100
 	
 	## vect with keys to get the ID
@@ -110,7 +113,12 @@ class Constants(object):
 	DATA_SET_GENERIC = "Generic"	## default name for a dataset
 	
 	### NextClade link
-	NEXTCLADE_LINK = "https://clades.nextstrain.org/?input-fasta="
+	NEXTCLADE_LINK_sars_cov_2 = "https://clades.nextstrain.org/?dataset-name=sars-cov-2&input-fasta="
+	NEXTCLADE_LINK_A_H3N2 = "https://clades.nextstrain.org/?dataset-name=flu_h3n2_ha&input-fasta="
+	NEXTCLADE_LINK_A_H1N1 = "https://clades.nextstrain.org/?dataset-name=flu_h1n1pdm_ha&input-fasta="
+	NEXTCLADE_LINK_B_Yamagata = "https://clades.nextstrain.org/?dataset-name=flu_yam_ha&input-fasta="
+	NEXTCLADE_LINK_B_Victoria = "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
+	AUSPICE_LINK = "https://auspice.us/"
 	
 	## NUMBER OF SETs to paginate
 	PAGINATE_NUMBER = 12

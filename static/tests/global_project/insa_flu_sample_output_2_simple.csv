@@ -1,0 +1,6 @@
+id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection,xpto_1
+second_stage_2_ test_create_tree,,,,,,,,,,,
+EVA011_S54,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1
+EVA003_S91,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1
+EVA002_S52,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1
+EVA001_S66,,,,,,,,,"xpto, zpto",,xpto_1 xpto_1

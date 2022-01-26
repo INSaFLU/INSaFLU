@@ -7,7 +7,7 @@ from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Result
-from constants.constants import TypePath, FileType, FileExtensions
+from constants.constants import TypePath, FileExtensions
 from constants.software_names import SoftwareNames
 from utils.result import SoftwareDesc
 from utils.software import Software
@@ -15,7 +15,9 @@ from utils.proteins import Proteins
 from constants.constants import Constants
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
+from settings.constants_settings import ConstantsSettings
 import os
+
 
 class CreateTree(object):
 	'''
@@ -53,7 +55,7 @@ class CreateTree(object):
 		"""
 		create the tree and the alignments
 		:param sequence_name Element name to process, None if they are all
-		return: path to results, or None if some error
+		:out path to results, or None if some error
 		"""
 		metaKeyAndValue = MetaKeyAndValue()
 		manageDatabase = ManageDatabase()
@@ -73,6 +75,7 @@ class CreateTree(object):
 		dict_out_sample_name = {}
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
+			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue
@@ -86,26 +89,19 @@ class CreateTree(object):
 			### get consensus
 			if (project_sample.is_mask_consensus_sequences): 
 				limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-								DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-								if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+								DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+								if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 			else: limit_to_mask_consensus = -1
 			
-			consensus_fasta = project_sample.get_file_output(TypePath.MEDIA_ROOT, FileType.FILE_CONSENSUS_FASTA,
-					SoftwareNames.SOFTWARE_SNIPPY_name if project_sample.is_sample_illumina() else\
-					SoftwareNames.SOFTWARE_Medaka_name)
-			if (not os.path.exists(consensus_fasta)):
-				manageDatabase.set_project_metakey(project, owner, meta_key,\
-						MetaKeyAndValue.META_VALUE_Error, "Error: fasta file doens't exist - " + consensus_fasta)
-				self.utils.remove_dir(temp_dir)
-				return False
+			consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
 			if (sequence_name is None):		### join all elements
 				if (self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
 					dict_out_sample_name[project_sample.sample.name] = 1
 					n_files_with_sequences += 1
 			elif (self.utils.filter_fasta_by_sequence_names(consensus_fasta, project_sample.sample.name, sequence_name, coverage, None,\
 					limit_to_mask_consensus, temp_dir)):
-					dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
-					n_files_with_sequences += 1
+				dict_out_sample_name[project_sample.sample.name + "_" + sequence_name] = 1
+				n_files_with_sequences += 1
 			n_count_samples_processed += 1
 		
 		### error, there's no enough files to create tree file
@@ -117,19 +113,19 @@ class CreateTree(object):
 			self.clean_file_by_vect(project, sequence_name, project.vect_clean_file)
 			return False
 		
-		### copy the reference
-		sample_name = project.reference.display_name.replace(' ', '_')
+		### copy the reference, get the Ref name
+		reference_name = project.reference.display_name.replace(' ', '_')
 		if (sequence_name is None):
-			if (sample_name is None): sample_name = ""
-			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name 
-			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, sample_name + FileExtensions.FILE_FASTA))
+			if (reference_name is None): reference_name = ""
+			if (reference_name in dict_out_sample_name or len(reference_name) == 0): reference_name = 'Ref_' + reference_name 
+			self.utils.copy_file(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT), os.path.join(temp_dir, reference_name + FileExtensions.FILE_FASTA))
 		else:
 			## test if exist a sample that is equal
-			if (sample_name in dict_out_sample_name or len(sample_name) == 0): sample_name = 'Ref_' + sample_name
+			if (reference_name in dict_out_sample_name or len(reference_name) == 0): reference_name = 'Ref_' + reference_name
 			self.utils.filter_fasta_by_sequence_names(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),\
-						sample_name, sequence_name, None, None, -1, temp_dir)
+						reference_name, sequence_name, None, None, -1, temp_dir)
 		n_files_with_sequences += 1
-		
+
 		##########################
 		#####
 		##### When we have only one element in the reference it's not necessary run progressive mauve
@@ -137,10 +133,10 @@ class CreateTree(object):
 		result_all = Result()
 		out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
 		## need to join all sequences
-		if (sequence_name is None):
+		if (sequence_name is None):	## by element
 			vect_elements = self.utils.get_elements_from_db(project.reference, project.owner) 
 			self.utils.merge_fasta_and_join_sequences(temp_dir, vect_elements, out_file_convert_mauve)
-		else: self.utils.merge_fasta_first_sequence(temp_dir, out_file_convert_mauve)
+		else: self.utils.merge_fasta_first_sequence(temp_dir, out_file_convert_mauve)	## altogether
 			
 # 		if (n_max_elements_in_reference == 1): ## only concatenate fasta files
 # 			out_file_convert_mauve = self.utils.get_temp_file_from_dir(temp_dir, "convert_mauve", ".fasta")
@@ -209,7 +205,8 @@ class CreateTree(object):
 		try:
 			## dvtditr
 			out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree", FileExtensions.FILE_NWK)
-			self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters())
+			self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters(),
+								reference_name)
 			result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
 							self.software_names.get_fasttree_parameters()))
 		except Exception:

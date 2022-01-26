@@ -43,10 +43,10 @@
 		                            	{% csrf_token %}
 		                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected samples</button>
 		                            </form>
-<!-- 		                            <form method="post" id="id_add_all_samples" class="form-inline pull-left">
+ 		                            <form method="post" id="id_add_all_samples" class="form-inline pull-left">
 		                            	{% csrf_token %}
 		                              	<button type="submit" id="id_submit_all" name="submit_all" class="btn btn-small btn-primary dark" style="margin-left: 8px;"><i class="fa fa-plus-square"></i> {{ add_all_samples_message }}</button>
-		                            </form>  -->
+		                            </form>
 		                        </div> 
 		                        
 		                        <form method="get" action="" class="form-inline form-search pull-right">
@@ -106,7 +106,7 @@
 			<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 		{% endif %}
 	
-		<a href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		{% if show_message_change_settings %}
 			<div class="modal fade" id="modal_show_settings_allert">
@@ -148,12 +148,24 @@
 		    create_post();
 		}); */
 		
+		/// set wait screen
+	    $('#id_submit_all').click(function() { 
+	    	wait_screen();
+	    });
+		    
+	    $('#id_submit_checked').click(function() { 
+	    	wait_screen();
+	    }); 
+		
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+		
 	</script>
  		
  	 {% load static from staticfiles %}
  	 		<!-- Custom scripts for all pages-->
 	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
-	    	
 			
      
  {% endblock %}

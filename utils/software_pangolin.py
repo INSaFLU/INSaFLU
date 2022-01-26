@@ -114,6 +114,8 @@ class SoftwarePangolin(object):
 		For "pango-designation (vv1.2.13) is newer than latest stable release (v1.2.86), not updating." return (vv1.2.13)
 		For "pangolearn updated to 2021-09-28" return (2021-09-28)
 		For "pangolin already latest release (v3.1.14)" return (v3.1.14)
+		For "pango-designation used by pangoLEARN/Usher: v1.2.101" return (v1.2.101)
+		For "pango-designation aliases: 1.2.106" return (v1.2.101)
 		"""
 		for word in description.split():
 			count_word = 0
@@ -185,8 +187,12 @@ class SoftwarePangolin(object):
 				SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
 		
 		uploadFiles = UploadFiles()
-		vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
-		if (len(vect_data) == 0):
+		try:
+			## could fail some identification, so, return False if it occurs
+			vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
+			if (len(vect_data) == 0):
+				return False
+		except Exception as e:
 			return False
 		
 		### test number of right segments
@@ -194,6 +200,7 @@ class SoftwarePangolin(object):
 		for identify_virus in vect_data:
 			if (identify_virus.seq_virus.name == "BetaCoV" and
 				identify_virus.seq_virus.kind_type.name == "Genus"): number_right += 1
+			### need to read from the file 
 			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
 				identify_virus.seq_virus.kind_type.name == "Human"): number_right += 1
 
@@ -276,7 +283,8 @@ class SoftwarePangolin(object):
 		if (pangolin_version_run is None):
 			sz_out += "Do you want to run pangolin version ({})?".format(dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
 		elif (dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name) != pangolin_version_run):
-			sz_out += "Do you want to update pangolin version from ({}) to ({})?".format(pangolin_version_run, dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
+			sz_out += "Do you want to update pangolin version from ({}) to ({})?".format(pangolin_version_run,
+									dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
 		### Pango Learn version
 		if (pangolin_learn_version_run is None):
 			if (len(sz_out) > 0): sz_out += "<br /><br />"

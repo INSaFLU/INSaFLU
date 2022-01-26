@@ -121,7 +121,7 @@
   					<!-- Modal footer -->
   					<div class="modal-footer" id="id-modal-footer-remove">
     					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
-    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
   					</div>
 			</div>
  		</div>
@@ -132,4 +132,27 @@
 {% block js %}
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/remove_references.js' %}"></script>
+	    
+	<script>
+	
+		$(document).ready(function() { 
+			$('#id-cancel-button').click(function() { 
+				$.unblockUI();
+			});
+			$('#id-remove-button').click(function() { 
+				$.unblockUI();
+			});
+		});
+
+		/// set wait screen
+		$(document).on("click", "a", function(e){
+			
+			var id_ = $(this).attr('id');
+			var href = $(this).attr('href');
+			var onclick = $(this).attr('onclick');
+			if (onclick !== 'return false;' && id_ !== 'sidenavToggler' && !href.startsWith('/media') && !href.startsWith('http') ){
+				wait_screen();
+			}
+		});
+	</script>
 {% endblock js %}

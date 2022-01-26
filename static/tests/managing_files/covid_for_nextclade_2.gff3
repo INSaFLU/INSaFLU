@@ -1,0 +1,29 @@
+##gff-version 3
+##sequence-region unknown 1 2280
+# conversion-by bp_genbank2gff3.pl
+# organism Influenza_virus_a influenza_a_virus
+# Note Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+PB2	GenBank	gene	31	2280	.	+	0	gene_name=PB2;Name=PB2;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31345;locus_tag=locus_00001;product=Polymerase basic protein 2;protein_id=Prokka:locus_00001;translation=length.749
+PB2	GenBank	CDS	31	2280	.	+	0	gene=PB2;Name=PB2;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31345;locus_tag=locus_00001;product=Polymerase basic protein 2;protein_id=Prokka:locus_00001;translation=length.749
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+PB1	GenBank	gene	1	2274	.	+	0	gene_name=PB1;eC_number=2.7.7.48;Name=PB1;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q3HM40;locus_tag=locus_00002;product=RNA-directed RNA polymerase catalytic subunit;protein_id=Prokka:locus_00002;translation=length.757
+PB1	GenBank	CDS	1	2274	.	+	0	gene=PB1;eC_number=2.7.7.48;Name=PB1;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q3HM40;locus_tag=locus_00002;product=RNA-directed RNA polymerase catalytic subunit;protein_id=Prokka:locus_00002;translation=length.757
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+PA	GenBank	gene	1	2151	.	+	0	gene_name=PA;Name=PA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31343;locus_tag=locus_00003;product=Polymerase acidic protein;protein_id=Prokka:locus_00003;translation=length.716
+PA	GenBank	CDS	1	2151	.	+	0	gene=PA;Name=PA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P31343;locus_tag=locus_00003;product=Polymerase acidic protein;protein_id=Prokka:locus_00003;translation=length.716
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+HA	GenBank	gene	1	1701	.	+	0	gene_name=HA;Name=HA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:O11283;locus_tag=locus_00004;product=Hemagglutinin;protein_id=Prokka:locus_00004;translation=length.566
+HA	GenBank	CDS	1	1701	.	+	0	gene=HA;Name=HA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:O11283;locus_tag=locus_00004;product=Hemagglutinin;protein_id=Prokka:locus_00004;translation=length.566
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+NP	GenBank	gene	1	1497	.	+	0	gene_name=NP;Name=NP;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P03467;locus_tag=locus_00005;product=Nucleoprotein;protein_id=Prokka:locus_00005;translation=length.498
+NP	GenBank	CDS	1	1497	.	+	0	gene=NP;Name=NP;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P03467;locus_tag=locus_00005;product=Nucleoprotein;protein_id=Prokka:locus_00005;translation=length.498
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+NA	GenBank	gene	1	1410	.	+	0	gene_name=NA;eC_number=3.2.1.18;Name=NA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P06820;locus_tag=locus_00006;product=Neuraminidase;protein_id=Prokka:locus_00006;translation=length.469
+NA	GenBank	CDS	1	1410	.	+	0	gene=NA;eC_number=3.2.1.18;Name=NA;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P06820;locus_tag=locus_00006;product=Neuraminidase;protein_id=Prokka:locus_00006;translation=length.469
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+MP	GenBank	gene	1	759	.	+	0	gene_name=M;Name=M;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P63233;locus_tag=locus_00007;product=Matrix protein 1;protein_id=Prokka:locus_00007;translation=length.252
+MP	GenBank	CDS	1	759	.	+	0	gene=M;Name=M;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:P63233;locus_tag=locus_00007;product=Matrix protein 1;protein_id=Prokka:locus_00007;translation=length.252
+# working on region:unknown, Influenza_virus_a influenza_a_virus, Influenza_virus_a influenza_a_virus strain A_H3N2_A_Hong_Kong_4801_2014.
+NS	GenBank	gene	1	693	.	+	0	gene_name=NS;Name=NS;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q38SQ2;locus_tag=locus_00008;product=Non-structural protein 1;protein_id=Prokka:locus_00008;translation=length.230
+NS	GenBank	CDS	1	693	.	+	0	gene=NS;Name=NS;codon_start=1;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:UniProtKB:Q38SQ2;locus_tag=locus_00008;product=Non-structural protein 1;protein_id=Prokka:locus_00008;translation=length.230

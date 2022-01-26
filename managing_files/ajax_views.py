@@ -23,12 +23,12 @@ from extend_user.models import Profile
 from managing_files.models import Reference, Sample, UploadFiles, MetaKey, ProcessControler
 from datetime import datetime
 from django.db import transaction
-from utils.result import DecodeObjects
 from utils.process_SGE import ProcessSGE
 from utils.software import Software
-from utils.result import Coverage
+from utils.result import Coverage, DecodeObjects
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
+from settings.constants_settings import ConstantsSettings
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -244,8 +244,8 @@ def show_coverage_as_a_table(request):
 					
 					### default parameters
 					limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,\
-							DefaultParameters.MASK_CONSENSUS_threshold, SoftwareNames.TECHNOLOGY_illumina \
-							if project_sample.is_sample_illumina() else SoftwareNames.TECHNOLOGY_minion))
+							DefaultParameters.MASK_CONSENSUS_threshold, ConstantsSettings.TECHNOLOGY_illumina \
+							if project_sample.is_sample_illumina() else ConstantsSettings.TECHNOLOGY_minion))
 		
 					count_sequences = 1
 					for sequence_name in geneticElement.get_sorted_elements():
@@ -472,9 +472,10 @@ def get_image_coverage(request):
 		if (key_with_project_sample_id in request.GET and key_element in request.GET):
 			try:
 				project_sample = ProjectSample.objects.get(id=request.GET.get(key_with_project_sample_id))
-				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE, request.GET.get(key_element), FileExtensions.FILE_PNG)
+				path_name = project_sample.get_global_file_by_element(TypePath.MEDIA_URL, ProjectSample.PREFIX_FILE_COVERAGE,
+						request.GET.get(key_element).replace('/', '_'), FileExtensions.FILE_PNG)
 				data['is_ok'] = True
-				data['image'] = mark_safe('<img src="{}" style="width: 100%;">'.format(path_name))
+				data['image'] = mark_safe('<img id="coverage_image_id" src="{}" style="width: 100%;">'.format(path_name))
 				data['image_download'] = path_name
 				data['image_download_name'] = os.path.basename(path_name)
 				data['text'] = _("Coverage for locus '{}'".format(request.GET.get(key_element)))
@@ -838,6 +839,9 @@ def remove_sample(request):
 						upload_file.save()
 						break
 
+			## refresh sample list for this user
+			process_SGE = ProcessSGE()
+			process_SGE.set_create_sample_list_by_user(sample.owner, [])
 			data = { 'is_ok' : True }
 		return JsonResponse(data)
 
@@ -884,8 +888,11 @@ def remove_project(request):
 				project_sample.date_deleted = datetime.now()
 				project_sample.save()
 			
+			## refresh sample and project list for this user
+			process_SGE = ProcessSGE()
+			process_SGE.set_create_sample_list_by_user(request.user, [])
+			process_SGE.set_create_project_list_by_user(request.user)
 			data = { 'is_ok' : True }
-		
 		return JsonResponse(data)
 
 @transaction.atomic
@@ -932,6 +939,10 @@ def remove_project_sample(request):
 				manageDatabase.set_project_metakey(project_sample.project, request.user, metaKeyAndValue.get_meta_key(\
 							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project_sample.project.id),
 							MetaKeyAndValue.META_VALUE_Queue, taskID)
+				
+				## refresh sample list for this user
+				## project list is updated in collect global files
+				process_SGE.set_create_sample_list_by_user(request.user, [])
 				data = { 'is_ok' : True }
 			except:
 				data = { 'is_ok' : False }
@@ -1077,7 +1088,7 @@ def unlock_sample_file(request):
 
 		return JsonResponse(data)
 
-
+	
 @csrf_protect
 def get_process_running(request):
 	"""

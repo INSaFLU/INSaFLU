@@ -58,7 +58,7 @@
 	</table>
 	
 	<hr>
-	<a href="{% url 'sample-add-fastq' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+	<a id="id_go_back_button" href="{% url 'sample-add-fastq' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 	
 	<!--  -->
 	<div class="modal fade" id="modal-progress" data-backdrop="static" data-keyboard="false">
@@ -85,5 +85,12 @@
 	 	
 	 	<!-- Custom scripts for all pages-->
     	<script type="text/javascript" src="{% static 'js/upload-fastq-files.js' %}"></script>
+
+    <script>
+		/// set wait screen
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+	</script>
  {% endblock %}
 

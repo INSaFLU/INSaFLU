@@ -48,6 +48,13 @@ class Test(unittest.TestCase):
 		self.assertTrue(os.path.exists(software_names.get_fasttree()), "Fail to test - " + software_names.get_fasttree_name(), )
 		self.assertTrue(os.path.exists(software_names.get_fastqtools_sample()), "Fail to test - " + software_names.get_fastqtools_sample_name())
 
+		### pangolin names
+		dt_software_names_pangolin = software_names.get_pangolin_all_names_version()
+		self.assertTrue(SoftwareNames.SOFTWARE_Pangolin_name in dt_software_names_pangolin)
+		self.assertTrue(SoftwareNames.SOFTWARE_Pangolin_learn_name in dt_software_names_pangolin)
+		self.assertTrue(SoftwareNames.SOFTWARE_Pangolin_designation_name in dt_software_names_pangolin)
+		self.assertTrue(SoftwareNames.SOFTWARE_Pangolin_constellations_name in dt_software_names_pangolin)
+		self.assertTrue(SoftwareNames.SOFTWARE_Pangolin_scorpio_name in dt_software_names_pangolin)
 
 
 if __name__ == "__main__":

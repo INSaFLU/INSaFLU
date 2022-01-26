@@ -8,6 +8,14 @@ from constants.constants import Constants
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from Bio.SeqFeature import SeqFeature, CompoundLocation, FeatureLocation
 
+def is_integer(n_value):
+	try:
+		int(n_value)
+		return True
+	except ValueError: 
+		return False
+
+
 class DecodeObjects(object):
 
 	def __init__(self):
@@ -20,6 +28,10 @@ class DecodeObjects(object):
 		if '__Coverage__' in o:
 			a = Coverage()
 			a.__dict__.update(o['__Coverage__'])
+			return a
+		elif '__MaskingConsensus__' in o:
+			a = MaskingConsensus()
+			a.__dict__.update(o['__MaskingConsensus__'])
 			return a
 		elif '__CountHits__' in o:
 			a = CountHits()
@@ -132,21 +144,32 @@ class Softwares(object):
 	def add_software(self, software):
 		self.list_software.append(software)
 
-	def get_software(self, sz_name):
+	def get_software(self, sz_name, b_not_add_software_name = False):
 		"""   return software name, version and parameters"""
 		list_return = []
 		for software_desc in self.list_software:
 			if (software_desc.name.startswith(sz_name)):
 				version_data = ""
+				## version
 				if (len(software_desc.version) > 0): version_data = "-{}".format(software_desc.version)
+				###
 				if (not software_desc.parameters is None and len(software_desc.parameters) > 0):
-					description = "{}{}; ({})".format(software_desc.name, version_data, software_desc.parameters)
+					if b_not_add_software_name: description = "{}".format(software_desc.parameters)
+					else: description = "{}{}; ({})".format(software_desc.name, version_data, software_desc.parameters)
 					if (not description in list_return): list_return.append(description)
 				else:
 					description = "{}{}".format(software_desc.name, version_data)
 					if (not description in list_return): list_return.append(description)
 		if (len(list_return) > 0): return "/".join(list_return)
 		return ""
+	
+	def is_software_present(self, sz_name):
+		"""   test if a specific software is present in the list.
+			This is useful to test if the software it runs or Not. 
+		"""
+		for software_desc in self.list_software:
+			if (software_desc.name.startswith(sz_name)): return True
+		return False
 	
 	def get_software_instance(self, sz_name):
 		""" return software instance """
@@ -226,7 +249,12 @@ class KeyValues(object):
 
 	def get_key_value(self):
 		return self.list_key_value
-
+	
+	def get_value_by_key(self, key):
+		for data_ in self.list_key_value:
+			if data_[0] == key: return data_[1]
+		return None
+	
 class Result(object):
 	'''
 	classdocs
@@ -263,8 +291,8 @@ class Result(object):
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ResultEncoder)
 
-	def get_software(self, sz_name):
-		return self.softwares.get_software(sz_name)
+	def get_software(self, sz_name, b_not_add_software_name = False):
+		return self.softwares.get_software(sz_name, b_not_add_software_name)
 	
 	def get_software_instance(self, sz_name):
 		return self.softwares.get_software_instance(sz_name)
@@ -282,12 +310,18 @@ class Result(object):
 	def get_all_software_names(self):
 		return self.softwares.get_all_software_names()
 	
+	def is_software_present(self, sz_name):
+		return self.softwares.is_software_present(sz_name)
+	
 	def is_success(self):
 		return self.result == Result.SUCCESS
 
 	def get_key_value(self):
 		return self.key_values.get_key_value()
 
+	def get_value_by_key(self, key):
+		return self.key_values.get_value_by_key(key)
+	
 class ResultEncoder(json.JSONEncoder):
 
 	def default(self, o):
@@ -303,10 +337,10 @@ class ResultAverageAndNumberReads(object):
 	Only have the number of reads and average
 	"""
 	def __init__(self, number_file_1, average_file_1, number_file_2, average_file_2):
-		self.number_file_1 = number_file_1
-		self.average_file_1 = average_file_1
-		self.number_file_2 = number_file_2
-		self.average_file_2 = average_file_2
+		self.number_file_1 = None if number_file_1 is None else str(number_file_1)
+		self.average_file_1 = None if average_file_1 is None else str(average_file_1)
+		self.number_file_2 = None if number_file_2 is None else str(number_file_2)
+		self.average_file_2 = None if average_file_2 is None else str(average_file_2)
 	
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
@@ -322,9 +356,8 @@ class ResultAverageAndNumberReads(object):
 		"""
 		Test if has reads
 		"""
-		if ((self.number_file_1 == 0 and self.average_file_1 == 0) and
-			((self.number_file_2 == 0 and self.average_file_2 == 0) or 
-			(self.number_file_2 is None and self.average_file_2 is None))): return False
+		if (self.number_file_1 == '0' and
+			(self.number_file_2 == '0' or self.number_file_2 is None)): return False
 		return True
 
 class CoverageElement(object):
@@ -720,6 +753,7 @@ class GeneticElement(object):
 		self.name = ""
 		self.dt_elements = {}
 		self.dt_elements_size = {}
+		self.dt_elements_mask = {}
 		
 	def add_gene(self, element_name, length, gene):
 		if (element_name in self.dt_elements):
@@ -750,6 +784,14 @@ class GeneticElement(object):
 		if (element_name in self.dt_elements_size): return self.dt_elements_size[element_name]
 		return None
 	
+	def get_mask_consensus_element(self, element_name):
+		if (element_name in self.dt_elements_mask): return self.dt_elements_mask[element_name]
+		return None
+	
+	def set_mask_consensus_element(self, element_name, mask_consensus):
+		""" MaskingConsensus """
+		self.dt_elements_mask[element_name] = mask_consensus
+	
 	def get_vect_gene_names(self, element_name):
 		if (element_name in self.dt_elements): 
 			return [gene.name for gene in self.dt_elements[element_name]]
@@ -758,6 +800,35 @@ class GeneticElement(object):
 	def get_sorted_elements(self):
 		return sorted(self.dt_elements.keys())
 	
+	def has_masking_data(self):
+		""" testing if has masking data """
+		for element in self.dt_elements_mask:
+			if self.dt_elements_mask[element].has_data(): return True
+		return False
+	
+	def get_message_mask_to_show_in_web_site(self):
+		sz_return = ""
+		for element in self.get_sorted_elements():
+			if (len(sz_return) > 0): sz_return += "\n#####################\n"
+			else: sz_return += "#####################\n"
+			sz_return += self.dt_elements_mask[element].get_message_to_show_in_web_site(element)
+		return sz_return
+
+	def get_message_to_show_in_csv_file(self):
+		sz_return = ""
+		for element in self.get_sorted_elements():
+			if not element in self.dt_elements_mask: continue
+			sz_out = self.dt_elements_mask[element].get_message_to_show_in_csv_file(element)
+			if (len(sz_out) > 0):
+				if (len(sz_return) > 0): sz_return += " "
+				sz_return += sz_out
+		return sz_return
+	
+	def cleaning_mask_results(self):
+		""" cleaning masking values """			
+		for element in self.get_sorted_elements():
+			self.dt_elements_mask[element].cleaning_mask_results()
+			
 	def to_json(self):
 		return json.dumps(self, indent=4, cls=ObjectEncoder)
 
@@ -765,6 +836,10 @@ class GeneticElement(object):
 		if (other == None or len(other.dt_elements) != len(self.dt_elements)): return False
 		for value_ in self.dt_elements:
 			if (value_ not in other.dt_elements or other.dt_elements[value_] != self.dt_elements[value_]): return False
+		for value_ in self.dt_elements_size:
+			if (value_ not in other.dt_elements_size or other.dt_elements_size[value_] != self.dt_elements_size[value_]): return False
+		for value_ in self.dt_elements_mask:
+			if (value_ not in other.dt_elements_mask or other.dt_elements_mask[value_] != self.dt_elements_mask[value_]): return False
 		return True
 		
 	def __str__(self):
@@ -864,5 +939,146 @@ class ProcessResults(object):
 
 	def __str__(self):
 		return '\n'.join([str(a) for a in self.vect_results])
+
+
+class MaskingConsensus(object):
+	"""
+	Mask Consensus sequences...
+	"""
+	def __init__(self):
+		self.mask_sites = "" 			### <number>,<number>,...
+		self.mask_from_beginning = ""	### <number>
+		self.mask_from_ends = ""		### <number>
+		self.mask_regions = ""			### [<number>-<number>],[<number>-<number>],...
+		
+	def set_mask_sites(self, mask_sites):
+		lst_data = mask_sites.split(',')
+		vect_data = []
+		for data_ in lst_data:
+			if (is_integer(data_) and not abs(int(data_)) in vect_data): vect_data.append(abs(int(data_)))
+		vect_data = sorted(vect_data)
+		self.mask_sites = ",".join([str(_) for _ in vect_data])
+	
+	def set_mask_from_beginning(self, mask_from_beginning):
+		if (is_integer(mask_from_beginning)):
+			self.mask_from_beginning = "{}".format(abs(int(mask_from_beginning)))
+		else: self.mask_from_beginning = ""
+	
+	def set_mask_from_ends(self, mask_from_ends):
+		if (is_integer(mask_from_ends)):
+			self.mask_from_ends = "{}".format(abs(int(mask_from_ends)))
+		else: self.mask_from_ends = ""
+	
+	def set_mask_regions(self, mask_regions):
+		self._clean_mask_regions(mask_regions)
+	
+	def _clean_mask_regions(self, mask_regions):
+		lst_data = mask_regions.split(',')
+		vect_data = []
+		for data_ in lst_data:
+			lst_positions = data_.strip().replace('[','').replace(']','').split('-')
+			if len(lst_positions) == 2 and is_integer(lst_positions[0]) and \
+				is_integer(lst_positions[1]):
+				pos_1 = abs(int(lst_positions[0]))
+				pos_2 = abs(int(lst_positions[1]))
+				if pos_1 > pos_2: vect_data.append([pos_2, pos_1])
+				elif pos_1 < pos_2: vect_data.append([pos_1, pos_2])
+		
+		## merge data
+		if len(vect_data) > 0:
+			vect_data = self._merge(vect_data)
+			self.mask_regions = ",".join(["{}-{}".format(data_[0], data_[1]) for data_ in vect_data])
+		else: self.mask_regions = ""
+	
+	def cleaning_mask_results(self):
+		""" cleaning all results """
+		self.set_mask_sites(self.mask_sites)
+		self.set_mask_from_beginning(self.mask_from_beginning)
+		self.set_mask_from_ends(self.mask_from_ends)
+		self._clean_mask_regions(self.mask_regions)
+		
+	# if the two intervals overlaps
+	def _is_overlaping(self, a, b):
+		""" is overlapping """
+		if b[0] >= a[0] and b[0] <= a[1]: return True
+		else: return False
+
+	# merge the intervals
+	def _merge(self, vect_data):
+		""" merge intervals """
+		#sort the intervals by its first value
+		vect_data = sorted(vect_data, key = lambda x: x[0])
+		merged_list= []
+		merged_list.append(vect_data[0])
+		for i in range(1, len(vect_data)):
+			pop_element = merged_list.pop()
+			if self._is_overlaping(pop_element, vect_data[i]):
+				new_element = pop_element[0], max(pop_element[1], vect_data[i][1])
+				merged_list.append(new_element)
+			else:
+				merged_list.append(pop_element)
+				merged_list.append(vect_data[i])
+		return merged_list
+	
+	def get_header(self, separator = ","):
+		""" return header """	
+		return "Mask sites{}Mask from beginning{}Mask from end{}Mask regions".format(separator,
+				separator, separator)
+	def get_vect_header(self):
+		""" return header """	
+		return ["Mask sites", "Mask from beginning", "Mask from end", "Mask regions"]
+		
+	def get_mask_sites(self):
+		return self.mask_sites
+	
+	def get_mask_from_beginning(self):
+		return self.mask_from_beginning
+	
+	def get_mask_from_ends(self):
+		return self.mask_from_ends
+	
+	def get_mask_regions(self):
+		return self.mask_regions
+
+	def get_message_to_show_in_web_site(self, element_name):
+		"""  get message for web site about regions to be masked  """
+		if not self.has_data(): return "Element:{} -> No mask".format(element_name)
+		return "Element:{}\n\nMask sites:{}  Mask regions:{}\nMask from beginning:{}  Mask from ends:{}".format(
+			element_name, self.mask_sites, self.mask_regions,
+			self.mask_from_beginning, self.mask_from_ends)
+		
+	def get_message_to_show_in_csv_file(self, element_name):
+		"""  get message for web site about regions to be masked  """
+		if not self.has_data(): return ""
+		sz_out = "Element:{} -> ".format(element_name)
+		b_add = False
+		if len(self.mask_sites) > 0:
+			sz_out += "{}Mask sites:{}".format(" " if b_add else "(", self.mask_sites)
+			b_add = True
+		if len(self.mask_regions) > 0:
+			sz_out += "{}Mask regions:{}".format(" " if b_add else "(", self.mask_regions)
+			b_add = True
+		if len(self.mask_from_beginning) > 0:
+			sz_out += "{}Mask from beginning:{}".format(" " if b_add else "(", self.mask_from_beginning)
+			b_add = True
+		if len(self.mask_from_ends) > 0:
+			sz_out += "{}Mask from end:{}".format(" " if b_add else "(", self.mask_from_ends)
+		return sz_out + ")"
+	
+	def has_data(self):
+		return len(self.mask_sites) > 0 or len(self.mask_from_beginning) > 0 or \
+			len(self.mask_from_ends) > 0 or len(self.mask_regions) > 0
+		
+	def to_json(self):
+		return json.dumps(self, indent=4, cls=ObjectEncoder)
+
+	def __eq__(self, other):
+		return other != None and other.mask_regions == self.mask_regions and other.mask_from_ends == self.mask_from_ends\
+			and other.mask_from_beginning == self.mask_from_beginning and other.mask_sites == self.mask_sites
+
+	def __str__(self):
+		return "mask_sites: {}  mask_from_beginning: {}   mask_from_ends: {}".format(self.mask_sites, self.mask_from_beginning, self.mask_from_ends) + \
+			"  mask_regions: {}".format(self.mask_regions)
+
 
 

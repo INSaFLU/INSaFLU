@@ -48,7 +48,8 @@ function phylTree(metaData, data_input, root_name) {
                 	window.PhylocanvasTree.leaves[i].setDisplay({
 
                         leafStyle: {
-                            fillStyle: color[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j] + Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j]]
+                            fillStyle: color[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j] + 
+								Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j]]
                         }
                     });
                 }

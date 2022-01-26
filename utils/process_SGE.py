@@ -93,6 +93,7 @@ class ProcessSGE(object):
 			handleSGE.write("#$ -S /bin/bash\n") 	# interpreting shell
 			## hold_jid <comma separated list of job-ids, can also be a job id pattern such as 2722*> : 
 			## will start the current job/job -array only after completion of all jobs in the comma separated list
+			if isinstance(job_name_wait, str): job_name_wait = [job_name_wait]
 			if len(job_name_wait) > 0: handleSGE.write("#$ -hold_jid {}\n".format(",".join(job_name_wait)))	# need to wait until all this jobs names finished
 			handleSGE.write("#$ -j y\n")	# merge the standard error with standard output
 			handleSGE.write("#$ -N {}\n".format(job_name))	# job name

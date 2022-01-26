@@ -744,7 +744,7 @@ class SoftwareNames(object):
 	def get_pangolin_constellations_version(self): return self.SOFTWARE_Pangolin_constellations_VERSION
 	def get_pangolin_all_names_version(self):
 		dt_return_version = {}
-		for name in self.VECT_INSAFLU_PARAMETER:
+		for name in self.VECT_PANGOLIN_TO_TEST:
 			dt_return_version[name] = self.get_pangolin_version(name)
 		return dt_return_version
 	

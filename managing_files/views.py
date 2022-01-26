@@ -1668,7 +1668,8 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 
 		## pangolin file			
 		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
-			context['pangolin_lineage'] = get_link_for_dropdown_item(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage))
+			context['pangolin_lineage'] = get_link_for_dropdown_item(project.get_global_file_by_project(TypePath.MEDIA_URL,
+															Project.PROJECT_FILE_NAME_Pangolin_lineage))
 		
 		#### nextclade link
 		if (os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \

@@ -448,7 +448,8 @@
 	       
 	       					<!-- Modal body -->
 		  					<div class="modal-body mx-auto mw-100">
-		  						<div id="id-modal-body-upadate-pangolin" pk="{{project_id}}" update-pangolin-value-url="{% url 'update_project_pangolin' %}">
+		  						<div id="id-modal-body-upadate-pangolin" pk="{{project_id}}" update-pangolin-value-url="{% url 'update_project_pangolin' %}"
+		  								ref_project="{{project_name}}">
 		  							<label id="id-label-update-pangolin" class="col-form-label">{{update_pangolin_message}}</label>
 		   						</div>
 		  					</div>

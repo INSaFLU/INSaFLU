@@ -591,14 +591,14 @@ $('#id-update-pangolin-button').on('click', function(){
         	  
         	  /// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was successfully applied to pangolin identification.' +
+        		'The project \'' + $('#id-modal-body-upadate-pangolin').attr('ref_project') + '\' was successfully applied to pangolin identification.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }
           else{
         	/// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was NOT applied to pangolin identification.' +
+        		'The project \'' + $('#id-modal-body-upadate-pangolin').attr('ref_project') + '\' was NOT applied to pangolin identification.' +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }

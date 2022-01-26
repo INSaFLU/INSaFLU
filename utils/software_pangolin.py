@@ -283,7 +283,8 @@ class SoftwarePangolin(object):
 		if (pangolin_version_run is None):
 			sz_out += "Do you want to run pangolin version ({})?".format(dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
 		elif (dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name) != pangolin_version_run):
-			sz_out += "Do you want to update pangolin version from ({}) to ({})?".format(pangolin_version_run, dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
+			sz_out += "Do you want to update pangolin version from ({}) to ({})?".format(pangolin_version_run,
+									dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
 		### Pango Learn version
 		if (pangolin_learn_version_run is None):
 			if (len(sz_out) > 0): sz_out += "<br /><br />"

@@ -1154,7 +1154,7 @@ class Software(models.Model):
 		ordering = ['name', 'version__name']
 
 	def is_updated_today(self):
-		return self.last_update.date() == datetime.now().date()
+		return not self.last_update is None and self.last_update.date() == datetime.now().date()
 
 	def set_last_update_today(self):
 		self.last_update = datetime.now()

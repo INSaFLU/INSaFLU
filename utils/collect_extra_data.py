@@ -171,8 +171,11 @@ class CollectExtraData(object):
 		try:
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
 			
@@ -658,9 +661,15 @@ class CollectExtraData(object):
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV))
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV))
 		
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus),
@@ -1398,7 +1407,7 @@ class CollectExtraData(object):
 				
 				## creation date
 				if b_test: vect_out.append("Date")
-				else: vect_out.append(sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW))
+				else: vect_out.append(sample.creation_date.strftime(settings.DATETIME_FORMAT_FOR_SHOW))
 				
 				## info about projects
 				vect_out.append("{}".format(ProjectSample.objects.filter(sample=sample, 
@@ -1472,10 +1481,10 @@ class CollectExtraData(object):
 									 is_error=False).count()))
 				vect_out.append(project.reference.name)
 				vect_out.append("" if project.last_change_date is None else \
-							project.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW) )
+							project.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_SHOW) )
 				if not b_test:
 					vect_out.append("" if project.creation_date is None else \
-							project.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE_SHOW) )
+							project.creation_date.strftime(settings.DATETIME_FORMAT_FOR_SHOW) )
 				
 				### END save global parameters
 				csv_writer.writerow(vect_out)

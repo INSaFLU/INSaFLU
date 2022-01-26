@@ -76,10 +76,19 @@ class Command(BaseCommand):
 		software = Software()
 		count = 0
 		for reference in Reference.objects.all():
+			if reference.is_deleted: continue
 			count += 1
 		
 			### create bed and index for genbank
 			test_file = reference.get_reference_bed(TypePath.MEDIA_ROOT)
+			if not os.path.exists(reference.get_reference_gbk(TypePath.MEDIA_ROOT)):	## remove this reference
+				
+				self.stdout.write("Reference removed: '{}' owner: '{}'".format(reference.name,
+									reference.owner.username))
+				reference.is_deleted = True;
+				reference.save()
+				continue
+			
 			if not os.path.exists(test_file): utils.from_genbank_to_bed(reference.get_reference_gbk(TypePath.MEDIA_ROOT), test_file)
 			
 			test_file = reference.get_gff3(TypePath.MEDIA_ROOT)

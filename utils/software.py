@@ -2281,24 +2281,23 @@ class Software(object):
 		
 		## test if the output is in fasta
 		try:
-			self.utils.is_fasta(temp_file_name_out)
+			number_record = self.utils.is_fasta(temp_file_name_out)
+			if (number_record != 2): return "", ""
 		except IOError as e:
 			return "", ""
 		
 		## read file
-		record_dict = SeqIO.index(temp_file_name_out, "fasta")
-		if (len(record_dict) != 2): return "", ""
-		
-		## get both sequences
-		seq_ref = ""
-		seq_other = ""
-		for seq in record_dict:
-			if (seq == ref_seq_name):	## ref seq
-				seq_ref = str(record_dict[seq].seq).upper()
-			else:
-				seq_other = str(record_dict[seq].seq).upper()
-						
-		if (out_dir_temp is None): self.utils.remove_dir(out_dir)
+		with open(temp_file_name_out) as handle:
+			## get both sequences
+			seq_ref = ""
+			seq_other = ""
+			for record_dict in SeqIO.parse(handle, "fasta"):
+				if (record_dict.id == ref_seq_name):	## ref seq
+					seq_ref = str(record_dict.seq).upper()
+				else:
+					seq_other = str(record_dict.seq).upper()
+							
+			if (out_dir_temp is None): self.utils.remove_dir(out_dir)
 		return seq_ref, seq_other
 
 	

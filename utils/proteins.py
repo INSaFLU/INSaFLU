@@ -289,12 +289,11 @@ class Proteins(object):
 		return False
 	
 	def genetic_element_from_sample(self, reference_fasta_file, record_dict_consensus, genetic_element,
-					coverage, limit_to_mask_consensus, out_dir):
+					coverage, limit_to_mask_consensus, temp_dir):
 		"""
 		get position where genes consensus from sample matches in the reference
 		"""
 		generic_consensus_element = GeneticElement()
-		temp_dir = self.utils.get_temp_dir()
 		with open(reference_fasta_file) as handle_ref: 
 			record_dict_ref = SeqIO.to_dict(SeqIO.parse(handle_ref, "fasta"))
 			if (record_dict_ref is None): return generic_consensus_element
@@ -361,8 +360,6 @@ class Proteins(object):
 									len(seq_other.replace('-', '')), Gene(
 									gene.name, cons_start, pos_con,
 									gene.strand, vect_feature_location))
-		### remove dir
-		self.utils.remove_dir(temp_dir)
 		
 		return generic_consensus_element
 

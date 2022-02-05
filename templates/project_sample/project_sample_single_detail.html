@@ -135,12 +135,17 @@
 		  								</button>
 		  								<div class="dropdown-menu">
 											{% if nextclade_link_covid %} 
-												<a href="{{nextclade_link_covid}}" data-title="Upload your Consensus File in NextClade Annotation SARS-Cov 2" class="dropdown-item" ><span class="hidden-phone"> (SARS-Cov 2)</span></a>
+												<a href="{{nextclade_link_covid}}" data-title="Upload your Consensus File in NextClade Annotation SARS-CoV-2" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (SARS-CoV-2)</span></a>
 											{% else %}
-												<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" class="dropdown-item" ><span class="hidden-phone"> (A-H3N2)</span></a>
-												<a href="{{nextclade_link_a_h1n1}}" data-title="Upload your Consensus File in NextClade Annotation A-H1N1" class="dropdown-item" ><span class="hidden-phone"> (A-H1N1)</span></a>
-												<a href="{{nextclade_link_b_yamagata}}" data-title="Upload your Consensus File in NextClade Annotation B-Yamagata" class="dropdown-item" ><span class="hidden-phone"> (B-Yamagata)</span></a>
-												<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" class="dropdown-item" ><span class="hidden-phone"> (B-Vitoria)</span></a>
+												<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H3N2)</span></a>
+												<a href="{{nextclade_link_a_h1n1}}" data-title="Upload your Consensus File in NextClade Annotation A-H1N1" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H1N1)</span></a>
+												<a href="{{nextclade_link_b_yamagata}}" data-title="Upload your Consensus File in NextClade Annotation B-Yamagata" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
+												<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
 											{% endif %}
 										</div>
 									</div>

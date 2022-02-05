@@ -323,18 +323,16 @@ class Utils(object):
 		Test Fata file
 		"""
 		if (not os.path.exists(sz_file_name)): raise IOError(_("Error: File doens't exist: "  + sz_file_name))
-		handle = open(sz_file_name)
 		b_pass = False
-		for line in handle:
-			sz_temp = line.strip()
-			if (len(sz_temp) == 0): continue
-			if (sz_temp[0] == ">"): 
-				b_pass = True
-				break
-			else: 
-				handle.close()
-				raise IOError(_("Error: the file is not in FASTA format."))
-		handle.close()
+		with open(sz_file_name) as handle:
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0): continue
+				if (sz_temp[0] == ">"): 
+					b_pass = True
+					break
+				else: 
+					raise IOError(_("Error: the file is not in FASTA format."))
 		if (not b_pass): raise IOError(_("Error: file is not in FASTA format."))
 
 		record_dict = SeqIO.index(sz_file_name, "fasta")

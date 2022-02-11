@@ -5,7 +5,7 @@ Created on Nov 27, 2017
 '''
 import os, csv, time, json, logging
 import plotly.graph_objs as go
-from utils.utils import Utils 
+from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, TagNames, ProcessControler, Sample
 from managing_files.models import Software as SoftwareModel, ProjectSample
@@ -224,46 +224,87 @@ class CollectExtraData(object):
 # 			os.unlink(out_file_png)
 # 		elif (os.path.exists(file_destination)): os.unlink(file_destination)
 
+		
 		try:
+			count = 0
+			start = time.time()
+			self.logger_production.info("COLLECT_EXTRA_FILES: Start")
+			
 			## calculate the max sample label size of the samples that belong to this project
 			## used in MSA viewer 
 			b_calculate_again = True
 			manage_database.get_max_length_label(project, user, b_calculate_again)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			## masks all consensus first, must be before of merge AllConsensus (Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_mask_all_consensus, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			## collect all consensus files for a project_sample
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			## calculate the lineage, if necessary
 			## This need to be after the PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus
 			self.__collect_update_pangolin_lineage(project, user, False)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			### calculate global file
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			## collect tab variations snippy
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			## collect tab variations freebayes, <50%
 			## remove del or ins
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			## with snp, del and ins
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 		
 			## calculate global variations for a project
 			self.calculate_count_variations(project)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			### create trees
 			createTree = CreateTree()
 			createTree.create_tree_and_alignments(project, user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
@@ -274,12 +315,21 @@ class CollectExtraData(object):
 				
 			### collect all project data for the user, and set for the user
 			self.collect_project_list(user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			### Refresh sample list, something can would change
 			self.collect_sample_list(user)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			### zip several files to download 
 			self.zip_several_files(project)
+			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 		except:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
@@ -619,17 +669,22 @@ class CollectExtraData(object):
 				self.software.mask_sequence_by_sites(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),
 					project_sample.get_consensus_file(TypePath.MEDIA_ROOT), masking_consensus_original_project)
 
-					
+
 	def merge_all_consensus_files(self, project):
 		"""
 		merge all consensus files
 		"""
-		
+
+		default_software = DefaultProjectSoftware()		
 		out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
 		vect_to_process = []
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+
+			## test if it has to join in all consensus files
+			if not default_software.include_consensus(project_sample): continue
+
 			vect_to_process.append([
 				project_sample.get_consensus_file(TypePath.MEDIA_ROOT),\
 				project_sample.sample.name, project_sample.id])
@@ -640,6 +695,7 @@ class CollectExtraData(object):
 		
 		self.utils.merge_fasta_files(vect_to_process, out_file)
 		return out_file
+
 
 	def zip_several_files(self, project):
 		

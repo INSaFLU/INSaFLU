@@ -1906,7 +1906,8 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['extra_data_sample_expand'] = (tag_names != None) ## (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
 			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
 			
-			context['consensus_file'] = project_sample.get_consensus_file_web()
+			default_software = DefaultProjectSoftware()
+			context['consensus_file'] = project_sample.get_consensus_file_web(not default_software.include_consensus(project_sample))
 			software_used = []	### has a list with all software used... [name, parameters]
 			### only for illumina
 			decode_result = DecodeObjects()
@@ -1991,7 +1992,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			software_pangolin = SoftwarePangolin()
 			is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
 			if (os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
-					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+					settings.SHOW_NEXTCLADE_LINK and default_software.include_consensus(project_sample)):		## docker versions doesn't show NextClade link
 				context = _get_constext_nextclade(project_sample.get_consensus_file(TypePath.MEDIA_URL),
 						context, get_current_site(self.request), is_sars_cov_2)
 			

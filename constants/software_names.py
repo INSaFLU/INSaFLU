@@ -310,6 +310,12 @@ class SoftwareNames(object):
 	SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended = "Mask consensus by sites"
 	SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion = "1"
 	SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters = ""	## don't have anything by default
+	
+	### set consensus on AllConsensus file ON|OFF
+	SOFTWARE_GENERATE_CONSENSUS_name = "Generate consensus"
+	SOFTWARE_GENERATE_CONSENSUS_name_extended = "Generate consensus"
+	SOFTWARE_GENERATE_CONSENSUS_vesion = "1"
+	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
 		
 	###################################
 	###################################
@@ -641,6 +647,15 @@ class SoftwareNames(object):
 	def get_software_mask_consensus_by_site_name_extended(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_name_extended
 	def get_software_mask_consensus_by_site_version(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_vesion
 	def get_software_mask_consensus_by_site_parameters(self): return self.SOFTWARE_MASK_CONSENSUS_BY_SITE_parameters
+	
+	"""
+	return generate consensus
+	"""
+	def get_software_generate_consensus_(self): return self.SOFTWARE_GENERATE_CONSENSUS_name
+	def get_software_generate_consensus_name(self): return self.SOFTWARE_GENERATE_CONSENSUS_name
+	def get_software_generate_consensus_name_extended(self): return self.SOFTWARE_GENERATE_CONSENSUS_name_extended
+	def get_software_generate_consensus_version(self): return self.SOFTWARE_GENERATE_CONSENSUS_vesion
+	def get_software_generate_consensus_parameters(self): return self.SOFTWARE_GENERATE_CONSENSUS_parameters
 
 	"""
 	return 

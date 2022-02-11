@@ -92,7 +92,7 @@ def set_default_parameters(request):
 							manageDatabase = ManageDatabase()
 							process_SGE = ProcessSGE()
 							
-							### change flag to nor finished
+							### change flag to not finished
 							project_sample.is_finished = False
 							project_sample.save()
 			
@@ -327,6 +327,7 @@ def change_mask_consensus_in_project(project, masking_consensus_proposed):
 					MetaKeyAndValue.META_VALUE_Success, masking_consensus_proposed.to_json())
 		## need to mask all the project_sample if exist
 		for project_sample in project.project_samples.all():
+			if project_sample.is_deleted: continue
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample,
 				MetaKeyAndValue.META_KEY_Masking_consensus, MetaKeyAndValue.META_VALUE_Success)
 			if not meta_value is None:
@@ -462,10 +463,48 @@ def turn_on_off_software(request):
 			try:
 				project, project_sample, sample = None, None, None
 				software = Software.objects.get(pk=software_id)
-				if not project_id is None: project = Project.objects.get(pk=project_id)
-				elif not project_sample_id is None:		## project sample 
+				if not project_id is None:				##	project 
+					project = Project.objects.get(pk=project_id)
+				elif not project_sample_id is None:		##	project sample 
 					project_sample = ProjectSample.objects.get(pk=project_sample_id)
+					
+					## sample is not ready for run again, To prevent to many ON|OFF
+					if not project_sample.is_finished:
+						data['message'] = "You cannot do this operation. The project '{}' with sample '{}' is in pipeline to run.".format(
+							project_sample.project.name, project_sample.sample.name)
+						return JsonResponse(data)
 				
+					### create a task to perform the analysis of snippy and freebayes
+					manageDatabase = ManageDatabase()
+					process_SGE = ProcessSGE()
+					metaKeyAndValue = MetaKeyAndValue()
+					try:
+						### the unique can be ON|OFF
+						if (software.name == SoftwareNames.SOFTWARE_FREEBAYES_name):
+							### change flag to not finished
+							project_sample.is_finished = False
+							project_sample.save()
+							
+							(job_name_wait, job_name) = request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL)
+							if (project_sample.is_sample_illumina()):
+								taskID = process_SGE.set_second_stage_snippy(project_sample, request.user, job_name, [job_name_wait])
+							else:
+								taskID = process_SGE.set_second_stage_medaka(project_sample, request.user, job_name, [job_name_wait])
+								
+							### set project sample queue ID
+							manageDatabase.set_project_sample_metakey(project_sample, request.user,\
+											metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
+											MetaKeyAndValue.META_VALUE_Queue, taskID)
+						
+						## Generate Consensus
+						### need to collect global files again 
+						taskID = process_SGE.set_collect_global_files(project_sample.project, request.user)
+						manageDatabase.set_project_metakey(project, request.user, metaKeyAndValue.get_meta_key(\
+								MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
+								MetaKeyAndValue.META_VALUE_Queue, taskID)
+					except:
+						pass
+
 				elif not sample_id is None:	## for Sample 
 					sample = Sample.objects.get(pk=sample_id)
 				
@@ -500,6 +539,7 @@ def turn_on_off_software(request):
 					if not job_name is None:
 						process_SGE.set_create_sample_list_by_user(request.user, [job_name])
 			
+				## set ON|OFF software 
 				is_to_run = default_parameters.set_software_to_run_by_software(software,
 						project, project_sample, sample)
 				
@@ -507,7 +547,7 @@ def turn_on_off_software(request):
 				data['is_to_run'] = is_to_run
 				data['message'] = "The '{}' in '{}' technology was turned '{}'.".format(
 					software.name_extended, software.technology.name,
-					"ON" if software.is_to_run else "OFF")
+					"ON" if is_to_run else "OFF")
 					
 			except Software.DoesNotExist:
 				return JsonResponse(data)

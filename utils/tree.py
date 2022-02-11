@@ -16,7 +16,7 @@ from constants.constants import Constants
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
-import os
+import os, logging, time
 
 
 class CreateTree(object):
@@ -27,6 +27,7 @@ class CreateTree(object):
 	utils = Utils()
 	software_names = SoftwareNames()
 	software = Software()
+	logger_production = logging.getLogger("fluWebVirus.production")
 	
 	def __init__(self):
 		'''
@@ -39,18 +40,29 @@ class CreateTree(object):
 		create both trees and the alignments
 		"""
 		
+		start= time.time()
+		self.logger_production.info("START TREE and ALIGNEMTS:")
+		
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
-		
+		self.logger_production.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		start = time.time()
+			
 		proteins = Proteins()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, owner)
 		### create for single sequences
 		for sequence_name in geneticElement.get_sorted_elements():
+			self.logger_production.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			start = time.time()
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
 			### create the protein alignments
+			self.logger_production.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			start = time.time()
 			proteins.create_alignement_for_element(project, owner, geneticElement, sequence_name)
 			
+		self.logger_production.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
+		
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
 		create the tree and the alignments
@@ -76,6 +88,10 @@ class CreateTree(object):
 		for project_sample in project.project_samples.all():
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+			
+			## test if it has to join in all consensus files
+			if not default_software.include_consensus(project_sample): continue
+			
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue

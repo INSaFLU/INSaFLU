@@ -33,6 +33,7 @@ class DefaultParameters(object):
 	### used when the parameters are passed in other way
 	### parameters values has the META_KEY of the metakey_projectsample/metakey_project 
 	MASK_DONT_care = "dont_care"
+	MASK_not_applicable = "Not applicable"
 
 	### clean human reads
 	MASK_CLEAN_HUMAN_READS = software_names.SOFTWARE_CLEAN_HUMAN_READS_name
@@ -141,8 +142,9 @@ class DefaultParameters(object):
 						project_sample=project_sample, sample=sample)
 	
 		### if only one parameter and it is don't care, return dont_care 
-		if len(list(parameters)) == 1 and list(parameters)[0].name == DefaultParameters.MASK_DONT_care:
-			return DefaultParameters.MASK_DONT_care
+		if len(list(parameters)) == 1 and list(parameters)[0].name in \
+				[DefaultParameters.MASK_not_applicable, DefaultParameters.MASK_DONT_care]:
+			return DefaultParameters.MASK_not_applicable
 		
 		### parse them
 		dict_out = {}
@@ -179,6 +181,34 @@ class DefaultParameters(object):
 		#### This is the case where all the options can be "not to set"
 		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
 		return return_parameter.strip()
+
+	def get_list_parameters(self, software_name, user, type_of_use, project, project_sample,
+				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina):
+		"""
+		get software_name parameters, if it saved in database...
+		"""
+		try:
+			software = Software.objects.get(name=software_name, owner=user,\
+						type_of_use = type_of_use,
+						technology__name = technology_name,
+						version_parameters = self.get_software_parameters_version(software_name))
+		except Software.DoesNotExist:
+			if (type_of_use == Software.TYPE_OF_USE_global):
+				try:
+					software = Software.objects.get(name=software_name, owner=user,\
+							type_of_use=type_of_use,
+							version_parameters = self.get_software_parameters_version(software_name))
+				except Software.DoesNotExist:
+					return None
+			else: return None
+
+		## get parameters for a specific user
+		parameters = Parameter.objects.filter(software=software, project=project,
+						project_sample=project_sample, sample=sample)
+	
+		### if only one parameter and it is don't care, return dont_care 
+		return list(parameters)
+
 
 	def is_software_to_run(self, software_name, user, type_of_use, project, project_sample,
 				sample, technology_name):
@@ -312,6 +342,8 @@ class DefaultParameters(object):
 		elif (software.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name):
 			return self.get_mask_consensus_by_site_default(software.owner, Software.TYPE_OF_USE_global,
 					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name):
+			return self.get_generate_consensus_default(software.owner)
 		elif (software.name == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return self.get_freebayes_default(software.owner, Software.TYPE_OF_USE_global,
 					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
@@ -1234,3 +1266,45 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		return vect_parameters
 
+	def get_generate_consensus_default(self, user, project_sample = None):
+		"""
+		Mask consensus by site
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name
+		software.name_extended = SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name_extended
+		software.type_of_use = Software.TYPE_OF_USE_project_sample
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version = "1.0"
+		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(ConstantsSettings.TECHNOLOGY_generic)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_variant_detection)
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		parameter = Parameter()
+		parameter.name = DefaultParameters.MASK_DONT_care
+		parameter.parameter = DefaultParameters.MASK_DONT_care
+		parameter.type_data = Parameter.PARAMETER_none
+		parameter.software = software
+		parameter.project_sample = project_sample
+		parameter.union_char = ""
+		parameter.can_change = False
+		parameter.is_to_run = True			### by default it's True
+		parameter.sequence_out = 1
+		parameter.range_available = ""
+		parameter.range_max = ""
+		parameter.range_min = ""
+		parameter.description = ""
+		vect_parameters.append(parameter)
+		return vect_parameters
+
+### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File

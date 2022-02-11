@@ -3,10 +3,11 @@ Created on 03/05/2020
 
 @author: mmp
 '''
+import os
 import django_tables2 as tables
 
 from django.utils.safestring import mark_safe
-from constants.constants import Constants
+from constants.constants import Constants, TypePath
 from constants.software_names import SoftwareNames
 from django.urls import reverse
 from managing_files.models import ProjectSample
@@ -68,6 +69,10 @@ class SoftwaresTable(tables.Table):
 		### When in sample you can not turn ON|OFF the software
 		b_enable_options = self.b_enable_options
 		if not self.sample is None: b_enable_options = True
+
+		### check if can ON/OFF SOFTWARE_GENERATE_CONSENSUS_name (consensus make exist)
+		if not self.project_sample is None and record.name == SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name:
+			b_enable_options = os.path.exists(self.project_sample.get_consensus_file(TypePath.MEDIA_ROOT))
 
 		## need to remove # in href, otherwise still active
 		sz_href = '<a href="{}id_turn_software_on_off" {} '.format(
@@ -184,7 +189,7 @@ class SoftwaresTable(tables.Table):
 				
 			str_links += '<a href="{}"'.format('#id_set_default_modal' if b_enable_options else '') +\
 				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(tooltip_reset) +\
-				'{}'.format("" if self.b_enable_options else 'onclick=\'return false;\' disable') +\
+				'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') +\
 				' ref_name="' + record.name + '" pk="' + str(record.pk) + '" pk_proj_sample="' + str(self.project_sample.pk) +\
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\

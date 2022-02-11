@@ -95,9 +95,12 @@ $('#id-set-default-button').on('click', function(){
 					}
 					
 					// clean the tooltip
-					document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id')).setAttribute('title', 'Edit parameters');
-					
+					var element = document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id'));
+					if (element != null && typeof element !== "undefined" && element.value == '') {
+						element.setAttribute('title', 'Edit parameters');
+					}					
 				}
+				$.unblockUI();
 				/// END clean yellow from the icon in edit MaskConsensus
           	}
           	else{

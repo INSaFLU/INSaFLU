@@ -61,6 +61,9 @@ class Proteins(object):
 			if (not project_sample.get_is_ready_to_proccess()): continue
 			if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
 			
+			## test if it has to join in all consensus files
+			if not default_software.include_consensus(project_sample): continue
+			
 			### get coverage
 			meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, MetaKeyAndValue.META_KEY_Coverage, MetaKeyAndValue.META_VALUE_Success)
 			if (meta_value is None): continue

@@ -63,8 +63,12 @@ class DefaultProjectSoftware(object):
 			self.test_default_db(SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_generic)
+			self.test_default_db(SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name,\
+						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
+						ConstantsSettings.TECHNOLOGY_generic)
 			
-			if (project_sample.sample.is_type_fastq_gz_sequencing()): ### illumina
+			### illumina
+			if (project_sample.sample.is_type_fastq_gz_sequencing()):
 				self.test_default_db(SoftwareNames.SOFTWARE_SNIPPY_name, user, Software.TYPE_OF_USE_project_sample, None,
 						project_sample, None, ConstantsSettings.TECHNOLOGY_illumina)
 				self.test_default_db(SoftwareNames.SOFTWARE_FREEBAYES_name, user, Software.TYPE_OF_USE_project_sample,
@@ -73,7 +77,7 @@ class DefaultProjectSoftware(object):
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_illumina)
 				
-			else:
+			else:	## ONT
 				self.test_default_db(SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name,\
 						user, Software.TYPE_OF_USE_project_sample, None, project_sample, None,
 						ConstantsSettings.TECHNOLOGY_minion)
@@ -159,6 +163,10 @@ class DefaultProjectSoftware(object):
 				software_name, None, vect_parameters, technology_name)		### base values
 			if (not project_sample is None): vect_parameters = self._get_default_project(user,\
 				software_name, project_sample.project, vect_parameters, technology_name)		### base values
+			return vect_parameters
+		elif (software_name == SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name):
+			vect_parameters = self.default_parameters.get_generate_consensus_default(
+				user, project_sample)
 			return vect_parameters
 		elif (software_name == SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name):
 			vect_parameters = self.default_parameters.get_limit_coverage_ONT_threshold_default(user, type_of_use, technology_name, project, project_sample)
@@ -1113,7 +1121,29 @@ class DefaultProjectSoftware(object):
 	#####
 	#####################################################
 
+	#####################################################
+	#####
+	#####		Generate consensus
+	#####
 	
+	def include_consensus(self, project_sample):
+		"""
+		get mask_consensus parameters for project and default
+		"""
+		
+		### Test project_sample first
+		vect_parameters = self.default_parameters.get_list_parameters(SoftwareNames.SOFTWARE_GENERATE_CONSENSUS_name,\
+				project_sample.sample.owner,\
+				Software.TYPE_OF_USE_project_sample, None, project_sample, None, ConstantsSettings.TECHNOLOGY_generic)
+		if (not vect_parameters is None and len(vect_parameters) > 0): return vect_parameters[0].is_to_run
+		return True
+	
+
+	#####
+	#####		END Generate consensus
+	#####
+	#####################################################
+
 	
 	#####################################################
 	#####

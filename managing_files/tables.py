@@ -491,7 +491,8 @@ class ShowProjectSamplesResults(tables.Table):
 		"""
 		return link to consensus file
 		"""
-		return record.get_consensus_file_web()
+		default_software = DefaultProjectSoftware()
+		return record.get_consensus_file_web(not default_software.include_consensus(record))
 
 	def render_results(self, record):
 		"""

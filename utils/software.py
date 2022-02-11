@@ -466,8 +466,8 @@ class Software(object):
 				MetaKeyAndValue.META_VALUE_Success, "Success, Abricate(%s)" % (self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
-		self.utils.remove_file(out_file_abricate)
 		self.utils.remove_dir(out_dir_result)
+		self.utils.remove_file(out_file_abricate)
 		self.utils.remove_file(clean_abricate_file)
 		return True
 

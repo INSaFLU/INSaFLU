@@ -1066,12 +1066,13 @@ class ProjectSample(models.Model):
 		return os.path.join(self.__get_path__(TypePath.MEDIA_ROOT, ProjectSample.PATH_MAIN_RESULT), "{}{}_backup{}".format(\
 					ProjectSample.FILE_CONSENSUS_FILE, self.sample.name, FileExtensions.FILE_FASTA))
 	
-	def get_consensus_file_web(self):
+	def get_consensus_file_web(self, user_reject_file = False):
 		"""
 		get consensus file web
 		"""
 		out_file = self.get_consensus_file(TypePath.MEDIA_ROOT)
 		if (os.path.exists(out_file)):
+			if user_reject_file: return _('Rejected.')
 			return mark_safe('<a href="{}" download> {}</a>'.format(self.get_consensus_file(\
 						TypePath.MEDIA_URL), self.constants.short_name(os.path.basename(out_file), 15)))
 		return _('Not available.')

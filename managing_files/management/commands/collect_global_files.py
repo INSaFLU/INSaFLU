@@ -47,6 +47,7 @@ class Command(BaseCommand):
 			project.last_change_date = datetime.datetime.now()
 			project.save()
 			
+			### collect extra data for projects
 			collect_extra_data.collect_extra_data_for_project(project, user)
 			self.stdout.write("End")
 		except Project.DoesNotExist as e:

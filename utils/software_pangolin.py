@@ -185,6 +185,9 @@ class SoftwarePangolin(object):
 		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate,
 				"doesnt_mather.txt",\
 				SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		## don't need this file, only need vect_data_file
+		self.utils.remove_file(clean_abricate_file)
+		self.utils.remove_file(out_file_abricate)
 		
 		uploadFiles = UploadFiles()
 		try:

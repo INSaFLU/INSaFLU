@@ -139,8 +139,11 @@ $('#id-mask-consensus').on('click', function(){
           if (data['is_ok']) {
         	  
         	  /// add new class
-        	  document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id')).setAttribute('title', data['new_title_i']);
-			  document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id')).setAttribute('class', data['new_class_i']);
+			  var element = document.getElementById($('#id_set_positions_to_mask_regions').attr('i_to_change_id'));
+			  if (element != null && typeof element !== "undefined" && element.value == '') {
+        	  	element.setAttribute('title', data['new_title_i']);
+			  	element.setAttribute('class', data['new_class_i']);
+		      }
         	  
         	  /// add message with informaton
 			  if (data['is_going_to_mask']){

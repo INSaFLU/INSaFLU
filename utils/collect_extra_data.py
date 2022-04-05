@@ -1577,18 +1577,19 @@ class ParsePangolinResult(object):
 	def get_value(self, sample_name_starts_with, value_to_call):
 		if (sample_name_starts_with is None): return ""
 		vect_match = [key for key in self.dt_data.keys() if key.startswith(sample_name_starts_with)]
-		return ";".join([self.dt_data.get(key, [""]).get(value_to_call, "") for key in vect_match ] )
+		return ";".join([self.dt_data.get(key, {}).get(value_to_call, "") for key in vect_match if \
+						len(self.dt_data.get(key, {}).get(value_to_call, "")) > 0 ])
 	
 	def process_file(self):
 		"""
 		### pangolin ouput
-		taxon,lineage,conflict,ambiguity_score,scorpio_call,scorpio_support,scorpio_conflict,version,pangolin_version,pangoLEARN_version,pango_version,status,note
-		ULSLA_1183718_2021_S16__MN908947,AY.4,0.0,1.0,Delta (AY.4-like),0.957400,0.000000,PLEARN-v1.2.86,3.1.15,2021-10-13,v1.2.86,passed_qc,scorpio call: Altalleles 45; Ref alleles 0; Amb alleles 2; Oth alleles 0
-		ULSLA_1183440_2021_S15__MN908947,B.1.617.2,0.0,1.0,Delta (B.1.617.2-like),1.000000,0.000000,PLEARN-v1.2.86,3.1.15,2021-10-13,v1.2.86,passed_qc,scorpiocall: Alt alleles 13; Ref alleles 0; Amb alleles 0; Oth alleles 0
+		taxon	lineage	conflict	scorpio_call	pangolin_version	pangoLEARN_version	pango_version	status	note
+		MN908947_SARSCoVDec200153	B.1.177	0	Alpha (B.1.1.7-like)	2.4.2	2021-04-28	v1.1.23	passed_qc	14/17 B.1.1.7 SNPs (0 ref and 3 other)
+		MN908947_SARSCoVDec200234	B.1.1.7	1.01	Alpha1 (B.1.1.7-like)	2.4.2	2021-04-28	v1.1.23	notpassed_qc	14/17 B.1.1.7 SNPs (0 ref and 3 other)
+		LRSP_LA_183570_2021__SARS_CoV_2	B.1.1.348	0.0	Alpha2 (B.1.1.7-like)	2.4.2	2021-04-28	v1.1.23	passed_qc	
 		"""
 
 		## start parsing
-		dt_positions = {}
 		if (os.path.exists(self.file_pangolin_output)):
 			vect_data = self.utils.read_text_file(self.file_pangolin_output)
 			b_header = False

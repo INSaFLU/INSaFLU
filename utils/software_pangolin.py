@@ -73,7 +73,7 @@ class SoftwarePangolin(object):
 		if (not settings.DEBUG):
 			## default version
 			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-			cmd = "{} {} --update; {} --decompress-model".format(self.software_names.get_pangolin_env(),
+			cmd = "{} {} --update".format(self.software_names.get_pangolin_env(),
 				self.software_names.get_pangolin(), self.software_names.get_pangolin())
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
@@ -131,7 +131,7 @@ class SoftwarePangolin(object):
 		"""
 		
 		### update pangolin, if necessary
-		self.run_pangolin_update()
+		#self.run_pangolin_update()
 		
 		tem_dir = self.utils.get_temp_dir()
 		

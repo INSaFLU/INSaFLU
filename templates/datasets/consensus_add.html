@@ -1,0 +1,98 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<!-- pre-define in-house css for main page-->
+		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
+{% endblock css %}
+
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Consensus" "consensus" %}
+	{% breadcrumb "Add consensus" "consensus-add" %}
+{% endblock %}
+
+<!-- Main content-->
+{% block content %}
+	<p class="insa-title"><a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Guide to generate additional references</a></p>
+	<div class="collapse bg-insa-fixed-top" id="collapseExample">
+  		<p class="insa-description-read-more-first"><strong>No Further Actions Are Needed</strong> if you are using the suggested wet-lab pre-NGS protocol and you 
+  		want to compare your sequences against a reference available at INSaFLU <a href="http://insaflu.readthedocs.io/en/latest/guide_pre_ngs.html" target="_blank">database</a>.</p>
+  		<p class="insa-description-read-more">However, if you want to <mark>upload additional reference files</mark> <strong>(“.fasta” extension;</strong>
+  		<strong style="color:blue;"> maximum 50K bp per file</strong><strong>)</strong>
+  		to the user-restricted reference database.</p>
+  		
+  		<p class="insa-description-read-more-first">For instance, you may need to upload the vaccine A/H3N2 reference sequence for the season 2017/2018 (A/Hong Kong/4801/2014 virus), 
+  		which is not freely available.</p>
+  		
+  		<p class="insa-description-read-more-first">Please take this guide into account when generating additional reference sequences:</p>
+  		<ul>
+	  		<li><p class="mb-0 insa-description-read-more">multi-FASTA files to be upload typically contain the set of reference sequences that constitute the influenza “whole-genome” 
+	  		sequence of a particular virus (e.g, the combination of the traditional 8 amplicons targeting the 8 eight influenza RNA segments). <strong>Each individual sequence must have the 
+	  		precise size of each “intra-amplicon” target sequence that you capture by each one of the RT-PCR amplicons</strong>. INSaFLU automatically annotates uploaded multi-FASTA sequences 
+	  		upon submission, but, if you prefer, you can also upload (optionally) the respective multi-GenBank file;</p></li>
+	  		<li><p class="mb-0 insa-description-read-more">you may generate your multi-FASTA files in order to fit your amplicon schema by simply adjusting the whole-genome sequences 
+	  		available for download at INSaFLU or at influenza-specific sequence repositories, such as the 
+	  		<a href="https://www.gisaid.org/" target="_blank">EpiFLU/GISAID</a>, 
+	  		<a href="https://www.fludb.org" target="_blank">Influenza Research Database</a>, 
+	  		<a href="https://www.ncbi.nlm.nih.gov/genomes/FLU/Database/nph-select.cgi?go=database" target="_blank">NCBI Influenza Virus Resource</a>;</p></li>
+	  		<li><p class="mb-0 insa-description-read-more">(multi) FASTA format is widely applied to save either nucleotide sequences or peptide sequences. An easy way to 
+	  		handle/generate multi-FASTA files is by opening a text file (e.g., NOTEPAD) and paste individual sequences after each header line. The FASTA IDs (after the '>' character) 
+	  		represent the individual sequence names. For the sake of simplicity, you may designate each sequence as 1, 2, 3, 4, 5, 6, 7 and 8 
+	  		(<a href="http://insaflu.readthedocs.io/en/latest/uploading_data.html#guide-to-generate-additional-reference-sequences" target="_blank">see example</a>), 
+	  		following the traditional influenza segments order (keeping this numerical order is advisable). At the end, you just have to save the multi-FASTA file as “.fasta” 
+	  		(please avoid symbols or blank spaces in the file names);</p></li>
+	  		<li><p class="insa-description-read-more-last"><strong>INSaFLU requires reference sequences exclusively composed by non-degenerate bases (i.e. A, T, C, and G).</strong> As such, please ensure 
+	  		that all degenerated bases (e.g., R, Y, M, K, S and W) are replaced by non-degenerate sequences before uploading. The choice of the base used in the replacement (e.g., “A” 
+	  		or “G” when replacing an “R”) has no impact on the analysis. It simply means that mutations falling in the replaced nucleotide position will be reported taking into account
+	  		the reference base selected.</p>
+	  		</li>
+	  	</ul>
+	  	
+  	</div>
+  	
+<!--   	{% if user_mmp %}
+  		<button id="id-submit-sge" type="button" class="btn btn-primary" remove-single-value-url="{% url 'submit-sge' %}">Send SGE</button>
+  	{% endif %}-->
+  	
+	{% crispy form %}
+{% endblock %}
+
+
+{% block js %}
+
+	{% load static from staticfiles %}
+		<!-- Custom scripts for all pages-->
+		<script type="text/javascript" src="{% static 'js/reference_add.js' %}"></script>
+
+	<script>
+ 		$("#id_reference_fasta").click( function(){
+ 			$('#error_1_id_reference_fasta').empty();
+ 			$.unblockUI();
+ 		});
+ 		$("#id_reference_genbank").click( function(){
+ 			$('#error_1_id_reference_genbank').empty();
+ 			$.unblockUI();
+ 		});
+ 		
+ 		/* wait button */
+ 		$(document).ready(function() { 
+		    $('#submit-id-save').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+	</script>
+{% endblock js %}

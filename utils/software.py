@@ -503,6 +503,7 @@ class Software(object):
 		name_strain = self.utils.clean_extension(os.path.basename(original_file_name))
 		cmd = "{} {} {} --strain {} --force --outdir {} --prefix {}".format(\
 					self.software_names.get_prokka(), fasta_file_name, self.software_names.get_prokka_parameters(), name_strain, temp_dir, name_strain)
+		print(cmd)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2057,9 +2058,10 @@ class Software(object):
 			if (path_2 != None and os.path.exists(path_2)):
 				self.utils.uncompress_files(self.software_names.get_bgzip(), path_2, path_2_temp)
 				file_names += " " + path_2_temp
-
+			
 			cmd = "{} -p {:.2f} -o {}/sample {}".format(self.software_names.get_fastqtools_sample(), ratio, path_to_work, file_names)
-#			print(cmd)
+			print(cmd)
+			print(self.software_names)
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)

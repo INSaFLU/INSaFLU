@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-cd /software
+cd /usr/local/software/insaflu
 pip3 install virtualenv
 virtualenv medaka --python=python3 --prompt "(medaka 1.2.1) "
 . medaka/bin/activate

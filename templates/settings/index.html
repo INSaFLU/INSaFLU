@@ -1,0 +1,49 @@
+{% extends '_layouts/base.html' %}
+
+{% load static %}
+{% block content %}
+	
+<h1>Settings</h1>
+<div class="row">
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="card-img-top" src="{% static "img/typing.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'RefMap' }}</h5>
+                <p class="card-text">{{ 'Reference based sample profiling' }}</p>
+                <a href="{% url 'settings' %}"
+                   class="btn btn-primary">
+                    Setings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="card-img-top" src="{% static "img/patho.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ "PathoFinder"}}</h5>
+                <p class="card-text">{{ "Viral Pathogen identification" }}</p>
+                <a href="{% url 'under_construction' %}"
+                   class="btn btn-primary">
+                   Setings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="card-img-top" src="{% static "img/phylo.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ "PhyloTree" }}</h5>
+                <p class="card-text">{{ "Perform phylogenetic analysis" }}</p>
+                <a href="{% url 'under_construction' %}"
+                   class="btn btn-primary">
+                    Go to page
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

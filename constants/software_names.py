@@ -144,6 +144,11 @@ class SoftwareNames(object):
 	
 	SOFTWARE_Pangolin_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate"))
 	SOFTWARE_Pangolin = "pangolin"
+	SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin
+	SOFTWARE_Pangolin_name = "Pangolin"					## Pangolin
+	SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"	## Pangolin
+	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
+
 # <<<<<<< HEAD
 # 	SOFTWARE_Pangolin_name = "Pangolin"
 # 	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
@@ -153,30 +158,27 @@ class SoftwareNames(object):
 # 	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
 # 	SOFTWARE_Pangolin_designation_VERSION = "v1.2.12"	## this value is going to increase across time
 # =======
-	SOFTWARE_Pangolin_name_search_name = "Pango"		## only yo help on the search of Pango Name in output 
-	SOFTWARE_Pangolin_name = "Pangolin"					## Pangolin
-	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
-	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
-	SOFTWARE_Pangolin_designation_name = "Pango-designation"		## Pango Designation
-#	SOFTWARE_Pangolin_designation_name = "Pango"				## Pango Designation
-	SOFTWARE_Pangolin_constellations_name = "Constellations"	## Constelations
-	SOFTWARE_Pangolin_scorpio_name = "scorpio"					## Scorpio
-	SOFTWARE_Pangolin_name_extended = "Phylogenetic Assignment of Named Global Outbreak LINeages (Pangolin)"
-	SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin 
-	SOFTWARE_Pangolin_learn_VERSION = "2021-09-28"		## Version Name: pangoLearn
-	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
-	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
-	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
+#	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
+#	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
+#	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
+#	SOFTWARE_Pangolin_designation_name = "Pango-designation"		## Pango Designation
+#	SOFTWARE_Pangolin_constellations_name = "Constellations"	## Constelations
+#	SOFTWARE_Pangolin_scorpio_name = "scorpio"					## Scorpio
+#	SOFTWARE_Pangolin_name_extended = "Phylogenetic Assignment of Named Global Outbreak LINeages (Pangolin)"
+#	SOFTWARE_Pangolin_learn_VERSION = "2021-09-28"		## Version Name: pangoLearn
+#	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
+#	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
+#	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
 #>>>>>>> refs/heads/develop
-	
-	VECT_PANGOLIN_TO_TEST = [
-		SOFTWARE_Pangolin_name,
-		SOFTWARE_Pangolin_learn_name,
-		SOFTWARE_Pangolin_designation_name,
-		SOFTWARE_Pangolin_constellations_name,
-		SOFTWARE_Pangolin_scorpio_name,
-		]
-	
+
+#	VECT_PANGOLIN_TO_TEST = [
+#		SOFTWARE_Pangolin_name,
+#		SOFTWARE_Pangolin_learn_name,
+#		SOFTWARE_Pangolin_designation_name,
+#		SOFTWARE_Pangolin_constellations_name,
+#		SOFTWARE_Pangolin_scorpio_name,
+#		]
+
 	SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
 	SOFTWARE_BCFTOOLS_name = "bcftools"
 	SOFTWARE_BCFTOOLS_VERSION = "1.9"
@@ -739,30 +741,9 @@ class SoftwareNames(object):
 	def get_pangolin_env(self): return self.SOFTWARE_Pangolin_Env
 	def get_pangolin(self): return self.SOFTWARE_Pangolin
 	def get_pangolin_name(self): return self.SOFTWARE_Pangolin_name
-	def get_pangolin_learn_name(self): return self.SOFTWARE_Pangolin_learn_name
-	def get_pangolin_learn_name_old(self): return self.SOFTWARE_Pangolin_learn_name_old
-	def get_pangolin_designation_name(self): return self.SOFTWARE_Pangolin_designation_name
-	def get_pangolin_constellations_name(self): return self.SOFTWARE_Pangolin_constellations_name
-	def get_pangolin_scorpio_name(self): return self.SOFTWARE_Pangolin_scorpio_name
-	def get_pangolin_name_extended(self): return self.SOFTWARE_Pangolin_name_extended
-	
 	def get_pangolin_version(self, software): 
 		if software == SoftwareNames.SOFTWARE_Pangolin_name: return SoftwareNames.SOFTWARE_Pangolin_VERSION
-		if software == SoftwareNames.SOFTWARE_Pangolin_learn_name: return self.get_pangolin_learn_version()
-		if software == SoftwareNames.SOFTWARE_Pangolin_designation_name: return self.get_pangolin_designation_version()
-		if software == SoftwareNames.SOFTWARE_Pangolin_scorpio_name: return self.get_pangolin_scorpio_version()
-		if software == SoftwareNames.SOFTWARE_Pangolin_constellations_name: return self.get_pangolin_constellations_version()
 		return ""
-	def get_pangolin_learn_version(self): return self.SOFTWARE_Pangolin_learn_VERSION
-	def get_pangolin_designation_version(self): return self.SOFTWARE_Pangolin_designation_VERSION
-	def get_pangolin_scorpio_version(self): return self.SOFTWARE_Pangolin_scorpio_VERSION
-	def get_pangolin_constellations_version(self): return self.SOFTWARE_Pangolin_constellations_VERSION
-	def get_pangolin_all_names_version(self):
-		dt_return_version = {}
-		for name in self.VECT_PANGOLIN_TO_TEST:
-			dt_return_version[name] = self.get_pangolin_version(name)
-		return dt_return_version
-	
 	## version must be obtain from ManagingFiles.Software.Version
 
 

@@ -123,21 +123,19 @@ class CollectExtraData(object):
 					project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
 				## process pangolin
 				software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
-				
 				try:
 					software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 					
 					### set last version of the Pangolin run in this project
-					dt_result_version = software.get_versions()
+					dt_result_version = software.get_version_long()
 					result_all = Result()
 					manage_database = ManageDatabase()
-					software_names = SoftwareNames()
-					result_all.add_software(SoftwareDesc(software_names.get_pangolin_name(),
-							dt_result_version.get(software_names.get_pangolin_name(), ""), ""))
-					result_all.add_software(SoftwareDesc(software_names.get_pangolin_learn_name(),
-							dt_result_version.get(software_names.get_pangolin_learn_name(), ""), ""))
-					result_all.add_software(SoftwareDesc(software_names.get_pangolin_designation_name(),
-							dt_result_version.get(software_names.get_pangolin_designation_name(), ""), ""))
+					for soft_name in dt_result_version:
+						result_all.add_software(SoftwareDesc(soft_name,
+							dt_result_version.get(soft_name, ""), ""))
+					## Add Analysis Mode that was ran
+					result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_Pangolin_analysis_mode,
+							settings.RUN_PANGOLIN_MODEL, ""))
 					manage_database.set_project_metakey(project, user,
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\
 							MetaKeyAndValue.META_VALUE_Success,\

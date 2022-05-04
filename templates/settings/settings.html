@@ -34,8 +34,15 @@
 	{% elif sample_settings %}
 		{% breadcrumb "Samples" "samples" %}
 		{% breadcrumb "Samples settings" "sample-settings" sample.pk %}
+	{% elif qc_settings %}	<!-- Default settings QC -->
+		{% breadcrumb "Settings Index" "settings-index" %}
+		{% breadcrumb "Settings QC" "settings_qc" %}
+	{% elif settings_pathogenid %}	<!-- Default settings QC -->
+		{% breadcrumb "Settings Index" "settings-index" %}
+		{% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" %}	
 	{% else %}	<!-- Default settings -->
-		{% breadcrumb "Settings" "settings" %}
+		{% breadcrumb "Settings Index" "settings-index" %}
+		{% breadcrumb "Settings RefMap" "settings" %}
 	{% endif %}
 {% endblock %}
 

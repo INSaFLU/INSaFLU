@@ -1,16 +1,41 @@
 {% extends '_layouts/base.html' %}
 
+{% load django_bootstrap_breadcrumbs %}
 {% load static %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+    {% breadcrumb "Settings Index" "settings-index"%}
+{% endblock %}
+
 {% block content %}
 	
 <h1>Settings</h1>
 <div class="row">
     <div class="col-md-2">
         <div class="card mb-2">
-            <img class="card-img-top" src="{% static "img/typing.jpg" %}">
+            <img class="img-index" src="{% static "img/QC.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'QC' }}</h5>
+                <p class="card-text">{{ 'Global Quality Control' }}</p>
+                <a href="{% url 'settings_qc' %}"
+                   class="btn btn-primary">
+                    Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="img-index" src="{% static "img/typing.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ 'RefMap' }}</h5>
-                <p class="card-text">{{ 'Reference based sample profiling' }}</p>
+                <p class="card-text">{{ 'Sample profiling' }}</p>
                 <a href="{% url 'settings' %}"
                    class="btn btn-primary">
                     Settings
@@ -20,11 +45,11 @@
     </div>
     <div class="col-md-2">
         <div class="card mb-2">
-            <img class="card-img-top" src="{% static "img/patho.jpg" %}">
+            <img class="img-index" src="{% static "img/patho.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ "PathoFinder"}}</h5>
                 <p class="card-text">{{ "Viral Pathogen identification" }}</p>
-                <a href="{% url 'under_construction' %}"
+                <a href="{% url 'pathogenID_pipeline' %}"
                    class="btn btn-primary">
                    Settings
                 </a>
@@ -33,7 +58,7 @@
     </div>
     <div class="col-md-2">
         <div class="card mb-2">
-            <img class="card-img-top" src="{% static "img/phylo.jpg" %}">
+            <img class="img-index" src="{% static "img/phylo.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ "PhyloTree" }}</h5>
                 <p class="card-text">{{ "Perform phylogenetic analysis" }}</p>
@@ -44,6 +69,5 @@
             </div>
         </div>
     </div>
-
 </div>
 {% endblock %}

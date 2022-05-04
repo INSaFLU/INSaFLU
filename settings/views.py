@@ -27,6 +27,159 @@ class Maintenance(TemplateView):
     template_name = "settings/maintenance.html"
 
 
+class PISettingsView(LoginRequiredMixin, ListView):
+    """
+    Home page
+    """
+
+    # 	model = Software
+    # 	context_object_name = 'software'
+    template_name = "settings/settings.html"
+
+    def get_queryset(self):
+        print("qc get_queryset")
+        """overwrite queryset to not get all software itens available in Software table"""
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super(PISettingsView, self).get_context_data(**kwargs)
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultSoftware()
+        default_software.test_all_defaults(
+            self.request.user
+        )  ## the user can have defaults yet
+
+        all_tables = []  ## order by Technology, PipelineStep, table
+        ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+        ## Mix parameters with software
+        ### IMPORTANT, must have technology__name, because old versions don't
+        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                print(f"type of use {Software.TYPE_OF_USE_pident}")
+                query_set = Software.objects.filter(
+                    owner=self.request.user,
+                    type_of_use=Software.TYPE_OF_USE_pident,
+                    type_of_software__in=[
+                        Software.TYPE_SOFTWARE,
+                        Software.TYPE_INSAFLU_PARAMETER,
+                    ],
+                    technology__name=technology,
+                    pipeline_step__name=pipeline_step,
+                    is_obsolete=False,
+                )
+                print(query_set)
+
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step,
+                            SoftwaresTable(query_set),
+                        ]
+                    )
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context["nav_settings"] = True
+        context["settings_pathogenid"] = True  ## True for global softwares
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+
+class QCSettingsView(LoginRequiredMixin, ListView):
+    """
+    Home page
+    """
+
+    # 	model = Software
+    # 	context_object_name = 'software'
+    template_name = "settings/settings.html"
+
+    def get_queryset(self):
+        print("qc get_queryset")
+        """overwrite queryset to not get all software itens available in Software table"""
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super(QCSettingsView, self).get_context_data(**kwargs)
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultSoftware()
+        default_software.test_all_defaults(
+            self.request.user
+        )  ## the user can have defaults yet
+
+        all_tables = []  ## order by Technology, PipelineStep, table
+        ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+        ## Mix parameters with software
+        ### IMPORTANT, must have technology__name, because old versions don't
+        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                print(f"type of use {Software.TYPE_OF_USE_qc}")
+                query_set = Software.objects.filter(
+                    owner=self.request.user,
+                    type_of_use=Software.TYPE_OF_USE_qc,
+                    type_of_software__in=[
+                        Software.TYPE_SOFTWARE,
+                        Software.TYPE_INSAFLU_PARAMETER,
+                    ],
+                    technology__name=technology,
+                    pipeline_step__name=pipeline_step,
+                    is_obsolete=False,
+                )
+
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step,
+                            SoftwaresTable(query_set),
+                        ]
+                    )
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context["nav_settings"] = True
+        context["qc_settings"] = True  ## True for global softwares
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+
 class SettingsView(LoginRequiredMixin, ListView):
     """
     Home page
@@ -41,6 +194,8 @@ class SettingsView(LoginRequiredMixin, ListView):
         return []
 
     def get_context_data(self, **kwargs):
+        print("get_context_data")
+        print(kwargs)
         context = super(SettingsView, self).get_context_data(**kwargs)
 
         ### test all defaults first, if exist in database
@@ -48,6 +203,7 @@ class SettingsView(LoginRequiredMixin, ListView):
         default_software.test_all_defaults(
             self.request.user
         )  ## the user can have defaults yet
+        print("get query")
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -104,7 +260,7 @@ class SettingsView(LoginRequiredMixin, ListView):
 class UpdateParametersView(LoginRequiredMixin, UpdateView):
     model = Software
     form_class = SoftwareForm
-    success_url = reverse_lazy("settings")
+    success_url = reverse_lazy("settings-index")
     template_name = "settings/software_update.html"
 
     ## Other solution to get the reference

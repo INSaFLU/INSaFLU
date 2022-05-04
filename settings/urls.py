@@ -5,10 +5,16 @@ Created on Jan 7, 2018
 """
 from django.conf.urls import url
 
-from settings import ajax_views, views
+from settings import ajax_views, new_views, views
 
 urlpatterns = [
+    url(
+        r"pathogenID-pipeline",
+        views.PISettingsView.as_view(),
+        name="pathogenID_pipeline",
+    ),
     url(r"^$", views.index.as_view(), name="settings-index"),
+    url(r"set_quality", views.QCSettingsView.as_view(), name="settings_qc"),
     url(r"403/$", views.Maintenance.as_view(), name="under_construction"),
     url(r"settings", views.SettingsView.as_view(), name="settings"),
     url(

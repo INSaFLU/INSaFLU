@@ -1,5 +1,5 @@
 <p align="center"><img src="static/insa/logo_insaflu_new.png" alt="INSaFLU" width="300"></p>
-
+# python3 manage.py confirm_email_account
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 

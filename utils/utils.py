@@ -1188,7 +1188,7 @@ class Utils(object):
 		"""
 		send an email
 		"""
-		send_mail(header, message, 'insaflu@insa.min-saude.pt', [address])
+		send_mail(header, message, settings.DEFAULT_USER_EMAIL, [address])
 
 
 	def grouped(self, l, n):

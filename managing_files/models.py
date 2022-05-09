@@ -18,6 +18,7 @@ from operator import itemgetter
 from constants.software_names import SoftwareNames
 from manage_virus.constants_virus import ConstantsVirus
 from constants.constants_mixed_infection import ConstantsMixedInfection
+import json
 
 def reference_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
@@ -1146,57 +1147,52 @@ class Software(models.Model):
 	name = models.CharField(max_length=100, blank=True, null=True)
 	path_to_run = models.CharField(max_length=300)
 	version = models.CharField(max_length=200)
+	version_long = models.TextField(default="")		## has the version in json mode, in an dictonary
 
 	### last update of the software
 	last_update = models.DateTimeField(auto_now_add=True, null=True,
 				blank=True, verbose_name='Last update date')
 
 	class Meta:
-		ordering = ['name', 'version__name']
+		ordering = ['name']
 
 	def is_updated_today(self):
-		return not self.last_update is None and self.last_update.date() == datetime.now().date()
+		return not self.last_update is None and self.last_update.date() == datetime.now().date() and len(self.version_long) > 0
 
 	def set_last_update_today(self):
 		self.last_update = datetime.now()
+	
+	def set_version(self, version):
+		self.version = version
 
-	def set_dual_version(self, version_1, version_2):
-		"""
-		set only 
-		"""
-		self.version = "{}{}{}".format(version_1, Software.BREAK_TAG, version_2)
+	def get_version(self):
+		return self.version
 		
-
-	def set_versions(self, dict_version):
+	def set_version_long(self, dict_version):
 		"""
 		set several versions in the version field, separated by dollar
 		"""
-		software_names = SoftwareNames()
-		lst_version = []
-		for name in software_names.VECT_PANGOLIN_TO_TEST:
-			lst_version.append(dict_version.get(name, software_names.get_pangolin_version(name)))
-		self.version = Software.BREAK_TAG.join(lst_version)
+		if (len(dict_version) > 0):
+			self.version_long = json.dumps(dict_version)
 
-	def get_dual_version(self):
-		"""
-		return dual version
-		"""
-		lst_data = self.version.split(Software.BREAK_TAG)
-		if len(lst_data) > 1: return (lst_data[0], lst_data[1])
-		return lst_data[0], "0"
-
-	def get_versions(self):
+	def get_version_long(self):
 		"""
 		return dict ["soft name": "version", "soft1 name": "version"]
 		"""
-		software_names = SoftwareNames()
-		lst_data = self.version.split(Software.BREAK_TAG)
 		dt_result_version = {}
-		for i, name in enumerate(software_names.VECT_PANGOLIN_TO_TEST):
-			if i < len(lst_data): dt_result_version[name] = lst_data[i]
-			else: dt_result_version[name] = software_names.get_pangolin_version(name)
+		if len(self.version) > 0:
+			try:
+				dt_result_version = json.loads(self.version_long)
+			except Exception as e:
+				pass
 		return dt_result_version
-	
+
+	def is_same_version_long(self, dt_version):
+		""" test version as a all, all string """
+		if self.version_long == json.dumps(dt_version): return True
+		return False
+
+
 class UploadFiles(models.Model):
 	"""
 	this class has the files that the user can upload, has he want,

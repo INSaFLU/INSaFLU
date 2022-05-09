@@ -1,4 +1,3 @@
-taxon,lineage,conflict,scorpio_call,pangolin_version,pangoLEARN_version,pango_version,status,note
-MN908947_SARSCoVDec200153,B.1.177,0,Alpha (B.1.1.7-like),2.4.2,2021-04-28,v1.1.23,passed_qc,14/17 B.1.1.7 SNPs (0 ref and 3 other)
-MN908947_SARSCoVDec200234,B.1.1.7,1.01,Alpha1 (B.1.1.7-like),2.4.2,2021-04-28,v1.1.23,notpassed_qc,14/17 B.1.1.7 SNPs (0 ref and 3 other)
-LRSP_LA_183570_2021__SARS_CoV_2,B.1.1.348,0.0,Alpha2 (B.1.1.7-like),2.4.2,2021-04-28,v1.1.23,passed_qc
+taxon,lineage,conflict,ambiguity_score,scorpio_call,scorpio_support,scorpio_conflict,scorpio_notes,version,pangolin_version,scorpio_version,constellation_version,is_designated,qc_status,qc_notes,note
+MN908947 SARSCoVDec200153,B.1.177,0.0,1.0,,,,,PLEARN-v1.2.133,4.0.1,0.3.16,v0.1.4,False,pass,Ambiguous_content:0.02,
+MN908947 SARSCoVDec200234,B.1.1.7,0.0,0.94,Alpha (B.1.1.7-like),0.96,0.04,scorpio call: Alt alleles 22; Ref alleles 1; Amb alleles 0; Oth alleles 0,PLEARN-v1.2.133,4.0.1,0.3.16,v0.1.4,False,pass,Ambiguous_content:0.04,

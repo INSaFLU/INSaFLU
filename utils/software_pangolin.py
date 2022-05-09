@@ -49,18 +49,23 @@ class SoftwarePangolin(object):
 				dt_result_version = self._run_pangolin_update()
 				software = SoftwareModel()
 				software.name = SoftwareNames.SOFTWARE_Pangolin_name
-				software.set_versions(dt_result_version)
+				software.set_version(dt_result_version.get(SoftwareNames.SOFTWARE_Pangolin_name.lower(), ""))
+				software.set_version_long(dt_result_version)
 				software.save()
 				return
 			
 			## return if the software was updated today
 			if (software.is_updated_today()): 
-				return software.get_versions()
+				return software.get_version_long()
 			
 			dt_result_version = self._run_pangolin_update()
-			software.set_versions(dt_result_version)
-			software.set_last_update_today()
-			software.save()
+			if len(dt_result_version) > 0:
+				software.set_version_long(dt_result_version)
+				software.set_version(dt_result_version.get(SoftwareNames.SOFTWARE_Pangolin_name.lower(), ""))
+				software.set_last_update_today()
+				software.save()
+			else:
+				dt_result_version = software.get_version_long()
 		return dt_result_version
 
 	def _run_pangolin_update(self):
@@ -68,8 +73,7 @@ class SoftwarePangolin(object):
 		Run update
 		:return (pangolin version, pangolinLearn Version)
 		"""
-		dt_result_version = self.software_names.get_pangolin_all_names_version()
-		
+		dt_result_version = {}
 		if (not settings.DEBUG):
 			## default version
 			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
@@ -93,18 +97,16 @@ class SoftwarePangolin(object):
 			vect_lines = self.utils.read_text_file(temp_file)
 			## Important, go through pangolin --all-versions
 			#$ pangolin --all-versions
-			# pangolin already latest release (v3.1.16)
-			# pangolearn already latest release (2021-11-25)
-			# constellations already latest release (v0.0.27)
-			# scorpio already latest release (v0.3.14)
-			# pango-designation already latest release (v1.2.106)
-			dt_result_version = {}
+			# pangolin: 4.0.5
+			# pangolin-data: 1.3
+			# constellations: v0.1.6
+			# scorpio: 0.3.16
+			
 			for line in vect_lines:
-				lst_data = line.replace(':', '').strip().split()
-				for test_name in SoftwareNames.VECT_PANGOLIN_TO_TEST:
-					if (lst_data[0].lower() == test_name.lower() and not test_name in dt_result_version):
-						dt_result_version[test_name] = self._get_verion_tag(line.strip()).replace('(', '').replace(')', '')
-						break
+				## must be lower case
+				lst_data = [_.lower().strip() for _ in line.strip().split(':')]
+				if len(lst_data) > 1:
+					dt_result_version["_".join(lst_data[:-1])] = self._get_verion_tag(lst_data[-1].replace('(', '').replace(')', ''))
 			self.utils.remove_file(temp_file)
 		return dt_result_version
 
@@ -121,7 +123,7 @@ class SoftwarePangolin(object):
 			count_word = 0
 			for char_ in word:
 				if self.utils.is_integer(char_): count_word += 1
-				if (count_word > 2):
+				if (count_word > 1):
 					return word
 		return ""
 	
@@ -136,8 +138,8 @@ class SoftwarePangolin(object):
 		tem_dir = self.utils.get_temp_dir()
 		
 		### run pangolin
-		cmd = "{} {} {} -o {} -t 2".format(self.software_names.get_pangolin_env(),
-			self.software_names.get_pangolin(), file_in_fasta, tem_dir)
+		cmd = "{} {} {} -o {} --analysis-mode {} -t 2".format(self.software_names.get_pangolin_env(),
+			self.software_names.get_pangolin(), file_in_fasta, tem_dir, settings.RUN_PANGOLIN_MODEL)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -236,19 +238,13 @@ class SoftwarePangolin(object):
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\
 							MetaKeyAndValue.META_VALUE_Success)
 		if (not meta_sample is None):
-			software_names = SoftwareNames()
 			result_pangolin = decode_result.decode_result(meta_sample.description)
-			pangolin_version_run = result_pangolin.get_software_version(software_names.get_pangolin_name())
-			pangolin_learn_version_run = result_pangolin.get_software_version(software_names.get_pangolin_learn_name())
-			if (pangolin_learn_version_run is None):
-				pangolin_learn_version_run = result_pangolin.get_software_version(software_names.get_pangolin_learn_name_old())
-			pangolin_designation_version_run = result_pangolin.get_software_version(software_names.get_pangolin_designation_name())
-			if (not pangolin_version_run is None and not pangolin_learn_version_run is None and \
-				not pangolin_designation_version_run is None and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name) == pangolin_version_run and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_designation_name) == pangolin_designation_version_run and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_learn_name) == pangolin_learn_version_run):
-				return False
+			for soft_name in dt_pangolin_versions:
+				## if actual version does not have this software it is because out of date
+				version_run_before = result_pangolin.get_software_version(soft_name)
+				if version_run_before is None: return True
+				if version_run_before != dt_pangolin_versions[soft_name]: return True
+			return False
 		return True
 
 	def get_update_message(self, project):
@@ -264,46 +260,41 @@ class SoftwarePangolin(object):
 		meta_sample = manage_database.get_project_metakey_last(project,
 							MetaKeyAndValue.META_KEY_Identify_pangolin,\
 							MetaKeyAndValue.META_VALUE_Success)
-		pangolin_version_run = None
-		pangolin_learn_version_run = None
-		pangolin_designation_version_run = None
-		if (not meta_sample is None):
-			software_names = SoftwareNames()
-			result_pangolin = decode_result.decode_result(meta_sample.description)
-			pangolin_version_run = result_pangolin.get_software_version(software_names.get_pangolin_name())
-			pangolin_learn_version_run = result_pangolin.get_software_version(software_names.get_pangolin_learn_name())
-			if (pangolin_learn_version_run is None):
-				pangolin_learn_version_run = result_pangolin.get_software_version(software_names.get_pangolin_learn_name_old())
-			pangolin_designation_version_run = result_pangolin.get_software_version(software_names.get_pangolin_designation_name())
-			if (not pangolin_version_run is None and not pangolin_learn_version_run is None and \
-				not pangolin_designation_version_run is None and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name) == pangolin_version_run and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_designation_name, "") == pangolin_designation_version_run and \
-				dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_learn_name) == pangolin_learn_version_run):
-				return False
+		
 		sz_out = ""
-		### Pangolin version
-		if (pangolin_version_run is None):
-			sz_out += "Do you want to run pangolin version ({})?".format(dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
-		elif (dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name) != pangolin_version_run):
-			sz_out += "Do you want to update pangolin version from ({}) to ({})?".format(pangolin_version_run,
-									dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_name))
-		### Pango Learn version
-		if (pangolin_learn_version_run is None):
-			if (len(sz_out) > 0): sz_out += "<br /><br />"
-			sz_out += "Do you want to run pangoLearn version ({})?".format(dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_learn_name))
-		elif (dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_learn_name) != pangolin_learn_version_run):
-			if (len(sz_out) > 0): sz_out += "<br /><br />"
-			sz_out += "Do you want to update pangoLearn version from ({}) to ({})?".format(pangolin_learn_version_run,
-						dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_learn_name))
-		### Pangolin designation version
-		if (pangolin_designation_version_run is None):
-			if (len(sz_out) > 0): sz_out += "<br /><br />"
-			sz_out += "Do you want to run pangolin-designation version ({})?".format(dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_designation_name))
-		elif (dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_designation_name) != pangolin_designation_version_run):
-			if (len(sz_out) > 0): sz_out += "<br /><br />"
-			sz_out += "Do you want to update pangolin-designation version from ({}) to ({})?".format(pangolin_designation_version_run,
-						dt_pangolin_versions.get(SoftwareNames.SOFTWARE_Pangolin_designation_name))
+		if (not meta_sample is None):
+			result_pangolin = decode_result.decode_result(meta_sample.description)
+			for soft_name in self.__get_order_pangolin_names(dt_pangolin_versions):
+				## if actual version does not have this software it is because out of date
+				version_run_before = result_pangolin.get_software_version(soft_name)
+				if version_run_before is None:
+					if (len(sz_out) > 0): sz_out += "<br /><br />"
+					sz_out += "Do you want to run {} version ({})?".format(soft_name, dt_pangolin_versions.get(soft_name))
+				elif (version_run_before != dt_pangolin_versions.get(soft_name)):
+					if (len(sz_out) > 0): sz_out += "<br /><br />"
+					sz_out += "Do you want to update {} version from ({}) to ({})?".format(soft_name, version_run_before,
+									dt_pangolin_versions.get(soft_name))
+		else:
+			for soft_name in dt_pangolin_versions:
+				if (len(sz_out) > 0): sz_out += "<br /><br />"
+				sz_out += "Do you want to run {} version ({})?".format(soft_name, dt_pangolin_versions.get(soft_name))
 
 		return sz_out
 
+	def __get_order_pangolin_names(self, dt_pangolin_versions):
+		"""
+		Return Pangolin first, then pangolinXXX, at last others
+		"""
+		vect_out = []
+		if SoftwareNames.SOFTWARE_Pangolin_name.lower() in dt_pangolin_versions:
+			vect_out = [SoftwareNames.SOFTWARE_Pangolin_name.lower()]
+		for soft_name in dt_pangolin_versions:
+			if soft_name.startswith(SoftwareNames.SOFTWARE_Pangolin_name.lower()) and \
+				not soft_name in vect_out:
+				vect_out.append(soft_name)
+		for soft_name in dt_pangolin_versions:
+			if not soft_name in vect_out: vect_out.append(soft_name)
+		return vect_out
+		
+		
+		

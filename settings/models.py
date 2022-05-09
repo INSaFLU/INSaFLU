@@ -105,10 +105,10 @@ class Parameter(models.Model):
 	PARAMETER_float = 1 
 	PARAMETER_char = 2
 	PARAMETER_null = 3		### its like only to show, not editable, Example: (TOPHRED33)
-	PARAMETER_char_list = 4
+	PARAMETER_char_list = 4 ### combo list
 	PARAMETER_check_box = 5	### check box
 	PARAMETER_none = 6		### This case is when some "software/procedure" doesn't have parameters at all
-							### It only has one parameter. Example: "Generate consensus"
+							### It is only has one parameter. Example: "Generate consensus"
 							### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File
 	
 	name = models.CharField(max_length=50, db_index=True, blank=True, null=True)

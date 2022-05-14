@@ -59,3 +59,6 @@ $ qconf -msconf
 $ qalter -p -1020 38127
 
 
+#### show all scripts 
+$ ll /opt/sge/default/spool/qmaster/job_scripts/
+

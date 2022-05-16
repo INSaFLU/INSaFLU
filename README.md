@@ -15,7 +15,7 @@ For an easy and rapid local installation using docker see here [https://github.c
 
 ## Synopsis
 
-INSaFLU (“INSide the FLU”) is a bioinformatics free web-based suite that deals with primary NGS data (reads) towards the automatic generation of the output data that are actually the core first-line “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). This platform is influenza-oriented, but can be applicable to amplicon-derived NGS data of other pathogens, such as the novel coronavirus SARS-CoV-2.
+INSaFLU (“INSide the FLU”) is a free web-based bioinformatics suite that deals with primary NGS data (reads) towards the automatic generation of the output data that are actually the core first-line “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). This platform is influenza-oriented, but can be applicable to amplicon-derived NGS data of other pathogens, such as the novel coronavirus SARS-CoV-2.
 
 ## Main features
 

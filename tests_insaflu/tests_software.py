@@ -4,6 +4,7 @@ Created on Oct 28, 2017
 @author: mmp
 '''
 
+from pickle import TRUE
 from django.test import TestCase
 from django.conf import settings 
 from constants.constantsTestsCase import ConstantsTestsCase
@@ -3496,6 +3497,20 @@ class Test(TestCase):
 		self.assertEqual('43909', result.get_value_by_key(MetaKeyAndValue.SAMTOOLS_flagstat_total_reads))
 		self.assertEqual(None, result.get_value_by_key('xpto'))
 
+
+	def test_run_nextstrain(self):
+		""" test running nexstrain """
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata.tsv")
+
+		temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
+
+		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_root-sequence.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_tip-frequencies.json"),True)
+
+		self.utils.remove_dir(temp_dir)
 
 
 

@@ -195,12 +195,12 @@ class SoftwareNames(object):
 	### used to create a file with variations table
 	## git: https://github.com/SantosJGND/INSA
 	## python algn2pheno.py --db DB_COG_UK_antigenic_mutations_2022-05-30.tsv -g S --algn Alignment_aa_SARS_CoV_2_S.fasta -r <referenceName inside Alignment> --odir algn2pheno --output COG_UK_antigenic_mutations
-    ####
-    ## outputs to provide to the users:
-    ## ...._final_report.tsv
-    ## ...._flagged_mutation_report.tsv
-    ## (if possible, add the Lineage column to these two reports)
-    ## ....log
+	####
+	## outputs to provide to the users:
+	## ...._final_report.tsv
+	## ...._flagged_mutation_report.tsv
+	## (if possible, add the Lineage column to these two reports)
+	## ....log
 	SOFTWARE_Alignment2phenotype_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "Alignment2phenotype/bin/activate"))
 	SOFTWARE_Alignment2phenotype = "algn2pheno.py"
 	SOFTWARE_Alignment2phenotype_VERSION = "v1.0"					## Version Name: pangolin

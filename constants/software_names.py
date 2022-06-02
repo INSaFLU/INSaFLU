@@ -184,6 +184,30 @@ class SoftwareNames(object):
 	SOFTWARE_BCFTOOLS_VERSION = "1.9"
 	SOFTWARE_BCFTOOLS_NEX_PARAMETERS = ""
 	
+	## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
+	## ll temp/assembly.fasta
+	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "Flye/bin/flye")
+	SOFTWARE_FLYE_name = "Flye"
+	SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
+	SOFTWARE_FLYE_VERSION = "2.9-b1778"
+	SOFTWARE_FLYE_PARAMETERS = "--no-alt-contigs "	## genomeSize=<number>[g|m|k] file1 file2
+
+	### used to create a file with variations table
+	## git: https://github.com/SantosJGND/INSA
+	## python algn2pheno.py --db DB_COG_UK_antigenic_mutations_2022-05-30.tsv -g S --algn Alignment_aa_SARS_CoV_2_S.fasta -r <referenceName inside Alignment> --odir algn2pheno --output COG_UK_antigenic_mutations
+    ####
+    ## outputs to provide to the users:
+    ## ...._final_report.tsv
+    ## ...._flagged_mutation_report.tsv
+    ## (if possible, add the Lineage column to these two reports)
+    ## ....log
+	SOFTWARE_Alignment2phenotype_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "Alignment2phenotype/bin/activate"))
+	SOFTWARE_Alignment2phenotype = "algn2pheno.py"
+	SOFTWARE_Alignment2phenotype_VERSION = "v1.0"					## Version Name: pangolin
+	SOFTWARE_Alignment2phenotype_name = "Alignment2phenotype"					## Alignment2phenotype
+	SOFTWARE_Alignment2phenotype_analysis_mode = "Analysis mode (Alignment2phenotype)"	## Alignment2phenotype
+	SOFTWARE_Alignment2phenotype_parameters = "-g S"	## Alignment2phenotype
+	
 	SOFTWARE_SNIPPY = os.path.join(DIR_SOFTWARE_SNIPPY, "bin/snippy")
 	SOFTWARE_SNIPPY_name = "Snippy"
 	SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"
@@ -377,7 +401,8 @@ class SoftwareNames(object):
 				SOFTWARE_ABRICATE_name,
 			],
 		ConstantsSettings.TECHNOLOGY_minion : [
-				SOFTWARE_NanoFilt_name, 
+				SOFTWARE_NanoFilt_name,
+				SOFTWARE_FLYE_name,
 				SOFTWARE_Medaka_name,
 				INSAFLU_PARAMETER_MASK_CONSENSUS_name,
 				SOFTWARE_CLEAN_HUMAN_READS_name,
@@ -668,6 +693,16 @@ class SoftwareNames(object):
 	def get_nextalign_version(self): return self.SOFTWARE_NEXTALIGN_vesion
 	def get_nextalign_parameters(self): return self.SOFTWARE_NEXTALIGN_parameters
 
+	"""
+	Used in Alignment2phenotype
+	"""
+	def get_Alignment2phenotype_env(self): return self.SOFTWARE_Alignment2phenotype_Env
+	def get_Alignment2phenotype(self): return self.SOFTWARE_Alignment2phenotype
+	def get_Alignment2phenotype_name(self): return self.SOFTWARE_Alignment2phenotype_name
+	def get_Alignment2phenotype_name_extended(self): return self.SOFTWARE_Alignment2phenotype_name_extended
+	def get_Alignment2phenotype_version(self): return self.SOFTWARE_Alignment2phenotype_VERSION
+	def get_Alignment2phenotype_parameters(self): return self.SOFTWARE_Alignment2phenotype_PARAMETERS
+
 	###### START minion software
 	###
 	def get_rabbitQC(self): return self.SOFTWARE_RabbitQC
@@ -703,6 +738,12 @@ class SoftwareNames(object):
 	def get_medaka_default_model(self): return self.SOFTWARE_Medaka_default_model
 	def get_medaka_remove_tags_model(self): return self.SOFTWARE_Medaka_remove_tags_model
 	def get_medaka_version(self): return self.SOFTWARE_Medaka_VERSION
+
+	def get_flye(self): return self.SOFTWARE_FLYE
+	def get_flye_name(self): return self.SOFTWARE_FLYE_name
+	def get_flye_name_extended(self): return self.SOFTWARE_FLYE_name_extended
+	def get_flye_version(self): return self.SOFTWARE_FLYE_VERSION
+	def get_flye_parameters(self): return self.SOFTWARE_FLYE_PARAMETERS
 
 	###
 	###### END minion software

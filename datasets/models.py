@@ -5,6 +5,7 @@ import os
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
+from managing_files.models import ProjectSample, Reference
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from constants.constants import Constants, TypePath, FileExtensions, FileType
 # Create your models here.
@@ -72,3 +73,61 @@ class Consensus(models.Model):
         indexes = [
             models.Index(fields=['name'], name='name_consensus_idx'),
         ]
+
+class Dataset(models.Model):
+    """
+    Dataset, join several consensus from different projects or individual consensus
+    """
+    ### has the path for main result
+    PATH_MAIN_RESULT = 'main_result'
+    
+    name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Dataset name')
+    owner = models.ForeignKey(User, related_name='dataset', blank=True, null=True, on_delete=models.CASCADE)
+    creation_date = models.DateTimeField('Uploaded date', auto_now_add=True)
+    last_change_date = models.DateTimeField('Last change date', blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+    number_of_sequences_from_projects = models.SmallIntegerField(default=0)      ### has the number of sequences from projects
+    number_of_sequences_from_consensus = models.SmallIntegerField(default=0)      ### has the number of sequences from consensus
+    number_of_sequences_from_references = models.SmallIntegerField(default=0)      ### has the number of sequences from references
+    is_processed = models.BooleanField(default=False)               ### if some sequence was added and not processed yet
+    
+    ### if is deleted in file system
+    is_deleted_in_file_system = models.BooleanField(default=False)            ## if this file was removed in file system
+    date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')    ## this date has the time of deleted by web page
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Dataset'
+        verbose_name_plural = 'Datasets'
+        ordering = ['-creation_date', ]
+
+
+class DatasetConsensus(models.Model):
+    
+    dataset = models.ForeignKey(Dataset, related_name='dataset_consensus', blank=True, null=True, on_delete=models.CASCADE)
+    ## only can have one of this three
+    project_sample = models.ForeignKey(ProjectSample, related_name='dataset_project_samples', blank=True, null=True, on_delete=models.CASCADE)
+    reference = models.ForeignKey(Reference, related_name='dataset_reference', blank=True, null=True, on_delete=models.CASCADE)
+    consensus = models.ForeignKey(Consensus, related_name='dataset_consensus', blank=True, null=True, on_delete=models.CASCADE)
+    ##
+    creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+    is_finished = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    is_error = models.BooleanField(default=False)        ## if some problem occurs
+    alert_first_level = models.IntegerField(default=0)    ## has the number of alerts for high errors
+    alert_second_level = models.IntegerField(default=0)    ## has the number of alerts for low errors
+    seq_name_all_consensus = models.CharField(blank=True, null=True, max_length=200)    ## name of the sequence when saved in AllConsensus.fasta file
+
+    def __str__(self):
+        return self.dataset.name
+    
+    class Meta:
+        verbose_name = 'Consensus'
+        verbose_name_plural = 'Consensus'
+        ordering = ['-creation_date', ]
+
+
+
+

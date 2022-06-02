@@ -265,7 +265,7 @@ class MixedInfections(models.Model):
 	average_value = models.FloatField(default=0.0)
 	description = models.TextField(default="")
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
+	last_change_date = models.DateTimeField('last change date', blank=True, null=True)
 	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
 															## and is not used in projectSample,
 															## It can change across time

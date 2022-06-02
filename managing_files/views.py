@@ -43,6 +43,7 @@ from django.template.defaultfilters import filesizeformat
 from settings.constants_settings import ConstantsSettings
 from settings.models import Software as SoftwareSettings
 from utils.support_django_template import get_link_for_dropdown_item
+from utils.session_variables import clean_check_box_in_session, is_all_check_box_in_session
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 	
@@ -279,8 +280,8 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 	success_url = reverse_lazy('samples')
 	template_name = 'samples/sample_add.html'
 
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+	else: logger = logging.getLogger("fluWebVirus.production")
 
 	def get_form_kwargs(self):
 		"""
@@ -377,8 +378,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 			else:										### Minion, codify with other
 				taskID = process_SGE.set_run_clean_minion(sample, self.request.user, job_name)
 		except Exception as e:
-			self.logger_production.error('Fail to run: ProcessSGE - ' + str(e))
-			self.logger_debug.error('Fail to run: ProcessSGE - ' + str(e))
+			self.logger.error('Fail to run: ProcessSGE - ' + str(e))
 			return super(SamplesAddView, self).form_invalid(form)
 		
 		## refresh sample list for this user
@@ -806,13 +806,14 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	"""
 	Create a new reference
 	"""
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
 	form_class = SamplesUploadMultipleFastqForm
 	success_url = reverse_lazy('sample-add-fastq')
 	template_name = 'samples/samples_upload_fastq_files.html'
 	utils = Utils()
 
+	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+	else: logger = logging.getLogger("fluWebVirus.production")
+	
 	def get_form_kwargs(self):
 		"""
 		Set the request to pass in the form
@@ -877,8 +878,7 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 						out.write(path_name.file.read())                ## Read bytes into file
 					self.utils.move_file(temp_file, sz_file_to)
 				else: self.utils.copy_file(path_name.file.name, sz_file_to)
-				self.logger_debug.info("Starting for file: " + str(upload_files.file_name))
-				self.logger_production.info("Starting file: " + str(upload_files.file_name))
+				self.logger.info("Starting for file: " + str(upload_files.file_name))
 			
 				## test if file exist
 				if (not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10):
@@ -907,8 +907,7 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			else:
 				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : str(form.errors['path_name'][0]) }
 		except:
-			self.logger_debug.error(sys.exc_info())
-			self.logger_production.error(sys.exc_info())
+			self.logger.error(sys.exc_info())
 			data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, unknown error.' }
 			return JsonResponse(data)
 	
@@ -1351,8 +1350,8 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 	success_url = reverse_lazy('projects')
 	template_name = 'project_sample/project_sample_add.html'
 	
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+	else: logger = logging.getLogger("fluWebVirus.production")
 	
 	def get_context_data(self, **kwargs):
 		context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
@@ -1397,12 +1396,11 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					else: self.request.session[key] = True
 		## END need to clean all the others if are reject in filter
 		
-		### check if it show already the settings message
+		### check if it was shown the settings message
 		key_session_name_project_settings = "project_settings_{}".format(project.name)
 		if (not key_session_name_project_settings in self.request.session):
 			self.request.session[key_session_name_project_settings] = True
 		else: self.request.session[key_session_name_project_settings] = False
-		
 		
 		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
@@ -1480,8 +1478,7 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					sample = Sample.objects.get(pk=id_sample)
 				except Sample.DoesNotExist:
 					## log
-					self.logger_production.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-					self.logger_debug.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
+					self.logger.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
 					continue
 				
 				## the sample can be deleted by other session
@@ -2031,57 +2028,6 @@ def _get_constext_nextclade(media_url_path, context, current_site, is_sars_cov_2
 				current_site,
 				media_url_path)
 	return context
-
-def is_all_check_box_in_session(vect_check_to_test, request):
-	"""
-	test if all check boxes are in session 
-	If not remove the ones that are in and create the new ones all False
-	"""
-	utils = Utils()
-	dt_data = {}
-	
-	## get the dictonary
-	for key in request.session.keys():
-		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-			dt_data[key] = True
-	
-	b_different = False
-	if (len(vect_check_to_test) != len(dt_data)): 
-		b_different = True
-	
-	## test the vector
-	if (not b_different):
-		for key in vect_check_to_test:
-			if (key not in dt_data):
-				b_different = True
-				break
-		
-	if (b_different):
-		## remove all
-		for key in dt_data:
-			del request.session[key] 
-	
-		## create new
-		for key in vect_check_to_test:
-			request.session[key] = False
-		return False
-	return True
-
-	
-	
-def clean_check_box_in_session(request):
-	"""
-	check all check boxes on samples/references to add samples
-	"""
-	utils = Utils()
-	## clean all check unique
-	if (Constants.CHECK_BOX_ALL in request.session): del request.session[Constants.CHECK_BOX_ALL]
-	vect_keys_to_remove = []
-	for key in request.session.keys():
-		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
-			vect_keys_to_remove.append(key)
-	for key in vect_keys_to_remove:
-		del request.session[key] 
 
 
 def get_first_pk_from_session(request):

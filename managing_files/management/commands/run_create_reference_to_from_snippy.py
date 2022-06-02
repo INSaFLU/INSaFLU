@@ -12,7 +12,7 @@ class Command(BaseCommand):
 	'''
 	classdocs
 	'''
-	help = "Create coverage images to all samples in a specific project."
+	help = "Create new reference for snippy."
 
 	## logging
 	logger_debug = logging.getLogger("fluWebVirus.debug")

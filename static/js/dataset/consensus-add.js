@@ -32,7 +32,7 @@ $("#id-name-to-insert").on("change paste keyup", function () {
         },
         
         // handle a non-successful response
-        error : function(xhr,errmsg,err) {
+        error : function(xhr, errmsg, err) {
             console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
         }
    });
@@ -65,65 +65,63 @@ function test_file_size() {
 }
 
 // add consensus
-$(document).ready(function () {
-	// alert($('#id_form_consensus').length)  // throws one if ID was found
-	var form = $('#id_form_consensus')[0];
-  	form.onsubmit = function(e){
-	//$('#id_form_consensus').on('submit', function(e){
-		e.preventDefault();
-		
-		//consensus name to insert
-		$.ajax({
-	        url: $('#id_form_consensus').attr("add-consensus-name-url"),
-			type: "POST",
-	        /// need to add crfs
-	        data : { 
-	        	consensus_name : $('#id-name-to-insert').val(),
-				file_name: $('#id_consensus_fasta').serialize(),
-	    		csrfmiddlewaretoken: '{{ csrf_token }}'
-	        }, // data sent with the post request
-	        		
-	        success: function (data) {
-	          if (data['is_ok']) {
-	        		// add line with values
-	        		$('#id_vaccine_status').append($('<option>', {
-	        			value: data['value'],
-	        			text: data['text'],
-	        		 }));
+$('#id_form_consensus').on('submit', function(e){
 	
-		        	 /// add message with information
-		        	 $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-		        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-							'</div>');
-					
-					 /// Add new row in the table 
-					 $('#id_tbody').append('<tr id="row_' + data['id'] + '" class="odd">' +
-		                '<td class="name"><a href="#id_remove_modal" id="id_remove_dataset_modal" data-toggle="modal" title="Delete" ref_name="' +
-						data['dataset_name'] + '" pk="' + data['id'] + '"><i class="fa fa-trash"></i> </a>' + data['dataset_name'] + '</td>' +
-		                '<td class="last_change_date">Not set yet</td>' +
-		                '<td class="creation_date">' + data['date_created'] + '</td>' +
-		                '<td class="sequences"><span><i class="tip fa fa-info-circle" title="Consensus from projects: 0\n' +
-		                'Consensus uploaded: 0\n' +
-		                'References: 0"></i></span> (0/0/0) <a href="/datasets/datasets/' +
-		                data['id'] + '/add_sequences_dataset" data-toggle="tooltip" title=""' +
-		                'data-original-title="Add Consensus/References"><i class="fa fa-plus-square"></i> Add Seqs.</a></td>' +
-		                '<td class="results"></td>' +
-		                '</tr>')
-	          }
-	          else{
-	        	  /// add message with information
-	        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+	e.preventDefault();
+    var $this = $(this);
+	var formData = new FormData(this);
+
+	//consensus name to insert
+	$.ajax({
+        url: $('#id_form_consensus').attr("add-consensus-name-url"),
+		type: "POST",
+		data: formData,
+        mimeType: "multipart/form-data",
+        contentType: false,
+        cache: false,
+        processData: false,
+        /// need to add crfs
+        //data : {
+        //	consensus_name : $('#id-name-to-insert').val(),
+		//	file_name: $('#id_consensus_fasta').serialize(),
+    	//	csrfmiddlewaretoken: '{{ csrf_token }}',
+        //}, // data sent with the post request
+        		
+        success: function (data) {
+          if (data['is_ok']) {
+
+	        	 /// add message with information
+	        	 $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
 	        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 						'</div>');
-	          }
-	        },
-	        
-	        // handle a non-successful response
-	        error : function(xhr,errmsg,err) {
-	            alert(errmsg);
-	            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-	        }
-		});
+				
+				 /// Add new row in the table 
+				 $('#id_tbody').append('<tr id="row_' + data['id'] + '" class="odd">' +
+	                '<td class="name"><a href="#id_remove_modal" id="id_remove_dataset_modal" data-toggle="modal" title="Delete" ref_name="' +
+					data['dataset_name'] + '" pk="' + data['id'] + '"><i class="fa fa-trash"></i> </a>' + data['dataset_name'] + '</td>' +
+	                '<td class="last_change_date">Not set yet</td>' +
+	                '<td class="creation_date">' + data['date_created'] + '</td>' +
+	                '<td class="sequences"><span><i class="tip fa fa-info-circle" title="Consensus from projects: 0\n' +
+	                'Consensus uploaded: 0\n' +
+	                'References: 0"></i></span> (0/0/0) <a href="/datasets/datasets/' +
+	                data['id'] + '/add_sequences_dataset" data-toggle="tooltip" title=""' +
+	                'data-original-title="Add Consensus/References"><i class="fa fa-plus-square"></i> Add Seqs.</a></td>' +
+	                '<td class="results"></td>' +
+	                '</tr>')
+          }
+          else{
+        	  /// add message with information
+        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+        		data['message'] + '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+					'</div>');
+          }
+        },
+        
+        // handle a non-successful response
+        error : function(xhr,errmsg,err) {
+            alert(errmsg);
+            console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+        }
 	});
 });
 

@@ -17,7 +17,7 @@ urlpatterns = [
     url(r'^ajax/add_dataset_name$', ajax_views.add_dataset_name, name='add_dataset_name'),      ## add a dataset 
     url(r'^ajax/test_dataset_name$', ajax_views.test_dataset_name, name='test_dataset_name'),   ## test if a dataset name exists
     url(r'^ajax/test_consensus_name$', ajax_views.test_consensus_name, name='test_consensus_name'),   ## test if a consensus name exists
-    url(r'^ajax/add_consensus_name$', ajax_views.add_consensus_fasta, name='add_consensus_name'),      ## add a dataset 
+    url(r'^ajax/add_consensus_name$', ajax_views.add_consensus_name, name='add_consensus_name'),      ## add a consensus name and file 
     
     
 ]

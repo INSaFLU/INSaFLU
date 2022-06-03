@@ -56,8 +56,7 @@ class DatasetTable(tables.Table):
             record.number_of_sequences_from_projects, record.number_of_sequences_from_consensus, record.number_of_sequences_from_references)
         add_sequence = '<div class="btn-group">' + \
             '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"' +\
-            'data-toggle="tooltip" title="Add Consensus/References/Projects" >' +\
-            'Add Sequences</button>' + \
+            'data-toggle="tooltip" title="Add Consensus/References/Projects" style="margin-left: 8px;">Add Sequences</button>' + \
             '<div class="dropdown-menu" x-placement="bottom-start" style="position: absolute; transform: translate3d(0px, 38px, 0px); top: 0px; left: 0px; will-change: transform;">' + \
             '<a rel="nofollow" class="dropdown-item" href=' + reverse('add-references-dataset', args=[record.pk]) + '> Add References</a>' + \
             '<a rel="nofollow" class="dropdown-item" href=' + reverse('add-projects-dataset', args=[record.pk]) + ' > Add Consensus from Projects</a>' + \

@@ -47,11 +47,6 @@ $('#id-save-button').on('click', function(){
         		
         success: function (data) {
           if (data['is_ok']) {
-        		// add line with values
-        		$('#id_vaccine_status').append($('<option>', {
-        			value: data['value'],
-        			text: data['text'],
-        		 }));
 
 	        	 /// add message with information
 	        	 $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
@@ -65,12 +60,16 @@ $('#id-save-button').on('click', function(){
 	                '<td class="last_change_date">Not set yet</td>' +
 	                '<td class="creation_date">' + data['date_created'] + '</td>' +
 	                '<td class="sequences"><span><i class="tip fa fa-info-circle" title="Consensus from projects: 0\n' +
-	                'Consensus uploaded: 0\n' +
-	                'References: 0"></i></span> (0/0/0) <a href="/datasets/datasets/' +
-	                data['id'] + '/add_sequences_dataset" data-toggle="tooltip" title=""' +
-	                'data-original-title="Add Consensus/References"><i class="fa fa-plus-square"></i> Add Seqs.</a></td>' +
-	                '<td class="results"></td>' +
-	                '</tr>')
+	                'Consensus uploaded: 0\nReferences: 0"></i></span> (0/0/0)' +
+	                '<div class="btn-group"><button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" ' +
+					'aria-expanded="false" title="Add Consensus/References/Projects" style="margin-left: 8px;">Add Sequences</button>' +
+					'<div class="dropdown-menu" x-placement="bottom-start" style="position: absolute; ' +
+					'transform: translate3d(0px, 38px, 0px); top: 0px; left: 0px; will-change: transform;">' +
+					'<a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_references_dataset"> ' +
+					'Add References</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_projects_dataset">' +
+					' Add Consensus from Projects</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_consensus_dataset">' +
+					' Add your own Consensus</a></div> </div>' +
+	                '</td></tr>')
           }
           else{
         	  /// add message with information

@@ -190,9 +190,8 @@ def test_consensus_name(request):
 				return JsonResponse(data)
 		return JsonResponse(data)
 
-@transaction.atomic
 @csrf_protect
-def add_consensus_fasta(request):
+def add_consensus_name(request):
 	"""
 	add new dataset
 	"""

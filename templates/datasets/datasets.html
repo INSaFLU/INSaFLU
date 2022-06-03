@@ -188,8 +188,8 @@
 			var id_ = $(this).attr('id');
 			var href = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
-			if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
-					!href.startsWith('/media') && !href.startsWith('http') ){
+			if (href !== '#id_modal_add_dataset' && href !== '#id_remove_modal' && onclick !== 'return false;' &&
+					id_ !== 'sidenavToggler' &&	!href.startsWith('/media') && !href.startsWith('http') ){
 				wait_screen();
 			}
 		});

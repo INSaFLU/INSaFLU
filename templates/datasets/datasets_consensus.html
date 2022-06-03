@@ -126,7 +126,7 @@
     					<button type="button" class="close" data-dismiss="modal">&times;</button>
   					</div>
   
-  					<form method="post" id="id_form_consensus" role="form" add-consensus-name-url="{% url 'add_consensus_name' %}" action="">
+  					<form method="post" id="id_form_consensus" role="form" add-consensus-name-url="{% url 'add_consensus_name' %}" enctype="multipart/form-data">
   						{% csrf_token %}
 	  					<!-- Modal body -->
 	  					<div class="modal-body mx-auto mw-100">
@@ -143,7 +143,7 @@
 	       								<div id="div_id_consensus_fasta" class="form-group"> 
 	       									<label for="id_consensus_fasta" class="col-form-label requiredField"> Consensus (FASTA)<span class="asteriskField">*</span> </label> 
 	       									<div class=""> 
-	       										<input type="file" name="consensus_fasta" class="clearablefileinput" required id="id_consensus_fasta" onclick = "test_file_size()"> 
+	       										<input type="file" name="consensus_fasta" class="clearablefileinput" required id="id_consensus_fasta"> 
 	       										<small id="hint_id_consensus_fasta" class="form-text text-muted">Consensus file in fasta format.<br>{{message_size_1}} <br>{{message_size_2}}</small>
 	       									</div>
 	       								</div>

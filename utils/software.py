@@ -2300,13 +2300,20 @@ class Software(object):
 			if (out_dir_temp is None): self.utils.remove_dir(out_dir)
 		return seq_ref, seq_other
 
-	def run_nextstrain(self, reference, alignments, metadata, cores=8):
+
+	def run_nextstrain(self, sequences, metadata, root="Wuhan-Hu-1/2019", build="ncov", cores=1):
 		"""
 		run nextstrain
-		:param  alignments: sequence file with nucleotides
+		:param  sequences: sequence file with nucleotides
 		:param  metadata: tabbed table file with properties
+		:param  root: sample id used as root of nextstrain (by default Wuhan-Hu-1/2019)	
+		:param  build: type of build (by default ncvov - SARS-CoV-2)		
+		:param  build: number of cores used in nextstrain (by default 1)
 		:out temp folder with all data (including results) 
 		"""
+
+
+		# TODO Allow user to provide reference
 
 		# Create a temp folder
 		temp_dir = os.path.join(self.utils.get_temp_dir())
@@ -2320,12 +2327,28 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + "to temp folder " + temp_dir)
 
+
+		# TODO? : merge_fasta_files(self, vect_sample_path_and_name, out_file)
+		cmd = "cat " + sequences + " " + temp_dir + "/data/references_sequences.fasta > " + temp_dir + "/data/sequences.fasta"
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy sequences file " + sequences + " to temp folder " + temp_dir)
+
+		cmd = "cat " + metadata + " " + temp_dir + "/data/references_metadata_noheader.tsv > " + temp_dir + "/data/metadata.tsv"
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy metadata file " + metadata + " to temp folder " + temp_dir)
+
 		# Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
-		self.utils.copy_file(alignments, os.path.join(temp_dir + "/data/"))
-		self.utils.copy_file(metadata, os.path.join(temp_dir + "/data/"))
+		# self.utils.copy_file(alignments, os.path.join(temp_dir + "/data/sequences.fasta"))
+		# self.utils.copy_file(metadata, os.path.join(temp_dir + "/data/metadata.tsv"))
 
 		# Need to add root to the end of config file
-		cmd = "echo \'  root: \""+reference+"\"\' >> " + temp_dir + '/config/config.yaml'
+		cmd = "echo \'  root: \""+root+"\"\' >> " + temp_dir + '/config/config.yaml'
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2345,6 +2368,29 @@ class Software(object):
 		return temp_dir
 
 
+	def run_aln2pheno(self, sequences, reference):
+		"""
+		run aln2pheno
+		:param sequences: sequence file with aminoacids from the SARS-CoV-2 S protein
+		:param reference: name of the reference (must be one of the sequences)
+		:out temp folder with results
+		"""
+
+		# Create a temp folder
+		temp_dir = os.path.join(self.utils.get_temp_dir())
+
+		# Run nextstrain
+		cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run aln2pheno in temp folder " + temp_dir)
+
+		# collect results and check content
+
+		return temp_dir
 
 	
 class Contigs2Sequences(object):

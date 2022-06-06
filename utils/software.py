@@ -2301,7 +2301,8 @@ class Software(object):
 		return seq_ref, seq_other
 
 
-	def run_nextstrain(self, sequences, metadata, root="Wuhan-Hu-1/2019", build="ncov", cores=1):
+	#def run_nextstrain(self, sequences, metadata, root="Wuhan/Hu-1/2019", build="ncov", cores=1):
+	def run_nextstrain(self, sequences, metadata, build="ncov", cores=1):
 		"""
 		run nextstrain
 		:param  sequences: sequence file with nucleotides
@@ -2311,7 +2312,6 @@ class Software(object):
 		:param  build: number of cores used in nextstrain (by default 1)
 		:out temp folder with all data (including results) 
 		"""
-
 
 		# TODO Allow user to provide reference
 
@@ -2327,26 +2327,113 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + "to temp folder " + temp_dir)
 
+		# merge fasta files
 
-		# TODO? : merge_fasta_files(self, vect_sample_path_and_name, out_file)
-		cmd = "cat " + sequences + " " + temp_dir + "/data/references_sequences.fasta > " + temp_dir + "/data/sequences.fasta"
+		# TODO ? write unwrapped fasta
+
+		# convert "-" in fasta names to "/"
+
+		# TODO add to utils function fasta_unwrap:
+		# from Bio.SeqIO import FastaIO
+		# fasta_out = FastaIO.FastaWriter(handle, wrap=None)
+		# fasta_out.write_file(data)
+
+		# Pass some of this as functions to utils?
+
+		cmd = "cat " + sequences + " | sed 's/__.*//' > " + temp_dir + "/data/new_sequences.fasta"
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to copy sequences file " + sequences + " to temp folder " + temp_dir)
+			raise Exception("Fail to copy new sequences file " + sequences + " to temp folder " + temp_dir + "/data/new_sequences.fasta")
 
-		cmd = "cat " + metadata + " " + temp_dir + "/data/references_metadata_noheader.tsv > " + temp_dir + "/data/metadata.tsv"
+		cmd = "cat " + temp_dir + "/data/new_sequences.fasta " + temp_dir + "/data/references_sequences.fasta > " + temp_dir + "/data/sequences.fasta"
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to copy metadata file " + metadata + " to temp folder " + temp_dir)
+			raise Exception("Fail to merge sequences file " + sequences + " with references in temp folder " + temp_dir)
 
-		# Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
-		# self.utils.copy_file(alignments, os.path.join(temp_dir + "/data/sequences.fasta"))
-		# self.utils.copy_file(metadata, os.path.join(temp_dir + "/data/metadata.tsv"))
+		# Process references metadata file, basically header and reference entries
+		# this should already contain mandatory fields
+		ref_header_fields = []
+		ref_sample_metadata = []
+		with open(temp_dir + "/data/references_metadata.tsv") as f:
+			# first line is "header"
+			ref_header_fields = f.readline().strip().split('\t')
+			for line in f:
+				ref_sample_metadata.append(line.strip().split('\t'))	
 
+
+		# Process metadata file... assume format that is usually in the Sample_list.tsv that we download from INSaFLU
+		# Assume first line is not relevant and second line is header, otherwise all this will fail...
+		# remaining lines are sample metadata entries
+		# assume entries are quoted with "", but if they're not that's not a problem
+		sample_header_fields = []
+		sample_metadata = []
+		with open(metadata) as f:
+			# first line is "comment" to discard eg. Reference name	SARS_CoV_2_Wuhan_Hu_1_MN908947
+			f.readline()
+			# second line is "header"
+			sample_header_fields = f.readline().strip().replace("\"","").split('\t')
+			for line in f:
+				sample_metadata.append(line.strip().replace("\"","").split('\t'))
+
+		#*Mandatory metadata fields:
+		#strain	Sample ID (Characters “()[]{}|#><” are disallowed)
+		#date	YEAR-MONTH-DAY ex: 2021-02-19
+		#virus	ncov
+		#region	Africa, Asia, Europe, North America, Oceania or South America
+		#gisaid_epi_isl	GISAID ID; if not available needs to be “?” 
+		#genbank_accession	Genbank accession #; if not available needs to be “?” 
+		#length	Genome length; can be filled with “?” 
+		#segment		Filled with “genome”
+		#sex	host sex; if not available needs to be “?” 
+		#age	host age; if not available needs to be “?” 
+		#host	host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
+
+		# id in the Sample_list.tsv corresponds to strain in nextstrain metadata
+		# fastq1 and fastq2 in Sample_list is to ignore
+		# "data set" in Sample_list is to ignore
+
+		# Lineage Pangolin (for ncov) corresponds to lineage in nextstrain metadata
+
+		out_file = temp_dir + "/data/metadata.tsv" 
+		with open(out_file, 'w') as handle_write:
+		
+			# this should be the original columns in the reference + user-added extra columns
+			handle_write.write("\t".join(ref_header_fields)+"\n")
+			#final_sample_metadata = []
+			for ref_sample in ref_sample_metadata:
+				# If necessary add extra fields with empty data
+				handle_write.write("\t".join(ref_sample)+"\n")
+				#final_sample_metadata.append(ref_sample_metadata)
+			
+			for sample in sample_metadata:
+				to_write = []
+				for column in ref_header_fields:
+					# if there are too many exceptions, just make a dictionary...
+					if(column == 'strain'):
+						column = 'id'
+					if(column == 'lineage'):
+						column = 'Lineage Pangolin'
+					if(column == 'country'):
+						column = 'Country'
+					if(column == 'date'):
+						column = 'collection date'
+					if(column == 'date_submitted'):
+						column = 'collection date'
+
+					if(column in sample_header_fields):
+						# maybe handle a few exceptions here...
+						to_write.append(sample[sample_header_fields.index(column)])
+					else:
+						# maybe handle a few exceptions here...
+						to_write.append("?")
+				
+				handle_write.write("\t".join(to_write)+"\n")	
+
+		root = "Wuhan/Hu-1/2019"
 		# Need to add root to the end of config file
 		cmd = "echo \'  root: \""+root+"\"\' >> " + temp_dir + '/config/config.yaml'
 		exit_status = os.system(cmd)
@@ -2379,7 +2466,7 @@ class Software(object):
 		# Create a temp folder
 		temp_dir = os.path.join(self.utils.get_temp_dir())
 
-		# Run nextstrain
+		# Run aln2pheno
 		cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
 
 		exit_status = os.system(cmd)

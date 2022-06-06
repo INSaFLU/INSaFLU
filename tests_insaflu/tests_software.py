@@ -3500,17 +3500,24 @@ class Test(TestCase):
 
 	def test_run_nextstrain(self):
 		""" test running nexstrain """
-		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_sequences_noroot.fasta")
-		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_metadata_noroot.tsv")
+		
+		# alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_sequences_noroot.fasta")
+		# metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_metadata_noroot.tsv")
+
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_AllConsensus.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_Sample_list.tsv")
 
 		# example where we can pass the reference
 		# temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
+		
 		temp_dir = self.software.run_nextstrain(alignments_file, metadata_file)
 
 		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
 		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build.json"),True)
 		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_root-sequence.json"),True)
 		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_tip-frequencies.json"),True)
+
+		# os.system("cp -r "+ temp_dir + "/auspice /insaflu_web/INSaFLU/media/" )
 
 		self.utils.remove_dir(temp_dir)
 

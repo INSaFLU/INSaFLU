@@ -20,7 +20,8 @@ class Consensus(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
     
     ## Size 100K
-    consensus_fasta = ContentTypeRestrictedFileField(upload_to=consensus_directory_path, content_types=['application/octet-stream'],\
+    consensus_fasta = ContentTypeRestrictedFileField(upload_to=consensus_directory_path, content_types=['application/octet-stream',
+                                                                                                        'text/plain'],\
                                         max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
     consensus_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
     hash_consensus_fasta = models.CharField(max_length=50, blank=True, null=True)
@@ -28,7 +29,9 @@ class Consensus(models.Model):
     owner = models.ForeignKey(User, related_name='consensus', blank=True, null=True, on_delete=models.CASCADE)
     is_obsolete = models.BooleanField(default=False, verbose_name='Obsolete')
     is_deleted = models.BooleanField(default=False, verbose_name='Deleted')
+    is_deleted_in_file_system = models.BooleanField(default=False, verbose_name='Deleted in FileSystem')
     description = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name='Description')
+    number_of_locus = models.IntegerField(default=0, verbose_name='#Locus')
 
     ### if is deleted in file system
     is_deleted_in_file_system = models.BooleanField(default=False)            ## if this file was removed in file system
@@ -109,6 +112,7 @@ class DatasetConsensus(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='dataset_consensus', blank=True, null=True, on_delete=models.CASCADE)
     ## only can have one of this three
     project_sample = models.ForeignKey(ProjectSample, related_name='dataset_project_samples', blank=True, null=True, on_delete=models.CASCADE)
+    is_project_sample_finished = models.BooleanField(default=False)    ## True if all process in ProjectSample Over 
     reference = models.ForeignKey(Reference, related_name='dataset_reference', blank=True, null=True, on_delete=models.CASCADE)
     consensus = models.ForeignKey(Consensus, related_name='dataset_consensus', blank=True, null=True, on_delete=models.CASCADE)
     ##

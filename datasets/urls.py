@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'datasets/datasets$', views.DatasetsView.as_view(), name='datasets'),
     url(r'datasets/(?P<pk>\d+)/add_references_dataset$', views.AddDatasetsReferencesView.as_view(), name='add-references-dataset'),
     url(r'datasets/(?P<pk>\d+)/add_consensus_dataset$', views.AddDatasetsConsensusView.as_view(), name='add-consensus-dataset'),
+    url(r'datasets/(?P<pk>\d+)/upload_new_consensus$', views.UploadNewConsensusView.as_view(), name='upload-new-consensus'),
     url(r'datasets/(?P<pk>\d+)/add_projects_dataset$', views.AddDatasetsProjectsView.as_view(), name='add-projects-dataset'),
     url(r'datasets/(?P<pk>\d+)/show_sequences_dataset$', views.ShowDatasetsSequencesView.as_view(), name='show-sequences-dataset'),
     # url(r'datasets/datasets_projects_add$', views.DatasetsProjectsAddView.as_view(), name='datasets-projects-add'),
@@ -17,7 +18,9 @@ urlpatterns = [
     url(r'^ajax/add_dataset_name$', ajax_views.add_dataset_name, name='add_dataset_name'),      ## add a dataset 
     url(r'^ajax/test_dataset_name$', ajax_views.test_dataset_name, name='test_dataset_name'),   ## test if a dataset name exists
     url(r'^ajax/test_consensus_name$', ajax_views.test_consensus_name, name='test_consensus_name'),   ## test if a consensus name exists
-    url(r'^ajax/add_consensus_name$', ajax_views.add_consensus_name, name='add_consensus_name'),      ## add a consensus name and file 
+    url(r'^ajax/add_consensus_name$', ajax_views.add_consensus_name, name='add_consensus_name'),      ## add a consensus name and file
+    url(r'^ajax/remove_consensus$', ajax_views.remove_consensus, name='remove_consensus'),      ## add a consensus name and file
+    url(r'^ajax/validate_consensus_name$', ajax_views.validate_consensus_name, name='validate-consensus-name'), ## Validate consensus name 
     
     
 ]

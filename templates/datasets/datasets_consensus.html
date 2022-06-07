@@ -17,6 +17,13 @@
 	{% breadcrumb "Add Consensus to dataset" "add-consensus-dataset" %}
 {% endblock %}
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
 {% block content %}
 
 	{% if error_cant_see %}
@@ -49,10 +56,15 @@
 		                              	<button type="submit" id="id_submit_all" name="submit_all" class="btn btn-small btn-primary dark" style="margin-left: 8px;"
 		                              		data-title="{{add_all_references_message}} to this Dataset" data-toggle="tolltip"><i class="fa fa-plus-square"></i> {{ add_all_references_message }}</button>
 		                            </form>
-		                            <a href="#id_modal_add_consensus" data-title="Upload a new Consensus to use in a Dataset" class="btn btn-small btn-primary dark"
+		                            <a href="{% url 'upload-new-consensus' pk %}" data-title="Upload a new Consensus to use in a Dataset" 
+		                            	class="btn btn-small btn-primary dark" style="margin-left: 8px;">
+		                            	<span class="hidden-phone"><i class="fa fa-plus-square"></i> Upload a new Consensus</span>
+		                            </a>
+		                            
+		                            <!-- <a href="#id_modal_add_consensus" data-title="Upload a new Consensus to use in a Dataset" class="btn btn-small btn-primary dark"
 	                    				id="id_modal_add_new_consensus" data-toggle="modal" data-toggle="tolltip" style="margin-left: 8px;"
 		                            	<span class="hidden-phone"><i class="fa fa-plus-square"></i> Upload a new Consensus</span>
-	                    			</a>
+	                    			</a> -->
 		                        </div> 
 		                        <form method="get" action="" class="form-inline form-search pull-right">
 		                        	{% csrf_token %}
@@ -79,7 +91,7 @@
 		            <tbody id="id_tbody">
 		                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
 		                  {% block table.tbody.row %}
-		                  <tr class="{% cycle 'odd' 'even' %}">
+		                  <tr id="row_{{ row.record.id }}" class="{% cycle 'odd' 'even' %}">
 		                      {% for column, cell in row.items %}
 		                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
 		                      {% endfor %}
@@ -103,19 +115,47 @@
 			
 		{% if table.page and show_paginatior %}
 		    {% block pagination %}
-		    	<label id="id-total-list" class="pull-right">Total References: {{ query_set_count }}</label>
+		    	<label id="id-total-list" class="pull-right">Total Consensus: {{ query_set_count }}</label>
 		        {% bootstrap_pagination table.page url=request.get_full_path %}
 		    {% endblock pagination %}
 		  </div>
 		{% else %}
-			<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+			<label id="id-total-list" class="pull-right">Total Consensus: {{ query_set_count }}</label>
 		{% endif %}
 	
 		<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 	{% endif %}
 	
+	<!-- The remove Modal -->
+	<div class="modal fade" id="id_remove_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title-remove">Remove a Consensus</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_consensus' %}">
+  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+   						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer" id="id-modal-footer-remove">
+    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal"
+    						remove-dataset-name-url="{% url 'remove_dataset' %}">Remove</button>
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+	
 	<!-- Upload new Consensus -->
+	<!-- NOT USED in this moment, future work -->
 	<div class="modal fade" id="id_modal_add_consensus" >
 		<div class="modal-dialog">
 			<div class="modal-content">
@@ -190,8 +230,9 @@
 	</script>
  		
  	 {% load static from staticfiles %}
- 	 		<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/dataset/consensus-add.js' %}"></script>
+ 	 		<!-- Custom scripts for all pages -->
+	    	<script type="text/javascript" src="{% static 'js/dataset/remove_consensus.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 			
      
  {% endblock %}

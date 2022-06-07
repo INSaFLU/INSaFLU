@@ -147,6 +147,10 @@ class ReferenceForm(forms.ModelForm):
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True
 			self.add_error('reference_fasta', e.args[0])
+		except ValueError as e:	## (e.errno, e.strerror)
+			os.unlink(reference_fasta_temp_file_name.name)
+			some_error_in_files = True
+			self.add_error('consensus_fasta', e.args[0])
 		except: 
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True
@@ -739,7 +743,7 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 		temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.fastq.gz', delete=False)
 		if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
 			with open(temp_file_name.name, 'wb') as out: ## Open temporary file as bytes
-				out.write(path_name.file.read())                ## Read bytes into file
+				out.write(path_name.file.read())				## Read bytes into file
 		else: utils.link_file(path_name.file.name, temp_file_name.name, False)
 
 		try:
@@ -761,4 +765,3 @@ class SamplesUploadMultipleFastqForm(forms.ModelForm):
 		
 		os.unlink(temp_file_name.name)
 		return cleaned_data
-

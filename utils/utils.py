@@ -427,7 +427,6 @@ class Utils(object):
 		"""
 		n_total = 0
 		record_dict = SeqIO.index(sz_file_name, "fasta")
-		if (len(record_dict) > 0): return len(record_dict)
 		for seq in record_dict:
 			n_total += len(record_dict[seq].seq)
 		return n_total

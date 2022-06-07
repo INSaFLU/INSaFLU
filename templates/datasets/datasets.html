@@ -9,16 +9,16 @@
 {% block css %}
 {% endblock css %}
 
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Datasets" "datasets" %}
+{% endblock %}
+
 {% block extra_messages %}
 	<!-- set the messages -->
 	<div class="container">
 		<div id="id_messages_remove"></div>
 	</div>
-{% endblock %}
-
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Datasets" "datasets" %}
 {% endblock %}
 
 {% block content %}
@@ -167,7 +167,6 @@
 
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/dataset/remove_datasets.js' %}"></script>
-	    <script type="text/javascript" src="{% static 'js/dataset/dataset-add.js' %}"></script>
 
 	<script>
 	

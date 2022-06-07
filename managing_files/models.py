@@ -60,14 +60,16 @@ class Reference(models.Model):
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream',
+										'text/plain'],\
 										max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
 	## application/x-gameboy-rom because of 'gb' extension file of gbk
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/x-gameboy-rom'],\
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream',\
+								    'application/x-gameboy-rom', 'text/plain'],\
 									max_upload_size=settings.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)

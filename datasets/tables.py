@@ -7,10 +7,10 @@ import django_tables2 as tables
 from django.urls import reverse
 from django.conf import settings
 from django.db.models import F
-from datasets.models import Dataset
+from datasets.models import Dataset, DatasetConsensus
 from django.utils.safestring import mark_safe
 from constants.constants import Constants, TypePath
-from managing_files.models import Reference
+from managing_files.models import Reference, Project, ProjectSample
 
 class DatasetTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -175,7 +175,12 @@ class ConsensusTable(tables.Table):
         from crequest.middleware import CrequestMiddleware
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
-        if (user.username == Constants.USER_ANONYMOUS): return record.name
+        
+        if (user.username == Constants.USER_ANONYMOUS): return record.owner.username
+        if (user.username == record.owner.username and 
+            DatasetConsensus.objects.filter(consensus__pk=record.pk, dataset__is_deleted=False, is_deleted=False).count() == 0):
+            return mark_safe('<a href="#id_remove_modal" id="id_remove_consensus_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"' +\
+                    ' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + record.name)
         return record.name
     
     def render_consensus_fasta_name(self, **kwargs):
@@ -191,4 +196,67 @@ class ConsensusTable(tables.Table):
         queryset = queryset.annotate(owner_name = F('owner__username')).order_by(('-' if is_descending else '') + 'owner_name')
         return (queryset, True)
 
+
+class ProjectTable(tables.Table):
+#   Renders a normal value as an internal hyperlink to another page.
+#   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
+    select_ref = tables.CheckBoxColumn(accessor="pk", attrs = { "th__input": {"id": "checkBoxAll"}}, orderable=False)
+    reference = tables.Column('Reference', empty_values=())
+    samples = tables.Column('#Consensus (S/A)', orderable=False, empty_values=())
+    last_change_date = tables.Column('Last Change date', empty_values=())
+    creation_date = tables.Column('Creation date', empty_values=())
+    results = tables.LinkColumn('Options', orderable=False, empty_values=())
+    
+    class Meta:
+        model = Project
+        fields = ('select_ref', 'name', 'reference', 'last_change_date','creation_date', 'samples', 'results')
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no Projects to show..."
+    
+    def render_name(self, record):
+        return record.name
+            
+    def render_samples(self, record):
+        """
+        return a reference name
+        """
+        tip_info = '<span ><i class="tip fa fa-info-circle" title="Selected: {}\nAvailable: {}"></i></span>'.format(
+            record.number_passed_sequences, record.number_passed_sequences)
+        return mark_safe(tip_info + " ({}/{}) ".format(record.number_passed_sequences,
+                record.number_passed_sequences))
+    
+    def render_creation_date(self, **kwargs):
+        record = kwargs.pop("record")
+        return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+    
+    def render_last_change_date(self, **kwargs):
+        record = kwargs.pop("record")
+        if (record.last_change_date is None): return "Not set yet"
+        return record.last_change_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+    
+    def render_results(self, record):
+        """
+        icon with link to extra info
+        """
+        ## there's nothing to show
+        # count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
+        # count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
+        #
+        # sz_project_sample = ""
+        # if (count > 0):
+        #     sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
+        #         '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
+        #     ## only can change settings when has projects finished
+        #     #sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #     #    '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+        #     sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #         '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+        # elif (count_not_finished > 0): 
+        #     sz_project_sample = _("{} processing ".format(count_not_finished))
+        # else:    ## can change settings
+        #     sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #         '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+        #
+        # return mark_safe(sz_project_sample)
+        return ""
 

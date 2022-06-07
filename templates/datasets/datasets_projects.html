@@ -14,7 +14,7 @@
 {% block breadcrumbs %}
 	{{ block.super }}
 	{% breadcrumb "Datasets" "datasets" %}
-	{% breadcrumb "Add references to dataset" "add-references-dataset" %}
+	{% breadcrumb "Add Consensus from projects" "add-consensus-from-projects-dataset" %}
 {% endblock %}
 
 {% block content %}
@@ -41,7 +41,7 @@
 	                            <div class="pull-left">
 		                            <form method="post" action="" id="id_add_all_checked" class="form-inline pull-left">
 		                            	{% csrf_token %}
-		                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected references</button>
+		                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected Projects</button>
 		                            </form>
  		                            <form method="post" id="id_add_all_references" class="form-inline pull-left">
 		                            	{% csrf_token %}
@@ -98,12 +98,12 @@
 			
 		{% if table.page and show_paginatior %}
 		    {% block pagination %}
-		    	<label id="id-total-list" class="pull-right">Total References: {{ query_set_count }}</label>
+		    	<label id="id-total-list" class="pull-right">Total Projects: {{ query_set_count }}</label>
 		        {% bootstrap_pagination table.page url=request.get_full_path %}
 		    {% endblock pagination %}
 		  </div>
 		{% else %}
-			<label id="id-total-list" class="pull-right">Total References: {{ query_set_count }}</label>
+			<label id="id-total-list" class="pull-right">Total Projects: {{ query_set_count }}</label>
 		{% endif %}
 	
 		<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
@@ -111,7 +111,7 @@
 	{% endif %}
 {% endblock content %}
 
- {% block js %}
+{% block js %}
  		
 	<script>
 		
@@ -141,6 +141,6 @@
 	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
 			
      
- {% endblock %}
+{% endblock %}
 
 

@@ -63,12 +63,9 @@ def remove_dataset(request):
 			
 			### delete all Sequences Datasets samples
 			### this is only necessary for consistency
-# for dataset_sequence in dataset.dataset_sequences.all():
-# 	dataset_sequence.is_deleted = True
-# 	dataset_sequence.is_deleted_in_file_system = False
-# 	dataset_sequence.date_deleted = datetime.now()
-# 	dataset_sequence.save()
-			
+			for dataset_consensus in dataset.dataset_consensus.all():
+				dataset_consensus.is_deleted = True
+				dataset_consensus.save()
 			data = { 'is_ok' : True }
 		return JsonResponse(data)
 
@@ -235,4 +232,56 @@ def add_consensus_name(request):
 			}
 		return JsonResponse(data)
 
+@transaction.atomic
+@csrf_protect
+def remove_consensus(request):
+	"""
+	remove a dataset.
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		consensus_id_a = 'consensus_id'
+		
+		if (consensus_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			consensus_id = request.GET[consensus_id_a]
+			try:
+				consensus = Consensus.objects.get(pk=consensus_id)
+			except Dataset.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (consensus.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			consensus.is_deleted = True
+			consensus.is_deleted_in_file_system = False
+			consensus.date_deleted = datetime.now()
+			consensus.save()
+			
+			data = { 'is_ok' : True }
+		return JsonResponse(data)
+	
+@csrf_protect
+def validate_consensus_name(request):
+	"""
+	test if exist this reference name
+	"""
+	if request.is_ajax():
+		consensus_name = request.GET.get('consensus_name')
+		
+		data = {
+			'is_taken': Consensus.objects.filter(name__iexact=consensus_name,
+				is_deleted=False, owner=request.user).exists()
+		}
+		if (data['is_taken']): data['error_message'] = 'Exists a consensus with this name.'
+		return JsonResponse(data)
 

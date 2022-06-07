@@ -286,9 +286,9 @@ class SoftwareNames(object):
 	SOFTWARE_SET_ENV_MAFFT = "export MAFFT_BINARIES={}".format(os.path.join(settings.DIR_SOFTWARE, "mafft-{}-without-extensions/binaries".format(version)))
 	SOFTWARE_MAFFT_name = "Mafft"
 	
-	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion"
-	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino"
-	SOFTWARE_MAFFT_PARAMETERS = "--preservecase"
+	SOFTWARE_MAFFT_PARAMETERS_TWO_SEQUENCES = "--maxiterate 1000 --localpair --preservecase --leavegappyregion --quiet"
+	SOFTWARE_MAFFT_PARAMETERS_PROTEIN = "--preservecase --amino --quiet"
+	SOFTWARE_MAFFT_PARAMETERS = "--preservecase --quiet"
 	
 	SOFTWARE_CLUSTALO = os.path.join(settings.DIR_SOFTWARE, "clustalo/clustalo")
 	SOFTWARE_CLUSTALO_name = "clustalo"

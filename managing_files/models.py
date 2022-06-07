@@ -524,9 +524,16 @@ class Sample(models.Model):
 
 		if (len(vect_identify_virus) > 0):
 
-			### Corona
+			### Corona/monkeypox
 			sz_return_c = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS, [ConstantsVirus.TYPE_BetaCoV])
-			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN, [])
+			
+			## get several species
+			sz_subtype = ""
+			for sub_type_available in ConstantsVirus.VECT_SUB_TYPE_other_than_influenza:
+				sz_temp = self.__get_type__(vect_identify_virus, sub_type_available, [])
+				if len(sz_temp) == 0: continue
+				if (len(sz_subtype) > 0): sz_subtype += sz_subtype + "-" + sz_temp
+				else: sz_subtype = sz_temp 
 			if (len(sz_subtype) > 0): sz_return_c += sz_subtype if len(sz_return_c) == 0 else "-" + sz_subtype
 						
 			### Type A
@@ -651,19 +658,19 @@ class Sample(models.Model):
 						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
 		
 		## BEGIN corona
-		if (self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_GENUS) or self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_HUMAN)):
+		if (self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_GENUS) or self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_SPECIES)):
 			
 			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS) == 1):
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 1):
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 1):
 					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) > 1):
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) > 1):
 					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
 						"Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'")
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 0):
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 0):
 					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
 			else:
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_HUMAN) == 1):
+				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 1):
 					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
 						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
 				else:

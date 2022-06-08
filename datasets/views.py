@@ -9,14 +9,14 @@ from datasets.forms import ConsensusForm
 from django.views.generic import ListView
 from utils.utils import Utils
 from datasets.models import Dataset, DatasetConsensus, Consensus
-from datasets.tables import DatasetTable, ReferenceTable, ConsensusTable, ProjectTable
+from datasets.tables import DatasetTable, ReferenceTable, ConsensusTable, ProjectTable, DatasetConsensusTable
 from datasets.forms import AddReferencesDatasetForm, AddConsensusDatasetForm, AddProjectsDatasetForm
 from django.http import HttpResponseRedirect
 from extend_user.models import Profile
 from django.contrib import messages
 from django.db.models import Q
 from django_tables2 import RequestConfig
-from constants.constants import Constants
+from constants.constants import Constants, TypePath
 from utils.utils import ShowInfoMainPage
 from django.template.defaultfilters import pluralize
 from operator import attrgetter
@@ -24,6 +24,8 @@ from itertools import chain
 from utils.session_variables import clean_check_box_in_session, is_all_check_box_in_session
 from utils.software import Software
 from django.db import transaction
+
+
 
 class DatasetsView(LoginRequiredMixin, ListView):
     """
@@ -226,6 +228,7 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
             if (reference_add > 0):
                 dataset.last_change_date = datetime.datetime.now()
                 dataset.number_of_sequences_from_references += reference_add
+                dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
                 dataset.save()
             
             if (reference_add == 0):
@@ -560,6 +563,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
             if (reference_add > 0):
                 dataset.last_change_date = datetime.datetime.now()
                 dataset.number_of_sequences_from_projects += reference_add
+                dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
                 dataset.save()
             
             if (reference_add == 0):
@@ -693,4 +697,39 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
     form_valid_message = ""        ## need to have this
 
 
+class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
+    model = Project
+    template_name = 'datasets/dataset_consensus_show.html'
+    context_object_name = 'dataset_consensus'
+    
+    def get_context_data(self, **kwargs):
+        context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
+        dataset = Dataset.objects.get(pk=self.kwargs['pk'])
+        
+        ### can't see this project
+        context['nav_dataset'] = True
+        if (dataset.owner.id != self.request.user.id): 
+            context['error_cant_see'] = "1"
+            return context
+        
+        query_set = DatasetConsensus.objects.filter(dataset=dataset, is_deleted=False, is_error=False).order_by('creation_date')
+        tag_search = 'search_add_project_sample'
+        ### filter the search
+        if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
+            query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
+                                        Q(type_subtype__icontains=self.request.GET.get(tag_search)))
+        table = DatasetConsensusTable(query_set)
+        RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
 
+        if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get('search_add_project_sample')        
+        context['table'] = table
+        context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
+        context['query_set_count'] = query_set.count()
+        context['dataset'] = dataset
+        context['different_references'] = dataset.get_number_different_references()
+        context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
+        context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
+
+        ## Files
+            
+        return context

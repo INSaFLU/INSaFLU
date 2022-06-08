@@ -14,7 +14,7 @@ from extend_user.models import Profile
 from django.conf import settings
 from datetime import datetime
 from django.db import transaction
-from datasets.models import Dataset, Consensus
+from datasets.models import Dataset, Consensus, DatasetConsensus
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -269,7 +269,56 @@ def remove_consensus(request):
 			
 			data = { 'is_ok' : True }
 		return JsonResponse(data)
-	
+
+
+@transaction.atomic
+@csrf_protect
+def remove_consensus_in_dataset(request):
+	"""
+	remove a dataset.
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		consensus_id_a = 'consensus_id'
+		
+		if (consensus_id_a in request.GET):
+			
+			## some pre-requisites
+			if (not request.user.is_active or not request.user.is_authenticated): return JsonResponse(data)
+			try:
+				profile = Profile.objects.get(user__pk=request.user.pk)
+			except Profile.DoesNotExist:
+				return JsonResponse(data)
+			if (profile.only_view_project): return JsonResponse(data)
+			
+			consensus_id = request.GET[consensus_id_a]
+			try:
+				dataset_consensus = DatasetConsensus.objects.get(pk=consensus_id)
+			except Dataset.DoesNotExist:
+				return JsonResponse(data)
+			
+			## different owner or belong to a project not deleted
+			if (dataset_consensus.dataset.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### now you can remove
+			dataset_consensus.is_deleted = True
+			dataset_consensus.date_deleted = datetime.now()
+			dataset_consensus.save()
+			
+			if not dataset_consensus.project_sample is None:
+				dataset_consensus.dataset.number_of_sequences_from_projects -= 1
+				dataset_consensus.dataset.save() 
+			elif not dataset_consensus.consensus is None:
+				dataset_consensus.dataset.number_of_sequences_from_consensus -= 1
+				dataset_consensus.dataset.save()
+			elif not dataset_consensus.reference is None:
+				dataset_consensus.dataset.number_of_sequences_from_references -= 1
+				dataset_consensus.dataset.save()
+
+			data = { 'is_ok' : True }
+		return JsonResponse(data)
+
+
 @csrf_protect
 def validate_consensus_name(request):
 	"""

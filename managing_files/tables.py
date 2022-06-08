@@ -52,13 +52,11 @@ class ReferenceTable(tables.Table):
 	
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
-		href = record.get_reference_fasta(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
+		return mark_safe(record.get_consensus_fasta_web())
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
-		href = record.get_reference_gbk(TypePath.MEDIA_URL)		
-		return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_genbank_name, self.SHORT_NAME_LENGTH) + '</a>')
+		return mark_safe(record.get_reference_gb_web())
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")

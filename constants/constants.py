@@ -25,6 +25,7 @@ class Constants(object):
 	## MAX LOCUS FROM FASTA
 	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
+	SHORT_NAME_LENGTH = 20				### cut length name to show in the tables
 	
 	### has the minimun number of files to calculate global files
 	MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES = 2

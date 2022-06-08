@@ -10,7 +10,9 @@ from django.db.models import F
 from datasets.models import Dataset, DatasetConsensus
 from django.utils.safestring import mark_safe
 from constants.constants import Constants, TypePath
+from settings.constants_settings import ConstantsSettings
 from managing_files.models import Reference, Project, ProjectSample
+from settings.default_software_project_sample import DefaultProjectSoftware
 
 class DatasetTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -25,7 +27,7 @@ class DatasetTable(tables.Table):
     
     class Meta:
         model = Dataset
-        fields = ('name', 'last_change_date','creation_date', 'sequences', 'results')
+        fields = ('name', 'last_change_date','creation_date', 'totla_alerts', 'sequences', 'results')
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Datasets to show..."
     
@@ -84,7 +86,7 @@ class DatasetTable(tables.Table):
         count = record.number_of_sequences_from_projects + record.number_of_sequences_from_consensus + record.number_of_sequences_from_references
         sz_project_sample = ""
         if (count > 0):
-            sz_project_sample = '<a href=' + reverse('show-sequences-dataset', args=[record.pk]) + ' data-toggle="tooltip" title="See sequences"> ' +\
+            sz_project_sample = '<a href=' + reverse('show-dataset-consensus', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
                 '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
             ## Can also launch all the sequeneces in the NextTrain
             # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
@@ -131,13 +133,11 @@ class ReferenceTable(tables.Table):
     
     def render_reference_fasta_name(self, **kwargs):
         record = kwargs.pop("record")
-        href = record.get_reference_fasta(TypePath.MEDIA_URL)        
-        return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
+        return mark_safe(record.get_consensus_fasta_web())
 
     def render_reference_genbank_name(self, **kwargs):
         record = kwargs.pop("record")
-        href = record.get_reference_gbk(TypePath.MEDIA_URL)        
-        return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.reference_genbank_name, self.SHORT_NAME_LENGTH) + '</a>')
+        return mark_safe(record.get_reference_gb_web())
 
     def render_creation_date(self, **kwargs):
         record = kwargs.pop("record")
@@ -185,8 +185,7 @@ class ConsensusTable(tables.Table):
     
     def render_consensus_fasta_name(self, **kwargs):
         record = kwargs.pop("record")
-        href = record.get_consensus_fasta(TypePath.MEDIA_URL)        
-        return mark_safe('<a href="' + href + '" download>' + self.constants.short_name(record.consensus_fasta_name, self.SHORT_NAME_LENGTH) + '</a>')
+        return mark_safe(record.get_consensus_fasta_web())
 
     def render_creation_date(self, **kwargs):
         record = kwargs.pop("record")
@@ -240,23 +239,159 @@ class ProjectTable(tables.Table):
         """
         ## there's nothing to show
         # count = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=True).count()
-        # count_not_finished = ProjectSample.objects.filter(project__id=record.id, is_deleted=False, is_error=False, is_finished=False).count()
-        #
-        # sz_project_sample = ""
+        
+        sz_project_sample = "---"
         # if (count > 0):
-        #     sz_project_sample = '<a href=' + reverse('show-sample-project-results', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
+        #     sz_project_sample = '<a href=' + reverse('show-dataset-consensus', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
         #         '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
         #     ## only can change settings when has projects finished
         #     #sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
         #     #    '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
-        #     sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-        #         '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-        # elif (count_not_finished > 0): 
-        #     sz_project_sample = _("{} processing ".format(count_not_finished))
+        #     #sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #     #    '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
         # else:    ## can change settings
-        #     sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #     #sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
+        #     #    '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+        
+        return mark_safe(sz_project_sample)
+
+class DatasetConsensusTable(tables.Table):
+    """
+    Has the results from the result samples processed against references
+    """
+    
+    name = tables.Column('Name', empty_values=())
+    source = tables.Column('Source', empty_values=())
+    type_and_subtype = tables.LinkColumn('Classification', empty_values=())
+    alerts = tables.Column('Alerts', empty_values=())
+    technology = tables.Column('Technology', empty_values=())
+    consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
+    results = tables.LinkColumn('Options', orderable=False, empty_values=())
+    EMPTY = "---"
+    
+    class Meta:
+        model = DatasetConsensus
+        fields = ('name', 'source', 'type_and_subtype', 'technology',\
+            'alerts', 'consensus_file', 'results')
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no samples processed to show..."
+    
+    def render_sample_name(self, record):
+        """
+        return sample name
+        """
+        from crequest.middleware import CrequestMiddleware
+        current_request = CrequestMiddleware.get_request()
+        
+        name = DatasetConsensusTable.EMPTY
+        if not record.project_sample is None: name = record.sample.name
+        elif not record.consensus is None or not record.reference is None: name = record.name
+        else: return name
+        
+        user = current_request.user
+        if (user.username == Constants.USER_ANONYMOUS): return record.sample.name;
+        if (user.username == record.project.owner.username):
+            return mark_safe('<a href="#id_remove_modal" id="id_remove_consensus_modal" data-toggle="modal"' +\
+                    ' ref_name="' + name + '" pk="' + str(record.pk) + '" +\
+                    " ref_project="' + name + '" data-toggle="tooltip" title="Remove consensus">' +\
+                    '<i class="fa fa-trash"></i></span> </a>')
+                    ## '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
+                    ## '{}</a>'.format(record.sample.name))
+        return name
+
+    def render_technology(self, record):
+        """ shows if it is Illumina or Minion """
+        if  not record.project_sample is None:
+            return ConstantsSettings.TECHNOLOGY_illumina if record.project_sample.sample.is_type_fastq_gz_sequencing()\
+                else ConstantsSettings.TECHNOLOGY_minion
+        return self.EMPTY
+
+    def render_alerts(self, record):
+        """
+        return number
+        """
+        return "{}".format(record.alert_first_level + record.alert_second_level)
+    
+    def render_source(self, record):
+        """
+        return source of choise
+        """
+        if  not record.project_sample is None: 
+            return "Con. Project"
+        elif not record.consensus is None:
+            return "Private Con."
+        elif not record.reference is None:
+            return "Reference"
+        return DatasetConsensusTable.EMPTY
+    
+    def render_type_and_subtype(self, record):
+        """
+        return number
+        """
+        if  not record.project_sample is None: 
+            return record.project_sample.sample.type_subtype
+        return self.EMPTY
+    
+        return record.sample.type_subtype
+    
+    def render_consensus_file(self, record):
+        """
+        return link to consensus file
+        """
+        default_software = DefaultProjectSoftware()
+        if  not record.project_sample is None: 
+            return record.project_sample.get_consensus_file_web(not default_software.include_consensus(record.project_sample))
+        elif not record.consensus is None:
+            return record.consensus.get_consensus_fasta_web()
+        elif not record.reference is None:
+            return record.reference.get_reference_fasta_web()
+        return DatasetConsensusTable.EMPTY
+
+    def render_results(self, record):
+        """
+        icon with link to extra info
+        """
+        # from crequest.middleware import CrequestMiddleware
+        # current_request = CrequestMiddleware.get_request()
+        # user = current_request.user
+        # str_links = ""
+        # if (user.username != Constants.USER_ANONYMOUS):
+        #     str_links = '<a href=' + reverse('sample-project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
         #         '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
         #
-        # return mark_safe(sz_project_sample)
-        return ""
+        # b_space_add = False
+        # if (record.is_mask_consensus_sequences):
+        #     str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample run with user-selected parameters (see update 30 Oct 2020)">' +\
+        #         '<span ><i class="padding-button-table fa fa-calendar-check-o"></i></a>'
+        # else:
+        #     b_space_add = True
+        #     str_links += '  '
+        #
+        # ### check if it was downsized
+        # if (self.manage_database.is_sample_downsized(record.sample)):
+        #     str_links += '<a href="javascript:void(0);" data-toggle="tooltip" title="Sample was downsized">' +\
+        #         '<span ><i class="padding-button-table warning_fa_icon fa fa-level-down"></i></a>'
+        # elif (not b_space_add):
+        #     str_links += '  '
+        #
+        # str_links += '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information" class="padding-button-table">' +\
+        #         '<span ><i class="fa fa-info-circle"></i> More info</a>'
+        # return mark_safe(str_links)
+        return DatasetConsensusTable.EMPTY
 
+    def order_sample_name(self, queryset, is_descending):
+        queryset = queryset.annotate(sample_name = F('sample__name')).order_by(('-' if is_descending else '') + 'sample_name')
+        return (queryset, True)
+
+    def order_type_and_subtype(self, queryset, is_descending):
+        queryset = queryset.annotate(type_subtype = F('sample__type_subtype')).order_by(('-' if is_descending else '') + 'type_subtype')
+        return (queryset, True)
+
+    def order_alerts(self, queryset, is_descending):
+        queryset = queryset.annotate(alerts = F('alert_first_level') + F('alert_second_level')).order_by(('-' if is_descending else '') + 'alerts')
+        return (queryset, True)
+    
+    def order_technology(self, queryset, is_descending):
+        """ shows if it is Illumina or Minion """
+        queryset = queryset.annotate(technology = F('sample__type_of_fastq')).order_by(('-' if is_descending else '') + 'technology')
+        return (queryset, True)

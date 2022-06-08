@@ -54,6 +54,8 @@ class MetaKey(models.Model):
 		ordering = ['name', ]
 		
 class Reference(models.Model):
+	constants = Constants()
+	
 	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
 	display_name = models.CharField(max_length=200, db_index=True, default='', verbose_name='Display name')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
@@ -138,7 +140,18 @@ class Reference(models.Model):
 		if (os.path.exists(out_file)):
 			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_fasta(\
 						TypePath.MEDIA_URL), os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
-						self.name))
+						self.constants.short_name(self.reference_fasta_name, Constants.SHORT_NAME_LENGTH)))
+		return _('File not available.')
+	
+	def get_reference_gb_web(self):
+		"""
+		return web link for reference
+		"""
+		out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_gbk(\
+						TypePath.MEDIA_URL), os.path.basename(self.get_reference_gbk(TypePath.MEDIA_ROOT)),
+						self.constants.short_name(self.reference_genbank_name, Constants.SHORT_NAME_LENGTH)))
 		return _('File not available.')
 
 	def get_gff3(self, type_path):

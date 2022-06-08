@@ -213,3 +213,4 @@ class ConsensusForm(forms.ModelForm):
         os.unlink(reference_fasta_temp_file_name.name)
         return cleaned_data
 
+

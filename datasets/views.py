@@ -61,7 +61,6 @@ class DatasetsView(LoginRequiredMixin, ListView):
         context['nav_dataset'] = True
         context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
         context['query_set_count'] = query_set.count()
-        
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         return context
 
@@ -77,7 +76,7 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
     template_name = 'datasets/datasets_references.html'
     success_url = reverse_lazy('datasets')
     context_object_name = 'datasets'
-    
+
     if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
     else: logger = logging.getLogger("fluWebVirus.production")
 
@@ -217,6 +216,7 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
                     try:
                         reference = Reference.objects.get(pk=id_reference)
                         dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = reference.name
                         dataset_consensus.dataset = dataset
                         dataset_consensus.reference = reference
                         dataset_consensus.save() 
@@ -378,6 +378,7 @@ class AddDatasetsConsensusView(LoginRequiredMixin, FormValidMessageMixin, generi
                     try:
                         consensus = Consensus.objects.get(pk=id_consensus)
                         dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = consensus.name
                         dataset_consensus.dataset = dataset
                         dataset_consensus.consensus = consensus
                         dataset_consensus.save() 
@@ -553,12 +554,31 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                         continue
                     except DatasetConsensus.DoesNotExist:
                         dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = project_sample.sample.name
+                        dataset_consensus.type_subtype = project_sample.sample.type_subtype
                         dataset_consensus.dataset = dataset
                         dataset_consensus.project_sample = project_sample
                         dataset_consensus.is_project_sample_finished = project_sample.is_finished
                         dataset_consensus.save() 
                         reference_add += 1
-                    
+                
+                ### Add the reference of this project if not there yet
+                try:
+                    dataset_consensus = DatasetConsensus.objects.get(reference=project.reference,
+                                        dataset=dataset)
+                    if dataset_consensus.is_deleted or dataset_consensus.is_error:
+                        dataset_consensus.is_deleted = False
+                        dataset_consensus.is_error = False
+                        dataset_consensus.save()
+                        reference_add += 1
+                except DatasetConsensus.DoesNotExist:
+                    dataset_consensus = DatasetConsensus()
+                    dataset_consensus.name = project.reference.name
+                    dataset_consensus.dataset = dataset
+                    dataset_consensus.reference = project.reference
+                    dataset_consensus.save() 
+                    reference_add += 1
+
             ### necessary to calculate the global results again 
             if (reference_add > 0):
                 dataset.last_change_date = datetime.datetime.now()

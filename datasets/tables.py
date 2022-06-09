@@ -283,21 +283,16 @@ class DatasetConsensusTable(tables.Table):
         from crequest.middleware import CrequestMiddleware
         current_request = CrequestMiddleware.get_request()
         
-        name = DatasetConsensusTable.EMPTY
-        if not record.project_sample is None: name = record.sample.name
-        elif not record.consensus is None or not record.reference is None: name = record.name
-        else: return name
-        
         user = current_request.user
         if (user.username == Constants.USER_ANONYMOUS): return record.sample.name;
         if (user.username == record.project.owner.username):
             return mark_safe('<a href="#id_remove_modal" id="id_remove_consensus_modal" data-toggle="modal"' +\
-                    ' ref_name="' + name + '" pk="' + str(record.pk) + '" +\
-                    " ref_project="' + name + '" data-toggle="tooltip" title="Remove consensus">' +\
+                    ' ref_name="' + record.name + '" pk="' + str(record.pk) + '" +\
+                    " ref_project="' + record.name + '" data-toggle="tooltip" title="Remove consensus">' +\
                     '<i class="fa fa-trash"></i></span> </a>')
                     ## '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
                     ## '{}</a>'.format(record.sample.name))
-        return name
+        return record.name
 
     def render_technology(self, record):
         """ shows if it is Illumina or Minion """

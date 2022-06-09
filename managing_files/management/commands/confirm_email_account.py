@@ -16,7 +16,7 @@ class Command(BaseCommand):
 		super(Command, self).__init__(*args, **kwargs)
 	
 	def add_arguments(self, parser):
-		parser.add_argument('username', type=str, help='User name to activate email...')
+		parser.add_argument('--username', type=str, help='User name to activate email...')
 
 	# A command must define handle()
 	def handle(self, *args, **options):

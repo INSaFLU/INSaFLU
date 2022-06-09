@@ -798,6 +798,9 @@ class Project(models.Model):
 	PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = "mask_all_consensus" 		### masking all consensus, defined by user
 	
 	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
+
+	PROJECT_FILE_NAME_Aln2pheno_report = "aln2pheno_final_report.tsv"				### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_flagged = "aln2pheno_flagged_mutation_report.tsv"	### has results of aln2pheno
 	
 	PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"					### Several files zipped
 	

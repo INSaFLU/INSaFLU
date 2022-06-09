@@ -2330,8 +2330,7 @@ class Software(object):
 		# merge fasta files
 
 		# TODO ? write unwrapped fasta
-
-		# convert "-" in fasta names to "/"
+		# convert "-" in fasta names to "/" ?
 
 		# TODO add to utils function fasta_unwrap:
 		# from Bio.SeqIO import FastaIO
@@ -2347,6 +2346,7 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to copy new sequences file " + sequences + " to temp folder " + temp_dir + "/data/new_sequences.fasta")
 
+		# TODO pass this to configurable constants?
 		cmd = "cat " + temp_dir + "/data/new_sequences.fasta " + temp_dir + "/data/references_sequences.fasta > " + temp_dir + "/data/sequences.fasta"
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
@@ -2433,14 +2433,15 @@ class Software(object):
 				
 				handle_write.write("\t".join(to_write)+"\n")	
 
-		root = "Wuhan/Hu-1/2019"
+		# eventually there will be a template to setup and configure the build
+		#root = "Wuhan/Hu-1/2019"
 		# Need to add root to the end of config file
-		cmd = "echo \'  root: \""+root+"\"\' >> " + temp_dir + '/config/config.yaml'
-		exit_status = os.system(cmd)
-		if (exit_status != 0):
-			self.logger_production.error('Fail to run: ' + cmd)
-			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to append reference to config file in temp folder " + temp_dir)
+		#cmd = "echo \'  root: \""+root+"\"\' >> " + temp_dir + '/config/config.yaml'
+		#exit_status = os.system(cmd)
+		#if (exit_status != 0):
+		#	self.logger_production.error('Fail to run: ' + cmd)
+		#	self.logger_debug.error('Fail to run: ' + cmd)
+		#	raise Exception("Fail to append reference to config file in temp folder " + temp_dir)
 
 		# Run nextstrain
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
@@ -2455,19 +2456,29 @@ class Software(object):
 		return temp_dir
 
 
-	def run_aln2pheno(self, sequences, reference):
+	def run_aln2pheno(self, sequences, reference, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):
 		"""
 		run aln2pheno
 		:param sequences: sequence file with aminoacids from the SARS-CoV-2 S protein
 		:param reference: name of the reference (must be one of the sequences)
-		:out temp folder with results
+		:param report: output file with final report
+		:param flagged: output file with flagged mutations
+		:param db: database for aln2pheno
+		:out exit status
 		"""
 
 		# Create a temp folder
 		temp_dir = os.path.join(self.utils.get_temp_dir())
+		temp_dir = temp_dir + "/tmp"
 
+		# Add as parameter...
+		#db_file =  os.path.join(settings.MEDIA_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
+		#db_file =  os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_ALN2PHENO, db)
+		db_file =  os.path.join(settings.STATIC_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
+		
 		# Run aln2pheno
-		cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
+		cmd = "{} --db {} -g S --algn {} -r {} --odir {} --output aln2pheno".format(SoftwareNames.SOFTWARE_ALN2PHENO, db_file, sequences, reference, temp_dir)
+		#cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
 
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
@@ -2475,9 +2486,13 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run aln2pheno in temp folder " + temp_dir)
 
-		# collect results and check content
+		# copy results to output
+		self.utils.copy_file(temp_dir + '/aln2pheno_final_report.tsv', report)
+		self.utils.copy_file(temp_dir + '/aln2pheno_flagged_mutation_report.tsv', flagged)
 
-		return temp_dir
+		self.utils.remove_dir(temp_dir)
+
+		return exit_status
 
 	
 class Contigs2Sequences(object):

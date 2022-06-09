@@ -144,7 +144,8 @@ class SoftwareNames(object):
 	
 	SOFTWARE_Pangolin_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate"))
 	SOFTWARE_Pangolin = "pangolin"
-	SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin
+	#SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin
+	SOFTWARE_Pangolin_VERSION = "v4.0.6"					## Version Name: pangolin
 	SOFTWARE_Pangolin_name = "Pangolin"					## Pangolin
 	SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"	## Pangolin
 	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
@@ -318,6 +319,9 @@ class SoftwareNames(object):
 	SOFTWARE_GENERATE_CONSENSUS_name_extended = "Generate consensus"
 	SOFTWARE_GENERATE_CONSENSUS_vesion = "1"
 	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
+
+	### algn2pheno
+	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/run_algn2pheno.sh")
 
 	### Nextstrain
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/run_nextstrain.sh")

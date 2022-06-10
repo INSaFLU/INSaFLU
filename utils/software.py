@@ -1548,7 +1548,6 @@ class Software(object):
 					message = "Info: Abricate turned OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
-				sample_to_update.save()
 			else:
 				manage_database = ManageDatabase()
 				manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
@@ -1558,7 +1557,7 @@ class Software(object):
 				else: sample_to_update.number_alerts += 1
 				sample_to_update.is_ready_for_projects = False
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-				sample_to_update.save()
+			sample_to_update.save()
 			
 			### set the flag of the end of the task		
 			meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)

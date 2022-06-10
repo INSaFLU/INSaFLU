@@ -90,7 +90,9 @@ def add_dataset_name(request):
 				return JsonResponse(data)
 			if (profile.only_view_project): return JsonResponse(data)
 			
-			dataset_name_str = request.GET[dataset_name]
+			dataset_name_str = request.GET[dataset_name].strip()
+			if len(dataset_name_str) == 0: return JsonResponse(data)
+			
 			try:
 				dataset = Dataset.objects.get(name=dataset_name_str, owner__pk=request.user.pk,
 										is_deleted=False)

@@ -73,7 +73,7 @@
 	                {% empty %}
 	                  {% if table.empty_text %}
 	                  {% block table.tbody.empty_text %}
-	                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+	                  	<tr id="id_empty_text_table"><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
 	                  {% endblock table.tbody.empty_text %}
 	                  {% endif %}
 	                {% endfor %}
@@ -167,6 +167,7 @@
 
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/dataset/remove_datasets.js' %}"></script>
+	    <script type="text/javascript" src="{% static 'js/dataset/add_datasets.js' %}"></script>
 
 	<script>
 	

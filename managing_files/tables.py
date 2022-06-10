@@ -52,11 +52,11 @@ class ReferenceTable(tables.Table):
 	
 	def render_reference_fasta_name(self, **kwargs):
 		record = kwargs.pop("record")
-		return mark_safe(record.get_consensus_fasta_web())
+		return record.get_reference_fasta_web()
 
 	def render_reference_genbank_name(self, **kwargs):
 		record = kwargs.pop("record")
-		return mark_safe(record.get_reference_gb_web())
+		return record.get_reference_gb_web()
 
 	def render_creation_date(self, **kwargs):
 		record = kwargs.pop("record")

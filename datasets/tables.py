@@ -133,11 +133,11 @@ class ReferenceTable(tables.Table):
     
     def render_reference_fasta_name(self, **kwargs):
         record = kwargs.pop("record")
-        return mark_safe(record.get_consensus_fasta_web())
+        return record.get_reference_fasta_web()
 
     def render_reference_genbank_name(self, **kwargs):
         record = kwargs.pop("record")
-        return mark_safe(record.get_reference_gb_web())
+        return record.get_reference_gb_web()
 
     def render_creation_date(self, **kwargs):
         record = kwargs.pop("record")
@@ -276,7 +276,7 @@ class DatasetConsensusTable(tables.Table):
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no samples processed to show..."
     
-    def render_sample_name(self, record):
+    def render_name(self, record):
         """
         return sample name
         """
@@ -284,12 +284,12 @@ class DatasetConsensusTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         
         user = current_request.user
-        if (user.username == Constants.USER_ANONYMOUS): return record.sample.name;
-        if (user.username == record.project.owner.username):
+        if (user.username == Constants.USER_ANONYMOUS): return record.name;
+        if (user.username == record.dataset.owner.username):
             return mark_safe('<a href="#id_remove_modal" id="id_remove_consensus_modal" data-toggle="modal"' +\
                     ' ref_name="' + record.name + '" pk="' + str(record.pk) + '" +\
                     " ref_project="' + record.name + '" data-toggle="tooltip" title="Remove consensus">' +\
-                    '<i class="fa fa-trash"></i></span> </a>')
+                    '<i class="fa fa-trash"></i></span> {}</a>'.format(record.name))
                     ## '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
                     ## '{}</a>'.format(record.sample.name))
         return record.name

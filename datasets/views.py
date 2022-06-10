@@ -525,7 +525,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                 vect_sample_id_add = vect_sample_id_add_temp
             
             ### start adding...
-            reference_add = 0
+            reference_add, consensus_add = 0, 0
             for id_project in vect_sample_id_add:
                 
                 try:
@@ -546,11 +546,11 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                             dataset_consensus.is_deleted = False
                             dataset_consensus.is_error = False
                             dataset_consensus.save()
-                            reference_add += 1
+                            consensus_add += 1
                         ## now is finished and before is not finished yet
                         elif (project_sample.is_finished and not dataset_consensus.is_project_sample_finished):
                             dataset_consensus.is_project_sample_finished = True
-                            reference_add += 1
+                            consensus_add += 1
                         continue
                     except DatasetConsensus.DoesNotExist:
                         dataset_consensus = DatasetConsensus()
@@ -560,7 +560,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                         dataset_consensus.project_sample = project_sample
                         dataset_consensus.is_project_sample_finished = project_sample.is_finished
                         dataset_consensus.save() 
-                        reference_add += 1
+                        consensus_add += 1
                 
                 ### Add the reference of this project if not there yet
                 try:
@@ -582,7 +582,8 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
             ### necessary to calculate the global results again 
             if (reference_add > 0):
                 dataset.last_change_date = datetime.datetime.now()
-                dataset.number_of_sequences_from_projects += reference_add
+                dataset.number_of_sequences_from_projects += consensus_add
+                dataset.number_of_sequences_from_references += reference_add
                 dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
                 dataset.save()
             

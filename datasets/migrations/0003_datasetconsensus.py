@@ -19,7 +19,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('creation_date', models.DateTimeField(auto_now_add=True, verbose_name='uploaded date')),
-                ('is_finished', models.BooleanField(default=False)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('is_error', models.BooleanField(default=False)),
                 ('alert_first_level', models.IntegerField(default=0)),

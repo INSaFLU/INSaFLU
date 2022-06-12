@@ -169,10 +169,9 @@ class CollectExtraData(object):
 		try:
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)

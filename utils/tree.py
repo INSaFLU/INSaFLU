@@ -16,6 +16,7 @@ from constants.constants import Constants
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
+from django.conf import settings
 import os, logging, time
 
 
@@ -27,7 +28,9 @@ class CreateTree(object):
 	utils = Utils()
 	software_names = SoftwareNames()
 	software = Software()
-	logger_production = logging.getLogger("fluWebVirus.production")
+	
+	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+	else: logger = logging.getLogger("fluWebVirus.production")
 	
 	def __init__(self):
 		'''
@@ -41,27 +44,27 @@ class CreateTree(object):
 		"""
 		
 		start= time.time()
-		self.logger_production.info("START TREE and ALIGNEMTS:")
+		self.logging.info("START TREE and ALIGNEMTS:")
 		
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
-		self.logger_production.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		self.logging.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
 		start = time.time()
 			
 		proteins = Proteins()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, owner)
 		### create for single sequences
 		for sequence_name in geneticElement.get_sorted_elements():
-			self.logger_production.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logging.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
 			### create the protein alignments
-			self.logger_production.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logging.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			proteins.create_alignement_for_element(project, owner, geneticElement, sequence_name)
 			
-		self.logger_production.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
+		self.logging.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
 		
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
@@ -278,5 +281,16 @@ class CreateTree(object):
 		if (os.path.exists(path_file)): os.unlink(path_file)
 		
 
-
+	def create_tree_and_alignments_dataset(self, dataset, owner):
+		"""
+		create both trees and the alignments
+		"""
+		
+		start= time.time()
+		self.logger.info("START TREE and ALIGNEMTS:")
+		
+		### create tree and alignments for all genes
+		self.create_tree_and_alignments(dataset, owner)
+		self.logging.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		start = time.time()
 		

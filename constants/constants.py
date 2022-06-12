@@ -60,6 +60,7 @@ class Constants(object):
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
 	DIR_PROCESSED_FILES_PROJECT = "projects/result"
 	DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
+	DIR_PROCESSED_FILES_DATASETS = "datasets/result"
 
 	DIR_ICONS = "icons"
 	DIR_TEMPLATE_INPUT = "template_input"
@@ -291,6 +292,7 @@ class TypeFile(object):
 	TYPE_FILE_fastq_gz = "fastq.gz"								## fastq.fz files
 	TYPE_FILE_sample_file = "sample-file imported" 				## file that the user import with sample descriptions
 	TYPE_FILE_sample_file_metadata = "sample-file metadata" 	## file that the user import with new metadata
+	TYPE_FILE_dataset_file_metadata = "dataset-file metadata" 	## file that the user import with new metadata
 
 	
 class FileExtensions(object):

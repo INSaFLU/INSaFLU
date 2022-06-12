@@ -248,7 +248,7 @@ $('#id-remove-button').on('click', function(){
 	$.ajax({
         url: $('#id-modal-body-remove-sample').attr("remove-single-value-url"),
         data : { 
-        	project_sample_id : $('#id-modal-body-remove-sample').attr('pk'),
+        	consensus_id : $('#id-modal-body-remove-sample').attr('pk'),
     		csrfmiddlewaretoken: '{{ csrf_token }}'
         }, // data sent with the post request
         		

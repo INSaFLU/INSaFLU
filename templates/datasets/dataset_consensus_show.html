@@ -11,7 +11,6 @@
 		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
 		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
-		<link rel="stylesheet" href="{% static 'vendor/tablefilter/style/tablefilter.css' %}" type="text/css">
 {% endblock css %}
 
 {% block extra_messages %}
@@ -183,6 +182,22 @@
 											</div>
 										</div>
 										
+										<!-- Meta Data -->
+										<div class="btn-group">
+											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			    								Meta Data for NextStrain
+			  								</button>
+			  								<div class="dropdown-menu">
+			  									{% if file_meta_data_csv %} 
+			  										{{ file_meta_data_csv }}
+			  										{{ file_meta_data_tsv }}
+			  										<div class="dropdown-divider"></div> 
+			  									{% endif %}
+			  									<a href="{% url 'dataset-update-metadata' dataset.pk %}" data-title="Upload metadata to update on {{dataset.name}} dataset from csv/tsv file" 
+			  										class="dropdown-item" ><span class="hidden-phone"> Update metadata</span></a>
+											</div>
+										</div>
+										
 										<!-- Show nextClade link -->
 										<!-- {% if nextclade_link_covid or nextclade_link_a_h3n2 %}
 											<div class="btn-group" style="padding-left:20px" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
@@ -264,7 +279,7 @@
 					<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 				{% endif %}
 		
-				<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
 				
 				<!-- The Modal -->
 				<!-- The remove Modal -->
@@ -302,7 +317,6 @@
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/dataset/show-dataset-consensus.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
 	    	
 	    	<!--  JS to insaphylo -->

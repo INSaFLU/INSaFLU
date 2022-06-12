@@ -90,14 +90,16 @@ class Utils(object):
 	def get_unique_file(self, file_name):
 		"""
 		get unique file name from a file_name
-		return '<path file_name>/<random number>_<file_name>'
+		return '<path file_name>/<file_name>'
+		OR if exists
+		return '<path file_name>/<random number>/<file_name>'
 		"""
-		temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+		temp_file_name = ntpath.basename(file_name.replace(" ", "_"))
 		main_path = os.path.dirname(file_name)
 		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		while 1:
 			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
-			temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+			temp_file_name = os.path.join(str(random.randrange(10000000, 99999999, 10)), ntpath.basename(file_name))
 		return os.path.join(main_path, temp_file_name.replace(" ", "_"))
 
 	def get_temp_file(self, file_name, sz_type):

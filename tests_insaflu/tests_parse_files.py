@@ -1010,6 +1010,9 @@ class Test(TestCase):
 													TypeFile.TYPE_FILE_sample_file), os.path.basename(txt_file))
 		sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(txt_file, sz_file_to)
+		### test unique name repeated
+		sz_file_to_temp = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		self.assertTrue(self.utils.is_integer(sz_file_to_temp.split('/')[-2]))
 		
 		try:
 			type_file_sample_files = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)

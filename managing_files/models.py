@@ -29,6 +29,7 @@ def user_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
 	return 'uploads/generic_data/user_{0}/{1}'.format(instance.owner.id, filename)
 
+
 class SeasonReference(models.Model):
 	"""
 	Each sample needs a dataset 
@@ -1274,6 +1275,7 @@ class ProcessControler(models.Model):
 	PREFIX_SAMPLE = "sample_"
 	PREFIX_PROJECT_SAMPLE = "project_sample_"
 	PREFIX_PROJECT = "project_"
+	PREFIX_DATASET = "dataset_"
 	PREFIX_UPLOAD_FILES = "upload_files_"
 	PREFIX_LINK_FILES_USER = "link_files_user_"
 	PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
@@ -1304,6 +1306,8 @@ class ProcessControler(models.Model):
 		return "{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk)
 	def get_name_project(self, project):
 		return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
+	def get_name_dataset(self, dataset):
+		return "{}{}".format(ProcessControler.PREFIX_DATASET, dataset.pk)
 	def get_name_upload_files(self, upload_files):
 		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
 	def get_name_link_files_user(self, user):

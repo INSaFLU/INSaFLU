@@ -117,7 +117,8 @@ class MetaKeyAndValue(object):
 	META_KEY_Elements_And_CDS_Reference = "Elements And CDS"		### has the elements and the CDS
 	
 	### has the max sample length for a specific project
-	META_KEY_Project_max_sample_length = "Project_max_sample_length"### has the max sample length for a specific project
+	META_KEY_Project_max_sample_length = "Project_max_sample_length"	### has the max sample length for a specific project
+	META_KEY_Dataset_max_name_length = "Dataset_max_name_length"			### has the max sample length for a specific dataset
 
 	### MetaKey for the alerts
 	META_KEY_Alert_First_level = "AlertFirstLevel"			### has the alert description for highest level alert

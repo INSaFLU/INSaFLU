@@ -6,16 +6,19 @@ Created on 31/05/2022
 import os
 from django import forms
 from managing_files.models import Reference, Project
+from datasets.models import UploadFiles
 from datasets.models import Consensus
 from utils.utils import Utils
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from crispy_forms.helper import FormHelper
 from django.core.files.temp import NamedTemporaryFile
-from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button
+from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, HTML
 from django.urls import reverse
 from constants.constants import Constants
 from utils.software import Software
+from django.utils.safestring import mark_safe
+from utils.parse_in_files import ParseInFiles
 
 class AddReferencesDatasetForm(forms.ModelForm):
     """
@@ -214,3 +217,77 @@ class ConsensusForm(forms.ModelForm):
         return cleaned_data
 
 
+
+class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
+    """
+    Upload csv file to update metadata 
+    """
+    error_css_class = 'error'
+    
+    class Meta:
+        model = UploadFiles
+        exclude = ()
+        fields = ('path_name', )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        self.pk = kwargs.pop('pk')
+        super(DatastesUploadDescriptionMetadataForm, self).__init__(*args, **kwargs)
+        
+        
+        field_text= [
+            ('path_name', 'File name', '"csv" or "tsv" file with metadata to update existing samples.', True),
+        ]
+        for x in field_text:
+            self.fields[x[0]].label = x[1]
+            self.fields[x[0]].help_text = x[2]
+            self.fields[x[0]].required = x[3]
+        
+        self.helper = FormHelper()
+        self.helper.form_method = 'POST'
+        self.helper.layout = Layout(
+            HTML('<p> </p>'),
+            HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+                    Constants.FILE_TEMPLATE_INPUT_METADATA_csv)) + \
+                    '" download> <span> <i class="fa fa-download"></i></span> Last metadata file \'csv\' for "{}"</a> </div>'.format(self.dataset_name)),
+            HTML('<p> </p>'),
+            HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
+                    Constants.FILE_TEMPLATE_INPUT_METADATA_tsv)) + \
+                    '" download> <span> <i class="fa fa-download"></i></span> Last metadata file \'tsv\' for "{}"</a> </div>'.format(self.dataset_name)),
+            HTML('<p> </p>'),
+            Div('path_name', css_class="col-lm-3"),
+            HTML('<p> </p>'),
+            ButtonHolder(
+                Submit('save', 'Upload', css_class='btn-primary', onclick="this.disabled=true,this.form.submit();"),
+                Button('cancel', 'Cancel', css_class='btn-secondary', 
+                       onclick='window.location.href="{}"'.format(reverse('dataset-update-metadata', args=[self.pk])))
+            ),
+        )
+
+    def clean(self):
+        """
+        Clean all 
+        """
+        cleaned_data = super(DatastesUploadDescriptionMetadataForm, self).clean()
+        
+        ### get path name
+        path_name = self.cleaned_data['path_name']
+        
+        ## testing fastq
+        temp_file_name = NamedTemporaryFile(prefix='flu_fq_', suffix='.csv', delete=False)
+        temp_file_name.write(path_name.file.read())
+        temp_file_name.flush()
+        temp_file_name.close()
+        
+        parse_in_files = ParseInFiles()
+        b_test_char_encoding = True
+        parse_in_files.parse_sample_files(temp_file_name.name, self.request.user, b_test_char_encoding,\
+                                    ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples)
+        
+        os.unlink(temp_file_name.name)
+        if (parse_in_files.get_errors().has_errors()):
+            self.add_error('path_name', 'There are errors in the file')
+            self.error_in_file = str(parse_in_files.get_errors())        ## pass error_file kwargs for context
+        else:
+            self.number_files_to_process = parse_in_files.get_number_samples()
+        return cleaned_data

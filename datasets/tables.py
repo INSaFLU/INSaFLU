@@ -9,10 +9,11 @@ from django.conf import settings
 from django.db.models import F
 from datasets.models import Dataset, DatasetConsensus
 from django.utils.safestring import mark_safe
-from constants.constants import Constants, TypePath
+from constants.constants import Constants
 from settings.constants_settings import ConstantsSettings
-from managing_files.models import Reference, Project, ProjectSample
+from managing_files.models import Reference, Project, UploadFiles
 from settings.default_software_project_sample import DefaultProjectSoftware
+
 
 class DatasetTable(tables.Table):
 #   Renders a normal value as an internal hyperlink to another page.
@@ -390,3 +391,33 @@ class DatasetConsensusTable(tables.Table):
         """ shows if it is Illumina or Minion """
         queryset = queryset.annotate(technology = F('sample__type_of_fastq')).order_by(('-' if is_descending else '') + 'technology')
         return (queryset, True)
+
+
+class AddDatasetFromCvsFileTableMetadata(tables.Table):
+    """
+    To add metadata to datasets
+    """
+    is_processed = tables.Column('Is processed', empty_values=())
+
+    class Meta:
+        model = UploadFiles
+        fields = ('file_name', 'creation_date', 'owner', 'is_valid', 'is_completed')
+        attrs = {"class": "table-striped table-bordered"}
+        empty_text = "There are no (csv) or (tsv) files with metadata to add..."
+    
+    def render_creation_date(self, value, record):
+        return record.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE)
+
+    def render_is_processed(self, value, record):
+        return 'True' if record.is_processed else 'False'
+    
+    def render_file_name(self, value, record):
+        """
+        return file name
+        """
+        return record.get_metadata_fasta_web()
+    
+    def order_is_processed(self, queryset, is_descending):
+        queryset = queryset.annotate(is_processed = F('is_processed')).order_by(('-' if is_descending else '') + 'is_processed')
+        return (queryset, True)
+    

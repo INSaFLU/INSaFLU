@@ -182,7 +182,20 @@ class CollectExtraDatasetData(object):
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_all_consensus):
             out_file = self.merge_all_consensus_files(dataset)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+        elif (type_file == Dataset.DATASET_FILE_NAME_default_build):
+            
+            temp_dir, auspice_path = self.run_nextstrain(dataset)
+            ## copy files if they exist, try to remove in destination
+            for type_file in Dataset.VECT_files_next_strain:
+                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+                out_file = os.path.join(temp_dir, auspice_path, type_file)
+                if os.path.exists(out_file): self.utils.copy_file(out_file, out_file_file_system)
+                elif (not out_file_file_system is None and os.path.exists(out_file_file_system)):
+                    self.utils.remove_file(out_file_file_system)
 
+            out_file = None     ## not copy anything with this variable
+            self.utils.remove_dir(temp_dir)
+            
         ## copy file
         if (not out_file is None):
             self.utils.copy_file(out_file, out_file_file_system)
@@ -212,6 +225,21 @@ class CollectExtraDatasetData(object):
         
         self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file)
         return out_file
+
+    def run_nextstrain(self, dataset):
+        """
+        Run nextStrain
+        Files expected
+        DATASET_FILE_NAME_default_build = "ncov_default-build.json"
+        DATASET_FILE_NAME_default_build_root = "ncov_default-build_root-sequence.json"
+        DATASET_FILE_NAME_default_build_tip = "ncov_default-build_tip-frequencies.json"
+        IMPORTANT: add 'auspice' to out directory "Dataset.RUN_out_path"
+        """
+        alignments_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
+        metadata_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV)
+        reference_name = dataset.get_first_reference_name()
+        temp_dir = self.software.run_nextstrain(reference_name, alignments_file, metadata_file)
+        return temp_dir, Dataset.RUN_out_path
 
 
     def collect_sample_table(self, dataset, column_separator, type_list):
@@ -290,29 +318,10 @@ class CollectExtraDatasetData(object):
         temp_dir = self.utils.get_temp_dir()
         
         ## sample file result
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV))
-            
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_MAFFT))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_FASTTREE))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_FASTTREE_tree))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_nex))
-
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)):
-            self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus),
-                        os.path.join(temp_dir, Dataset.DATASET_FILE_NAME_RESULT_all_consensus))
+        for type_file in Dataset.VECT_files_to_zip:
+            if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)):
+                self.utils.link_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file),
+                        os.path.join(temp_dir, type_file))
         
         ## all files zipped
         zip_out = self.software.zip_files_in_path(temp_dir)

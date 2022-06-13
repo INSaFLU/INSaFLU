@@ -280,7 +280,10 @@ def remove_consensus_in_dataset(request):
 	remove a dataset.
 	"""
 	if request.is_ajax():
-		data = { 'is_ok' : False }
+		data = { 
+			'is_ok' : False,
+			'message' : "Something went wrong. Fail to remove."
+		}
 		consensus_id_a = 'consensus_id'
 		
 		if (consensus_id_a in request.GET):
@@ -290,6 +293,7 @@ def remove_consensus_in_dataset(request):
 			try:
 				profile = Profile.objects.get(user__pk=request.user.pk)
 			except Profile.DoesNotExist:
+				
 				return JsonResponse(data)
 			if (profile.only_view_project): return JsonResponse(data)
 			
@@ -297,10 +301,18 @@ def remove_consensus_in_dataset(request):
 			try:
 				dataset_consensus = DatasetConsensus.objects.get(pk=consensus_id)
 			except Dataset.DoesNotExist:
+				data['message'] = "Something went wrong. Fail to remove."
 				return JsonResponse(data)
 			
 			## different owner or belong to a project not deleted
 			if (dataset_consensus.dataset.owner.pk != request.user.pk): return JsonResponse(data)
+			
+			### test how many references exist in this dataset
+			if not dataset_consensus.reference is None and \
+				DatasetConsensus.objects.filter(is_deleted=False, is_error=False,
+							reference__isnull=False).count() < 2:
+				data['message'] = "You can not remove the remain reference sequence. At least one must be present."
+				return JsonResponse(data)
 			
 			### now you can remove
 			dataset_consensus.is_deleted = True
@@ -309,15 +321,22 @@ def remove_consensus_in_dataset(request):
 			
 			if not dataset_consensus.project_sample is None:
 				dataset_consensus.dataset.number_of_sequences_from_projects -= 1
+				data['message'] = "The consensus sequence {} from project {} was removed".format(
+					dataset_consensus.project_sample.sample.name,
+					dataset_consensus.project_sample.project.name)
 				dataset_consensus.dataset.save() 
 			elif not dataset_consensus.consensus is None:
 				dataset_consensus.dataset.number_of_sequences_from_consensus -= 1
+				data['message'] = "The consensus {} was removed".format(
+					dataset_consensus.consensus.name)
 				dataset_consensus.dataset.save()
 			elif not dataset_consensus.reference is None:
 				dataset_consensus.dataset.number_of_sequences_from_references -= 1
+				data['message'] = "The reference {} was removed".format(
+					dataset_consensus.reference.name)
 				dataset_consensus.dataset.save()
 
-			data = { 'is_ok' : True }
+			data['is_ok'] = True
 		return JsonResponse(data)
 
 

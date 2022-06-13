@@ -354,13 +354,8 @@ class CreateTree(object):
 		## set meta info
 		manageDatabase.set_dataset_metakey(dataset, owner, meta_key, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		
-		## clean fasta file from alignment
-		out_clean_fasta_file = self.utils.get_temp_file_from_dir(temp_dir, "clean", ".fasta")
-		self.utils.clean_fasta_file(out_file_mafft, out_clean_fasta_file)
-		
 		### copy files for the dataset
 		self.utils.copy_file(out_file_mafft, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT))
-		self.utils.copy_file(out_clean_fasta_file, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTA))
 		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE))
 		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree))
 		self.utils.copy_file(out_file_nex, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex))

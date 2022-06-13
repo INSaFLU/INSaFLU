@@ -2299,7 +2299,52 @@ class Software(object):
 			if (out_dir_temp is None): self.utils.remove_dir(out_dir)
 		return seq_ref, seq_other
 
-	
+
+	def run_nextstrain(self, reference, alignments, metadata, cores=4):
+		"""
+		run nextstrain
+		:param  reference: reference name in alignments file
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = os.path.join(self.utils.get_temp_dir())
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + "to temp folder " + temp_dir)
+
+		# Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
+		self.utils.copy_file(alignments, os.path.join(temp_dir, "data"))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, "data"))
+
+		# Need to add root to the end of config file
+		cmd = "echo \'  root: \"" + reference + "\"\' >> " + temp_dir + '/config/config.yaml'
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to append reference to config file in temp folder " + temp_dir)
+
+		# Run nextstrain
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run nexstrain in temp folder " + temp_dir)
+
+		# Collect results
+		return temp_dir
+
+
 class Contigs2Sequences(object):
 	'''
 	classdocs

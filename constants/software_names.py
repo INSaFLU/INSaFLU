@@ -318,7 +318,11 @@ class SoftwareNames(object):
 	SOFTWARE_GENERATE_CONSENSUS_name_extended = "Generate consensus"
 	SOFTWARE_GENERATE_CONSENSUS_vesion = "1"
 	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
-		
+
+	### Nextstrain
+	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/run_nextstrain.sh")
+	SOFTWARE_NEXTSTRAIN_NCOV_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/ncov")
+
 	###################################
 	###################################
 	#####

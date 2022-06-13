@@ -260,14 +260,14 @@ $('#id-remove-button').on('click', function(){
         	  
         	  /// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-success">' +
-        		'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' in a project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was successfully removed.' +
+        		data['message'] +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }
           else{
         	/// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' in a project \'' + $('#id-modal-body-remove-sample').attr('ref_project') + '\' was not removed.' +
+        		data['message'] +
 				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
 				'</div>');
           }

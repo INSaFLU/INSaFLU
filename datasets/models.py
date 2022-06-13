@@ -87,7 +87,6 @@ class Dataset(models.Model):
     PATH_MAIN_RESULT = 'main_result'
     
     DATASET_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
-    DATASET_FILE_NAME_FASTA = "All_nt.fasta"
     DATASET_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
     DATASET_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
     DATASET_FILE_NAME_nex = "Alignment_nt_All.nex"
@@ -97,18 +96,41 @@ class Dataset(models.Model):
     DATASET_FILE_NAME_SAMPLE_RESULT_json = "Dataset_list_simple.json"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
     DATASET_FILE_NAME_RESULT_all_consensus = "AllConsensus.fasta"     ### all consensus sequences for a project sample
     
+    ###NextStrain Expected, apear inside 'auspice' folder whenrun NextStrain
+    RUN_out_path = 'auspice'
+    DATASET_FILE_NAME_default_build = "ncov_default-build.json"
+    DATASET_FILE_NAME_default_build_root = "ncov_default-build_root-sequence.json"
+    DATASET_FILE_NAME_default_build_tip = "ncov_default-build_tip-frequencies.json"
+    
+    ####
+    VECT_files_next_strain = [
+        DATASET_FILE_NAME_default_build,
+        DATASET_FILE_NAME_default_build_root,
+        DATASET_FILE_NAME_default_build_tip
+    ]
+    
+    ### files to zip
+    VECT_files_to_zip = [ 
+        DATASET_FILE_NAME_SAMPLE_RESULT_TSV,
+        DATASET_FILE_NAME_SAMPLE_RESULT_CSV,
+        DATASET_FILE_NAME_RESULT_all_consensus,
+        DATASET_FILE_NAME_MAFFT,
+        DATASET_FILE_NAME_FASTTREE,
+        DATASET_FILE_NAME_FASTTREE_tree,
+        DATASET_FILE_NAME_nex
+        ] + VECT_files_next_strain
+        
     DATASET_FILE_NAME_all_files_zipped = "AllFiles.zip"                    ### Several files zipped
     
     ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
     vect_clean_file = [DATASET_FILE_NAME_MAFFT, DATASET_FILE_NAME_FASTTREE,\
                     DATASET_FILE_NAME_FASTTREE_tree,\
-                    DATASET_FILE_NAME_nex, DATASET_FILE_NAME_FASTA]
+                    DATASET_FILE_NAME_nex]
     
     ### this is only to join with other names
     DATASET_FILE_NAME_FASTTREE_element = "Tree_ML"
     DATASET_FILE_NAME_MAFFT_element_nt = "Alignment_nt"
     DATASET_FILE_NAME_MAFFT_element_aa = "Alignment_aa"
-    DATASET_FILE_NAME_FASTA_element = "Sequences_nt"
 
     name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Dataset name')
     owner = models.ForeignKey(User, related_name='dataset', blank=True, null=True, on_delete=models.CASCADE)
@@ -148,24 +170,6 @@ class Dataset(models.Model):
             if not dataset_consensus.project_sample is None and not dataset_consensus.project_sample.project.reference.pk in dt_id_ref:
                 dt_id_ref[dataset_consensus.project_sample.project.reference.pk] = 1
         return len(dt_id_ref)
-
-    def get_global_file_by_element(self, type_path, file_name):
-        """
-        type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
-        element: element name or None
-        file_name: Project.DATASET_FILE_NAME_MAFFT, ....   
-        """
-        if (self.DATASET_FILE_NAME_MAFFT == file_name):
-            return os.path.join(self.__get_global_path__(type_path, None), "{}.fasta".format(self.DATASET_FILE_NAME_MAFFT_element_nt))
-        if (self.DATASET_FILE_NAME_FASTA == file_name):
-            return os.path.join(self.__get_global_path__(type_path, None), "{}.fasta".format(self.DATASET_FILE_NAME_FASTA_element))
-        if (self.DATASET_FILE_NAME_FASTTREE == file_name):
-            return os.path.join(self.__get_global_path__(type_path, None), "{}.nwk".format(self.DATASET_FILE_NAME_FASTTREE_element))
-        if (self.DATASET_FILE_NAME_FASTTREE_tree == file_name):
-            return os.path.join(self.__get_global_path__(type_path, None), "{}.tree".format(self.DATASET_FILE_NAME_FASTTREE_element))
-        if (self.DATASET_FILE_NAME_nex == file_name):
-            return os.path.join(self.__get_global_path__(type_path, None), "{}.nex".format(self.DATASET_FILE_NAME_MAFFT_element_nt))
-        return None
 
     def _clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
         """

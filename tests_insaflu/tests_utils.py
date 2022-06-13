@@ -14,6 +14,7 @@ from utils.result import Coverage, FeatureLocationSimple
 from constants.constants import Constants, FileExtensions
 from managing_files.models import ProjectSample
 from utils.result import Gene
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -903,6 +904,7 @@ class Test(unittest.TestCase):
 		self.assertTrue(">test_sample_1__EVA002_S52_1" in vect_read_file)
 		os.unlink(out_file)
 
+
 	def test_merge_fasta_files_1(self):
 		"""
 		testing merging fasta
@@ -942,6 +944,38 @@ class Test(unittest.TestCase):
 		except ProjectSample.DoesNotExist:	## need to create with last version
 			self.fail("Must exist...")
 		os.unlink(out_file)
+
+
+	def test_merge_fasta_files_and_join_multifasta(self):
+		"""
+		testing merging fasta
+		"""
+		utils = Utils()
+		path_to_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_FASTA)
+		out_file = self.utils.get_temp_file("file_name", ".fasta")
+		self.assertTrue(os.path.exists(out_file))
+		vest_data = [[os.path.join(path_to_fasta, "fasta_1.fasta"), "test_sample_1", -1],
+					[os.path.join(path_to_fasta, "fasta_2.fasta"), "test_sample_1", -1],
+					[os.path.join(path_to_fasta, "fasta_3.fasta"), "test_sample_2", -1]]
+		utils.merge_fasta_files_and_join_multifasta(vest_data , out_file)
+		self.assertTrue(os.path.exists(out_file))
+		
+		with open(out_file, "rU") as handle_fasta:
+			count = 0
+			for record in SeqIO.parse(handle_fasta, "fasta"):
+				if (count == 0):
+					self.assertEqual("test_sample_1", record.id)
+					self.assertEqual(1982, len(str(record.seq)))
+				elif (count == 1):
+					self.assertEqual("test_sample_1_1", record.id)
+					self.assertEqual(1982, len(str(record.seq)))
+				elif (count == 2):
+					self.assertEqual("test_sample_2", record.id)
+					self.assertEqual(2052, len(str(record.seq)))
+				count += 1
+				self.assertTrue(count < 3)
+		os.unlink(out_file)
+
 
 	def test_merge_fasta_and_join_sequences(self):
 		"""

@@ -162,6 +162,7 @@ class Test(unittest.TestCase):
 				project_sample.id = n_id
 				project_sample.sample = sample
 				project_sample.project = project
+				project_sample.seq_name_all_consensus = project_sample.sample.name
 				project_sample.is_finished = True
 				project_sample.is_deleted = False
 				project_sample.is_error = False
@@ -199,6 +200,7 @@ class Test(unittest.TestCase):
 		### set dataset name
 		dataset = Dataset()
 		dataset.name = "xpto"
+		dataset.owner = user
 		dataset.save()
 		
 		consensus_add, reference_add = 0, 0
@@ -257,7 +259,7 @@ class Test(unittest.TestCase):
 		collect_extra_data = CollectExtraDatasetData()
 		collect_extra_data.collect_extra_data_for_dataset(dataset, user)
 
-		meta_data = manage_database_datasets.get_dataset_metakey(project, MetaKeyAndValue.META_KEY_Dataset_max_name_length, MetaKeyAndValue.META_VALUE_Success)
+		meta_data = manage_database_datasets.get_dataset_metakey(dataset, MetaKeyAndValue.META_KEY_Dataset_max_name_length, MetaKeyAndValue.META_VALUE_Success)
 		self.assertEqual("32", meta_data.description)
 		
 		### get sample result file

@@ -17,6 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
 from constants.software_names import SoftwareNames
+from datasets.models import DatasetConsensus
 ## Add 'Ter' to dictonary
 ## http://www.hgmd.cf.ac.uk/docs/cd_amino.html
 protein_letters_3to1['Ter'] = 'X'
@@ -1354,7 +1355,57 @@ class Utils(object):
 			if (len(vect_out_fasta) > 0):
 				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
 		return len(vect_out_fasta)
-	
+
+	def merge_fasta_files_and_join_multifasta(self, vect_sample_path_and_name, out_file):
+		"""
+		:param vect_sample_path_and_name = [[path_file, name, ID],
+					[path_file, name, ID], ... ]
+		:param outfile file 
+		"""
+		vect_out_fasta_total = []
+		dt_out_name = {}
+		
+		for data_file in vect_sample_path_and_name:
+			
+			if (not os.path.exists(data_file[0])): continue
+			fasta_out = ""
+			with open(data_file[0], "rU") as handle_fasta:
+				for record in SeqIO.parse(handle_fasta, "fasta"):
+					fasta_out += str(record.seq)
+			
+			## none fasta sequence
+			if (len(fasta_out) == 0): continue
+			
+			###
+			count = 1
+			sample_name = data_file[1].replace(" ", "_")
+			possible_name = sample_name
+			while True:
+				if possible_name in dt_out_name:
+					possible_name = "{}_{}".format(sample_name, count)
+					count += 1
+				else: 
+					dt_out_name[possible_name] = 1
+					break
+						
+			vect_out_fasta_total.append(SeqRecord(Seq(fasta_out), id=possible_name, description=""))
+			
+			### set all_consensus name in table dataset_consensus
+			if data_file[2] != -1:
+				try:
+					dataset_consensus = DatasetConsensus.objects.get(id=data_file[2])
+					## if the sample starts like this
+					dataset_consensus.seq_name_all_consensus = possible_name
+					dataset_consensus.save()
+				except DatasetConsensus.DoesNotExist:	## need to create with last version
+					continue
+						
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta_total) > 0):
+				SeqIO.write(vect_out_fasta_total, handle_fasta_out, "fasta")
+		return len(vect_out_fasta_total)
+
 	def parse_amino_HGVS_code(self, amino_value):
 		""" p.Asn292Asn -> p.Asn292Asn"""
 		match = re.search("p.(?P<first_amino>[A-Za-z*]+)(?P<position>[0-9]+)(?P<second_amino>[A-Za-z*]+)", amino_value)

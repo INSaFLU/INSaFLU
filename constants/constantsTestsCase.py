@@ -97,6 +97,7 @@ class ConstantsTestsCase(object):
 	DIR_IMAGES = "images"
 	DIR_PROJECTS = "projects"
 	DIR_GLOBAL_PROJECT = "global_project"
+	DIR_DATASET_FILES = "dataset_files"
 	DIR_INPUT_FILES = "input_files"
 	DIR_FASTA = "fasta"
 	DIR_MERGE_FASTA = "merge_files"

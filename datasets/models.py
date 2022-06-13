@@ -140,7 +140,8 @@ class Dataset(models.Model):
         """ return the number of different references 
         :param user """
         dt_id_ref = {}
-        for dataset_consensus in DatasetConsensus.objects.filter(dataset=self, is_deleted=False):
+        for dataset_consensus in self.dataset_consensus.all():
+            if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
             if not dataset_consensus.consensus is None: continue
             if not dataset_consensus.reference is None and not dataset_consensus.reference.pk in dt_id_ref:
                 dt_id_ref[dataset_consensus.reference.pk] = 1
@@ -148,22 +149,22 @@ class Dataset(models.Model):
                 dt_id_ref[dataset_consensus.project_sample.project.reference.pk] = 1
         return len(dt_id_ref)
 
-    def get_global_file_by_element(self, type_path, element, file_name):
+    def get_global_file_by_element(self, type_path, file_name):
         """
         type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
         element: element name or None
         file_name: Project.DATASET_FILE_NAME_MAFFT, ....   
         """
         if (self.DATASET_FILE_NAME_MAFFT == file_name):
-            return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.DATASET_FILE_NAME_MAFFT_element_nt, element))
+            return os.path.join(self.__get_global_path__(type_path, None), "{}.fasta".format(self.DATASET_FILE_NAME_MAFFT_element_nt))
         if (self.DATASET_FILE_NAME_FASTA == file_name):
-            return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.fasta".format(self.DATASET_FILE_NAME_FASTA_element, element))
+            return os.path.join(self.__get_global_path__(type_path, None), "{}.fasta".format(self.DATASET_FILE_NAME_FASTA_element))
         if (self.DATASET_FILE_NAME_FASTTREE == file_name):
-            return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nwk".format(self.DATASET_FILE_NAME_FASTTREE_element, element))
+            return os.path.join(self.__get_global_path__(type_path, None), "{}.nwk".format(self.DATASET_FILE_NAME_FASTTREE_element))
         if (self.DATASET_FILE_NAME_FASTTREE_tree == file_name):
-            return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.tree".format(self.DATASET_FILE_NAME_FASTTREE_element, element))
+            return os.path.join(self.__get_global_path__(type_path, None), "{}.tree".format(self.DATASET_FILE_NAME_FASTTREE_element))
         if (self.DATASET_FILE_NAME_nex == file_name):
-            return os.path.join(self.__get_global_path__(type_path, element), "{}_{}.nex".format(self.DATASET_FILE_NAME_MAFFT_element_nt, element))
+            return os.path.join(self.__get_global_path__(type_path, None), "{}.nex".format(self.DATASET_FILE_NAME_MAFFT_element_nt))
         return None
 
     def _clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
@@ -202,7 +203,7 @@ class Dataset(models.Model):
         return Constants.DIR_PROCESSED_FILES_DATASETS + '/user_{0}/dataset_{1}/{2}'.format(
             self.owner.id, self.pk, self.PATH_MAIN_RESULT)
     
-    def __get_global_path__(self, type_path, element):
+    def __get_global_path__(self, type_path, element = None):
         """
         get a path, from MEDIA_URL or MEDIA_ROOT
         """
@@ -212,6 +213,15 @@ class Dataset(models.Model):
         ### URL
         else: path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
         return path_to_find
+    
+    def get_first_reference_name(self):
+        """
+        return first reference name 
+        """
+        for dataset_consensus in self.dataset_consensus.all():
+            if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
+            if not dataset_consensus.reference is None: return dataset_consensus.reference.name
+            return ""
     
 class DatasetConsensus(models.Model):
     

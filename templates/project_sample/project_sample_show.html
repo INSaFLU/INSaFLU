@@ -221,7 +221,29 @@
 	      			</div>
 	    		</div>
 	    	</div>
-	    		
+			
+	    	{% if aln2pheno_report %} 
+			
+	  		<!-- Card Show aln2pheno report -->
+			  <div class="card">
+				<div class="card-header" role="tab" id="headingAln2Pheno">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseAln2Pheno" aria-expanded="false" aria-controls="collapseAln2Pheno">
+							<strong>Aln2Pheno</strong> report
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseAln2Pheno" class="collapse" role="tabpanel" aria-labelledby="headingAln2Pheno">
+	      			<div class="card-block">
+	        			<div id='loader_showaln2pheno'><img src="{{ spinner_url }}"/></div>
+	        			<div id="showaln2pheno" class="show_variants_table" project_id="{{ project_id }}" show-aln2pheno-url="{% url 'show-aln2pheno' %}"></div>
+	      			</div>
+	    		</div>
+	  		</div>
+			
+			{% endif %}
+
 	   		<!-- Card Minor variants overview-->
 	   		{% if variations_statistics_file %}
 		   		<div class="card">
@@ -503,6 +525,7 @@
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/show-sample-project.js' %}"></script>
+			<script type="text/javascript" src="{% static 'js/sample-project/show-aln2pheno.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
 	    	<!-- <script type="text/javascript" src="{% static 'vendor/msa/msa.min.js' %}"></script> -->

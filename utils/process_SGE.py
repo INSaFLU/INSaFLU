@@ -631,7 +631,7 @@ class ProcessSGE(object):
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
 		
-		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
+		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL)
 		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, [job_name_wait])
 		try:
 			sge_id = self.submitte_job(path_file)
@@ -656,7 +656,7 @@ class ProcessSGE(object):
 		
 		queue_name = user.profile.queue_name_sge
 		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL)
+		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL)
 		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, [job_name_wait])
 		try:
 			sge_id = self.submitte_job(path_file)

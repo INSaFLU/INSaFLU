@@ -27,8 +27,8 @@ from itertools import chain
 from utils.session_variables import clean_check_box_in_session, is_all_check_box_in_session
 from utils.software import Software
 from django.db import transaction
-
-
+from utils.support_django_template import get_link_for_dropdown_item
+from utils.process_SGE import ProcessSGE
 
 class DatasetsView(LoginRequiredMixin, ListView):
     """
@@ -66,7 +66,6 @@ class DatasetsView(LoginRequiredMixin, ListView):
         context['query_set_count'] = query_set.count()
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         return context
-
 
 
 class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
@@ -585,21 +584,28 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                     reference_add += 1
 
             ### necessary to calculate the global results again 
-            if (reference_add > 0):
+            if (reference_add > 0 or consensus_add > 0):
                 dataset.last_change_date = datetime.datetime.now()
                 dataset.number_of_sequences_from_projects += consensus_add
                 dataset.number_of_sequences_from_references += reference_add
                 dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
                 dataset.save()
             
-            if (reference_add == 0):
+            if (reference_add == 0 and consensus_add == 0):
                 messages.warning(self.request, "No consensus was added to the data set '{}'".format(dataset.name))
             else:
-                if (reference_add > 1):
+                if ((consensus_add + reference_add) > 1):
                     messages.success(self.request, "'{}' projects with samples were added to your data set '{}'.".format(\
                                 reference_add, dataset.name), fail_silently=True)
                 else:
-                    messages.success(self.request, "One consensus from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+                    messages.success(self.request, "One consensus/reference from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+                    
+                ## need to run processing
+                try:
+                    process_SGE = ProcessSGE()
+                    taskID =  process_SGE.set_collect_dataset_global_files(dataset, self.request.user)
+                except:
+                    return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
             return HttpResponseRedirect(reverse_lazy('datasets'))
         else:
             return super(AddDatasetsProjectsView, self).form_invalid(form)
@@ -717,10 +723,35 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         context['dataset'] = dataset
         
         ## metadata already there
-        #context['file_meta_data_csv'] = 
-        #context['file_meta_data_tsv'] = 
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV)):
+            context['dataset_file_result_csv'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV)):
+            context['dataset_file_result_tsv'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV)):
+            context['dataset_file_nextstrain_tsv'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)):
+            context['all_consensus'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_default_build)):
+            context['nextstrain_default_build'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_default_build))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_root)):
+            context['nextstrain_build_root'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_root))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_tip)):
+            context['nextstrain_build_tip'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_tip))
+            
+        ## all files zipped
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped)):
+            context['download_all_files'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
+                "{}_{}_{}".format(os.path.splitext(Dataset.DATASET_FILE_NAME_all_files_zipped)[0],
+                dataset.get_clean_project_name(), datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
 
-        
         context['different_references'] = dataset.get_number_different_references()
         context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute

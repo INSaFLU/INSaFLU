@@ -3,23 +3,19 @@ Created on Dec 6, 2017
 @author: mmp
 '''
 
-import os
-import csv, json, logging
-
-from utils.utils import Utils
+import logging
 from django.http import JsonResponse
-from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
 from django.conf import settings
 from datetime import datetime
 from django.db import transaction
 from datasets.models import Dataset, Consensus, DatasetConsensus
+from utils.process_SGE import ProcessSGE
 
 ### Logger
-logger_debug = logging.getLogger("fluWebVirus.debug")
-logger_production = logging.getLogger("fluWebVirus.production")
-	
+if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+else: logger = logging.getLogger("fluWebVirus.production")
 	
 ######################################
 ###
@@ -335,7 +331,14 @@ def remove_consensus_in_dataset(request):
 				data['message'] = "The reference {} was removed".format(
 					dataset_consensus.reference.name)
 				dataset_consensus.dataset.save()
-
+			
+			## need to run processing
+			try:
+				process_SGE = ProcessSGE()
+				taskID =  process_SGE.set_collect_dataset_global_files(dataset_consensus.dataset,
+										request.user)
+			except:
+				pass
 			data['is_ok'] = True
 		return JsonResponse(data)
 
@@ -354,4 +357,3 @@ def validate_consensus_name(request):
 		}
 		if (data['is_taken']): data['error_message'] = 'Exists a consensus with this name.'
 		return JsonResponse(data)
-

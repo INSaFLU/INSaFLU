@@ -5,8 +5,10 @@ Created on 13/06/2022
 '''
 
 import csv
+from datetime import date
 from utils.collect_extra_data import CollectExtraData
 from constants.constants import Constants
+from django.conf import settings
 
 """
 #*Mandatory metadata fields:
@@ -153,13 +155,27 @@ class Metadata(object):
                     else: vect_out.append('?')
                     continue
                 
-                ### test synonymous
+                ### date column, has data
+                if (column == NEXTSTRAIN_date and self.dt_header.get(column, -1) > 0 and \
+                        len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]]) > 0):
+                    vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
+                    continue
+                
+                ### test synonymous, And try date synonymous
+                b_found = False
                 for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU.get(column, []):     
                     if self.dt_header.get(column, -1) > 0 and \
                         len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column_insaflu]]) > 0:
                         vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column_insaflu]])
                         for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU[column]: dt_out_header[column_insaflu] = 1
+                        b_found = True
                         break
+                
+                ## found synonymous before
+                if b_found: continue
+                if (column == NEXTSTRAIN_date):     ## need to add default date
+                    vect_out.append(date.today().strftime(settings.DATE_FORMAT_FOR_SHOW))
+                    continue
                 
                 ## test default NEXTstrain columns names
                 if column in DICT_NEXTSTRAIN_default:

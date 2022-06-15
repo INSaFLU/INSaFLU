@@ -50,13 +50,13 @@ class Test(unittest.TestCase):
 		try:
 			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
-			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
+			self.assertEqual("File need to have suffix '.fastq.gz'/'.fq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
 		try:
 			self.assertEqual((True, Constants.FORMAT_FASTQ_illumina), self.utils.is_fastq_gz(path_file))
 		except Exception as e:
-			self.assertEqual("File need to have suffix '.fastq.gz'", e.args[0])
+			self.assertEqual("File need to have suffix '.fastq.gz'/'.fq.gz'", e.args[0])
 			
 		path_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA_FAKE_GZ)
 		try:

@@ -41,6 +41,7 @@ urlpatterns += [
     url(r'^managing_files/', include('managing_files.urls')),
     url(r'^phylogeny/', include('phylogeny.urls')),
     url(r'^settings/', include('settings.urls')),
+    url(r'^datasets/', include('datasets.urls')),
 ]
 
 if settings.DEBUG is True:

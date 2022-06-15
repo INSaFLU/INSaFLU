@@ -133,7 +133,7 @@ class SoftwarePangolin(object):
 		"""
 		
 		### update pangolin, if necessary
-		self.run_pangolin_update()
+		#self.run_pangolin_update()
 		
 		tem_dir = self.utils.get_temp_dir()
 		

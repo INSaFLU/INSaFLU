@@ -92,33 +92,36 @@ class Dataset(models.Model):
     DATASET_FILE_NAME_nex = "Alignment_nt_All.nex"
 
     DATASET_FILE_NAME_SAMPLE_RESULT_TSV = "Dataset_list.tsv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+    DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV = "Nextstrain_metadata.tsv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
     DATASET_FILE_NAME_SAMPLE_RESULT_CSV = "Dataset_list.csv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
     DATASET_FILE_NAME_SAMPLE_RESULT_json = "Dataset_list_simple.json"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
     DATASET_FILE_NAME_RESULT_all_consensus = "AllConsensus.fasta"     ### all consensus sequences for a project sample
     
     ###NextStrain Expected, apear inside 'auspice' folder whenrun NextStrain
+    REFERENCE_NAME = "Wuhan/Hu-1/2019"      ### need to change in the future
     RUN_out_path = 'auspice'
-    DATASET_FILE_NAME_default_build = "ncov_default-build.json"
-    DATASET_FILE_NAME_default_build_root = "ncov_default-build_root-sequence.json"
-    DATASET_FILE_NAME_default_build_tip = "ncov_default-build_tip-frequencies.json"
+    DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
+    DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
+    DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"
     
     ####
     VECT_files_next_strain = [
-        DATASET_FILE_NAME_default_build,
-        DATASET_FILE_NAME_default_build_root,
-        DATASET_FILE_NAME_default_build_tip
+        DATASET_FILE_NAME_nextstrain_default_build,
+        DATASET_FILE_NAME_nextstrain_build_root,
+        DATASET_FILE_NAME_nextstrain_build_tip
     ]
     
     ### files to zip
     VECT_files_to_zip = [ 
         DATASET_FILE_NAME_SAMPLE_RESULT_TSV,
         DATASET_FILE_NAME_SAMPLE_RESULT_CSV,
+        DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV,
         DATASET_FILE_NAME_RESULT_all_consensus,
         DATASET_FILE_NAME_MAFFT,
         DATASET_FILE_NAME_FASTTREE,
         DATASET_FILE_NAME_FASTTREE_tree,
         DATASET_FILE_NAME_nex
-        ] + VECT_files_next_strain
+    ] + VECT_files_next_strain
         
     DATASET_FILE_NAME_all_files_zipped = "AllFiles.zip"                    ### Several files zipped
     
@@ -225,7 +228,7 @@ class Dataset(models.Model):
         for dataset_consensus in self.dataset_consensus.all():
             if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
             if not dataset_consensus.reference is None: return dataset_consensus.reference.name
-            return ""
+        return ""
     
 class DatasetConsensus(models.Model):
     

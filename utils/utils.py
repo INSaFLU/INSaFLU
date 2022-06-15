@@ -236,7 +236,8 @@ class Utils(object):
 				raise Exception("Fail to make a copy a file") 
 			
 			### set attributes to file 664
-			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
+			if os.path.isfile(sz_file_to):
+				os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 			
 	def make_path(self, path_name):
 		if (not os.path.isdir(path_name) and not os.path.isfile(path_name)):
@@ -429,9 +430,10 @@ class Utils(object):
 		get max length fasta
 		"""
 		n_total = 0
-		record_dict = SeqIO.index(sz_file_name, "fasta")
-		for seq in record_dict:
-			n_total += len(record_dict[seq].seq)
+		if os.path.exists(sz_file_name):
+			record_dict = SeqIO.index(sz_file_name, "fasta")
+			for seq in record_dict:
+				n_total += len(record_dict[seq].seq)
 		return n_total
 
 							

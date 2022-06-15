@@ -95,7 +95,9 @@ class Constants(object):
 	DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 	DIR_TYPE_REFERENCES = "db/references/"
+	DIR_NEXTSTRAIN_tables = "db/nextstrain"
 	DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
+	
 	
 	INSAFLU_NAME = 'insaflu'
 	

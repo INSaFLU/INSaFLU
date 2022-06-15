@@ -50,7 +50,6 @@ class Test(unittest.TestCase):
 		
 		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
 		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
-		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_GLOBAL_PROJECT, "insa_flu_coverage_output.tsv")
 		
 		try:
 			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME + '5000')
@@ -231,22 +230,22 @@ class Test(unittest.TestCase):
 				dataset_consensus.save() 
 				consensus_add += 1
 			
-			### Add the reference of this project if not there yet
-			try:
-				dataset_consensus = DatasetConsensus.objects.get(reference=project.reference,
-									dataset=dataset)
-				if dataset_consensus.is_deleted or dataset_consensus.is_error:
-					dataset_consensus.is_deleted = False
-					dataset_consensus.is_error = False
-					dataset_consensus.save()
-					reference_add += 1
-			except DatasetConsensus.DoesNotExist:
-				dataset_consensus = DatasetConsensus()
-				dataset_consensus.name = project.reference.name
-				dataset_consensus.dataset = dataset
-				dataset_consensus.reference = project.reference
-				dataset_consensus.save() 
+		### Add the reference of this project if not there yet
+		try:
+			dataset_consensus = DatasetConsensus.objects.get(reference=project.reference,
+								dataset=dataset)
+			if dataset_consensus.is_deleted or dataset_consensus.is_error:
+				dataset_consensus.is_deleted = False
+				dataset_consensus.is_error = False
+				dataset_consensus.save()
 				reference_add += 1
+		except DatasetConsensus.DoesNotExist:
+			dataset_consensus = DatasetConsensus()
+			dataset_consensus.name = project.reference.name
+			dataset_consensus.dataset = dataset
+			dataset_consensus.reference = project.reference
+			dataset_consensus.save() 
+			reference_add += 1
 
 		### necessary to calculate the global results again 
 		if (reference_add > 0):
@@ -256,11 +255,20 @@ class Test(unittest.TestCase):
 			dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
 			dataset.save()
 
+		## test reference name
+		self.assertEqual(ref_name, dataset.get_first_reference_name())
+		
 		collect_extra_data = CollectExtraDatasetData()
 		collect_extra_data.collect_extra_data_for_dataset(dataset, user)
 
 		meta_data = manage_database_datasets.get_dataset_metakey(dataset, MetaKeyAndValue.META_KEY_Dataset_max_name_length, MetaKeyAndValue.META_VALUE_Success)
 		self.assertEqual("32", meta_data.description)
+		
+		### test nextStrain metadata
+		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "out_nextstrain_metadata.tsv")
+		out_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV)
+		self.assertTrue(os.path.exists(out_file))
+		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)

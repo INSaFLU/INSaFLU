@@ -166,16 +166,21 @@ class CollectExtraData(object):
 		process_SGE = ProcessSGE()
 		try:
 
-			is_sars_cov = software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+			#is_sars_cov = software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+			#is_sars_cov = software_pangolin.is_ref_sars_cov_2(project.reference.name)
+
+			#self.logger_debug.info("Aln2pheno: {} {}".format(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),is_sars_cov))
 
 			## we can only run for the moment in the case of sars_cov_2
 			## later we will extend this to more cases...
-			if (is_sars_cov):
+			#if (is_sars_cov):
 
-				# TODO Where to get constants for this? for the moment it is hardcoded
+			#	self.logger_debug.info("Aln2pheno Entered the zone")
+			# TODO Where to get constants for this? for the moment it is hardcoded
 
-				file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, "SARS_CoV_2", "S", Project.PROJECT_FILE_NAME_MAFFT)
+			file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, "SARS_CoV_2", "S", Project.PROJECT_FILE_NAME_MAFFT)
 
+			if(os.path.exists(file_alignments)):
 
 				file_aln2pheno_report = project.get_global_file_by_project(TypePath.MEDIA_ROOT,	Project.PROJECT_FILE_NAME_Aln2pheno_report)
 				file_aln2pheno_flagged = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged)
@@ -205,6 +210,8 @@ class CollectExtraData(object):
 				#except:
 				#	self.logger_production.error('ProjectID: {}  Fail to run aln2pheno '.format(project.id))
 				#	self.logger_debug.error('ProjectID: {}  '.format(project.id))
+
+
 		except:
 			## finished with error
 			self.logger_debug.info("Aln2pheno Gave an error")

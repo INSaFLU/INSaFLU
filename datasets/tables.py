@@ -40,7 +40,7 @@ class DatasetTable(tables.Table):
         ## there's nothing to show
         count = record.number_of_sequences_from_projects + record.number_of_sequences_from_consensus + record.number_of_sequences_from_references
         if (count > 0):
-            project_sample = '<a href=' + reverse('show-sequences-dataset', args=[record.pk]) + ' data-toggle="tooltip" title="Show sequences">' +\
+            project_sample = '<a href=' + reverse('show-dataset-consensus', args=[record.pk]) + ' data-toggle="tooltip" title="Show sequences">' +\
                 '{}</a>'.format(record.name)
         else:
             project_sample = record.name
@@ -290,7 +290,7 @@ class DatasetConsensusTable(tables.Table):
             return mark_safe('<a href="#id_remove_modal" id="id_remove_consensus_modal" data-toggle="modal"' +\
                     ' ref_name="' + record.name + '" pk="' + str(record.pk) + '" +\
                     " ref_project="' + record.name + '" data-toggle="tooltip" title="Remove consensus">' +\
-                    '<i class="fa fa-trash"></i></span> {}</a>'.format(record.name))
+                    '<i class="fa fa-trash"></i></span></a> {}'.format(record.name))
                     ## '<a href=' + reverse('show-sample-project-single-detail', args=[record.pk]) + ' data-toggle="tooltip" title="Show more information">' +\
                     ## '{}</a>'.format(record.sample.name))
         return record.name

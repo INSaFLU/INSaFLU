@@ -4,7 +4,8 @@
 $(document).on("click", "a", function(e){
 	var attr = $(this).attr('id');
 	var ref_name = $(this).attr('ref_name');
-	var tr_to_remove = e.target.parentNode.parentNode.parentNode.id;
+	// ID to remove line
+	var tr_to_remove = 'row_' + $(this).attr('pk');
 	
 	// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
 	if (attr === 'id_remove_dataset_modal'){

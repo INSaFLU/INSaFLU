@@ -19,7 +19,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django_tables2 import RequestConfig
 from django.utils.safestring import mark_safe
-from constants.constants import Constants, TypeFile
+from constants.constants import Constants, TypeFile, TypePath
 from utils.utils import ShowInfoMainPage
 from django.template.defaultfilters import pluralize
 from operator import attrgetter
@@ -541,6 +541,8 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                 for project_sample in ProjectSample.objects.filter(project=project, is_deleted= False):
                     ## don't add project samples not added
                     if not project_sample.is_finished: continue
+                    ## only add the ones that have consensus files
+                    if not os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)): continue
                     try:
                         dataset_consensus = DatasetConsensus.objects.get(project_sample=project_sample,
                                             dataset=dataset)
@@ -603,43 +605,6 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
             return super(AddDatasetsProjectsView, self).form_invalid(form)
 
     form_valid_message = ""        ## need to have this, even empty
-
-class ShowDatasetsSequencesView(LoginRequiredMixin, ListView):
-    """
-    Show sequences of Dataset
-    """
-    utils = Utils()
-    model = Dataset
-    template_name = 'datasets/datasets.html'
-    context_object_name = 'datasets'
-##    group_required = u'company-user' security related with GroupRequiredMixin
-    
-    def get_context_data(self, **kwargs):
-        context = super(ShowDatasetsSequencesView, self).get_context_data(**kwargs)
-        tag_search = 'search_projects'
-        query_set = Dataset.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
-        if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
-            query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search))).\
-                            distinct()
-                            
-        table = DatasetTable(query_set)
-        RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-        if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-        
-        ### clean check box in the session
-        #clean_check_box_in_session(self.request) ## for both samples and references
-
-        ### clean project name session
-        if Constants.PROJECT_NAME_SESSION in self.request.session:
-            del self.request.session[Constants.PROJECT_NAME_SESSION]
-
-        context['table'] = table
-        context['nav_dataset'] = True
-        context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-        context['query_set_count'] = query_set.count()
-        
-        context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
-        return context
 
 class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
     

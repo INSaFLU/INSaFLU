@@ -8,7 +8,6 @@ urlpatterns = [
     url(r'(?P<pk>\d+)/add_consensus_dataset$', views.AddDatasetsConsensusView.as_view(), name='add-consensus-dataset'),
     url(r'(?P<pk>\d+)/upload_new_consensus$', views.UploadNewConsensusView.as_view(), name='upload-new-consensus'),
     url(r'(?P<pk>\d+)/add_projects_dataset$', views.AddDatasetsProjectsView.as_view(), name='add-projects-dataset'),
-    url(r'(?P<pk>\d+)/show_sequences_dataset$', views.ShowDatasetsSequencesView.as_view(), name='show-sequences-dataset'),
     url(r'(?P<pk>\d+)/show_dataset_consensus$', views.ShowDatasetsConsensusView.as_view(), name='show-dataset-consensus'),
     
     url(r'(?P<pk>\d+)/dataset_update_metadata$', views.UpdateMetadataDataset.as_view(), name='dataset-update-metadata'),     ## upload new matadata to replace the exist

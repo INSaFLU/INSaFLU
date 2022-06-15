@@ -17,7 +17,8 @@ $(document).on("click", "a", function(e){
 		
 		var ref_name = $(this).attr('ref_name');
 		var ref_project = $(this).attr('ref_project');
-		var tr_to_remove = e.target.parentNode.parentNode.parentNode.id;
+		// ID to remove line
+		var tr_to_remove = 'row_' + $(this).attr('pk');
 		
 		$('#id-label-remove').text('Do you want to remove \'' + ref_name + '\'?');
 		$('#id-modal-body-remove-sample').attr('pk', $(this).attr('pk'));

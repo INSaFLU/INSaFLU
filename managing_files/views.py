@@ -1609,6 +1609,10 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
 			context['samples_file_minor_intra_host'] = get_link_for_dropdown_item(
 				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
+		## aln2pheno result		
+		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report)):
+			context['aln2pheno_report'] = get_link_for_dropdown_item(
+				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report))
 		## all files zipped
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped)):
 			context['download_all_files'] = get_link_for_dropdown_item(

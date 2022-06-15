@@ -64,7 +64,7 @@
 							  	<div class="col-lg-4"><strong>Coverage:</strong> {{ coverage_file }}</div>
 							  	<div class="col-lg-4"><strong>Variants:</strong> {{ main_variations_snippy_file }}</div>
 							  	<div class="col-lg-4"><strong>Minor intra-host SNVs:</strong> {{ freebays_variations_50_file }}</div>
-							</div>
+							</div>					
 							<hr>
 						</div>
 	      			</div>
@@ -314,6 +314,7 @@
 			    									{% if samples_file_coverage %} {{ samples_file_coverage }} {% endif %}
 			    									{% if samples_file_variants %} {{ samples_file_variants }} {% endif %}
 			    									{% if samples_file_minor_intra_host %} {{ samples_file_minor_intra_host }} {% endif %}
+													{% if aln2pheno_report %} {{ aln2pheno_report }} {% endif %}
 			    								{% endif %}
 			    								
 			    								{% if pangolin_lineage %}

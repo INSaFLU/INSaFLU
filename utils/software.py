@@ -2325,12 +2325,18 @@ class Software(object):
 		self.utils.copy_file(alignments, os.path.join(temp_dir, 'data', 'sequences.fasta'))
 		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
 
+		### add reference sequence Fasta to global alignment
+		reference_fasta = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, "ncov/references_sequences.fasta")		
+		cmd = "cat {} >> {}".format(reference_fasta, os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run nexstrain in temp folder " + temp_dir)
+
+
 		# Run nextstrain
-		
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
-		# cmd = ". /usr/local/software/insaflu/miniconda/bin/activate; " +
-		# 	"conda activate nextstrain; " +\
-		# 	"nextstrain build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

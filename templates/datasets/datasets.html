@@ -9,16 +9,16 @@
 {% block css %}
 {% endblock css %}
 
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Datasets" "datasets" %}
+{% endblock %}
+
 {% block extra_messages %}
 	<!-- set the messages -->
 	<div class="container">
 		<div id="id_messages_remove"></div>
 	</div>
-{% endblock %}
-
-{% block breadcrumbs %}
-	{{ block.super }}
-	{% breadcrumb "Projects" "projects" %}
 {% endblock %}
 
 {% block content %}
@@ -33,25 +33,20 @@
 	            {% block table.thead %}
 	            <thead>                 
 	                <tr>
-	                    <th colspan="7">
-	                    	<a href="{% url "project-add" %}" data-title="Create a new project to process samples" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-plus-square"></i> Create project</span></a>
-	                        <form method="get" class="form-inline form-search pull-right">
-	           		            {% csrf_token %}
-	                            <input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8" placeholder="Name, Reference, Sample"{% if search_projects %} value="{{ search_projects }}"{% endif %}>
-	                            <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
+	                    <th colspan="6">
+	                    	<a href="#id_modal_add_dataset" data-title="Create a new dataset to attach sequences" class="btn btn-small btn-primary dark"
+	                    		id="id_modal_add_new_dataset" data-toggle="modal" data-toggle="tolltip">
+	                    		<span class="hidden-phone"><i class="fa fa-plus-square"></i> New Dataset</span>
+	                    	</a>
+                    			
+                    		<form method="get" class="form-inline form-search pull-right">
+	                          {% csrf_token %}
+	                            <div>
+	                              <input id="search_form_id" name="search_datasets" type="text" class="form-control col-md-8" placeholder="Name"{% if search_samples %} value="{{ search_samples }}"{% endif %}>
+	                              <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
+	                            </div>              
 	                        </form>
-	                        {% if list_project_file_csv or list_project_file_tsv %}
-								<div class="btn-group">
-									<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	    								Download
-	  								</button>
-	  								<div class="dropdown-menu">
-	  									{% if list_project_file_csv %} {{ list_project_file_csv }} {% endif %}
-	    								{% if list_project_file_tsv %} {{ list_project_file_tsv }} {% endif %}
-									</div>
-								</div>
-							{% endif %}
-	                    </th>                  
+	                    </th>               
 	                </tr>
 	             
 	              <tr>
@@ -66,7 +61,7 @@
 	            </thead>
 	            {% endblock table.thead %}
 	            {% block table.tbody %}
-	            <tbody>
+	            <tbody id="id_tbody">
 	                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
 	                  {% block table.tbody.row %}
 	                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
@@ -78,7 +73,7 @@
 	                {% empty %}
 	                  {% if table.empty_text %}
 	                  {% block table.tbody.empty_text %}
-	                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+	                  	<tr id="id_empty_text_table"><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
 	                  {% endblock table.tbody.empty_text %}
 	                  {% endif %}
 	                {% endfor %}
@@ -93,12 +88,12 @@
 	
 	{% if table.page and show_paginatior %}
 	    {% block pagination %}
-	    	<label id="id-total-list" class="pull-right">Total projects: {{ query_set_count }}</label>
+	    	<label id="id-total-list" class="pull-right">Total datasets: {{ query_set_count }}</label>
 	        {% bootstrap_pagination table.page url=request.get_full_path %}
 	    {% endblock pagination %}
 	  </div>
 	{% else %}
-		<label id="id-total-list" class="pull-right">Total projects: {{ query_set_count }}</label>
+		<label id="id-total-list" class="pull-right">Total datasets: {{ query_set_count }}</label>
 	{% endif %}
 	
 	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
@@ -110,37 +105,77 @@
    
   					<!-- Modal Header -->
   					<div class="modal-header alert alert-warning">
-    					<h4 class="modal-title-remove">Remove a project</h4>
+    					<h4 class="modal-title-remove">Remove a dataset</h4>
     					<button type="button" class="close" data-dismiss="modal">&times;</button>
   					</div>
   
   					<!-- Modal body -->
   					<div class="modal-body mx-auto mw-100">
-  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project' %}">
+  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_dataset' %}">
   							<label id="id-label-remove" class="col-form-label">Folder Name</label>
    						</div>
   					</div>
   					<!-- Modal footer -->
   					<div class="modal-footer" id="id-modal-footer-remove">
-    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal"
+    						remove-dataset-name-url="{% url 'remove_dataset' %}">Remove</button>
     					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
   					</div>
 			</div>
  		</div>
 	</div>
 	
+	<!-- The new Dataset, only name -->
+	<div class="modal fade" id="id_modal_add_dataset" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+   
+  					<!-- Modal Header -->
+  					<div class="modal-header alert alert-primary">
+    					<h4 class="modal-title">Add new dataset</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+  
+  					<!-- Modal body -->
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="modal-body-add-dataset"">
+  							<div class="form-group row">
+  								<label id="id-label-dataset" class="col-6 col-form-label">New name for the Dataset</label>
+ 								<div class="col-10">
+         							<input class="form-control" id="id-name-to-insert" placeholder="" type="text" autocomplete="off"
+         								add-dataset-name-url="{% url 'test_dataset_name' %}" />
+       							</div>
+       							<div id="id_dataset_name_error">
+									<!-- <span id="error_1_id_name" class="fields_error"><strong>Exists a project with this name.</strong></span> -->
+								</div>
+       						</div>
+  						</div>
+  					</div>
+  					<!-- Modal footer -->
+  					<div class="modal-footer">
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    					<button id="id-save-button" type="button" class="btn btn-primary" data-dismiss="modal"
+    						add-dataset-name-url="{% url 'add_dataset_name' %}">Add</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
 {% endblock content %}
 
 
 {% block js %}
 
 	{% load static from staticfiles %}
-	    <script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
+	    <script type="text/javascript" src="{% static 'js/dataset/remove_datasets.js' %}"></script>
+	    <script type="text/javascript" src="{% static 'js/dataset/add_datasets.js' %}"></script>
 
 	<script>
 	
 		$(document).ready(function() { 
 			$('#id-cancel-button').click(function() { 
+				$.unblockUI();
+			});
+			$('#id-save-button').click(function() { 
 				$.unblockUI();
 			});
 			$('#id-remove-button').click(function() { 
@@ -153,8 +188,8 @@
 			var id_ = $(this).attr('id');
 			var href = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
-			if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
-					!href.startsWith('/media') && !href.startsWith('http') ){
+			if (href !== '#id_modal_add_dataset' && href !== '#id_remove_modal' && onclick !== 'return false;' &&
+					id_ !== 'sidenavToggler' &&	!href.startsWith('/media') && !href.startsWith('http') ){
 				wait_screen();
 			}
 		});

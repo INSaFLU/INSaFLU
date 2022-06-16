@@ -29,6 +29,7 @@ def user_directory_path(instance, filename):
 	# file will be uploaded to MEDIA_ROOT/<filename>
 	return 'uploads/generic_data/user_{0}/{1}'.format(instance.owner.id, filename)
 
+
 class SeasonReference(models.Model):
 	"""
 	Each sample needs a dataset 
@@ -54,20 +55,24 @@ class MetaKey(models.Model):
 		ordering = ['name', ]
 		
 class Reference(models.Model):
+	constants = Constants()
+	
 	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
 	display_name = models.CharField(max_length=200, db_index=True, default='', verbose_name='Display name')
 	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
 	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
 	
 	## Size 100K
-	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream',
+										'text/plain'],\
 										max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
 	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
 	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
 	## Size 200K
 	## application/x-gameboy-rom because of 'gb' extension file of gbk
-	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream', 'application/x-gameboy-rom'],\
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream',\
+								    'application/x-gameboy-rom', 'text/plain'],\
 									max_upload_size=settings.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
 	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
 	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
@@ -136,7 +141,18 @@ class Reference(models.Model):
 		if (os.path.exists(out_file)):
 			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_fasta(\
 						TypePath.MEDIA_URL), os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
-						self.name))
+						self.constants.short_name(self.reference_fasta_name, Constants.SHORT_NAME_LENGTH)))
+		return _('File not available.')
+	
+	def get_reference_gb_web(self):
+		"""
+		return web link for reference
+		"""
+		out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_gbk(\
+						TypePath.MEDIA_URL), os.path.basename(self.get_reference_gbk(TypePath.MEDIA_ROOT)),
+						self.constants.short_name(self.reference_genbank_name, Constants.SHORT_NAME_LENGTH)))
 		return _('File not available.')
 
 	def get_gff3(self, type_path):
@@ -265,7 +281,7 @@ class MixedInfections(models.Model):
 	average_value = models.FloatField(default=0.0)
 	description = models.TextField(default="")
 	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
-	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
+	last_change_date = models.DateTimeField('last change date', blank=True, null=True)
 	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
 															## and is not used in projectSample,
 															## It can change across time
@@ -1269,6 +1285,7 @@ class ProcessControler(models.Model):
 	PREFIX_SAMPLE = "sample_"
 	PREFIX_PROJECT_SAMPLE = "project_sample_"
 	PREFIX_PROJECT = "project_"
+	PREFIX_DATASET = "dataset_"
 	PREFIX_UPLOAD_FILES = "upload_files_"
 	PREFIX_LINK_FILES_USER = "link_files_user_"
 	PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
@@ -1299,6 +1316,8 @@ class ProcessControler(models.Model):
 		return "{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk)
 	def get_name_project(self, project):
 		return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
+	def get_name_dataset(self, dataset):
+		return "{}{}".format(ProcessControler.PREFIX_DATASET, dataset.pk)
 	def get_name_upload_files(self, upload_files):
 		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
 	def get_name_link_files_user(self, user):

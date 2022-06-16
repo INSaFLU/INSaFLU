@@ -30,9 +30,10 @@ class CollectExtraData(object):
 	classdocs
 	'''
 
-	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
-	HEADER_SAMPLE_OUT_CSV_statistics = "id,fastq1,fastq2,sample date created"
-	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	HEADER_SAMPLE_OUT_ID = "id"
+	HEADER_SAMPLE_OUT_CSV = HEADER_SAMPLE_OUT_ID + ",fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV_statistics = HEADER_SAMPLE_OUT_ID + ",fastq1,fastq2,sample date created"
+	HEADER_SAMPLE_OUT_CSV_simple = HEADER_SAMPLE_OUT_ID + ",data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
 	## this is used for global sample list. It has all samples per user
 	HEADER_SAMPLE_OUT_CSV_for_sample = "sample,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification"
 
@@ -238,10 +239,9 @@ class CollectExtraData(object):
 		try:
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
@@ -423,7 +423,7 @@ class CollectExtraData(object):
 			self.logger_debug.info("COLLECT_EXTRA_FILES: zip files Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
-		except:
+		except Exception as e:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return

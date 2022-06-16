@@ -150,15 +150,6 @@ class SoftwareNames(object):
 	SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"	## Pangolin
 	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
 
-# <<<<<<< HEAD
-# 	SOFTWARE_Pangolin_name = "Pangolin"
-# 	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
-# 	SOFTWARE_Pangolin_designation_name = "Pango-designation"
-# 	SOFTWARE_Pangolin_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
-# 	SOFTWARE_Pangolin_VERSION = "2.3.8"				## this value is going to increase across time 
-# 	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
-# 	SOFTWARE_Pangolin_designation_VERSION = "v1.2.12"	## this value is going to increase across time
-# =======
 #	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
 #	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
 #	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
@@ -170,7 +161,6 @@ class SoftwareNames(object):
 #	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
 #	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
 #	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
-#>>>>>>> refs/heads/develop
 
 #	VECT_PANGOLIN_TO_TEST = [
 #		SOFTWARE_Pangolin_name,

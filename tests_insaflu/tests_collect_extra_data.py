@@ -283,6 +283,7 @@ class Test(unittest.TestCase):
 				project_sample = ProjectSample()
 				project_sample.id = n_id
 				project_sample.sample = sample
+				project_sample.seq_name_all_consensus = project_sample.sample.name
 				project_sample.project = project
 				project_sample.is_finished = True
 				project_sample.is_deleted = False

@@ -750,7 +750,7 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
             context['download_all_files'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
                 "{}_{}_{}".format(os.path.splitext(Dataset.DATASET_FILE_NAME_all_files_zipped)[0],
-                dataset.get_clean_project_name(), datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
+                dataset.get_clean_dataset_name(), datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
 
         context['different_references'] = dataset.get_number_different_references()
         context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)

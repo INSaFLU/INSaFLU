@@ -338,7 +338,7 @@ class SoftwareNames(object):
 	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/run_algn2pheno.sh")
 
 	### Nextstrain
-	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/run_nextstrain.sh")
+	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
 	SOFTWARE_NEXTSTRAIN_NCOV_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/ncov")
 		
 	###################################

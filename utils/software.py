@@ -2334,7 +2334,6 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run nexstrain in temp folder " + temp_dir)
 
-
 		# Run nextstrain
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
 		exit_status = os.system(cmd)

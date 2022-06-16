@@ -3,7 +3,7 @@ Created on 12/06/2022
 
 @author: mmp
 '''
-import os, csv, time, logging
+import os, csv, time, logging, json
 from constants.constants import Constants, TypePath, FileExtensions
 from utils.utils import Utils
 from django.conf import settings
@@ -82,6 +82,7 @@ class CollectExtraDatasetData(object):
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV, dataset, user)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV, dataset, user)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_json, dataset, user)
             ## IMPORTANT -> this need to be after of Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV
             #self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_json, dataset, user)
             
@@ -137,6 +138,7 @@ class CollectExtraDatasetData(object):
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_json, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
@@ -194,9 +196,16 @@ class CollectExtraDatasetData(object):
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_all_consensus):
             out_file = self.merge_all_consensus_files(dataset)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+        elif (type_file == Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_json):
+            ## tree json
+            out_file = self.create_json_file_from_sample_csv(dataset)
+            out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_nextstrain_default_build):
             
-            temp_dir, auspice_path = self.run_nextstrain(dataset)
+            try:
+                temp_dir, auspice_path = self.run_nextstrain(dataset)
+            except: ## fail to run nextStrain
+                pass
             ## copy files if they exist, try to remove in destination
             for type_file in Dataset.VECT_files_next_strain:
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
@@ -206,7 +215,9 @@ class CollectExtraDatasetData(object):
                     self.utils.remove_file(out_file_file_system)
 
             out_file = None     ## not copy anything with this variable
-            self.utils.remove_dir(temp_dir)
+            out_file_file_system = None
+            print(temp_dir)
+            #self.utils.remove_dir(temp_dir)
             
         ## copy file
         if (not out_file is None):
@@ -214,6 +225,38 @@ class CollectExtraDatasetData(object):
             self.utils.remove_file(out_file)
         elif (not out_file_file_system is None and os.path.exists(out_file_file_system)): self.utils.remove_file(out_file_file_system)
 
+    def create_json_file_from_sample_csv(self, dataset):
+        """
+        Create JSON file to insaPhylo
+        """
+        vect_remove_keys = ['id', 'fastq1', 'fastq2', 'data set', 'latitude', 'longitude']
+        file_name_root_sample = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV)
+        if (os.path.exists(file_name_root_sample)):
+            out_file = self.utils.get_temp_file('json_sample_file', FileExtensions.FILE_JSON)
+            with open(out_file, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
+                reader = csv.DictReader(handle_in_csv)
+                all_data = json.loads(json.dumps(list(reader)))
+                dt_result = {}
+                for dict_data in all_data:
+                    if ('id' in dict_data):
+                        dt_out = dict_data.copy()
+                        for key_to_remove in vect_remove_keys:
+                            try:
+                                del dt_out[key_to_remove]
+                            except KeyError:
+                                pass
+                        dt_result[dict_data['id']] = dt_out
+                if len(dt_result) == len(all_data):
+                    handle_write.write(json.dumps(dt_result))
+                else:
+                    os.unlink(out_file)
+                    self.logger.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(dataset.id, len(dt_result), len(all_data)))
+                    return None
+            return out_file
+        else:
+            self.logger.error('Sample csv file does not exist: {}'.format(file_name_root_sample))
+        return None
+    
     def merge_all_consensus_files(self, dataset):
         """
         merge all consensus files
@@ -245,7 +288,7 @@ class CollectExtraDatasetData(object):
         DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
         DATASET_FILE_NAME_nextstrain_default_build_root = "ncov_default-build_root-sequence.json"
         DATASET_FILE_NAME_nextstrain_default_build_tip = "ncov_default-build_tip-frequencies.json"
-        IMPORTANT: add 'auspice' to out directory "Dataset.RUN_out_path"
+        IMPORTANT: add 'auspice' to out directory "Dataset.RUN_out_path", it is where the results are out
         """
         alignments_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
         metadata_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV)

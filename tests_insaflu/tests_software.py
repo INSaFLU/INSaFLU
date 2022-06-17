@@ -3507,13 +3507,16 @@ class Test(TestCase):
 
 		# test the ncov build
 
-		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_AllConsensus.fasta")
-		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_Sample_list.tsv")
+		#alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_AllConsensus.fasta")
+		#metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_Sample_list.tsv")
+
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata.tsv")
 
 		# example where we can pass the reference
 		# temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
 
-		temp_dir = self.software.run_nextstrain(alignments_file, metadata_file)
+		temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
 
 		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
 		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build.json"),True)

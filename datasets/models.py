@@ -91,10 +91,10 @@ class Dataset(models.Model):
     DATASET_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
     DATASET_FILE_NAME_nex = "Alignment_nt_All.nex"
 
-    DATASET_FILE_NAME_SAMPLE_RESULT_TSV = "Dataset_list.tsv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV = "Nextstrain_metadata.tsv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
-    DATASET_FILE_NAME_SAMPLE_RESULT_CSV = "Dataset_list.csv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    DATASET_FILE_NAME_SAMPLE_RESULT_json = "Dataset_list_simple.json"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
+    DATASET_FILE_NAME_RESULT_TSV = "Dataset_list.tsv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+    DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV = "Nextstrain_metadata.tsv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
+    DATASET_FILE_NAME_RESULT_CSV = "Dataset_list.csv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+    DATASET_FILE_NAME_RESULT_json = "Dataset_list_simple.json"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
     DATASET_FILE_NAME_RESULT_all_consensus = "AllConsensus.fasta"     ### all consensus sequences for a project sample
     
     ###NextStrain Expected, apear inside 'auspice' folder whenrun NextStrain
@@ -103,6 +103,8 @@ class Dataset(models.Model):
     DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
     DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
     DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"
+    
+    DATASET_FILE_NAME_nextstrain_error = "NextStrainError.txt"      ## has the error of the nextStrain
     
     ####
     VECT_files_next_strain = [
@@ -113,15 +115,15 @@ class Dataset(models.Model):
     
     ### files to zip
     VECT_files_to_zip = [ 
-        DATASET_FILE_NAME_SAMPLE_RESULT_TSV,
-        DATASET_FILE_NAME_SAMPLE_RESULT_CSV,
-        DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV,
+        DATASET_FILE_NAME_RESULT_TSV,
+        DATASET_FILE_NAME_RESULT_CSV,
+        DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV,
         DATASET_FILE_NAME_RESULT_all_consensus,
         DATASET_FILE_NAME_MAFFT,
         DATASET_FILE_NAME_FASTTREE,
         DATASET_FILE_NAME_FASTTREE_tree,
         DATASET_FILE_NAME_nex
-    ] + VECT_files_next_strain
+    ] + VECT_files_next_strain + [DATASET_FILE_NAME_nextstrain_error]
         
     DATASET_FILE_NAME_all_files_zipped = "AllFiles.zip"                    ### Several files zipped
     
@@ -130,11 +132,6 @@ class Dataset(models.Model):
                     DATASET_FILE_NAME_FASTTREE_tree,\
                     DATASET_FILE_NAME_nex]
     
-    ### this is only to join with other names
-    DATASET_FILE_NAME_FASTTREE_element = "Tree_ML"
-    DATASET_FILE_NAME_MAFFT_element_nt = "Alignment_nt"
-    DATASET_FILE_NAME_MAFFT_element_aa = "Alignment_aa"
-
     name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Dataset name')
     owner = models.ForeignKey(User, related_name='dataset', blank=True, null=True, on_delete=models.CASCADE)
     creation_date = models.DateTimeField('Uploaded date', auto_now_add=True)

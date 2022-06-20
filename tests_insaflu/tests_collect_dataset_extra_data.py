@@ -266,7 +266,7 @@ class Test(unittest.TestCase):
 		
 		### test nextStrain metadata
 		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "out_nextstrain_metadata.tsv")
-		out_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV)
+		out_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
 		self.assertTrue(os.path.exists(out_file))
 		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
 		

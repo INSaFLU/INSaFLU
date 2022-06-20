@@ -356,9 +356,9 @@ class CreateTree(object):
 		
 		### copy files for the dataset
 		self.utils.copy_file(out_file_mafft, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT))
+		self.utils.copy_file(out_file_nex, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex))
 		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE))
 		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree))
-		self.utils.copy_file(out_file_nex, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex))
 		self.utils.remove_dir(temp_dir)
 		return True
 

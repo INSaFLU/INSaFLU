@@ -5,6 +5,7 @@ Created on Oct 28, 2017
 '''
 import os, gzip, logging, cmd, re, subprocess, datetime
 from ete3 import Tree
+from utils.exceptions import CmdException
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -2330,9 +2331,10 @@ class Software(object):
 		cmd = "cat {} >> {}".format(reference_fasta, os.path.join(temp_dir, 'data', 'sequences.fasta'))
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
+			self.utils.remove_dir(temp_dir)
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run nexstrain in temp folder " + temp_dir)
+			raise Exception("Fail to run nextstrain. Command: " + cmd)
 
 		# Run nextstrain
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
@@ -2340,7 +2342,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to run nexstrain in temp folder " + temp_dir)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
 		return temp_dir

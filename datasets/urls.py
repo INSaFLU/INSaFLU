@@ -22,5 +22,7 @@ urlpatterns = [
     url(r'^ajax/remove_consensus_in_dataset$', ajax_views.remove_consensus_in_dataset, name='remove_consensus_in_dataset'),      ## remove a consensus dataset
     url(r'^ajax/validate_consensus_name$', ajax_views.validate_consensus_name, name='validate-consensus-name'), ## Validate consensus name 
     
-    
+ 
+    url(r'^ajax/show_phylo_canvas$', ajax_views.show_phylo_canvas, name='show-phylo-canvas-datasets'),
+    url(r'^ajax/show_msa_nucleotide$', ajax_views.show_msa_nucleotide, name='show-msa-nucleotide-datasets'),
 ]

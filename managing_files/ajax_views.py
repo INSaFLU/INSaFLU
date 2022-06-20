@@ -162,8 +162,10 @@ def show_phylo_canvas(request):
 						data['tree'] = string_file_content
 						data['root'] = project.reference.name
 						data['url_sample'] = file_name_url_json
-						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
-						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name_tree, os.path.basename(file_name_tree)))
+						data['tree_nwk_id'] = mark_safe('<strong>Tree (.nwk):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_nwk,
+														os.path.basename(file_name_nwk), os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe('<strong>Tree (.tree):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_tree,
+												os.path.basename(file_name_tree), os.path.basename(file_name_tree)))
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)

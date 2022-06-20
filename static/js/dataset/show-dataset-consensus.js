@@ -38,15 +38,9 @@ $('#collapseTwo').on('hidden.bs.collapse', function () {
 	$('#phylocanvas').empty();
 });
 
-//catch the element from tree nucleotides combo box
-$("#combo_select_elements_phylocanvas_id").change(function () {
-	draw_phylo_canvas();
-});
-
 //draw phylocanvas
 // set size of window "#phylocanvas" defined in 'static/css/flu-web-site.css'
 function draw_phylo_canvas() {
-	var element_selected = $('#combo_select_elements_phylocanvas_id option:selected').val();
 
     $.ajax({
     	/// spin 
@@ -59,8 +53,7 @@ function draw_phylo_canvas() {
     	},
     	
 	    data : { 
-	    	project_id : $('#phylocanvas').attr("project_id"),
-	    	key_element_name : element_selected,
+	    	dataset_id : $('#phylocanvas').attr("dataset_id"),
 			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
@@ -164,14 +157,8 @@ $('#collapseThree').on('hidden.bs.collapse', function () {
 	$('#msa_viewer_nucleote_id').empty();
 });
 
-//catch the element from tree nucleotides combo box
-$("#combo_select_elements_nucleotids_alignments_id").change(function () {
-	draw_nucleotide_alignments();
-});
-
 //draw nucleotide alignments
 function draw_nucleotide_alignments() {
-	var element_selected = $('#combo_select_elements_nucleotids_alignments_id option:selected').val();
     
     $.ajax({
     	/// spin 
@@ -185,8 +172,7 @@ function draw_nucleotide_alignments() {
     	},
     	
 	    data : { 
-	    	project_id : $('#msa_viewer_nucleote_id').attr("project_id"),
-	    	key_element_name : element_selected,
+	    	dataset_id : $('#msa_viewer_nucleote_id').attr("dataset_id"),
 			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
 	    
@@ -236,6 +222,7 @@ function draw_nucleotide_alignments() {
 	    
 	    // handle a non-successful response
 	    error : function(xhr,errmsg,err) {
+			$('#loader_msa_viewer_nucleote_id').hide();
 	    	$('#msa_viewer_nucleote_id').append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load the alignment.</div>')
 	        console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
 	    }

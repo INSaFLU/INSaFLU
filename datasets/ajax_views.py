@@ -3,15 +3,19 @@ Created on Dec 6, 2017
 @author: mmp
 '''
 
-import logging
+import logging, os, csv, json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
 from django.conf import settings
 from datetime import datetime
 from django.db import transaction
+from django.utils.safestring import mark_safe
 from datasets.models import Dataset, Consensus, DatasetConsensus
 from utils.process_SGE import ProcessSGE
+from utils.utils import Utils
+from constants.constants import TypePath
+from datasets.manage_database import ManageDatabase
 
 ### Logger
 if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
@@ -357,3 +361,102 @@ def validate_consensus_name(request):
 		}
 		if (data['is_taken']): data['error_message'] = 'Exists a consensus with this name.'
 		return JsonResponse(data)
+	
+
+@csrf_protect
+def show_msa_nucleotide(request):
+	"""
+	manage msa nucleotide alignments
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_dataset_id = 'dataset_id'
+		if (key_with_dataset_id in request.GET):
+			dataset_id = int(request.GET.get(key_with_dataset_id))
+			try:
+				manage_database = ManageDatabase()
+				dataset = Dataset.objects.get(id=dataset_id)
+				file_name_fasta = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT)
+				
+				if (os.path.exists(file_name_fasta)):
+					file_name_fasta = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_MAFFT)
+					data['alignment_fasta_show_id'] = mark_safe(request.build_absolute_uri(file_name_fasta))
+					url_file_name_fasta = '<a href="{}" download="{}"> {}</a>'.format(file_name_fasta,
+						os.path.basename(file_name_fasta), os.path.basename(file_name_fasta))
+				else: 
+					url_file_name_fasta = 'File not available'
+					data['alignment_fasta_show_id'] = '#'
+				
+				file_name_nex = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex)
+				if (os.path.exists(file_name_nex)):
+					file_name_nex = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nex)
+					url_file_name_nex = '<a href="{}" download="{}"> {}</a>'.format(file_name_nex,
+						os.path.basename(file_name_fasta), os.path.basename(file_name_nex))
+				else: 
+					url_file_name_nex = 'File not available'
+						
+				data['is_ok'] = True
+				data['alignment_fasta_id'] = mark_safe("<strong>Alignment (.fasta):</strong> {}".format(url_file_name_fasta))
+				data['alignment_nex_id'] = mark_safe("<strong>Alignment (.nex):</strong> {}".format(url_file_name_nex))
+				b_calculate_again = False
+				data['max_length_label'] = manage_database.get_max_length_label(dataset, request.user, b_calculate_again)
+			except Dataset.DoesNotExist:
+				pass
+		return JsonResponse(data)
+
+@csrf_protect
+def show_phylo_canvas(request):
+	"""
+	manage check boxes through ajax
+	"""
+	
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		utils = Utils()
+		key_with_dataset_id = 'dataset_id'
+		if (key_with_dataset_id in request.GET):
+			dataset_id = int(request.GET.get(key_with_dataset_id))
+			try:
+				dataset = Dataset.objects.get(id=dataset_id)
+				file_name_root_json = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_json)
+				file_name_url_json = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_json)
+				### this is a little version of PROJECT_FILE_NAME_RESULT_CSV
+				file_name_root_sample = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_CSV)
+					
+				file_name_root_nwk = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
+				file_name_nwk = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_FASTTREE)
+				file_name_tree = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
+
+				if (os.path.exists(file_name_root_nwk) and os.path.exists(file_name_root_sample)):
+					string_file_content = utils.read_file_to_string(file_name_root_nwk).strip()
+					
+					if not os.path.exists(file_name_root_json) or os.path.getsize(file_name_root_json) == 0:
+						with open(file_name_root_json, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
+							reader = csv.DictReader(handle_in_csv)
+							all_data = json.loads(json.dumps(list(reader)))
+							dt_result = {}
+							for dict_data in all_data:
+								if ('id' in dict_data):
+									dt_out = dict_data.copy()
+									del dt_out['id']
+									dt_result[dict_data['id']] = dt_out
+							if len(dt_result) == len(all_data):
+								handle_write.write(json.dumps(dt_result))
+							else:
+								logger.error('DatasetID: {}  different number of lines processing Sample {} -> JSON {}'.format(
+									dataset_id, len(dt_result), len(all_data)))
+								string_file_content = None	## return error
+								
+					if (string_file_content != None and len(string_file_content) > 0):
+						data['is_ok'] = True
+						data['tree'] = string_file_content
+						data['root'] = dataset.get_first_reference_name()
+						data['url_sample'] = file_name_url_json
+						data['tree_nwk_id'] = mark_safe('<strong>Tree (.nwk):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_nwk, 
+														os.path.basename(file_name_nwk), os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe('<strong>Tree (.tree):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_tree,
+														os.path.basename(file_name_tree), os.path.basename(file_name_tree)))
+			except Dataset.DoesNotExist:
+				pass
+		return JsonResponse(data)
+

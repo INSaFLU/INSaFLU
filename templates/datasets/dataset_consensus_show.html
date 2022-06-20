@@ -80,18 +80,6 @@
 	      			<div class="card-block">
 	      				<div class="container-fluid">
 	      					<br>
-							<form class="form-inline regular_info_box">
-								<div class="form-group">
-									<label for="selectElement">Select a locus</label>
-							  		<select id="combo_select_elements_phylocanvas_id" class="custom-select mx-sm-3">
-			      						<option selected value="all_together">All</option>
-			      						{% for element in elements %}
-			      							<option value="{{ element }}">{{ element }}</option>
-			      						{% endfor %}
-			      					</select>
-								</div>
-	      					</form>
-	      					<br>
 	      					<div class="regular_info_box form-inline">
 						  		<div id="tree_nwk_id" class="col-lg-5"></div>
 						  		<div id="tree_tree_id" class="col-lg-5"></div>
@@ -99,7 +87,7 @@
 	      					
 	      					<!-- Show files to download, trees -->
 	      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
-	        				<div id="phylocanvas" project_id="{{ project_id }}" show-phylo-canvas-url="{% url 'show-phylo-canvas' %}"></div>
+	        				<div id="phylocanvas" dataset_id="{{ dataset.pk }}" show-phylo-canvas-url="{% url 'show-phylo-canvas-datasets' %}"></div>
 	        			</div>
 	      			</div>
 	    		</div>
@@ -120,18 +108,6 @@
 	      			<div class="card-block">
 	      				<div class="container-fluid">
 	      					<br>
-							<form class="form-inline regular_info_box">
-								<div class="form-group">
-									<label for="selectElement">Select a locus</label>
-							  		<select id="combo_select_elements_nucleotids_alignments_id" class="custom-select mx-sm-3">
-			      						<option selected value="all_together">All</option>
-			      						{% for element in elements %}
-			      							<option value="{{ element }}">{{ element }}</option>
-			      						{% endfor %}
-			      					</select>
-								</div>
-	      					</form>
-	      					<br>
 	      					<div class="regular_info_box form-inline">
 						  		<div id="alignment_fasta_id" class="col-lg-5"></div>
 						  		<div id="alignment_nex_id" class="col-lg-5"></div>
@@ -139,12 +115,11 @@
 	      					<br>
 	      					<!-- Show files to download -->
 	      					<div id='loader_msa_viewer_nucleote_id'><img src="{{ spinner_url }}"/></div>
-	        				<div id="msa_viewer_nucleote_id" project_id="{{ project_id }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide' %}"></div>
+	        				<div id="msa_viewer_nucleote_id" dataset_id="{{ dataset.pk }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide-datasets' %}"></div>
 	        			</div>
 	      			</div>
 	    		</div>
 	  		</div>
-	  		
 		</div>
 	
 		<hr>
@@ -171,15 +146,13 @@
 			    									{{ all_consensus }}
 			    								{% endif %}
 			    								
-			    								{% if nextstrain_default_build %}
+			    								{% if nextstrain_default_build or nextstrain_error or dataset_file_nextstrain_tsv%}
 			    									<div class="dropdown-divider"></div>
 			    									{{ nextstrain_default_build }}
 			    									{{ nextstrain_build_root }}
 			    									{{ nextstrain_build_tip }}
-			    								{% endif %}
-			    								{% if dataset_file_nextstrain_tsv %}
-			    									<div class="dropdown-divider"></div>
 			    									{{ dataset_file_nextstrain_tsv }}
+			    									{{ nextstrain_error }}
 			    								{% endif %}
 			    								{% if download_all_files %}
 			    									<div class="dropdown-divider"></div>
@@ -191,7 +164,7 @@
 										<!-- Meta Data -->
 										<div class="btn-group">
 											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			    								Meta Data for NextStrain
+			    								Metadata for NextStrain
 			  								</button>
 			  								<div class="dropdown-menu">
 			  									{% if file_meta_data_csv %} 
@@ -321,6 +294,7 @@
  	 		<!-- Custom scripts for all pages-->
 	    	
 	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
+	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'js/dataset/show-dataset-consensus.js' %}"></script>
 	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
@@ -330,6 +304,7 @@
 	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/tree.js' %}" defer></script>
 	    	<!--  END JS to insaphylo -->
 			
+			<script type="text/javascript" src="{% static 'vendor/raphael/raphael.min.js' %}"></script>
 	<script>	
 		$('#id_go_back_button').on('click', function(){
 			wait_screen();

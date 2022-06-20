@@ -723,18 +723,19 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         context['dataset'] = dataset
         
         ## metadata already there
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV)):
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_CSV)):
             context['dataset_file_result_csv'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_CSV))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV)):
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_CSV))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_TSV)):
             context['dataset_file_result_tsv'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_TSV))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV)):
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_TSV))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)):
             context['dataset_file_nextstrain_tsv'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_SAMPLE_RESULT_NEXTSTRAIN_TSV))
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV))
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)):
             context['all_consensus'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus))
+        ### nextStrain
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_default_build)):
             context['nextstrain_default_build'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_default_build))
@@ -744,6 +745,9 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_tip)):
             context['nextstrain_build_tip'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_tip))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)):
+            context['nextstrain_error'] = get_link_for_dropdown_item(
+                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_error))
             
         ## all files zipped
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped)):

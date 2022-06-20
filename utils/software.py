@@ -2345,8 +2345,49 @@ class Software(object):
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
+
 		return temp_dir
 
+
+	def run_aln2pheno(self, sequences, reference, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):
+		"""
+		run aln2pheno
+		:param sequences: sequence file with aminoacids from the SARS-CoV-2 S protein
+		:param reference: name of the reference (must be one of the sequences)
+		:param report: output file with final report
+		:param flagged: output file with flagged mutations
+		:param db: database for aln2pheno
+		:out exit status
+		"""
+
+		# Create a temp folder
+		temp_dir = os.path.join(self.utils.get_temp_dir())
+		temp_dir = temp_dir + "/tmp"
+
+		# Add as parameter...
+		#db_file =  os.path.join(settings.MEDIA_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
+		#db_file =  os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_ALN2PHENO, db)
+		db_file =  os.path.join(settings.STATIC_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
+		
+		# Run aln2pheno
+		cmd = "{} --db {} -g S --algn {} -r {} --odir {} --output aln2pheno".format(SoftwareNames.SOFTWARE_ALN2PHENO, db_file, sequences, reference, temp_dir)
+		#cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run aln2pheno in temp folder " + temp_dir)
+
+		# copy results to output
+		self.utils.copy_file(temp_dir + '/aln2pheno_final_report.tsv', report)
+		self.utils.copy_file(temp_dir + '/aln2pheno_flagged_mutation_report.tsv', flagged)
+
+		self.utils.remove_dir(temp_dir)
+
+		return exit_status
+
+	
 
 class Contigs2Sequences(object):
 	'''

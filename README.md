@@ -9,6 +9,8 @@ INSaFLU (“INSide the FLU”) is a bioinformatics free web-based suite (https:/
 
 INSaFLU is freely available at [https://insaflu.insa.pt](https://insaflu.insa.pt)
 
+Test
+
 Documentation (latest) for each INSaFLU module is provided at [http://insaflu.readthedocs.io/](http://insaflu.readthedocs.io/)
 
 For an easy and rapid local installation using docker see here [https://github.com/INSaFLU/docker](https://github.com/INSaFLU/docker).

@@ -97,8 +97,8 @@ class Constants(object):
 	DIR_TYPE_REFERENCES = "db/references/"
 	DIR_NEXTSTRAIN_tables = "db/nextstrain"
 	DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
-	
-	
+	DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
+
 	INSAFLU_NAME = 'insaflu'
 	
 	### key for a session with project name

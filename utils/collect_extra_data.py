@@ -176,18 +176,24 @@ class CollectExtraData(object):
 			## later we will extend this to more cases...
 			#if (is_sars_cov):
 
-			#	self.logger_debug.info("Aln2pheno Entered the zone")
+			self.logger_debug.info("Aln2pheno Entered the zone")
 			# TODO Where to get constants for this? for the moment it is hardcoded
 
 			file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, "SARS_CoV_2", "S", Project.PROJECT_FILE_NAME_MAFFT)
 
 			if(os.path.exists(file_alignments)):
 
-				file_aln2pheno_report = project.get_global_file_by_project(TypePath.MEDIA_ROOT,	Project.PROJECT_FILE_NAME_Aln2pheno_report)
-				file_aln2pheno_flagged = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged)
+				file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+				file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
 
 				# add output as parameters of individual files, or output a zip with the folder...
-				software.run_aln2pheno(reference="{}_SARS_CoV_2_S".format(project.reference.name), sequences=file_alignments, report=file_aln2pheno_report, flagged=file_aln2pheno_flagged)				
+				software.run_aln2pheno(	reference="{}_SARS_CoV_2_S".format(project.reference.name), sequences=file_alignments, report=file_aln2pheno_report_COG_UK, flagged=file_aln2pheno_flagged_COG_UK, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv")
+
+				file_aln2pheno_report_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)
+				file_aln2pheno_flagged_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay)
+
+				# add output as parameters of individual files, or output a zip with the folder...
+				software.run_aln2pheno(	reference="{}_SARS_CoV_2_S".format(project.reference.name), sequences=file_alignments, report=file_aln2pheno_report_pokay, flagged=file_aln2pheno_flagged_pokay, db="pokay_2022-04-28.tsv")		
 
 				# Versions, etc.... try adding this later...
 				#try:
@@ -837,13 +843,17 @@ class CollectExtraData(object):
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Pangolin_lineage))
 
 		### aln2pheno data
-		file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report)
+		file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
 		## aln2pheno files			
 		if (project.number_passed_sequences > 0 and os.path.exists(file_aln2pheno_result)):
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report))
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged))						
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))						
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay),
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))						
 		
 			
 		## all files zipped

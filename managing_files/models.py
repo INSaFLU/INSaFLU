@@ -822,9 +822,11 @@ class Project(models.Model):
 	
 	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
 
-	PROJECT_FILE_NAME_Aln2pheno_report = "aln2pheno_final_report.tsv"				### has results of aln2pheno
-	PROJECT_FILE_NAME_Aln2pheno_flagged = "aln2pheno_flagged_mutation_report.tsv"	### has results of aln2pheno
-	
+	PROJECT_FILE_NAME_Aln2pheno_report_COG_UK = "aln2pheno_final_report_COG_UK.tsv"					### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK = "aln2pheno_flagged_mutation_report_COG_UK.tsv"		### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_report_pokay = "aln2pheno_final_report_pokay.tsv"					### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_flagged_pokay = "aln2pheno_flagged_mutation_report_pokay.tsv"		### has results of aln2pheno
+
 	PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"					### Several files zipped
 	
 	## put the type file here to clean if there isn't enough sequences to create the trees and alignments

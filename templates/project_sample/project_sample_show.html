@@ -222,7 +222,7 @@
 	    		</div>
 	    	</div>
 			
-	    	{% if aln2pheno_report %} 
+	    	{% if aln2pheno_report_cog %} 
 			
 	  		<!-- Card Show aln2pheno report -->
 			  <div class="card">
@@ -336,7 +336,8 @@
 			    									{% if samples_file_coverage %} {{ samples_file_coverage }} {% endif %}
 			    									{% if samples_file_variants %} {{ samples_file_variants }} {% endif %}
 			    									{% if samples_file_minor_intra_host %} {{ samples_file_minor_intra_host }} {% endif %}
-													{% if aln2pheno_report %} {{ aln2pheno_report }} {% endif %}
+													{% if aln2pheno_report_cog %} {{ aln2pheno_report_cog }} {% endif %}
+													{% if aln2pheno_report_pokay %} {{ aln2pheno_report_pokay }} {% endif %}
 			    								{% endif %}
 			    								
 			    								{% if pangolin_lineage %}

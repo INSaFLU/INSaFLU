@@ -265,10 +265,10 @@ class Test(unittest.TestCase):
 		self.assertEqual("32", meta_data.description)
 		
 		### test nextStrain metadata
-		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "out_nextstrain_metadata.tsv")
+		out_nextstrain_metadata = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "out_nextstrain_metadata.tsv")
 		out_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
 		self.assertTrue(os.path.exists(out_file))
-		self.assertTrue(filecmp.cmp(out_file, expected_file_coverage))
+		self.assertTrue(filecmp.cmp(out_file, out_nextstrain_metadata))
 		
 		### get sample result file
 		self.utils.remove_dir(temp_dir)

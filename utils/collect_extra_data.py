@@ -44,6 +44,7 @@ class CollectExtraData(object):
 	
 	utils = Utils()
 	software = Software()
+	software_pangolin = SoftwarePangolin()
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
 	
@@ -110,7 +111,6 @@ class CollectExtraData(object):
 		Only for update metadata
 		"""
 		### get the taskID and seal it
-		software_pangolin = SoftwarePangolin()
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		try:
@@ -119,11 +119,11 @@ class CollectExtraData(object):
 										Project.PROJECT_FILE_NAME_Pangolin_lineage)
 			file_consensus = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
 										Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
-			## test if is necesserary to run pangolin lineage
-			if (os.path.exists(file_pangolin_output) or software_pangolin.is_ref_sars_cov_2(
+			## test if is necessary to run pangolin lineage
+			if (os.path.exists(file_pangolin_output) or self.software_pangolin.is_ref_sars_cov_2(
 					project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
 				## process pangolin
-				software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
+				self.software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
 				try:
 					software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 					
@@ -161,64 +161,37 @@ class CollectExtraData(object):
 		Runs aln2pheno
 		"""
 		### get the taskID and seal it
-		software_pangolin = SoftwarePangolin()
-		software = Software()
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		try:
 
-			#is_sars_cov = software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-			#is_sars_cov = software_pangolin.is_ref_sars_cov_2(project.reference.name)
-
-			#self.logger_debug.info("Aln2pheno: {} {}".format(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT),is_sars_cov))
-
-			## we can only run for the moment in the case of sars_cov_2
-			## later we will extend this to more cases...
-			#if (is_sars_cov):
-
-			self.logger_debug.info("Aln2pheno Entered the zone")
-			# TODO Where to get constants for this? for the moment it is hardcoded
-
-			file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, "SARS_CoV_2", "S", Project.PROJECT_FILE_NAME_MAFFT)
-
-			if(os.path.exists(file_alignments)):
-
-				file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
-				file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
-
-				# add output as parameters of individual files, or output a zip with the folder...
-				software.run_aln2pheno(	reference="{}_SARS_CoV_2_S".format(project.reference.name), sequences=file_alignments, report=file_aln2pheno_report_COG_UK, flagged=file_aln2pheno_flagged_COG_UK, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv")
-
-				file_aln2pheno_report_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)
-				file_aln2pheno_flagged_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay)
-
-				# add output as parameters of individual files, or output a zip with the folder...
-				software.run_aln2pheno(	reference="{}_SARS_CoV_2_S".format(project.reference.name), sequences=file_alignments, report=file_aln2pheno_report_pokay, flagged=file_aln2pheno_flagged_pokay, db="pokay_2022-04-28.tsv")		
-
-				# Versions, etc.... try adding this later...
-				#try:
-				#	software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-				#	
-				#	### set last version of the Pangolin run in this project
-				#	dt_result_version = software.get_version_long()
-				#	result_all = Result()
-				#	manage_database = ManageDatabase()
-				#	for soft_name in dt_result_version:
-				#		result_all.add_software(SoftwareDesc(soft_name,	dt_result_version.get(soft_name, ""), ""))
-				#	## Add Analysis Mode that was ran
-				#	result_all.add_software(SoftwareDesc(SoftwareNames.SOFTWARE_Pangolin_analysis_mode,	settings.RUN_PANGOLIN_MODEL, ""))
-				#	manage_database.set_project_metakey(project, user,
-				#			MetaKeyAndValue.META_KEY_Identify_pangolin,\
-				#			MetaKeyAndValue.META_VALUE_Success,\
-				#			result_all.to_json() )
-				#except SoftwareModel.DoesNotExist:	## need to create with last version
-				#	self.logger_production.error('ProjectID: {} Fail to detect software model'.format(project.id))
-				#	self.logger_debug.error('ProjectID: {} Fail to detect software model'.format(project.id))
-				#except:
-				#	self.logger_production.error('ProjectID: {}  Fail to run aln2pheno '.format(project.id))
-				#	self.logger_debug.error('ProjectID: {}  '.format(project.id))
-
-
+			## test SARS cov
+			if (self.software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
+				self.logger_debug.info("Aln2pheno Entered the zone")
+				geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+				
+				### create for single sequences
+				GENE_NAME = 'S'
+				for sequence_name in geneticElement.get_sorted_elements():
+					file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 
+						GENE_NAME, Project.PROJECT_FILE_NAME_MAFFT)
+					if(os.path.exists(file_alignments)): break
+					
+				if(os.path.exists(file_alignments)):
+	
+					file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+					file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
+	
+					# add output as parameters of individual files, or output a zip with the folder...
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
+								sequences=file_alignments, report=file_aln2pheno_report_COG_UK,
+								flagged=file_aln2pheno_flagged_COG_UK, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv")
+					file_aln2pheno_report_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)
+					file_aln2pheno_flagged_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay)
+					# add output as parameters of individual files, or output a zip with the folder...
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
+								sequences=file_alignments, report=file_aln2pheno_report_pokay,
+								flagged=file_aln2pheno_flagged_pokay, db="pokay_2022-04-28.tsv")
 		except:
 			## finished with error
 			self.logger_debug.info("Aln2pheno Gave an error")
@@ -396,7 +369,7 @@ class CollectExtraData(object):
 			
 			## calculate the phenotype table, if possible...
 			## This needs to be after the CreateTree to generate protein alignments
-			self.__collect_aln2pheno(project, user)
+			self.__collect_aln2pheno(project, user, False)
 			self.logger_production.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
 			self.logger_debug.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1

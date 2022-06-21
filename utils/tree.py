@@ -5,7 +5,8 @@ Created on Nov 25, 2017
 '''
 from utils.utils import Utils
 from datasets.models import Dataset
-from datasets.manage_database import ManageDatabase
+from datasets.manage_database import ManageDatabase as ManageDatabaseDatasets
+from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Result
 from constants.constants import TypePath, FileExtensions
@@ -45,27 +46,27 @@ class CreateTree(object):
 		"""
 		
 		start= time.time()
-		self.logging.info("START TREE and ALIGNEMTS:")
+		self.logger.info("START TREE and ALIGNEMTS:")
 		
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
-		self.logging.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		self.logger.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
 		start = time.time()
 			
 		proteins = Proteins()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, owner)
 		### create for single sequences
 		for sequence_name in geneticElement.get_sorted_elements():
-			self.logging.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logger.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
 			### create the protein alignments
-			self.logging.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logger.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			proteins.create_alignement_for_element(project, owner, geneticElement, sequence_name)
 			
-		self.logging.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
+		self.logger.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
 		
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
@@ -290,7 +291,7 @@ class CreateTree(object):
 		start= time.time()
 		self.logger.info("START TREE and ALIGNEMTS:")
 		
-		manageDatabase = ManageDatabase()
+		manageDatabase = ManageDatabaseDatasets()
 		temp_dir = self.utils.get_temp_dir()
 		
 		### get meta_key

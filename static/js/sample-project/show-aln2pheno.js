@@ -148,7 +148,7 @@ function show_aln2pheno() {
 	    			}
 
 	    			// hide loading icon
-	    			$('#loader_showvariantsasatable').hide();
+	    			$('#loader_showaln2pheno').hide();
 	    		});
 	      }
 	      else{

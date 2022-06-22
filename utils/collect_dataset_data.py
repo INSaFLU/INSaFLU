@@ -354,7 +354,6 @@ class CollectExtraDatasetData(object):
                             dataset_consensus.project_sample.pk,
                             dataset_consensus.seq_name_all_consensus, row)
                     continue
-            
                 
                 dt_out_temp = {}
                 ## start looking for simple list                

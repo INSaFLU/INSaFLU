@@ -164,7 +164,7 @@ class Metadata(object):
                 ### test synonymous, And try date synonymous
                 b_found = False
                 for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU.get(column, []):     
-                    if self.dt_header.get(column, -1) > 0 and \
+                    if self.dt_header.get(column, -1) == -1 and column_insaflu in self.dt_header and \
                         len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column_insaflu]]) > 0:
                         vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column_insaflu]])
                         for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU[column]: dt_out_header[column_insaflu] = 1

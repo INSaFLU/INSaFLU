@@ -2361,18 +2361,14 @@ class Software(object):
 		"""
 
 		# Create a temp folder
-		temp_dir = os.path.join(self.utils.get_temp_dir())
-		temp_dir = temp_dir + "/tmp"
+		temp_dir = self.utils.get_temp_dir()
 
 		# Add as parameter...
-		#db_file =  os.path.join(settings.MEDIA_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
-		#db_file =  os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_TYPE_ALN2PHENO, db)
 		db_file =  os.path.join(settings.STATIC_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
 		
 		# Run aln2pheno
-		cmd = "{} --db {} -g S --algn {} -r {} --odir {} --output aln2pheno".format(SoftwareNames.SOFTWARE_ALN2PHENO, db_file, sequences, reference, temp_dir)
-		#cmd = SoftwareNames.SOFTWARE_ALN2PHENO + " --db " + SoftwareNames.SOFTWARE_ALN2PHENO_DB +  " -g S --algn " + sequences + " -r " + reference + " --odir " + temp_dir + "/tmp --output aln2pheno"
-
+		cmd = "{} --db {} -g S --algn {} -r {} --odir {} --output aln2pheno -f".format(SoftwareNames.SOFTWARE_ALN2PHENO,
+				db_file, sequences, reference, temp_dir)
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2383,8 +2379,8 @@ class Software(object):
 		self.utils.copy_file(temp_dir + '/aln2pheno_final_report.tsv', report)
 		self.utils.copy_file(temp_dir + '/aln2pheno_flagged_mutation_report.tsv', flagged)
 
+		###
 		self.utils.remove_dir(temp_dir)
-
 		return exit_status
 
 	

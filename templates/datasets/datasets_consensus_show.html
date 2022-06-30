@@ -162,20 +162,12 @@
 										</div>
 										
 										<!-- Meta Data -->
-										<div class="btn-group">
-											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			    								Metadata for NextStrain
-			  								</button>
-			  								<div class="dropdown-menu">
-			  									{% if file_meta_data_csv %} 
-			  										{{ file_meta_data_csv }}
-			  										{{ file_meta_data_tsv }}
-			  										<div class="dropdown-divider"></div> 
-			  									{% endif %}
-			  									<a href="{% url 'dataset-update-metadata' dataset.pk %}" data-title="Upload metadata to update on {{dataset.name}} dataset from csv/tsv file" 
-			  										class="dropdown-item" ><span class="hidden-phone"> Update metadata</span></a>
-											</div>
-										</div>
+										<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
+											data-title="Upload metadata to update '{{dataset.name}}' dataset from a csv/tsv file"
+											class="btn btn-small btn-primary dark"
+                    						data-toggle="tolltip">
+                    						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
+                    					</a>
 										
 										<!-- Show nextClade link -->
 										<!-- {% if nextclade_link_covid or nextclade_link_a_h3n2 %}

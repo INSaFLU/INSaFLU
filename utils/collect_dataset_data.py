@@ -141,6 +141,7 @@ class CollectExtraDatasetData(object):
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
             
@@ -192,7 +193,11 @@ class CollectExtraDatasetData(object):
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV):
             ## samples tsv
-            out_file = self.collect_nextstrain_table(dataset)
+            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_TAB)
+            out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+        elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV):
+            ## samples csv
+            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_COMMA)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_all_consensus):
             out_file = self.merge_all_consensus_files(dataset)
@@ -391,7 +396,7 @@ class CollectExtraDatasetData(object):
             return None
         return out_file
     
-    def collect_nextstrain_table(self, dataset):
+    def collect_nextstrain_table(self, dataset, column_separator):
         """
         collect sample table
         column_separator : COMMA or TAB
@@ -400,8 +405,6 @@ class CollectExtraDatasetData(object):
         2) sample list, used to upload in the tree
         
         """
-        column_separator = Constants.SEPARATOR_TAB
-        
         data_columns = DataColumns()
         ### join all
         dt_out_id_project = {} 

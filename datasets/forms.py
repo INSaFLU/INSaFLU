@@ -7,7 +7,7 @@ import os
 from django import forms
 from managing_files.models import Reference, Project
 from datasets.models import UploadFiles
-from datasets.models import Consensus
+from datasets.models import Consensus, Dataset
 from utils.utils import Utils
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
@@ -234,6 +234,7 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
         self.pk = kwargs.pop('pk')
         super(DatastesUploadDescriptionMetadataForm, self).__init__(*args, **kwargs)
         
+        dataset_name = Dataset.objects.get(pk=self.pk) 
         
         field_text= [
             ('path_name', 'File name', '"csv" or "tsv" file with metadata to update existing samples.', True),
@@ -247,13 +248,15 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
         self.helper.form_method = 'POST'
         self.helper.layout = Layout(
             HTML('<p> </p>'),
-            HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-                    Constants.FILE_TEMPLATE_INPUT_METADATA_csv)) + \
-                    '" download> <span> <i class="fa fa-download"></i></span> Last metadata file \'csv\' for "{}"</a> </div>'.format(self.dataset_name)),
+            HTML('<div class="alert alert-dark"> <span><i class="fa fa-download"></i></span> ' + \
+                    dataset_name.get_global_file_by_dataset_web(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV) + \
+                    " Last metadata file 'csv' for '{}' </div>".format(
+                    dataset_name.name)),
             HTML('<p> </p>'),
-            HTML('<div class="alert alert-dark"> <a href="' + mark_safe(os.path.join(getattr(settings, "STATIC_URL", None), Constants.DIR_TEMPLATE_INPUT,\
-                    Constants.FILE_TEMPLATE_INPUT_METADATA_tsv)) + \
-                    '" download> <span> <i class="fa fa-download"></i></span> Last metadata file \'tsv\' for "{}"</a> </div>'.format(self.dataset_name)),
+            HTML('<div class="alert alert-dark"> <span><i class="fa fa-download"></i></span> ' + \
+                     dataset_name.get_global_file_by_dataset_web(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV) + \
+                    " Last metadata file 'tsv' for '{}' </div>".format(
+                    dataset_name.name)),
             HTML('<p> </p>'),
             Div('path_name', css_class="col-lm-3"),
             HTML('<p> </p>'),
@@ -291,3 +294,7 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
         else:
             self.number_files_to_process = parse_in_files.get_number_samples()
         return cleaned_data
+
+
+
+

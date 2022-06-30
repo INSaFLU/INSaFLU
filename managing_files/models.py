@@ -904,7 +904,6 @@ class Project(models.Model):
 	def _clean_name(self, name_to_clean, dict_to_clean = { ' ' : '_', '(' : '', ')' : '', '$' : '', '#' : '', '&' : '', '/' : '', '\\' : '', '-' : '_' }):
 		"""
 		clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
-		
 		"""
 		for key in dict_to_clean:
 			name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
@@ -916,7 +915,7 @@ class Project(models.Model):
 	def get_global_file_by_project(self, type_path, file_name):
 		"""
 		type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
-		file_name:	Project.PROJECT_FILE_NAME_MAFFT, ....  
+		file_name: Project.PROJECT_FILE_NAME_MAFFT, ....  
 		"""
 		return os.path.join(self.__get_global_path__(type_path, None), file_name)
 

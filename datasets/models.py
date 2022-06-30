@@ -93,6 +93,7 @@ class Dataset(models.Model):
 
     DATASET_FILE_NAME_RESULT_TSV = "Dataset_list.tsv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
     DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV = "Nextstrain_metadata.tsv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
+    DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV = "Nextstrain_metadata.csv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
     DATASET_FILE_NAME_RESULT_CSV = "Dataset_list.csv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
     DATASET_FILE_NAME_RESULT_json = "Dataset_list_simple.json"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
     DATASET_FILE_NAME_RESULT_all_consensus = "AllConsensus.fasta"     ### all consensus sequences for a project sample
@@ -103,6 +104,7 @@ class Dataset(models.Model):
     DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
     DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
     DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"
+    DATASET_FILE_NAME_nextstrain_log = "ncov_default-build.json"
     
     DATASET_FILE_NAME_nextstrain_error = "NextStrainError.txt"      ## has the error of the nextStrain
     
@@ -118,6 +120,7 @@ class Dataset(models.Model):
         DATASET_FILE_NAME_RESULT_TSV,
         DATASET_FILE_NAME_RESULT_CSV,
         DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV,
+        DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV,
         DATASET_FILE_NAME_RESULT_all_consensus,
         DATASET_FILE_NAME_MAFFT,
         DATASET_FILE_NAME_FASTTREE,
@@ -194,9 +197,9 @@ class Dataset(models.Model):
         
         out_file = self.get_global_file_by_dataset(TypePath.MEDIA_ROOT, file_name)
         if (os.path.exists(out_file)):
-            return mark_safe('<a href="{}" download> {}</a>'.format(self.get_global_file_by_dataset(\
-                        TypePath.MEDIA_URL, file_name), file_name))
-        return _('File not available yet.')
+            return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_global_file_by_dataset(\
+                        TypePath.MEDIA_URL, file_name), file_name, file_name))
+        return 'File not available yet.'
         
         
     def __get_user_result_global_directory_path__(self, element = None):

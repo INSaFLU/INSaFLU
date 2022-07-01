@@ -694,7 +694,7 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
 
 class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
     model = Project
-    template_name = 'datasets/dataset_consensus_show.html'
+    template_name = 'datasets/datasets_consensus_show.html'
     context_object_name = 'dataset_consensus'
     
     def get_context_data(self, **kwargs):
@@ -759,9 +759,6 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         context['different_references'] = dataset.get_number_different_references()
         context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
-
-        ## Files
-            
         return context
 
 

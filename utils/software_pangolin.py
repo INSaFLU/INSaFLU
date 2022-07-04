@@ -158,29 +158,43 @@ class SoftwarePangolin(object):
 		"""
 		test if it's SARS_COV
 		"""
+
+		#self.logger_debug.info("is_ref_sars_cov_2 {}".format(fasta_ref_name))
+
 		software = Software()
 		### test id abricate has the database
 		try:
 			uploadFile = UploadFile.objects.order_by('-version')[0]
-		except UploadFile.DoesNotExist:
+		except UploadFile.DoesNotExist as e:
+			#self.logger_debug.error("is_ref_sars_cov_2 getting db {}".format(e))
 			return False
+
+		#self.logger_debug.info("is_ref_sars_cov_2 {}".format(uploadFile.abricate_name))
 
 		## if not exist try to create it
 		if (not software.is_exist_database_abricate(uploadFile.abricate_name)):
+			#self.logger_debug.info("is_ref_sars_cov_2 {} db does not exist".format(uploadFile.abricate_name))
 			try:
-				self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
-			except Exception:
+				#self.logger_debug.info("is_ref_sars_cov_2 creating db for {}".format(uploadFile.abricate_name))
+				software.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+				#self.logger_debug.info("is_ref_sars_cov_2 created db for {}".format(uploadFile.abricate_name))				
+			except Exception as e:
+				#self.logger_debug.error("is_ref_sars_cov_2 failed creating db {}".format(e))
 				return False
 		
 		## run abricate
 		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
 		try:
-			cmd = software.run_abricate(uploadFile.abricate_name, fasta_ref_name, 
+			#self.logger_debug.info("is_ref_sars_cov_2 going to run abricate")				
+			software.run_abricate(uploadFile.abricate_name, fasta_ref_name, 
 				SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
-		except Exception:
+			#self.logger_debug.info("is_ref_sars_cov_2 ran abricate")
+		except Exception as e:
+			#self.logger_debug.error("is_ref_sars_cov_2 failed running abricate {}".format(e))
 			return False
 		
 		if (not os.path.exists(out_file_abricate)):
+			#self.logger_debug.info("is_ref_sars_cov_2 could not find {}".format(out_file_abricate))
 			return False
 
 		parseOutFiles = ParseOutFiles()
@@ -193,25 +207,36 @@ class SoftwarePangolin(object):
 		
 		uploadFiles = UploadFiles()
 		try:
+			#self.logger_debug.info("is_ref_sars_cov_2 trying to identify")
 			## could fail some identification, so, return False if it occurs
 			vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
 			if (len(vect_data) == 0):
+				#self.logger_debug.info("is_ref_sars_cov_2 failed to identify")
 				return False
 		except Exception as e:
+			#self.logger_debug.info("is_ref_sars_cov_2 error trying to identify {}".format(e))
 			return False
 		
 		### test number of right segments
 		number_right =0 
 		for identify_virus in vect_data:
-			if (identify_virus.seq_virus.name == "BetaCoV" and
-				identify_virus.seq_virus.kind_type.name == "Genus"): number_right += 1
+			#self.logger_debug.info("is_ref_sars_cov_2 matched with {} {}".format(identify_virus.seq_virus.name, identify_virus.seq_virus.kind_type.name))
+			
+			#self.logger_debug.info("is_ref_sars_cov_2 test 1 {}".format((identify_virus.seq_virus.name == "BetaCoV") and (identify_virus.seq_virus.kind_type.name == "Genus")))
+			#self.logger_debug.info("is_ref_sars_cov_2 test 2 {}".format( (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV")) and
+			#	(identify_virus.seq_virus.kind_type.name == "Species")))
+
+			if ((identify_virus.seq_virus.name == "BetaCoV") and 
+				(identify_virus.seq_virus.kind_type.name == "Genus")): number_right += 1
 			### need to read from the file 
-			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
-				identify_virus.seq_virus.kind_type.name == "Human"): number_right += 1
+			elif ((identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV")) and
+				(identify_virus.seq_virus.kind_type.name == "Species")): number_right += 1
 
 		## if right at least two		
 		if (number_right > 1): return True
+		#self.logger_debug.info("is_ref_sars_cov_2 could not find any match")
 		return False
+
 
 	def pangolin_results_out_date(self, project):
 		"""

@@ -167,7 +167,7 @@ class CollectExtraData(object):
 
 			## test SARS cov
 			if (self.software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
-				self.logger_debug.info("Aln2pheno Entered the zone")
+				#self.logger_debug.info("Aln2pheno Entered the zone")
 				geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 				
 				### create for single sequences

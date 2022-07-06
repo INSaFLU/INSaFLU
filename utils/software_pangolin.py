@@ -77,8 +77,8 @@ class SoftwarePangolin(object):
 		if (not settings.DEBUG):
 			## default version
 			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-			cmd = "{} {} --update".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), self.software_names.get_pangolin())
+			cmd = "{} {} --update > {} 2>&1".format(self.software_names.get_pangolin_env(),
+				self.software_names.get_pangolin(), temp_file)
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
@@ -86,17 +86,17 @@ class SoftwarePangolin(object):
 				raise Exception("Fail to run pangolin --update")
 			
 			### check all versions installed 
-			cmd = "{} {} --all-versions > {} 2>&1".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), temp_file)
-			exist_status = os.system(cmd)
-			if (exist_status != 0):
-				self.logger_production.error('Fail to run: ' + cmd)
-				self.logger_debug.error('Fail to run: ' + cmd)
-				raise Exception("Fail to run pangolin --update")
+# cmd = "{} {} --all-versions > {} 2>&1".format(self.software_names.get_pangolin_env(),
+# 	self.software_names.get_pangolin(), temp_file)
+# exist_status = os.system(cmd)
+# if (exist_status != 0):
+# 	self.logger_production.error('Fail to run: ' + cmd)
+# 	self.logger_debug.error('Fail to run: ' + cmd)
+# 	raise Exception("Fail to run pangolin --all-versions")
 
 			vect_lines = self.utils.read_text_file(temp_file)
 			## Important, go through pangolin --all-versions
-			#$ pangolin --all-versions
+			#$ pangolin --all-versions	## now aldo uses conda
 			# pangolin: 4.0.5
 			# pangolin-data: 1.3
 			# constellations: v0.1.6
@@ -104,9 +104,9 @@ class SoftwarePangolin(object):
 			
 			for line in vect_lines:
 				## must be lower case
-				lst_data = [_.lower().strip() for _ in line.strip().split(':')]
+				lst_data = [_.lower().strip() for _ in line.strip().split()]
 				if len(lst_data) > 1:
-					dt_result_version["_".join(lst_data[:-1])] = self._get_verion_tag(lst_data[-1].replace('(', '').replace(')', ''))
+					dt_result_version[lst_data[0]] = self._get_verion_tag(lst_data[-1].replace('(', '').replace(')', ''))
 			self.utils.remove_file(temp_file)
 		return dt_result_version
 

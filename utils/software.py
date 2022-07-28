@@ -2301,12 +2301,14 @@ class Software(object):
 		return seq_ref, seq_other
 
 
-	def run_nextstrain(self, reference_name, alignments, metadata, cores=4):
+	# TODO remove after everything is settled with the specific builds...
+	def run_nextstrain(self, alignments, metadata, build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS[0], cores=1):
 		"""
-		run nextstrain
-		:param  reference: reference name in alignments file
+		run nextstrain_ncov
 		:param  alignments: sequence file with nucleotides
 		:param  metadata: tabbed table file with properties
+		:param  build: the specific nextstrain build to be used (defaults to a generic build)		
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
 		:out temp folder with all data (including results) 
 		"""
 
@@ -2315,19 +2317,31 @@ class Software(object):
 
 		# copy the base nexstrain folder to a temp folder
 		# TODO Make a function copy_folder in utils
-		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + temp_dir 
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_NCOV_BASE + "/* " + "to temp folder " + temp_dir)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
 
 		# Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
 		self.utils.copy_file(alignments, os.path.join(temp_dir, 'data', 'sequences.fasta'))
 		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
 
+		# Copy the build-specific config file to the appropriate place in the temp folder
+		config_file = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, build, "config.yaml")	
+		self.utils.copy_file(config_file, os.path.join(temp_dir, 'config', "config.yaml"))
+
+		# to generate the include: may need to remove "" from the names...
+		cmd = "cat " + metadata + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > " +  os.path.join(temp_dir, 'data', "include.txt")
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to generate include file in temp folder " + temp_dir)
+
 		### add reference sequence Fasta to global alignment
-		reference_fasta = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, "ncov/references_sequences.fasta")		
+		reference_fasta = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, build, "references_sequences.fasta")		
 		cmd = "cat {} >> {}".format(reference_fasta, os.path.join(temp_dir, 'data', 'sequences.fasta'))
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
@@ -2337,7 +2351,11 @@ class Software(object):
 			raise Exception("Fail to run nextstrain. Command: " + cmd)
 
 		# Run nextstrain
+		# right now this is an exception... eventually make it generic, as the sofware swtup may be different according to the build?
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+		if(build == 'mpx'):
+			cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+			
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2349,13 +2367,211 @@ class Software(object):
 		return temp_dir
 
 
-	def run_aln2pheno(self, sequences, reference, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):
+	def run_nextstrain_ncov(self, alignments, metadata, cores=1):
+		"""
+		run nextstrain_ncov
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties	
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		build = "ncov"
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# Add references from the build to the consensus sequences (TODO merge fasta with function instead with a cat...)
+		cmd = "cat {} {} > {}".format(alignments, os.path.join(temp_dir, 'data', 'references_sequences.fasta'), os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate ncov references with alignments in temp folder " + temp_dir)
+
+		# Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
+		# TODO do a proper integration of tables?
+		cmd = "cat {} {} > {}".format(metadata, os.path.join(temp_dir, 'data', 'references_metadata.tsv'), os.path.join(temp_dir, 'data', 'metadata.tsv'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate ncov reference metadata with metadata in temp folder " + temp_dir)	
+
+		cmd = "cat " + metadata + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > " +  os.path.join(temp_dir, 'data', "include.txt")
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to generate include file in temp folder " + temp_dir)
+
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+			
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+
+		# Collect results
+
+		return temp_dir
+
+
+	def run_nextstrain_generic(self, alignments, metadata, ref_fasta, ref_genbank, cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  ref_fasta: the reference fasta file to be used
+		:param  ref_genbank: the reference genbank file to be used (MUST correspond to fasta)
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# make sure fasta and genbank correspond...
+		self.utils.compare_locus_fasta_gb(ref_fasta, ref_genbank)
+
+		# Assume the reference as one of the segments: this is unlikely to work if there is more than one segment
+		reference = self.utils.get_elements_and_genes(ref_genbank).get_sorted_elements()[0]
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "generic"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add reference.gb and reference.fasta to data folder
+		self.utils.copy_file(ref_fasta, os.path.join(temp_dir, 'data', 'reference.fasta'))
+		self.utils.copy_file(ref_genbank, os.path.join(temp_dir, 'data', 'reference.gb'))
+
+		# add sequences.fasta and metadata.tsv to data folder
+		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', 'metadata.tsv'))
+
+		# add 'root = "reference_id"' at the top of Snakefile_base, creating the final Snakefile
+		cmd = "cat {} | sed 's/REFID/{}/' > {}".format(os.path.join(temp_dir, 'Snakefile_base'), reference, os.path.join(temp_dir, 'Snakefile'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to change root in config file in temp folder " + temp_dir)	
+
+		# Now run Nextstrain
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores)			
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+
+		# Collect results
+
+		return temp_dir
+
+
+	def run_nextstrain_flu(self, alignments, metadata, strain="h3n2", period="12y", cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  strain: flu strain (one of: h3n2, h1n1pdm, vic, yam)
+		:param  period: the reference time period (one of: 6m, 2y, 3y, 6y, 12y, 60y)
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "flu"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add sequences.fasta and metadata.tsv to data folder
+		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences_" + strain + "_ha.fasta"))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata_" + strain + "_ha.tsv"))
+
+		# Now run Nextstrain
+		cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {}".format(SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores))	
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+
+		# Collect results
+
+		return temp_dir
+
+	def run_nextstrain_mpx(self, alignments, metadata, cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "mpx"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add sequences.fasta and metadata.tsv to data folder
+		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
+
+		# Now run Nextstrain
+		cmd = "{} build --native {} --cores {}".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores))	
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+
+		# Collect results
+
+		return temp_dir
+
+
+	def run_aln2pheno(self, sequences, reference, gene, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):
 		"""
 		run aln2pheno
 		:param sequences: sequence file with aminoacids from the SARS-CoV-2 S protein
 		:param reference: name of the reference (must be one of the sequences)
+		:param reference: name of the gene in use		
 		:param report: output file with final report
-		:param flagged: output file with flagged mutations
+		:param flagged: output file with flagged mutations	
 		:param db: database for aln2pheno
 		:out exit status
 		"""
@@ -2367,8 +2583,9 @@ class Software(object):
 		db_file =  os.path.join(settings.STATIC_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
 		
 		# Run aln2pheno
-		cmd = "{} --db {} -g S --algn {} -r {} --odir {} --output aln2pheno -f".format(SoftwareNames.SOFTWARE_ALN2PHENO,
-				db_file, sequences, reference, temp_dir)
+		cmd = "{} --db {} -g {} --algn {} -r {} --odir {} --output prefix -f".format(SoftwareNames.SOFTWARE_ALN2PHENO,
+				db_file, gene, sequences, reference, temp_dir)
+		
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2376,9 +2593,9 @@ class Software(object):
 			raise Exception("Fail to run aln2pheno in temp folder " + temp_dir)
 
 		# copy results to output
-		self.utils.copy_file(temp_dir + '/aln2pheno_final_report.tsv', report)
-		self.utils.copy_file(temp_dir + '/aln2pheno_flagged_mutation_report.tsv', flagged)
-
+		self.utils.copy_file(temp_dir + '/prefix_final_report.tsv', report)
+		self.utils.copy_file(temp_dir + '/prefix_flagged_mutation_report.tsv', flagged)
+	
 		###
 		self.utils.remove_dir(temp_dir)
 		return exit_status

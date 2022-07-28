@@ -34,6 +34,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 import os, filecmp
+import pandas
 
 class Test(TestCase):
 
@@ -293,8 +294,8 @@ class Test(TestCase):
 		self.assertEqual("Input Read Pairs:", filtering_result.get_key_value()[1].key)
 		self.assertEqual("44425", filtering_result.get_key_value()[1].value)
 		self.assertEqual("Dropped:", filtering_result.get_key_value()[-1].key)
-		self.assertEqual("434 (0,98%)", filtering_result.get_key_value()[-1].value)
-		self.assertNotEqual("434 (0,98%)_", filtering_result.get_key_value()[-1].value)
+		self.assertEqual("434 (0.98%)", filtering_result.get_key_value()[-1].value)
+		self.assertNotEqual("434 (0.98%)_", filtering_result.get_key_value()[-1].value)
 		
 		out_put_path = self.software.run_fastq(out_file_1, out_file_2)
 		out_file_1 = os.path.join(out_put_path, os.path.basename(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True)))
@@ -3310,7 +3311,7 @@ class Test(TestCase):
 		#except SoftwareModel.DoesNotExist:	## need to create with last version
 		#	pass
 
-		# self.software_pangolin.run_pangolin_update()
+		self.software_pangolin.run_pangolin_update()
 
 		#try:
 		#	software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
@@ -3498,39 +3499,74 @@ class Test(TestCase):
 		self.assertEqual(None, result.get_value_by_key('xpto'))
 
 
-	def test_run_nextstrain(self):
-		""" test running nexstrain """
-		
-		# alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_sequences_noroot.fasta")
-		# metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_test_metadata_noroot.tsv")
+	def test_run_nextstrain_ncov(self):
+		""" test running nexstrain ncov build"""
 
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_ncov.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_ncov.tsv")
 
-		# test the ncov build
+		temp_dir = self.software.run_nextstrain_ncov(alignments=alignments_file, metadata=metadata_file)
 
-		#alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_AllConsensus.fasta")
-		#metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "nextstrain_Sample_list.tsv")
-
-		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences.fasta")
-		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata.tsv")
-
-		# example where we can pass the reference
-		# temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
-
-		temp_dir = self.software.run_nextstrain("Wuhan-Hu-1/2019", alignments_file, metadata_file)
-
+		# TODO look inside the results to see if we get what we expect to get
 		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_root-sequence.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_default-build_tip-frequencies.json"),True)
-
-		# os.system("cp -r "+ temp_dir + "/auspice /insaflu_web/INSaFLU/media/" )
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_root-sequence.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_tip-frequencies.json"),True)
 
 		self.utils.remove_dir(temp_dir)
 
-		# test the flu build
+
+	def test_run_nextstrain_generic(self):
+		""" test running nexstrain generic (default) build"""
+		
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_generic.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_generic.tsv")
+
+		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "reference_generic.fasta")
+		reference_gb = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "reference_generic.gb")
+
+		temp_dir = self.software.run_nextstrain_generic(alignments=alignments_file, metadata=metadata_file, 
+														 ref_fasta=reference_fasta, ref_genbank=reference_gb)
+
+		# TODO look inside the results to see if we get what we expect to get
+		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/generic.json"),True)
+
+		self.utils.remove_dir(temp_dir)	
 
 
-		# test the monkeypox build
+	def test_run_nextstrain_mpx(self):
+		""" test running nexstrain mpx build"""
+		
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_mpx.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_mpx.tsv")
+
+		temp_dir = self.software.run_nextstrain_mpx(alignments=alignments_file, metadata=metadata_file)
+
+		# TODO look inside the results to see if we get what we expect to get
+		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox_root-sequence.json"),True)
+
+		self.utils.remove_dir(temp_dir)	
+
+
+	def test_run_nextstrain_flu(self):
+		""" test running nexstrain flu build"""
+
+		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_h3n2_ha.fasta")
+		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_h3n2_ha.tsv")
+
+		# TODO make tests for other strains and periods...
+		temp_dir = self.software.run_nextstrain_flu(alignments=alignments_file, metadata=metadata_file, strain="h3n2", period="12y")
+
+		# TODO look inside the results to see if we get what we expect to get
+		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_root-sequence.json"),True)
+		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_tip-frequencies.json"),True)
+
+		self.utils.remove_dir(temp_dir)	
 
 
 
@@ -3541,10 +3577,27 @@ class Test(TestCase):
 		temp_dir = os.path.join(self.utils.get_temp_dir())
 		report = os.path.join(temp_dir, '/final_report.tsv')
 		flagged = os.path.join(temp_dir, '/flagged_mutation_report.tsv')
-		exit_status = self.software.run_aln2pheno(sequences=alignments_file, reference="SARS_CoV_2_Wuhan_Hu_1_MN908947_SARS_CoV_2_S", report=report, flagged=flagged)
+
+		exit_status = self.software.run_aln2pheno(sequences=alignments_file,  reference="SARS_CoV_2_Wuhan_Hu_1_MN908947_SARS_CoV_2_S", gene="S", report=report, flagged=flagged)
 
 		self.assertEqual(os.path.exists(report),True)
 		self.assertEqual(os.path.exists(flagged),True)
+
+		report_data = pandas.read_csv(report, delimiter=Constants.SEPARATOR_TAB)
+
+		# create a function in utils, or within DataColumns or something (not sure if this is sufficiently generic...)
+		pangolin_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "test_Alignment_aa_SARS_CoV_2_S_pangolin_lineage.csv")
+		pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
+		pangolin_data = pangolin_data[['taxon','lineage']]
+		pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__SARS_CoV_2','')
+		pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
+
+		report_data = report_data.merge(pangolin_data, on=["Sequence"])
+		self.assertEqual(report_data['lineage'][0], "BA.2")
+
+		final_report = os.path.join(temp_dir, '/flagged_mutation_report_lineage.tsv')
+		report_data.to_csv(final_report, sep=Constants.SEPARATOR_TAB, index=False)
+		self.assertEqual(os.path.exists(final_report),True)
 
 		# TODO collect results and check content
 		self.utils.remove_dir(temp_dir)

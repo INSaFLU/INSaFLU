@@ -3,7 +3,7 @@ Created on Nov 27, 2017
 
 @author: mmp
 '''
-import os, csv, time, json, logging
+import os, csv, time, json, logging, pandas
 import plotly.graph_objs as go
 from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
@@ -167,7 +167,7 @@ class CollectExtraData(object):
 
 			## test SARS cov
 			if (self.software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
-				#self.logger_debug.info("Aln2pheno Entered the zone")
+								
 				geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 				
 				### create for single sequences
@@ -181,20 +181,61 @@ class CollectExtraData(object):
 	
 					file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
 					file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
-	
+
+					# For SARS-CoV-2 add the lineage to the columns: TODO Add this functionality to DataColumns or some other class, or some function(s) in utils...
+					# start by reading the lineage (which needs to exist beforehand)
+					pangolin_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
+					if(not os.path.exists(file_alignments)): 
+						self.logger_debug.info("Collect aln2pheno: error getting pangolin lineage: file does not exist {}".format(file_alignments))
+						process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+						return
+					
+					pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
+					pangolin_data = pangolin_data[['taxon','lineage']]
+					# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
+					pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__'+sequence_name,'')
+					pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
+
+					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
+
 					# add output as parameters of individual files, or output a zip with the folder...
-					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
-								sequences=file_alignments, report=file_aln2pheno_report_COG_UK,
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME), 
+								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
 								flagged=file_aln2pheno_flagged_COG_UK, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv")
+
+					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
+					report_data = report_data.merge(pangolin_data, on=["Sequence"])
+
+					# Reorder lineage column to second
+					cols = report_data.columns.tolist()
+					report_data = report_data[[cols[0]] + [cols[len(cols)-1]] + cols[1:(len(cols)-1)]]
+					
+					report_data.to_csv(file_aln2pheno_report_COG_UK, sep=Constants.SEPARATOR_TAB, index=False)
+
+					# we could reuse the same file, but might as well destroy the previous and create a new clean one
+					self.utils.remove_temp_file(tmp_aln2pheno)
+					
+					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
+
 					file_aln2pheno_report_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)
 					file_aln2pheno_flagged_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay)
+
 					# add output as parameters of individual files, or output a zip with the folder...
 					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
-								sequences=file_alignments, report=file_aln2pheno_report_pokay,
+								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
 								flagged=file_aln2pheno_flagged_pokay, db="pokay_2022-04-28.tsv")
-		except:
+
+					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
+					report_data = report_data.merge(pangolin_data, on=["Sequence"])
+					
+					report_data.to_csv(file_aln2pheno_report_pokay, sep=Constants.SEPARATOR_TAB, index=False)
+
+					self.utils.remove_temp_file(tmp_aln2pheno)
+
+
+		except Exception as e:
 			## finished with error
-			self.logger_debug.info("Aln2pheno Gave an error")
+			self.logger_debug.info("Aln2pheno Gave an error {}".format(e))
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return
 		
@@ -822,11 +863,11 @@ class CollectExtraData(object):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))						
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))																		
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))						
+						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))											
 		
 			
 		## all files zipped

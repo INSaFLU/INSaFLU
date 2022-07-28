@@ -339,8 +339,10 @@ class SoftwareNames(object):
 
 	### Nextstrain
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
-	SOFTWARE_NEXTSTRAIN_NCOV_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/ncov")
-		
+	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
+	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
+	SOFTWARE_NEXTSTRAIN_BUILDS = [ "generic", "ncov", "flu", "mpx" ]
+
 	###################################
 	###################################
 	#####

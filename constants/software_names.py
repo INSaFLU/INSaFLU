@@ -335,7 +335,7 @@ class SoftwareNames(object):
 	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
 
 	### algn2pheno
-	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/run_algn2pheno.sh")
+	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/aln2pheno.sh")
 
 	### Nextstrain
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")

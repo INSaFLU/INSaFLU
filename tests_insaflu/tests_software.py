@@ -3313,10 +3313,9 @@ class Test(TestCase):
 		try:
 			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 			software.is_updated_today()
-			dt_softwares = software.get_versions()
-			self.assertEqual(len(self.software_names.VECT_PANGOLIN_TO_TEST), len(dt_softwares))
-			for names in self.software_names.VECT_PANGOLIN_TO_TEST:
-				self.assertTrue(len(dt_softwares[names].strip()) > 0)
+			dt_software = software.get_version_long()
+			self.assertTrue(len(dt_software) > 0)
+			self.assertTrue(len(software.version) > 0)
 		except SoftwareModel.DoesNotExist:	## need to create with last version
 			self.fail("Must not exist software name")
 		
@@ -3328,9 +3327,9 @@ class Test(TestCase):
 
 		try:
 			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			dt_versions = software.get_versions()
-			for name in SoftwareNames.VECT_PANGOLIN_TO_TEST:
-				self.assertTrue(len(dt_versions.get(name)) > 5)
+			dt_versions = software.get_version_long()
+			self.assertTrue(len(dt_versions) > 0)
+			self.assertTrue(len(software.version) > 0)
 							
 		except SoftwareModel.DoesNotExist:	## need to create with last version
 			self.fail("Must exist software name")

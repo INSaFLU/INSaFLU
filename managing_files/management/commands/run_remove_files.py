@@ -348,25 +348,26 @@ class Command(BaseCommand):
 				
 				try:
 					original_file_not_removed = False
+					## Do not remove Quality Control outputs 
 					if (sample.is_type_fastq_gz_sequencing()):	### illumina
 						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 						if (not sample.is_original_fastq_removed()):
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, False))
-							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
-							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+							#files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
+							#files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
 							original_file_not_removed = True
-						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
-						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+						#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+						#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
 						files_to_remove.append(sample.get_abricate_output(TypePath.MEDIA_ROOT))
 					else:	### minion
 						if (not sample.is_original_fastq_removed()):
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-							files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+							#files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
 							original_file_not_removed = True
 						files_to_remove.append(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
-						files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+						#files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
 						
 					if (only_identify_files):
 						files_removed = files_to_remove.copy()

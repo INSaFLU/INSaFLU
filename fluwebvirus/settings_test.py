@@ -264,6 +264,9 @@ MEDIA_URL = '/media/'
 ### software directory
 DIR_SOFTWARE = config('DIR_SOFTWARE', default="/usr/local/software/insaflu")
 
+### Run pangolin model
+RUN_PANGOLIN_MODEL=config('RUN_PANGOLIN_MODEL', default="pangolearn")
+
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.

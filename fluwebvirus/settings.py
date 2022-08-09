@@ -14,7 +14,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.5.1"
+APP_VERSION_NUMBER = "1.5.2"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -280,6 +280,10 @@ STATIC_URL = '/static/' 		## is the URL to use when referring to static files lo
 MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+
+### Run pangolin model
+RUN_PANGOLIN_MODEL=config('RUN_PANGOLIN_MODEL', default="pangolearn")
 
 
 # A sample logging configuration. The only tangible logging

@@ -264,7 +264,7 @@ class Utils(object):
 		test if the file name ends in gzip
 		:out (True/False, type of file) OR raise Exception
 		""" 
-		if (not self.is_gzip(file_name)): raise Exception("File need to have suffix '.fastq.gz'")
+		if (not self.is_gzip(file_name)): raise Exception("File need to have suffix '.fastq.gz'/'.fq.gz'")
 		
 		try:
 			sz_type = self.get_type_file(file_name)
@@ -284,36 +284,37 @@ class Utils(object):
 		return 'fasta' or 'fastq' 
 		raise exception if can't detected
 		"""
-		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')	## need to be opened in text mode, default it's in binary mode
-		else: handle = open(file_name)
+		
 		vect_length = []
-		
-		### read 200 lines
-		try:
-			count = 0
-			for record in SeqIO.parse(handle, "fastq"):
-				vect_length.append(len(str(record.seq)))
-				count += 1
-				if (count > 100): break
-			handle.close()
-#			print("mean(vect_length): {} ".format(mean(vect_length)))
-		except:
-			handle.close()
-		
+		with (gzip.open(file_name, mode='rt') if self.is_gzip(file_name) \
+			else open(file_name, mode='r')) as handle_read:
+			### read 100 lines
+			try:
+				count = 0
+				for record in SeqIO.parse(handle_read, "fastq"):
+					vect_length.append(len(str(record.seq)))
+					count += 1
+					if (count > 100): break
+					#print("mean(vect_length): {} ".format(mean(vect_length)))
+			except:
+				pass
+			
 		### if read something in last SeqIO.parse
 		if (len(vect_length) > 1):
 			if (mean(sorted(vect_length, reverse=True)[:5]) <= Constants.MAX_LENGHT_ILLUMINA_FASQC_SEQ): return Constants.FORMAT_FASTQ_illumina
 			if (mean(vect_length) > Constants.MIN_LENGHT_MINION_FASQC_SEQ): return Constants.FORMAT_FASTQ_ont
 			raise Exception("Can not detect file format. Ensure Illumina fastq file.")
 		
-		if (self.is_gzip(file_name)): handle = gzip.open(file_name, mode='rt')
-		else: handle = open(file_name)
-		try:
-			for record in SeqIO.parse(handle, Constants.FORMAT_FASTA):
-				handle.close() 
-				return Constants.FORMAT_FASTA
-		except:
-			handle.close()
+		## test fasta format
+		with (gzip.open(file_name, mode='rt') if self.is_gzip(file_name) \
+			else open(file_name, mode='r')) as handle_read:
+		
+			try:
+				for record in SeqIO.parse(handle_read, Constants.FORMAT_FASTA):
+					handle_read.close() 
+					return Constants.FORMAT_FASTA
+			except:
+				pass
 		
 		raise Exception("File is not in fastq.gz format.")
 	
@@ -1188,7 +1189,7 @@ class Utils(object):
 		"""
 		send an email
 		"""
-		send_mail(header, message, 'insaflu@insa.min-saude.pt', [address])
+		send_mail(header, message, settings.DEFAULT_USER_EMAIL, [address])
 
 
 	def grouped(self, l, n):

@@ -35,20 +35,20 @@ class Test(unittest.TestCase):
 	def test_pangolin_file(self):
 		"""
 		'taxon,lineage,conflict,pangoLEARN_version,status,note',
-		'MN908947_SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
-		'MN908947_SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
+		'MN908947 SARSCoVDec200153,B.1.177,1.0,2021-04-01,passed_qc,'
+		'MN908947 SARSCoVDec200234,B.1.1.7,1.0,2021-04-01,passed_qc,17/17 B.1.1.7 SNPs'
 		"""
 		
 		pangolin_results = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "pangolin_results.csv")
 		parse_pangolin_result = ParsePangolinResult(pangolin_results)
 		self.assertTrue(parse_pangolin_result.has_data())
-		self.assertEqual("B.1.177", parse_pangolin_result.get_value("MN908947_SARSCoVDec200153", ParsePangolinResult.KEY_LINEAGE))
-		self.assertEqual("Alpha (B.1.1.7-like)", parse_pangolin_result.get_value("MN908947_SARSCoVDec200153", ParsePangolinResult.KEY_SCORPIO))
-		self.assertEqual("", parse_pangolin_result.get_value("MN908947_SARSCoVDec200153", "xpto"))
-		self.assertEqual("B.1.1.7", parse_pangolin_result.get_value("MN908947_SARSCoVDec200234", ParsePangolinResult.KEY_LINEAGE))
-		self.assertEqual("Alpha1 (B.1.1.7-like)", parse_pangolin_result.get_value("MN908947_SARSCoVDec200234", ParsePangolinResult.KEY_SCORPIO))
-		self.assertEqual("B.1.177;B.1.1.7", parse_pangolin_result.get_value("MN908947_SARSCoVDec200", ParsePangolinResult.KEY_LINEAGE))
-		self.assertEqual("Alpha (B.1.1.7-like);Alpha1 (B.1.1.7-like)", parse_pangolin_result.get_value("MN908947_SARSCoVDec20", ParsePangolinResult.KEY_SCORPIO))
+		self.assertEqual("B.1.177", parse_pangolin_result.get_value("MN908947 SARSCoVDec200153", ParsePangolinResult.KEY_LINEAGE))
+		self.assertEqual("", parse_pangolin_result.get_value("MN908947 SARSCoVDec200153", ParsePangolinResult.KEY_SCORPIO))
+		self.assertEqual("", parse_pangolin_result.get_value("MN908947 SARSCoVDec200153", "xpto"))
+		self.assertEqual("B.1.1.7", parse_pangolin_result.get_value("MN908947 SARSCoVDec200234", ParsePangolinResult.KEY_LINEAGE))
+		self.assertEqual("Alpha (B.1.1.7-like)", parse_pangolin_result.get_value("MN908947 SARSCoVDec200234", ParsePangolinResult.KEY_SCORPIO))
+		self.assertEqual("B.1.177;B.1.1.7", parse_pangolin_result.get_value("MN908947 SARSCoVDec200", ParsePangolinResult.KEY_LINEAGE))
+		self.assertEqual("Alpha (B.1.1.7-like)", parse_pangolin_result.get_value("MN908947 SARSCoVDec20", ParsePangolinResult.KEY_SCORPIO))
 		self.assertEqual("", parse_pangolin_result.get_value("MN908947_SARSCoVDec200___", ParsePangolinResult.KEY_LINEAGE))
 		self.assertEqual("", parse_pangolin_result.get_value("MN908947_SARSCo200___", ParsePangolinResult.KEY_SCORPIO))
 		self.assertEqual("", parse_pangolin_result.get_value(None, ParsePangolinResult.KEY_LINEAGE))

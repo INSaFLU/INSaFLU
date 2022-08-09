@@ -148,7 +148,7 @@ class Softwares(object):
 		"""   return software name, version and parameters"""
 		list_return = []
 		for software_desc in self.list_software:
-			if (software_desc.name.startswith(sz_name)):
+			if (software_desc.name.lower().startswith(sz_name.lower())):
 				version_data = ""
 				## version
 				if (len(software_desc.version) > 0): version_data = "-{}".format(software_desc.version)

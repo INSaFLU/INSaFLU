@@ -43,9 +43,9 @@ class ContentTypeRestrictedFileField(FileField):
 			self.logger_debug.info("Read '{}' size '{}' content type: {}".format(file.name, file._size, content_type))
 			if content_type in self.content_types:
 				if file._size > self.max_upload_size:
-					self.logger_debug.warning(_('Please keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
-					self.logger_production.warning(_('Please keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
-					raise forms.ValidationError(_('Please keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
+					self.logger_debug.warning(_('Please, keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
+					self.logger_production.warning(_('Please, keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
+					raise forms.ValidationError(_('Please, keep file size under %s. Current file size %s') % (filesizeformat(self.max_upload_size), filesizeformat(file._size)))
 			else:
 				self.logger_debug.warning(_("File type '{}' not supported.".format(content_type)))
 				self.logger_production.warning(_("File type '{}' not supported.".format(content_type)))

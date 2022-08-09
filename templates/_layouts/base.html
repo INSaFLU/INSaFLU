@@ -2,125 +2,138 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge">
-  <meta name="author" content="Miguel Pinheiro">
-  <title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
-  <!-- Bootstrap core CSS-->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge">
+	<meta name="author" content="Miguel Pinheiro">
+	<title>INSaFLU - Instituto Nacional de Saúde Doutor Ricardo Jorge</title>
+	<!-- Bootstrap core CSS-->
 
-	  {% load static from staticfiles %}
-	  	<link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css">
-	  	<!-- Custom fonts for this template-->
-	  	<link rel="stylesheet" href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
-	  	<!-- Custom styles for this template-->
-		<link rel="stylesheet" href="{% static 'css/sb-admin.min.css' %}" rel="stylesheet" type="text/css">
-		<!-- pre-define in-house css -->
-		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" rel="stylesheet" type="text/css"> 
-		
-		<!-- favicons-->
-		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
-  		<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-192x192.png' %}" sizes="192x192">
+	{% load static from staticfiles %}
+	<link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"
+		type="text/css">
+	<!-- Custom fonts for this template-->
+	<link rel="stylesheet" href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet"
+		type="text/css">
+	<!-- Custom styles for this template-->
+	<link rel="stylesheet" href="{% static 'css/sb-admin.min.css' %}" rel="stylesheet" type="text/css">
+	<!-- pre-define in-house css -->
+	<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" rel="stylesheet" type="text/css">
 
-  {% block css %}  
-  {% endblock css %}
+	<!-- favicons-->
+	<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-32x32.png' %}" sizes="32x32">
+	<link rel="icon" href="{% static 'insa/cropped-insa_logo_bola-192x192.png' %}" sizes="192x192">
+
+	{% block css %}
+	{% endblock css %}
 </head>
 
 <body class="fixed-nav sticky-footer sidenav-toggled" id="page-top">
-  <!-- Navigation-->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
-    <!-- Show or not the log image in the main page -->
-  	{% if show_info_main_page and show_info_main_page.show_images_main_page%}
-	  	<div class="insa-image-left">
-	  		<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
-	{% endif %}
-	
-  	<div class="insa-image-left">
-  		<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
-    
-    <!-- button of table, minimized -->
-    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-      <i class="fa fa-bars" style="color:rgb(100, 100, 100)" aria-hidden="true"></i>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarResponsive">
-      <ul class="navbar-nav navbar-sidenav" id="mainAccordion">
-        <li class="nav-item {% if nav_dashboard %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Dashboard">
-          <a class="nav-link" href="{% url 'dashboard' %}">
-            <i class="fa fa-fw fa-dashboard"></i>
-            <span class="nav-link-text">Home</span>
-          </a>
-        </li>
-        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References">
-          <a class="nav-link " href="{% url 'references' %}">
-            <i class="fa fa-fw fa-bug "></i>
-            <span class="nav-link-text ">References</span>
-          </a>
-        </li>
-        <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples">
-          <a class="nav-link" href="{% url 'samples' %}">
-            <i class="fa fa-fw fa-wrench"></i>
-            <span class="nav-link-text">Samples</span>
-          </a>
-        </li>
-        <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects">
-          <a class="nav-link" href="{% url 'projects' %}">
-            <i class="fa fa-fw fa-table "></i>
-            <span class="nav-link-text active">Projects</span>
-          </a>
-        </li>
-        <!-- 
+	<!-- Navigation-->
+	<nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
+		<!-- Show or not the log image in the main page -->
+		{% if show_info_main_page and show_info_main_page.show_images_main_page%}
+		<div class="insa-image-left">
+			<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}"
+					style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
+		{% endif %}
+
+		<div class="insa-image-left">
+			<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}"
+					class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
+
+		<!-- button of table, minimized -->
+		<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+			data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
+			aria-label="Toggle navigation">
+			<i class="fa fa-bars" style="color:rgb(100, 100, 100)" aria-hidden="true"></i>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarResponsive">
+			<ul class="navbar-nav navbar-sidenav" id="mainAccordion">
+				<li class="nav-item {% if nav_dashboard %} active {% endif %}" data-toggle="tooltip"
+					data-placement="right" title="Dashboard">
+					<a class="nav-link" href="{% url 'dashboard' %}">
+						<i class="fa fa-fw fa-dashboard"></i>
+						<span class="nav-link-text">Home</span>
+					</a>
+				</li>
+				<li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip"
+					data-placement="right" title="References">
+					<a class="nav-link " href="{% url 'references' %}">
+						<i class="fa fa-fw fa-bug "></i>
+						<span class="nav-link-text ">References</span>
+					</a>
+				</li>
+				<li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right"
+					title="Samples">
+					<a class="nav-link" href="{% url 'samples' %}">
+						<i class="fa fa-fw fa-wrench"></i>
+						<span class="nav-link-text">Samples</span>
+					</a>
+				</li>
+				<li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip"
+					data-placement="right" title="Projects">
+					<a class="nav-link" href="{% url 'projects' %}">
+						<i class="fa fa-fw fa-table "></i>
+						<span class="nav-link-text active">Projects</span>
+					</a>
+				</li>
+				<!-- 
         <li class="nav-item {% if nav_phylogeny %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Phylogeny">
           <a class="nav-link" href="{% url 'phylogeny' %}">
             <i class="fa fa-fw fa-magic"></i>
             <span class="nav-link-text active">Extra Alignment/Phylogeny</span>
           </a>
         </li>  -->
-        <li class="nav-item {% if nav_settings %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Settings">
-          <a class="nav-link" href="{% url 'settings-index' %}">
-            <i class="fa fa-fw fa-magic"></i>
-            <span class="nav-link-text active">Settings</span>
-          </a>
-        </li>
-      </ul>
-      <ul class="navbar-nav sidenav-toggler">
-        <li class="nav-item" data-toggle="tooltip" data-placement="top" title="Expand/Collapse side bar">
-          <a class="nav-link text-center" id="sidenavToggler">
-            <i class="fa fa-fw fa-angle-left"></i>
-          </a>
-        </li>
-      </ul>
-      <ul class="navbar-nav ml-auto">
-      	<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank" class="main-page-documentation"><strong>Documentation</strong></a></li>
-       
-       	{% if num_reference %} 
-	        <li class="nav-item dropdown">
-	          <a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	            <i class="fa fa-fw fa-envelope"></i>
-	            <span class="d-lg-none">Messages 
-	            	{% if num_reference %}
-	            		<span class="indicator text-primary d-none d-lg-block">
-	              			<i class="fa fa-fw fa-circle bg-insa-fixed-top"></i>
-	            		</span>
-	              		<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
-					{% else %}
-						<div class="dropdown-menu" aria-labelledby="messagesDropdown">
-				            <h6 class="dropdown-header"><strong>INSa</strong>Flu messages (0)</h6>
-				            <div class="dropdown-divider"></div>
-				            <a class="dropdown-item" href="#">
-				            	<span class="text-muted">No messages</span>
-				            </a>
-						</div>
-					{% endif %}
-	            </span>
-	            
-	          </a>
-	    </li>
-	{% endif %}
-     
+				<li class="nav-item {% if nav_settings %} active {% endif %}" data-toggle="tooltip"
+					data-placement="right" title="Settings">
+					<a class="nav-link" href="{% url 'settings-index' %}">
+						<i class="fa fa-fw fa-magic"></i>
+						<span class="nav-link-text active">Settings</span>
+					</a>
+				</li>
+			</ul>
+			<ul class="navbar-nav sidenav-toggler">
+				<li class="nav-item" data-toggle="tooltip" data-placement="top" title="Expand/Collapse side bar">
+					<a class="nav-link text-center" id="sidenavToggler">
+						<i class="fa fa-fw fa-angle-left"></i>
+					</a>
+				</li>
+			</ul>
+			<ul class="navbar-nav ml-auto">
+				<li><a href="http://insaflu.readthedocs.io/en/latest/" target="_blank"
+						class="main-page-documentation"><strong>Documentation</strong></a></li>
 
-		<!-- SEARCH -->        
-<!--    <li class="nav-item">
+				{% if num_reference %}
+				<li class="nav-item dropdown">
+					<a class="nav-link dropdown-toggle mr-lg-2 bg-insa-fixed-top" id="messagesDropdown" href="#"
+						data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<i class="fa fa-fw fa-envelope"></i>
+						<span class="d-lg-none">Messages
+							{% if num_reference %}
+							<span class="indicator text-primary d-none d-lg-block">
+								<i class="fa fa-fw fa-circle bg-insa-fixed-top"></i>
+							</span>
+							<span class="badge badge-pill badge-primary">{{ num_reference }} New</span>
+							{% else %}
+							<div class="dropdown-menu" aria-labelledby="messagesDropdown">
+								<h6 class="dropdown-header"><strong>INSa</strong>Flu messages (0)</h6>
+								<div class="dropdown-divider"></div>
+								<a class="dropdown-item" href="#">
+									<span class="text-muted">No messages</span>
+								</a>
+							</div>
+							{% endif %}
+						</span>
+
+					</a>
+				</li>
+				{% endif %}
+
+
+				<!-- SEARCH -->
+				<!--    <li class="nav-item">
           <form class="form-inline my-2 my-lg-0 mr-lg-2">
             <div class="input-group">
               <input class="form-control" type="text" placeholder="Search for...">
@@ -133,63 +146,65 @@
           </form>
         </li> -->
 
-		{% if user.is_authenticated %}
-			<a class="nav-link bg-insa-fixed-top" data-toggle="modal" id="id_user_name" data-target="#logoutModal">
-            	<i class="fa fa-fw fa-sign-out"></i> {{ user.username }} - Logout</a>
-		{% else %}
-			<a class="nav-link bg-insa-fixed-top" href="{% url 'login' %}">
-            	<i class="fa fa-fw fa-sign-in"></i>Login</a>
-		{% endif %}
+				{% if user.is_authenticated %}
+				<a class="nav-link bg-insa-fixed-top" data-toggle="modal" id="id_user_name" data-target="#logoutModal">
+					<i class="fa fa-fw fa-sign-out"></i> {{ user.username }} - Logout</a>
+				{% else %}
+				<a class="nav-link bg-insa-fixed-top" href="{% url 'login' %}">
+					<i class="fa fa-fw fa-sign-in"></i>Login</a>
+				{% endif %}
 
-      </ul>
-    </div>
-  </nav>
+			</ul>
+		</div>
+	</nav>
 
 	<div class="content-wrapper">
 
-    	<div class="container-fluid">
-		    <!-- MESSAGES -->
-		    {% if messages %}
-		    	<div class="container">
-					{% for message in messages %}
-						<div class="alert alert-dismissible {% if message.tags == 'error' %} alert-danger {% else %} alert-{{ message.tags }} {% endif %}">
-							{{ message }}
-							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-						</div>
-					{% endfor %}
+		<div class="container-fluid">
+			<!-- MESSAGES -->
+			{% if messages %}
+			<div class="container">
+				{% for message in messages %}
+				<div
+					class="alert alert-dismissible {% if message.tags == 'error' %} alert-danger {% else %} alert-{{ message.tags }} {% endif %}">
+					{{ message }}
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
 				</div>
+				{% endfor %}
+			</div>
 			{% endif %}
-			
+
 			{% block extra_messages %}
 			{% endblock extra_messages %}
-			
- 			{% if nav_modal %} <div class="container"> {% endif %}
+
+			{% if nav_modal %} <div class="container"> {% endif %}
 				{% if not not_show_breadcrumbs %}
-					{% load django_bootstrap_breadcrumbs %}
-					{% block breadcrumbs %}
-						{% clear_breadcrumbs %}
-		    			{% breadcrumb "Home" "/" %} 
-					{% endblock breadcrumbs %}
-					{% render_breadcrumbs %}
-				{% endif %} 
-				
+				{% load django_bootstrap_breadcrumbs %}
+				{% block breadcrumbs %}
+				{% clear_breadcrumbs %}
+				{% breadcrumb "Home" "/" %}
+				{% endblock breadcrumbs %}
+				{% render_breadcrumbs %}
+				{% endif %}
+
 				{% block header %}{% endblock header %}
 				{% block content %}{% endblock content %}
 				<p> </p>
-			{% if nav_modal %} </div> {% endif %}
-     	</div>
+				{% if nav_modal %} </div> {% endif %}
+		</div>
 	</div>
-   <!-- /.container-fluid-->
-   <!-- /.content-wrapper-->
-   <footer class="sticky-footer bg-insa-fixed-top">
+	<!-- /.container-fluid-->
+	<!-- /.content-wrapper-->
+	<footer class="sticky-footer bg-insa-fixed-top">
 		<div class="container-flow">
 			<div class="row">
 				<div class="col-lg-3 text-center">
 				</div>
 				{% if show_info_main_page and show_info_main_page.instutution_name%}
-					<div class="col-lg-5 text-center">
-						<small><a href="{{ show_info_main_page.instutution_web_site }}" target="_blank">{{ show_info_main_page.instutution_name }}</a></small>
-					</div>
+				<div class="col-lg-5 text-center">
+					<small><a href="{{ show_info_main_page.instutution_web_site }}"
+							target="_blank">{{ show_info_main_page.instutution_name }}</a></small>
+				</div>
 				{% endif %}
 				<div class="col-lg-3 text-right">
 					<small id="info_pocess_id"></small>
@@ -198,15 +213,16 @@
 				</div>
 			</div>
 		</div>
-   </footer>
+	</footer>
 
 	<!-- Scroll to Top Button-->
-    <a class="scroll-to-top rounded" href="#page-top">
+	<a class="scroll-to-top rounded" href="#page-top">
 		<i class="fa fa-angle-up"></i>
-    </a>
-    
-    <!-- Logout Modal-->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	</a>
+
+	<!-- Logout Modal-->
+	<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+		aria-hidden="true">
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
 				<div class="modal-header alert alert-warning">
@@ -223,44 +239,47 @@
 			</div>
 		</div>
 	</div>
-    
-   
-	    <!-- Bootstrap core JavaScript-->
-	    {% load static from staticfiles %}
-	        <script type="text/javascript" src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/popper/popper.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
-	    	
-	    	<!-- Core plugin JavaScript-->
-	    	<script type="text/javascript" src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
-	    	<!-- Custom scripts for all pages-->
-	    	<script type="text/javascript" src="{% static 'js/sb-admin.min.js' %}"></script>
-	    	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
-     		<script type="text/javascript" src="{% static 'js/number_of_process.js' %}"></script>
 
-		{% if add_google_analytis %}
-			<!-- Global site tag (gtag.js) - Google Analytics -->
-			<script async src="https://www.googletagmanager.com/gtag/js?id=UA-113057806-1"></script>
-			<script>
-			  window.dataLayer = window.dataLayer || [];
-			  function gtag(){dataLayer.push(arguments);}
-			  gtag('js', new Date());
-			
-			  gtag('config', 'UA-113057806-1');
-			</script>
-		{% endif %}
-		     	
+
+	<!-- Bootstrap core JavaScript-->
+	{% load static from staticfiles %}
+	<script type="text/javascript" src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'vendor/popper/popper.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'vendor/blockUI/jquery.blockUI.js' %}"></script>
+
+	<!-- Core plugin JavaScript-->
+	<script type="text/javascript" src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+	<!-- Custom scripts for all pages-->
+	<script type="text/javascript" src="{% static 'js/sb-admin.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'js/flu-web-site.js' %}"></script>
+	<script type="text/javascript" src="{% static 'js/number_of_process.js' %}"></script>
+
+	{% if add_google_analytis %}
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-113057806-1"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+
+		function gtag() {
+			dataLayer.push(arguments);
+		}
+		gtag('js', new Date());
+
+		gtag('config', 'UA-113057806-1');
+	</script>
+	{% endif %}
+
 	{% block js %}
-	
-		<script>	
-			/// set wait screen
-			$(document).ready(function(){
-				$.unblockUI();
-			});
-		</script>
-	
-    {% endblock js %}
+
+	<script>
+		/// set wait screen
+		$(document).ready(function () {
+			$.unblockUI();
+		});
+	</script>
+
+	{% endblock js %}
 </body>
 
 </html>

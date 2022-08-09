@@ -1,0 +1,45 @@
+{% extends '_layouts/base.html' %}
+
+{% load django_bootstrap_breadcrumbs %}
+{% load static %}
+
+{% block css %}
+{% load static from staticfiles %}
+<link rel="stylesheet" href="{% static 'css/settings-index.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Settings Index" "settings-index"%}
+{% endblock %}
+
+{% block content %}
+
+<h1>Settings</h1>
+<div class="row">
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="img-index" src="{% static "img/QC.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'INSAFLU' }}</h5>
+                <p class="card-text">{{ 'old projects' }}</p>
+                <a href="{% url 'settings_qc' %}" class="btn btn-primary">
+                    Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="img-index" src="{% static "img/typing.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'TELEVIR' }}</h5>
+                <p class="card-text">{{ 'new projects' }}</p>
+                <a href="{% url 'settings' %}" class="btn btn-primary">
+                    Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

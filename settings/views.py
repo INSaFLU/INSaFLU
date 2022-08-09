@@ -136,7 +136,6 @@ class QCSettingsView(LoginRequiredMixin, ListView):
         for technology in ConstantsSettings.vect_technology:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
-                print(f"type of use {Software.TYPE_OF_USE_qc}")
                 query_set = Software.objects.filter(
                     owner=self.request.user,
                     type_of_use=Software.TYPE_OF_USE_qc,

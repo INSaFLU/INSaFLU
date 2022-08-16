@@ -1,0 +1,42 @@
+{% extends '_layouts/base.html' %}
+{% load render_table from django_tables2 %}
+{%load html_tags%}
+
+{% load static %}
+{%load plotly_dash%}
+
+{%load report_colors %}
+
+<style>
+    .igv {
+        height: 100%;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/igv@2.12.6/dist/igv.min.js"></script>
+
+{% block content %}
+
+<div id="igv-div">
+</div>
+
+<script>
+    var igvDiv = document.getElementById("igv-div");
+    var options = {
+        genome: "hg38",
+        locus: "chr8:127,736,588-127,739,371",
+        tracks: [{
+            "name": "HG00103",
+            "url": "https://s3.amazonaws.com/1000genomes/data/HG00103/alignment/HG00103.alt_bwamem_GRCh38DH.20150718.GBR.low_coverage.cram",
+            "indexURL": "https://s3.amazonaws.com/1000genomes/data/HG00103/alignment/HG00103.alt_bwamem_GRCh38DH.20150718.GBR.low_coverage.cram.crai",
+            "format": "cram"
+        }]
+    };
+
+    igv.createBrowser(igvDiv, options)
+        .then(function (browser) {
+            console.log("Created IGV browser");
+        })
+</script>
+
+{% endblock %}

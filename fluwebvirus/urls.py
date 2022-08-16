@@ -73,6 +73,7 @@ urlpatterns += [
     ),
     url(r"^dashboard/$", HomePageView.as_view(), name="dashboard"),
     url(r"^managing_files/", include("managing_files.urls")),
+    url(r"^pathogen_identification/", include("pathogen_identification.urls")),
     url(r"^phylogeny/", include("phylogeny.urls")),
     url(r"^settings/", include("settings.urls")),
     #    url(r"^settings_pf/", include("settings_pf.urls")),

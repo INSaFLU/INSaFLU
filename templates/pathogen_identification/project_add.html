@@ -1,0 +1,37 @@
+{% extends '_layouts/base.html' %}
+
+
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+{{ block.super }}
+{% breadcrumb "Projects" "projects" %}
+{% breadcrumb "Create a project" "project-add" %}
+{% endblock %}
+
+{% block content %}
+
+<br>
+<form method="post">{% csrf_token %}
+	<div class="form-group">
+		<label for="name">Name</label>
+		<input type="text" class="form-control" id="name" name="name" placeholder="Name" value="{{ project.name }}">
+	</div>
+	<div class="form-group">
+		<label for="description">Description</label>
+		<textarea class="form-control" id="description" name="description"
+			placeholder="Description">{{ project.description }}</textarea>
+	</div>
+	<div class="form-group">
+		<label for="technology">Technology</label>
+		<select class="form-control" id="technology" name="technology">
+			<option value="ONT" {% if project.technology == 1 %}selected{% endif %}>ONT</option>
+			<option value="Illumina" {% if project.technology == 0 %}selected{% endif %}>Illumina</option>
+		</select>
+	</div>
+
+	<input type="submit" name="save" value="Save" class="btn btn-primary btn-primary" id="submit-save" />
+	<input type="button" name="cancel" value="Cancel" class="btn btn-secondary" id="button-cancel"
+		onclick="window.location.href='/pathogen_identification/projects'">
+</form>
+{% endblock %}

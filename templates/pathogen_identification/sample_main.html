@@ -1,0 +1,71 @@
+{% extends '_layouts/base.html' %}
+{% load render_table from django_tables2 %}
+
+{% load static %}
+
+
+{% block content %}
+
+<div>
+    <ul class="breadcrumb">
+        <li><a href="{% url 'projects_main' %}">Home</a></li>
+        <li><a href={% url 'project_samples' project_name=project_name %}> project {{project_name}}</a></li>
+        <li>sample {{name}}</li>
+    </ul>
+</div>
+
+<body>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h4> Quality Control </h4>
+
+                <p> Reads trimmed using {{ sampleqc.software }}. </p>
+                <p> {{ sampleqc.input_reads }} input reads, {{ sampleqc.processed_reads }} passed
+                    ({{sampleqc.percent_passed }} %). </p>
+            </div>
+        </div>
+
+        <table class="center">
+            {{ block.super }}
+            <link href="{% static 'django_tables2/themes/paleblue/css/screen.css' %}" rel="stylesheet">
+
+            {% render_table qc_table %}
+        </table>
+    </div>
+    <div class="container">
+
+        <div class="row">
+            <div class="col-md-12">
+                <p> Input Fastqc <a href="{% url 'display_fastqc_report' name=name report_source="input" %}">report</a>
+                </p>
+
+            </div>
+
+            <div class="col-md-12">
+                <p> Processed Fastqc <a
+                        href="{% url 'display_fastqc_report' name=name report_source="processed" %}">report</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+    <br>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h4> Runs </h4>
+            </div>
+
+        </div>
+    </div>
+
+
+    <table class="center">
+        {% render_table runs "django_tables2/semantic.html" %}
+    </table>
+
+</body>
+{% endblock content %}

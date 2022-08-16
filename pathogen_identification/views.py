@@ -1,0 +1,930 @@
+import logging
+import mimetypes
+import os
+
+from braces.views import FormValidMessageMixin, LoginRequiredMixin
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+from django import forms
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Q
+from django.forms.models import model_to_dict
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from django.http.response import HttpResponse
+from django.shortcuts import render
+from django.template.defaultfilters import filesizeformat, pluralize
+from django.urls import reverse_lazy
+from django.utils.safestring import mark_safe
+from django.views import generic
+from django.views.generic import ListView
+from django_tables2 import RequestConfig
+from extend_user.models import Profile
+from fluwebvirus.settings import STATICFILES_DIRS
+from managing_files.forms import AddSampleProjectForm
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import Sample
+from managing_files.tables import SampleToProjectsTable
+from settings.default_software_project_sample import DefaultProjectSoftware
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage, Utils
+
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+)
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    RunMainTable,
+    SampleQCTable,
+    SampleTable,
+)
+
+
+def clean_check_box_in_session(request):
+    """
+    check all check boxes on samples/references to add samples
+    """
+    utils = Utils()
+    ## clean all check unique
+    if Constants.CHECK_BOX_ALL in request.session:
+        del request.session[Constants.CHECK_BOX_ALL]
+    vect_keys_to_remove = []
+    for key in request.session.keys():
+        if (
+            key.startswith(Constants.CHECK_BOX)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            vect_keys_to_remove.append(key)
+    for key in vect_keys_to_remove:
+        del request.session[key]
+
+
+def is_all_check_box_in_session(vect_check_to_test, request):
+    """
+    test if all check boxes are in session
+    If not remove the ones that are in and create the new ones all False
+    """
+    utils = Utils()
+    dt_data = {}
+
+    ## get the dictonary
+    for key in request.session.keys():
+        if (
+            key.startswith(Constants.CHECK_BOX)
+            and len(key.split("_")) == 3
+            and utils.is_integer(key.split("_")[2])
+        ):
+            dt_data[key] = True
+
+    b_different = False
+    if len(vect_check_to_test) != len(dt_data):
+        b_different = True
+
+    ## test the vector
+    if not b_different:
+        for key in vect_check_to_test:
+            if key not in dt_data:
+                b_different = True
+                break
+
+    if b_different:
+        ## remove all
+        for key in dt_data:
+            del request.session[key]
+
+        ## create new
+        for key in vect_check_to_test:
+            request.session[key] = False
+        return False
+    return True
+
+
+# Create your views here.
+
+
+class IGVform(forms.Form):
+    sample_name = forms.CharField(max_length=100)
+    run_name = forms.CharField(max_length=100)
+    reference = forms.CharField(max_length=100)
+    unique_id = forms.CharField(max_length=100)
+    project_name = forms.CharField(max_length=100)
+
+
+class download_form(forms.Form):
+    file_path = forms.CharField(max_length=300)
+
+    class Meta:
+
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+################################################################
+
+
+class PathId_ProjectsView(LoginRequiredMixin, ListView):
+    model = Projects
+    template_name = "pathogen_identification/projects.html"
+    context_object_name = "projects"
+    ##	group_required = u'company-user' security related with GroupRequiredMixin
+
+    def get_context_data(self, **kwargs):
+        context = super(PathId_ProjectsView, self).get_context_data(**kwargs)
+        tag_search = "search_projects"
+        query_set = Projects.objects.filter(
+            owner__id=self.request.user.id, is_deleted=False
+        ).order_by("-creation_date")
+
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(reference__name__icontains=self.request.GET.get(tag_search))
+                | Q(
+                    project_samples__sample__name__icontains=self.request.GET.get(
+                        tag_search
+                    )
+                )
+            ).distinct()
+
+        table = ProjectTable(query_set)
+
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+
+        ### clean check box in the session
+        clean_check_box_in_session(self.request)  ## for both samples and references
+
+        ### clean project name session
+        if Constants.PROJECT_NAME_SESSION in self.request.session:
+            del self.request.session[Constants.PROJECT_NAME_SESSION]
+
+        context["table"] = table
+
+        context["nav_project"] = True
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["show_info_main_page"] = ShowInfoMainPage()
+        return context
+
+
+class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
+    """
+    Create a new reference
+    """
+
+    # utils = Utils()
+    model = Projects
+    fields = ["name", "description"]
+    success_url = reverse_lazy("PIprojects_main")
+    template_name = "pathogen_identification/project_add.html"
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(PathID_ProjectCreateView, self).get_form_kwargs()
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(PathID_ProjectCreateView, self).get_context_data(**kwargs)
+
+        ### get project name
+        project_name = (
+            self.request.session[Constants.PROJECT_NAME_SESSION]
+            if Constants.PROJECT_NAME_SESSION in self.request.session
+            else ""
+        )
+
+        ## clean the check box in the session
+        if Constants.PROJECT_NAME in self.request.session:
+            context[Constants.PROJECT_NAME] = self.request.session[
+                Constants.PROJECT_NAME
+            ]
+            del self.request.session[Constants.PROJECT_NAME]
+        if Constants.ERROR_PROJECT_NAME in self.request.session:
+            context[Constants.ERROR_PROJECT_NAME] = self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ]
+            del self.request.session[Constants.ERROR_PROJECT_NAME]
+
+        ###
+
+        ###
+
+        context["project_name"] = project_name
+        context["show_paginatior"] = False
+        context["nav_project"] = True
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not create projects.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(PathID_ProjectCreateView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        context = self.get_context_data()
+        name = form.cleaned_data["name"]
+
+        b_error = False
+        try:
+            Projects.objects.get(
+                name__iexact=name,
+                is_deleted=False,
+                owner__username=self.request.user.username,
+            )
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "Exists a project with this name."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+        except Projects.DoesNotExist:
+            pass
+        ### exists an error
+        if b_error:
+            return super(PathID_ProjectCreateView, self).form_invalid(form)
+
+        with transaction.atomic():
+            form.instance.owner = self.request.user
+
+            project = form.save()
+            project.owner = self.request.user
+            project.owner_id = self.request.user.id
+            project.save()
+
+        return super(PathID_ProjectCreateView, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
+
+
+class AddSamples_PIProjectsView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Create a new reference
+    """
+
+    utils = Utils()
+    model = Sample
+    fields = ["name"]
+    success_url = reverse_lazy("PIprojects_main")
+    template_name = "project_sample/project_sample_add.html"
+
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
+
+    def get_context_data(self, **kwargs):
+        context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
+
+        ### test if the user is the same of the page
+        project = Projects.objects.get(pk=self.kwargs["pk"])
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ## catch everything that is not in connection with project
+        count_active_projects = PIProject_Sample.objects.filter(
+            project=project, is_deleted=False, is_error=False
+        ).count()
+        samples_out = PIProject_Sample.objects.filter(
+            Q(project=project) & ~Q(is_deleted=True) & ~Q(is_error=True)
+        ).values("sample__pk")
+        query_set = Sample.objects.filter(
+            owner__id=self.request.user.id,
+            is_obsolete=False,
+            is_deleted=False,
+            is_deleted_processed_fastq=False,
+            is_ready_for_projects=True,
+        ).exclude(pk__in=samples_out)
+
+        tag_search = "search_add_project_sample"
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(type_subtype__icontains=self.request.GET.get(tag_search))
+                | Q(data_set__name__icontains=self.request.GET.get(tag_search))
+                | Q(week__icontains=self.request.GET.get(tag_search))
+            )
+            tag_search
+        table = SampleToProjectsTable(query_set)
+
+        ### set the check_box
+        if Constants.CHECK_BOX_ALL not in self.request.session:
+            self.request.session[Constants.CHECK_BOX_ALL] = False
+            is_all_check_box_in_session(
+                ["{}_{}".format(Constants.CHECK_BOX, key.id) for key in query_set],
+                self.request,
+            )
+
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+        ## need to clean all the others if are reject in filter
+        dt_sample_id_add_temp = {}
+        if context[Constants.CHECK_BOX_ALL]:
+            for sample in query_set:
+                dt_sample_id_add_temp[
+                    sample.id
+                ] = 1  ## add the ids that are in the tables
+            for key in self.request.session.keys():
+                if (
+                    key.startswith(Constants.CHECK_BOX)
+                    and len(key.split("_")) == 3
+                    and self.utils.is_integer(key.split("_")[2])
+                ):
+                    ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                    if int(key.split("_")[2]) not in dt_sample_id_add_temp:
+                        self.request.session[key] = False
+                    else:
+                        self.request.session[key] = True
+        ## END need to clean all the others if are reject in filter
+
+        ### check if it show already the settings message
+        key_session_name_project_settings = "project_settings_{}".format(project.name)
+        if not key_session_name_project_settings in self.request.session:
+            self.request.session[key_session_name_project_settings] = True
+        else:
+            self.request.session[key_session_name_project_settings] = False
+
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["project_name"] = project.name
+        context["nav_modal"] = True  ## short the size of modal window
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_message_change_settings"] = (
+            count_active_projects == 0
+            and self.request.session[key_session_name_project_settings]
+        )  ## Show message to change settings to the project
+        context["add_all_samples_message"] = "Add {} sample{}".format(
+            query_set.count(), pluralize(query_set.count(), ",s")
+        )
+        if self.request.POST:
+            context["project_sample"] = AddSampleProjectForm(self.request.POST)
+        else:
+            context["project_sample"] = AddSampleProjectForm()
+        return context
+
+    def form_valid(self, form):
+        """
+        Validate the form
+        """
+
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add samples to a project.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(AddSamples_PIProjectsView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            pass
+
+        if form.is_valid():
+            metaKeyAndValue = MetaKeyAndValue()
+            manageDatabase = ManageDatabase()
+            process_SGE = ProcessSGE()
+
+            ### get project sample..
+            context = self.get_context_data()
+
+            ### get project
+            project = Projects.objects.get(pk=self.kwargs["pk"])
+
+            vect_sample_id_add_temp = []
+            for sample in context["table"].data:
+                vect_sample_id_add_temp.append(sample.id)
+
+            vect_sample_id_add = []
+            if "submit_checked" in self.request.POST:
+                for key in self.request.session.keys():
+                    if (
+                        self.request.session[key]
+                        and key.startswith(Constants.CHECK_BOX)
+                        and len(key.split("_")) == 3
+                        and self.utils.is_integer(key.split("_")[2])
+                    ):
+                        ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                        if int(key.split("_")[2]) in vect_sample_id_add_temp:
+                            vect_sample_id_add.append(int(key.split("_")[2]))
+            elif "submit_all" in self.request.POST:
+                vect_sample_id_add = vect_sample_id_add_temp
+
+            ### get samples already out
+            dt_sample_out = {}
+            for project_sample in PIProject_Sample.objects.filter(
+                project__id=project.id,
+                is_deleted=False,
+                is_error=False,
+                is_deleted_in_file_system=False,
+            ):
+                dt_sample_out[project_sample.sample.id] = 1
+
+            ### start adding...
+            (job_name_wait, job_name) = ("", "")
+            project_sample_add = 0
+            for id_sample in vect_sample_id_add:
+                ## keep track of samples out
+                if id_sample in dt_sample_out:
+                    continue
+                dt_sample_out[id_sample] = 1
+
+                try:
+                    sample = Sample.objects.get(pk=id_sample)
+                except Sample.DoesNotExist:
+                    ## log
+                    self.logger_production.error(
+                        "Fail to get sample_id {} in ProjectSample".format(
+                            key.split("_")[2]
+                        )
+                    )
+                    self.logger_debug.error(
+                        "Fail to get sample_id {} in ProjectSample".format(
+                            key.split("_")[2]
+                        )
+                    )
+                    continue
+
+                ## the sample can be deleted by other session
+                if sample.is_deleted:
+                    continue
+
+                ## get project sample
+                try:
+                    project_sample = PIProject_Sample.objects.get(
+                        project__id=project.id, sample__id=sample.id
+                    )
+
+                    ### if exist can be deleted, pass to active
+                    if (
+                        project_sample.is_deleted
+                        and not project_sample.is_error
+                        and not project_sample.is_deleted_in_file_system
+                    ):
+                        project_sample.is_deleted = False
+                        project_sample.is_finished = False
+                        project_sample.save()
+                        project_sample_add += 1
+
+                except PIProject_Sample.DoesNotExist:
+                    project_sample = PIProject_Sample()
+                    project_sample.project = project
+                    project_sample.sample = sample
+                    project_sample.save()
+                    project_sample_add += 1
+
+                ### create a task to perform the analysis of snippy and freebayes
+                ### Important, it is necessary to run again because can have some changes in the parameters.
+                try:
+                    if len(job_name_wait) == 0:
+                        (
+                            job_name_wait,
+                            job_name,
+                        ) = self.request.user.profile.get_name_sge_seq(
+                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                        )
+                    if sample.is_type_fastq_gz_sequencing():
+                        taskID = process_SGE.set_second_stage_snippy(
+                            project_sample, self.request.user, job_name, [job_name_wait]
+                        )
+                    else:
+                        taskID = process_SGE.set_second_stage_medaka(
+                            project_sample, self.request.user, job_name, [job_name_wait]
+                        )
+
+                    ### set project sample queue ID
+                    manageDatabase.set_project_sample_metakey(
+                        project_sample,
+                        self.request.user,
+                        metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
+                            project_sample.id
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+                except:
+                    pass
+
+            ### necessary to calculate the global results again
+            if project_sample_add > 0:
+                try:
+                    taskID = process_SGE.set_collect_global_files(
+                        project, self.request.user
+                    )
+                    manageDatabase.set_project_metakey(
+                        project,
+                        self.request.user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+                except:
+                    pass
+
+            if project_sample_add == 0:
+                messages.warning(
+                    self.request,
+                    "No sample was added to the project '{}'".format(project.name),
+                )
+            else:
+                if project_sample_add > 1:
+                    messages.success(
+                        self.request,
+                        "'{}' samples were added to your project.".format(
+                            project_sample_add
+                        ),
+                        fail_silently=True,
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "One sample was added to your project.",
+                        fail_silently=True,
+                    )
+            return HttpResponseRedirect(reverse_lazy("projects"))
+        else:
+            return super(AddSamples_PIProjectsView, self).form_invalid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
+
+
+def MainPage(request, project_name):
+    """
+    home page
+    """
+
+    template_name = "pathogen_identification/main_page.html"
+
+    try:
+        samples = Sample.objects.filter(project__name=project_name)
+    except Sample.DoesNotExist:
+        samples = parser.get_samples()
+
+    samples = SampleTable(samples)
+    context = {}
+    context["samples"] = samples
+    context["project_name"] = project_name
+
+    return render(
+        request,
+        template_name,
+        context,
+    )
+
+
+def Sample_main(requesdst, project_name, sample_name):
+    """
+    sample main page
+    """
+    template_name = "pathogen_identification/sample_main.html"
+
+    try:
+        runs = RunMain.objects.filter(
+            sample__name=sample_name, project__name=project_name
+        )
+    except RunMain.DoesNotExist:
+        runs = None
+
+    try:
+        sampleqc = SampleQC.objects.filter(sample__name=sample_name)
+
+    except SampleQC.DoesNotExist:
+        sampleqc = None
+
+    sampleqc_table = SampleQCTable(sampleqc)
+    runs = RunMainTable(runs)
+    RequestConfig(
+        requesdst, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
+    ).configure(runs)
+
+    return render(
+        requesdst,
+        template_name,
+        {
+            "runs": runs,
+            "qc_table": sampleqc_table,
+            "sampleqc": [list(sampleqc.values())][0][0],
+            "name": sample_name,
+            "project_main": True,
+            "project_name": project_name,
+        },
+    )
+
+
+def Project_reports(requesdst, project):
+    """
+    sample main page
+    """
+    template_name = "pathogen_identification/allreports_table.html"
+
+    all_reports = FinalReport.objects.filter(run__project__name=project)
+
+    return render(
+        requesdst,
+        template_name,
+        {"all_reports": all_reports, "project": project},
+    )
+
+
+def Sample_detail(requesdst, project="", sample="", name=""):
+    """
+    home page
+    """
+    template_name = "pathogen_identification/sample_detail.html"
+    project_main = Projects.objects.get(name=project)
+    sample_main = Sample.objects.get(name=sample, project__name=project)
+    #
+    run_main = RunMain.objects.get(project__name=project, sample=sample_main, name=name)
+    #
+    run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
+    #
+    run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+    #
+    print(run_assembly)
+    run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+    #
+    read_classification = ReadClassification.objects.get(
+        sample=sample_main, run=run_main
+    )
+    #
+    final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
+    #
+    contig_classification = ContigClassification.objects.get(
+        sample=sample_main, run=run_main
+    )
+    #
+
+    reference_remap_main = ReferenceMap_Main.objects.filter(
+        sample=sample_main, run=run_main
+    )
+    #
+
+    context = {
+        "project": project,
+        "run_name": name,
+        "sample": sample,
+        "run_main": run_main,
+        "run_detail": run_detail,
+        "assembly": run_assembly,
+        "contig_classification": contig_classification,
+        "read_classification": read_classification,
+        "run_remap": run_remap,
+        "reference_remap_main": reference_remap_main,
+        "final_report": final_report,
+    }
+
+    return render(
+        requesdst,
+        template_name,
+        context,
+    )
+
+
+def IGV_display(requestdst):
+    """display python plotly app"""
+    template_name = "pathogen_identification/IGV.html"
+
+    if requestdst.method == "POST":
+        form = IGVform(requestdst.POST)
+        if form.is_valid():
+            print(form.cleaned_data)
+            project_name = form.cleaned_data.get("project_name")
+            sample_name = form.cleaned_data.get("sample_name")
+            run_name = form.cleaned_data.get("run_name")
+            reference = form.cleaned_data.get("reference")
+            unique_id = form.cleaned_data.get("unique_id")
+
+            data = {"is_ok": False}
+            print(project_name)
+            print(reference)
+
+            print(Sample.objects.filter(name=sample_name, project__name=project_name))
+            sample = Sample.objects.get(project__name=project_name, name=sample_name)
+            run = RunMain.objects.get(name=run_name, sample=sample)
+            ref_map = ReferenceMap_Main.objects.get(
+                reference=reference, sample=sample, run=run
+            )
+            final_report = FinalReport.objects.get(
+                sample=sample, run=run, unique_id=unique_id
+            )
+
+            def remove_pre_static(path, pattern):
+                path = path.split(pattern)[1]
+                path = f"/{pattern}{path}"
+                print(path)
+                return path
+
+            path_name_bam = remove_pre_static(ref_map.bam_file_path, "igv")
+            path_name_bai = remove_pre_static(ref_map.bai_file_path, "igv")
+            path_name_reference = remove_pre_static(ref_map.fasta_file_path, "igv")
+            path_name_reference_index = remove_pre_static(ref_map.fai_file_path, "igv")
+            reference_name = final_report.reference_contig_str
+
+            data["is_ok"] = True
+
+            data["path_reference"] = path_name_reference
+            data["path_reference_index"] = path_name_reference_index
+            data["path_bam"] = path_name_bam
+            data["path_bai"] = path_name_bai
+
+            data["reference_name"] = sample_name
+            data["sample_name"] = final_report.reference_contig_str
+
+            #### other files
+            data["bam_file_id"] = mark_safe(
+                '<strong>Bam file:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    "download_file",
+                    os.path.basename(path_name_bam),
+                    os.path.basename(path_name_bam),
+                )
+            )
+            data["bai_file_id"] = mark_safe(
+                '<strong>Bai file:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    path_name_bai,
+                    os.path.basename(path_name_bai),
+                    os.path.basename(path_name_bai),
+                )
+            )
+            data["reference_id"] = mark_safe(
+                '<strong>Reference:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    path_name_reference,
+                    os.path.basename(path_name_reference),
+                    os.path.basename(path_name_reference),
+                )
+            )
+            data["reference_index_id"] = mark_safe(
+                '<strong>Ref. index:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    path_name_reference_index,
+                    os.path.basename(path_name_reference_index),
+                    os.path.basename(path_name_reference_index),
+                )
+            )
+
+            data["static_dir"] = run.static_dir
+            print(run.static_dir)
+
+            return render(
+                requestdst,
+                template_name,
+                {
+                    "sample_name": final_report.reference_contig_str,
+                    "run_name": run_name,
+                    "reference": reference,
+                    "data": data,
+                },
+            )
+    else:
+        form = IGVform()
+
+
+def download_file_igv(requestdst):
+    """download fasta file"""
+    print(requestdst.method)
+    if requestdst.method == "POST":
+        form = download_form(requestdst.POST)
+
+        if form.is_valid():
+            filepath = form.cleaned_data.get("file_path")
+
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            DLDIR = os.path.join(BASE_DIR, STATICFILES_DIRS[0], "igv_files")
+            filepath = os.path.join(DLDIR, filepath)
+
+            if not os.path.exists(filepath):
+                return HttpResponseNotFound(f"file {filepath} not found")
+
+            path = open(filepath, "rb")
+            # Set the mime type
+            mime_type, _ = mimetypes.guess_type(filepath)
+            # Set the return value of the HttpResponse
+            response = HttpResponse(path, content_type=mime_type)
+            # Set the HTTP header for sending to browser
+            response[
+                "Content-Disposition"
+            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            # Return the response value
+            return response
+
+
+def download_file(requestdst):
+    """download fasta file"""
+    if requestdst.method == "POST":
+        form = download_form(requestdst.POST)
+
+        if form.is_valid():
+            filepath = form.cleaned_data.get("file_path")
+
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            print(BASE_DIR)
+            print(filepath)
+
+            filepath = BASE_DIR + filepath
+
+            if "//" in filepath:
+                filepath = "/" + filepath.split("//")[1]
+
+            if not os.path.isfile(filepath):
+                return HttpResponseNotFound(f"file {filepath} not found")
+
+            path = open(filepath, "rb")
+            # Set the mime type
+            mime_type, _ = mimetypes.guess_type(filepath)
+            # Set the return value of the HttpResponse
+            response = HttpResponse(path, content_type=mime_type)
+            # Set the HTTP header for sending to browser
+            response[
+                "Content-Disposition"
+            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            # Return the response value
+            return response
+
+
+def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
+    """
+    home page
+    """
+    template_name = "pathogen_identification/scaffold_remap.html"
+    ##
+
+    sample_main = Sample.objects.get(project__name=project, name=sample)
+    #
+    run_main = RunMain.objects.get(sample=sample_main, name=run)
+
+    try:
+        ref_main = ReferenceMap_Main.objects.get(
+            reference=reference, sample=sample_main, run=run_main
+        )
+        map_db = ReferenceContigs.objects.filter(
+            reference=ref_main,
+            run=run_main,
+        )
+    except ReferenceMap_Main.DoesNotExist:
+
+        return Http404("Sample not found")
+
+    return render(
+        requesdst,
+        template_name,
+        {
+            "table": ContigTable(map_db),
+        },
+    )

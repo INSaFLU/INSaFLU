@@ -10,33 +10,45 @@
 
 {% block breadcrumbs %}
 {{ block.super }}
-{% breadcrumb "Settings Index" "settings-index"%}
+{% breadcrumb "Project Index" "project-index"%}
 {% endblock %}
 
 {% block content %}
 
-<h1>Settings</h1>
+<h1>Projects</h1>
 <div class="row">
     <div class="col-md-2">
         <div class="card mb-2">
-            <img class="img-index" src="{% static "img/QC.jpg" %}">
+            <img class="img-index" src="{% static "img/projects_insaflu.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ 'INSAFLU' }}</h5>
                 <p class="card-text">{{ 'old projects' }}</p>
-                <a href="{% url 'settings_qc' %}" class="btn btn-primary">
-                    Settings
+                <a href="{% url 'projects' %}" class="btn btn-primary">
+                    Projects
                 </a>
             </div>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card mb-2">
-            <img class="img-index" src="{% static "img/typing.jpg" %}">
+            <img class="img-index" src="{% static "img/projects_televir.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ 'TELEVIR' }}</h5>
                 <p class="card-text">{{ 'new projects' }}</p>
-                <a href="{% url 'settings' %}" class="btn btn-primary">
-                    Settings
+                <a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
+                    Projects
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card mb-2">
+            <img class="img-index" src="{% static "img/phylogeny.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'phylogeny' }}</h5>
+                <p class="card-text">{{ 'PHYLOGENY' }}</p>
+                <a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
+                    Projects
                 </a>
             </div>
         </div>

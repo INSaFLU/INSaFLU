@@ -23,7 +23,7 @@
 
 {% block content %}
 
-{% if table.page and show_paginatior %}
+{% if table.page or show_paginatior %}
 <div class="table-container">
 	{% endif %}
 
@@ -35,29 +35,10 @@
 			<thead>
 				<tr>
 					<th colspan="7">
-						<a href="{% url "project-add" %}" data-title="Create a new project to process samples"
+						<a href="{% url "PIproject-add" %}" data-title="Create a new project to process samples"
 							class="btn btn-small btn-primary dark"><span class="hidden-phone"><i
 									class="fa fa-plus-square"></i> Create project</span></a>
-						<form method="get" class="form-inline form-search pull-right">
-							{% csrf_token %}
-							<input id="search_form_id" name="search_projects" type="text" class="form-control col-md-8"
-								placeholder="Name, Reference, Sample" {% if search_projects %}
-								value="{{ search_projects }}" {% endif %}>
-							<button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i>
-								Search</button>
-						</form>
-						{% if list_project_file_csv or list_project_file_tsv %}
-						<div class="btn-group">
-							<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-								aria-haspopup="true" aria-expanded="false">
-								Download
-							</button>
-							<div class="dropdown-menu">
-								{% if list_project_file_csv %} {{ list_project_file_csv }} {% endif %}
-								{% if list_project_file_tsv %} {{ list_project_file_tsv }} {% endif %}
-							</div>
-						</div>
-						{% endif %}
+
 					</th>
 				</tr>
 

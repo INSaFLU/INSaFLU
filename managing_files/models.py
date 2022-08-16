@@ -7,8 +7,10 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -17,6 +19,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.constants_virus import ConstantsVirus
+from manage_virus.models import IdentifyVirus
 
 
 def reference_directory_path(instance, filename):
@@ -425,475 +428,834 @@ class MixedInfections(models.Model):
 
 
 class Sample(models.Model):
-	"""
-	Sample, each sample has one or two files...
-	"""
-	OUT_FILE_ABRICATE = "abricate.txt"
-	DRAFT_CONTIGS = "_draft_contigs.fasta"
-	SEGMENTS_CONTIGS = "_segments_to_contigs.tsv"
-	SEGMENTS_READS = "_segments_to_reads.tsv"		### if the abricate is produced from reads, instead
-	
-	### consensus file
-	OUT_CONSENSUS_FILE = "consensus.fasta"
-	
-	### type of fastq.gz
-	TYPE_OF_FASTQ_illumina = 0
-	TYPE_OF_FASTQ_minion = 1
-	TYPE_OF_FASTQ_not_defined = -1
-	
-	## to remove in future
-	objects = models.Manager()	## need to check this
-	
-	name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Sample Name')  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /  
-																	##	prefix_R2_001.fastq.gz),
-	date_of_onset = models.DateField('date of onset', blank=True, null=True)
-	date_of_collection = models.DateField('date of collection', blank=True, null=True)
-	date_of_receipt_lab = models.DateField('date of receipt lab', blank=True, null=True)
-	week = models.IntegerField(blank=True, null=True)
-	day = models.IntegerField(blank=True, null=True)	## from "Date of onset” or “Date of collection” 
-	month = models.IntegerField(blank=True, null=True)
-	year = models.IntegerField(blank=True, null=True)
-	vaccine_status = models.ForeignKey(VaccineStatus, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
-	is_deleted = models.BooleanField(default=False)
-	is_obsolete = models.BooleanField(default=False)
-	owner = models.ForeignKey(User, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	data_set = models.ForeignKey(DataSet, related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-	geo_local = PointField(null=True, blank=True, srid=4326);  ## 4326 which means latitude and longitude
-	geo_manager = GeoManager()
-	
-	### Type/Subtype Virus
-	identify_virus = models.ManyToManyField(IdentifyVirus)
-	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
-	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
-	mixed_infections_tag = models.ForeignKey(MixedInfectionsTag, verbose_name='Putative Mixed Infection', related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
-																			### has the tag of Yes/No mixed infection
+    """
+    Sample, each sample has one or two files...
+    """
 
-	## many to many relation	
-	tag_names = models.ManyToManyField(TagName, through='TagNames')
+    OUT_FILE_ABRICATE = "abricate.txt"
+    DRAFT_CONTIGS = "_draft_contigs.fasta"
+    SEGMENTS_CONTIGS = "_segments_to_contigs.tsv"
+    SEGMENTS_READS = (
+        "_segments_to_reads.tsv"  ### if the abricate is produced from reads, instead
+    )
 
-	### files
-	is_valid_1 = models.BooleanField(default=False)
-	file_name_1 = models.CharField(max_length=200, blank=True, null=True)
-	candidate_file_name_1 = models.CharField(max_length=200, blank=True, null=True)
-	
-	## 30M
-	path_name_1 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
-					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
-					max_length=500)
-	is_valid_2 = models.BooleanField(default=False)
-	file_name_2 = models.CharField(max_length=200, blank=True, null=True)
-	candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
-	path_name_2 = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip'],\
-					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
-					max_length=500)
+    ### consensus file
+    OUT_CONSENSUS_FILE = "consensus.fasta"
 
-	### type of fastq.gz, Default Illumina, 
-	type_of_fastq = models.SmallIntegerField(verbose_name='File type', default=TYPE_OF_FASTQ_not_defined)	## has the type of the fastq files
-	
-	## has files, the user can upload the files after
-	has_files = models.BooleanField(default=False)
-	
-	###	has the flag indicating that the sample can be processed by projects
-	is_ready_for_projects = models.BooleanField(default=False)
-	###	has the flag indicating that the sample has end of processing, if False it is ready for process
-	is_sample_in_the_queue = models.BooleanField(default=False)
-	
-	### if is deleted in file system
-	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
-	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date deleted')	## this date has the time of deleted by web page
-	
-	### deleted processed fastq, but not delete the sample (trimmomatic/Rabbit/etc)
-	is_deleted_processed_fastq = models.BooleanField(default=False)			## if this files were removed in file system
-	date_deleted_processed_fastq = models.DateTimeField(blank=True, null=True, verbose_name='Date fastq deleted')	## this date has the time of fastq deleted
+    ### type of fastq.gz
+    TYPE_OF_FASTQ_illumina = 0
+    TYPE_OF_FASTQ_minion = 1
+    TYPE_OF_FASTQ_not_defined = -1
 
-	def __str__(self):
-		return self.name
+    ## to remove in future
+    objects = models.Manager()  ## need to check this
 
-	class Meta:
-		ordering = ['-creation_date', ]
+    name = models.CharField(
+        max_length=200, db_index=True, blank=True, null=True, verbose_name="Sample Name"
+    )  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /
+    ##	prefix_R2_001.fastq.gz),
+    date_of_onset = models.DateField("date of onset", blank=True, null=True)
+    date_of_collection = models.DateField("date of collection", blank=True, null=True)
+    date_of_receipt_lab = models.DateField("date of receipt lab", blank=True, null=True)
+    week = models.IntegerField(blank=True, null=True)
+    day = models.IntegerField(
+        blank=True, null=True
+    )  ## from "Date of onset” or “Date of collection”
+    month = models.IntegerField(blank=True, null=True)
+    year = models.IntegerField(blank=True, null=True)
+    vaccine_status = models.ForeignKey(
+        VaccineStatus,
+        related_name="sample",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    creation_date = models.DateTimeField(
+        auto_now_add=True, verbose_name="Uploaded Date"
+    )
+    is_deleted = models.BooleanField(default=False)
+    is_obsolete = models.BooleanField(default=False)
+    owner = models.ForeignKey(
+        User, related_name="sample", blank=True, null=True, on_delete=models.CASCADE
+    )
+    data_set = models.ForeignKey(
+        DataSet, related_name="sample", blank=True, null=True, on_delete=models.CASCADE
+    )
+    geo_local = PointField(null=True, blank=True, srid=4326)
+    ## 4326 which means latitude and longitude
+    geo_manager = GeoManager()
 
-	def get_file_names(self):
-		sz_return = "" if self.file_name_1 == None else self.file_name_1
-		sz_return += "/" if len(sz_return) > 0 and self.file_name_2 is not None else ""
-		sz_return += "" if self.file_name_2 == None else self.file_name_2
-		return sz_return
+    ### Type/Subtype Virus
+    identify_virus = models.ManyToManyField(IdentifyVirus)
+    type_subtype = models.CharField(
+        max_length=50, blank=True, null=True
+    )  ## has the type/subtype collected
+    number_alerts = models.IntegerField(
+        verbose_name="Alerts", default=0, blank=True, null=True
+    )  ## has the number of alerts
+    mixed_infections_tag = models.ForeignKey(
+        MixedInfectionsTag,
+        verbose_name="Putative Mixed Infection",
+        related_name="sample",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    ### has the tag of Yes/No mixed infection
 
-	def exist_file_2(self):
-		if (self.path_name_2 is None or self.path_name_2.name is None or len(self.path_name_2.name) == 0): return False
-		return True
+    ## many to many relation
+    tag_names = models.ManyToManyField(TagName, through="TagNames")
 
-	def get_abricate_output(self, type_path, b_gzip_file = False):
-		"""
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		Can be zipped
-		"""
-		return os.path.join(self.__get_path__(type_path, True),\
-			self.OUT_FILE_ABRICATE + (FileExtensions.FILE_GZ if b_gzip_file else "")) 
-	
-	def get_draft_contigs_output(self, type_path):
-		"""
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.DRAFT_CONTIGS))
-	
-	def get_draft_contigs_abricate_output(self, type_path):
-		"""
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.SEGMENTS_CONTIGS))
-	
-	def get_draft_reads_abricate_output(self, type_path):
-		"""
-		If the obreciate result came from Reads instead contigs. This appends in ONT reads. It is not produced contigs
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		Return the file name of the abricate output base on fastq File input
-		path it's a FileField instance, or a string
-		"""
-		return os.path.join(self.__get_path__(type_path, True), "{}{}".format(self.name.replace(' ', '_'), self.SEGMENTS_READS))
-	
-	def get_trimmomatic_file(self, type_path, b_first_file):
-		"""
-		get the trimmomatic files, it's going to be use for all processing
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		"""
-		if (not b_first_file and not self.exist_file_2()): return None
-		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
-		return os.path.join(path_out, self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz"))
-	
-	def get_nanofilt_file(self, type_path):
-		"""
-		get the trimmomatic files, it's going to be use for all processing
-		type_path = [MEDIA_ROOT, MEDIA_URL]
-		"""
-		b_first_file = True
-		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
-		return os.path.join(path_out, self.name + ".fastq.gz")
+    ### files
+    is_valid_1 = models.BooleanField(default=False)
+    file_name_1 = models.CharField(max_length=200, blank=True, null=True)
+    candidate_file_name_1 = models.CharField(max_length=200, blank=True, null=True)
 
-	def get_fastq_trimmomatic(self, type_path, b_first_file):
-		"""
-		return fastQC output first step
-		"""
-		if (not b_first_file and not self.exist_file_2()): return None
-		
-		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
-		return os.path.join(path_out, self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"))
+    ## 30M
+    path_name_1 = ContentTypeRestrictedFileField(
+        upload_to=user_directory_path,
+        blank=True,
+        null=True,
+        content_types=[
+            "application/octet-stream",
+            "application/gzip",
+            "application/x-gzip",
+        ],
+        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+        if settings.DOWN_SIZE_FASTQ_FILES
+        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_length=500,
+    )
+    is_valid_2 = models.BooleanField(default=False)
+    file_name_2 = models.CharField(max_length=200, blank=True, null=True)
+    candidate_file_name_2 = models.CharField(max_length=200, blank=True, null=True)
+    path_name_2 = ContentTypeRestrictedFileField(
+        upload_to=user_directory_path,
+        blank=True,
+        null=True,
+        content_types=[
+            "application/octet-stream",
+            "application/gzip",
+            "application/x-gzip",
+        ],
+        max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE
+        if settings.DOWN_SIZE_FASTQ_FILES
+        else settings.MAX_FASTQ_FILE_UPLOAD,
+        max_length=500,
+    )
 
-	def get_rabbitQC_nanofilt(self, type_path):
-		"""
-		return rabbitQC output first step
-		"""
-		b_first_file = True
-		path_out = os.path.join(self.__get_path__(type_path, b_first_file), Constants.DIR_PROCESSED_PROCESSED)
-		if (type_path == TypePath.MEDIA_ROOT): os.makedirs(path_out, mode=0o755, exist_ok=True)
-		return os.path.join(path_out, self.name + "_rabbitQC.html")
-	
-	def get_fastq(self, type_path, b_first_file):
-		"""
-		return fastq output first step, from MEDIA_URL or MEDIA_ROOT
-		"""
-		if (not b_first_file and not self.exist_file_2()): return None
-		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1 if b_first_file else self.file_name_2)
+    ### type of fastq.gz, Default Illumina,
+    type_of_fastq = models.SmallIntegerField(
+        verbose_name="File type", default=TYPE_OF_FASTQ_not_defined
+    )  ## has the type of the fastq files
 
-	def get_fastq_available(self, type_path, b_first_file = True):
-		"""
-		gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
-		try first trimmomatic/nanofilt, then return fastq
-		"""
-		file_name = self.get_trimmomatic_file(type_path, b_first_file)
-		if os.path.exists(file_name): return file_name
-		file_name = self.get_nanofilt_file(type_path)
-		if os.path.exists(file_name): return file_name
-		return self.get_fastq(type_path, b_first_file)
-		
-	def is_original_fastq_removed(self):
-		"""
-		Test if original fastq were removed already
-		"""
-		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
-	
-	def is_processed_fastq_deleted(self):
-		return self.is_deleted_processed_fastq
+    ## has files, the user can upload the files after
+    has_files = models.BooleanField(default=False)
 
-	def get_fastqc_output(self, type_path, b_first_file):
-		"""
-		return fastqc output first quality control
-		can be generic, also for rabbitQC
-		"""
-		if (not b_first_file and not self.exist_file_2()): return None
-		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_fastqc.html") if b_first_file else self.file_name_2.replace(".fastq.gz", "_fastqc.html"))
+    ###	has the flag indicating that the sample can be processed by projects
+    is_ready_for_projects = models.BooleanField(default=False)
+    ###	has the flag indicating that the sample has end of processing, if False it is ready for process
+    is_sample_in_the_queue = models.BooleanField(default=False)
 
-	def get_rabbitQC_output(self, type_path):
-		"""
-		return fastq output second step
-		can be generic, also for rabbitQC
-		"""
-		b_first_file = True
-		return os.path.join(self.__get_path__(type_path, b_first_file), self.file_name_1.replace(".fastq.gz", "_rabbitQC.html"))
-		
-	def __get_path__(self, type_path, b_first_file):
-		"""
-		get a path, from MEDIA_URL or MEDIA_ROOT
-		"""
-		if (b_first_file):
-			path_to_find = os.path.dirname(self.path_name_1.name)
-			if (type_path == TypePath.MEDIA_ROOT): 
-				if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
-			else:
-				path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
-		else:
-			path_to_find = os.path.dirname(self.path_name_2.name)
-			if (type_path == TypePath.MEDIA_ROOT): 
-				if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
-			else:
-				path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
-		return path_to_find
+    ### if is deleted in file system
+    is_deleted_in_file_system = models.BooleanField(
+        default=False
+    )  ## if this file was removed in file system
+    date_deleted = models.DateTimeField(
+        blank=True, null=True, verbose_name="Date deleted"
+    )  ## this date has the time of deleted by web page
 
-	def get_type_sub_type(self):
-		"""
-		return a string with Type/Subtpye
-		"""
-		vect_identify_virus_temp = self.identify_virus.all()
-		
-		### clean some possible repeated
-		vect_identify_virus = []
-		for identify_virus in vect_identify_virus_temp:
-			if (not identify_virus in vect_identify_virus):
-				vect_identify_virus.append(identify_virus)
+    ### deleted processed fastq, but not delete the sample (trimmomatic/Rabbit/etc)
+    is_deleted_processed_fastq = models.BooleanField(
+        default=False
+    )  ## if this files were removed in file system
+    date_deleted_processed_fastq = models.DateTimeField(
+        blank=True, null=True, verbose_name="Date fastq deleted"
+    )  ## this date has the time of fastq deleted
 
-		if (len(vect_identify_virus) > 0):
+    def __str__(self):
+        return self.name
 
-			### Corona/monkeypox
-			sz_return_c = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS, [ConstantsVirus.TYPE_BetaCoV])
-			
-			## get several species
-			sz_subtype = ""
-			for sub_type_available in ConstantsVirus.VECT_SUB_TYPE_other_than_influenza:
-				sz_temp = self.__get_type__(vect_identify_virus, sub_type_available, [])
-				if len(sz_temp) == 0: continue
-				if (len(sz_subtype) > 0): sz_subtype += sz_subtype + "-" + sz_temp
-				else: sz_subtype = sz_temp 
-			if (len(sz_subtype) > 0): sz_return_c += sz_subtype if len(sz_return_c) == 0 else "-" + sz_subtype
-						
-			### Type A
-			## the second flag is for corona
-			sz_return_a = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, [ConstantsVirus.TYPE_A, \
-												ConstantsVirus.TYPE_BetaCoV])
-			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, [ConstantsVirus.TYPE_A])
-			if (len(sz_subtype) > 0): sz_return_a += sz_subtype if len(sz_return_a) == 0 else "-" + sz_subtype
-			
-			### Type B
-			sz_return_b = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_TYPE, [ConstantsVirus.TYPE_B])
-			sz_subtype = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, [ConstantsVirus.TYPE_B])
-			if (len(sz_subtype) > 0): sz_return_b += sz_subtype if len(sz_return_b) == 0 else "-" + sz_subtype
-			
-			sz_return = sz_return_c
-			if (len(sz_return_a) > 0): sz_return = sz_return_a if len(sz_return) == 0 else "{}; {}".format(sz_return, sz_return_a)
-			if (len(sz_return_b) > 0): sz_return = sz_return_b if len(sz_return) == 0 else "{}; {}".format(sz_return, sz_return_b)
-			return sz_return
-		else: return Constants.EMPTY_VALUE_TYPE_SUBTYPE
-		
-	def __get_type__(self, vect_identify_virus, type_to_test, vect_virus_name):
-		vect_return = []
-		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_to_test and (identify_virus.seq_virus.name in vect_virus_name \
-							or len(vect_virus_name) == 0)):
-				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_A in vect_virus_name):
-				vect_return.append(identify_virus.seq_virus.name)
-			elif (type_to_test == ConstantsVirus.SEQ_VIRUS_LINEAGE and identify_virus.seq_virus.kind_type.name == type_to_test and ConstantsVirus.TYPE_B in vect_virus_name):
-				vect_return.append(identify_virus.seq_virus.name)
-		if (type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2): return '|'.join(sorted(vect_return))
-		if (type_to_test == ConstantsVirus.SEQ_VIRUS_HUMAN and len(vect_return) > 1): return '|'.join(sorted(vect_return))
-		return ''.join(sorted(vect_return))
-	
-	def __exists_type(self, vect_identify_virus, virus_name, type_virus = ConstantsVirus.SEQ_VIRUS_TYPE):
-		"""
-		test if exist some specific type
-		"""
-		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_virus and \
-				( identify_virus.seq_virus.name == virus_name or len(virus_name) == 0)): return True
-		return False
-				
-	def __get_number_type__(self, vect_identify_virus, type_to_test):
-		"""
-		get a number for a specific type
-		"""
-		n_return = 0
-		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_to_test): n_return += 1
-		return n_return
-	
-	def __get_number_type_and_start_sub_type(self, vect_identify_virus, type_to_test, starts_sub_type):
-		"""
-		get a number for a specific type and name starts with a specific sub_type
-		if (starts_sub_type == None) get all of a specific 
-		"""
-		n_return = 0
-		for identify_virus in vect_identify_virus:
-			if (identify_virus.seq_virus.kind_type.name == type_to_test and \
-					(starts_sub_type == None or identify_virus.seq_virus.name.startswith(starts_sub_type))): 
-				n_return += 1
-		return n_return
+    class Meta:
+        ordering = [
+            "-creation_date",
+        ]
 
-	def get_mixed_infection(self):
-		"""
-		mixed infection based on the table static/mixed_infections/mixed_infections.xls
-		return tuble (tag_mixed_infection, alert, message)
-		tag_mixed_infection: ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO or ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
-		alert: positive number, or zero
-		message: None, empty or the string with the error message
-		"""
-		vect_identify_virus_temp = self.identify_virus.all()
-		if (vect_identify_virus_temp.count() == 0): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-					"Warning: no typing data was obtained (possible reason: low number of influenza reads).")
-	
-		vect_identify_virus = []
-		for identify_virus in vect_identify_virus_temp:
-			if (not identify_virus in vect_identify_virus):
-				vect_identify_virus.append(identify_virus)
-		
-		## Only A not B
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
-			#  A; #any subtype; > 0 lineage
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 0):
-				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-					"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
-				
-			## A; = 2 subtype
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-			## A; > 2 subtype
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-					"Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.")
-			## A < 2 subtype
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) < 2): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-					"Warning: an incomplete subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
-		
-		## Only B not A
-		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
-			#  B; #any subtype; > 0 lineage
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) > 0):
-				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-					"Warning: more than one type/subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.")
-			
-			## B; == 1 lineage
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-			## B; > 1 lineage
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) > 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'.")
-			## B; < 1 lineage
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) < 1): return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: an incomplete lineage has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
-			
-		## A and B
-		if (self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
-			
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 0 and\
-					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 0):
-				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
-			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
-		
-		## BEGIN corona
-		if (self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_GENUS) or self.__exists_type(vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_SPECIES)):
-			
-			if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS) == 1):
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 1):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) > 1):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'")
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 0):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
-			else:
-				if (self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES) == 1):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)")
-				else:
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'")
-		### END corona
-					
-		## not A and not B
-		if (not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_A) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B)):
-			if ((self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 1 and\
-					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 0) or\
-					(self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE) == 1 and\
-					self.__get_number_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE) == 0)):
-				return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
-			else:
-				count_type_N = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.SUB_TYPE_STARTS_N)
-				count_type_H = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE, ConstantsVirus.SUB_TYPE_STARTS_H)
-				count_type_other = self.__get_number_type_and_start_sub_type(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, None)
-				
-				if (count_type_N == 1 and count_type_H == 1 and count_type_other == 0):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 1,\
-						"Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).")
-				elif (count_type_N > 1 or count_type_H > 1 or count_type_other > 0):
-					return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
-			return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES, 1,\
-						"Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.")
-		
-		## default	
-		return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
-	
-	def get_is_ready_for_projects(self):
-		"""
-		need to be true to be ready for projects
-		"""
-		return self.is_ready_for_projects and not self.is_obsolete and not self.is_deleted
+    def get_file_names(self):
+        sz_return = "" if self.file_name_1 == None else self.file_name_1
+        sz_return += "/" if len(sz_return) > 0 and self.file_name_2 is not None else ""
+        sz_return += "" if self.file_name_2 == None else self.file_name_2
+        return sz_return
 
-	def get_vect_tag_names_and_value(self):
-		"""
-		return [[header1, value1], [header2, value2], [header3, value3], ...]
-		"""
-		vect_out = []
-		query_set = TagNames.objects.filter(sample=self)
-		for tag_names in query_set:
-			vect_out.append([tag_names.tag_name.name, tag_names.value])
-		return sorted(vect_out, key=itemgetter(1))
+    def exist_file_2(self):
+        if (
+            self.path_name_2 is None
+            or self.path_name_2.name is None
+            or len(self.path_name_2.name) == 0
+        ):
+            return False
+        return True
 
-	def get_tag_names(self):
-		"""
-		get the tag names grouped by a number
-		"""
-		query_set = TagNames.objects.filter(sample=self)
-		if (query_set.count() == 0): return None
-		return query_set
+    def get_abricate_output(self, type_path, b_gzip_file=False):
+        """
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        Return the file name of the abricate output base on fastq File input
+        path it's a FileField instance, or a string
+        Can be zipped
+        """
+        return os.path.join(
+            self.__get_path__(type_path, True),
+            self.OUT_FILE_ABRICATE + (FileExtensions.FILE_GZ if b_gzip_file else ""),
+        )
 
-	def is_type_fastq_gz_sequencing(self, type_of_fastq = TYPE_OF_FASTQ_illumina):
-		"""
-		:param type_of_fastq, can be TYPE_OF_FASTQ_illumina, TYPE_OF_FASTQ_minion and so on
-		"""
-		return self.type_of_fastq == type_of_fastq
-	
-	def set_type_of_fastq_sequencing(self, type_of_fastq):
-		"""
-		:parm type_of_fastq Constants.FORMAT_FASTQ_illumina or Constants.FORMAT_FASTQ_ont
-		"""
-		if (type_of_fastq == Constants.FORMAT_FASTQ_illumina): self.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
-		if (type_of_fastq == Constants.FORMAT_FASTQ_ont): self.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+    def get_draft_contigs_output(self, type_path):
+        """
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        Return the file name of the abricate output base on fastq File input
+        path it's a FileField instance, or a string
+        """
+        return os.path.join(
+            self.__get_path__(type_path, True),
+            "{}{}".format(self.name.replace(" ", "_"), self.DRAFT_CONTIGS),
+        )
 
-	def get_type_technology(self):
-		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina): return "Illumina";
-		if (self.type_of_fastq == Sample.TYPE_OF_FASTQ_minion): return "ONT"
-		return "Not defined"
+    def get_draft_contigs_abricate_output(self, type_path):
+        """
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        Return the file name of the abricate output base on fastq File input
+        path it's a FileField instance, or a string
+        """
+        return os.path.join(
+            self.__get_path__(type_path, True),
+            "{}{}".format(self.name.replace(" ", "_"), self.SEGMENTS_CONTIGS),
+        )
+
+    def get_draft_reads_abricate_output(self, type_path):
+        """
+        If the obreciate result came from Reads instead contigs. This appends in ONT reads. It is not produced contigs
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        Return the file name of the abricate output base on fastq File input
+        path it's a FileField instance, or a string
+        """
+        return os.path.join(
+            self.__get_path__(type_path, True),
+            "{}{}".format(self.name.replace(" ", "_"), self.SEGMENTS_READS),
+        )
+
+    def get_trimmomatic_file(self, type_path, b_first_file):
+        """
+        get the trimmomatic files, it's going to be use for all processing
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        """
+        if not b_first_file and not self.exist_file_2():
+            return None
+        path_out = os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            Constants.DIR_PROCESSED_PROCESSED,
+        )
+        if type_path == TypePath.MEDIA_ROOT:
+            os.makedirs(path_out, mode=0o755, exist_ok=True)
+        return os.path.join(
+            path_out, self.name + ("_1P.fastq.gz" if b_first_file else "_2P.fastq.gz")
+        )
+
+    def get_nanofilt_file(self, type_path):
+        """
+        get the trimmomatic files, it's going to be use for all processing
+        type_path = [MEDIA_ROOT, MEDIA_URL]
+        """
+        b_first_file = True
+        path_out = os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            Constants.DIR_PROCESSED_PROCESSED,
+        )
+        if type_path == TypePath.MEDIA_ROOT:
+            os.makedirs(path_out, mode=0o755, exist_ok=True)
+        return os.path.join(path_out, self.name + ".fastq.gz")
+
+    def get_fastq_trimmomatic(self, type_path, b_first_file):
+        """
+        return fastQC output first step
+        """
+        if not b_first_file and not self.exist_file_2():
+            return None
+
+        path_out = os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            Constants.DIR_PROCESSED_PROCESSED,
+        )
+        if type_path == TypePath.MEDIA_ROOT:
+            os.makedirs(path_out, mode=0o755, exist_ok=True)
+        return os.path.join(
+            path_out,
+            self.name + ("_1P_fastqc.html" if b_first_file else "_2P_fastqc.html"),
+        )
+
+    def get_rabbitQC_nanofilt(self, type_path):
+        """
+        return rabbitQC output first step
+        """
+        b_first_file = True
+        path_out = os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            Constants.DIR_PROCESSED_PROCESSED,
+        )
+        if type_path == TypePath.MEDIA_ROOT:
+            os.makedirs(path_out, mode=0o755, exist_ok=True)
+        return os.path.join(path_out, self.name + "_rabbitQC.html")
+
+    def get_fastq(self, type_path, b_first_file):
+        """
+        return fastq output first step, from MEDIA_URL or MEDIA_ROOT
+        """
+        if not b_first_file and not self.exist_file_2():
+            return None
+        return os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            self.file_name_1 if b_first_file else self.file_name_2,
+        )
+
+    def get_fastq_available(self, type_path, b_first_file=True):
+        """
+        gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
+        try first trimmomatic/nanofilt, then return fastq
+        """
+        file_name = self.get_trimmomatic_file(type_path, b_first_file)
+        if os.path.exists(file_name):
+            return file_name
+        file_name = self.get_nanofilt_file(type_path)
+        if os.path.exists(file_name):
+            return file_name
+        return self.get_fastq(type_path, b_first_file)
+
+    def is_original_fastq_removed(self):
+        """
+        Test if original fastq were removed already
+        """
+        return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
+
+    def is_processed_fastq_deleted(self):
+        return self.is_deleted_processed_fastq
+
+    def get_fastqc_output(self, type_path, b_first_file):
+        """
+        return fastqc output first quality control
+        can be generic, also for rabbitQC
+        """
+        if not b_first_file and not self.exist_file_2():
+            return None
+        return os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            self.file_name_1.replace(".fastq.gz", "_fastqc.html")
+            if b_first_file
+            else self.file_name_2.replace(".fastq.gz", "_fastqc.html"),
+        )
+
+    def get_rabbitQC_output(self, type_path):
+        """
+        return fastq output second step
+        can be generic, also for rabbitQC
+        """
+        b_first_file = True
+        return os.path.join(
+            self.__get_path__(type_path, b_first_file),
+            self.file_name_1.replace(".fastq.gz", "_rabbitQC.html"),
+        )
+
+    def __get_path__(self, type_path, b_first_file):
+        """
+        get a path, from MEDIA_URL or MEDIA_ROOT
+        """
+        if b_first_file:
+            path_to_find = os.path.dirname(self.path_name_1.name)
+            if type_path == TypePath.MEDIA_ROOT:
+                if not path_to_find.startswith("/"):
+                    path_to_find = os.path.join(
+                        getattr(settings, "MEDIA_ROOT", None), path_to_find
+                    )
+            else:
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_URL", None), path_to_find
+                )
+        else:
+            path_to_find = os.path.dirname(self.path_name_2.name)
+            if type_path == TypePath.MEDIA_ROOT:
+                if not path_to_find.startswith("/"):
+                    path_to_find = os.path.join(
+                        getattr(settings, "MEDIA_ROOT", None), path_to_find
+                    )
+            else:
+                path_to_find = os.path.join(
+                    getattr(settings, "MEDIA_URL", None), path_to_find
+                )
+        return path_to_find
+
+    def identify_virus(self):
+        """
+        return a string with Type/Subtpye
+        """
+        vect_identify_virus_temp = self.identify_virus.all()
+
+        ### clean some possible repeated
+        vect_identify_virus = []
+        for identify_virus in vect_identify_virus_temp:
+            if not identify_virus in vect_identify_virus:
+                vect_identify_virus.append(identify_virus)
+
+        if len(vect_identify_virus) > 0:
+
+            ### Corona/monkeypox
+            sz_return_c = self.__get_type__(
+                vect_identify_virus,
+                ConstantsVirus.SEQ_VIRUS_GENUS,
+                [ConstantsVirus.TYPE_BetaCoV],
+            )
+
+            ## get several species
+            sz_subtype = ""
+            for sub_type_available in ConstantsVirus.VECT_SUB_TYPE_other_than_influenza:
+                sz_temp = self.__get_type__(vect_identify_virus, sub_type_available, [])
+                if len(sz_temp) == 0:
+                    continue
+                if len(sz_subtype) > 0:
+                    sz_subtype += sz_subtype + "-" + sz_temp
+                else:
+                    sz_subtype = sz_temp
+            if len(sz_subtype) > 0:
+                sz_return_c += sz_subtype if len(sz_return_c) == 0 else "-" + sz_subtype
+
+            ### Type A
+            ## the second flag is for corona
+            sz_return_a = self.__get_type__(
+                vect_identify_virus,
+                ConstantsVirus.SEQ_VIRUS_TYPE,
+                [ConstantsVirus.TYPE_A, ConstantsVirus.TYPE_BetaCoV],
+            )
+            sz_subtype = self.__get_type__(
+                vect_identify_virus,
+                ConstantsVirus.SEQ_VIRUS_SUB_TYPE,
+                [ConstantsVirus.TYPE_A],
+            )
+            if len(sz_subtype) > 0:
+                sz_return_a += sz_subtype if len(sz_return_a) == 0 else "-" + sz_subtype
+
+            ### Type B
+            sz_return_b = self.__get_type__(
+                vect_identify_virus,
+                ConstantsVirus.SEQ_VIRUS_TYPE,
+                [ConstantsVirus.TYPE_B],
+            )
+            sz_subtype = self.__get_type__(
+                vect_identify_virus,
+                ConstantsVirus.SEQ_VIRUS_LINEAGE,
+                [ConstantsVirus.TYPE_B],
+            )
+            if len(sz_subtype) > 0:
+                sz_return_b += sz_subtype if len(sz_return_b) == 0 else "-" + sz_subtype
+
+            sz_return = sz_return_c
+            if len(sz_return_a) > 0:
+                sz_return = (
+                    sz_return_a
+                    if len(sz_return) == 0
+                    else "{}; {}".format(sz_return, sz_return_a)
+                )
+            if len(sz_return_b) > 0:
+                sz_return = (
+                    sz_return_b
+                    if len(sz_return) == 0
+                    else "{}; {}".format(sz_return, sz_return_b)
+                )
+            return sz_return
+        else:
+            return Constants.EMPTY_VALUE_TYPE_SUBTYPE
+
+    def __get_type__(self, vect_identify_virus, type_to_test, vect_virus_name):
+        vect_return = []
+        for identify_virus in vect_identify_virus:
+            if identify_virus.seq_virus.kind_type.name == type_to_test and (
+                identify_virus.seq_virus.name in vect_virus_name
+                or len(vect_virus_name) == 0
+            ):
+                vect_return.append(identify_virus.seq_virus.name)
+            elif (
+                type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                and identify_virus.seq_virus.kind_type.name == type_to_test
+                and ConstantsVirus.TYPE_A in vect_virus_name
+            ):
+                vect_return.append(identify_virus.seq_virus.name)
+            elif (
+                type_to_test == ConstantsVirus.SEQ_VIRUS_LINEAGE
+                and identify_virus.seq_virus.kind_type.name == type_to_test
+                and ConstantsVirus.TYPE_B in vect_virus_name
+            ):
+                vect_return.append(identify_virus.seq_virus.name)
+        if type_to_test == ConstantsVirus.SEQ_VIRUS_SUB_TYPE and len(vect_return) > 2:
+            return "|".join(sorted(vect_return))
+        if type_to_test == ConstantsVirus.SEQ_VIRUS_HUMAN and len(vect_return) > 1:
+            return "|".join(sorted(vect_return))
+        return "".join(sorted(vect_return))
+
+    def __exists_type(
+        self, vect_identify_virus, virus_name, type_virus=ConstantsVirus.SEQ_VIRUS_TYPE
+    ):
+        """
+        test if exist some specific type
+        """
+        for identify_virus in vect_identify_virus:
+            if identify_virus.seq_virus.kind_type.name == type_virus and (
+                identify_virus.seq_virus.name == virus_name or len(virus_name) == 0
+            ):
+                return True
+        return False
+
+    def __get_number_type__(self, vect_identify_virus, type_to_test):
+        """
+        get a number for a specific type
+        """
+        n_return = 0
+        for identify_virus in vect_identify_virus:
+            if identify_virus.seq_virus.kind_type.name == type_to_test:
+                n_return += 1
+        return n_return
+
+    def __get_number_type_and_start_sub_type(
+        self, vect_identify_virus, type_to_test, starts_sub_type
+    ):
+        """
+        get a number for a specific type and name starts with a specific sub_type
+        if (starts_sub_type == None) get all of a specific
+        """
+        n_return = 0
+        for identify_virus in vect_identify_virus:
+            if identify_virus.seq_virus.kind_type.name == type_to_test and (
+                starts_sub_type == None
+                or identify_virus.seq_virus.name.startswith(starts_sub_type)
+            ):
+                n_return += 1
+        return n_return
+
+    def get_mixed_infection(self):
+        """
+        mixed infection based on the table static/mixed_infections/mixed_infections.xls
+        return tuble (tag_mixed_infection, alert, message)
+        tag_mixed_infection: ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO or ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES
+        alert: positive number, or zero
+        message: None, empty or the string with the error message
+        """
+        vect_identify_virus_temp = self.identify_virus.all()
+        if vect_identify_virus_temp.count() == 0:
+            return (
+                ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                1,
+                "Warning: no typing data was obtained (possible reason: low number of influenza reads).",
+            )
+
+        vect_identify_virus = []
+        for identify_virus in vect_identify_virus_temp:
+            if not identify_virus in vect_identify_virus:
+                vect_identify_virus.append(identify_virus)
+
+        ## Only A not B
+        if self.__exists_type(
+            vect_identify_virus, ConstantsVirus.TYPE_A
+        ) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
+            #  A; #any subtype; > 0 lineage
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                > 0
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                    1,
+                    "Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                )
+
+            ## A; = 2 subtype
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                == 2
+            ):
+                return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+            ## A; > 2 subtype
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                > 2
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                    1,
+                    "Warning: more than two subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                )
+            ## A < 2 subtype
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                < 2
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                    1,
+                    "Warning: an incomplete subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).",
+                )
+
+        ## Only B not A
+        if not self.__exists_type(
+            vect_identify_virus, ConstantsVirus.TYPE_A
+        ) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
+            #  B; #any subtype; > 0 lineage
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                > 0
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                    1,
+                    "Warning: more than one type/subtypes were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                )
+
+            ## B; == 1 lineage
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                == 1
+            ):
+                return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+            ## B; > 1 lineage
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                > 1
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                    1,
+                    "Warning: more than one lineage were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                )
+            ## B; < 1 lineage
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                < 1
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                    1,
+                    "Warning: an incomplete lineage has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).",
+                )
+
+        ## A and B
+        if self.__exists_type(
+            vect_identify_virus, ConstantsVirus.TYPE_A
+        ) and self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
+
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                == 0
+                and self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                == 0
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                    1,
+                    "Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                )
+            return (
+                ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                1,
+                "Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.",
+            )
+
+        ## BEGIN corona
+        if self.__exists_type(
+            vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_GENUS
+        ) or self.__exists_type(
+            vect_identify_virus, "", ConstantsVirus.SEQ_VIRUS_SPECIES
+        ):
+
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS
+                )
+                == 1
+            ):
+                if (
+                    self.__get_number_type__(
+                        vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES
+                    )
+                    == 1
+                ):
+                    return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+                if (
+                    self.__get_number_type__(
+                        vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES
+                    )
+                    > 1
+                ):
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                        1,
+                        "Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'",
+                    )
+                if (
+                    self.__get_number_type__(
+                        vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES
+                    )
+                    == 0
+                ):
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                        1,
+                        "Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)",
+                    )
+            else:
+                if (
+                    self.__get_number_type__(
+                        vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SPECIES
+                    )
+                    == 1
+                ):
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                        1,
+                        "Warning: an incomplete human BetaCoV identification has been obtained (possible reasons: low number of  human BetaCoV reads, mixed infection, etc)",
+                    )
+                else:
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                        1,
+                        "Warning: more than one human BetaCoV virus are likely present in this sample, suggesting that may represent a 'mixed infection'",
+                    )
+        ### END corona
+
+        ## not A and not B
+        if not self.__exists_type(
+            vect_identify_virus, ConstantsVirus.TYPE_A
+        ) and not self.__exists_type(vect_identify_virus, ConstantsVirus.TYPE_B):
+            if (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                == 1
+                and self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                == 0
+            ) or (
+                self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_SUB_TYPE
+                )
+                == 1
+                and self.__get_number_type__(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE
+                )
+                == 0
+            ):
+                return (
+                    ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                    1,
+                    "Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).",
+                )
+            else:
+                count_type_N = self.__get_number_type_and_start_sub_type(
+                    vect_identify_virus,
+                    ConstantsVirus.SEQ_VIRUS_SUB_TYPE,
+                    ConstantsVirus.SUB_TYPE_STARTS_N,
+                )
+                count_type_H = self.__get_number_type_and_start_sub_type(
+                    vect_identify_virus,
+                    ConstantsVirus.SEQ_VIRUS_SUB_TYPE,
+                    ConstantsVirus.SUB_TYPE_STARTS_H,
+                )
+                count_type_other = self.__get_number_type_and_start_sub_type(
+                    vect_identify_virus, ConstantsVirus.SEQ_VIRUS_LINEAGE, None
+                )
+
+                if count_type_N == 1 and count_type_H == 1 and count_type_other == 0:
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO,
+                        1,
+                        "Warning: an incomplete type/subtype has been assigned (possible reasons: low number of influenza reads, same-subtype mixed infection, etc.).",
+                    )
+                elif count_type_N > 1 or count_type_H > 1 or count_type_other > 0:
+                    return (
+                        ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                        1,
+                        "Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.",
+                    )
+            return (
+                ConstantsMixedInfection.TAGS_MIXED_INFECTION_YES,
+                1,
+                "Warning: more than one type/subtype were detected for this sample, suggesting that may represent a 'mixed infection'.",
+            )
+
+        ## default
+        return (ConstantsMixedInfection.TAGS_MIXED_INFECTION_NO, 0, None)
+
+    def get_is_ready_for_projects(self):
+        """
+        need to be true to be ready for projects
+        """
+        return (
+            self.is_ready_for_projects and not self.is_obsolete and not self.is_deleted
+        )
+
+    def get_vect_tag_names_and_value(self):
+        """
+        return [[header1, value1], [header2, value2], [header3, value3], ...]
+        """
+        vect_out = []
+        query_set = TagNames.objects.filter(sample=self)
+        for tag_names in query_set:
+            vect_out.append([tag_names.tag_name.name, tag_names.value])
+        return sorted(vect_out, key=itemgetter(1))
+
+    def get_tag_names(self):
+        """
+        get the tag names grouped by a number
+        """
+        query_set = TagNames.objects.filter(sample=self)
+        if query_set.count() == 0:
+            return None
+        return query_set
+
+    def is_type_fastq_gz_sequencing(self, type_of_fastq=TYPE_OF_FASTQ_illumina):
+        """
+        :param type_of_fastq, can be TYPE_OF_FASTQ_illumina, TYPE_OF_FASTQ_minion and so on
+        """
+        return self.type_of_fastq == type_of_fastq
+
+    def set_type_of_fastq_sequencing(self, type_of_fastq):
+        """
+        :parm type_of_fastq Constants.FORMAT_FASTQ_illumina or Constants.FORMAT_FASTQ_ont
+        """
+        if type_of_fastq == Constants.FORMAT_FASTQ_illumina:
+            self.type_of_fastq = Sample.TYPE_OF_FASTQ_illumina
+        if type_of_fastq == Constants.FORMAT_FASTQ_ont:
+            self.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+
+    def get_type_technology(self):
+        if self.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
+            return "Illumina"
+        if self.type_of_fastq == Sample.TYPE_OF_FASTQ_minion:
+            return "ONT"
+        return "Not defined"
 
 
 class TagNames(models.Model):
@@ -1158,7 +1520,7 @@ class Project(models.Model):
         if not element is None and len(element) > 0:
             return (
                 Constants.DIR_PROCESSED_FILES_PROJECT
-                + "/user_{0}/{1}_{2}/{3}/{4}".format(
+                + "/user_{0}/project_{1}/{3}/{4}".format(
                     self.owner.id,
                     self.project_directory_template,
                     self.pk,
@@ -1166,11 +1528,13 @@ class Project(models.Model):
                     element,
                 )
             )
-        return Constants.DIR_PROCESSED_FILES_PROJECT + "/user_{0}/{1}_{2}/{3}".format(
-            self.owner.id,
-            self.project_directory_template,
-            self.pk,
-            self.PATH_MAIN_RESULT,
+        return (
+            Constants.DIR_PROCESSED_FILES_PROJECT
+            + "/user_{0}/project_{1}/{2}".format(
+                self.owner.id,
+                self.pk,
+                self.PATH_MAIN_RESULT,
+            )
         )
 
     def __get_global_path__(self, type_path, element):
@@ -1189,14 +1553,6 @@ class Project(models.Model):
                 getattr(settings, "MEDIA_URL", None), path_to_find
             )
         return path_to_find
-
-
-class Project(Project_CORE):
-    project_directory_template = "project"
-
-
-class Project_Pathogen_Detection(Project_CORE):
-    project_televir_template = "project_pathogen_detection"
 
 
 class MetaKeyProject(models.Model):
@@ -1544,7 +1900,6 @@ class Statistics(models.Model):
 
 
 class Software(models.Model):
-<<<<<<< HEAD
     """
     Has all the softwares
     It can be used for all users
@@ -1554,6 +1909,9 @@ class Software(models.Model):
     name = models.CharField(max_length=100, blank=True, null=True)
     path_to_run = models.CharField(max_length=300)
     version = models.CharField(max_length=200)
+    version_long = models.TextField(
+        default=""
+    )  ## has the version in json mode, in an dictonary
 
     ### last update of the software
     last_update = models.DateTimeField(
@@ -1561,170 +1919,48 @@ class Software(models.Model):
     )
 
     class Meta:
-        ordering = ["name", "version__name"]
+        ordering = ["name"]
 
     def is_updated_today(self):
         return (
             not self.last_update is None
             and self.last_update.date() == datetime.now().date()
+            and len(self.version_long) > 0
         )
 
     def set_last_update_today(self):
         self.last_update = datetime.now()
 
-    def set_dual_version(self, version_1, version_2):
-        """
-        set only
-        """
-        self.version = "{}{}{}".format(version_1, Software.BREAK_TAG, version_2)
+    def set_version(self, version):
+        self.version = version
 
-    def set_versions(self, dict_version):
+    def get_version(self):
+        return self.version
+
+    def set_version_long(self, dict_version):
         """
         set several versions in the version field, separated by dollar
         """
-        software_names = SoftwareNames()
-        lst_version = []
-        for name in software_names.VECT_PANGOLIN_TO_TEST:
-            lst_version.append(
-                dict_version.get(name, software_names.get_pangolin_version(name))
-            )
-        self.version = Software.BREAK_TAG.join(lst_version)
+        if len(dict_version) > 0:
+            self.version_long = json.dumps(dict_version)
 
-    def get_dual_version(self):
-        """
-        return dual version
-        """
-        lst_data = self.version.split(Software.BREAK_TAG)
-        if len(lst_data) > 1:
-            return (lst_data[0], lst_data[1])
-        return lst_data[0], "0"
-
-    def get_versions(self):
+    def get_version_long(self):
         """
         return dict ["soft name": "version", "soft1 name": "version"]
         """
-        software_names = SoftwareNames()
-        lst_data = self.version.split(Software.BREAK_TAG)
         dt_result_version = {}
-        for i, name in enumerate(software_names.VECT_PANGOLIN_TO_TEST):
-            if i < len(lst_data):
-                dt_result_version[name] = lst_data[i]
-            else:
-                dt_result_version[name] = software_names.get_pangolin_version(name)
+        if len(self.version) > 0:
+            try:
+                dt_result_version = json.loads(self.version_long)
+            except Exception as e:
+                pass
         return dt_result_version
-=======
-	"""
-	Has all the softwares
-	It can be used for all users 
-	"""
-	BREAK_TAG = "$$$"
-	name = models.CharField(max_length=100, blank=True, null=True)
-	path_to_run = models.CharField(max_length=300)
-	version = models.CharField(max_length=200)
-	version_long = models.TextField(default="")		## has the version in json mode, in an dictonary
 
-	### last update of the software
-	last_update = models.DateTimeField(auto_now_add=True, null=True,
-				blank=True, verbose_name='Last update date')
-
-	class Meta:
-		ordering = ['name']
-
-	def is_updated_today(self):
-		return not self.last_update is None and self.last_update.date() == datetime.now().date() and len(self.version_long) > 0
-
-	def set_last_update_today(self):
-		self.last_update = datetime.now()
-	
-	def set_version(self, version):
-		self.version = version
-
-	def get_version(self):
-		return self.version
-		
-	def set_version_long(self, dict_version):
-		"""
-		set several versions in the version field, separated by dollar
-		"""
-		if (len(dict_version) > 0):
-			self.version_long = json.dumps(dict_version)
-
-	def get_version_long(self):
-		"""
-		return dict ["soft name": "version", "soft1 name": "version"]
-		"""
-		dt_result_version = {}
-		if len(self.version) > 0:
-			try:
-				dt_result_version = json.loads(self.version_long)
-			except Exception as e:
-				pass
-		return dt_result_version
-
-	def is_same_version_long(self, dt_version):
-		""" test version as a all, all string """
-		if self.version_long == json.dumps(dt_version): return True
-		return False
-
-
-class UploadFiles(models.Model):
-	"""
-	this class has the files that the user can upload, has he want,
-	then the system make the relations with the samples
-	"""
-	is_valid = models.BooleanField(default=False)							## true if everything is OK with the file, without errors
-	is_processed = models.BooleanField(default=False)						## if samples file -> True when all files is attributed
-																			## if fastq.gz -> True when the file is attributed
-	is_deleted = models.BooleanField(default=False)							## if this file is removed
-	number_errors = models.IntegerField(default=0)			## if has errors don't do anything, need to remove and upload again.
-	number_files_processed = models.IntegerField(default=0)	## samples_list, has the number of files already processed
-															## in fastq files, if this file is associated to a sample or not
-	number_files_to_process = models.IntegerField(default=0)	## samples_list, has the number of files to process. At the end this number must be equal to number_files_processed
-	
-	type_file = models.ForeignKey(MetaKey, related_name='upload_files', blank=True, null=True, on_delete=models.CASCADE)	## has the type of file
-															## constants.TYPE_FILE.TYPE_FILE_fastq_gz
-															## constants.TYPE_FILE.TYPE_FILE_sample_file
-															## constants.TYPE_FILE.TYPE_FILE_sample_file_metadata
-	file_name = models.CharField(max_length=300, blank=True, null=True)	## in fastq file, must have the same name in samples_list file
-	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
-	attached_date = models.DateTimeField(blank=True, null=True, verbose_name='Date attached')		## only used in fastq.gz files
-	
-	### if is deleted in file system
-	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
-	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
-	
-	owner = models.ForeignKey(User, related_name='upload_files', on_delete=models.CASCADE)
-	
-	### need to create a random name for this file
-	path_name = ContentTypeRestrictedFileField(upload_to=user_directory_path, blank=True, null=True,\
-					content_types=['application/octet-stream', 'application/gzip', 'application/x-gzip', 'text/csv', 'text/txt', 'text/tsv',\
-								'application/vnd.ms-excel', 'text/tab-separated-values', 'text/plain'],\
-					max_upload_size=settings.MAX_FASTQ_FILE_WITH_DOWNSIZE if settings.DOWN_SIZE_FASTQ_FILES else settings.MAX_FASTQ_FILE_UPLOAD,\
-					max_length=500)
-
-	samples = models.ManyToManyField(Sample) 	## if fastq file has the sample where it belongs
-												## if samples_file has all the relations with samples. Must be all created, files attributed, or deleted
-												##   to add other samples file
-	upload_file = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE) 			## in fastq file has the sample list where it belongs
-	description = models.TextField(default="")				## has a json result.ProcessResults instance with errors or successes
-	
-	class Meta:
-		ordering = ['-creation_date']
-
-	def __str__(self):
-		return self.file_name
-	
-	def get_path_to_file(self, type_path):
-		"""
-		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
-		"""
-		path_to_find = self.path_name.name
-		if (type_path == TypePath.MEDIA_ROOT): 
-			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
-		else:
-			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
-		return path_to_find
->>>>>>> 7b1ce5add596c63820af97395dd9c9c92e8639ef
+    def is_same_version_long(self, dt_version):
+        """test version as a all, all string"""
+        if self.version_long == json.dumps(dt_version):
+            return True
+        return False
 
 
 class UploadFiles(models.Model):

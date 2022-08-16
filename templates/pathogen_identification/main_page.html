@@ -1,0 +1,56 @@
+{% extends '_layouts/base.html' %}
+{% load render_table from django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% load static %}
+
+
+{% block content %}
+
+<style>
+    .button {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+</style>
+
+<div>
+    <ul class="breadcrumb">
+        <li><a href="{% url 'projects_main' %}">Home</a></li>
+    </ul>
+</div>
+
+<body>
+
+    <div class="container" id="left">
+        <div>
+            <div>
+                <div class="button" style="display: inline-block" display="center">
+                    <a href="{% url 'all_project_reports' project=project_name %}" style="">All results</a>
+                </div>
+            </div>
+            <div>
+                <div class="button" style="display: inline-block" display="center">
+                    <a href="{% url 'all_project_qc' project=project_name %}" style="">All qc reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="center">
+        {% block table %}
+
+
+        {{ block.super }}
+        <link href="{% static 'django_tables2/themes/paleblue/css/screen.css' %}" rel="stylesheet">
+
+        {% render_table samples %}
+
+
+        {% endblock table %}
+
+    </table>
+</body>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends '_layouts/base.html' %}
+{% load render_table from django_tables2 %}
+{%load html_tags%}
+
+{% load static %}
+
+
+{% block content %}
+
+<table>
+
+    {{ block.super }}
+    <link href="{% static 'django_tables2/themes/paleblue/css/screen.css' %}" rel="stylesheet">
+
+    {% render_table table %}
+
+</table>
+
+{% endblock %}

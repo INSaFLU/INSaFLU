@@ -338,10 +338,31 @@ class SoftwareNames(object):
 	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/aln2pheno.sh")
 
 	### Nextstrain
+	SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
 	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
 	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
-	SOFTWARE_NEXTSTRAIN_BUILDS = [ "generic", "ncov", "flu", "mpx" ]
+	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
+	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu = "flu"
+	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
+	SOFTWARE_NEXTSTRAIN_BUILDS = [ 
+		SOFTWARE_NEXTSTRAIN_BUILDS_generic, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_ncov, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_mpx 
+	]
+	SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [ 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu, "Influenza"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"] 
+	]
+
+	# default build
+	SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic
+	SOFTWARE_NEXTSTRAIN_name = "Nextstrain"
+	SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
 
 	###################################
 	###################################

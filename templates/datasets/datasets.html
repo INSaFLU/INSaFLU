@@ -34,7 +34,7 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="6">
-	                    	<a href="#id_modal_add_dataset" data-title="Create a new dataset to attach sequences" class="btn btn-small btn-primary dark"
+	                    	<a href="#id_modal_add_dataset" title="Create a new dataset to attach sequences" class="btn btn-small btn-primary dark"
 	                    		id="id_modal_add_new_dataset" data-toggle="modal" data-toggle="tolltip">
 	                    		<span class="hidden-phone"><i class="fa fa-plus-square"></i> New Dataset</span>
 	                    	</a>
@@ -97,6 +97,40 @@
 	{% endif %}
 	
 	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+
+	<!-- The rebuild Modal -->
+	
+	<div class="modal fade" id="id_rebuild_modal" >
+		<div class="modal-dialog">
+			<div class="modal-content">
+			
+  					<!-- Modal Header -->
+					
+  					<div class="modal-header alert alert-warning">
+    					<h4 class="modal-title">Rebuild results for a dataset</h4>
+    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+  					</div>
+				
+  					<!-- Modal body -->
+
+					
+  					<div class="modal-body mx-auto mw-100">
+  						<div id="id-modal-body-dataset_rebuild" dataset_rebuild-url="{% url 'dataset_rebuild' %}">
+  							<label id="id-label-rebuild" class="col-form-label">Dataset Name</label>
+   						</div>
+  					</div>
+				
+  					<!-- Modal footer -->
+					
+  					<div class="modal-footer" id="id-modal-footer-rebuild">
+    					<button id="id-rebuild-button" type="button" class="btn btn-primary" data-dismiss="modal"
+    						dataset_rebuild-url="{% url 'dataset_rebuild' %}">Rebuild Results</button>
+    					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  					</div>
+			</div>
+ 		</div>
+	</div>
+			
 
 	<!-- The remove Modal -->
 	<div class="modal fade" id="id_remove_modal" >
@@ -168,6 +202,7 @@
 	{% load static from staticfiles %}
 	    <script type="text/javascript" src="{% static 'js/dataset/remove_datasets.js' %}"></script>
 	    <script type="text/javascript" src="{% static 'js/dataset/add_datasets.js' %}"></script>
+		<script type="text/javascript" src="{% static 'js/dataset/rebuild_datasets.js' %}"></script>
 
 	<script>
 	
@@ -181,6 +216,9 @@
 			$('#id-remove-button').click(function() { 
 				$.unblockUI();
 			});
+			$('#id-rebuild-button').click(function() { 
+				$.unblockUI();
+			});
 		});
 		
 		/// set wait screen
@@ -188,7 +226,7 @@
 			var id_ = $(this).attr('id');
 			var href = $(this).attr('href');
 			var onclick = $(this).attr('onclick');
-			if (href !== '#id_modal_add_dataset' && href !== '#id_remove_modal' && onclick !== 'return false;' &&
+			if (href !== '#id_modal_add_dataset' && href !== '#id_remove_modal' && href !== '#id_rebuild_modal' && onclick !== 'return false;' &&
 					id_ !== 'sidenavToggler' &&	!href.startsWith('/media') && !href.startsWith('http') ){
 				wait_screen();
 			}

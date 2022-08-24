@@ -619,8 +619,10 @@ class ProcessSGE(object):
 	def set_collect_dataset_global_files(self, dataset, user):
 		"""
 		job_name = "job_name_<user_id>_<seq_id>"
-		only run this task after all second_stage_snippy
 		"""
+
+		# TODO: If dataset is running, do not run again... fail with error... 
+
 		process_controler = ProcessControler()
 		vect_command = ['python3 {} collect_global_dataset_files --dataset_id {} --user_id {}'.format(\
 				os.path.join(settings.BASE_DIR, 'manage.py'), dataset.pk, user.pk)]

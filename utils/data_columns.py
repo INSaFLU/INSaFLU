@@ -319,7 +319,8 @@ class DataColumns(object):
         return count
 
 
-    def save_rows_nextstrain(self, csv_writer, reference_tsv):
+    #def save_rows_nextstrain(self, csv_writer, reference_tsv):
+    def save_rows_nextstrain(self, csv_writer):
         """
         create file for nextstrain
         """
@@ -329,10 +330,10 @@ class DataColumns(object):
         csv_writer.writerow(self._get_header_nextstrain())
         
         ## read NextStrain reference 
-        reference = Reference(reference_tsv)
+        #reference = Reference(reference_tsv)
         
         ### save reference
-        count += reference.save_out_nextstrain(csv_writer, self.vect_header_out)
+        #count += reference.save_out_nextstrain(csv_writer, self.vect_header_out)
         
         ## save data
         for key_metadata in self.dt_project:

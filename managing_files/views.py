@@ -1708,7 +1708,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, project, None, None, None) ## the user can have defaults yet
 		
 		all_tables = []	## order by Technology, PipelineStep, table
 						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -1734,7 +1734,8 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set,project, None, None, count_project_sample == 0)])
+								SoftwaresTable(query_set, project = project, project_sample = None,  sample = None, b_enable_options = count_project_sample == 0)])
+
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
 				all_tables.append([technology.replace(' ', '').replace('/', ''),
@@ -1792,7 +1793,7 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set, None, project_sample, None)])
+								SoftwaresTable(query_set, project = None, project_sample = project_sample, sample = None)])
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
 				all_tables.append([technology.replace(' ', '').replace('/', ''),
@@ -1825,7 +1826,7 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, None, None, sample) ## the user can have defaults yet
+		default_software.test_all_defaults(user=self.request.user, project=None, project_sample=None, sample=sample, dataset=None) ## the user can have defaults yet
 		
 		all_tables = []	## order by Technology, PipelineStep, table
 						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -1850,11 +1851,11 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set, None, None, sample)])
+								SoftwaresTable(query_set, project = None, project_sample = None, sample = sample)])
+
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
-				all_tables.append([technology.replace(' ', '').replace('/', ''),
-								technology, vect_pipeline_step])
+				all_tables.append([technology.replace(' ', '').replace('/', ''), technology, vect_pipeline_step])
 				
 		context['all_softwares'] = all_tables
 		context['sample'] = sample

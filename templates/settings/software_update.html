@@ -21,6 +21,10 @@
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Project settings" "project-settings" pk_project %}
 		{% breadcrumb "Update parameters" "software-update" %}
+	{% elif dataset_settings %}
+		{% breadcrumb "Datasets" "datasets" %}
+		{% breadcrumb "Dataset settings" "dataset-settings" pk_dataset %}
+		{% breadcrumb "Update parameters" "software-update" %}		
 	{% elif sample_project_settings %}
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Show project results" "show-sample-project-results" pk_proj_sample %}

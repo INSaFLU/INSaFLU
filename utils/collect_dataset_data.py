@@ -4,6 +4,9 @@ Created on 12/06/2022
 @author: mmp
 '''
 import os, csv, time, logging, json, glob
+import sys
+from constants.software_names import SoftwareNames
+from settings.models import Parameter
 from utils.exceptions import CmdException
 from constants.constants import Constants, TypePath, FileExtensions
 from utils.utils import Utils
@@ -11,7 +14,7 @@ from django.conf import settings
 from utils.software import Software
 from utils.process_SGE import ProcessSGE
 from utils.data_columns import DataColumns
-from managing_files.models import ProcessControler, Project
+from managing_files.models import ProcessControler, Project, Reference
 from datasets.models import Dataset
 from constants.meta_key_and_values import MetaKeyAndValue
 from datasets.manage_database import ManageDatabase
@@ -143,13 +146,14 @@ class CollectExtraDatasetData(object):
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
-            count += 1
-            
+            count += 1 
+
             start = time.time()
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_default_build, dataset)
+            #self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_default_build, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip, dataset)
             self.logger.info("RUN nextStrain: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
-            
+    
             ### create trees
             createTree = CreateTree()
             createTree.create_tree_and_alignments_dataset(dataset, user)
@@ -206,36 +210,39 @@ class CollectExtraDatasetData(object):
             ## tree json
             out_file = self.create_json_file_from_sample_csv(dataset)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
-        elif (type_file == Dataset.DATASET_FILE_NAME_nextstrain_default_build):
+        #elif (type_file == Dataset.DATASET_FILE_NAME_nextstrain_default_build):
+        elif (type_file == Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip):
             
             ## remove previous nextStrain
-            for type_file in Dataset.VECT_files_next_strain + [Dataset.DATASET_FILE_NAME_nextstrain_error]:
-                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
-                self.utils.remove_file(out_file_file_system)
-                
-            temp_dir = None    
+            #for type_file in Dataset.VECT_files_next_strain + [Dataset.DATASET_FILE_NAME_nextstrain_error]:
+            #    out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+            #    self.utils.remove_file(out_file_file_system)
+            self.utils.remove_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip))
+
+            auspice_zip_file = None    
             try:
-                temp_dir, auspice_path = self.run_nextstrain(dataset)
-                
+
+                auspice_zip_file, auspice_path = self.run_nextstrain(dataset)
+
                 ## copy files if they exist, try to remove in destination
-                for type_file in Dataset.VECT_files_next_strain:
-                    out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
-                    out_file = os.path.join(temp_dir, auspice_path, type_file)
-                    if os.path.exists(out_file): self.utils.copy_file(out_file, out_file_file_system)
-                    elif (not out_file_file_system is None and os.path.exists(out_file_file_system)):
-                        self.utils.remove_file(out_file_file_system)
+                #for type_file in Dataset.VECT_files_next_strain:
+                #    out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
+                #    if os.path.exists(auspice_zip_file): self.utils.move_file(auspice_zip_file, out_file_file_system)
+                #    elif (not out_file_file_system is None and os.path.exists(out_file_file_system)):
+                #        self.utils.remove_file(out_file_file_system)
+                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)
+                if os.path.exists(auspice_zip_file): self.utils.move_file(auspice_zip_file, out_file_file_system)
 
                 ### remove possible error of previous run
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 self.utils.remove_file(out_file_file_system)
             except CmdException as e:       ## copy the snakeMake file
+                # this means there is potentially a lot of stuff left in the tmp directory that needs to be manually removed
                 files = []
                 if e.exist_path():
                     files = glob.glob(os.path.join(e.output_path, ".snakemake/log/*snakemake.log"))
-                    temp_dir = e.output_path
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 if len(files) > 0:
-                    files = glob.glob(os.path.join(e.output_path, ".snakemake/log/*snakemake.log"))
                     self.utils.copy_file(str(files[0]), out_file_file_system)
                 else:
                     with open(out_file_file_system, 'w') as handle_write:
@@ -247,7 +254,7 @@ class CollectExtraDatasetData(object):
             
             out_file = None     ## not copy anything with this variable
             out_file_file_system = None
-            if not temp_dir is None: self.utils.remove_dir(temp_dir) 
+            #if not temp_dir is None: self.utils.remove_dir(temp_dir) 
             
         ## copy file
         if (not out_file is None):
@@ -309,22 +316,76 @@ class CollectExtraDatasetData(object):
         dataset.number_passed_sequences = len(vect_to_process)
         dataset.save()
         
-        self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file)
+
+        # check what is the build that is configured, otherwise use the default
+        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        # See if there is a build parameter specific for this dataset, in which case use it
+        parameters_list = Parameter.objects.filter(dataset=dataset)
+        if len(list(parameters_list)) == 1:
+            build = list(parameters_list)[0].parameter
+
+        # If the nextstrain build is flu, only use specific segments
+        segment = None
+        if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
+            # TODO make this more generic...
+            segment = '4'
+
+        self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file, segment)
+
         return out_file
 
     def run_nextstrain(self, dataset):
         """
-        Run nextStrain
-        Files expected
-        DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
-        DATASET_FILE_NAME_nextstrain_default_build_root = "ncov_default-build_root-sequence.json"
-        DATASET_FILE_NAME_nextstrain_default_build_tip = "ncov_default-build_tip-frequencies.json"
-        IMPORTANT: add 'auspice' to out directory "Dataset.RUN_out_path", it is where the results are out
+        Runs nextStrain
+        File expected: DATASET_FILE_NAME_auspice_zip = "auspice.zip"
         """
-        alignments_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
+
+        # check what is the build that is configured, otherwise use the default
+        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+
+        # See if there is a build parameter specific for this dataset, in which case use it
+        parameters_list = Parameter.objects.filter(dataset=dataset)
+        if len(list(parameters_list)) == 1:
+            build = list(parameters_list)[0].parameter
+        
+        sequences_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
         metadata_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
-        temp_dir = self.software.run_nextstrain(Dataset.REFERENCE_NAME, alignments_file, metadata_file)
-        return temp_dir, Dataset.RUN_out_path
+
+        auspice_zip = None
+        if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov):
+            auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx):
+            auspice_zip = self.software.run_nextstrain_mpx(alignments=sequences_file, metadata=metadata_file)             
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
+            # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and time period (default: 12y)
+            auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file) 
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
+            # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
+            ref_name = dataset.get_first_reference_name()
+            if( (ref_name is None) or (ref_name == "") ):
+                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
+                with open(out_file_file_system, 'w') as handle_write: 
+                    handle_write.write("No Reference was found. The generic build needs at least one reference")                
+                return None, Dataset.RUN_out_path
+            try:
+                # Check for user?
+                reference = Reference.objects.get(name=ref_name)
+                auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
+                    ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT)) 
+            except Reference.DoesNotExist:
+                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
+                with open(out_file_file_system, 'w') as handle_write: 
+                    handle_write.write("Reference was not found. The generic build needs at least one reference")                     
+                return None, Dataset.RUN_out_path
+        else:
+            # It is not supposed to arrive here
+            out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
+            with open(out_file_file_system, 'w') as handle_write: 
+                handle_write.write("Unknown error. Please contact the administrators")
+            return None, Dataset.RUN_out_path
+
+        #temp_dir = self.software.run_nextstrain(Dataset.REFERENCE_NAME, sequences_file, metadata_file)
+        return auspice_zip, Dataset.RUN_out_path
 
 
     def collect_sample_table(self, dataset, column_separator, type_list):
@@ -405,6 +466,10 @@ class CollectExtraDatasetData(object):
         2) sample list, used to upload in the tree
         
         """
+
+        # May change depending on the build??
+
+
         data_columns = DataColumns()
         ### join all
         dt_out_id_project = {} 
@@ -455,12 +520,12 @@ class CollectExtraDatasetData(object):
                             dataset_consensus.seq_name_all_consensus, row,
                             consensus_length)
         
-
+        ## this should be no longer necessary
         ## get reference file for ncov                
-        reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, "ncov/references_metadata.tsv")
-        if not os.path.exists(reference_tsv):
-            self.logger.error("CFile not found: {}".format(reference_tsv))
-            return None
+        #reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, "ncov/references_metadata.tsv")
+        #if not os.path.exists(reference_tsv):
+        #    self.logger.error("CFile not found: {}".format(reference_tsv))
+        #    return None
     
         ## save file
         out_file = self.utils.get_temp_file('dataset_out', FileExtensions.FILE_CSV if\
@@ -471,7 +536,7 @@ class CollectExtraDatasetData(object):
                         quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
             
             ### save metadata
-            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv)
+            n_count = data_columns.save_rows_nextstrain(csv_writer)
                        
         if (n_count == 0):
             os.unlink(out_file)

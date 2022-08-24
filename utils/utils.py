@@ -1359,7 +1359,7 @@ class Utils(object):
 				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
 		return len(vect_out_fasta)
 
-	def merge_fasta_files_and_join_multifasta(self, vect_sample_path_and_name, out_file):
+	def merge_fasta_files_and_join_multifasta(self, vect_sample_path_and_name, out_file, segment=None):
 		"""
 		:param vect_sample_path_and_name = [[path_file, name, ID],
 					[path_file, name, ID], ... ]
@@ -1374,7 +1374,9 @@ class Utils(object):
 			fasta_out = ""
 			with open(data_file[0], "rU") as handle_fasta:
 				for record in SeqIO.parse(handle_fasta, "fasta"):
-					fasta_out += str(record.seq)
+					# In case of multiple segments we may concatenate all or retrieve a specific segment
+					if( (segment is None) or (segment == record.id) ):
+						fasta_out += str(record.seq)
 			
 			## none fasta sequence
 			if (len(fasta_out) == 0): continue

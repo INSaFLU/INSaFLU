@@ -27,6 +27,9 @@
 	{% if project_settings %}
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Project settings" "project-settings" %}
+	{% elif dataset_settings %}
+		{% breadcrumb "Datasets" "datasets" %}
+		{% breadcrumb "Dataset settings" "dataset-settings" %}		
 	{% elif project_sample_settings %}
 		{% breadcrumb "Projects" "projects" %}
 		{% breadcrumb "Show project results" "show-sample-project-results" project_sample.project.pk %}
@@ -96,6 +99,8 @@
 										                    <th colspan="7">
 										                    	{% if project_settings %}
 										                    		<div class="header-software-settings">Software parameters for project: '{{project.name}}'</div>
+													{% elif dataset_settings %}
+										                    		<div class="header-software-settings">Software parameters for dataset: '{{dataset.name}}'</div>	
 										                    	{% elif project_sample_settings %}
 										                    		<div class="header-software-settings">Software parameters for project: '{{project_sample.project.name}}' and sample: '{{project_sample.sample.name}}'</div>
 										                    	{% elif sample_settings %}
@@ -159,6 +164,9 @@
 		{% if project_settings %}
 			<br>
 			<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+		{% elif dataset_settings %}
+			<br>
+			<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>			
 		{% elif project_sample_settings %}
 			<br>
 			<a id="id_go_back_button" href="{% url 'show-sample-project-results' project_sample.project.pk %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>

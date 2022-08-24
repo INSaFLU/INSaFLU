@@ -76,7 +76,8 @@ $('#id-save-button').on('click', function(){
 					'Add References</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_projects_dataset">' +
 					' Add Consensus from Projects</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_consensus_dataset">' +
 					' Add your own Consensus</a></div>' +
-					'<td class="results"></td>' +
+					'<td class="results"><a rel="nofollow" href="/datasets/' + data['id'] + '/show_dataset_settings" data-toggle="tooltip" title="Dataset settings">' +
+					'<span ><i class="fa fa-magic padding-button-table"></i></span></a></td>' +
 					'</div>' +
 	                '</td></tr>')
           }

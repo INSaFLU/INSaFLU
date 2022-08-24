@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.conf import settings
+from constants.software_names import SoftwareNames
 from managing_files.models import Reference, Project, ProjectSample, MetaKey
 from datasets.forms import ConsensusForm
 from django.views.generic import ListView
@@ -29,6 +30,9 @@ from utils.software import Software
 from django.db import transaction
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.process_SGE import ProcessSGE
+from settings.models import Software as SoftwareSettings
+from settings.constants_settings import ConstantsSettings
+from settings.tables import SoftwaresTable
 
 class DatasetsView(LoginRequiredMixin, ListView):
     """
@@ -600,7 +604,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
                 else:
                     messages.success(self.request, "One consensus/reference from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
                     
-                ## need to run processing
+                ## need to run processing: TODO user has to explicitly click for it to run...
                 try:
                     process_SGE = ProcessSGE()
                     taskID =  process_SGE.set_collect_dataset_global_files(dataset, self.request.user)
@@ -735,16 +739,19 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)):
             context['all_consensus'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus))
-        ### nextStrain
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_default_build)):
-            context['nextstrain_default_build'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_default_build))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_root)):
-            context['nextstrain_build_root'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_root))
-        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_tip)):
-            context['nextstrain_build_tip'] = get_link_for_dropdown_item(
-                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_tip))
+        if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)):
+           context['nextstrain_auspice_zip'] = get_link_for_dropdown_item(
+               dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip))                
+        ### nextStrain  
+        # if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_default_build)):
+        #    context['nextstrain_default_build'] = get_link_for_dropdown_item(
+        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_default_build))
+        #if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_root)):
+        #    context['nextstrain_build_root'] = get_link_for_dropdown_item(
+        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_root))
+        #if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_tip)):
+        #    context['nextstrain_build_tip'] = get_link_for_dropdown_item(
+        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_tip))
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)):
             context['nextstrain_error'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_error))
@@ -951,3 +958,48 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
     ## static method, not need for now.
     form_valid_message = ""        ## need to have this
 
+class DatasetsSettingsView(LoginRequiredMixin, ListView):
+	"""
+	To change settings in the datasetd
+	"""
+	model = Dataset
+	template_name = 'settings/settings.html'
+	context_object_name = 'dataset'
+	
+	def get_context_data(self, **kwargs):
+		
+		context = super(DatasetsSettingsView, self).get_context_data(**kwargs)
+		dataset = Dataset.objects.get(pk=self.kwargs['pk'])
+		
+		### can't see this project
+		context['nav_dataset'] = True
+		if (dataset.owner.id != self.request.user.id): 
+			context['error_cant_see'] = "1"
+			return context
+				
+        # Add the 
+		all_tables = []
+
+		vect_pipeline_step = [ ] 
+		query_set = SoftwareSettings.objects.filter(owner=self.request.user,
+			parameter__dataset=dataset,
+			is_obsolete = False).distinct()
+				
+		### if there are dataset-specific parameters, use them
+		if query_set.count() > 0:
+			vect_pipeline_step.append(["{}_{}".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_name.replace(' ', '').replace('/', ''),
+						ConstantsSettings.TECHNOLOGY_generic.replace(' ', '').replace('/', '')), 
+                        SoftwareNames.SOFTWARE_NEXTSTRAIN_name.replace(' ', '').replace('/', ''),
+                       SoftwaresTable(query_set, dataset=dataset)])
+		
+        ## if there are parameters for the pipeline step
+		if len(vect_pipeline_step) > 0:
+			all_tables.append([ConstantsSettings.TECHNOLOGY_generic.replace(' ', '').replace('/', ''), 
+                ConstantsSettings.TECHNOLOGY_generic, vect_pipeline_step])
+		
+		context['all_softwares'] = all_tables
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		context['dataset'] = dataset
+		context['main_settings'] = False
+		context['dataset_settings'] = True
+		return context

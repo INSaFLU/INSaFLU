@@ -132,7 +132,11 @@ class DefaultSoftware(object):
 		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_ABRICATE_name, user,
 					Software.TYPE_OF_USE_global, None, None, None, technology_name)
 		return "" if result is None else result
-	
+	def get_nextstrain_parameters(self, user):
+		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, user,
+					Software.TYPE_OF_USE_global, None, None, None, ConstantsSettings.TECHNOLOGY_generic)
+		return "" if result is None else result
+
 	def set_default_software(self, software):
 		""" Set a default  
 		"""
@@ -214,6 +218,9 @@ class DefaultSoftware(object):
 			self.test_default_db(SoftwareNames.SOFTWARE_ABRICATE_name,
 				self.default_parameters.get_abricate_default(user, Software.TYPE_OF_USE_global, technology_name), user)
 			return self.get_abricate_parameters(user, technology_name)
+		if (software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
+			self.test_default_db(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, self.default_parameters.get_nextstrain_default(user), user)
+			return self.get_nextstrain_parameters(user)			
 		return ""
 		
 	def get_all_software(self):

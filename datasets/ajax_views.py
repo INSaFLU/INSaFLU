@@ -6,12 +6,16 @@ Created on Dec 6, 2017
 import logging, os, csv, json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
+from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from django.conf import settings
 from datetime import datetime
 from django.db import transaction
 from django.utils.safestring import mark_safe
 from datasets.models import Dataset, Consensus, DatasetConsensus
+from settings.default_parameters import DefaultParameters
+from settings.default_software import DefaultSoftware
+from settings.models import Software
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 from constants.constants import TypePath
@@ -108,13 +112,24 @@ def add_dataset_name(request):
 			dataset.name = dataset_name_str
 			dataset.owner = profile.user
 			dataset.save()
-			
+
+			message = "The Dataset '{}' was created".format(dataset_name_str)
+			# TODO If there are specified parameters, change them before saving...
+			try:
+				default_parameters =  DefaultParameters()
+				vect_parameters = default_parameters.get_nextstrain_default(user=request.user, dataset=dataset)
+				# This will repeat the same software over and over for each dataset, but well...
+				# TODO reuse existing software entry (only save new parameter)
+				default_parameters.persist_parameters(vect_parameters, type_of_use=Software.TYPE_OF_USE_dataset)
+			except Exception as e:
+				message = "The Dataset '{}' was created, but with problems: {}".format(dataset_name_str, str(e))				
+
 			data = { 
 				'is_ok' : True,
 				'dataset_name' : dataset_name_str,
 				'id' : dataset.pk,
 				'date_created' : dataset.creation_date.strftime(settings.DATETIME_FORMAT_FOR_TABLE),
-				'message' : "The Dataset '{}' was created".format(dataset_name_str)
+				'message' : message
 			}
 		return JsonResponse(data)
 
@@ -353,7 +368,7 @@ def validate_consensus_name(request):
 	test if exist this reference name
 	"""
 	if request.is_ajax():
-		consensus_name = request.GET.get('consensus_name')
+		dataset_id = request.GET.get('consensus_name')
 		
 		data = {
 			'is_taken': Consensus.objects.filter(name__iexact=consensus_name,
@@ -361,7 +376,37 @@ def validate_consensus_name(request):
 		}
 		if (data['is_taken']): data['error_message'] = 'Exists a consensus with this name.'
 		return JsonResponse(data)
-	
+
+
+@csrf_protect
+def dataset_rebuild(request):
+	"""
+	Rebuild results
+	"""
+	if request.is_ajax():
+
+		data = { 
+			'is_ok' : False,
+			'message' : "Something went wrong."
+		}
+		key_with_dataset_id = 'dataset_id'
+		if (key_with_dataset_id in request.GET):
+			dataset_id = int(request.GET.get(key_with_dataset_id))
+			try:
+				dataset = Dataset.objects.get(id=dataset_id)
+				## need to run processing
+				try:
+					process_SGE = ProcessSGE()
+					process_SGE.set_collect_dataset_global_files(dataset, request.user)
+					data['is_ok'] = True
+					data['message'] = "alls well that ends well."					
+				except:
+					data['message'] = "Something went wrong. Could not Rebuild Dataset."
+			except Dataset.DoesNotExist:
+				data['message'] = "Something went wrong. Dataset could not be found."
+
+		return JsonResponse(data)
+
 
 @csrf_protect
 def show_msa_nucleotide(request):

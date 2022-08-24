@@ -3,6 +3,7 @@ Created on 03/05/2020
 
 @author: mmp
 '''
+import logging
 import os
 import django_tables2 as tables
 
@@ -41,9 +42,10 @@ class SoftwaresTable(tables.Table):
 	constants = Constants()
 	software_names = SoftwareNames()
 
-	def __init__(self, query_set, project = None, project_sample = None, sample = None, b_enable_options = True):
+	def __init__(self, query_set, project = None, project_sample = None, sample = None, b_enable_options = True, dataset = None):
 		tables.Table.__init__(self, query_set)
 		self.project = project
+		self.dataset = dataset		
 		self.project_sample = project_sample
 		self.sample = sample
 		self.b_enable_options = b_enable_options
@@ -92,12 +94,31 @@ class SoftwaresTable(tables.Table):
 		from crequest.middleware import CrequestMiddleware
 		current_request = CrequestMiddleware.get_request()
 		user = current_request.user
-		
+
+		#logger = logging.getLogger("fluWebVirus.debug")
+
 		record = kwargs.pop("record")
 		technology_name = ConstantsSettings.TECHNOLOGY_illumina if record.technology is None else record.technology.name
-		if (self.project is None and self.project_sample is None and self.sample is None):
+
+		#logger.debug("User:{}; Software:{}; Technology:{}; Dataset:{}".format(user, record.name, technology_name, self.dataset))
+
+		if (self.project is None and self.project_sample is None and self.sample is None and self.dataset is None):
 			default_software = DefaultSoftware()
 			return default_software.get_parameters(record.name, user, technology_name)
+		elif (not self.dataset is None):
+			#default_software_projects = DefaultProjectSoftware()
+			#logger.debug("Dataset parameters for {}".format(self.dataset))		
+			# TODO need to make this work...	
+			#parameters = default_software_projects.get_parameters(software_name=record.name, user=user, 
+			#	type_of_use=None, project=None, project_sample=None, sample=None, 
+			#	technology_name=ConstantsSettings.TECHNOLOGY_generic, dataset=self.dataset)
+			#logger.debug("Dataset parameters:{}".format(parameters))
+			#return parameters
+			parameters_list = Parameter.objects.filter(dataset=self.dataset)
+			if len(list(parameters_list)) == 1:
+				return list(parameters_list)[0].parameter
+			else:
+				return None
 		elif (not self.project is None):
 			default_software_projects = DefaultProjectSoftware()
 			parameters = default_software_projects.get_parameters(record.name, user, Software.TYPE_OF_USE_project,
@@ -144,6 +165,7 @@ class SoftwaresTable(tables.Table):
 		## start define links
 		b_enable_options = self.b_enable_options
 		if (not self.project is None):		## for projects
+
 			### turn on/off buttons
 			if record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name:	### allways true for this software
 				b_enable_options = True
@@ -169,6 +191,25 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+
+		elif (not self.dataset is None):		## for datasets
+			### turn on/off buttons
+			if (b_enable_options):	## If b_enable_options is False it's false to All
+				default_software_projects = DefaultProjectSoftware()
+				b_enable_options = default_software_projects.can_change_values_for_this_software(record, project=None, project_sample=None, sample=None, dataset=self.dataset)
+			
+			str_links = '<a href=' + reverse('software-dataset-update', args=[record.pk, self.dataset.pk]) + ' data-toggle="tooltip" title="Edit parameters" ' +\
+				'{}'.format("" if b_enable_options else 'onclick=\'return false;\' disable') + '><span><i class="fa fa-2x fa-pencil padding-button-table ' +\
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+				
+			str_links += '<a href="{}"'.format('#id_set_default_modal' if b_enable_options else '') +\
+				' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(tooltip_reset) +\
+				'{}'.format("" if b_enable_options else 'onclick="return false;" disable') +\
+				' ref_name="' + record.name + '" pk="' + str(record.pk) + '" pk_dataset="' + str(self.dataset.pk) +\
+				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
+				'" dataset_name="' + str(self.dataset.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
+				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+
 		elif (not self.project_sample is None):		## for project samples
 			if (b_enable_options): ## If b_enable_options is False it's false to All
 				default_software_projects = DefaultProjectSoftware()
@@ -194,6 +235,7 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.project_sample.project.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+
 		elif (not self.sample is None):		## for samples
 			is_to_run, sz_ids = self._is_to_run(record)
 			if (b_enable_options and is_to_run): ## If b_enable_options is False it's false to All
@@ -211,6 +253,7 @@ class SoftwaresTable(tables.Table):
 				'" type_software="{}'.format('software' if record.is_software() else 'INSaFLU') +\
 				'" proj_name="' + str(self.sample.name) + '"><span ><i class="fa fa-2x fa-power-off padding-button-table ' +\
 				'{}'.format("" if b_enable_options else 'disable_fa_icon') + '"></i></span></a>'
+
 		else:								## for all
 			### test if all parameters are ON/OFF
 			if (b_enable_options): ## If b_enable_options is False it's false to All
@@ -232,7 +275,7 @@ class SoftwaresTable(tables.Table):
 
 	def has_change_parameters(self, record):
 		""" test if has some parameters that can be changed """
-		for parameter in Parameter.objects.filter(software=record, project=self.project,
+		for parameter in Parameter.objects.filter(software=record, project=self.project, dataset=self.dataset,
 							project_sample=self.project_sample, sample=self.sample):
 			if parameter.can_change: return True
 		return False
@@ -241,12 +284,13 @@ class SoftwaresTable(tables.Table):
 		""" test if a software is to run and return the ids """
 		sz_ids = ""
 		if (not self.project is None): sz_ids += 'project_id="{}"'.format(self.project.id)
+		if (not self.dataset is None): sz_ids += ' dataset_id="{}"'.format(self.dataset.id)		
 		if (not self.project_sample is None): sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
 		if (not self.sample is None): sz_ids += ' sample_id="{}"'.format(self.sample.id)
 		
 		is_to_run = record.is_to_run
 		if len(sz_ids) > 0:
-			parameters = Parameter.objects.filter(software=record, project=self.project,
+			parameters = Parameter.objects.filter(software=record, project=self.project, dataset=self.dataset,
 							project_sample=self.project_sample, sample=self.sample)
 			if len(parameters) > 0: is_to_run = parameters[0].is_to_run
 		return is_to_run, sz_ids
@@ -298,6 +342,7 @@ class SoftwaresTable(tables.Table):
 				return True, masking_consensus_original.get_message_mask_to_show_in_web_site()		
 		return (False, "Edit parameters")
 		
+
 class INSaFLUParametersTable(tables.Table):
 	
 #   Renders a normal value as an internal hyperlink to another page.

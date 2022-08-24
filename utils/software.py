@@ -2302,7 +2302,7 @@ class Software(object):
 
 
 	# TODO remove after everything is settled with the specific builds...
-	def run_nextstrain(self, alignments, metadata, build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS[0], cores=1):
+	def run_nextstrain(self, alignments, metadata, build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter, cores=1):
 		"""
 		run nextstrain_ncov
 		:param  alignments: sequence file with nucleotides
@@ -2422,8 +2422,12 @@ class Software(object):
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,temp_file)
+		self.utils.remove_dir(temp_dir)
 
-		return temp_dir
+		return temp_file
 
 
 	def run_nextstrain_generic(self, alignments, metadata, ref_fasta, ref_genbank, cores=1):
@@ -2481,8 +2485,13 @@ class Software(object):
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,temp_file)
+		self.utils.remove_dir(temp_dir)
 
-		return temp_dir
+		return temp_file
+
 
 
 	def run_nextstrain_flu(self, alignments, metadata, strain="h3n2", period="12y", cores=1):
@@ -2522,8 +2531,13 @@ class Software(object):
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,temp_file)
+		self.utils.remove_dir(temp_dir)
 
-		return temp_dir
+		return temp_file
+
 
 	def run_nextstrain_mpx(self, alignments, metadata, cores=1):
 		"""
@@ -2560,8 +2574,13 @@ class Software(object):
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
 		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,temp_file)
+		self.utils.remove_dir(temp_dir)
 
-		return temp_dir
+		return temp_file
+
 
 
 	def run_aln2pheno(self, sequences, reference, gene, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):

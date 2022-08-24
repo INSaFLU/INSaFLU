@@ -3505,15 +3505,19 @@ class Test(TestCase):
 		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_ncov.fasta")
 		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_ncov.tsv")
 
-		temp_dir = self.software.run_nextstrain_ncov(alignments=alignments_file, metadata=metadata_file)
+		zip_file = self.software.run_nextstrain_ncov(alignments=alignments_file, metadata=metadata_file)
+
+		self.assertEqual(os.path.exists(zip_file),True)
+
+		self.utils.remove_file(zip_file)
 
 		# TODO look inside the results to see if we get what we expect to get
-		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_root-sequence.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_tip-frequencies.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_root-sequence.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/ncov_current_tip-frequencies.json"),True)
 
-		self.utils.remove_dir(temp_dir)
+		#self.utils.remove_dir(temp_dir)
 
 
 	def test_run_nextstrain_generic(self):
@@ -3525,14 +3529,20 @@ class Test(TestCase):
 		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "reference_generic.fasta")
 		reference_gb = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "reference_generic.gb")
 
-		temp_dir = self.software.run_nextstrain_generic(alignments=alignments_file, metadata=metadata_file, 
+		zip_file = self.software.run_nextstrain_generic(alignments=alignments_file, metadata=metadata_file, 
 														 ref_fasta=reference_fasta, ref_genbank=reference_gb)
 
-		# TODO look inside the results to see if we get what we expect to get
-		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/generic.json"),True)
+		self.assertEqual(os.path.exists(zip_file),True)
 
-		self.utils.remove_dir(temp_dir)	
+		# TODO Open file and see the content to verify...
+
+		self.utils.remove_file(zip_file)
+
+		# TODO look inside the results to see if we get what we expect to get
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/generic.json"),True)
+
+		#self.utils.remove_dir(temp_dir)	
 
 
 	def test_run_nextstrain_mpx(self):
@@ -3541,14 +3551,18 @@ class Test(TestCase):
 		alignments_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "sequences_mpx.fasta")
 		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_mpx.tsv")
 
-		temp_dir = self.software.run_nextstrain_mpx(alignments=alignments_file, metadata=metadata_file)
+		zip_file = self.software.run_nextstrain_mpx(alignments=alignments_file, metadata=metadata_file)
+
+		self.assertEqual(os.path.exists(zip_file),True)
+
+		self.utils.remove_file(zip_file)
 
 		# TODO look inside the results to see if we get what we expect to get
-		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox_root-sequence.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox_root-sequence.json"),True)
 
-		self.utils.remove_dir(temp_dir)	
+		#self.utils.remove_dir(temp_dir)	
 
 
 	def test_run_nextstrain_flu(self):
@@ -3558,15 +3572,19 @@ class Test(TestCase):
 		metadata_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "metadata_h3n2_ha.tsv")
 
 		# TODO make tests for other strains and periods...
-		temp_dir = self.software.run_nextstrain_flu(alignments=alignments_file, metadata=metadata_file, strain="h3n2", period="12y")
+		zip_file = self.software.run_nextstrain_flu(alignments=alignments_file, metadata=metadata_file, strain="h3n2", period="12y")
+
+		self.assertEqual(os.path.exists(zip_file),True)
+
+		self.utils.remove_file(zip_file)
 
 		# TODO look inside the results to see if we get what we expect to get
-		self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_root-sequence.json"),True)
-		self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_tip-frequencies.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_root-sequence.json"),True)
+		#self.assertEqual(os.path.exists(temp_dir + "/auspice/flu_h3n2_ha_12y_tip-frequencies.json"),True)
 
-		self.utils.remove_dir(temp_dir)	
+		#self.utils.remove_dir(temp_dir)	
 
 
 

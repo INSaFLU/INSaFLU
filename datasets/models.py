@@ -101,19 +101,20 @@ class Dataset(models.Model):
     ###NextStrain Expected, apear inside 'auspice' folder whenrun NextStrain
     REFERENCE_NAME = "Wuhan/Hu-1/2019"      ### need to change in the future
     RUN_out_path = 'auspice'
-    DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
-    DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
-    DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"
-    DATASET_FILE_NAME_nextstrain_log = "ncov_default-build.json"
+    DATASET_FILE_NAME_nextstrain_auspice_zip = "auspice.zip"
+    #DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
+    #DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
+    #DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"
+    #DATASET_FILE_NAME_nextstrain_log = "ncov_default-build.json"
     
     DATASET_FILE_NAME_nextstrain_error = "NextStrainError.txt"      ## has the error of the nextStrain
     
     ####
-    VECT_files_next_strain = [
-        DATASET_FILE_NAME_nextstrain_default_build,
-        DATASET_FILE_NAME_nextstrain_build_root,
-        DATASET_FILE_NAME_nextstrain_build_tip
-    ]
+    #VECT_files_next_strain = [
+    #    DATASET_FILE_NAME_nextstrain_default_build,
+    #    DATASET_FILE_NAME_nextstrain_build_root,
+    #   DATASET_FILE_NAME_nextstrain_build_tip
+    #]
     
     ### files to zip
     VECT_files_to_zip = [ 
@@ -125,8 +126,11 @@ class Dataset(models.Model):
         DATASET_FILE_NAME_MAFFT,
         DATASET_FILE_NAME_FASTTREE,
         DATASET_FILE_NAME_FASTTREE_tree,
-        DATASET_FILE_NAME_nex
-    ] + VECT_files_next_strain + [DATASET_FILE_NAME_nextstrain_error]
+        DATASET_FILE_NAME_nex,
+        DATASET_FILE_NAME_nextstrain_auspice_zip,
+        DATASET_FILE_NAME_nextstrain_error 
+    ]
+    #] + VECT_files_next_strain + [DATASET_FILE_NAME_nextstrain_error]
         
     DATASET_FILE_NAME_all_files_zipped = "AllFiles.zip"                    ### Several files zipped
     

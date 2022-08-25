@@ -45,6 +45,7 @@ class SoftwareNames(object):
 	SOFTWARE_IGVTOOLS_name = "igvtools"
 	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
 	SOFTWARE_IGVTOOLS_PARAMETERS = ""
+	
 	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 #	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
@@ -177,10 +178,10 @@ class SoftwareNames(object):
 	
 	## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
 	## ll temp/assembly.fasta
-	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "Flye/bin/flye")
-	SOFTWARE_FLYE_name = "Flye"
+	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "flye/flye.sh")
+	SOFTWARE_FLYE_name = "flye"
 	SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
-	SOFTWARE_FLYE_VERSION = "2.9-b1778"
+	SOFTWARE_FLYE_VERSION = "2.9.1-b1780"
 	SOFTWARE_FLYE_PARAMETERS = "--no-alt-contigs "	## genomeSize=<number>[g|m|k] file1 file2
 
 	### used to create a file with variations table

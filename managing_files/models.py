@@ -314,7 +314,7 @@ class Sample(models.Model):
 	
 	### Type/Subtype Virus
 	identify_virus = models.ManyToManyField(IdentifyVirus)
-	type_subtype = models.CharField(max_length=50, blank=True, null=True)	## has the type/subtype collected
+	type_subtype = models.CharField(max_length=150, blank=True, null=True)	## has the type/subtype collected
 	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
 	mixed_infections_tag = models.ForeignKey(MixedInfectionsTag, verbose_name='Putative Mixed Infection', related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 																			### has the tag of Yes/No mixed infection

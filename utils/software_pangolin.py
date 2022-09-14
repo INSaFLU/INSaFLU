@@ -110,40 +110,6 @@ class SoftwarePangolin(object):
 			self.utils.remove_file(temp_file)
 		return dt_result_version
 
-	"""	
-		Pangolin After Conda
-			cmd = "{} {} --update".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), self.software_names.get_pangolin())
-			exist_status = os.system(cmd)
-			if (exist_status != 0):
-				self.logger_production.error('Fail to run: ' + cmd)
-				self.logger_debug.error('Fail to run: ' + cmd)
-				raise Exception("Fail to run pangolin --update")
-			
-			### check all versions installed 
-			cmd = "{} {} --all-versions > {} 2>&1".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), temp_file)
-			exist_status = os.system(cmd)
-			if (exist_status != 0):
-				self.logger_production.error('Fail to run: ' + cmd)
-				self.logger_debug.error('Fail to run: ' + cmd)
-				raise Exception("Fail to run pangolin --update")
-
-			vect_lines = self.utils.read_text_file(temp_file)
-			## Important, go through pangolin --all-versions
-			#$ pangolin --all-versions
-			# pangolin: 4.0.5
-			# pangolin-data: 1.3
-			# constellations: v0.1.6
-			# scorpio: 0.3.16
-			
-			for line in vect_lines:
-				## must be lower case
-				lst_data = [_.lower().strip() for _ in line.strip().split(':')]
-				if len(lst_data) > 1:
-					dt_result_version["_".join(lst_data[:-1])] = self._get_verion_tag(lst_data[-1].replace('(', '').replace(')', ''))
-			self.utils.remove_file(temp_file)
-	"""
 
 	def _get_verion_tag(self, description):
 		"""
@@ -167,7 +133,7 @@ class SoftwarePangolin(object):
 		"""
 		
 		### update pangolin, if necessary
-		#self.run_pangolin_update()
+		self.run_pangolin_update()
 		
 		tem_dir = self.utils.get_temp_dir()
 		

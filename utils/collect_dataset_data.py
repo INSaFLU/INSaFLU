@@ -154,12 +154,12 @@ class CollectExtraDatasetData(object):
             self.logger.info("RUN nextStrain: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
     
-            ### create trees
-            createTree = CreateTree()
-            createTree.create_tree_and_alignments_dataset(dataset, user)
-            self.logger.info("Trees and alignments: Step {}  diff_time:{}".format(count, time.time() - start))
-            count += 1
-            start = time.time()
+            ### create trees; this is now replaced by nextstrain results
+            #createTree = CreateTree()
+            #createTree.create_tree_and_alignments_dataset(dataset, user)
+            #self.logger.info("Trees and alignments: Step {}  diff_time:{}".format(count, time.time() - start))
+            #count += 1
+            #start = time.time()
             
             meta_dataset = manage_database.get_dataset_metakey_last(dataset, metaKeyAndValue.get_meta_key(\
                         MetaKeyAndValue.META_KEY_Queue_TaskID_Project, dataset.id), MetaKeyAndValue.META_VALUE_Queue)
@@ -222,7 +222,7 @@ class CollectExtraDatasetData(object):
             auspice_zip_file = None    
             try:
 
-                auspice_zip_file, auspice_path = self.run_nextstrain(dataset)
+                tree_file, alignment_file, auspice_zip_file = self.run_nextstrain(dataset)
 
                 ## copy files if they exist, try to remove in destination
                 #for type_file in Dataset.VECT_files_next_strain:
@@ -230,8 +230,15 @@ class CollectExtraDatasetData(object):
                 #    if os.path.exists(auspice_zip_file): self.utils.move_file(auspice_zip_file, out_file_file_system)
                 #    elif (not out_file_file_system is None and os.path.exists(out_file_file_system)):
                 #        self.utils.remove_file(out_file_file_system)
-                out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)
-                if os.path.exists(auspice_zip_file): self.utils.move_file(auspice_zip_file, out_file_file_system)
+
+                out_file_file_system_tree = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
+                if os.path.exists(tree_file): self.utils.move_file(tree_file, out_file_file_system_tree)
+
+                out_file_file_system_alignment = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT)
+                if os.path.exists(alignment_file): self.utils.move_file(alignment_file, out_file_file_system_alignment)
+
+                out_file_file_system_auspice = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)
+                if os.path.exists(auspice_zip_file): self.utils.move_file(auspice_zip_file, out_file_file_system_auspice)
 
                 ### remove possible error of previous run
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
@@ -351,14 +358,16 @@ class CollectExtraDatasetData(object):
         sequences_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
         metadata_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
 
+        tree_file = None
+        alignment_file = None
         auspice_zip = None
         if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov):
-            auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx):
-            auspice_zip = self.software.run_nextstrain_mpx(alignments=sequences_file, metadata=metadata_file)             
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpx(alignments=sequences_file, metadata=metadata_file)             
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and time period (default: 12y)
-            auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file) 
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file) 
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
             ref_name = dataset.get_first_reference_name()
@@ -370,7 +379,7 @@ class CollectExtraDatasetData(object):
             try:
                 # Check for user?
                 reference = Reference.objects.get(name=ref_name)
-                auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
+                tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
                     ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT)) 
             except Reference.DoesNotExist:
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
@@ -385,7 +394,7 @@ class CollectExtraDatasetData(object):
             return None, Dataset.RUN_out_path
 
         #temp_dir = self.software.run_nextstrain(Dataset.REFERENCE_NAME, sequences_file, metadata_file)
-        return auspice_zip, Dataset.RUN_out_path
+        return tree_file, alignment_file, auspice_zip
 
 
     def collect_sample_table(self, dataset, column_separator, type_list):

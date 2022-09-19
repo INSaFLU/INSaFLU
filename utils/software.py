@@ -2458,19 +2458,47 @@ class Software(object):
 
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
 			
+		jsom_tree = os.path.join(temp_dir, 'auspice', "ncov_current.json")
+
+
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'ncov_current.json'), 
+													 tree_file)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)
+
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
-		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
-		self.utils.move_file(zip_out,temp_file)
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		# Put out the alignments too...
+		#results/aligned_current.fasta.xz
+		exit_status = os.system("xz -d {}".format(os.path.join(temp_dir, 'results', 'aligned_current.fasta.xz')))
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run unzip alignment file.", cmd, temp_dir)	
+
+		alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'aligned_current.fasta'),alignment_file)		
+
 		self.utils.remove_dir(temp_dir)
 
-		return temp_file
+		return [tree_file, alignment_file, auspice_zip]
 
 
 	def run_nextstrain_generic(self, alignments, metadata, ref_fasta, ref_genbank, cores=1):
@@ -2527,13 +2555,25 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'generic.json'), 
+													 tree_file)
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
-		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
-		self.utils.move_file(zip_out,temp_file)
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'aligned.fasta'),alignment_file)		
+
 		self.utils.remove_dir(temp_dir)
 
-		return temp_file
+		#results/aligned.fasta
+
+		return [tree_file, alignment_file, auspice_zip]
 
 
 
@@ -2573,13 +2613,25 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
+
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'flu_' + strain + '_ha_' + period + '.json'), 
+													 tree_file)
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
-		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
-		self.utils.move_file(zip_out,temp_file)
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		#results/aligned_h3n2_ha_12y.fasta
+		alignment_file = self.utils.get_temp_file('aligned.fasta', sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', "aligned_{}_ha_{}.fasta".format(strain, period)),alignment_file)		
+
 		self.utils.remove_dir(temp_dir)
 
-		return temp_file
+		return [tree_file, alignment_file, auspice_zip]
 
 
 	def run_nextstrain_mpx(self, alignments, metadata, cores=1):
@@ -2616,13 +2668,25 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
 
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'monkeypox.json'), 
+													 tree_file)
+
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
-		temp_file = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
-		self.utils.move_file(zip_out,temp_file)
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		#results/cladeX/aligned.fasta
+		alignment_file = self.utils.get_temp_file('aligned.fasta', sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'cladeX', "aligned.fasta"),alignment_file)		
+
 		self.utils.remove_dir(temp_dir)
 
-		return temp_file
+		return [tree_file, alignment_file, auspice_zip]
 
 
 

@@ -2457,9 +2457,7 @@ class Software(object):
 			raise Exception("Fail to generate include file in temp folder " + temp_dir)
 
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
-			
-		jsom_tree = os.path.join(temp_dir, 'auspice', "ncov_current.json")
-
+		
 
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
@@ -2561,6 +2559,12 @@ class Software(object):
 													 os.path.join(temp_dir, 'auspice', 'generic.json'), 
 													 tree_file)
 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)			
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
 		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
@@ -2620,6 +2624,12 @@ class Software(object):
 													 os.path.join(temp_dir, 'auspice', 'flu_' + strain + '_ha_' + period + '.json'), 
 													 tree_file)
 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)	
+
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
 		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
@@ -2674,6 +2684,11 @@ class Software(object):
 													 os.path.join(temp_dir, 'auspice', 'monkeypox.json'), 
 													 tree_file)
 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)	
 
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))

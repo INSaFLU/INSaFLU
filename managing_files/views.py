@@ -9,7 +9,8 @@ from itertools import chain
 from operator import attrgetter
 
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
@@ -39,35 +40,20 @@ from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
-from managing_files.forms import (
-    AddSampleProjectForm,
-    ReferenceForm,
-    ReferenceProjectFormSet,
-    SampleForm,
-    SamplesUploadDescriptionForm,
-    SamplesUploadDescriptionMetadataForm,
-    SamplesUploadMultipleFastqForm,
-)
+from managing_files.forms import (AddSampleProjectForm, ReferenceForm,
+                                  ReferenceProjectFormSet, SampleForm,
+                                  SamplesUploadDescriptionForm,
+                                  SamplesUploadDescriptionMetadataForm,
+                                  SamplesUploadMultipleFastqForm)
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MetaKey,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-)
-from managing_files.tables import (
-    AddSamplesFromCvsFileTable,
-    AddSamplesFromCvsFileTableMetadata,
-    AddSamplesFromFastqFileTable,
-    ProjectTable,
-    ReferenceProjectTable,
-    ReferenceTable,
-    SampleTable,
-    SampleToProjectsTable,
-    ShowProjectSamplesResults,
-)
+from managing_files.models import (MetaKey, Project, ProjectSample, Reference,
+                                   Sample, UploadFiles)
+from managing_files.tables import (AddSamplesFromCvsFileTable,
+                                   AddSamplesFromCvsFileTableMetadata,
+                                   AddSamplesFromFastqFileTable, ProjectTable,
+                                   ReferenceProjectTable, ReferenceTable,
+                                   SampleTable, SampleToProjectsTable,
+                                   ShowProjectSamplesResults)
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
@@ -516,6 +502,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
             ### test geo spacing
             if lat != None and lng != None:
                 sample.geo_local = Point(lat, lng)
+            sample.is_ready_for_projects = True  ### remove
             sample.save()
 
             ## move the files to the right place
@@ -553,12 +540,15 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
                 )
             sample.save()
 
-        ### create a task to perform the analysis of fastq and trimmomatic
+        # create a task to perform the analysis of fastq and trimmomatic
         try:
             process_SGE = ProcessSGE()
             (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
             )
+
+            taskID = 3  ### remove
+            ######################################### REMOVE IF LOCAL (WITHOUT SGE)
             if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
                 taskID = process_SGE.set_run_trimmomatic_species(
                     sample, self.request.user, job_name
@@ -567,14 +557,15 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
                 taskID = process_SGE.set_run_clean_minion(
                     sample, self.request.user, job_name
                 )
+            ########################################
         except Exception as e:
             self.logger_production.error("Fail to run: ProcessSGE - " + str(e))
             self.logger_debug.error("Fail to run: ProcessSGE - " + str(e))
             return super(SamplesAddView, self).form_invalid(form)
 
-        ## refresh sample list for this user
+        ## refresh sample list for this user  ### REMOVE ALSO THIS LINE IF LOCAL (WITHOUT SGE)
         if not job_name is None:
-            process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
+           process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
         ###
         manageDatabase = ManageDatabase()
         manageDatabase.set_sample_metakey(

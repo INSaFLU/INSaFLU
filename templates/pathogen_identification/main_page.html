@@ -17,7 +17,7 @@
 
 <div>
     <ul class="breadcrumb">
-        <li><a href="{% url 'projects_main' %}">Home</a></li>
+        <li><a href="{% url 'PIprojects_main' %}">Home</a></li>
     </ul>
 </div>
 
@@ -27,14 +27,10 @@
         <div>
             <div>
                 <div class="button" style="display: inline-block" display="center">
-                    <a href="{% url 'all_project_reports' project=project_name %}" style="">All results</a>
+                    <a href="{% url 'all_PIproject_reports' project=project_name %}" style="">All results</a>
                 </div>
             </div>
-            <div>
-                <div class="button" style="display: inline-block" display="center">
-                    <a href="{% url 'all_project_qc' project=project_name %}" style="">All qc reports</a>
-                </div>
-            </div>
+
         </div>
     </div>
 

@@ -606,28 +606,27 @@ class AddSamples_PIProjectsView(
     form_valid_message = ""  ## need to have this, even empty
 
 
-def MainPage(request, project_name):
+class MainPage(LoginRequiredMixin, generic.CreateView):
     """
     home page
     """
 
     template_name = "pathogen_identification/main_page.html"
+    model = PIProject_Sample
+    fields = ["name"]
 
-    try:
-        samples = Sample.objects.filter(project__name=project_name)
-    except Sample.DoesNotExist:
-        samples = parser.get_samples()
+    def get_context_data(self, **kwargs):
+        context = super(MainPage, self).get_context_data(**kwargs)
 
-    samples = SampleTable(samples)
-    context = {}
-    context["samples"] = samples
-    context["project_name"] = project_name
+        project = Projects.objects.get(pk=self.kwargs["pk"])
+        query_set = PIProject_Sample.objects.filter(project=project)
 
-    return render(
-        request,
-        template_name,
-        context,
-    )
+        samples = SampleTable(query_set)
+        context = {}
+        context["samples"] = samples
+        context["project_name"] = project.pk
+
+        return context
 
 
 def Sample_main(requesdst, project_name, sample_name):

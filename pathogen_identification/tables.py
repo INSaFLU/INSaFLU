@@ -32,9 +32,16 @@ class ProjectTable(tables.Table):
             "creation_date",
             "samples",
             "results",
+            "page",
         )
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
+
+    page = tables.LinkColumn(
+        "PIproject_samples",
+        text="project page",
+        args=[tables.A("pk")],
+    )
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware

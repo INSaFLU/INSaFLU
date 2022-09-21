@@ -10,6 +10,11 @@ urlpatterns = [
         name="PIprojects_main",
     ),
     url(
+        "Projects/(?P<pk>\d+)$",
+        PIviews.MainPage.as_view(),
+        name="PIproject_samples",
+    ),
+    url(
         r"project_add$",
         PIviews.PathID_ProjectCreateView.as_view(),
         name="PIproject-add",
@@ -25,7 +30,7 @@ urlpatterns = [
         name="PIproject-settings",
     ),
     url(
-        r"Project_samples/(?P<pk>\d+)/remove_sample_project$",
+        r"Project_samples/(?P<pk>\d+)$",
         views.SamplesDetailView.as_view(),
         name="remove-sample-PIproject",
     ),
@@ -35,7 +40,7 @@ urlpatterns = [
         name="igv_browser",
     ),  ## get values for IGV
     url(
-        "project_<project>/all_reports",
+        r"projects/(?P<project>[a-zA-Z0-9]+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
     ),
@@ -46,7 +51,6 @@ urlpatterns = [
     ),  ## get values for IGV
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
-    url("<slug:project_name>", PIviews.MainPage, name="PIproject_samples"),
     url(
         "<slug:project_name>/sample_<slug:sample_name>",
         PIviews.Sample_main,

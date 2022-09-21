@@ -448,6 +448,7 @@ class SoftwareNames(object):
     SOFTWARE_CENTRIFUGE_VERSION = "1.0.0"
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
+
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
         settings.DIR_SOFTWARE, "conda_environments/kraken2/bin/kraken2"

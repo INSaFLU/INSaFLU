@@ -13,11 +13,11 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
-from metagen_view.settings import STATICFILES_DIRS
+from fluwebvirus.settings import STATICFILES_DIRS
 
-from pathogen_detection.constants_settings import ConstantsSettings
-from pathogen_detection.object_classes import Sample_runClass
-from pathogen_detection.params import (
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.object_classes import Sample_runClass
+from pathogen_identification.params import (
     ACTIONS,
     ARGS_ASS,
     ARGS_CLASS,
@@ -32,8 +32,8 @@ from pathogen_detection.params import (
     SOFTWARE,
     SOURCE,
 )
-from pathogen_detection.run_main import RunMain_class
-from pathogen_detection.update_DBs import (
+from pathogen_identification.run_main import RunMain_class
+from pathogen_identification.update_DBs import (
     RunIndex_Update_Retrieve_Key,
     Update_project,
     Update_QC_report,

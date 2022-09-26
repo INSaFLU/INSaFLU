@@ -105,6 +105,7 @@ class DefaultParameters(object):
                         type_of_use=type_of_use,
                         technology=parameter.software.technology,
                         version_parameters=parameter.software.version_parameters,
+                        pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
                     software = parameter.software
@@ -142,33 +143,70 @@ class DefaultParameters(object):
         """
         get software_name parameters, if it saved in database...
         """
-        try:
-            software = Software.objects.get(
-                name=software_name,
-                owner=user,
-                type_of_use=type_of_use,
-                technology__name=technology_name,
-                version_parameters=self.get_software_parameters_version(software_name),
-            )
-        except Software.DoesNotExist:
-            if type_of_use in [
-                Software.TYPE_OF_USE_global,
-                Software.TYPE_OF_USE_qc,
-                Software.TYPE_OF_USE_pident,
-            ]:
-                try:
-                    software = Software.objects.get(
-                        name=software_name,
-                        owner=user,
-                        type_of_use=type_of_use,
-                        version_parameters=self.get_software_parameters_version(
-                            software_name
-                        ),
-                    )
-                except Software.DoesNotExist:
+
+        if self.check_software_is_polyvalent(software_name):
+            prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+            try:
+                software = Software.objects.get(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=type_of_use,
+                    technology__name=technology_name,
+                    version_parameters=self.get_software_parameters_version(
+                        software_name
+                    ),
+                    pipeline_step__name=prefered_pipeline,
+                )
+            except Software.DoesNotExist:
+                if type_of_use in [
+                    Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_qc,
+                    Software.TYPE_OF_USE_pident,
+                ]:
+                    try:
+                        software = Software.objects.get(
+                            name=software_name,
+                            owner=user,
+                            type_of_use=type_of_use,
+                            version_parameters=self.get_software_parameters_version(
+                                software_name
+                            ),
+                            pipeline_step__name=prefered_pipeline,
+                        )
+                    except Software.DoesNotExist:
+                        return None
+                else:
                     return None
-            else:
-                return None
+        else:
+            try:
+                software = Software.objects.get(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=type_of_use,
+                    technology__name=technology_name,
+                    version_parameters=self.get_software_parameters_version(
+                        software_name
+                    ),
+                )
+            except Software.DoesNotExist:
+                if type_of_use in [
+                    Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_qc,
+                    Software.TYPE_OF_USE_pident,
+                ]:
+                    try:
+                        software = Software.objects.get(
+                            name=software_name,
+                            owner=user,
+                            type_of_use=type_of_use,
+                            version_parameters=self.get_software_parameters_version(
+                                software_name
+                            ),
+                        )
+                    except Software.DoesNotExist:
+                        return None
+                else:
+                    return None
 
         ## get parameters for a specific user
         parameters = Parameter.objects.filter(
@@ -538,6 +576,7 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_pident,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
+
         elif software.name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             return self.get_kraken2_default(
                 software.owner,
@@ -585,14 +624,28 @@ class DefaultParameters(object):
             return self.get_spades_default(
                 software.owner,
                 Software.TYPE_OF_USE_pident,
-                ConstantsSettings.TECHNOLOGY_minion,
-            )
-        elif software.name == SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name:
-            return self.get_fastvirexplorer_default(
-                software.owner,
-                Software.TYPE_OF_USE_pident,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
+        elif software.name == SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name:
+            return self.get_fastviromeexplorer_default(
+                software.owner,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_minion,
+            )
+        else:
+            return None
+
+    def check_software_is_polyvalent(self, software_name):
+        """return True if the software is polyvalent"""
+        if software_name in ConstantsSettings.polyvalent_software:
+            return True
+        else:
+            return False
+
+    def get_polyvalent_software_pipeline(self, software_name):
+        """return first pipeline where software is used"""
+        if software_name in ConstantsSettings.polyvalent_software:
+            return ConstantsSettings.polyvalent_software_pipelines[software_name][0]
         else:
             return None
 
@@ -1529,10 +1582,15 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
         return vect_parameters
 
-    def get_centrifuge_default(self, user, type_of_use, technology_name, sample=None):
+    def get_centrifuge_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         """
-        centrifuge default
+        centrifuge default illumina
         """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_CENTRIFUGE_name
         # software.name_extended = SoftwareNames.SOFTWARE_CENTRIFUGE_name_extended
@@ -1552,9 +1610,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_viral_enrichment
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
@@ -1596,10 +1652,29 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_kraken2_default(self, user, type_of_use, technology_name, sample=None):
+    def get_centrifuge_default_read_classification(
+        self, user, type_of_use, technology_name, sample=None
+    ):
+        vect_parameters = self.get_centrifuge_default(
+            user,
+            type_of_use,
+            technology_name,
+            sample=sample,
+            # pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+        )
+        # print("returning vevct_parameters")
+        return vect_parameters
+
+    def get_kraken2_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         """
         kraken2 default
         """
+
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKEN2_name
         # software.name_extended = SoftwareNames.SOFTWARE_KRAKEN2_name_extended
@@ -1619,9 +1694,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_viral_enrichment
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
@@ -1665,10 +1738,15 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_kaiju_default(self, user, type_of_use, technology_name, sample=None):
+    def get_kaiju_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         """
         kaiju default
         """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KAIJU_name
         # software.name_extended = SoftwareNames.SOFTWARE_KAIJU_name_extended
@@ -1688,9 +1766,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_contig_classification
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
@@ -1756,7 +1832,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run; NEED TO CHECK
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_contig_classification
+            ConstantsSettings.PIPELINE_NAME_read_classification
         )
 
         software.owner = user
@@ -1831,10 +1907,16 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_krakenuniq_default(self, user, type_of_use, technology_name, sample=None):
+    def get_krakenuniq_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         """
         krakenuniq default
         """
+
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKENUNIQ_name
         # software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
@@ -1854,9 +1936,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_contig_classification
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
@@ -2311,6 +2391,9 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         return vect_parameters
+
+    ##############################
+    ############################## END OF PI SOFTWARE DEFAULTS.
 
     def get_abricate_default(self, user, type_of_use, technology_name, sample=None):
 

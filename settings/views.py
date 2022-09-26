@@ -59,7 +59,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         for technology in ConstantsSettings.vect_technology:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
-                print(f"type of use {Software.TYPE_OF_USE_pident}")
+                # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 query_set = Software.objects.filter(
                     owner=self.request.user,
                     type_of_use=Software.TYPE_OF_USE_pident,
@@ -71,7 +71,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                     pipeline_step__name=pipeline_step,
                     is_obsolete=False,
                 )
-                print(query_set)
 
                 ### if there are software
                 if query_set.count() > 0:
@@ -193,8 +192,7 @@ class SettingsView(LoginRequiredMixin, ListView):
         return []
 
     def get_context_data(self, **kwargs):
-        print("get_context_data")
-        print(kwargs)
+
         context = super(SettingsView, self).get_context_data(**kwargs)
 
         ### test all defaults first, if exist in database
@@ -202,7 +200,6 @@ class SettingsView(LoginRequiredMixin, ListView):
         default_software.test_all_defaults(
             self.request.user
         )  ## the user can have defaults yet
-        print("get query")
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],

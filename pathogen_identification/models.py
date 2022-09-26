@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
 from managing_files.models import Sample
+from settings.models import Parameter
 
 # Create your models here.
 
@@ -54,6 +55,16 @@ class Projects(models.Model):
         return self.name + " " + self.name + " " + self.description
 
 
+class ParameterSet(models.Model):
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE)
+    set_index = models.SmallIntegerField(default=-1)
+
+    def __str__(self):
+        return self.name + " " + self.name + " " + self.description
+
+
 class PIProject_Sample(models.Model):
     """
     Main sample information. Connects to the RunMain and QC models.
@@ -63,6 +74,7 @@ class PIProject_Sample(models.Model):
 
     project = models.ForeignKey(
         Projects,
+        related_name="project_samples",
         null=True,
         blank=True,
         on_delete=models.CASCADE,

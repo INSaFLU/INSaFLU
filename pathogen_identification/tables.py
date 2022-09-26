@@ -5,6 +5,7 @@ from constants.constants import Constants
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from managing_files.manage_database import ManageDatabase
 
 from pathogen_identification.models import (
     PIProject_Sample,
@@ -121,6 +122,17 @@ class ProjectTable(tables.Table):
 
 
 class SampleTable(tables.Table):
+    name = tables.Column(verbose_name="Sample Name")
+    combinations = tables.Column(
+        verbose_name="Combinations", orderable=False, empty_values=()
+    )
+    input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
+    technology = tables.Column(
+        verbose_name="Technology", orderable=False, empty_values=()
+    )
+    type = tables.Column(verbose_name="Type", orderable=False, empty_values=())
+    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+
     class Meta:
         model = PIProject_Sample
         # attrs = {
@@ -141,6 +153,70 @@ class SampleTable(tables.Table):
         return RunMain.objects.filter(
             sample__name=record.name, project__name=record.project
         ).count()
+
+    def render_report(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        record_name = (
+            '<a href="'
+            + reverse("sample_main", args=[record.project.name, record.name])
+            + '">'
+            + "report"
+            + "</a>"
+        )
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        if user.username == record.project.owner.username:
+            return mark_safe(record_name)
+
+    def render_name(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        ### get the link for sample, to expand data
+        sample_name = record.sample.name
+        sample_name = (
+            '<a href="'
+            + reverse("sample_main", args=[record.project.name, record.name])
+            + '">'
+            + record.name
+            + "</a>"
+        )
+
+        # sample_name = "<a>" + record.name + "</a>"
+
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe(sample_name)
+        if (
+            user.username == record.project.owner.username
+        ):  ## it can't be in any active project
+            ## it can have project samples not deleted but in projects deleted
+            # for project_samples in record.project_samples.all().filter(
+            #    is_deleted=False, is_error=False
+            # ):
+            #    if (
+            #        not project_samples.is_deleted
+            #        and not project_samples.project.is_deleted
+            #    ):
+            #        return mark_safe(sample_name)
+
+            return mark_safe(
+                '<a href="#id_remove_modal" id="id_remove_reference_modal" data-toggle="modal"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-trash"></i></span> </a>'
+                + sample_name
+            )
+
+        print(sample_name)
+        return mark_safe(sample_name)
 
     report = tables.LinkColumn(
         "sample_main", text="Report", args=[tables.A("project__name"), tables.A("name")]

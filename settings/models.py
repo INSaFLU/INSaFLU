@@ -55,7 +55,7 @@ class Software(models.Model):
     TYPE_OF_USE_project_sample = 2  ### Used in a particular project sample
     TYPE_OF_USE_sample = 3  ### Used in a particular sample
     TYPE_OF_USE_qc = 4  ### Used for  quality control
-    TYPE_OF_USE_pident = 5
+    TYPE_OF_USE_pident = 5  ### used for pathogen_identification.
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)

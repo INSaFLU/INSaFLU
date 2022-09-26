@@ -64,10 +64,15 @@ class ProcessSGE(object):
         raise exception if something wrong
         """
         temp_file = self.utils.get_temp_file("qsub_out", FileExtensions.FILE_TXT)
+
         cmd = "export SGE_ROOT={}; qsub {} > {}".format(
             settings.SGE_ROOT, file_name, temp_file
         )
         exist_status = os.system(cmd)
+        print("submitting job")
+        print(cmd)
+        with open(file_name, "r") as f:
+            print(f.read())
         if exist_status != 0:
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
@@ -79,10 +84,12 @@ class ProcessSGE(object):
             )
             raise Exception("Fail to submit qsub")
         ## read output
+        print("########## PREP JOB")
         vect_out = self.utils.read_text_file(temp_file)
         if os.path.exists(temp_file):
             os.unlink(temp_file)
         b_found = False
+
         for line in vect_out:
             if line.find("has been submitted") != -1:
                 lst_line = line.split(" ")

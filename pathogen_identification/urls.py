@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from managing_files import ajax_views, views
 
+import pathogen_identification.ajax_views as PIajax_views
 import pathogen_identification.views as PIviews
 
 urlpatterns = [
@@ -10,7 +11,7 @@ urlpatterns = [
         name="PIprojects_main",
     ),
     url(
-        "Projects/(?P<pk>\d+)$",
+        r"Projects/(?P<pk>\d+)$",
         PIviews.MainPage.as_view(),
         name="PIproject_samples",
     ),
@@ -52,7 +53,7 @@ urlpatterns = [
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
-        "<slug:project_name>/sample_<slug:sample_name>",
+        r"Projects/(?P<project_name>[a-zA-Z0-9]+)/(?P<sample_name>[a-zA-Z0-9]+)",
         PIviews.Sample_main,
         name="sample_main",
     ),
@@ -67,30 +68,8 @@ urlpatterns = [
         name="scaffold_remap",
     ),
     url(
-        r"^ajax/add_single_value_database$",
-        ajax_views.add_single_value_database,
-        name="add_single_value_database",
-    ),  ## add a single value to a table in database
-    url(
-        r"^ajax/remove_single_value_database$",
-        ajax_views.remove_single_value_database,
-        name="remove_single_value_database",
-    ),  ## add a single value to a table in database
-    url(
-        r"^ajax/show_igv$", ajax_views.show_igv, name="show_igv"
-    ),  ## get values for IGV
-    url(
-        r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
-    ),  ## remove a project
-    url(
-        r"^ajax/unlock_sample_file$",
-        ajax_views.unlock_sample_file,
-        name="unlock_sample_file",
-    ),  ## unlock sample list files
-    url(
-        r"^ajax/get_process_running$",
-        ajax_views.get_process_running,
-        name="get_process_running",
-    ),  ## get process to run
-    url(r"^ajax/submit_sge$", ajax_views.submit_sge, name="submit-sge"),
+        r"ajax/deploy_ProjectPI$",
+        PIajax_views.deploy_ProjectPI,
+        name="deploy_ProjectPI",
+    ),
 ]

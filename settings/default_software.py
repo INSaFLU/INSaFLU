@@ -130,6 +130,27 @@ class DefaultSoftware(object):
             user,
         )
 
+        print("getting centrifuge")
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_CENTRIFUGE_name,
+            self.default_parameters.get_centrifuge_default(
+                user,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_CENTRIFUGE_name,
+            self.default_parameters.get_centrifuge_default(
+                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             self.default_parameters.get_kraken2_default(
@@ -142,6 +163,14 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_KAIJU_name,
             self.default_parameters.get_kaiju_default(
                 user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KAIJU_name,
+            self.default_parameters.get_kaiju_default(
+                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
             ),
             user,
         )
@@ -216,6 +245,24 @@ class DefaultSoftware(object):
         type_of_use = Software.TYPE_OF_USE_global
         ## lock because more than one process can duplicate software names
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+            print(
+                software_name,
+                vect_parameters[0].software.pipeline_step,
+                vect_parameters[0].software.technology.name,
+            )
+            print(
+                Software.objects.filter(
+                    name=software_name,
+                    owner=user,
+                    type_of_use=vect_parameters[0].software.type_of_use,
+                    technology__name=vect_parameters[0].software.technology.name,
+                    version_parameters=self.default_parameters.get_software_parameters_version(
+                        software_name
+                    ),
+                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
+                ).count()
+            )
+
             try:
                 Software.objects.get(
                     name=software_name,
@@ -225,6 +272,7 @@ class DefaultSoftware(object):
                     version_parameters=self.default_parameters.get_software_parameters_version(
                         software_name
                     ),
+                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
                 )
             except Software.DoesNotExist:  ### if not exist save it
                 self.default_parameters.persist_parameters(vect_parameters, type_of_use)

@@ -442,16 +442,17 @@ class SoftwareNames(object):
     ### CENTRIFUGE
     SOFTWARE_CENTRIFUGE = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/host_depletion/host_depletion/bin/centrifuge",
+        "host_depletion/hostdep_env/bin/centrifuge",
     )
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
+
     SOFTWARE_CENTRIFUGE_VERSION = "1.0.0"
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
 
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
-        settings.DIR_SOFTWARE, "conda_environments/kraken2/bin/kraken2"
+        settings.DIR_SOFTWARE, "kraken2/kraken_env/bin/kraken2"
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
     SOFTWARE_KRAKEN2_VERSION = "2.0.5"
@@ -462,7 +463,7 @@ class SoftwareNames(object):
     ### KRAKENUNIQ
     SOFTARE_KRAKENUNIQ = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/host_depletion/host_depletion/bin/krakenuniq",
+        "host_depletion/hostdep_env/bin/krakenuniq",
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
     SOFTWARE_KRAKENUNIQ_VERSION = "1.0.0"
@@ -478,7 +479,7 @@ class SoftwareNames(object):
     SOFTWARE_FASTVIROMEEXPLORER_name = "FastViromeExplorer"
     SOFTWARE_FASTVIROMEEXPLORER = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/FastViromeExplorer/FastViromeExplorer/bin/",
+        "FastViromeExplorer/FastViromeExplorer/bin/FastViromeExplorer",
     )
     SOFTWARE_FASTVIROMEEXPLORER_VERSION = "1.0.0"
     SOFTWARE_FASTVIROMEEXPLORER_parameters = ""
@@ -487,7 +488,7 @@ class SoftwareNames(object):
     SOFTWARE_DIAMOND_name = "Diamond"
     SOFTWARE_DIAMOND = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/host_depletion/host_depletion/bin/diamond",
+        "hostDepletion/hostdep_env/bin/diamond",
     )
     SOFTWARE_DIAMOND_VERSION = "0.9.24"
     SOFTWARE_DIAMOND_parameters = (
@@ -497,7 +498,7 @@ class SoftwareNames(object):
     ### BLAST
     SOFTWARE_BLAST_name = "Blast"
     SOFTWARE_BLAST = os.path.join(
-        settings.DIR_SOFTWARE, "conda_environments/host_depletion/host_depletion/bin/"
+        settings.DIR_SOFTWARE, "hostDepletion/hostdep_env/bin/blast"
     )
     SOFTWARE_BLAST_VERSION = "2.9.0"
     SOFTWARE_BLAST_parameters = "-num_threads 5 -outfmt 6"
@@ -505,7 +506,7 @@ class SoftwareNames(object):
     ### KAIJU
     SOFTWARE_KAIJU = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/host_depletion/host_depletion/bin/kaiju",
+        "hostDepletion/hostdep_env/bin/kaiju",
     )
     SOFTWARE_KAIJU_name = "Kaiju"
     SOFTWARE_KAIJU_VERSION = "2.0.1"
@@ -517,7 +518,7 @@ class SoftwareNames(object):
 
     SOFTWARE_DESAMBA = os.path.join(
         settings.DIR_SOFTWARE,
-        "conda_environments/host_depletion/host_depletion/bin/desambar",
+        "classm_lc/deSAMBA/bin/deSAMBA",
     )
     SOFTWARE_DESAMBA_name = "Desamba"
     SOFTWARE_DESAMBA_VERSION = "1.0.0"
@@ -525,9 +526,7 @@ class SoftwareNames(object):
     ### RAVEN
 
     SOFTWARE_RAVEN_name = "Raven"
-    SOFTWARE_RAVEN = os.path.join(
-        settings.DIR_SOFTWARE, "conda_environments/assembly/assemb_lc/bin/"
-    )
+    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/")
     SOFTWARE_RAVEN_VERSION = "1.0.0"
     SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
@@ -600,7 +599,6 @@ class SoftwareNames(object):
             SOFTWARE_CENTRIFUGE_name,
             SOFTWARE_KRAKEN2_name,
             SOFTWARE_KRAKENUNIQ_name,
-            SOFTWARE_DIAMOND_name,
             SOFTWARE_KAIJU_name,
         ],
         ConstantsSettings.TECHNOLOGY_minion: [
@@ -612,6 +610,11 @@ class SoftwareNames(object):
             SOFTWARE_MASK_CONSENSUS_BY_SITE_name,
             INSAFLU_PARAMETER_VCF_FREQ_ONT_name,
             SOFTWARE_ABRICATE_name,
+            SOFTWARE_DIAMOND_name,
+            SOFTWARE_CENTRIFUGE_name,
+            SOFTWARE_KRAKEN2_name,
+            SOFTWARE_KRAKENUNIQ_name,
+            SOFTWARE_KAIJU_name,
         ],
     }
     ###

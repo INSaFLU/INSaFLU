@@ -790,7 +790,7 @@ class Sample(models.Model):
                 )
         return path_to_find
 
-    def identify_virus(self):
+    def get_type_sub_type(self):
         """
         return a string with Type/Subtpye
         """

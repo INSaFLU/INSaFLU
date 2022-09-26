@@ -56,6 +56,18 @@ class ConstantsSettings(object):
         TECHNOLOGY_Undefined,
     ]
 
+    ### software with application in multiple pipeline_steps:
+    polyvalent_software = [
+        "Centrifuge",
+    ]
+    # pipeline_steps per software, for software with multiple pipeline_steps.
+    polyvalent_software_pipelines = {
+        "Centrifuge": [
+            PIPELINE_NAME_viral_enrichment,
+            PIPELINE_NAME_read_classification,
+        ],
+    }
+
     ###### Relation between software and technology
     def get_list_software_names_by_technology(self, technology_name):
         """

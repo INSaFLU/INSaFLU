@@ -6,13 +6,12 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
-from matplotlib.cbook import contiguous_regions
 
-from pathogen_detection.assembly_class import Assembly_class
-from pathogen_detection.classification_class import Classifier
-from pathogen_detection.constants_settings import ConstantsSettings
-from pathogen_detection.metadata_handler import Metadata_handler
-from pathogen_detection.object_classes import (
+from pathogen_identification.assembly_class import Assembly_class
+from pathogen_identification.classification_class import Classifier
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.metadata_handler import Metadata_handler
+from pathogen_identification.object_classes import (
     Assembly_results,
     Contig_classification_results,
     Read_class,
@@ -24,8 +23,8 @@ from pathogen_detection.object_classes import (
     Sample_runClass,
     Software_detail,
 )
-from pathogen_detection.preprocess_class import Preprocess
-from pathogen_detection.remap_class import Mapping_Manager, Remapping
+from pathogen_identification.preprocess_class import Preprocess
+from pathogen_identification.remap_class import Mapping_Manager, Remapping
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):

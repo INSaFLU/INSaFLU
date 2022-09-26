@@ -6,9 +6,9 @@ from typing import Type
 
 import pandas as pd
 from Bio import SeqIO
-from metagen_view.settings import STATICFILES_DIRS
+from fluwebvirus.settings import STATICFILES_DIRS
 
-from pathogen_detection.object_classes import RunCMD
+from pathogen_identification.object_classes import RunCMD
 
 
 class Assembly_init:

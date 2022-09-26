@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import os
 
+import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -31,8 +32,6 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from settings.default_software_project_sample import DefaultProjectSoftware
-from utils.process_SGE import ProcessSGE
-from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
@@ -57,6 +56,8 @@ from pathogen_identification.tables import (
     SampleQCTable,
     SampleTable,
 )
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage, Utils
 
 
 def clean_check_box_in_session(request):
@@ -523,9 +524,16 @@ class AddSamples_PIProjectsView(
                         project_sample_add += 1
 
                 except PIProject_Sample.DoesNotExist:
+                    project_sample_input = sample.file_name_1
+                    if sample.is_valid_2:
+                        project_sample_input += ";" + sample.file_name_2
                     project_sample = PIProject_Sample()
                     project_sample.project = project
                     project_sample.sample = sample
+                    project_sample.name = sample.name
+                    project_sample.input = project_sample_input
+                    project_sample.technology = sample.type_of_fastq
+                    project_sample.report = "report"
                     project_sample.save()
                     project_sample_add += 1
 
@@ -622,9 +630,18 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         query_set = PIProject_Sample.objects.filter(project=project)
 
         samples = SampleTable(query_set)
+        print(pd.DataFrame(query_set.values()).columns)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(samples)
+
         context = {}
-        context["samples"] = samples
-        context["project_name"] = project.pk
+        context["table"] = samples
+        context["project_index"] = project.pk
+        context["nav_sample"] = True
+        context["total_itens"] = query_set.count()
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["show_info_main_page"] = ShowInfoMainPage()
 
         return context
 
@@ -637,33 +654,38 @@ def Sample_main(requesdst, project_name, sample_name):
 
     try:
         runs = RunMain.objects.filter(
-            sample__name=sample_name, project__name=project_name
+            sample__name=sample_name,
+            project__name=project_name,
+            project__owner=requesdst.user,
         )
     except RunMain.DoesNotExist:
         runs = None
 
-    try:
-        sampleqc = SampleQC.objects.filter(sample__name=sample_name)
-
-    except SampleQC.DoesNotExist:
-        sampleqc = None
-
-    sampleqc_table = SampleQCTable(sampleqc)
+    # try:
+    #    sampleqc = SampleQC.objects.filter(sample__name=sample_name)
+    #
+    # except SampleQC.DoesNotExist:
+    #    sampleqc = None
+    #
+    # sampleqc_table = SampleQCTable(sampleqc)
     runs = RunMainTable(runs)
     RequestConfig(
         requesdst, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
     ).configure(runs)
+
+    project_pk = Projects.objects.get(name=project_name, owner=requesdst.user).pk
 
     return render(
         requesdst,
         template_name,
         {
             "runs": runs,
-            "qc_table": sampleqc_table,
-            "sampleqc": [list(sampleqc.values())][0][0],
+            # "qc_table": sampleqc_table,
+            # "sampleqc": [list(sampleqc.values())][0][0],
             "name": sample_name,
             "project_main": True,
             "project_name": project_name,
+            "project_index": project_pk,
         },
     )
 

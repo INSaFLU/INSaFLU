@@ -55,7 +55,7 @@ CSRF_USE_SESSIONS = True
 
 ################### If you
 ### ADMIN  disable/disable django
-ADMIN_ENABLED = config("ADMIN_ENABLED", default=True, cast=bool)
+ADMIN_ENABLED = True  # config("ADMIN_ENABLED", default=True, cast=bool)
 
 ### threads to use in several software
 THREADS_TO_RUN_FASTQC = config(

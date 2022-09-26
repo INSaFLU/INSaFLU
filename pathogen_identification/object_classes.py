@@ -9,7 +9,7 @@ from typing import Type
 import pandas as pd
 from numpy import ERR_CALL
 
-from pathogen_detection.utilities import fastqc_parse
+from pathogen_identification.utilities import fastqc_parse
 
 
 class RunCMD:

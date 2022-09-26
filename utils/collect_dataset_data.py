@@ -125,6 +125,7 @@ class CollectExtraDatasetData(object):
             start = time.time()
             self.logger.info("COLLECT_EXTRA_FILES: Start")
             
+            print("Start")
             ## calculate the max sample label size of the samples that belong to this dataset
             ## used in MSA viewer 
             b_calculate_again = True
@@ -133,27 +134,38 @@ class CollectExtraDatasetData(object):
             count += 1
             start = time.time()
             
+            print("Start consensus")
             ## collect all consensus files for a dataset
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
             start = time.time()
-            
+            print("End consensus")
+
+
+            print("Start metadata")
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
+            print("metadata 1")
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
+            print("metadata 2")            
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
+            print("metadata 3")            
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)
+            print("metadata 4")            
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1 
+            print("End metadata")
 
+            print("Start nextstrain")
             start = time.time()
             #self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_default_build, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip, dataset)
             self.logger.info("RUN nextStrain: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
-    
+            print("End nextstrain")
+
             ### create trees; this is now replaced by nextstrain results
             #createTree = CreateTree()
             #createTree.create_tree_and_alignments_dataset(dataset, user)
@@ -185,23 +197,32 @@ class CollectExtraDatasetData(object):
         """
         Collect extra files
          """
+
+        # check what is the build that is configured, otherwise use the default
+        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+
+        # See if there is a build parameter specific for this dataset, in which case use it
+        parameters_list = Parameter.objects.filter(dataset=dataset)
+        if len(list(parameters_list)) == 1:
+            build = list(parameters_list)[0].parameter
+         
         out_file = None
         out_file_file_system = None
         if (type_file == Dataset.DATASET_FILE_NAME_RESULT_CSV):
             ## samples csv
-            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_COMMA, CollectExtraDatasetData.DATASET_LIST_list)
+            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_COMMA, CollectExtraDatasetData.DATASET_LIST_list, build)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_TSV):
             ## samples tsv
-            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_TAB, CollectExtraDatasetData.DATASET_LIST_list)
+            out_file = self.collect_sample_table(dataset, Constants.SEPARATOR_TAB, CollectExtraDatasetData.DATASET_LIST_list, build)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV):
             ## samples tsv
-            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_TAB)
+            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_TAB, build)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV):
             ## samples csv
-            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_COMMA)
+            out_file = self.collect_nextstrain_table(dataset, Constants.SEPARATOR_COMMA, build)
             out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, type_file)
         elif (type_file == Dataset.DATASET_FILE_NAME_RESULT_all_consensus):
             out_file = self.merge_all_consensus_files(dataset)
@@ -222,7 +243,7 @@ class CollectExtraDatasetData(object):
             auspice_zip_file = None    
             try:
 
-                tree_file, alignment_file, auspice_zip_file = self.run_nextstrain(dataset)
+                tree_file, alignment_file, auspice_zip_file = self.run_nextstrain(dataset, build)
 
                 ## copy files if they exist, try to remove in destination
                 #for type_file in Dataset.VECT_files_next_strain:
@@ -306,6 +327,9 @@ class CollectExtraDatasetData(object):
         """
         merge all consensus files
         """
+
+        ## TODO?: Some build require the presence of reference sequences... add them here?
+
         out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
         vect_to_process = []
         for dataset_consensus in dataset.dataset_consensus.all():
@@ -325,35 +349,35 @@ class CollectExtraDatasetData(object):
         
 
         # check what is the build that is configured, otherwise use the default
-        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        #build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
         # See if there is a build parameter specific for this dataset, in which case use it
-        parameters_list = Parameter.objects.filter(dataset=dataset)
-        if len(list(parameters_list)) == 1:
-            build = list(parameters_list)[0].parameter
+        #parameters_list = Parameter.objects.filter(dataset=dataset)
+        #if len(list(parameters_list)) == 1:
+        #    build = list(parameters_list)[0].parameter
 
         # If the nextstrain build is flu, only use specific segments
         segment = None
-        if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
-            # TODO make this more generic...
-            segment = '4'
+        #if(build in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
+        #    # TODO make this more generic... use abricate to screen for HA segment
+        #    segment = '4'
 
         self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file, segment)
 
         return out_file
 
-    def run_nextstrain(self, dataset):
+    def run_nextstrain(self, dataset, build):
         """
         Runs nextStrain
         File expected: DATASET_FILE_NAME_auspice_zip = "auspice.zip"
         """
 
         # check what is the build that is configured, otherwise use the default
-        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        #build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
 
         # See if there is a build parameter specific for this dataset, in which case use it
-        parameters_list = Parameter.objects.filter(dataset=dataset)
-        if len(list(parameters_list)) == 1:
-            build = list(parameters_list)[0].parameter
+        #parameters_list = Parameter.objects.filter(dataset=dataset)
+        #if len(list(parameters_list)) == 1:
+        #    build = list(parameters_list)[0].parameter
         
         sequences_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
         metadata_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
@@ -365,9 +389,15 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_mpx(alignments=sequences_file, metadata=metadata_file)             
-        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y):
             # This one can have extra parameters such as strain (default: h3n2, h1n1, etc...) and time period (default: 12y)
-            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file) 
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='h3n2') 
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='h1n1pdm') 
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='vic') 
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')                                     
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
             ref_name = dataset.get_first_reference_name()
@@ -397,7 +427,7 @@ class CollectExtraDatasetData(object):
         return tree_file, alignment_file, auspice_zip
 
 
-    def collect_sample_table(self, dataset, column_separator, type_list):
+    def collect_sample_table(self, dataset, column_separator, type_list, build):
         """
         collect sample table
         column_separator : COMMA or TAB
@@ -407,7 +437,8 @@ class CollectExtraDatasetData(object):
         
         """
         
-        data_columns = DataColumns()
+        data_columns = DataColumns(build)
+
         ### join all
         dt_out_id_project = {} 
         for dataset_consensus in dataset.dataset_consensus.all():
@@ -466,7 +497,9 @@ class CollectExtraDatasetData(object):
             return None
         return out_file
     
-    def collect_nextstrain_table(self, dataset, column_separator):
+
+
+    def collect_nextstrain_table(self, dataset, column_separator, build):
         """
         collect sample table
         column_separator : COMMA or TAB
@@ -476,10 +509,11 @@ class CollectExtraDatasetData(object):
         
         """
 
-        # May change depending on the build??
+        # May change depending on the build
 
+        print("Starting Nextstrain table")
 
-        data_columns = DataColumns()
+        data_columns = DataColumns(build)
         ### join all
         dt_out_id_project = {} 
         for dataset_consensus in dataset.dataset_consensus.all():
@@ -487,15 +521,22 @@ class CollectExtraDatasetData(object):
             if (dataset_consensus.is_error): continue
             
             ## add metadata to reference
-            if not dataset_consensus.reference is None: continue
+            if not dataset_consensus.reference is None: 
+                print("Need to do metadata for reference: {}".format(dataset_consensus.reference))
+                continue
             ## add metadata to consensus
-            if not dataset_consensus.consensus is None: continue
+            if not dataset_consensus.consensus is None: 
+                print("Need to do metadata for user-provided consensus: {}".format(dataset_consensus.consensus))
+                continue
             
             ## read metadata from file
             if not dataset_consensus.project_sample is None:
+                
                 ## test if already processed
                 if dataset_consensus.project_sample.project.pk in dt_out_id_project:
+
                     row = dt_out_id_project[dataset_consensus.project_sample.project.pk].get(dataset_consensus.project_sample.sample.name, None)
+
                     if not row is None:
                         ### get consensus length
                         consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
@@ -504,8 +545,7 @@ class CollectExtraDatasetData(object):
                             dataset_consensus.seq_name_all_consensus, row,
                             consensus_length)
                     continue
-            
-                
+                               
                 dt_out_temp = {}
                 ## start looking for simple list                
                 file_csv = dataset_consensus.project_sample.project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple)
@@ -519,6 +559,7 @@ class CollectExtraDatasetData(object):
                             if line == 0: data_columns.add_header(dataset_consensus.project_sample.project.pk, row)
                             else:
                                 dt_out_temp[row[0]] = row
+
                 ### set processed
                 dt_out_id_project[dataset_consensus.project_sample.project.pk] = dt_out_temp
                 row = dt_out_id_project[dataset_consensus.project_sample.project.pk].get(dataset_consensus.project_sample.sample.name, None)
@@ -529,12 +570,16 @@ class CollectExtraDatasetData(object):
                             dataset_consensus.seq_name_all_consensus, row,
                             consensus_length)
         
-        ## this should be no longer necessary
-        ## get reference file for ncov                
-        #reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, "ncov/references_metadata.tsv")
-        #if not os.path.exists(reference_tsv):
-        #    self.logger.error("CFile not found: {}".format(reference_tsv))
-        #    return None
+
+        ## get reference file (if it exists)                
+        reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE, build, "data", "references_metadata.tsv")
+
+        print(reference_tsv)
+
+        if not os.path.exists(reference_tsv):
+            reference_tsv = None
+
+        print(reference_tsv)
     
         ## save file
         out_file = self.utils.get_temp_file('dataset_out', FileExtensions.FILE_CSV if\
@@ -544,8 +589,11 @@ class CollectExtraDatasetData(object):
             csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
                         quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
             
+            print("Nextstrain table: going to write rows")
             ### save metadata
-            n_count = data_columns.save_rows_nextstrain(csv_writer)
+            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv)
+
+            print("Nextstrain table: wrote rows")
                        
         if (n_count == 0):
             os.unlink(out_file)

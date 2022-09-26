@@ -2432,6 +2432,8 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
 
+
+		# TODO?: Add this to the collect_consensus section...?
 		# Add references from the build to the consensus sequences (TODO merge fasta with function instead with a cat...)
 		cmd = "cat {} {} > {}".format(alignments, os.path.join(temp_dir, 'data', 'references_sequences.fasta'), os.path.join(temp_dir, 'data', 'sequences.fasta'))
 		exit_status = os.system(cmd)
@@ -2441,13 +2443,16 @@ class Software(object):
 			raise Exception("Fail to concatenate ncov references with alignments in temp folder " + temp_dir)
 
 		# Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
-		# TODO do a proper integration of tables?
+		
+		# TODO do a proper integration of tables? This should already be taken care of in DataColumns ... test if it is working properly...
 		cmd = "cat {} {} > {}".format(metadata, os.path.join(temp_dir, 'data', 'references_metadata.tsv'), os.path.join(temp_dir, 'data', 'metadata.tsv'))
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to concatenate ncov reference metadata with metadata in temp folder " + temp_dir)	
+
+
 
 		cmd = "cat " + metadata + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > " +  os.path.join(temp_dir, 'data', "include.txt")
 		exit_status = os.system(cmd)
@@ -2667,11 +2672,18 @@ class Software(object):
 			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
 
 		# add sequences.fasta and metadata.tsv to data folder
-		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+		#self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
 		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
 
+		cmd = "cat {} {} > {}".format(os.path.join(temp_dir, 'data', 'references_sequences.fasta'), alignments, os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate references with consensus in temp folder " + temp_dir)
+
 		# Now run Nextstrain
-		cmd = "{} build --native {} --cores {}".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores))	
+		cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores))	
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -2681,7 +2693,7 @@ class Software(object):
 		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
 		# Convert json to tree
 		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-													 os.path.join(temp_dir, 'auspice', 'monkeypox.json'), 
+													 os.path.join(temp_dir, 'auspice', 'monkeypox_hmpxv1_big.json'), 
 													 tree_file)
 
 		exit_status = os.system(cmd)

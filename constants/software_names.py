@@ -90,7 +90,9 @@ class SoftwareNames(object):
 					'TruSeq2-SE.fa',
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
-					'TruSeq3-SE.fa']
+					'TruSeq3-SE.fa',
+					'MPXV-primer_seqs.fa',
+					'cov-amplicon-v4.1_seqs.fa']
 	### collect stat data for ILLUMINA, in form of key value
 	SOFTWARE_ILLUMINA_stat = "illumina_stat"
 	SOFTWARE_ILLUMINA_stat_collect = [
@@ -345,18 +347,37 @@ class SoftwareNames(object):
 	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
 	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
 	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
-	SOFTWARE_NEXTSTRAIN_BUILDS_flu = "flu"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu = [ 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y
+	]
+
 	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
+
 	SOFTWARE_NEXTSTRAIN_BUILDS = [ 
 		SOFTWARE_NEXTSTRAIN_BUILDS_generic, 
 		SOFTWARE_NEXTSTRAIN_BUILDS_ncov, 
-		SOFTWARE_NEXTSTRAIN_BUILDS_flu, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
 		SOFTWARE_NEXTSTRAIN_BUILDS_mpx 
 	]
 	SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [ 
 		[SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"], 
 		[SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"], 
-		[SOFTWARE_NEXTSTRAIN_BUILDS_flu, "Influenza"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],		
 		[SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"] 
 	]
 

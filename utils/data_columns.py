@@ -6,6 +6,7 @@ Created on 13/06/2022
 
 import csv
 from datetime import date
+from constants.software_names import SoftwareNames
 from utils.collect_extra_data import CollectExtraData
 from constants.constants import Constants
 from django.conf import settings
@@ -38,12 +39,15 @@ NEXTSTRAIN_virus = "virus"      ## ncov
 NEXTSTRAIN_region = "region"    ##   Africa, Asia, Europe, North America, Oceania or South America
 NEXTSTRAIN_gisaid_epi_isl = "gisaid_epi_isl" #    GISAID ID; if not available needs to be “?” 
 NEXTSTRAIN_genbank_accession = "genbank_accession"  #  Genbank accession #; if not available needs to be “?” 
+NEXTSTRAIN_accession = "accession"  #  Genbank accession #; if not available needs to be “?” 
 NEXTSTRAIN_length = "length"    ##   Genome length; can be filled with “?” 
 NEXTSTRAIN_segment = "segment"  ##   Filled with “genome”
 NEXTSTRAIN_sex = "sex"          ## host sex; if not available needs to be “?” 
 NEXTSTRAIN_age = "age"          ## host age; if not available needs to be “?” 
 NEXTSTRAIN_host = "host"        ## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
-VECT_NEXTSTRAIN_manatory = [
+NEXTSTRAIN_clade = "clade"        ## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
+
+VECT_NEXTSTRAIN_mandatory_ncov = [
         NEXTSTRAIN_strain,
         NEXTSTRAIN_date,
         NEXTSTRAIN_virus,
@@ -56,8 +60,37 @@ VECT_NEXTSTRAIN_manatory = [
         NEXTSTRAIN_age, 
         NEXTSTRAIN_host, 
     ]
-     
-DICT_NEXTSTRAIN_default = {
+
+VECT_NEXTSTRAIN_mandatory_mpx = [
+        NEXTSTRAIN_accession,
+        NEXTSTRAIN_genbank_accession,
+        NEXTSTRAIN_strain,
+        NEXTSTRAIN_date,
+        NEXTSTRAIN_region,
+        NEXTSTRAIN_host, 
+        NEXTSTRAIN_clade, 
+    ]    
+
+VECT_NEXTSTRAIN_mandatory_generic = [
+        NEXTSTRAIN_strain,
+        NEXTSTRAIN_date,
+        NEXTSTRAIN_genbank_accession,         
+        NEXTSTRAIN_region,
+        NEXTSTRAIN_host
+    ]
+
+DICT_MANDATORY_FIELDS = {
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : VECT_NEXTSTRAIN_mandatory_ncov,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : VECT_NEXTSTRAIN_mandatory_mpx,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : VECT_NEXTSTRAIN_mandatory_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : VECT_NEXTSTRAIN_mandatory_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : VECT_NEXTSTRAIN_mandatory_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : VECT_NEXTSTRAIN_mandatory_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : VECT_NEXTSTRAIN_mandatory_generic
+}
+
+
+DICT_NEXTSTRAIN_default_ncov = {
         NEXTSTRAIN_virus : "ncov",
         NEXTSTRAIN_region : "Europe",
         NEXTSTRAIN_gisaid_epi_isl : "?",
@@ -67,6 +100,29 @@ DICT_NEXTSTRAIN_default = {
         NEXTSTRAIN_age : "?",
         NEXTSTRAIN_host : "?",
     }
+
+DICT_NEXTSTRAIN_default_mpx = {
+        NEXTSTRAIN_region : "Europe",
+        NEXTSTRAIN_genbank_accession : "?",
+        NEXTSTRAIN_host : "Homo sapiens",
+        NEXTSTRAIN_clade : "hMPXV-1",        
+    }
+
+DICT_NEXTSTRAIN_default_generic = {
+        NEXTSTRAIN_genbank_accession : "?",         
+        NEXTSTRAIN_region : "Europe",
+        NEXTSTRAIN_host : "?",
+    }
+
+DICT_MANDATORY_FIELDS_DEFAULTS = {
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov : DICT_NEXTSTRAIN_default_ncov,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx : DICT_NEXTSTRAIN_default_mpx,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : DICT_NEXTSTRAIN_default_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : DICT_NEXTSTRAIN_default_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : DICT_NEXTSTRAIN_default_generic,
+    SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : DICT_NEXTSTRAIN_default_generic,    
+}
 
 ### if None pass
 DICT_INSAFLU_to_NEXTSTRAIN = {
@@ -82,6 +138,7 @@ DICT_INSAFLU_to_NEXTSTRAIN = {
 
 DICT_NEXTSTRAIN_to_INSAFLU = {
         NEXTSTRAIN_strain : ['id'],
+        NEXTSTRAIN_accession : ['id'],
         NEXTSTRAIN_date : ['collection date', 'onset date', 'lab reception date'],
 }
 
@@ -125,7 +182,7 @@ class Metadata(object):
             csv_writer.writerow(vect_out)
         return count
     
-    def get_vect_out_nextstrain(self, vect_header_out, dt_header_normal_out, csv_writer):
+    def get_vect_out_nextstrain(self, vect_header_out, dt_header_normal_out, csv_writer, build):
         """
         :param vect_header_out all headers out
         :param dt_header_normal_out keys that are present only in INSAFLu list files
@@ -135,16 +192,28 @@ class Metadata(object):
         dt_out_id_project_sample = {}
         count = 0
         for project_sample_pk in self.dt_rows_id:
+
+            print("Handling sample id {}".format(project_sample_pk))
+
+            # Avoid repeating samples?      
             if project_sample_pk in dt_out_id_project_sample: continue
+
             dt_out_id_project_sample[project_sample_pk] = 1
+
             ## NEXTSTRAIN_strain
             vect_out = [self.dt_rows_id[project_sample_pk].seq_name_consensus]
+            print("Handling sample id {}: ".format(vect_out))
 
             dt_out_header = {}
             for column in vect_header_out:
+
+                print("Processing column {}: ".format(column))
+
                 if column == NEXTSTRAIN_strain: continue    ## already out
                 if column in dt_out_header: continue        ## already out, can be synonymous
                 
+                print("Processing column 2 {}: ".format(column))
+
                 ## exception
                 if column == NEXTSTRAIN_length:
                     if self.dt_header.get(column, -1) > 0 and \
@@ -155,12 +224,15 @@ class Metadata(object):
                     else: vect_out.append('?')
                     continue
                 
+                print("Processing column 3 {}: ".format(column))
+
                 ### date column, has data
                 if (column == NEXTSTRAIN_date and self.dt_header.get(column, -1) > 0 and \
                         len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]]) > 0):
                     vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
                     continue
                 
+                print("Processing column 4 {}: ".format(column))
                 ### test synonymous, And try date synonymous
                 b_found = False
                 for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU.get(column, []):     
@@ -171,19 +243,24 @@ class Metadata(object):
                         b_found = True
                         break
                 
+                print("Processing column 5 {}: ".format(column))
+
                 ## found synonymous before
                 if b_found: continue
                 if (column == NEXTSTRAIN_date):     ## need to add default date
                     vect_out.append(date.today().strftime(settings.DATE_FORMAT_FOR_SHOW))
                     continue
                 
+                print("Processing column 6 {}: ".format(column))
+
                 ## test default NEXTstrain columns names
-                if column in DICT_NEXTSTRAIN_default:
+                if column in DICT_MANDATORY_FIELDS[build]:
+                    print("Processing mandatory field {}: ".format(column))
                     if self.dt_header.get(column, -1) > 0 and \
                         len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]]) > 0:
                         vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
                     else:
-                        vect_out.append(DICT_NEXTSTRAIN_default[column])
+                        vect_out.append(DICT_MANDATORY_FIELDS_DEFAULTS[build][column])
                     dt_out_header[column] = 1
                     continue
                 
@@ -191,7 +268,9 @@ class Metadata(object):
                 if column in self.dt_header: vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
                 else: vect_out.append("?")
             count += 1
+            
             csv_writer.writerow(['?' if len(_) == 0 else _ for _ in vect_out])
+
         return count
     
     
@@ -212,15 +291,15 @@ class Reference(object):
                 else: self.dt_out_rows[row[0]] = row
         ## done
                
-    def save_out_nextstrain(self, csv_writer, vect_header_out):
+    def save_out_nextstrain(self, csv_writer, vect_header_out, build):
         """
         """
         
         count = 0
         for ref_id in self.dt_out_rows:
             vect_out = []
-            for index, column in enumerate(VECT_NEXTSTRAIN_manatory):
-                if (self.dt_header.get(column, -1) < 0): vect_out.append(DICT_NEXTSTRAIN_default.get(column, '?'))
+            for index, column in enumerate(DICT_MANDATORY_FIELDS[build]):
+                if (self.dt_header.get(column, -1) < 0): vect_out.append(DICT_MANDATORY_FIELDS_DEFAULTS[build].get(column, '?'))
                 else: vect_out.append(self.dt_out_rows[ref_id][self.dt_header[column]])
             vect_out += ['?'] * (len(vect_header_out) - index - 1)   
             count += 1
@@ -229,13 +308,15 @@ class Reference(object):
     
 class DataColumns(object):
     '''
-    classdocs
+    Create table for nextstrain metadata. 
+    Depends on the nextstrain build
     '''
 
-    def __init__(self):
+    def __init__(self, build):
         '''
         Constructor
         '''
+        self.build = build
         self.dt_project = {}
     
     def add_header(self, project_pk, header):
@@ -287,13 +368,14 @@ class DataColumns(object):
         return header
         ## CollectExtraData.HEADER_SAMPLE_OUT_CSV_simple
         """
+
         regular_header = self._get_header()
         self.vect_header_out = []
         self.dt_header_normal_out = {}
-        
+
         ## mandatory fields
-        self.vect_header_out = VECT_NEXTSTRAIN_manatory.copy()
-        
+        self.vect_header_out = DICT_MANDATORY_FIELDS[self.build].copy()
+
         ## try to find others in the other file
         for regular_name in regular_header:
             if regular_name in DICT_INSAFLU_to_NEXTSTRAIN: continue
@@ -319,26 +401,40 @@ class DataColumns(object):
         return count
 
 
-    #def save_rows_nextstrain(self, csv_writer, reference_tsv):
-    def save_rows_nextstrain(self, csv_writer):
+    def save_rows_nextstrain(self, csv_writer, reference_tsv=None):
         """
         create file for nextstrain
         """
         count = 0 ## number of rows saved
         
+        print("Going to write header")
         ## save header
         csv_writer.writerow(self._get_header_nextstrain())
         
-        ## read NextStrain reference 
-        #reference = Reference(reference_tsv)
+        print("Wrote header")
+
+        print("Going to write Reference {}".format(count))
+        # read NextStrain reference 
+        if(reference_tsv != None):
+            reference = Reference(reference_tsv)
+            ### save reference
+            count += reference.save_out_nextstrain(csv_writer, self.vect_header_out, self.build)
         
-        ### save reference
-        #count += reference.save_out_nextstrain(csv_writer, self.vect_header_out)
-        
+        print("Wrote Reference {}".format(count))
+
+        print("Going to write Consensus Metadata")
+
         ## save data
         for key_metadata in self.dt_project:
+            print("Going to write {}".format(key_metadata))
+            
             count += self.dt_project[key_metadata].get_vect_out_nextstrain(
-                self.vect_header_out, self.dt_header_normal_out, csv_writer) 
+                    self.vect_header_out, self.dt_header_normal_out, csv_writer, self.build)            
+
+            print("Wrote {} : {}".format(key_metadata, count))
+        
+        print("Wrote Consensus Metadata {}".format(count))
+
         return count
         
             

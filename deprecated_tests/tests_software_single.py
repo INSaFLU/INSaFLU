@@ -48,7 +48,7 @@ from utils.collect_extra_data import CollectExtraData
 class Test(TestCase):
 
 	### static
-	#software = Software()
+	software = Software()
 	software_minion = SoftwareMinion()
 	software_names = SoftwareNames()
 	software_pangolin = SoftwarePangolin()
@@ -64,50 +64,26 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 	
-	def test_run_pangolin(self):
+	def test_get_first_sequence_fasta(self):
 		"""
-		test run_pangolin method
+		Test samtools fai index
 		"""
-		## covid
+		## create an index file from 
 		
-		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
-		consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
-		out_file_consensus = self.utils.get_temp_file("all_file_name", ".fasta")
-		cmd = "cat {} {} > {}".format(consensus_file_1, consensus_file_2, out_file_consensus)
-		os.system(cmd)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_demo_lower_case.fasta")
+		fasta_file_temp = self.utils.get_temp_file("fasta_single_read", FileExtensions.FILE_FASTA)
+		self.utils.copy_file(fasta_file, fasta_file_temp)
 		
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			self.fail("Must not exist software name")
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			pass
+		## first
+		self.software.get_sequence_fasta(fasta_file_temp, 1)
+		fasta_file_upper = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_only_first_sequence.fasta")
+		self.assertTrue(filecmp.cmp(fasta_file_temp, fasta_file_upper))
+		
+		## second
+		self.utils.copy_file(fasta_file, fasta_file_temp)
+		self.software.get_sequence_fasta(fasta_file_temp, 2)
+		fasta_file_upper = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_only_first_sequence.fasta")
+		self.assertTrue(filecmp.cmp(fasta_file_temp, fasta_file_upper))
+		self.utils.remove_file(fasta_file_temp)
 
-		self.software_pangolin.run_pangolin_update()
-		  
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			software.is_updated_today()
-			dt_softwares = software.get_versions()
-			self.assertEqual(len(self.software_names.VECT_PANGOLIN_TO_TEST), len(dt_softwares))
-			for names in self.software_names.VECT_PANGOLIN_TO_TEST:
-				self.assertTrue(len(dt_softwares[names].strip()) > 0)
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must not exist software name")
-		
-		out_file = self.utils.get_temp_file("file_name", ".txt")
-		self.software_pangolin.run_pangolin(out_file_consensus, out_file)
-		
-		vect_data = self.utils.read_text_file(out_file)
-		self.assertEqual(3, len(vect_data))
-
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			dt_versions = software.get_versions()
-			for name in SoftwareNames.VECT_PANGOLIN_TO_TEST:
-				self.assertTrue(len(dt_versions.get(name)) > 5)
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must exist software name")
-		
-		os.unlink(out_file)
-		os.unlink(out_file_consensus)
 

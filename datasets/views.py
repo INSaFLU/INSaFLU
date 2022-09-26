@@ -149,7 +149,7 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
         context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
         context['query_set_count'] = len(query_set_result)
         context['dataset_name'] = dataset.name
-        context['add_all_references_message'] = "Add {} reference{}".format(len(query_set_result), pluralize(len(query_set_result), ',s'))
+        context['add_all_references_message'] = "Add {} reference{}".format(len(query_set_result), pluralize(len(query_set_result), 's'))
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         
         ## Add references to DataSet
@@ -311,7 +311,7 @@ class AddDatasetsConsensusView(LoginRequiredMixin, FormValidMessageMixin, generi
         context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
         context['query_set_count'] = len(query_set_result)
         context['dataset_name'] = dataset.name
-        context['add_all_references_message'] = "Add {} consensus{}".format(len(query_set_result), pluralize(len(query_set_result), ',s'))
+        context['add_all_references_message'] = "Add {} consensus to data set".format(len(query_set_result))
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         
         ## Add references to DataSet
@@ -476,7 +476,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
         context['show_paginatior'] = len(query_set_result) > Constants.PAGINATE_NUMBER
         context['query_set_count'] = len(query_set_result)
         context['dataset_name'] = dataset.name
-        context['add_all_references_message'] = "Add {} project{}".format(len(query_set_result), pluralize(len(query_set_result), ',s'))
+        context['add_all_references_message'] = "Add {} project{}".format(len(query_set_result), pluralize(len(query_set_result), 'es'))
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         
         ## Add references to DataSet
@@ -638,7 +638,8 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
     def get_context_data(self, **kwargs):
         context = super(UploadNewConsensusView, self).get_context_data(**kwargs)
         context['nav_dataset'] = True
-        context['nav_modal'] = True    ## short the size of modal window
+        context['nav_modal'] = True         ## short the size of modal window
+        context['pk'] = self.kwargs['pk']   ## pk of dataset, need to return
         context['show_info_main_page'] = ShowInfoMainPage()        ## show main information about the institute
         return context
     

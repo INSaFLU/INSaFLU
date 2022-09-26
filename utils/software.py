@@ -2028,7 +2028,20 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index")
-	
+
+	def set_first_sequence_fasta(self, file_name):
+		"""
+		covert fasta 2 upper
+		"""
+		vect_record = []
+		with open(file_name) as handle_in:
+			for record in SeqIO.parse(handle_in, "fasta"):
+				vect_record.append(record)
+				break
+			
+			if len(vect_record) > 0:
+				with open(file_name, "w") as handle_fasta_out_align:
+					SeqIO.write(vect_record, handle_fasta_out_align, "fasta")
 
 	def make_downsize(self, path_1, path_2, max_fastq_file):
 		"""

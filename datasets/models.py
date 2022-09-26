@@ -68,7 +68,7 @@ class Consensus(models.Model):
             return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_consensus_fasta(\
                         TypePath.MEDIA_URL), os.path.basename(self.get_consensus_fasta(TypePath.MEDIA_ROOT)),
                         self.constants.short_name(self.name, Constants.SHORT_NAME_LENGTH)))
-        return _('File not available.')
+        return 'File not available.'
 
  
     class Meta:

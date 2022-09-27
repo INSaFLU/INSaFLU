@@ -32,4 +32,14 @@ def deploy_ProjectPI(request):
         project_id = int(request.POST["project_id"])
         parameters_table = utils.get_parameters_available(project_id)
 
-        print("parameters_table", parameters_table.columns)
+        utils.generate_software_parameter_dict(parameters_table)
+
+        utils.create_pipe_tree()
+        utils.generate_graph()
+        all_paths = utils.get_all_graph_paths()  #
+
+        for path in all_paths:
+            print([utils.node_index[x][1] for x in path])
+
+        # print(parameters_table.software_id)
+        # print("parameters_table", parameters_table.pipeline_step_id)

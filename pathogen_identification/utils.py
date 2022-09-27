@@ -8,7 +8,8 @@ from collections import defaultdict
 import networkx as nx
 import numpy as np
 import pandas as pd
-from settings.models import Parameter, Software
+from settings.constants_settings import ConstantsSettings as CS
+from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d
 
 from pathogen_identification.constants_settings import ConstantsSettings
@@ -25,19 +26,38 @@ from pathogen_identification.update_DBs import (
     Update_Sample,
     Update_Sample_Runs,
 )
+from pathogen_identification.utility_manager import Utility_Repository
 
 tree = lambda: defaultdict(tree)
 
 
+def make_tree(lst):
+    d = tree()
+    for x in lst:
+        curr = d
+        for item in x:
+            curr = curr[item]
+    return d
+
+
 class Utils:
     def __init__(self):
-        pass
+        # self.utility_repository = Utility_Repository()
+        self.pipeline_order = [
+            CS.PIPELINE_NAME_assembly,
+            CS.PIPELINE_NAME_viral_enrichment,
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+            CS.PIPELINE_NAME_remapping,
+        ]
 
     def get_parameters_available(self, project_id: int) -> pd.DataFrame:
         """
         Get the parameters available for a project
         """
         project = Projects.objects.get(id=int(project_id))
+        technology = project.technology
+        print(technology)
 
         owner = project.owner
 
@@ -46,7 +66,6 @@ class Utils:
 
         software_table = pd.DataFrame(software_available.values())
         parameters_table = pd.DataFrame(parameters_available.values())
-
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
         ).rename(
@@ -59,9 +78,23 @@ class Utils:
                 "is_to_run_y": "parameter_is_to_run",
             }
         )
+        print(combined_table.software_id.shape)
 
         combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
+        combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
+            lambda x: PipelineStep.objects.get(id=int(x)).name
+        )
+        combined_table["technology"] = combined_table["technology_id"].apply(
+            lambda x: Technology.objects.get(id=int(x)).name
+        )
+        combined_table = combined_table[combined_table.technology == technology]
 
+        combined_table = combined_table.T.drop_duplicates().T
+        pipelines_available = combined_table.pipeline_step.unique().tolist()
+
+        self.existing_pipeline_order = [
+            x for x in self.pipeline_order if x in pipelines_available
+        ]
         return combined_table
 
     def check_software_is_installed(self, software_name: str) -> bool:
@@ -70,11 +103,133 @@ class Utils:
         """
         pass
 
-    def generate_software_parameter_dict(self):
+    def generate_argument_combinations(
+        self, pipeline_software_dt: pd.DataFrame
+    ) -> list:
         """
-        Get the parameters tree
+        Generate a list of argument combinations
         """
-        pass
+        pipeline_software_dict = {
+            parameter_name: g.parameter.to_list()
+            for parameter_name, g in pipeline_software_dt.groupby("parameter_name")
+        }
+        print(pipeline_software_dict)
+
+        argument_combinations = []
+        for flag, arg in pipeline_software_dict.items():
+            flag_list = [" ".join([flag, x]) for x in arg]
+            argument_combinations.append(flag_list)
+        argument_combinations = list(it.product(*argument_combinations))
+        argument_combinations = [" ".join(x) for x in argument_combinations]
+        argument_combinations = list(set(argument_combinations))
+        return argument_combinations
+
+    def generate_software_parameter_dict(self, parameters_table: pd.DataFrame) -> dict:
+        """
+        Generate a dictionary of software and parameters
+        """
+        step_dict = {c: g for c, g in parameters_table.groupby("pipeline_step")}
+        step_software_dict = {
+            step: g.software_name.unique().tolist() for step, g in step_dict.items()
+        }
+        step_software_parameter_dict = {
+            step: {
+                software.lower(): {
+                    f"{software.upper()}_ARGS": self.generate_argument_combinations(g)
+                }
+                for software, g in g.groupby("software_name")
+            }
+            for step, g in step_dict.items()
+        }
+        self.params_lookup = step_software_parameter_dict
+        self.pipeline_software = {
+            x: [f.lower() for f in y] for x, y in step_software_dict.items()
+        }
+        # return software_parameter_dict
+
+    def create_pipe_tree(self):
+        """ """
+        self.pipeline_tree = self.fill_dict(0, {})
+        node_index, edge_dict, leaves = self.tree_index(self.pipeline_tree, "root")
+        self.node_index = node_index
+        self.edge_dict = edge_dict
+        self.leaves = leaves
+        self.nodes = [x[0] for x in node_index]
+
+    def tree_index(self, tree, root, node_index=[], edge_dict=[], leaves=[]):
+        """ """
+        if len(tree) == 0:
+            leaves.append(root)
+            return
+
+        subix = {}
+        for i, g in tree.items():
+
+            ix = len(node_index)
+            node_index.append([ix, i])
+            edge_dict.append([root, ix])
+            subix[i] = ix
+
+        #
+        td = [self.tree_index(g, subix[i]) for i, g in tree.items()]
+
+        return node_index, edge_dict, leaves
+
+    def fill_dict(self, ix, branch_left) -> nx.DiGraph:
+        """
+        Generate a tree of pipeline
+        """
+        if ix == (len(self.existing_pipeline_order)):
+            return branch_left
+
+        if branch_left:
+            return {
+                node: self.fill_dict(ix, branch) for node, branch in branch_left.items()
+            }
+
+        else:
+            current = self.existing_pipeline_order[ix]
+
+        soft_dict = {}
+        suffix = ""
+
+        for soft in self.pipeline_software[current]:
+            param_names = []
+            param_combs = []
+            if soft in self.params_lookup[current].keys():
+                params_dict = self.params_lookup[current][soft]
+
+                for i, g in params_dict.items():
+                    param_names.append(i + suffix)
+                    param_combs.append([(i + suffix, x, "param") for x in g])
+                param_combs = list(it.product(*param_combs))
+
+                param_tree = make_tree(param_combs)
+                soft_dict[soft] = param_tree
+            else:
+                soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
+
+        return {
+            (current, soft, "module"): self.fill_dict(ix + 1, g)
+            for soft, g in soft_dict.items()
+        }
+
+    def generate_graph(self):
+        """
+        Generate a graph of pipeline
+        """
+        self.create_pipe_tree()
+        self.graph = nx.DiGraph()
+        self.graph.add_edges_from(self.edge_dict)
+        self.graph.add_nodes_from(self.nodes)
+
+    def get_all_graph_paths(self):
+        """
+        Get all possible paths in the pipeline
+        """
+        self.generate_graph()
+        all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
+        return all_paths
 
 
 def simplify_name(name):

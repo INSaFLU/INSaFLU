@@ -1,3 +1,5 @@
+from settings.models import Technology
+
 from pathogen_identification.models import Projects
 
 
@@ -28,4 +30,5 @@ class ReferenceProjectForm(forms.ModelForm):
         Clean all together because it's necessary to compare the genbank and fasta files
         """
         cleaned_data = super(ReferenceProjectForm, self).clean()
+
         return cleaned_data

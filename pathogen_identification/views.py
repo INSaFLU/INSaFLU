@@ -203,7 +203,7 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
 
     # utils = Utils()
     model = Projects
-    fields = ["name", "description"]
+    fields = ["name", "description", "technology"]
     success_url = reverse_lazy("PIprojects_main")
     template_name = "pathogen_identification/project_add.html"
 
@@ -294,6 +294,7 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             project = form.save()
             project.owner = self.request.user
             project.owner_id = self.request.user.id
+            project.technology = form.cleaned_data["technology"]
             project.save()
 
         return super(PathID_ProjectCreateView, self).form_valid(form)

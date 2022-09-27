@@ -28,3 +28,6 @@ nanostat==1.4.0
 nanofilt==2.6.0
 chardet==3.0.4
 ete3==3.1.2
+beautifulsoup4==4.11.1
+dataclasses==0.8
+networkx==2.4

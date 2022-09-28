@@ -55,11 +55,53 @@ class Projects(models.Model):
         return self.name + " " + self.name + " " + self.description
 
 
+class Software_tree(models.Model):
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=True,
+        null=True,
+        verbose_name="Software name",
+    )
+
+    class Meta:
+        ordering = ["name"]
+
+
+class Software_tree_nodes(models.Model):
+
+    NODE_TYPE_software = 0
+    NODE_TYPE_parameter = 1
+    NODE_TYPE_parameter_value = 2
+
+    INTERNAL_node = 0
+    LEAF_node = 1
+
+    software_tree = models.ForeignKey(Software_tree, on_delete=models.CASCADE)
+    name = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=True,
+        null=True,
+        verbose_name="Software name",
+    )
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, blank=True, null=True, related_name="children"
+    )
+    node_type = models.SmallIntegerField(
+        default=NODE_TYPE_software
+    )  ### if it is a software, a parameter or a parameter value
+
+    node_place = models.SmallIntegerField(
+        default=INTERNAL_node
+    )  ### if it is a software, a parameter or a parameter value
+
+    class Meta:
+        ordering = ["name"]
+
+
 class ParameterSet(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
-    parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE)
-    set_index = models.SmallIntegerField(default=-1)
 
     def __str__(self):
         return self.name + " " + self.name + " " + self.description

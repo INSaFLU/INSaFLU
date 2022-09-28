@@ -49,11 +49,9 @@ class Utility_Repository:
     dbtype_local: str = "sqlite"
 
     def __init__(self, db_path="", install_type="local") -> None:
-        self.db_path = ""
+        self.db_path = db_path
 
         self.setup_engine(install_type)
-
-        print(self.engine)
 
         self.metadata = MetaData()
         self.create_tables()
@@ -65,22 +63,29 @@ class Utility_Repository:
             self.setup_engine_docker()
 
     def setup_engine_local(self):
+
         self.engine = create_engine(
             f"{self.dbtype_local}:///"
             + os.path.join(*self.db_path.split("/"), "utility.db")
         )
 
     def setup_engine_docker(self):
-
-        # from decouple import config
-        #
-        # self.engine = create_engine(
-        #    f"postgresql+psycopg2://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}"
-        # )
+        print(
+            f"{self.dbtype_local}:////"
+            + os.path.join(*self.db_path.split("/"), "utility.db")
+        )
 
         self.engine = create_engine(
             f"{self.dbtype_local}:////"
             + os.path.join(*self.db_path.split("/"), "utility.db")
+        )
+
+    def setup_engine_postgres(self):
+
+        from decouple import config
+
+        self.engine = create_engine(
+            f"postgresql+psycopg2://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}"
         )
 
     def create_software_table(self):

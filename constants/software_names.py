@@ -495,8 +495,8 @@ class SoftwareNames(object):
         "-p 5 --top 5 -e 0.01 --id 65 --query-cover 50 --sensitive"
     )
 
-    ### BLAST
-    SOFTWARE_BLAST_name = "Blast"
+    ### BLASTN
+    SOFTWARE_BLAST_name = "Blastn"
     SOFTWARE_BLAST = os.path.join(
         settings.DIR_SOFTWARE, "hostDepletion/hostdep_env/bin/blast"
     )

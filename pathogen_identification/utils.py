@@ -13,6 +13,7 @@ from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d
 
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import ParameterSet, PIProject_Sample, Projects
 from pathogen_identification.run_main import RunMain_class
 
@@ -42,7 +43,9 @@ def make_tree(lst):
 
 class Utils:
     def __init__(self):
-        # self.utility_repository = Utility_Repository()
+        self.utility_repository = Utility_Repository(
+            db_path=ConstantsSettings.docker_install_directory, install_type="docker"
+        )
         self.pipeline_order = [
             CS.PIPELINE_NAME_assembly,
             CS.PIPELINE_NAME_viral_enrichment,
@@ -51,13 +54,14 @@ class Utils:
             CS.PIPELINE_NAME_remapping,
         ]
 
+        self.binaries = Deployment_Params.BINARIES
+
     def get_parameters_available(self, project_id: int) -> pd.DataFrame:
         """
         Get the parameters available for a project
         """
         project = Projects.objects.get(id=int(project_id))
         technology = project.technology
-        print(technology)
 
         owner = project.owner
 
@@ -78,7 +82,6 @@ class Utils:
                 "is_to_run_y": "parameter_is_to_run",
             }
         )
-        print(combined_table.software_id.shape)
 
         combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
@@ -98,10 +101,35 @@ class Utils:
         return combined_table
 
     def check_software_is_installed(self, software_name: str) -> bool:
+        software_lower = software_name.lower()
+        if software_lower in self.binaries["software"].keys():
+            bin_path = os.path.join(
+                ConstantsSettings.docker_install_directory,
+                self.binaries["software"][software_lower],
+                "bin",
+                software_lower,
+            )
+            print(bin_path)
+            return os.path.isfile(bin_path)
+        else:
+            for pipeline in ["REMAPPING", "PREPROCESS", "ASSEMBLY"]:
+                if os.path.exists(
+                    os.path.join(
+                        ConstantsSettings.docker_install_directory,
+                        self.binaries[pipeline]["default"],
+                        "bin",
+                        software_lower,
+                    )
+                ):
+                    return True
+
+        return False
+
+    def check_software_DB_available(self, software_name: str) -> bool:
         """
         Check if a software is installed
         """
-        pass
+        return self.utility_repository.check_exists(software_name, "software")
 
     def generate_argument_combinations(
         self, pipeline_software_dt: pd.DataFrame
@@ -230,6 +258,21 @@ class Utils:
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         return all_paths
+
+    def df_from_path(self, path: list) -> pd.DataFrame:
+        """
+        Generate a dataframe from a path
+        """
+        df = []
+        for i in range(1, len(path), 2):
+            soft_param = path[i]
+            module_soft = path[i - 1]
+            new_row = [module_soft[0], module_soft[1], soft_param[0], soft_param[1]]
+            df.append(new_row)
+
+        df = pd.DataFrame(df, columns=["module", "software", "parameter", "value"])
+
+        return df
 
 
 def simplify_name(name):

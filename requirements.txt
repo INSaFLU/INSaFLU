@@ -32,3 +32,4 @@ beautifulsoup4==4.11.1
 dataclasses==0.8
 networkx==2.4
 matplotlib==3.3.2
+sqlalchemy==1.3.23

@@ -252,8 +252,11 @@ class CollectExtraDatasetData(object):
                 #    elif (not out_file_file_system is None and os.path.exists(out_file_file_system)):
                 #        self.utils.remove_file(out_file_file_system)
 
-                out_file_file_system_tree = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
-                if os.path.exists(tree_file): self.utils.move_file(tree_file, out_file_file_system_tree)
+                out_file_file_system_tree1 = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE)
+                if os.path.exists(tree_file): self.utils.move_file(tree_file, out_file_file_system_tree1)
+
+                out_file_file_system_tree2 = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
+                if os.path.exists(out_file_file_system_tree1): self.utils.copy_file(out_file_file_system_tree1, out_file_file_system_tree2)
 
                 out_file_file_system_alignment = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT)
                 if os.path.exists(alignment_file): self.utils.move_file(alignment_file, out_file_file_system_alignment)
@@ -264,6 +267,7 @@ class CollectExtraDatasetData(object):
                 ### remove possible error of previous run
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 self.utils.remove_file(out_file_file_system)
+                
             except CmdException as e:       ## copy the snakeMake file
                 # this means there is potentially a lot of stuff left in the tmp directory that needs to be manually removed
                 files = []
@@ -385,6 +389,7 @@ class CollectExtraDatasetData(object):
         tree_file = None
         alignment_file = None
         auspice_zip = None
+        # TODO Make this more generic...
         if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_ncov(alignments=sequences_file, metadata=metadata_file)
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx):
@@ -511,8 +516,6 @@ class CollectExtraDatasetData(object):
 
         # May change depending on the build
 
-        print("Starting Nextstrain table")
-
         data_columns = DataColumns(build)
         ### join all
         dt_out_id_project = {} 
@@ -522,16 +525,16 @@ class CollectExtraDatasetData(object):
             
             ## add metadata to reference
             if not dataset_consensus.reference is None: 
-                print("Need to do metadata for reference: {}".format(dataset_consensus.reference))
+                #print("Need to do metadata for reference: {}".format(dataset_consensus.reference))
                 continue
             ## add metadata to consensus
             if not dataset_consensus.consensus is None: 
-                print("Need to do metadata for user-provided consensus: {}".format(dataset_consensus.consensus))
+                #print("Need to do metadata for user-provided consensus: {}".format(dataset_consensus.consensus))
                 continue
             
             ## read metadata from file
             if not dataset_consensus.project_sample is None:
-                
+
                 ## test if already processed
                 if dataset_consensus.project_sample.project.pk in dt_out_id_project:
 
@@ -574,12 +577,8 @@ class CollectExtraDatasetData(object):
         ## get reference file (if it exists)                
         reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE, build, "data", "references_metadata.tsv")
 
-        print(reference_tsv)
-
         if not os.path.exists(reference_tsv):
             reference_tsv = None
-
-        print(reference_tsv)
     
         ## save file
         out_file = self.utils.get_temp_file('dataset_out', FileExtensions.FILE_CSV if\
@@ -589,11 +588,8 @@ class CollectExtraDatasetData(object):
             csv_writer = csv.writer(handle_out, delimiter=column_separator, quotechar='"',
                         quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
             
-            print("Nextstrain table: going to write rows")
             ### save metadata
             n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv)
-
-            print("Nextstrain table: wrote rows")
                        
         if (n_count == 0):
             os.unlink(out_file)

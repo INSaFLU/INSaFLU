@@ -3565,7 +3565,7 @@ class Test(TestCase):
 		self.utils.remove_file(alignments_file)
 		self.utils.remove_file(tree_file)
 
-		# TODO look inside the results to see if we get what we expect to get
+		# TODO look inside the results to see if we get what we expect to get, eg. test if they are empty!!
 		#self.assertEqual(os.path.exists(temp_dir + "/auspice"),True)
 		#self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox.json"),True)
 		#self.assertEqual(os.path.exists(temp_dir + "/auspice/monkeypox_root-sequence.json"),True)

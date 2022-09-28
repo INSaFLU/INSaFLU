@@ -42,7 +42,7 @@
                     		<form method="get" class="form-inline form-search pull-right">
 	                          {% csrf_token %}
 	                            <div>
-	                              <input id="search_form_id" name="search_datasets" type="text" class="form-control col-md-8" placeholder="Name"{% if search_samples %} value="{{ search_samples }}"{% endif %}>
+	                              <input id="search_form_id" name="search_datasets" type="text" class="form-control col-md-8" placeholder="Name"{% if search_datasets %} value="{{ search_datasets }}"{% endif %}>
 	                              <button type="submit" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button>
 	                            </div>              
 	                        </form>
@@ -185,12 +185,20 @@
        						</div>
   						</div>
   					</div>
-  					<!-- Modal footer -->
+  					
+					<!-- Modal footer -->
   					<div class="modal-footer">
     					<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
     					<button id="id-save-button" type="button" class="btn btn-primary" data-dismiss="modal"
     						add-dataset-name-url="{% url 'add_dataset_name' %}">Add</button>
   					</div>
+
+					  <div class="modal-body alert alert-warning" >
+						Note that by default a dataset uses a generic Nextstrain build. 
+						The generic build does not work with multisegment references (eg. Influenza).
+						To change the build please use the <i class="fa fa-magic padding-button-table"></i> button.
+					 </div>
+
 			</div>
  		</div>
 	</div>

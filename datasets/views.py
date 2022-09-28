@@ -47,12 +47,14 @@ class DatasetsView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super(DatasetsView, self).get_context_data(**kwargs)
-        tag_search = 'search_projects'
+        tag_search = 'search_datasets'
         query_set = Dataset.objects.filter(owner__id=self.request.user.id, is_deleted=False).order_by('-creation_date')
         if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)):
             query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search))).\
                             distinct()
-                            
+        
+        # TODO Enable search by build (maybe make build an explicit field of Dataset...)
+
         table = DatasetTable(query_set)
         RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
         if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
@@ -742,16 +744,6 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip)):
            context['nextstrain_auspice_zip'] = get_link_for_dropdown_item(
                dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip))                
-        ### nextStrain  
-        # if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_default_build)):
-        #    context['nextstrain_default_build'] = get_link_for_dropdown_item(
-        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_default_build))
-        #if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_root)):
-        #    context['nextstrain_build_root'] = get_link_for_dropdown_item(
-        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_root))
-        #if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_build_tip)):
-        #    context['nextstrain_build_tip'] = get_link_for_dropdown_item(
-        #        dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_build_tip))
         if os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)):
             context['nextstrain_error'] = get_link_for_dropdown_item(
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_nextstrain_error))

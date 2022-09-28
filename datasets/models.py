@@ -86,10 +86,10 @@ class Dataset(models.Model):
     ### has the path for main result
     PATH_MAIN_RESULT = 'main_result'
     
-    DATASET_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
-    DATASET_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
-    DATASET_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
-    DATASET_FILE_NAME_nex = "Alignment_nt_All.nex"
+    DATASET_FILE_NAME_MAFFT = "Nextstrain_Alignment_All.fasta"
+    DATASET_FILE_NAME_FASTTREE = "Nextstrain_Tree_All.nwk"
+    DATASET_FILE_NAME_FASTTREE_tree = "Nextstrain_Tree_All.tree"
+    DATASET_FILE_NAME_nex = "Nextstrain_Alignment_All.nex"
 
     DATASET_FILE_NAME_RESULT_TSV = "Dataset_list.tsv"     ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
     DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV = "Nextstrain_metadata.tsv"     ### nextstrain list, mandatory fields are in db/nextstrain/ncov/references_metadata.tsv
@@ -101,7 +101,7 @@ class Dataset(models.Model):
     ###NextStrain Expected, apear inside 'auspice' folder whenrun NextStrain
     REFERENCE_NAME = "Wuhan/Hu-1/2019"      ### need to change in the future
     RUN_out_path = 'auspice'
-    DATASET_FILE_NAME_nextstrain_auspice_zip = "auspice.zip"
+    DATASET_FILE_NAME_nextstrain_auspice_zip = "auspice_json.zip"
     #DATASET_FILE_NAME_nextstrain_default_build = "ncov_default-build.json"
     #DATASET_FILE_NAME_nextstrain_build_root = "ncov_default-build_root-sequence.json"
     #DATASET_FILE_NAME_nextstrain_build_tip = "ncov_default-build_tip-frequencies.json"

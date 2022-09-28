@@ -2048,7 +2048,7 @@ class Software(object):
 		os.chdir(path_name)		## change to path that will be compressed
 		
 		file_name_zip = "zip_file_out.zip"
-		cmd = "zip {} *".format(file_name_zip)
+		cmd = "zip -r {} *".format(file_name_zip)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			os.chdir(current_dir)
@@ -2345,6 +2345,7 @@ class Software(object):
 
 
 	# TODO remove after everything is settled with the specific builds...
+	# Actually make it a generic function that calls specific subsections related to builds
 	def run_nextstrain(self, alignments, metadata, build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter, cores=1):
 		"""
 		run nextstrain_ncov
@@ -2463,12 +2464,11 @@ class Software(object):
 
 		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
 		
-
 		exit_status = os.system(cmd)
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
 
 		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
 		# Convert json to tree
@@ -2480,8 +2480,15 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)
 
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
 
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
@@ -2494,7 +2501,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run unzip alignment file.", cmd, temp_dir)	
+			raise CmdException(message="Fail to run unzip alignment file.", cmd=cmd, output_path=temp_dir)	
 
 		alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
 		self.utils.move_file(os.path.join(temp_dir, 'results', 'aligned_current.fasta'),alignment_file)		
@@ -2556,7 +2563,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
 
 		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
 		# Convert json to tree
@@ -2568,7 +2575,17 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)			
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)			
+
+		
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
+
 
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
@@ -2620,7 +2637,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
 
 
 		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
@@ -2633,7 +2650,15 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)	
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)	
+
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
 
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
@@ -2680,7 +2705,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise Exception("Fail to concatenate references with consensus in temp folder " + temp_dir)
+			raise Exception("Fail to concatenate references with consensus in temp folder ")
 
 		# Now run Nextstrain
 		cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores))	
@@ -2688,7 +2713,7 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
 
 		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
 		# Convert json to tree
@@ -2700,16 +2725,24 @@ class Software(object):
 		if (exit_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
-			raise CmdException("Fail to run conversion of json to tree.", cmd, temp_dir)	
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)	
+
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
 
 		# Collect results
 		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
 		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
 		self.utils.move_file(zip_out,auspice_zip)
 
-		#results/cladeX/aligned.fasta
+		#results/hmpxv1_big/aligned.fasta
 		alignment_file = self.utils.get_temp_file('aligned.fasta', sz_type="fasta")
-		self.utils.move_file(os.path.join(temp_dir, 'results', 'cladeX', "aligned.fasta"),alignment_file)		
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'hmpxv1_big', "aligned.fasta"),alignment_file)		
 
 		self.utils.remove_dir(temp_dir)
 

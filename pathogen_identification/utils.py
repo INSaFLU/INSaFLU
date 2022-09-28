@@ -147,6 +147,7 @@ class Utils:
         for flag, arg in pipeline_software_dict.items():
             flag_list = [" ".join([flag, x]) for x in arg]
             argument_combinations.append(flag_list)
+
         argument_combinations = list(it.product(*argument_combinations))
         argument_combinations = [" ".join(x) for x in argument_combinations]
         argument_combinations = list(set(argument_combinations))

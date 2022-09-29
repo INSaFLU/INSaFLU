@@ -63,49 +63,26 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 	
-	def test_run_pangolin(self):
+	
+	def test_run_snippy_vcf_to_tab(self):
 		"""
-		test run_pangolin method
-		"""
-		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
-		consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
-		out_file_consensus = self.utils.get_temp_file("all_file_name", ".fasta")
-		cmd = "cat {} {} > {}".format(consensus_file_1, consensus_file_2, out_file_consensus)
-		os.system(cmd)
+  		test snippy_vcf_to_tab method
+  		"""
 		
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			self.fail("Must not exist software name")
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			pass
+		gb_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_GBK)
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_FASTA)
+		vcf_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "temp_more_REF.vcf")
+		result_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_VCF, "resutl_vcf_to_tab.tab")
 
-		self.software_pangolin.run_pangolin_update()
-
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			software.is_updated_today()
-			dt_software = software.get_version_long()
-			self.assertTrue(len(dt_software) > 0)
-			self.assertTrue(len(software.version) > 0)
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must not exist software name")
+		#### add the transform p.Val423Glu to p.V423G
+		### this run a on SNP_EFF
+		parse_out_files = ParseOutFiles()
+		vcf_file_with_pp = parse_out_files.add_amino_single_letter_code(vcf_file)
 		
-		out_file = self.utils.get_temp_file("file_name", ".txt")
-		self.software_pangolin.run_pangolin(out_file_consensus, out_file)
-		
-		vect_data = self.utils.read_text_file(out_file)
-		self.assertEqual(3, len(vect_data))
-
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			dt_versions = software.get_version_long()
-			self.assertTrue(len(dt_versions) > 0)
-			self.assertTrue(len(software.version) > 0)
-							
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must exist software name")
-		
-		os.unlink(out_file)
-		os.unlink(out_file_consensus)
-
-
+		out_file = self.utils.get_temp_file("snippy_vcf_to_tab", ".tab")
+		out_file_2 = self.software.run_snippy_vcf_to_tab(fasta_file, gb_file, vcf_file_with_pp, out_file)
+		self.assertEquals(out_file, out_file_2)
+		print(out_file_2, result_file)
+		self.assertTrue(filecmp.cmp(out_file_2, result_file))
+#		os.unlink(out_file)
+		os.unlink(vcf_file_with_pp)

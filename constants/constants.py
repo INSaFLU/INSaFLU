@@ -24,7 +24,9 @@ class Constants(object):
 	
 	## MAX LOCUS FROM FASTA
 	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
+	MAX_SEQUENCES_FROM_CONTIGS_FASTA = 100		### update this values
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
+	MAX_LENGTH_CONTIGS_SEQ_NAME = 20	###  it must be less than 20 because of the field  
 	SHORT_NAME_LENGTH = 20				### cut length name to show in the tables
 	
 	### has the minimun number of files to calculate global files
@@ -124,6 +126,9 @@ class Constants(object):
 	NEXTCLADE_LINK_A_H1N1 = "https://clades.nextstrain.org/?dataset-name=flu_h1n1pdm_ha&input-fasta="
 	NEXTCLADE_LINK_B_Yamagata = "https://clades.nextstrain.org/?dataset-name=flu_yam_ha&input-fasta="
 	NEXTCLADE_LINK_B_Victoria = "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
+	NEXTCLADE_LINK_hMPXV_B1 = "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="
+	NEXTCLADE_LINK_hMPXV = "https://clades.nextstrain.org/?dataset-name=hMPXV&input-fasta="
+	NEXTCLADE_LINK_MPXV_All_clades = "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
 	AUSPICE_LINK = "https://auspice.us/"
 	
 	## NUMBER OF SETs to paginate

@@ -55,7 +55,15 @@ class MetaKey(models.Model):
 		ordering = ['name', ]
 		
 class Reference(models.Model):
+
 	constants = Constants()
+	
+	### species
+	SPECIES_SARS_COV_2 = "SARS_COV_2"
+	SPECIES_MPXV = "MPXV"
+	SPECIES_INFLUENZA  = "INFLUENZA"
+	SPECIES_NOT_SET  = "NOT_SET"
+	SPECIES_INFLUENZA_segment_four  = "4"		## Name of segment 4
 	
 	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
 	display_name = models.CharField(max_length=200, db_index=True, default='', verbose_name='Display name')
@@ -88,6 +96,10 @@ class Reference(models.Model):
 	### if is deleted in file system
 	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
 	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
+	
+	### specie_tag, Has tag name of the specie;
+	### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
+	specie_tag = models.CharField(max_length=20, default='')
 	
 	def __str__(self):
 		return self.name

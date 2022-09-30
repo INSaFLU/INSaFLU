@@ -14,6 +14,7 @@ from managing_files.forms import ReferenceForm, SampleForm, ReferenceProjectForm
 from managing_files.forms import SamplesUploadDescriptionForm, SamplesUploadDescriptionMetadataForm
 from managing_files.manage_database import ManageDatabase
 from constants.constants import Constants, TypePath, FileExtensions, TypeFile, FileType
+from manage_virus.constants_virus import ConstantsVirus
 from constants.software_names import SoftwareNames
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.collect_extra_data import CollectExtraData
@@ -1554,6 +1555,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
 		project = Project.objects.get(pk=self.kwargs['pk'])
 		software_pangolin = SoftwarePangolin()
+		software = Software()
 		
 		### can't see this project
 		context['nav_project'] = True
@@ -1665,9 +1667,9 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
 		## first condition is to the ones without pangolin lineage
 		### need at least one sequence fasta to run pangolin
-		is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+		specie_tag = software.get_species_tag(project.reference)
 		if (project.number_passed_sequences != 0 and \
-			(not os.path.exists(file_pangolin_result) and is_sars_cov_2) or \
+			(not os.path.exists(file_pangolin_result) and specie_tag == Reference.SPECIES_SARS_COV_2) or \
 			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
 			context['update_pangolin'] = True
 			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
@@ -1682,7 +1684,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
 			context = _get_constext_nextclade(
 					project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus),
-					context, get_current_site(self.request), is_sars_cov_2)
+					context, get_current_site(self.request), specie_tag)
 			
 		return context
 
@@ -1867,6 +1869,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 	"""
 	"""
 	utils = Utils()
+	software = Software()
 	model = ProjectSample
 	template_name = 'project_sample/project_sample_single_detail.html'
 	context_object_name = 'project_sample'
@@ -1995,27 +1998,46 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
 			context['software_used'] = software_used	
 
 			#### nextclade link
-			software_pangolin = SoftwarePangolin()
-			is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+			#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+			specie_tag = self.software.get_species_tag(project_sample.project.reference)
 			if (os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
 					settings.SHOW_NEXTCLADE_LINK and default_software.include_consensus(project_sample)):		## docker versions doesn't show NextClade link
 				context = _get_constext_nextclade(project_sample.get_consensus_file(TypePath.MEDIA_URL),
-						context, get_current_site(self.request), is_sars_cov_2)
+						context, get_current_site(self.request), specie_tag)
 			
 		except ProjectSample.DoesNotExist:
 			context['error_cant_see'] = 1
 		return context
 
-def _get_constext_nextclade(media_url_path, context, current_site, is_sars_cov_2):
+
+def _get_constext_nextclade(media_url_path, context, current_site, specie_identification):
+	""" 
+	:param specie_identification """
 	
 	## sarscov 2
-	if (is_sars_cov_2):
+	if (specie_identification == Reference.SPECIES_SARS_COV_2):
 		context['nextclade_link_covid'] = "{}{}://{}{}".format(
 			Constants.NEXTCLADE_LINK_sars_cov_2,
 			settings.WEB_SITE_HTTP_NAME,
 			current_site,
 			media_url_path)
-	else:
+	elif (specie_identification == Reference.SPECIES_MPXV):
+		context['nextclade_link_mpxv_hmpxv_b1'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_hMPXV_B1,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+		context['nextclade_link_mpxv_hmpxv'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_hMPXV,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+		context['nextclade_link_mpxv_all_clades'] = "{}{}://{}{}".format(
+				Constants.NEXTCLADE_LINK_MPXV_All_clades,
+				settings.WEB_SITE_HTTP_NAME,
+				current_site,
+				media_url_path)
+	elif (specie_identification == Reference.SPECIES_INFLUENZA):
 		context['nextclade_link_a_h3n2'] = "{}{}://{}{}".format(
 				Constants.NEXTCLADE_LINK_A_H3N2,
 				settings.WEB_SITE_HTTP_NAME,
@@ -2038,6 +2060,57 @@ def _get_constext_nextclade(media_url_path, context, current_site, is_sars_cov_2
 				media_url_path)
 	return context
 
+
+def is_all_check_box_in_session(vect_check_to_test, request):
+	"""
+	test if all check boxes are in session 
+	If not remove the ones that are in and create the new ones all False
+	"""
+	utils = Utils()
+	dt_data = {}
+	
+	## get the dictonary
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+			dt_data[key] = True
+	
+	b_different = False
+	if (len(vect_check_to_test) != len(dt_data)): 
+		b_different = True
+	
+	## test the vector
+	if (not b_different):
+		for key in vect_check_to_test:
+			if (key not in dt_data):
+				b_different = True
+				break
+		
+	if (b_different):
+		## remove all
+		for key in dt_data:
+			del request.session[key] 
+	
+		## create new
+		for key in vect_check_to_test:
+			request.session[key] = False
+		return False
+	return True
+
+	
+	
+def clean_check_box_in_session(request):
+	"""
+	check all check boxes on samples/references to add samples
+	"""
+	utils = Utils()
+	## clean all check unique
+	if (Constants.CHECK_BOX_ALL in request.session): del request.session[Constants.CHECK_BOX_ALL]
+	vect_keys_to_remove = []
+	for key in request.session.keys():
+		if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and utils.is_integer(key.split('_')[2])):
+			vect_keys_to_remove.append(key)
+	for key in vect_keys_to_remove:
+		del request.session[key] 
 
 def get_first_pk_from_session(request):
 	"""

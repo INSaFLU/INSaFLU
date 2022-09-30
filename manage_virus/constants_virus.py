@@ -12,6 +12,7 @@ class ConstantsVirus(object):
 		type_identification/db_influenza_typing_vXXXX.fasta
 	'''
 	
+	
 	##############################33
 	####
 	####	TYPE/GENUS/etc... identification

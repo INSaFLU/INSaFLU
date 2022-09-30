@@ -104,7 +104,7 @@ class ConsensusForm(forms.ModelForm):
             ('name', 'Prefix Name', 'Prefix name to attach to the sequences names in fasta file. '\
              'If empty, only the names of the sequences will taken in consideration. It can be a multi-fasta sequence file. '\
              'If the name already exist in database the sequence will be rejected.', False),
-            ('consensus_fasta', 'Consensus (FASTA)', "Consensus file in fasta format.<br>" +\
+            ('consensus_fasta', 'Consensus (Fasta/Multi-Fasta)', "Consensus file in fasta format.<br>" +\
                 "Max total sequence length: {}<br>".format(filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA))  +\
                 "Max FASTA file size: {}".format(filesizeformat(settings.MAX_REF_FASTA_FILE)), True),
         ]
@@ -139,20 +139,22 @@ class ConsensusForm(forms.ModelForm):
         Clean all together because it's necessary to compare the genbank and fasta files
         """
         cleaned_data = super(ConsensusForm, self).clean()
+        ## It will be perfix, can be empty
         name = self.cleaned_data.get('name', '').strip()
-        if (len(name) == 0):
-            self.add_error('name', "Error: You must give a unique name.")
-            return cleaned_data
-
-        try:
-            Consensus.objects.get(name__iexact=name, owner=self.request.user, is_obsolete=False, is_deleted=False)
-            self.add_error('name', "This name '" + name +"' already exist in database, please choose other.")
-        except Consensus.DoesNotExist:
-            pass
+        # if (len(name) == 0):
+        #     self.add_error('name', "Error: You must give a unique name.")
+        #     return cleaned_data
+        #
+        # try:
+        #     Consensus.objects.get(name__iexact=name, owner=self.request.user, is_obsolete=False, is_deleted=False)
+        #     self.add_error('name', "This name '" + name +"' already exist in database, please choose other.")
+        #     return cleaned_data
+        # except Consensus.DoesNotExist:
+        #     pass
         
         ## test reference_fasta
         if ('consensus_fasta' not in cleaned_data):
-            self.add_error('consensus_fasta', "Error: Must have a file.")
+            self.add_error('consensus_fasta', "Error: Must have a Fasta/Multi-Fasta file.")
             return cleaned_data
         
         ### testing file names
@@ -170,21 +172,22 @@ class ConsensusForm(forms.ModelForm):
             self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
             
             ## test the max numbers
-            if (number_locus > Constants.MAX_SEQUENCES_FROM_FASTA):
-                self.add_error('consensus_fasta', _('Max allow number of sequences in fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_FASTA)))
+            if (number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA):
+                self.add_error('consensus_fasta', _('Max allow number of contigs in Multi-Fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA)))
                 some_error_in_files = True
             total_length_fasta = self.utils.get_total_length_fasta(reference_fasta_temp_file_name.name)
             if (not some_error_in_files and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA):
                 some_error_in_files = True
                 self.add_error('consensus_fasta', _('The max sum length of the sequences in fasta: {}'.format(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)))
             
-            n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(reference_fasta_temp_file_name.name, Constants.MAX_LENGTH_SEQ_NAME)
+            n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(reference_fasta_temp_file_name.name,
+							Constants.MAX_LENGTH_CONTIGS_SEQ_NAME, len(name))
             if (not some_error_in_files and n_seq_name_bigger_than > 0):
                 some_error_in_files = True
                 if (n_seq_name_bigger_than == 1):
-                    self.add_error('consensus_fasta', _('There is one sequence name length bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_SEQ_NAME)))
+                    self.add_error('consensus_fasta', _('There is one sequence name length bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_CONTIGS_SEQ_NAME)))
                 else:
-                    self.add_error('consensus_fasta', _('There are {0} sequences with name length bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_SEQ_NAME)))
+                    self.add_error('consensus_fasta', _('There are {0} sequences with name length bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_CONTIGS_SEQ_NAME)))
                     
                 ## if some errors in the files, fasta or genBank, return
                 if (some_error_in_files): return cleaned_data

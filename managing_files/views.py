@@ -210,6 +210,9 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
 		## create the index before commit in database, throw exception if something goes wrong
 		software.create_fai_fasta(os.path.join(getattr(settings, "MEDIA_ROOT", None), reference.reference_fasta.name))
 		
+		### set specie tag
+		software.get_species_tag(reference)
+
 		## remove genbank temp dir if exist 
 		if (temp_genbank_dir != None): utils.remove_dir(temp_genbank_dir)
 		

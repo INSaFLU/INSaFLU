@@ -533,16 +533,16 @@ class Software(object):
 				identify_virus.seq_virus.kind_type.name == "Human"): number_right_beta_cov += 1
 			elif (identify_virus.seq_virus.name in ("A", "B") and
 				identify_virus.seq_virus.kind_type.name == "Type"): number_right_influenza += 1
-			elif (identify_virus.seq_virus.name == "lineage" and
-				identify_virus.seq_virus.kind_type.name in ("Yamagata", "Victoria")): number_right_influenza += 1
-			elif (identify_virus.seq_virus.name == "subtype" and
-				(identify_virus.seq_virus.kind_type.name.startswith("H") or
-				identify_virus.seq_virus.kind_type.name.startswith("N"))): number_right_influenza += 1
-			elif (identify_virus.seq_virus.name == "MPVX" and
-				identify_virus.seq_virus.kind_type.name == "Species"): number_right_mpxv += 1
+			elif (identify_virus.seq_virus.name in ("Yamagata", "Victoria") and
+				identify_virus.seq_virus.kind_type.name.lower() == "lineage"): number_right_influenza += 1
+			elif (identify_virus.seq_virus.kind_type.name.lower() == "subtype" and
+				(identify_virus.seq_virus.name.startswith("H") or
+				identify_virus.seq_virus.name.startswith("N"))): number_right_influenza += 1
+			elif (identify_virus.seq_virus.name == "MPXV" and
+				identify_virus.seq_virus.kind_type.name.lower() == "species"): number_right_mpxv += 1
 
 		## if right at least two		
-		if (number_right_beta_cov > 1):
+		if (number_right_beta_cov > 0):
 			reference.specie_tag = Reference.SPECIES_SARS_COV_2
 			reference.save()
 			return Reference.SPECIES_SARS_COV_2

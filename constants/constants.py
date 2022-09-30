@@ -119,6 +119,9 @@ class Constants(object):
 	NEXTCLADE_LINK_A_H1N1 = "https://clades.nextstrain.org/?dataset-name=flu_h1n1pdm_ha&input-fasta="
 	NEXTCLADE_LINK_B_Yamagata = "https://clades.nextstrain.org/?dataset-name=flu_yam_ha&input-fasta="
 	NEXTCLADE_LINK_B_Victoria = "https://clades.nextstrain.org/?dataset-name=flu_vic_ha&input-fasta="
+	NEXTCLADE_LINK_hMPXV_B1 = "https://clades.nextstrain.org/?dataset-name=hMPXV_B1&input-fasta="
+	NEXTCLADE_LINK_hMPXV = "https://clades.nextstrain.org/?dataset-name=hMPXV&input-fasta="
+	NEXTCLADE_LINK_MPXV_All_clades = "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
 	AUSPICE_LINK = "https://auspice.us/"
 	
 	## NUMBER OF SETs to paginate

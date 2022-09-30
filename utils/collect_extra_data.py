@@ -7,7 +7,7 @@ import os, csv, time, json, logging
 import plotly.graph_objs as go
 from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import Project, TagNames, ProcessControler, Sample
+from managing_files.models import Project, TagNames, ProcessControler, Sample, Reference
 from managing_files.models import Software as SoftwareModel, ProjectSample
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects
@@ -119,8 +119,8 @@ class CollectExtraData(object):
 			file_consensus = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
 										Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
 			## test if is necesserary to run pangolin lineage
-			if (os.path.exists(file_pangolin_output) or software_pangolin.is_ref_sars_cov_2(
-					project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
+			if (os.path.exists(file_pangolin_output) or self.software.get_species_tag(
+					project.reference) == Reference.SPECIES_SARS_COV_2):
 				## process pangolin
 				software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
 				try:

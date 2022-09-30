@@ -63,49 +63,93 @@ class Test(TestCase):
 	def tearDown(self):
 		pass
 	
-	def test_run_pangolin(self):
+	
+	def test_get_species_tag(self):
 		"""
-		test run_pangolin method
+		test SARS cov 
 		"""
+		
+		ref_name = "File 1"
+		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
+		ref_name_2 = "File 2"
 		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
-		consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200234.consensus.fasta")
-		out_file_consensus = self.utils.get_temp_file("all_file_name", ".fasta")
-		cmd = "cat {} {} > {}".format(consensus_file_1, consensus_file_2, out_file_consensus)
-		os.system(cmd)
+		ref_name_3 = "File 3"
+		consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_A_Hong_Kong_4801_2014.fasta")
+		ref_name_4 = "File 4"
+		consensus_file_3 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "monkeypox_MT903344_MPXV_UK_P2_wo_NN.fasta")
 		
+		self.assertTrue(os.path.exists(reference_fasta))
+		self.assertTrue(os.path.exists(consensus_file_1))
+		self.assertTrue(os.path.exists(consensus_file_2))
+		self.assertTrue(os.path.exists(consensus_file_3))
 		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			self.fail("Must not exist software name")
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			pass
-
-		self.software_pangolin.run_pangolin_update()
-
-		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			software.is_updated_today()
-			dt_software = software.get_version_long()
-			self.assertTrue(len(dt_software) > 0)
-			self.assertTrue(len(software.version) > 0)
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must not exist software name")
-		
-		out_file = self.utils.get_temp_file("file_name", ".txt")
-		self.software_pangolin.run_pangolin(out_file_consensus, out_file)
-		
-		vect_data = self.utils.read_text_file(out_file)
-		self.assertEqual(3, len(vect_data))
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
 
 		try:
-			software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
-			dt_versions = software.get_version_long()
-			self.assertTrue(len(dt_versions) > 0)
-			self.assertTrue(len(software.version) > 0)
-							
-		except SoftwareModel.DoesNotExist:	## need to create with last version
-			self.fail("Must exist software name")
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = reference_fasta
+			reference.reference_fasta_name = os.path.basename(reference_fasta)
+			reference.owner = user
+			reference.save()
+			
+		try:
+			reference1 = Reference.objects.get(name=ref_name_2)
+		except Reference.DoesNotExist:
+			reference1 = Reference()
+			reference1.name = ref_name_2
+			reference1.reference_fasta.name = consensus_file_1
+			reference1.reference_fasta_name = os.path.basename(consensus_file_1)
+			reference1.owner = user
+			reference1.save()
 		
-		os.unlink(out_file)
-		os.unlink(out_file_consensus)
+		try:
+			reference2 = Reference.objects.get(name=ref_name_3)
+		except Reference.DoesNotExist:
+			reference2 = Reference()
+			reference2.name = ref_name_3
+			reference2.reference_fasta.name = consensus_file_2
+			reference2.reference_fasta_name = os.path.basename(consensus_file_2)
+			reference2.owner = user
+			reference2.save()
+			
+		try:
+			reference3 = Reference.objects.get(name=ref_name_4)
+		except Reference.DoesNotExist:
+			reference3 = Reference()
+			reference3.name = ref_name_3
+			reference3.reference_fasta.name = consensus_file_3
+			reference3.reference_fasta_name = os.path.basename(consensus_file_3)
+			reference3.owner = user
+			reference3.save()
+		
+		uploadFiles = UploadFiles()
+		version = 1
+		file = os.path.join(self.baseDirectory, Constants.DIR_TYPE_IDENTIFICATION, "test_covid_typing.fasta")
+		self.assertTrue(os.path.exists(file))
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		database_name = "xpto_sars_cov"
+		if (not self.software.is_exist_database_abricate(database_name)):
+			self.software.create_database_abricate(database_name, file)
 
-
+		self.assertEquals(Reference.SPECIES_INFLUENZA, self.software.get_species_tag(reference2))		
+		self.assertEquals(Reference.SPECIES_MPXV, self.software.get_species_tag(reference3))
+		self.assertEquals(Reference.SPECIES_SARS_COV_2, self.software.get_species_tag(reference))
+		self.assertEquals(Reference.SPECIES_SARS_COV_2, self.software.get_species_tag(reference1))
+		
+		##
+		try:
+			reference_test = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			self.assertFail("Record must exist")
+		
+		self.assertEqual(Reference.SPECIES_SARS_COV_2, reference_test.specie_tag)

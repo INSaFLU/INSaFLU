@@ -125,7 +125,7 @@
 						<div class="row">
 							<div class="col-lg-4"><strong>Consensus:</strong> {{ consensus_file }}
 								<!-- Show nextClade link -->
-								{% if nextclade_link_covid or nextclade_link_a_h3n2 %}
+								{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 %}
 									<div class="btn-group" style="padding-left:20px" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
 										<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 											<svg width="30" height="30" viewBox="0 0 76.68 76.955">
@@ -137,6 +137,13 @@
 											{% if nextclade_link_covid %} 
 												<a href="{{nextclade_link_covid}}" data-title="Upload your Consensus File in NextClade Annotation SARS-CoV-2" 
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (SARS-CoV-2)</span></a>
+											{% elif nextclade_link_mpxv_hmpxv_b1 %} 
+												<a href="{{nextclade_link_mpxv_hmpxv_b1}}" data-title="Upload your Consensus File in NextClade MPXV B1" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV B1)</span></a>
+												<a href="nextclade_link_mpxv_hmpxv" data-title="Upload your Consensus File in NextClade Annotation MPXV" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV)</span></a>
+												<a href="nextclade_link_mpxv_all_clades" data-title="Upload your Consensus File in NextClade MPXV (All Clades)" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV All clades)</span></a>
 											{% else %}
 												<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" 
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H3N2)</span></a>
@@ -150,6 +157,7 @@
 										</div>
 									</div>
 								{% endif %}
+								
 							</div>
 							{% if medaka_variants_file %}
 					  			<div class="col-lg-4"><strong>Variants:</strong> {{ medaka_variants_file }}</div>

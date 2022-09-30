@@ -127,6 +127,22 @@ class Command(BaseCommand):
 		uploadFiles.upload_default_references(User.objects.get(username=Constants.DEFAULT_USER), b_test) 
 	
 	
+	def set_species_tags_to_refences(self):
+		"""
+		set species tags to all references
+		"""
+		software = Software()
+		count = 0
+		for reference in Reference.objects.all():
+			if reference.is_deleted: continue
+			count += 1
+
+			## set species tag		
+			software.get_species_tag(reference)
+
+		self.stdout.write("Number of references processed on species tag: {}".format(count))
+
+
 	def default_database_fields(self):
 		"""
 		set default fields in database
@@ -206,6 +222,10 @@ class Command(BaseCommand):
 		#### set default references
 		self.stdout.write("Upload References")
 		self.upload_default_references()
+		
+		#### set all species tags to reference
+		self.stdout.write("Set species tag to all references")
+		self.set_species_tags_to_refences()
 		
 		#### set default references
 		self.stdout.write("Test bed and gff files for all references")

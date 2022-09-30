@@ -218,23 +218,16 @@ class SoftwarePangolin(object):
 			return False
 		
 		### test number of right segments
-		number_right =0 
+		number_right_bet_cov =0 
 		for identify_virus in vect_data:
-			#self.logger_debug.info("is_ref_sars_cov_2 matched with {} {}".format(identify_virus.seq_virus.name, identify_virus.seq_virus.kind_type.name))
-			
-			#self.logger_debug.info("is_ref_sars_cov_2 test 1 {}".format((identify_virus.seq_virus.name == "BetaCoV") and (identify_virus.seq_virus.kind_type.name == "Genus")))
-			#self.logger_debug.info("is_ref_sars_cov_2 test 2 {}".format( (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV")) and
-			#	(identify_virus.seq_virus.kind_type.name == "Species")))
-
-			if ((identify_virus.seq_virus.name == "BetaCoV") and 
-				(identify_virus.seq_virus.kind_type.name == "Genus")): number_right += 1
+			if (identify_virus.seq_virus.name == "BetaCoV" and
+				identify_virus.seq_virus.kind_type.name == "Genus"): number_right_bet_cov += 1
 			### need to read from the file 
-			elif ((identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV")) and
-				(identify_virus.seq_virus.kind_type.name == "Species")): number_right += 1
+			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
+				identify_virus.seq_virus.kind_type.name == "Human"): number_right_bet_cov += 1
 
 		## if right at least two		
-		if (number_right > 1): return True
-		#self.logger_debug.info("is_ref_sars_cov_2 could not find any match")
+		if (number_right_bet_cov > 1): return True
 		return False
 
 

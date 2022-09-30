@@ -376,7 +376,7 @@ class Utils(object):
 		return True		
 
 
-	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length):
+	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length, prefix_sum = 0):
 		"""
 		Test Fasta file
 		"""
@@ -384,7 +384,7 @@ class Utils(object):
 		record_dict = SeqIO.index(sz_file_name, "fasta")
 		n_count = 0
 		for key in record_dict:
-			if (len(key) > size_limit_length): n_count += 1
+			if ((len(key) + prefix_sum) > size_limit_length): n_count += 1
 		return n_count
 	
 	def has_degenerated_bases(self, sz_file_name):

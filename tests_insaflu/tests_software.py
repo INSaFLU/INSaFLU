@@ -157,6 +157,21 @@ class Test(TestCase):
 		self.software.fasta_2_upper(fasta_file_temp)
 		fasta_file_upper = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_demo_upper_case.fasta")
 		self.assertTrue(filecmp.cmp(fasta_file_temp, fasta_file_upper))
+		self.utils.remove_file(fasta_file_temp)
+		
+	def test_get_first_sequence_fasta(self):
+		"""
+		Test samtools fai index
+		"""
+		## create an index file from 
+		
+		fasta_file = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_demo_lower_case.fasta")
+		fasta_file_temp = self.utils.get_temp_file("fasta_single_read", FileExtensions.FILE_FASTA)
+		self.utils.copy_file(fasta_file, fasta_file_temp)
+		self.software.set_first_sequence_fasta(fasta_file_temp)
+		fasta_file_upper = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_reference_demo_upper_case.fasta")
+		self.assertTrue(filecmp.cmp(fasta_file_temp, fasta_file_upper))
+		self.utils.remove_file(fasta_file_temp)
 
 	def testCreateFaiToFastaFile(self):
 		## create an index file from 

@@ -48,7 +48,7 @@ from utils.collect_extra_data import CollectExtraData
 class Test(TestCase):
 
 	### static
-	#software = Software()
+	software = Software()
 	software_minion = SoftwareMinion()
 	software_names = SoftwareNames()
 	software_pangolin = SoftwarePangolin()

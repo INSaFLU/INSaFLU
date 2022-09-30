@@ -55,6 +55,8 @@ class MetaKey(models.Model):
 		ordering = ['name', ]
 		
 class Reference(models.Model):
+
+	constants = Constants()
 	
 	### species
 	SPECIES_SARS_COV_2 = "SARS_COV_2"

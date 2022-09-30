@@ -2131,7 +2131,6 @@ def clean_check_box_in_session(request):
 	for key in vect_keys_to_remove:
 		del request.session[key] 
 
-
 def get_first_pk_from_session(request):
 	"""
 	return the first pk selected, if none, return none 

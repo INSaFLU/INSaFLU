@@ -526,9 +526,29 @@ class SoftwareNames(object):
     ### RAVEN
 
     SOFTWARE_RAVEN_name = "Raven"
-    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/")
+    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
     SOFTWARE_RAVEN_VERSION = "1.0.0"
     SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
+
+    ### SNIPPY
+
+    SOFTWARE_SNIPPY_PI_name = "Snippy"
+    SOFTWARE_SNIPPY_PI = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/preproc/bin/snippy",
+    )
+    SOFTWARE_SNIPPY_PI_VERSION = "1.0.0"
+    SOFTWARE_SNIPPY_PI_parameters = "--cpus 4 mapqual=40 --mincov 10 --minfrac 0.1"
+
+    ### MINIMAP2 REMAP
+
+    SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/preproc/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "1.0.0"
+    SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
     ###################################
     ###################################

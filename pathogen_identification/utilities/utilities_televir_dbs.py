@@ -1,20 +1,9 @@
 # from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
 
-from abc import ABC, abstractmethod
+import os
+from abc import abstractmethod
 
-import sqlalchemy
-from sqlalchemy import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    create_engine,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import mapper, sessionmaker
+from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
 
 
 class software_item:
@@ -30,19 +19,18 @@ class software_item:
 
 
 class database_item:
-    def __init__(self, name, path, installed) -> None:
+    def __init__(self, name, path, installed, software: str = "none") -> None:
         self.name = name
         self.path = path
         self.installed = installed
+        self.software = software
 
     def __repr__(self) -> str:
         return f"({self.name}, {self.path}, {self.installed})"
 
 
-import os
-
-
 class Utility_Repository:
+    """Communicates with sql database to add a software dbs"""
 
     database_item = database_item
     software_item = software_item
@@ -52,6 +40,8 @@ class Utility_Repository:
         self.db_path = db_path
 
         self.setup_engine(install_type)
+
+        # self.connection = self.engine.connect()
 
         self.metadata = MetaData()
         self.create_tables()
@@ -63,25 +53,19 @@ class Utility_Repository:
             self.setup_engine_docker()
 
     def setup_engine_local(self):
-
         self.engine = create_engine(
-            f"{self.dbtype_local}:///"
+            f"{self.dbtype_local}:////"
             + os.path.join(*self.db_path.split("/"), "utility.db")
         )
 
     def setup_engine_docker(self):
-        print(
-            f"{self.dbtype_local}:////"
-            + os.path.join(*self.db_path.split("/"), "utility.db")
-        )
 
         self.engine = create_engine(
             f"{self.dbtype_local}:////"
             + os.path.join(*self.db_path.split("/"), "utility.db")
         )
 
-    def setup_engine_postgres(self):
-
+    def setup_engine_posrgres(self):
         from decouple import config
 
         self.engine = create_engine(
@@ -95,7 +79,7 @@ class Utility_Repository:
             self.metadata,
             Column("name", String),
             Column("path", String),
-            Column("dabatabse", String),
+            Column("database", String),
             Column("installed", Boolean),
             Column("env_path", String),
         )
@@ -107,26 +91,50 @@ class Utility_Repository:
             Column("name", String),
             Column("path", String),
             Column("installed", Boolean),
+            Column("software", String),
         )
 
     def create_tables(self):
         self.create_software_table()
         self.create_database_table()
+
         self.metadata.create_all(self.engine)
 
-    def get(self, table_name, id):
+    def get_by_name(self, table_name, id):
         """
         Get a record by id from a table
         """
 
         return self.engine.execute(f"SELECT * FROM {table_name} WHERE name='{id}'")
 
-    def check_exists(self, table_name, id):
+    def select_explicit(self, table_name, field, id):
+        """
+        select from table.
+        """
+        sql_statement = f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+
+        find = self.engine.execute(sql_statement)
+
+        return find
+
+    def select_explicit_statement(self, table_name, field, id):
+        """
+        select from table.
+        """
+        sql_statement = f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+
+        return sql_statement
+
+    def check_exists(self, table_name, field, id):
         """
         Check if a record exists in a table
         """
 
-        find = self.engine.execute(f"SELECT * FROM {table_name} WHERE name='{id}'")
+        find = self.engine.execute(
+            f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+        ).fetchall()
+        find = len(find) > 0
+
         if find:
             return True
         else:
@@ -136,10 +144,11 @@ class Utility_Repository:
         """
         Add a record to a table
         """
-        if not self.check_exists("software", item.name):
-            self.engine.execute(
-                f"INSERT INTO software (name, path, database, installed, env_path) VALUES {item}"
-            )
+        # print("adding software")
+
+        self.engine.execute(
+            f"INSERT INTO software (name, path, database, installed, env_path) VALUES ('{item.name}', '{item.path}', '{item.database}', '{item.installed}', '{item.env_path}')"
+        )
 
     @abstractmethod
     def add_database(self, item):
@@ -147,7 +156,6 @@ class Utility_Repository:
         Add a record to a table
         """
 
-        if not self.check_exists("database", item.name):
-            self.engine.execute(
-                f"INSERT INTO database (name, path, installed) VALUES {item}"
-            )
+        self.engine.execute(
+            f"INSERT INTO database (name, path, installed) VALUES ('{item.name}', '{item.path}', '{item.installed}')"
+        )

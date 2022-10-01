@@ -3,9 +3,11 @@ import os
 from typing import List
 
 import pandas as pd
-
-from pathogen_identification.object_classes import Remap_Target
-from pathogen_identification.utilities import merge_classes, scrape_description
+from pathogen_identification.modules.object_classes import Remap_Target
+from pathogen_identification.utilities.utilities_general import (
+    merge_classes,
+    scrape_description,
+)
 
 
 class Metadata_handler:

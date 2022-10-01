@@ -55,29 +55,34 @@ class Projects(models.Model):
         return self.name + " " + self.name + " " + self.description
 
 
-class Software_tree(models.Model):
-    name = models.CharField(
+class SoftwareTree(models.Model):
+    global_index = models.CharField(
         max_length=200,
         db_index=True,
         blank=True,
         null=True,
         verbose_name="Software name",
     )
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    technology = models.CharField(
+        max_length=100,
+        name="technology",
+        blank=True,
+        null=True,
+    )  # encoding
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["owner", "global_index"]
 
 
-class Software_tree_nodes(models.Model):
-
-    NODE_TYPE_software = 0
-    NODE_TYPE_parameter = 1
-    NODE_TYPE_parameter_value = 2
+class SoftwareTreeNode(models.Model):
 
     INTERNAL_node = 0
     LEAF_node = 1
+    id = models.AutoField(primary_key=True)
 
-    software_tree = models.ForeignKey(Software_tree, on_delete=models.CASCADE)
+    software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
+    index = models.SmallIntegerField(default=-1)
     name = models.CharField(
         max_length=200,
         db_index=True,
@@ -85,26 +90,29 @@ class Software_tree_nodes(models.Model):
         null=True,
         verbose_name="Software name",
     )
+
+    value = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=True,
+        null=True,
+    )
+
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, blank=True, null=True, related_name="children"
     )
-    node_type = models.SmallIntegerField(
-        default=NODE_TYPE_software
-    )  ### if it is a software, a parameter or a parameter value
-
+    node_type = models.CharField(
+        max_length=200,
+        db_index=True,
+        blank=True,
+        null=True,
+    )
     node_place = models.SmallIntegerField(
         default=INTERNAL_node
     )  ### if it is a software, a parameter or a parameter value
 
     class Meta:
         ordering = ["name"]
-
-
-class ParameterSet(models.Model):
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.name + " " + self.name + " " + self.description
 
 
 class PIProject_Sample(models.Model):
@@ -173,6 +181,33 @@ class PIProject_Sample(models.Model):
 
     def __str__(self):
         return self.project.name
+
+
+class ParameterSet(models.Model):
+    sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
+    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.sample.name + " " + self.leaf.index
+
+
+class Submitted(models.Model):
+    parameter_set = models.ForeignKey(
+        ParameterSet, on_delete=models.CASCADE, related_name="submitted_fastq_input"
+    )
+    date_submitted = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.index
+
+
+class Processed(models.Model):
+
+    parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
+    date_processed = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.index
 
 
 class SampleQC(models.Model):
@@ -246,7 +281,7 @@ class SampleQC(models.Model):
         ]
 
     def __str__(self):
-        return self.name
+        return self.sample.name
 
 
 class QC_REPORT(models.Model):

@@ -22,7 +22,7 @@ RUN_TEST_IN_COMMAND_LINE = False
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+print(BASE_DIR)
 ####	if the tests are running
 RUNNING_TEST = False
 
@@ -287,6 +287,7 @@ USE_TZ = False  ## enable time zone
 # https://stackoverflow.com/questions/5871730/need-a-minimal-django-file-upload-example
 
 # STATICFILES_DIRS is the list of folder where Django will search for additional static files, in addition to each static folder of each app installed.
+
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 # STATIC_ROOT is the folder where every static files will be stored after a manage.py collectstatic
 STATIC_ROOT = os.path.join(

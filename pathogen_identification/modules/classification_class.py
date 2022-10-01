@@ -5,8 +5,8 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-
-from pathogen_identification.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):

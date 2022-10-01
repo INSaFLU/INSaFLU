@@ -30,7 +30,6 @@ def Update_project(project_directory_path):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
     project_name = os.path.basename(project_directory_path)
-    project_name_simple = project_name.replace(".", "_").replace(":", "_")
 
     try:
         project = Projects.objects.get(name=project_name)

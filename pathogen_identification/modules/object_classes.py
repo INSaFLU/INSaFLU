@@ -1,3 +1,4 @@
+import itertools as it
 import logging
 import os
 import subprocess
@@ -6,10 +7,17 @@ from dataclasses import dataclass, field
 from random import randint
 from typing import Type
 
+import matplotlib
 import pandas as pd
 from numpy import ERR_CALL
+from pathogen_identification.utilities.utilities_general import fastqc_parse
 
-from pathogen_identification.utilities import fastqc_parse
+matplotlib.use("Agg")
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 class RunCMD:
@@ -651,6 +659,128 @@ class Software_detail:
 
     def __str__(self):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
+
+
+class Bedgraph:
+    """Class to store and work with bedgraph files
+
+
+    Methods:
+    read_bedgraph: reads bedgraph wiith coverage column.
+    get_coverage_array: returns numpy array of coverage column
+    get_bins: generates unzipped bins from start & end positions.
+    plot_coverage: barplot of coverage by window in bdgraph.
+    """
+
+    def __init__(self, bedgraph_file, max_bars=7000, nbins=300):
+        self.max_bars = max_bars
+        self.nbins = nbins
+        self.bedgraph = self.read_bedgraph(bedgraph_file)
+        self.reduce_number_bars()
+        self.bar_to_histogram()
+
+    def read_bedgraph(self, coverage_file) -> pd.DataFrame:
+        coverage = pd.read_csv(coverage_file, sep="\t", header=None).rename(
+            columns={0: "read_id", 1: "start", 2: "end", 3: "coverage"}
+        )
+
+        return coverage
+
+    def get_bins(self) -> np.ndarray:
+        """
+        Get the bins.
+
+        :param coverage_file: The coverage file.
+        """
+        self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
+
+    def get_coverage_array(self, coverage: pd.DataFrame) -> np.ndarray:
+        """
+        Get the coverage of the remapping.
+
+        :param coverage_file: The coverage file.
+        """
+        coverage_values = np.array(coverage.coverage.to_list())
+
+        return coverage_values
+
+    def get_bar_coordinates(self):
+        """
+        Get the bar coordinates.
+        """
+        self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
+
+        self.bedgraph["x"] = self.bedgraph.start + self.bedgraph.end / 2
+        self.bedgraph["y"] = self.bedgraph.coverage
+
+        return self.bedgraph
+
+    def reduce_number_bars(self):
+        """
+        Reduce the number of bars.
+        """
+
+        if self.bedgraph.shape > (self.max_bars,):
+            self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
+            self.bedgraph = self.bedgraph.sample(self.max_bars)
+
+    def merge_bedgraph_rows(self):
+        """
+        Merge the rows of the bedgraph.
+        """
+
+        for ix in range(1, self.bedgraph.shape[0]):
+            if self.bedgraph.iloc[ix - 1].end < (self.bedgraph.iloc[ix].start - 1):
+                self.bedgraph.iloc[ix].end = self.bedgraph.iloc[ix].start - 1
+
+    def bar_to_histogram(self):
+        """
+        Bar to histogram.
+        """
+
+        self.bedgraph["coord"] = (self.bedgraph.start + self.bedgraph.end) / 2
+        self.coverage = [
+            [self.bedgraph.iloc[x]["coord"]] * self.bedgraph.iloc[x]["coverage"]
+            for x in range(self.bedgraph.shape[0])
+        ]
+        self.coverage = list(it.chain.from_iterable(self.coverage))
+
+    def plot_coverage(self, output_file, borders=50, tlen=0):
+        """
+        Plot the coverage of the remapping.
+
+        :param coverage_file: The coverage file. bedgraph produced with samtools.
+        :param output_file: The output file.
+        """
+
+        fig, ax = plt.subplots(figsize=(11, 3))
+
+        if len(self.coverage) <= 1:
+            return
+
+        start_time = time.perf_counter()
+
+        ax.hist(
+            self.coverage,
+            bins=self.nbins,
+            color="skyblue",
+            edgecolor="none",
+        )
+
+        ax.set_xlabel("Reference")
+        ax.set_ylabel("Coverage")
+
+        ##
+        xmax = self.bedgraph.end.max()
+        if tlen:
+            xmax = tlen
+        ax.set_xlim(0 - borders, xmax + borders)
+        ##
+
+        fig.savefig(output_file, bbox_inches="tight")
+        ax.cla()
+        fig.clf()
+        plt.close("all")
 
 
 @dataclass

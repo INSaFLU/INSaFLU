@@ -7,8 +7,7 @@ from typing import Type
 import pandas as pd
 from Bio import SeqIO
 from fluwebvirus.settings import STATICFILES_DIRS
-
-from pathogen_identification.object_classes import RunCMD
+from pathogen_identification.modules.object_classes import RunCMD
 
 
 class Assembly_init:

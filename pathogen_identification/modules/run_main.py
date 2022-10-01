@@ -6,25 +6,23 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
-
-from pathogen_identification.assembly_class import Assembly_class
-from pathogen_identification.classification_class import Classifier
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.metadata_handler import Metadata_handler
-from pathogen_identification.object_classes import (
+from pathogen_identification.modules.assembly_class import Assembly_class
+from pathogen_identification.modules.classification_class import Classifier
+from pathogen_identification.modules.metadata_handler import Metadata_handler
+from pathogen_identification.modules.object_classes import (
     Assembly_results,
     Contig_classification_results,
     Read_class,
     Read_classification_results,
     Remap_main,
-    Remap_Target,
     Run_detail_report,
     RunCMD,
     Sample_runClass,
     Software_detail,
 )
-from pathogen_identification.preprocess_class import Preprocess
-from pathogen_identification.remap_class import Mapping_Manager, Remapping
+from pathogen_identification.modules.preprocess_class import Preprocess
+from pathogen_identification.modules.remap_class import Mapping_Manager
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):

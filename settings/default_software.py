@@ -3,7 +3,10 @@ Created on 03/05/2020
 
 @author: mmp
 """
+from curses.ascii import SO
+
 from constants.software_names import SoftwareNames
+from pathogen_identification.utilities_pipeline import Utils_Manager
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -22,6 +25,10 @@ class DefaultSoftware(object):
         """change values"""
         self.default_parameters = DefaultParameters()
         self.change_values_software = {}  ### the key is the name of the software
+
+    def generate_default_PI_software_trees(self, user):
+        utils = Utils_Manager(owner=user)
+        utils.generate_default_trees()
 
     def test_all_defaults(self, user):
 
@@ -130,8 +137,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        print("getting centrifuge")
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
@@ -237,6 +242,24 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+            self.default_parameters.get_snippy_pi_default(
+                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
+            self.default_parameters.get_minimap2_remap_ONT_default(
+                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+            ),
+            user,
+        )
+
+        self.generate_default_PI_software_trees(user)
 
     def test_default_db(self, software_name, vect_parameters, user):
         """
@@ -532,6 +555,30 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_snippy_pi_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+            user,
+            Software.TYPE_OF_USE_pident,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_minimap2_remap_ont_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
     ####
     ####
     def set_default_software(self, software):
@@ -784,6 +831,16 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_spades_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+                self.default_parameters.get_snippy_pi_default(
+                    user, Software.TYPE_OF_USE_pident, technology_name
+                ),
+                user,
+            )
+            return self.get_snippy_pi_parameters(user, technology_name)
 
     def get_all_software(self):
         """

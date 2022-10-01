@@ -632,6 +632,19 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_pident,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
+        elif software.name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
+            return self.get_snippy_pi_default(
+                software.owner,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
+            return self.get_minimap2_remap_ONT_default(
+                software.owner,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
         else:
             return None
 
@@ -2388,6 +2401,133 @@ class DefaultParameters(object):
         parameter.range_max = "4"
         parameter.range_min = "1"
         parameter.description = "number of times racon is invoked, default 2"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_snippy_pi_default(self, user, type_of_use, technology_name, sample=None):
+        """
+        snippy default
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_remapping
+        )
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--mapqual"
+        parameter.parameter = "40"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.description = "minimum mapping quality, default 40"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--mincov"
+        parameter.parameter = "10"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.description = "minimum coverage, default 10"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_minimap2_remap_ONT_default(
+        self, user, type_of_use, technology_name, sample=None
+    ):
+        """
+        minimap remap ONT default
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_remapping
+        )
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "-x map-ont"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.description = "preset for ONT data"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--secondary=no"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "do not output secondary alignments, default no"
         vect_parameters.append(parameter)
 
         return vect_parameters

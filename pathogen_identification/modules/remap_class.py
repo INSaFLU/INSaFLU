@@ -8,17 +8,15 @@ from typing import List, Type
 import numpy as np
 import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from scipy.stats import kstest
-
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.object_classes import (
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-)
-from pathogen_identification.plot_coverage import Bedgraph, plot_dotplot
-from pathogen_identification.utilities import read_paf_coordinates
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail)
+from pathogen_identification.utilities.utilities_general import (
+    plot_dotplot, read_paf_coordinates)
+from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")

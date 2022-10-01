@@ -1,0 +1,614 @@
+import itertools as it
+import os
+from collections import defaultdict
+
+import networkx as nx
+import pandas as pd
+from django.contrib.auth.models import User
+from settings.constants_settings import ConstantsSettings as CS
+from settings.models import Parameter, PipelineStep, Software, Technology
+from this import d
+
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.install_registry import Deployment_Params
+from pathogen_identification.models import SoftwareTree, SoftwareTreeNode
+from pathogen_identification.utilities_televir_dbs import Utility_Repository
+
+tree = lambda: defaultdict(tree)
+
+
+def make_tree(lst):
+    d = tree()
+    for x in lst:
+        curr = d
+        for item in x:
+            curr = curr[item]
+    return d
+
+
+class PipelineTree:
+
+    technology: str
+    nodes: list
+    edges: dict
+    leaves: list
+
+    def __init__(self, technology: str, nodes: list, edges: dict, leaves: list):
+        self.technology = technology
+        self.nodes = nodes
+        self.edges = edges
+        self.leaves = leaves
+        self.edge_dict = [(x[0], x[1]) for x in self.edges]
+
+    def get_parents_dict(self):
+        """
+        Get a dictionary of parents for each node
+        """
+        self.generate_graph()
+        parents_dict = {}
+
+        for node, name in enumerate(self.nodes):
+            parents = list(self.graph.predecessors(node))
+            if len(parents) == 0:
+                parents = None
+            else:
+                parents = parents[0]
+            parents_dict[node] = parents
+        return parents_dict
+
+    def node_from_index(self, nix):
+
+        return self.nodes[nix]
+
+    def get_path_explicit(self, path: list) -> list:
+        """return nodes names for nodes index list"""
+
+        return [self.node_from_index(x) for x in path]
+
+    def generate_graph(self):
+        """
+        Generate a graph of pipeline
+        """
+        nodes_index = [i for i, x in enumerate(self.nodes)]
+
+        self.graph = nx.DiGraph()
+        self.graph.add_edges_from(self.edge_dict)
+        self.graph.add_nodes_from(nodes_index)
+
+    def get_all_graph_paths(self) -> dict:
+        """
+        Get all possible paths in the pipeline
+        """
+
+        self.generate_graph()
+        all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
+
+        path_dict = {
+            leaf: self.df_from_path(all_paths[x]) for x, leaf in enumerate(self.leaves)
+        }
+
+        return path_dict
+
+    def df_from_path(self, path: list) -> pd.DataFrame:
+        """
+        Generate a dataframe from a path
+        """
+        path = self.get_path_explicit(path)
+        df = []
+        path = [x for x in path if x[0] != "root"]
+        current_module = None
+        for ix, node in enumerate(path):
+            node_type = node[2]
+            if ix == 0 and node_type != "module":
+                print("First node must be a module")
+                return pd.DataFrame()
+
+            if node_type == "module":
+                if current_module:
+                    for param, value in current_module["params"].items():
+                        df.append(
+                            [
+                                current_module.get("module"),
+                                current_module.get("software"),
+                                param,
+                                value,
+                            ]
+                        )
+
+                current_module = {
+                    "module": node[0],
+                    "software": node[1],
+                    "params": {
+                        f"{node[1].upper()}_ARGS": "",
+                    },
+                }
+                continue
+
+            current_module["params"][node[0]] = node[1]
+
+        if current_module:
+            for param, value in current_module["params"].items():
+                df.append(
+                    [
+                        current_module.get("module"),
+                        current_module.get("software"),
+                        param,
+                        value,
+                    ]
+                )
+        df = pd.DataFrame(df, columns=["module", "software", "parameter", "value"])
+
+        return df
+
+
+class Utility_Pipeline_Manager:
+    """
+    Takes a combined table and generates a pipeline tree.
+    Combined table is a table with the following columns:
+    - sample_name
+    - sample_id
+    - pipeline_step
+    - software_name
+    - parameter
+    - value
+
+    Uitility_Pipeline_Manager Comunicates with utility repository to complement the information
+    with software specific installed databases. Creates a pipeline tree from the combined information."""
+
+    software_name_list: list
+    existing_pipeline_order: list
+    combined_table: pd.DataFrame
+    software_dbs_dict: dict
+
+    def __init__(self, combined_table: pd.DataFrame, technology="nanopore"):
+
+        self.technology = technology
+
+        self.utility_repository = Utility_Repository(
+            db_path=ConstantsSettings.docker_app_directory,
+            install_type="docker",
+        )
+        self.pipeline_order = [
+            CS.PIPELINE_NAME_assembly,
+            CS.PIPELINE_NAME_viral_enrichment,
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+            CS.PIPELINE_NAME_remapping,
+        ]
+
+        self.binaries = Deployment_Params.BINARIES
+
+        self.process_combined_table(combined_table)
+
+    def generate_default_software_tree(self):
+
+        self.get_software_db_dict()
+
+        self.generate_software_parameter_dict()
+
+        return self.create_pipe_tree()
+
+    def process_combined_table(self, combined_table):
+        combined_table = combined_table[combined_table.technology == self.technology]
+
+        pipelines_available = combined_table.pipeline_step.unique().tolist()
+
+        ####
+
+        self.existing_pipeline_order = [
+            x for x in self.pipeline_order if x in pipelines_available
+        ]
+        self.software_name_list = combined_table.software_name.unique().tolist()
+        self.combined_table = combined_table
+
+    def check_software_is_installed(self, software_name: str) -> bool:
+        software_lower = software_name.lower()
+        if software_lower in self.binaries["software"].keys():
+            bin_path = os.path.join(
+                ConstantsSettings.docker_install_directory,
+                self.binaries["software"][software_lower],
+                "bin",
+                software_lower,
+            )
+            return os.path.isfile(bin_path)
+        else:
+            for pipeline in ["REMAPPING", "PREPROCESS", "ASSEMBLY"]:
+                if os.path.exists(
+                    os.path.join(
+                        ConstantsSettings.docker_install_directory,
+                        self.binaries[pipeline]["default"],
+                        "bin",
+                        software_lower,
+                    )
+                ):
+                    return True
+
+        return False
+
+    def check_software_db_available(self, software_name: str) -> bool:
+        """
+        Check if a software is installed
+        """
+
+        return self.utility_repository.check_exists(
+            "software", "name", software_name.lower()
+        )
+
+    def get_software_db_dict(self):
+
+        self.software_dbs_dict = {
+            software.lower(): self.get_software_dbs_if_exist(software)
+            .path.unique()
+            .tolist()
+            for software in self.software_name_list
+        }
+
+    def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
+
+        fields = self.utility_repository.select_explicit_statement(
+            "software", "name", software_name.lower()
+        )
+
+        try:
+            fields = pd.read_sql(fields, self.utility_repository.engine)
+            return fields
+        except Exception as e:
+            print(
+                f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
+            )
+            return pd.DataFrame(
+                columns=["name", "path", "database", "installed", "env_path"]
+            )
+
+    def generate_argument_combinations(
+        self, pipeline_software_dt: pd.DataFrame
+    ) -> list:
+        """
+        Generate a list of argument combinations
+        """
+        pipeline_software_dict = {
+            parameter_name: g.parameter.to_list()
+            for parameter_name, g in pipeline_software_dt.groupby("parameter_name")
+        }
+
+        argument_combinations = []
+        for flag, arg in pipeline_software_dict.items():
+            flag_list = [" ".join([flag, x]) for x in arg]
+            argument_combinations.append(flag_list)
+
+        argument_combinations = list(it.product(*argument_combinations))
+        argument_combinations = [" ".join(x) for x in argument_combinations]
+        argument_combinations = list(set(argument_combinations))
+        return argument_combinations
+
+    def generate_software_parameter_dict(self) -> dict:
+        """
+        Generate a dictionary of software and parameters
+        """
+        step_dict = {c: g for c, g in self.combined_table.groupby("pipeline_step")}
+        step_software_dict = {
+            step: g.software_name.unique().tolist() for step, g in step_dict.items()
+        }
+        step_software_parameter_dict = {
+            step: {
+                software.lower(): {
+                    f"{software.upper()}_ARGS": self.generate_argument_combinations(g),
+                    f"{software.upper()}_DB": self.software_dbs_dict[software.lower()],
+                }
+                for software, g in g.groupby("software_name")
+            }
+            for step, g in step_dict.items()
+        }
+        self.params_lookup = step_software_parameter_dict
+        self.pipeline_software = {
+            x: [f.lower() for f in y] for x, y in step_software_dict.items()
+        }
+        #
+
+    def fill_dict(self, ix, branch_left) -> nx.DiGraph:
+        """
+        Generate a tree of pipeline
+        """
+        if ix == (len(self.existing_pipeline_order)):
+            return branch_left
+
+        if branch_left:
+            return {
+                node: self.fill_dict(ix, branch) for node, branch in branch_left.items()
+            }
+
+        else:
+            current = self.existing_pipeline_order[ix]
+
+        soft_dict = {}
+        suffix = ""
+
+        for soft in self.pipeline_software[current]:
+
+            if soft in self.params_lookup[current].keys():
+                param_names = []
+                param_combs = []
+                params_dict = self.params_lookup[current][soft]
+
+                for i, g in params_dict.items():
+                    if not g:
+                        continue
+
+                    param_names.append(i + suffix)
+                    param_combs.append([(i + suffix, x, "param") for x in g])
+
+                param_combs = list(it.product(*param_combs))
+
+                param_tree = make_tree(param_combs)
+
+                soft_dict[soft] = param_tree
+            else:
+                soft_dict[soft] = {(f"{soft.upper()}_ARGS", "None", "param"): {}}
+
+        return {
+            (current, soft, "module"): self.fill_dict(ix + 1, g)
+            for soft, g in soft_dict.items()
+        }
+
+    def tree_index(self, tree, root, node_index=[], edge_dict=[], leaves=[]):
+        """ """
+        if len(tree) == 0:
+            leaves.append(root)
+            return
+
+        subix = {}
+        for i, g in tree.items():
+
+            ix = len(node_index)
+            node_index.append([ix, i])
+            edge_dict.append([root, ix])
+            subix[i] = ix
+
+        #
+        td = [
+            self.tree_index(
+                g, subix[i], node_index=node_index, edge_dict=edge_dict, leaves=leaves
+            )
+            for i, g in tree.items()
+        ]
+
+        return node_index, edge_dict, leaves
+
+    def create_pipe_tree(self) -> PipelineTree:
+        """ """
+        self.pipeline_tree = self.fill_dict(0, {})
+        # self.pipeline_tree = {("root", None, None): self.pipeline_tree}
+
+        node_index, edge_dict, leaves = self.tree_index(
+            self.pipeline_tree,
+            0,
+            node_index=[(0, ("root", None, None))],
+            edge_dict=[],
+            leaves=[],
+        )
+
+        self.node_index = node_index
+
+        return PipelineTree(
+            technology=self.technology,
+            nodes=[x[1] for x in node_index],
+            edges=edge_dict,
+            leaves=leaves,
+        )
+
+
+class Parameter_DB_Utility:
+    """Comunicates with dango database.
+    Functions:
+        - create combined table of software and parameters.
+        - get and store pipeline trees in tables SoftwareTree and SoftwareTree_node
+    """
+
+    def get_technologies_available(self, owner):
+        """
+        Get technologies available for a user
+        """
+
+        technologies_available = (
+            Software.objects.filter(owner=owner)
+            .values_list("technology__name", flat=True)
+            .distinct()
+        )
+
+        technologies_available = list(set(technologies_available))
+
+        return technologies_available
+
+    def generate_combined_parameters_table(self, owner: User):
+
+        software_available = Software.objects.filter(owner=owner)
+        parameters_available = Parameter.objects.filter(software__in=software_available)
+
+        software_table = pd.DataFrame(software_available.values())
+        parameters_table = pd.DataFrame(parameters_available.values())
+        combined_table = pd.merge(
+            software_table, parameters_table, left_on="id", right_on="software_id"
+        ).rename(
+            columns={
+                "id_x": "software_id",
+                "id_y": "parameter_id",
+                "name_x": "software_name",
+                "name_y": "parameter_name",
+                "is_to_run_x": "software_is_to_run",
+                "is_to_run_y": "parameter_is_to_run",
+            }
+        )
+
+        combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
+        combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
+            lambda x: PipelineStep.objects.get(id=int(x)).name
+        )
+        combined_table["technology"] = combined_table["technology_id"].apply(
+            lambda x: Technology.objects.get(id=int(x)).name
+        )
+
+        combined_table = combined_table.T.drop_duplicates().T
+
+        return combined_table
+
+    def check_default_software_tree_exists(
+        self, owner: User, technology: str, global_index: int
+    ):
+
+        try:
+            software_tree = SoftwareTree.objects.get(
+                owner=owner, global_index=global_index, technology=technology
+            )
+            return True
+
+        except SoftwareTree.DoesNotExist:
+            return None
+
+    def query_software_default_tree(
+        self, owner: User, technology: str, global_index: int
+    ) -> PipelineTree:
+        """
+        Generate a default software tree for a user
+        """
+
+        software_tree = SoftwareTree.objects.get(
+            owner=owner, global_index=global_index, technology=technology
+        )
+
+        tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
+
+        edges = []
+        nodes = []
+        leaves = []
+        for node in tree_nodes:
+            if node.parent:
+
+                edges.append((node.parent.index, node.index))
+            nodes.append((node.index, (node.name, node.value, node.node_type)))
+            if node.node_place == 1:
+                leaves.append(node.index)
+
+        return PipelineTree(
+            technology=technology,
+            nodes=[x[1] for x in sorted(nodes)],
+            edges=edges,
+            leaves=leaves,
+        )
+
+    def update_SoftwareTree_nodes(
+        self, software_tree: SoftwareTree, tree: PipelineTree
+    ):
+        """
+        Update the nodes of a software tree
+        """
+        parent_dict = tree.get_parents_dict()
+
+        for index, node in enumerate(tree.nodes):
+            is_leaf = int(index in tree.leaves)
+
+            try:
+                tree_node = SoftwareTreeNode.objects.get(
+                    software_tree=software_tree, index=index
+                )
+
+            except SoftwareTreeNode.DoesNotExist:
+
+                parent_node = parent_dict.get(index, None)
+
+                if parent_node != None:
+
+                    parent_node = SoftwareTreeNode.objects.get(
+                        software_tree=software_tree, index=parent_dict[index]
+                    )
+
+                tree_node = SoftwareTreeNode(
+                    software_tree=software_tree,
+                    index=index,
+                    name=node[0],
+                    value=node[1],
+                    node_type=node[2],
+                    parent=parent_node,
+                    node_place=is_leaf,
+                )
+                tree_node.save()
+
+    def update_software_tree(self, tree: PipelineTree, owner: User, global_index: int):
+        """
+        Update SoftwareTree table
+        """
+        try:
+            software_tree = SoftwareTree.objects.get(
+                owner=owner, global_index=global_index, technology=tree.technology
+            )
+
+        except SoftwareTree.DoesNotExist:
+            print("Creating new software tree")
+            software_tree = SoftwareTree(
+                owner=owner,
+                global_index=global_index,
+                technology=tree.technology,
+            )
+
+            software_tree.save()
+
+            self.update_SoftwareTree_nodes(software_tree, tree)
+
+
+class Utils_Manager:
+    """Combines Utility classes to create a manager for the pipeline."""
+
+    utilities_repository: Utility_Repository
+    parameter_util: Parameter_DB_Utility
+    utility_manager: Utility_Pipeline_Manager
+
+    def __init__(self, owner: User):
+        self.owner = owner
+
+        ###
+        self.parameter_util = Parameter_DB_Utility()
+        self.global_index = ConstantsSettings.USER_TREE_INDEX
+        self.utility_repository = Utility_Repository(
+            db_path=ConstantsSettings.docker_app_directory,
+            install_type="docker",
+        )
+
+        self.utility_technologies = self.parameter_util.get_technologies_available(
+            owner
+        )
+
+    def get_all_technology_pipelines(self, technology: str) -> dict:
+
+        pipeline_tree = self.generate_software_tree(technology)
+
+        all_paths = pipeline_tree.get_all_graph_paths()
+        return all_paths
+
+    def generate_software_tree(self, technology):
+
+        if self.parameter_util.check_default_software_tree_exists(
+            self.owner, technology, global_index=self.global_index
+        ):
+            return self.parameter_util.query_software_default_tree(
+                self.owner, technology, global_index=self.global_index
+            )
+
+        else:
+
+            combined_table = self.parameter_util.generate_combined_parameters_table(
+                self.owner
+            )
+
+            utility_drone = Utility_Pipeline_Manager(
+                combined_table, technology=technology
+            )
+
+            pipeline_tree = utility_drone.generate_default_software_tree()
+
+            self.parameter_util.update_software_tree(
+                pipeline_tree, self.owner, global_index=self.global_index
+            )
+
+    def generate_default_trees(self):
+        technology_trees = {}
+        for technology in self.utility_technologies:
+            technology_trees[technology] = self.generate_software_tree(technology)

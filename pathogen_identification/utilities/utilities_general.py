@@ -1,9 +1,68 @@
 import os
 import zipfile
 
+import matplotlib
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
+def simplify_name(name):
+    """simplify sample name"""
+    return (
+        name.replace("_", "_")
+        .replace("-", "_")
+        .replace(" ", "_")
+        .replace(".", "_")
+        .lower()
+    )
+
+
+def plot_dotplot(
+    df: pd.DataFrame,
+    out_file: str,
+    title: str,
+    inv_color: str = "red",
+    xmax=0,
+    borders=50,
+):
+    """Plot the dotplot from bamfile
+    query and reference coordinates column names are ax, ay, bx, by.
+
+    :param df: The dataframe with the dotplot.
+    :param out_dir: The output directory.
+    :param title: The title of the plot.
+    :param inv_color: The color of the inverted regions.
+    """
+    fig, ax = plt.subplots(figsize=(11, 3))
+    x_base = df.bx.min()
+
+    for i, row in df.iterrows():
+        x_coords = [row.ax, row.ay]
+        y_coords = [row.bx + x_base, row.by + x_base]
+
+        color = "black"
+        if row.ay < row.ax:
+            color = inv_color
+
+        ax.plot(x_coords, y_coords, color=color)
+        x_base += row.by
+
+    ax.set_title(title)
+    ax.set_xlabel("Reference")
+    ax.set_ylabel("Contigs")
+    if xmax:
+        ax.set_xlim(0 - borders, xmax + borders)
+
+    fig.savefig(out_file, bbox_inches="tight")
+    ax.cla()
+    fig.clf()
+    plt.close("all")
 
 
 def fastqc_parse(fastqc_path: str, stdin_fastqc_name: str = "stdin_fastqc"):

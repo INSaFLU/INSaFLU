@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import SoftwareTree, SoftwareTreeNode
-from pathogen_identification.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d

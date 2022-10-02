@@ -2,7 +2,6 @@ import os
 from typing import Type
 
 from django.core.files import File
-
 from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
@@ -19,9 +18,9 @@ from pathogen_identification.models import (
     Sample,
     SampleQC,
 )
-from pathogen_identification.object_classes import Sample_runClass
-from pathogen_identification.remap_class import Mapping_Instance
-from pathogen_identification.run_main import RunMain_class
+from pathogen_identification.modules.object_classes import Sample_runClass
+from pathogen_identification.modules.remap_class import Mapping_Instance
+from pathogen_identification.modules.run_main import RunMain_class
 
 
 ####################################################################################################################

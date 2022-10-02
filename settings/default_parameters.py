@@ -1633,12 +1633,12 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--min-hitlen"
-        parameter.parameter = "22"
+        parameter.parameter = "20"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
         parameter.range_available = "[16:30]"
@@ -1649,7 +1649,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "-k"
-        parameter.parameter = 1
+        parameter.parameter = "5"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1658,7 +1658,7 @@ class DefaultParameters(object):
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
         parameter.range_available = "[1:5]"
-        parameter.range_max = "5"
+        parameter.range_max = "3"
         parameter.range_min = "1"
         parameter.description = "report up to k distinc assignments per read or pair."
         vect_parameters.append(parameter)
@@ -1716,37 +1716,32 @@ class DefaultParameters(object):
         parameter = Parameter()
 
         parameter = Parameter()
-        parameter.name = "--minimum-base-quality"
-        parameter.parameter = "0"
-        parameter.type_data = Parameter.PARAMETER_int
+        parameter.name = "--quick"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True
+        parameter.can_change = False
+        parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 1
-        parameter.range_available = "[0:60]"
-        parameter.range_max = "60"
-        parameter.range_min = "0"
-        parameter.description = (
-            "Minimum base quality to consider a base for classification."
-        )
+        parameter.description = "quick operation mode"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--minimum-hit-groups"
-        parameter.parameter = "2"
-        parameter.type_data = Parameter.PARAMETER_int
+        parameter.name = "--confidence"
+        parameter.parameter = "0.5"
+        parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True
+        parameter.can_change = False
+        parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
-        parameter.range_available = "[1:5]"
-        parameter.range_max = "1"
-        parameter.range_min = "5"
-        parameter.description = "Minimum number of hit groups to report a taxon."
+        parameter.range_available = "[0.4:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.4"
+        parameter.description = "confidence threshold for reporting a taxon"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1794,7 +1789,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[1:5]"
@@ -1813,11 +1808,36 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 2
-        parameter.range_available = "[30:80]"
+        parameter.range_available = "[60:80]"
         parameter.range_max = "80"
-        parameter.range_min = "30"
+        parameter.range_min = "60"
         parameter.description = "Minimum match score in Greedy mode"
         vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-X"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.description = "Disable SEG low complexity filter"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-v"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 4
+        parameter.description = "Verbose output"
 
         return vect_parameters
 
@@ -1855,7 +1875,7 @@ class DefaultParameters(object):
         parameter = Parameter()
 
         parameter = Parameter()
-        parameter.name = "--sensitive"
+        parameter.name = "--fast"
         parameter.parameter = ""
         parameter.type_data = Parameter.PARAMETER_char
         parameter.software = software
@@ -1888,33 +1908,33 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--id"
-        parameter.parameter = "65"
+        parameter.parameter = "40"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 3
-        parameter.range_available = "[50:100]"
-        parameter.range_max = "50"
-        parameter.range_min = "100"
+        parameter.range_available = "[30:80]"
+        parameter.range_max = "80"
+        parameter.range_min = "40"
         parameter.description = "Minimum percent identity"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
         parameter.name = "--query-cover"
-        parameter.parameter = "65"
+        parameter.parameter = "40"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 4
-        parameter.range_available = "[50:100]"
-        parameter.range_max = "50"
-        parameter.range_min = "100"
+        parameter.range_available = "[20:60]"
+        parameter.range_max = "60"
+        parameter.range_min = "20"
         parameter.description = "Minimum query coverage"
         vect_parameters.append(parameter)
 
@@ -1958,34 +1978,18 @@ class DefaultParameters(object):
         parameter = Parameter()
 
         parameter = Parameter()
-        parameter.name = "--min-hits"
-        parameter.parameter = "2"
-        parameter.type_data = Parameter.PARAMETER_int
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True
-        parameter.sequence_out = 1
-        parameter.range_available = "[1:10]"
-        parameter.range_max = "10"
-        parameter.range_min = "1"
-        parameter.description = "Minimum number of hits"
-        vect_parameters.append(parameter)
-
-        parameter = Parameter()
         parameter.name = "--hll-precision"
-        parameter.parameter = "12"
+        parameter.parameter = "14"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 2
         parameter.range_available = "[10:18]"
         parameter.range_max = "18"
-        parameter.range_min = "12"
+        parameter.range_min = "13"
         parameter.description = (
             "Precision for HyperLogLog k-mer cardinality estimation."
         )
@@ -2001,22 +2005,6 @@ class DefaultParameters(object):
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 3
-        parameter.range_available = ""
-        parameter.range_max = ""
-        parameter.range_min = ""
-        parameter.description = "Use exact k-mer counting (slower, but more accurate)."
-        vect_parameters.append(parameter)
-
-        parameter = Parameter()
-        parameter.name = "--fast"
-        parameter.parameter = ""
-        parameter.type_data = Parameter.PARAMETER_char
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = False
-        parameter.is_to_run = True
-        parameter.sequence_out = 4
         parameter.range_available = ""
         parameter.range_max = ""
         parameter.range_min = ""
@@ -2057,21 +2045,21 @@ class DefaultParameters(object):
         vect_parameters = []
 
         parameter = Parameter()
-
-        parameter = Parameter()
-        parameter.name = "--outfmt"
-        parameter.parameter = "6"
-        parameter.type_data = Parameter.PARAMETER_char
+        parameter.name = "-max_target_seqs"
+        parameter.parameter = "5"
+        parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = ""
-        parameter.range_max = ""
-        parameter.range_min = ""
-        parameter.description = "Output format"
+        parameter.range_available = "[1:10]"
+        parameter.range_max = "10"
+        parameter.range_min = "1"
+        parameter.description = (
+            "Maximum number of target sequences to report alignments for"
+        )
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -2134,7 +2122,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[0:1]"
@@ -2208,24 +2196,6 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        parameter = Parameter()
-
-        parameter = Parameter()
-        parameter.name = "--min-length"
-        parameter.parameter = "100"
-        parameter.type_data = Parameter.PARAMETER_int
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True
-        parameter.sequence_out = 1
-        parameter.range_available = "[100:1000]"
-        parameter.range_max = "1000"
-        parameter.range_min = "100"
-        parameter.description = "Minimum length of contigs"
-        vect_parameters.append(parameter)
-
         return vect_parameters
 
     def get_spades_default(self, user, type_of_use, technology_name, sample=None):
@@ -2266,7 +2236,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[31:41]"
@@ -2320,7 +2290,7 @@ class DefaultParameters(object):
         parameter.range_available = ""
         parameter.range_max = ""
         parameter.range_min = ""
-        parameter.description = "value of phred-offset, default 33"
+        parameter.description = "skip read error correction step"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -2356,23 +2326,25 @@ class DefaultParameters(object):
         vect_parameters = []
 
         parameter = Parameter()
-        parameter.name = "--kmer-len"
-        parameter.parameter = "15"
-        parameter.type_data = Parameter.PARAMETER_int
+        parameter.name = "-f"
+        parameter.parameter = "0.001"
+        parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = "[12:20]"
-        parameter.range_max = "20"
-        parameter.range_min = "12"
-        parameter.description = "value of k-mer size, default 15"
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = (
+            "minimum fraction of reads required to support a variant"
+        )
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--window-len"
+        parameter.name = "-w"
         parameter.parameter = "5"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
@@ -2381,10 +2353,26 @@ class DefaultParameters(object):
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 2
-        parameter.range_available = "[5:10]"
-        parameter.range_max = "10"
-        parameter.range_min = "5"
-        parameter.description = "length of sliding widow, default 5"
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "minimum number of reads required to support a variant"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-k"
+        parameter.parameter = "21"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "k-mer size"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -2396,7 +2384,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = False
         parameter.is_to_run = True
-        parameter.sequence_out = 3
+        parameter.sequence_out = 4
         parameter.range_available = "[1:4]"
         parameter.range_max = "4"
         parameter.range_min = "1"
@@ -2437,7 +2425,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--mapqual"
-        parameter.parameter = "40"
+        parameter.parameter = "30"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -2445,25 +2433,25 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = "[0:100]"
-        parameter.range_max = "100"
-        parameter.range_min = "0"
+        parameter.range_available = "[20:60]"
+        parameter.range_max = "60"
+        parameter.range_min = "20"
         parameter.description = "minimum mapping quality, default 40"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
         parameter.name = "--mincov"
-        parameter.parameter = "10"
+        parameter.parameter = "2"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 2
-        parameter.range_available = "[0:100]"
-        parameter.range_max = "100"
-        parameter.range_min = "0"
+        parameter.range_available = "[2:10]"
+        parameter.range_max = "10"
+        parameter.range_min = "2"
         parameter.description = "minimum coverage, default 10"
         vect_parameters.append(parameter)
 

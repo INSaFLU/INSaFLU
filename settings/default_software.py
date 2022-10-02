@@ -6,7 +6,7 @@ Created on 03/05/2020
 from curses.ascii import SO
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings

@@ -9,8 +9,8 @@ from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import ParameterSet, Processed, Submitted
-from pathogen_identification.run_main import RunMain_class
-from pathogen_identification.update_DBs import (
+from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.utilities.update_DBs import (
     Update_QC_report,
     Update_Sample,
     Update_Sample_Runs,

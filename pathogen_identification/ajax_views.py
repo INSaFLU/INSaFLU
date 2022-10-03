@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import PIProject_Sample, Projects
-from pathogen_identification.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
 
 def simplify_name(name):

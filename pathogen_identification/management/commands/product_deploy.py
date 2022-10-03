@@ -3,13 +3,13 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.utils import Run_Main_from_Leaf
 
 
 class Command(BaseCommand):

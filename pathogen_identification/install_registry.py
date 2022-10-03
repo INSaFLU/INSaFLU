@@ -1,3 +1,6 @@
+from settings.constants_settings import ConstantsSettings as CS
+
+
 class Deployment_Params:
 
     SOURCE = {
@@ -23,7 +26,9 @@ class Deployment_Params:
         "SOURCE": "/opt/conda/",
         "ROOT": "/televir/mngs_benchmark/mngs_environments/",
         "software": {
-            "classification": "hostDepletion/hostdep_env",
+            CS.PIPELINE_NAME_contig_classification: "hostDepletion/hostdep_env",
+            CS.PIPELINE_NAME_read_classification: "hostDepletion/hostdep_env",
+            CS.PIPELINE_NAME_viral_enrichment: "hostDepletion/hostdep_env",
             "centrifuge": "hostDepletion/hostdep_env",
             "diamond": "hostDepletion/hostdep_env",
             "kaiju": "hostDepletion/hostdep_env",
@@ -40,23 +45,23 @@ class Deployment_Params:
             "minimap2_ONT": "hostDepletion/hostdep_env",
             "minimap2_asm": "hostDepletion/hostdep_env",
             "blastn": "hostDepletion/hostdep_env",
-            "blastp": "hostDepletion/hostdep_env"
+            "blastp": "hostDepletion/hostdep_env",
         },
-        "REMAPPING": {"default": "remap/remap"},
-        "PREPROCESS": {"default": "preprocess/preproc"},
-        "ASSEMBLY": {"default": "assembly/assembly"},
+        CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
+        CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
+        CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
 
     DIRS = {
-        "PREPROCESS": "reads/clean/",
+        CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",
-        "DEPLETION": "host_depletion/",
-        "ENRICHMENT": "enrichment/",
-        "ASSEMBLY": "assembly/",
-        "CONTIG_CLASSIFICATION": "classification/assembly/",
-        "READ_CLASSIFICATION": "classification/reads/",
-        "REMAPPING": "remap/",
+        CS.PIPELINE_NAME_host_depletion: "host_depletion/",
+        CS.PIPELINE_NAME_viral_enrichment: "enrichment/",
+        CS.PIPELINE_NAME_assembly: "assembly/",
+        CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
+        CS.PIPELINE_NAME_read_classification: "classification/reads/",
+        CS.PIPELINE_NAME_remapping: "remap/",
         "log_dir": "logs/",
         "OUTD": "output/",
     }
@@ -65,7 +70,7 @@ class Deployment_Params:
 
     ACTIONS = {
         "CLEAN": False,
-        "QCONTROL": True,
+        "QCONTROL": False,
         "ENRICH": True,
         "DEPLETE": False,
         "ASSEMBLE": True,

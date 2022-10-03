@@ -1,11 +1,14 @@
 import os
+import sys
 from typing import Type
 
+from django.contrib.auth.models import User
 from django.core.files import File
 from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
     FinalReport,
+    PIProject_Sample,
     Projects,
     ReadClassification,
     ReferenceContigs,
@@ -15,7 +18,6 @@ from pathogen_identification.models import (
     RunIndex,
     RunMain,
     RunRemapMain,
-    Sample,
     SampleQC,
 )
 from pathogen_identification.modules.object_classes import Sample_runClass
@@ -25,21 +27,33 @@ from pathogen_identification.modules.run_main import RunMain_class
 
 ####################################################################################################################
 ####################################################################################################################
-def Update_project(project_directory_path):
+def Update_project(project_directory_path, user: str = "admin"):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
     project_name = os.path.basename(project_directory_path)
+    project_name_simple = project_name.replace(".", "_").replace(":", "_")
+    print("user: ", user)
+    try:
+        user = User.objects.get(username=user)
+    except User.DoesNotExist:
+        print("User does not exist")
+        sys.exit(1)
 
     try:
-        project = Projects.objects.get(name=project_name)
+        project = Projects.objects.get(name=project_name, created_by=user)
 
     except Projects.DoesNotExist:
         print("project_name: ", project_name)
-        project = Projects(name=project_name, full_path=project_directory_path)
+        project = Projects(
+            name=project_name,
+            full_path=project_directory_path,
+            project_type=Projects.INHOUSE,
+            created_by=user,
+        )
         project.save()
 
 
-def Update_Sample(sample_class: Type[Sample_runClass]):
+def Update_Sample(sample_class: Sample_runClass):
     """
     Update Sample class.
 
@@ -47,18 +61,23 @@ def Update_Sample(sample_class: Type[Sample_runClass]):
     :return: None
     """
 
-    try:
-        Sample.objects.get(
-            name_extended=sample_class.sample_name,
-            project__name=sample_class.project_name,
-        )
-    except Sample.DoesNotExist:
+    user = User.objects.get(username=sample_class.user_name)
+    print(user)
+    print(sample_class.project_name)
+    print(sample_class.sample_name)
+    project = Projects.objects.get(name=sample_class.project_name, owner=user)
 
+    try:
+        PIProject_Sample.objects.get(
+            name=sample_class.sample_name,
+            project=project,
+        )
+    except PIProject_Sample.DoesNotExist:
         Update_sample(sample_class)
 
-    sample = Sample.objects.get(
-        name_extended=sample_class.sample_name,
-        project__name=sample_class.project_name,
+    sample = PIProject_Sample.objects.get(
+        name=sample_class.sample_name,
+        project=project,
     )
 
     try:
@@ -67,22 +86,25 @@ def Update_Sample(sample_class: Type[Sample_runClass]):
         Update_sample_qc(sample_class)
 
 
-def Update_sample(sample_class: Type[Sample_runClass]):
+def Update_sample(sample_class: Sample_runClass):
     """update sample_class.
     :param sample_class:
     :return: None
     """
+    user = User.objects.get(username=sample_class.user_name)
+    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+
     try:
-        sample = Sample.objects.get(
-            name_extended=sample_class.sample_name,
-            project__name=sample_class.project_name,
+        sample = PIProject_Sample.objects.get(
+            name=sample_class.sample_name,
+            project=project,
         )
 
-    except Sample.DoesNotExist:
+    except PIProject_Sample.DoesNotExist:
         #
-        project = Projects.objects.get(name=sample_class.project_name)
+        project = Projects.objects.get(name=sample_class.project_name, owner=user)
 
-        sample = Sample(
+        sample = PIProject_Sample(
             project=project,
             name_extended=sample_class.sample_name,
             name=os.path.splitext(sample_class.sample_name)[0],
@@ -95,14 +117,17 @@ def Update_sample(sample_class: Type[Sample_runClass]):
         sample.save()
 
 
-def Update_sample_qc(sample_class: Type[Sample_runClass]):
+def Update_sample_qc(sample_class: Sample_runClass):
     """update sample_class.qc_data.
     :param sample_class:
     :return: None
     """
 
-    sample = Sample.objects.get(
-        project__name=sample_class.project_name, name_extended=sample_class.sample_name
+    user = User.objects.get(username=sample_class.user_name)
+    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+
+    sample = PIProject_Sample.objects.get(
+        project=project, name=sample_class.sample_name
     )
 
     percent_passed = (
@@ -150,15 +175,21 @@ def Update_sample_qc(sample_class: Type[Sample_runClass]):
         processed_report.close()
 
 
-def Update_QC_report(sample_class: Type[Sample_runClass]):
+def Update_QC_report(sample_class: Sample_runClass):
     """
     Update QC data for sample_class.
 
     :param sample_class:
     :return: None
     """
-    sample = Sample.objects.get(
-        project__name=sample_class.project_name, name_extended=sample_class.sample_name
+    user = User.objects.get(username=sample_class.user_name)
+    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+
+    print("###")
+    print(project.name)
+    print("sample_class.sample_name: ", sample_class.sample_name)
+    sample = PIProject_Sample.objects.get(
+        project=project, name=sample_class.sample_name
     )
 
     try:
@@ -206,7 +237,7 @@ def Update_Sample_Runs(run_class: Type[RunMain_class]):
     Update_RefMap_DB(run_class)
 
 
-def retrieve_number_of_runs(project_name, sample_name):
+def retrieve_number_of_runs(project_name, sample_name, username):
     """
     retrieve number of runs for a given project.
 
@@ -214,15 +245,17 @@ def retrieve_number_of_runs(project_name, sample_name):
     :return: number of runs
     """
 
+    user = User.objects.get(username=username)
+
     try:
-        project = Projects.objects.get(name=project_name)
+        project = Projects.objects.get(name=project_name, owner=user)
     except Projects.DoesNotExist:
         print(f"project {project_name} does not exist")
         return 0
 
     try:
-        sample = Sample.objects.get(name_extended=sample_name, project=project)
-    except Sample.DoesNotExist:
+        sample = PIProject_Sample.objects.get(name=sample_name, project=project)
+    except PIProject_Sample.DoesNotExist:
         return 0
 
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
@@ -235,8 +268,8 @@ def RunIndex_Update_Retrieve_Key(project_name, sample_name):
     new_name = f"run_{run_index}"
 
     project = Projects.objects.get(name=project_name)
-    sample = Sample.objects.get(
-        name_extended=sample_name,
+    sample = PIProject_Sample.objects.get(
+        name=sample_name,
         project__name=project_name,
     )
 
@@ -257,10 +290,12 @@ def Update_RunMain(run_class: Type[RunMain_class]):
     :param run_class:
     :return: None
     """
-    project = Projects.objects.get(name=run_class.sample.project_name)
-    sample = Sample.objects.get(
-        name_extended=run_class.sample.sample_name,
-        project__name=run_class.sample.project_name,
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(name=run_class.project_name, owner=user)
+
+    sample = PIProject_Sample.objects.get(
+        name=run_class.sample.sample_name,
+        project=project,
     )
 
     reads_after_processing = run_class.sample.reads_after_processing
@@ -288,8 +323,8 @@ def Update_RunMain(run_class: Type[RunMain_class]):
             sample=sample,
             name=run_class.prefix,
             params_file_path=run_class.params_file_path,
-            processed_reads_r1=os.path.basename(run_class.sample.r1.current),
-            processed_reads_r2=os.path.basename(run_class.sample.r2.current),
+            processed_reads_r1=run_class.sample.r1.current,
+            processed_reads_r2=run_class.sample.r2.current,
             assembly_performed=run_class.assembly_drone.assembly_exists,
             assembly_method=run_class.assembly_drone.assembly_method.name,
             reads_after_processing=f"{reads_after_processing:,}",
@@ -308,7 +343,6 @@ def Update_RunMain(run_class: Type[RunMain_class]):
             read_classification=run_class.read_classification_drone.classifier_method.name,
             contig_classification=run_class.contig_classification_drone.classifier_method.name,
             runtime=f"{run_class.exec_time / 60:.2f} m",
-            # finished=str(run_class.finished),
             report="report",
             static_dir=run_class.static_dir,
         )
@@ -317,9 +351,13 @@ def Update_RunMain(run_class: Type[RunMain_class]):
 
 
 def Sample_update_combinations(run_class: Type[RunMain_class]):
-    sample = Sample.objects.get(
-        project__name=run_class.sample.project_name,
-        name_extended=run_class.sample.sample_name,
+
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(name=run_class.project_name, owner=user)
+
+    sample = PIProject_Sample.objects.get(
+        project=project,
+        name=run_class.sample.sample_name,
     )
 
     sample.combinations = sample.combinations + 1
@@ -345,14 +383,17 @@ def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
     """
     Sample_update_combinations(run_class)
 
-    sample = Sample.objects.get(
-        project__name=run_class.sample.project_name,
-        name_extended=run_class.sample.sample_name,
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(name=run_class.project_name, owner=user)
+
+    sample = PIProject_Sample.objects.get(
+        project=project,
+        name=run_class.sample.sample_name,
     )
 
     try:
         runmain = RunMain.objects.get(
-            project__name=run_class.sample.project_name,
+            project=project,
             suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
@@ -475,6 +516,7 @@ def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
                 unique_id=row["unique_id"],
             )
         except FinalReport.DoesNotExist:
+            print(row["covplot_path"])
             report_row = FinalReport(
                 run=runmain,
                 sample=sample,
@@ -537,13 +579,17 @@ def Update_ReferenceMap(
     - ReferenceMap_Main,
     - ReferenceContigs
     """
-    sample = Sample.objects.get(
-        name_extended=run_class.sample.sample_name,
-        project__name=run_class.sample.project_name,
+
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(name=run_class.project_name, owner=user)
+
+    sample = PIProject_Sample.objects.get(
+        name=run_class.sample.sample_name,
+        project=project,
     )
 
     run = RunMain.objects.get(
-        project__name=run_class.sample.project_name,
+        project=project,
         suprun=run_class.suprun,
         name=run_class.prefix,
         sample=sample,

@@ -23,6 +23,7 @@ from pathogen_identification.modules.object_classes import (
 )
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
+from settings.constants_settings import ConstantsSettings as CS
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
@@ -46,19 +47,19 @@ class RunDetail_main:
     config: dict
     prefix: str
     project_name: str
+    username: str
     ## input
     sample_name: str
     type: str
     r1_suffix: str
     r2_suffix: str
 
-    r1: Type[Read_class]
-    r2: Type[Read_class]
+    r1: Read_class
+    r2: Read_class
 
-    sample: Type[Sample_runClass]
-
+    sample: Sample_runClass
     ##  metadata
-    metadata_tool: Type[Metadata_handler]
+    metadata_tool: Metadata_handler
     sift_query: str
     max_remap: int
     taxid_limit: int
@@ -94,19 +95,24 @@ class RunDetail_main:
     ## output content
     report: pd.DataFrame
 
-    def __init__(self, config: dict, method_args: pd.DataFrame):
+    def __init__(self, config: dict, method_args: pd.DataFrame, username: str):
 
         self.project_name = config["project_name"]
+        self.username = username
         self.prefix = config["prefix"]
         self.suprun = self.prefix
 
         self.method_args = method_args
         self.config = config
-        self.cmd = RunCMD(get_bindir_from_binaries(config["bin"], "PREPROCESS"))
+        self.cmd = RunCMD(
+            get_bindir_from_binaries(
+                config["bin"], CS.PIPELINE_NAME_read_quality_analysis
+            )
+        )
         self.threads = config["threads"]
 
         self.logger_level_main = logging.INFO
-        self.logger_level_detail = logging.CRITICAL
+        self.logger_level_detail = logging.INFO
         self.logger = logging.getLogger("main {}".format(self.prefix))
         self.logger.setLevel(self.logger_level_main)
 
@@ -126,7 +132,9 @@ class RunDetail_main:
 
         # directories
         self.root = config["directories"]["root"]
-        self.filtered_reads_dir = config["directories"]["PREPROCESS"]
+        self.filtered_reads_dir = config["directories"][
+            CS.PIPELINE_NAME_read_quality_analysis
+        ]
         self.log_dir = config["directories"]["log_dir"]
 
         self.static_dir = config["static_dir"]
@@ -169,18 +177,22 @@ class RunDetail_main:
 
         self.r1 = Read_class(
             config["r1"],
-            config["directories"]["PREPROCESS"],
+            config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
             config["directories"]["reads_enriched_dir"],
             config["directories"]["reads_depleted_dir"],
-            bin=get_bindir_from_binaries(config["bin"], "PREPROCESS"),
+            bin=get_bindir_from_binaries(
+                config["bin"], CS.PIPELINE_NAME_read_quality_analysis
+            ),
         )
 
         self.r2 = Read_class(
             config["r2"],
-            config["directories"]["PREPROCESS"],
+            config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
             config["directories"]["reads_enriched_dir"],
             config["directories"]["reads_depleted_dir"],
-            bin=get_bindir_from_binaries(config["bin"], "PREPROCESS"),
+            bin=get_bindir_from_binaries(
+                config["bin"], CS.PIPELINE_NAME_read_quality_analysis
+            ),
         )
 
         self.sample = Sample_runClass(
@@ -188,13 +200,16 @@ class RunDetail_main:
             self.r2,
             self.sample_name,
             self.project_name,
+            self.username,
             self.config["technology"],
             self.type,
             0,
             ",".join(
                 [os.path.basename(self.r1.current), os.path.basename(self.r2.current)]
             ),
-            bin=get_bindir_from_binaries(config["bin"], "PREPROCESS"),
+            bin=get_bindir_from_binaries(
+                config["bin"], CS.PIPELINE_NAME_read_quality_analysis
+            ),
             threads=self.threads,
         )
 
@@ -217,53 +232,53 @@ class RunDetail_main:
         self.sift = config["actions"]["SIFT"]
         self.depletion = config["actions"]["DEPLETE"]
         self.enrichment = config["actions"]["ENRICH"]
-        self.assembly = config["actions"]["ASSEMBLY"]
+        self.assembly = config["actions"]["ASSEMBLE"]
         self.classification = config["actions"]["CLASSIFY"]
-        self.remapping = config["actions"]["REMAPPING"]
-        self.house_cleaning = config["actions"]["CLEANING"]
+        self.remapping = config["actions"]["REMAP"]
+        self.house_cleaning = config["actions"]["CLEAN"]
 
         ### methods
         self.preprocess_method = Software_detail(
-            "PREPROCESS",
+            CS.PIPELINE_NAME_read_quality_analysis,
             self.method_args,
             config,
             self.prefix,
         )
         self.assembly_method = Software_detail(
-            "ASSEMBLY",
+            CS.PIPELINE_NAME_assembly,
             method_args,
             config,
             self.prefix,
         )
         self.depletion_method = Software_detail(
-            "DEPLETION",
+            CS.PIPELINE_NAME_host_depletion,
             method_args,
             config,
             self.prefix,
         )
 
         self.enrichment_method = Software_detail(
-            "ENRICHMENT",
+            CS.PIPELINE_NAME_viral_enrichment,
             method_args,
             config,
             self.prefix,
         )
 
         self.contig_classification_method = Software_detail(
-            "CONTIG_CLASSIFICATION",
+            CS.PIPELINE_NAME_contig_classification,
             method_args,
             config,
             self.prefix,
         )
         self.read_classification_method = Software_detail(
-            "READ_CLASSIFICATION",
+            CS.PIPELINE_NAME_read_classification,
             method_args,
             config,
             self.prefix,
         )
 
         self.remapping_method = Software_detail(
-            "REMAPPING",
+            CS.PIPELINE_NAME_remapping,
             method_args,
             config,
             self.prefix,
@@ -345,19 +360,23 @@ class RunDetail_main:
 
         # directories
         self.root = config["directories"]["root"]
-        self.filtered_reads_dir = config["directories"]["PREPROCESS"]
+        self.filtered_reads_dir = config["directories"][
+            CS.PIPELINE_NAME_read_quality_analysis
+        ]
         self.log_dir = config["directories"]["log_dir"]
 
         self.sample.r1.update(
-            config["directories"]["PREPROCESS"],
-            config["directories"]["reads_enriched_dir"],
-            config["directories"]["reads_depleted_dir"],
+            self.sample.r1,
+            clean_dir=config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
+            enriched_dir=config["directories"]["reads_enriched_dir"],
+            depleted_dir=config["directories"]["reads_depleted_dir"],
         )
 
         self.sample.r2.update(
-            config["directories"]["PREPROCESS"],
-            config["directories"]["reads_enriched_dir"],
-            config["directories"]["reads_depleted_dir"],
+            self.sample.r2,
+            clean_dir=config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
+            enriched_dir=config["directories"]["reads_enriched_dir"],
+            depleted_dir=config["directories"]["reads_depleted_dir"],
         )
 
         ### actions
@@ -374,47 +393,47 @@ class RunDetail_main:
         ### methods
 
         self.preprocess_method = Software_detail(
-            "PREPROCESS",
+            CS.PIPELINE_NAME_read_quality_analysis,
             self.method_args,
             config,
             self.prefix,
         )
         self.assembly_method = Software_detail(
-            "ASSEMBLY",
+            CS.PIPELINE_NAME_assembly,
             method_args,
             config,
             self.prefix,
         )
 
         self.depletion_method = Software_detail(
-            "DEPLETION",
+            CS.PIPELINE_NAME_host_depletion,
             method_args,
             config,
             self.prefix,
         )
 
         self.enrichment_method = Software_detail(
-            "ENRICHMENT",
+            CS.PIPELINE_NAME_viral_enrichment,
             method_args,
             config,
             self.prefix,
         )
 
         self.contig_classification_method = Software_detail(
-            "CONTIG_CLASSIFICATION",
+            CS.PIPELINE_NAME_contig_classification,
             method_args,
             config,
             self.prefix,
         )
         self.read_classification_method = Software_detail(
-            "READ_CLASSIFICATION",
+            CS.PIPELINE_NAME_read_classification,
             method_args,
             config,
             self.prefix,
         )
 
         self.remapping_method = Software_detail(
-            "REMAPPING",
+            CS.PIPELINE_NAME_remapping,
             method_args,
             config,
             self.prefix,
@@ -467,11 +486,13 @@ class RunDetail_main:
 
 
 class Run_Deployment_Methods(RunDetail_main):
-    def __init__(self, config_json: os.PathLike, method_args: pd.DataFrame):
-        super().__init__(config_json, method_args)
+    def __init__(
+        self, config_json: os.PathLike, method_args: pd.DataFrame, username: str
+    ):
+        super().__init__(config_json, method_args, username)
         self.mapped_instances = []
 
-    def deploy_QC(self):
+    def deploy_QC(self, fake_run: bool = False):
         self.preprocess_drone = Preprocess(
             self.sample.r1.current,
             self.sample.r2.current,
@@ -483,12 +504,16 @@ class Run_Deployment_Methods(RunDetail_main):
             self.threads,
             self.subsample,
             logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
         )
 
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
         self.logger.info(f"r2 reads: {self.sample.r2.get_current_fastq_read_number()}")
 
-        self.preprocess_drone.run()
+        if fake_run:
+            self.preprocess_drone.fake_run()
+        else:
+            self.preprocess_drone.run()
 
     def deploy_HD(self):
         self.depletion_drone = Classifier(
@@ -498,7 +523,9 @@ class Run_Deployment_Methods(RunDetail_main):
             r2=self.sample.r2.current,
             prefix=self.prefix,
             threads=self.threads,
-            bin=get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
@@ -513,7 +540,9 @@ class Run_Deployment_Methods(RunDetail_main):
             r2=self.sample.r2.current,
             prefix=self.prefix,
             threads=self.threads,
-            bin=get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
@@ -529,7 +558,9 @@ class Run_Deployment_Methods(RunDetail_main):
             r2=self.sample.r2.current,
             prefix=self.prefix,
             threads=self.threads,
-            bin=get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
@@ -544,7 +575,9 @@ class Run_Deployment_Methods(RunDetail_main):
             r2="",
             prefix=self.prefix,
             threads=self.threads,
-            bin=get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
@@ -560,7 +593,9 @@ class Run_Deployment_Methods(RunDetail_main):
             r2=self.sample.r2.current,
             prefix=self.prefix,
             threads=self.threads,
-            bin=get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
             logging_level=self.logger_level_detail,  #
             log_dir=self.log_dir,
         )
@@ -579,7 +614,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.prefix,
             self.threads,
             self.minimum_coverage,
-            get_bindir_from_binaries(self.config["bin"], "REMAPPING"),
+            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             self.house_cleaning,
             logdir=self.config["directories"]["log_dir"],
@@ -597,8 +632,10 @@ class Run_Deployment_Methods(RunDetail_main):
 
 
 class RunMain_class(Run_Deployment_Methods):
-    def __init__(self, config_json: os.PathLike, method_args: pd.DataFrame):
-        super().__init__(config_json, method_args)
+    def __init__(
+        self, config_json: os.PathLike, method_args: pd.DataFrame, username: str
+    ):
+        super().__init__(config_json, method_args, username)
 
     def Run(self):
 
@@ -609,6 +646,8 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"classification: {self.classification}")
         self.logger.info(f"sift: {self.sift}")
         self.logger.info(f"remapping: {self.remapping}")
+
+        print("starting pipeline")
 
         if self.quality_control:
             self.deploy_QC()
@@ -625,6 +664,29 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.reads_after_processing = self.sample.current_total_read_number()
             self.sample.get_qc_data()
             print(self.sample.reads_after_processing)
+
+        else:
+            self.deploy_QC(fake_run=True)
+            import shutil
+
+            shutil.copy(self.sample.r1.current, self.sample.r1.clean)
+            if self.sample.r2.exists:
+                shutil.copy(self.sample.r2.current, self.sample.r2.clean)
+
+            self.sample.qc_soft = "none"
+            self.sample.input_fastqc_report = self.preprocess_drone.input_qc_report
+            self.sample.processed_fastqc_report = (
+                self.preprocess_drone.processed_qc_report
+            )
+
+            self.sample.r1.is_clean()
+            self.sample.r2.is_clean()
+            # self.sample.fake_quality_strings()
+            self.sample.reads_after_processing = self.sample.current_total_read_number()
+            self.sample.get_fake_qc_data()
+            print(self.r1.current)
+            print(self.sample.reads_after_processing)
+            print(self.preprocess_drone.preprocess_name_fastq_gz)
 
         if self.enrichment:
             self.deploy_EN()

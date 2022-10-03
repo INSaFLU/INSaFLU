@@ -58,7 +58,7 @@ urlpatterns = [
         name="sample_main",
     ),
     url(
-        "<slug:project>/sample_<slug:sample>/<slug:name>",
+        r"Projects/(?P<project_name>[a-zA-Z0-9]+)/(?P<sample>[a-zA-Z0-9]+)/(?P<name>[a-zA-Z0-9]+)",
         PIviews.Sample_detail,
         name="sample_detail",
     ),

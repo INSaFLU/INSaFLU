@@ -135,10 +135,7 @@ class SampleTable(tables.Table):
 
     class Meta:
         model = PIProject_Sample
-        # attrs = {
-        #    "class": "semantic-ui-table",
-        # }
-        # template_name = "django_tables2/bootstrap4.html"
+
         attrs = {"class": "paleblue"}
         fields = (
             "name",
@@ -151,7 +148,7 @@ class SampleTable(tables.Table):
 
     def render_combinations(self, record):
         return RunMain.objects.filter(
-            sample__name=record.name, project__name=record.project
+            sample__name=record.name, project=record.project
         ).count()
 
     def render_report(self, record):
@@ -248,6 +245,24 @@ class ContigTable(tables.Table):
 
 
 class RunMainTable(tables.Table):
+
+    name = tables.Column(verbose_name="Run Name")
+    enrichment = tables.Column(
+        verbose_name="Enrichment", orderable=False, empty_values=()
+    )
+    depletion = tables.Column(
+        verbose_name="Depletion", orderable=False, empty_values=()
+    )
+    assembly = tables.Column(verbose_name="Assembly", orderable=False, empty_values=())
+    read_classification = tables.Column(
+        verbose_name="Read Classification", orderable=False, empty_values=()
+    )
+    contig_classification = tables.Column(
+        verbose_name="Contig Classification", orderable=False, empty_values=()
+    )
+    runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
+    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+
     class Meta:
         model = RunMain
         attrs = {
@@ -261,14 +276,34 @@ class RunMainTable(tables.Table):
             "read_classification",
             "contig_classification",
             "finished",
-            "runtime",
         )
+
+    def render_report(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+        record_name = (
+            "<a url="
+            + "sample_detail"
+            + " project_name="
+            + record.project.name
+            + " sample_name="
+            + record.sample.name
+            + " run_name="
+            + record.name
+            + ">"
+            + "report"
+            + "</a>"
+        )
+        print(user.username)
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        if user.username == record.project.owner.username:
+            return mark_safe(record_name)
 
     report = tables.LinkColumn(
         "sample_detail",
         text="Details",
-        args=[tables.A("project"), tables.A("sample"), tables.A("name")],
+        args=[tables.A("project__name"), tables.A("sample__name"), tables.A("name")],
     )
-
-    def render_runtime(self, record):
-        return float(record.runtime.split()[0])

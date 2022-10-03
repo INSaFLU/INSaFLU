@@ -4,6 +4,7 @@ Ceated on 06/05/2022
 """
 
 from fluwebvirus.settings import STATICFILES_DIRS
+from settings.constants_settings import ConstantsSettings as CS
 
 
 class ConstantsSettings:
@@ -16,18 +17,20 @@ class ConstantsSettings:
     docker_install_directory = "/televir/mngs_benchmark/mngs_environments/"
     USER_TREE_INDEX = 0
 
+    ################################### Module names
+
     ################################### Project_file_structure
 
     DIRS = {
-        "PREPROCESS": "reads/clean/",
+        CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",
-        "DEPLETION": "host_depletion/",
-        "ENRICHMENT": "enrichment/",
-        "ASSEMBLY": "assembly/",
-        "CONTIG_CLASSIFICATION": "classification/assembly/",
-        "READ_CLASSIFICATION": "classification/reads/",
-        "REMAPPING": "remap/",
+        CS.PIPELINE_NAME_host_depletion: "host_depletion/",
+        CS.PIPELINE_NAME_viral_enrichment: "enrichment/",
+        CS.PIPELINE_NAME_assembly: "assembly/",
+        CS.PIPELINE_NAME_contig_classification: "classification/assembly/",
+        CS.PIPELINE_NAME_read_classification: "classification/reads/",
+        CS.PIPELINE_NAME_remapping: "remap/",
         "log_dir": "logs/",
         "OUTD": "output/",
     }

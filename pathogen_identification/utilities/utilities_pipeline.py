@@ -211,7 +211,11 @@ class Utility_Pipeline_Manager:
             )
             return os.path.isfile(bin_path)
         else:
-            for pipeline in ["REMAPPING", "PREPROCESS", "ASSEMBLY"]:
+            for pipeline in [
+                CS.PIPELINE_NAME_remapping,
+                CS.PIPELINE_NAME_read_quality_analysis,
+                CS.PIPELINE_NAME_assembly,
+            ]:
                 if os.path.exists(
                     os.path.join(
                         ConstantsSettings.docker_install_directory,
@@ -417,6 +421,34 @@ class Parameter_DB_Utility:
         technologies_available = list(set(technologies_available))
 
         return technologies_available
+
+    @staticmethod
+    def expand_parameters_table(combined_table):
+        def fix_row(row):
+            if not row.can_change or not row.range_available:
+                return [row.parameter]
+            else:
+                row_type = row.type_data
+                range_min = row.range_min
+                range_max = row.range_max
+
+                if row_type == "int":
+                    range_step = 1
+                    range_min = int(range_min)
+                    range_max = int(range_max)
+                    range_step = int(range_step)
+                    return [str(x) for x in range(range_min, range_max, range_step)]
+                elif row_type == "float":
+                    range_step = 0.1
+                    range_min = float(range_min)
+                    range_max = float(range_max)
+                    range_step = float(range_step)
+                    return [str(x) for x in np.arange(range_min, range_max, range_step)]
+
+        combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
+        combined_table = combined_table.explode("parameter")
+
+        return combined_table
 
     def generate_combined_parameters_table(self, owner: User):
 

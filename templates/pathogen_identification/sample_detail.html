@@ -17,10 +17,9 @@
 
 
 <ul class="breadcrumb">
-    <li><a href="{% url 'projects_main' %}">Home</a></li>
-    <li><a href={% url 'project_samples' project_name=project %}> project {{project}}</a></li>
-    <li><a href={% url 'sample_main' project_name=project sample_name=sample %}> sample {{sample}}</a></li>
-    <li>{{run_name}}</li>
+    <li><a href="{% url 'PIprojects_main' %}">Home</a></li>
+    <li><a href="{% url 'PIproject_samples' pk=project_index %}"> project {{project_name}}</a></li>
+    <li>sample {{name}}</li>
 </ul>
 
 

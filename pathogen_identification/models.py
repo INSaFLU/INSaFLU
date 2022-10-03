@@ -140,7 +140,7 @@ class PIProject_Sample(models.Model):
     type = models.CharField(
         max_length=10, blank=True, null=True
     )  # sample type: SE or PE
-    combinations = models.IntegerField(blank=True, null=True)  # number of combinations
+    combinations = models.IntegerField(blank=True, default=0)  # number of combinations
     input = models.TextField(blank=True, null=True)  # input files
     technology = models.CharField(
         max_length=100,
@@ -393,17 +393,12 @@ class RunMain(models.Model):
     read_classification = models.CharField(
         max_length=50, blank=True, null=True
     )  # read classification method if any
-    read_classification_performed = models.BooleanField(
-        blank=True
-    )  # read classification performed
 
     contig_classification = models.CharField(max_length=50, blank=True, null=True)
-    contig_classification_performed = models.BooleanField(blank=True)
 
     remap = models.CharField(
         max_length=50, blank=True, null=True
     )  # remap method if any
-    remap_performed = models.BooleanField(blank=True)
     remap_args = models.CharField(max_length=50, blank=True, null=True)
 
     finished = models.CharField(max_length=10, blank=True, null=True)  # SE or PE

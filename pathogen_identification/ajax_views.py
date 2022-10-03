@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import PIProject_Sample, Projects
+from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
 
@@ -41,6 +41,13 @@ def deploy_ProjectPI(request):
         )
         all_paths = utils.get_all_technology_pipelines(technology)
         pipeline_tree = utils.generate_software_tree(technology)
-
-        # print(pipeline_tree.nodes)
         print(all_paths)
+        print("user pk: ", request.user.pk)
+        print("project pk: ", project.pk)
+        print("sample pk: ", samples[0].pk)
+
+        leaf_node_key = SoftwareTreeNode.LEAF_node
+        leaf_node = SoftwareTreeNode.objects.filter(
+            software_tree__technology=technology, node_place=leaf_node_key
+        )
+        print("leaf node pk: ", leaf_node[0].pk)

@@ -32,6 +32,8 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from settings.default_software_project_sample import DefaultProjectSoftware
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
@@ -56,8 +58,6 @@ from pathogen_identification.tables import (
     SampleQCTable,
     SampleTable,
 )
-from utils.process_SGE import ProcessSGE
-from utils.utils import ShowInfoMainPage, Utils
 
 
 def clean_check_box_in_session(request):
@@ -662,13 +662,12 @@ def Sample_main(requesdst, project_name, sample_name):
     except RunMain.DoesNotExist:
         runs = None
 
-    # try:
-    #    sampleqc = SampleQC.objects.filter(sample__name=sample_name)
-    #
-    # except SampleQC.DoesNotExist:
-    #    sampleqc = None
-    #
-    # sampleqc_table = SampleQCTable(sampleqc)
+    print(runs)
+    for r in runs:
+        print(r.name)
+        print(r.project.name)
+        print(r.sample.name)
+
     runs = RunMainTable(runs)
     RequestConfig(
         requesdst, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
@@ -710,8 +709,11 @@ def Sample_detail(requesdst, project="", sample="", name=""):
     """
     home page
     """
+    print("going to sample detail")
     template_name = "pathogen_identification/sample_detail.html"
     project_main = Projects.objects.get(name=project)
+    project_pk = Projects.objects.get(name=project_main, owner=requesdst.user).pk
+
     sample_main = Sample.objects.get(name=sample, project__name=project)
     #
     run_main = RunMain.objects.get(project__name=project, sample=sample_main, name=name)
@@ -751,6 +753,7 @@ def Sample_detail(requesdst, project="", sample="", name=""):
         "run_remap": run_remap,
         "reference_remap_main": reference_remap_main,
         "final_report": final_report,
+        "project_index": project_pk,
     }
 
     return render(

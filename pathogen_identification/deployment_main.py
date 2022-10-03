@@ -1,20 +1,168 @@
+import datetime
 import os
 import shutil
 import sys
-from time import timezone
 
 import pandas as pd
 from django.contrib.auth.models import User
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
-from pathogen_identification.models import ParameterSet, Processed, Submitted
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Processed,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+    Submitted,
+)
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
     Update_QC_report,
     Update_Sample,
     Update_Sample_Runs,
 )
+from pathogen_identification.utilities.utilities_general import simplify_name
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+
+
+class PathogenIdentification_deployment:
+
+    project: str
+    prefix: str
+    rdir: str
+    threads: int = 3
+    run_engine: RunMain_class
+    params = dict
+    run_params_db = pd.DataFrame()
+    pk: int = 0
+    username: str
+
+    def __init__(
+        self,
+        pipeline_index: int,
+        sample,  # sample name
+        project: str = "test",
+        prefix: str = "main",
+        username: str = "admin",
+        technology: str = "ONT",
+        pk: int = 0,
+        static_dir: str = "static",
+    ) -> None:
+
+        self.pipeline_index = pipeline_index
+
+        self.username = username
+        self.project = project
+        self.sample = sample
+        self.prefix = prefix
+        self.rdir = os.path.join(ConstantsSettings.project_directory, username, project)
+        self.dir = os.path.join(self.rdir, prefix)
+
+        os.makedirs(self.dir, exist_ok=True)
+
+        self.prefix = prefix
+        self.pk = pk
+        self.static_dir = static_dir
+        self.technology = technology
+        self.install_registry = Deployment_Params
+
+    def configure(self, r1_path: str, pipeline_leaf, r2_path: str = "") -> None:
+        self.get_constants()
+        self.configure_params(pipeline_leaf)
+        self.generate_config_file()
+        self.prep_test_env()
+
+        r1_name = os.path.basename(r1_path)
+        new_r1_path = os.path.join(self.dir, "reads") + "/" + r1_name
+        shutil.copy(r1_path, new_r1_path)
+
+        if r2_path:
+            r2_name = os.path.basename(r1_path)
+            new_r2_path = os.path.join(self.dir, "reads") + "/" + r2_name
+            shutil.copy(r2_path, new_r2_path)
+        else:
+            new_r2_path = ""
+
+        self.config["sample_name"] = self.sample
+        self.config["r1"] = new_r1_path
+        self.config["r2"] = new_r2_path
+        self.config["type"] = ["SE", "PE"][
+            int(os.path.isfile(self.config["r2"] is not None))
+        ]
+        self.config["technology"] = self.technology
+
+    def get_constants(self):
+
+        if self.technology == "Illumina/IonTorrent":
+            self.constants = ConstantsSettings.CONSTANTS_ILLUMINA
+        if self.technology == "ONT":
+            self.constants = ConstantsSettings.CONSTANTS_ONT
+
+    def configure_params(self, pipeline_leaf):
+        user = User.objects.get(username=self.username)
+
+        utils = Utils_Manager(user)
+
+        all_paths = utils.get_all_technology_pipelines(self.technology)
+
+        leaf_index = self.pipeline_index
+
+        if leaf_index not in all_paths.keys():
+            raise ValueError("Pipeline not found")
+
+        else:
+            self.run_params_db = all_paths[leaf_index]
+
+    def generate_config_file(self):
+
+        self.config = {
+            "project": self.project,
+            "source": self.install_registry.SOURCE,
+            "directories": {
+                "root": self.rdir,
+            },
+            "static_dir": self.static_dir,
+            "threads": self.threads,
+            "prefix": self.prefix,
+            "project_name": self.project,
+            "metadata": {
+                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
+                for x, g in self.install_registry.METADATA.items()
+            },
+            "technology": self.technology,
+            "bin": self.install_registry.BINARIES,
+            "actions": {},
+        }
+
+        for dr, g in ConstantsSettings.DIRS.items():
+            self.config["directories"][dr] = os.path.join(self.dir, g)
+
+        for dr, g in ConstantsSettings.ACTIONS.items():
+            self.config["actions"][dr] = g
+
+        self.config.update(self.constants)
+
+    def prep_test_env(self):
+        """
+        from main directory bearing scripts, params.py and main.sh, create metagenome run directory
+
+        :return:
+        """
+
+        for dir in self.config["directories"].values():
+            os.makedirs(dir, exist_ok=True)
+
+    def close(self):
+        if os.path.exists(self.dir):
+            shutil.rmtree(self.dir)
+
+    def run_main_prep(self):
+
+        os.makedirs(self.static_dir, exist_ok=True)
+
+        self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
 
 
 class Run_Main_from_Leaf:
@@ -31,17 +179,27 @@ class Run_Main_from_Leaf:
 
     container: PathogenIdentification_deployment
 
-    def __init__(self, user, input_data, project, pipeline_leaf, pipeline_tree):
+    def __init__(
+        self,
+        user: User,
+        input_data: PIProject_Sample,
+        project: Projects,
+        pipeline_leaf: SoftwareTreeNode,
+        pipeline_tree: SoftwareTree,
+    ):
         self.user = user
         self.sample = input_data
         self.project = project
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
 
-        self.file_r1 = input_data.sample.path_name_1
-        self.file_r2 = input_data.sample.path_name_2
+        self.file_r1 = input_data.sample.path_name_1.path
+        if input_data.sample.path_name_2:
+            self.file_r2 = input_data.sample.path_name_2.path
+        else:
+            self.file_r2 = ""
 
-        self.technology = input_data.sample.technology
+        self.technology = input_data.sample.get_type_technology()
         # self.user = user.username
         self.project_name = project.name
         self.date_created = project.creation_date
@@ -52,16 +210,22 @@ class Run_Main_from_Leaf:
             ConstantsSettings.static_directory_deployment,
             self.user.username,
             self.project_name,
-            simplify_name(os.path.basename(self.file_r1)),
+            simplify_name(os.path.basename(input_data.name)),
         )
 
         self.static_dir = os.path.join(
             ConstantsSettings.static_directory, self.static_dir
         )
 
+        prefix = f"{simplify_name(input_data.name)}_{input_data.sample.pk}"
+
+        print("#####")
+        print(input_data.name)
         self.container = PathogenIdentification_deployment(
+            pipeline_index=pipeline_leaf.index,
+            sample=input_data.name,
             project=self.project_name,
-            prefix=f"{simplify_name(input_data.name)}_{input_data.sample.pk}",
+            prefix=prefix,
             username=self.user.username,
             static_dir=self.static_dir,
         )
@@ -120,9 +284,9 @@ class Run_Main_from_Leaf:
 
     def Update_dbs(self):
 
-        Update_Sample(
-            self.container.run_engine.sample,
-        )
+        # Update_Sample(
+        #    self.container.run_engine.sample,
+        # )
 
         Update_QC_report(self.container.run_engine.sample)
         Update_Sample_Runs(self.container.run_engine)
@@ -132,9 +296,10 @@ class Run_Main_from_Leaf:
             submitted = Submitted.objects.get(pk=self.pk)
         except Submitted.DoesNotExist:
             new_run = ParameterSet.objects.get(pk=self.pk)
+            date_submitted = datetime.datetime.now()
             submitted = Submitted(
                 parameter_set=new_run,
-                date_submitted=timezone.now(),
+                date_submitted=date_submitted,
             )
             submitted.save()
 
@@ -144,149 +309,19 @@ class Run_Main_from_Leaf:
             processed = Processed.objects.get(pk=self.pk)
         except Processed.DoesNotExist:
             new_run = ParameterSet.objects.get(pk=self.pk)
+            date_processed = datetime.datetime.now()
             processed = Processed(
                 parameter_set=new_run,
-                date_processed=timezone.now(),
+                date_processed=date_processed,
             )
             processed.save()
 
     def Submit(self):
 
-        self.register_submission()
+        # self.register_submission()
         self.configure()
+        print(self.container.config["directories"].keys())
         self.Deploy()
         self.Update_dbs()
         self.container.close()
-        self.register_completion()
-
-
-class PathogenIdentification_deployment:
-
-    project: str
-    prefix: str
-    rdir: str
-    threads: int = 3
-    run_engine: RunMain_class
-    params = dict
-    run_params_db = pd.DataFrame()
-    pk: int = 0
-    username: str
-
-    def __init__(
-        self,
-        project: str = "test",
-        prefix: str = "main",
-        username: str = "admin",
-        technology: str = "ONT",
-        pk: int = 0,
-        static_dir: str = "static",
-    ) -> None:
-
-        self.username = username
-        self.project = project
-        self.prefix = prefix
-        self.rdir = os.path.join(ConstantsSettings.project_directory, username, project)
-        self.dir = os.path.join(self.rdir, prefix)
-
-        os.makedirs(self.dir, exist_ok=True)
-
-        self.prefix = prefix
-        self.pk = pk
-        self.static_dir = self.static_dir
-        self.technology = technology
-        self.install_registry = Deployment_Params
-
-    def configure(self, r1_path: str, pipeline_leaf, r2_path: str = "") -> None:
-        self.configure_params(pipeline_leaf)
-        self.generate_config_file()
-        self.prep_test_env()
-
-        r1_name = os.path.basename(r1_path)
-        new_r1_path = os.path.join(self.dir, "reads") + "/" + r1_name
-        shutil.copy(r1_path, new_r1_path)
-
-        if r2_path:
-            r2_name = os.path.basename(r1_path)
-            new_r2_path = os.path.join(self.dir, "reads") + "/" + r2_name
-            shutil.copy(r2_path, new_r2_path)
-
-        self.config["sample_name"] = simplify_name(r1_name)
-        self.config["r1"] = new_r1_path
-        self.config["r2"] = new_r2_path
-        self.config["type"] = ["SE", "PE"][
-            int(os.path.isfile(self.config["r2"] is not None))
-        ]
-        self.config["technology"] = self.technology
-
-    def get_constants(self):
-
-        if self.technology == "Illumina/IonTorrent":
-            self.constants = ConstantsSettings.CONSTANTS_ILLUMINA
-        if self.technology == "ONT":
-            self.constants = ConstantsSettings.CONSTANTS_ONT
-
-    def configure_params(self, pipeline_leaf):
-
-        utils = Utils_Manager(owner=self.user)
-
-        all_paths = utils.get_all_technology_pipelines(self.technology)
-
-        leaf_index = self.pipeline_leaf.index
-
-        if leaf_index not in all_paths.keys():
-            raise ValueError("Pipeline not found")
-
-        else:
-            self.run_params_db = all_paths[leaf_index]
-
-    def generate_config_file(self):
-
-        self.config = {
-            "project": self.project,
-            "source": self.install_registry.SOURCE,
-            "directories": {
-                "root": self.rdir,
-            },
-            "static_dir": self.static_dir,
-            "threads": self.threads,
-            "prefix": self.prefix,
-            "project_name": self.project,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
-            "technology": self.technology,
-            "bin": self.install_registry.BINARIES,
-            "actions": {},
-        }
-
-        for dr, g in ConstantsSettings.DIRS.items():
-            self.config["directories"][dr] = os.path.join(self.dir, g)
-
-        for dr, g in ConstantsSettings.ACTIONS.items():
-            self.config["actions"][dr] = True
-            self.config["actions"]["DEPLETE"] = False
-            self.config["actions"]["CLEAN"] = False
-
-        self.config.update(self.params_dict.CONSTANTS)
-
-    def prep_test_env(self):
-        """
-        from main directory bearing scripts, params.py and main.sh, create metagenome run directory
-
-        :return:
-        """
-        #
-
-        for dir in self.config["directories"].values():
-            os.makedirs(dir, exist_ok=True)
-
-    def close(self):
-        if os.path.exists(self.dir):
-            shutil.rmtree(self.dir)
-
-    def run_main_prep(self):
-
-        os.makedirs(self.static_dir, exist_ok=True)
-
-        self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
+        # self.register_completion()

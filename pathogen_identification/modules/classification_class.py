@@ -5,8 +5,7 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -996,7 +995,7 @@ class Classifier:
     """
 
     available_software: dict = {
-        "blast": run_blast,
+        "blastn": run_blast,
         "blastp": run_blast_p,
         "centrifuge": run_centrifuge,
         "desamba": run_deSamba,

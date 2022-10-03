@@ -23,6 +23,8 @@ class Preprocess:
         subsample: bool = False,
         subsample_reads: int = 0,
         logging_level: int = logging.ERROR,
+        log_dir="",
+        prefix="",
     ):
         """
 
@@ -70,7 +72,7 @@ class Preprocess:
             ".gz", ""
         )
         self.preprocess_name_r2 = self.preprocess_name_r2_fastq.replace(".fastq", "")
-        self.cmd = RunCMD(self.bin)
+        self.cmd = RunCMD(self.bin, logdir=log_dir, prefix=prefix, task="preprocess")
 
         self.input_qc_report = os.path.join(self.preprocess_dir, "input_data.html")
         self.processed_qc_report = os.path.join(
@@ -178,6 +180,25 @@ class Preprocess:
         self.clean_read_names()
 
         self.fastqc_processed()
+
+    def fake_run(self):
+        self.logger.info("Fake run. Not running anything.")
+        self.generate_fake_input_html()
+        self.generate_fake_processed_html()
+
+    def generate_fake_input_html(self):
+        """
+        Generate fake input html
+        """
+        with open(self.input_qc_report, "w") as f:
+            f.write("Fake input html")
+
+    def generate_fake_processed_html(self):
+        """
+        Generate fake processed html
+        """
+        with open(self.processed_qc_report, "w") as f:
+            f.write("Fake processed html")
 
     def r2_output_check(self):
         """
@@ -432,6 +453,7 @@ class Preprocess:
         if os.path.isfile(self.preprocess_name_fastq_gz):
             os.remove(self.preprocess_name_fastq_gz)
         self.cmd.run_bash(gzip_cmd)
+        os.remove(temp_file_path)
 
     def clean_read_names(self):
         """

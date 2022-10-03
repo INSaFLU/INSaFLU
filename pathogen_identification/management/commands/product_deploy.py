@@ -17,40 +17,40 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--user_pk",
+            "--user",
             type=int,
-            help="user deploying the run",
+            help="user deploying the run (pk)",
         )
         parser.add_argument(
-            "--sample_pk",
+            "--sample",
             type=int,
-            help="sample to be run",
-        )
-
-        parser.add_argument(
-            "--project_pk",
-            type=int,
-            help="project to be run",
+            help="sample to be run (pk)",
         )
 
         parser.add_argument(
-            "--pipeline_pk",
+            "--project",
             type=int,
-            help="pipeline to be run",
+            help="project to be run (pk)",
+        )
+
+        parser.add_argument(
+            "--pipeline",
+            type=int,
+            help="pipeline to be run (pk )",
         )
 
     def handle(self, *args, **options):
         ###
         #
-        user = User.objects.get(pk=options["user_pk"])
-        sample = PIProject_Sample.objects.get(pk=options["sample_pk"])
-        project = Projects.objects.get(pk=options["project_pk"])
-        pipeline_leaf = SoftwareTreeNode.objects.get(pk=options["pipeline_pk"])
+        user = User.objects.get(pk=options["user"])
+        sample = PIProject_Sample.objects.get(pk=options["sample"])
+        project = Projects.objects.get(pk=options["project"])
+        pipeline_leaf = SoftwareTreeNode.objects.get(pk=options["pipeline"])
         pipeline_tree = SoftwareTree.objects.get(pk=pipeline_leaf.software_tree.pk)
 
         run = Run_Main_from_Leaf(
             user=user,
-            sample=sample,
+            input_data=sample,
             project=project,
             pipeline_leaf=pipeline_leaf,
             pipeline_tree=pipeline_tree,

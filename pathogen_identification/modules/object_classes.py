@@ -431,6 +431,7 @@ class Sample_runClass:
     input_fastqc_report: os.PathLike
     processed_fastqc_report: os.PathLike
     threads: int = 1
+    user_name: str
 
     def __init__(
         self,
@@ -438,6 +439,7 @@ class Sample_runClass:
         r2: Type[Read_class],
         sample_name: str,
         project_name: str,
+        user_name: str,
         technology: str,
         type: str,
         combinations: str,
@@ -450,6 +452,7 @@ class Sample_runClass:
         self.r2 = r2
         self.sample_name = sample_name
         self.project_name = project_name
+        self.user_name = user_name
         self.technology = technology
         self.type = type
         self.combinations = combinations
@@ -491,6 +494,28 @@ class Sample_runClass:
         """
 
         self.qcdata = self.QC_summary()
+
+    def get_fake_qc_data(self):
+        """get fake qc data for sample_class. Update sample_class.qc_data.
+
+        :param sample_class:
+        :return: None
+        """
+
+        fake_df = pd.DataFrame(
+            [
+                ["Total_sequences", 1000000],
+                ["Sequence length", 5000],
+                ["%GC", 50],
+                ["Q20", 90],
+            ],
+            columns=["measure", "value"],
+        ).set_index("measure")
+
+        self.qcdata = {
+            "input": fake_df,
+            "processed": fake_df,
+        }
 
     def clean_unique(self):
         if self.type == "SE":
@@ -619,14 +644,14 @@ class Software_detail:
 
             try:
                 self.args = method_details[
-                    method_details.param.str.contains("ARGS")
+                    method_details.parameter.str.contains("ARGS")
                 ].value.values[0]
             except IndexError:
                 self.args = ""
 
             try:
                 db_name = method_details[
-                    method_details.param.str.contains("DB")
+                    method_details.parameter.str.contains("DB")
                 ].value.values[0]
                 if ".gz" in db_name:
                     self.db = os.path.join(config["source"]["REF_FASTA"], db_name)

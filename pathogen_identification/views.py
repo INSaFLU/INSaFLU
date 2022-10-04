@@ -640,54 +640,62 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["table"] = samples
         context["project_index"] = project.pk
         context["nav_sample"] = True
-        context["total_itens"] = query_set.count()
+        context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
 
         return context
 
 
-def Sample_main(requesdst, project_name, sample_name):
+class Sample_main(LoginRequiredMixin, generic.CreateView):
     """
     sample main page
     """
-    template_name = "pathogen_identification/sample_main.html"
 
-    try:
+    template_name = "pathogen_identification/sample_main.html"
+    model = RunMain
+    fields = ["name"]
+
+    def get_context_data(self, **kwargs):
+        context = super(Sample_main, self).get_context_data(**kwargs)
+
+        project_name = self.kwargs["project_name"]
+        sample_name = self.kwargs["sample_name"]
+        user = self.request.user
+
         runs = RunMain.objects.filter(
             sample__name=sample_name,
             project__name=project_name,
-            project__owner=requesdst.user,
+            project__owner=user,
         )
-    except RunMain.DoesNotExist:
-        runs = None
 
-    print(runs)
-    for r in runs:
-        print(r.name)
-        print(r.project.name)
-        print(r.sample.name)
+        print(runs)
+        for r in runs:
+            print(r.name)
+            print(r.project.name)
+            print(r.sample.name)
 
-    runs = RunMainTable(runs)
-    RequestConfig(
-        requesdst, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
-    ).configure(runs)
+        runs_table = RunMainTable(runs)
 
-    project_pk = Projects.objects.get(name=project_name, owner=requesdst.user).pk
+        RequestConfig(
+            self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
+        ).configure(runs_table)
 
-    return render(
-        requesdst,
-        template_name,
-        {
-            "runs": runs,
-            # "qc_table": sampleqc_table,
-            # "sampleqc": [list(sampleqc.values())][0][0],
+        project_pk = Projects.objects.get(name=project_name, owner=user).pk
+
+        context = {
+            "nav_sample": True,
+            "total_items": runs.count(),
+            "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
+            "show_info_main_page": ShowInfoMainPage(),
+            "table": runs_table,
             "name": sample_name,
             "project_main": True,
             "project_name": project_name,
             "project_index": project_pk,
-        },
-    )
+        }
+
+        return context
 
 
 def Project_reports(requesdst, project):
@@ -705,62 +713,77 @@ def Project_reports(requesdst, project):
     )
 
 
-def Sample_detail(requesdst, project="", sample="", name=""):
+class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
     """
+
     print("going to sample detail")
+
     template_name = "pathogen_identification/sample_detail.html"
-    project_main = Projects.objects.get(name=project)
-    project_pk = Projects.objects.get(name=project_main, owner=requesdst.user).pk
 
-    sample_main = Sample.objects.get(name=sample, project__name=project)
-    #
-    run_main = RunMain.objects.get(project__name=project, sample=sample_main, name=name)
-    #
-    run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
-    #
-    run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
-    #
-    print(run_assembly)
-    run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
-    #
-    read_classification = ReadClassification.objects.get(
-        sample=sample_main, run=run_main
-    )
-    #
-    final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
-    #
-    contig_classification = ContigClassification.objects.get(
-        sample=sample_main, run=run_main
-    )
-    #
+    def get_context_data(self, **kwargs):
+        print(self.kwargs)
 
-    reference_remap_main = ReferenceMap_Main.objects.filter(
-        sample=sample_main, run=run_main
-    )
-    #
+        project_name = self.kwargs["project_name"]
+        run_name = self.kwargs["run_name"]
+        sample_name = self.kwargs["sample_name"]
+        user = self.request.user
+        print(sample_name)
+        print(run_name)
+        print(run_name)
 
-    context = {
-        "project": project,
-        "run_name": name,
-        "sample": sample,
-        "run_main": run_main,
-        "run_detail": run_detail,
-        "assembly": run_assembly,
-        "contig_classification": contig_classification,
-        "read_classification": read_classification,
-        "run_remap": run_remap,
-        "reference_remap_main": reference_remap_main,
-        "final_report": final_report,
-        "project_index": project_pk,
-    }
+        project_main = Projects.objects.get(name=project_name, owner=user)
+        project_pk = Projects.objects.get(name=project_name, owner=user).pk
 
-    return render(
-        requesdst,
-        template_name,
-        context,
-    )
+        sample_main = PIProject_Sample.objects.get(
+            name=sample_name, project=project_main
+        )
+        #
+
+        run_main = RunMain.objects.get(
+            project=project_main, sample=sample_main, name=run_name
+        )
+        #
+        run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
+        #
+        run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+        #
+        print(run_assembly)
+        run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
+        #
+        read_classification = ReadClassification.objects.get(
+            sample=sample_main, run=run_main
+        )
+        #
+        final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
+        #
+        contig_classification = ContigClassification.objects.get(
+            sample=sample_main, run=run_main
+        )
+        #
+
+        reference_remap_main = ReferenceMap_Main.objects.filter(
+            sample=sample_main, run=run_main
+        )
+        #
+
+        context = {
+            "project": project_name,
+            "run_name": run_name,
+            "sample": sample_name,
+            "run_main": run_main,
+            "run_detail": run_detail,
+            "assembly": run_assembly,
+            "contig_classification": contig_classification,
+            "read_classification": read_classification,
+            "run_remap": run_remap,
+            "reference_remap_main": reference_remap_main,
+            "final_report": final_report,
+            "project_index": project_pk,
+        }
+
+        return context
 
 
 def IGV_display(requestdst):

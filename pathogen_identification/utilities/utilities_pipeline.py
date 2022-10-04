@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
@@ -88,6 +89,21 @@ class PipelineTree:
 
         return path_dict
 
+    def get_all_graph_paths_explicit(self) -> dict:
+        """
+        Get all possible paths in the pipeline
+        """
+
+        self.generate_graph()
+        all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
+
+        path_dict = {
+            leaf: self.get_path_explicit(all_paths[x])
+            for x, leaf in enumerate(self.leaves)
+        }
+
+        return path_dict
+
     def df_from_path(self, path: list) -> pd.DataFrame:
         """
         Generate a dataframe from a path
@@ -158,10 +174,11 @@ class Utility_Pipeline_Manager:
     existing_pipeline_order: list
     combined_table: pd.DataFrame
     software_dbs_dict: dict
+    technology: str
 
-    def __init__(self, combined_table: pd.DataFrame, technology="nanopore"):
-
-        self.technology = technology
+    def __init__(
+        self,
+    ):
 
         self.utility_repository = Utility_Repository(
             db_path=ConstantsSettings.docker_app_directory,
@@ -177,6 +194,8 @@ class Utility_Pipeline_Manager:
 
         self.binaries = Deployment_Params.BINARIES
 
+    def input(self, combined_table: pd.DataFrame, technology="nanopore"):
+        self.technology = technology
         self.process_combined_table(combined_table)
 
     def generate_default_software_tree(self):
@@ -188,6 +207,9 @@ class Utility_Pipeline_Manager:
         return self.create_pipe_tree()
 
     def process_combined_table(self, combined_table):
+        print(self.technology)
+        print(combined_table.technology.unique())
+        print(combined_table[combined_table.technology.isna()].software_name.unique())
         combined_table = combined_table[combined_table.technology == self.technology]
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
@@ -289,6 +311,7 @@ class Utility_Pipeline_Manager:
         Generate a dictionary of software and parameters
         """
         step_dict = {c: g for c, g in self.combined_table.groupby("pipeline_step")}
+
         step_software_dict = {
             step: g.software_name.unique().tolist() for step, g in step_dict.items()
         }
@@ -399,6 +422,42 @@ class Utility_Pipeline_Manager:
             leaves=leaves,
         )
 
+    def generate_explicit_edge_dict(self, pipeline_tree: PipelineTree) -> dict:
+        """ """
+        nodes_dict = {x: [] for x in pipeline_tree.nodes}
+
+        for edge in pipeline_tree.edges:
+            nodes_dict[edge[0]].append([edge[1]])
+
+        nodes_dict = {
+            x: pd.DataFrame(y, columns=["child"]).set_index("child")
+            for x, y in nodes_dict.items()
+        }
+
+        return nodes_dict
+
+    def node_index_dict(self, pipe_tree: PipelineTree) -> dict:
+        """ """
+        return {x: i for i, x in enumerate(pipe_tree.nodes)}
+
+    def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
+        """"""
+
+        print(pipe_tree.nodes)
+        nodes_index_dict = self.node_index_dict(pipe_tree)
+        print(nodes_index_dict)
+
+        explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
+        print("hello")
+        parent = explicit_path[0]
+        for child in explicit_path[1:]:
+            if child in pipe_tree.leaves:
+                return child
+            if child not in explicit_edge_dict[parent].index:
+                print(f"Child {child} not in parent {parent}")
+                return False
+            parent = child
+
 
 class Parameter_DB_Utility:
     """Comunicates with dango database.
@@ -425,27 +484,43 @@ class Parameter_DB_Utility:
     @staticmethod
     def expand_parameters_table(combined_table):
         def fix_row(row):
+            if not row.parameter:
+                return [""]
             if not row.can_change or not row.range_available:
                 return [row.parameter]
             else:
+                print("####")
+                print(row.software_name)
+                print(row.parameter_name)
                 row_type = row.type_data
                 range_min = row.range_min
                 range_max = row.range_max
+                new_range = row.parameter
 
-                if row_type == "int":
+                if row_type == Parameter.PARAMETER_int:
                     range_step = 1
                     range_min = int(range_min)
                     range_max = int(range_max)
                     range_step = int(range_step)
-                    return [str(x) for x in range(range_min, range_max, range_step)]
-                elif row_type == "float":
+                    new_range = [
+                        str(x) for x in range(range_min, range_max, range_step)
+                    ]
+                elif row_type == Parameter.PARAMETER_float:
                     range_step = 0.1
                     range_min = float(range_min)
                     range_max = float(range_max)
                     range_step = float(range_step)
-                    return [str(x) for x in np.arange(range_min, range_max, range_step)]
+                    new_range = [
+                        str(round(x, 2))
+                        for x in np.arange(range_min, range_max, range_step)
+                    ]
+
+                print(new_range)
+                return new_range
 
         combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
+        combined_table = combined_table.reset_index(drop=True)
+
         combined_table = combined_table.explode("parameter")
 
         return combined_table
@@ -474,11 +549,16 @@ class Parameter_DB_Utility:
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
             lambda x: PipelineStep.objects.get(id=int(x)).name
         )
+
         combined_table["technology"] = combined_table["technology_id"].apply(
             lambda x: Technology.objects.get(id=int(x)).name
         )
 
-        combined_table = combined_table.T.drop_duplicates().T
+        combined_table = combined_table.reset_index(drop=True)
+
+        combined_table = combined_table.loc[
+            :, ~combined_table.T.duplicated(keep="first")
+        ]
 
         return combined_table
 
@@ -606,6 +686,7 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available(
             owner
         )
+        self.utility_manager = Utility_Pipeline_Manager()
 
     def get_all_technology_pipelines(self, technology: str) -> dict:
 
@@ -629,15 +710,29 @@ class Utils_Manager:
                 self.owner
             )
 
-            utility_drone = Utility_Pipeline_Manager(
-                combined_table, technology=technology
-            )
+            full_table = self.parameter_util.expand_parameters_table(combined_table)
 
-            pipeline_tree = utility_drone.generate_default_software_tree()
+            self.utility_manager.input(full_table, technology=technology)
+
+            pipeline_tree = self.utility_manager.generate_default_software_tree()
 
             self.parameter_util.update_software_tree(
                 pipeline_tree, self.owner, global_index=self.global_index
             )
+
+            return pipeline_tree
+
+    def generate_current_tree(self, technology):
+        combined_table = self.parameter_util.generate_combined_parameters_table(
+            self.owner
+        )
+
+        utility_drone = Utility_Pipeline_Manager()
+        utility_drone.input(combined_table, technology=technology)
+
+        pipeline_tree = utility_drone.generate_default_software_tree()
+
+        return pipeline_tree
 
     def generate_default_trees(self):
         technology_trees = {}

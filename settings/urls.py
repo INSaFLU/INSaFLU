@@ -5,7 +5,7 @@ Created on Jan 7, 2018
 """
 from django.conf.urls import url
 
-from settings import ajax_views, new_views, views
+from settings import ajax_views, views
 
 urlpatterns = [
     url(

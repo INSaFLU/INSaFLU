@@ -247,13 +247,16 @@ class ContigTable(tables.Table):
 class RunMainTable(tables.Table):
 
     name = tables.Column(verbose_name="Run Name")
+    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     enrichment = tables.Column(
         verbose_name="Enrichment", orderable=False, empty_values=()
     )
-    depletion = tables.Column(
+    host_depletion = tables.Column(
         verbose_name="Depletion", orderable=False, empty_values=()
     )
-    assembly = tables.Column(verbose_name="Assembly", orderable=False, empty_values=())
+    assembly_method = tables.Column(
+        verbose_name="Assembly", orderable=False, empty_values=()
+    )
     read_classification = tables.Column(
         verbose_name="Read Classification", orderable=False, empty_values=()
     )
@@ -261,7 +264,6 @@ class RunMainTable(tables.Table):
         verbose_name="Contig Classification", orderable=False, empty_values=()
     )
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
-    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
 
     class Meta:
         model = RunMain
@@ -270,15 +272,15 @@ class RunMainTable(tables.Table):
         }
         fields = (
             "name",
+            "report",
             "enrichment",
             "host_depletion",
             "assembly_method",
             "read_classification",
             "contig_classification",
-            "finished",
         )
 
-    def render_report(self, record):
+    def renderinf_report(self, record):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -305,5 +307,5 @@ class RunMainTable(tables.Table):
     report = tables.LinkColumn(
         "sample_detail",
         text="Details",
-        args=[tables.A("project__name"), tables.A("sample__name"), tables.A("name")],
+        args=[tables.A("project.name"), tables.A("sample.name"), tables.A("name")],
     )

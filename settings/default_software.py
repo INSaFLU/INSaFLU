@@ -167,7 +167,10 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_KAIJU_name,
             self.default_parameters.get_kaiju_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
             user,
         )
@@ -175,7 +178,10 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_KAIJU_name,
             self.default_parameters.get_kaiju_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+                user,
+                Software.TYPE_OF_USE_pident,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
             user,
         )
@@ -776,7 +782,10 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_KAIJU_name,
                 self.default_parameters.get_kaiju_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user,
+                    Software.TYPE_OF_USE_pident,
+                    technology_name,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
                 ),
                 user,
             )

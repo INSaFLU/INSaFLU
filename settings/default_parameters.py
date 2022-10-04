@@ -599,7 +599,8 @@ class DefaultParameters(object):
             return self.get_kaiju_default(
                 software.owner,
                 Software.TYPE_OF_USE_pident,
-                ConstantsSettings.TECHNOLOGY_illumina,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_DESAMBA_name:
@@ -1805,7 +1806,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 2
         parameter.range_available = "[60:80]"
@@ -2125,9 +2126,9 @@ class DefaultParameters(object):
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = "[0:1]"
-        parameter.range_max = "1"
-        parameter.range_min = "0.1"
+        parameter.range_available = "[0.2:0.4]"
+        parameter.range_max = "0.5"
+        parameter.range_min = "0.2"
         parameter.description = "value of ratio criteria, default 0.3"
         vect_parameters.append(parameter)
 
@@ -2141,8 +2142,8 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 2
-        parameter.range_available = "[0:1]"
-        parameter.range_max = "1"
+        parameter.range_available = "[0.1:0.4]"
+        parameter.range_max = "0.4"
         parameter.range_min = "0.1"
         parameter.description = "value of overlap criteria, default 0.1"
         vect_parameters.append(parameter)
@@ -2157,9 +2158,9 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 3
-        parameter.range_available = "[5:20]"
-        parameter.range_max = "20"
-        parameter.range_min = "5"
+        parameter.range_available = "[8:14]"
+        parameter.range_max = "14"
+        parameter.range_min = "8"
         parameter.description = "value of number of contigs criteria, default 10"
         vect_parameters.append(parameter)
 
@@ -2430,11 +2431,11 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = True
+        parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 1
-        parameter.range_available = "[20:60]"
-        parameter.range_max = "60"
+        parameter.range_available = "[20:30]"
+        parameter.range_max = "30"
         parameter.range_min = "20"
         parameter.description = "minimum mapping quality, default 40"
         vect_parameters.append(parameter)

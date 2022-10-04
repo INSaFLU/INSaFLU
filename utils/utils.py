@@ -56,7 +56,7 @@ class Utils(object):
 		"""
 		get the path to reference
 		"""
-		return os.path.join(Constants.DIR_PROCESSED_FILES_CONSENSUS, "userId_{0}".format(user_id), "refId_{0}".format(ref_id))
+		return os.path.join(Constants.DIR_PROCESSED_FILES_CONSENSUS, "userId_{0}".format(user_id), "consensusId_{0}".format(ref_id))
 	
 	def get_path_to_fastq_file(self, user_id, sample_id):
 		"""

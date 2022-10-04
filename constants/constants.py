@@ -26,7 +26,7 @@ class Constants(object):
 	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
 	MAX_SEQUENCES_FROM_CONTIGS_FASTA = 100		### update this values
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
-	MAX_LENGTH_CONTIGS_SEQ_NAME = 20	###  it must be less than 20 because of the field  
+	MAX_LENGTH_CONTIGS_SEQ_NAME = 190	###  it must be less than 190 because of the Consensus.name field  
 	SHORT_NAME_LENGTH = 20				### cut length name to show in the tables
 	
 	### has the minimun number of files to calculate global files

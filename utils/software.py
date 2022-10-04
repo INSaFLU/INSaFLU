@@ -364,26 +364,26 @@ class Software(object):
 				self.utils.remove_dir(out_dir_result)
 				return False
 		else:	### for minion
-			try:
-				cmd = self.run_flye(fastq1_1, out_dir_result)
-				parameters = self.software_names.get_flye_parameters()
-				result_all.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), parameters))
-			except Exception:
-				result = Result()
-				result.set_error("Flye (%s) fail to run" % (self.software_names.get_flye_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))
-				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
-				self.utils.remove_dir(out_dir_result)
-				return False			
 			#try:
-			#	cmd = self.convert_fastq_to_fasta(fastq1_1, os.path.join(out_dir_result, "contigs.fasta"))
+			#	cmd = self.run_flye(fastq1_1, out_dir_result)
+			#	parameters = self.software_names.get_flye_parameters()
+			#	result_all.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), parameters))
 			#except Exception:
 			#	result = Result()
-			#	result.set_error("Fail to convert fastq to fasta.")
-			#	result.add_software(SoftwareDesc("sed", "", ""))
+			#	result.set_error("Flye (%s) fail to run" % (self.software_names.get_flye_version()))
+			#	result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))
 			#	manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			#	self.utils.remove_dir(out_dir_result)
-			#	return False
+			#	return False			
+			try:
+				cmd = self.convert_fastq_to_fasta(fastq1_1, os.path.join(out_dir_result, "contigs.fasta"))
+			except Exception:
+				result = Result()
+				result.set_error("Fail to convert fastq to fasta.")
+				result.add_software(SoftwareDesc("sed", "", ""))
+				manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+				self.utils.remove_dir(out_dir_result)
+				return False
 			
 		file_out_contigs = os.path.join(out_dir_result, "contigs.fasta")
 		if (not os.path.exists(file_out_contigs) or os.path.getsize(file_out_contigs) < 50):
@@ -393,10 +393,10 @@ class Software(object):
 				result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
 				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			else:
-				result.set_error("Flye (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_flye_version()))
-				result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))				
-				#result.set_error("Low number of reads in fasta file. Came from fastq.gz")
-				#result.add_software(SoftwareDesc("sed", "", ""))
+				#result.set_error("Flye (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_flye_version()))
+				#result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))				
+				result.set_error("Low number of reads in fasta file. Came from fastq.gz")
+				result.add_software(SoftwareDesc("sed", "", ""))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
 			self.utils.remove_dir(out_dir_result)
 			return False
@@ -473,19 +473,19 @@ class Software(object):
 		## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
 		try:
 			contigs_2_sequences = Contigs2Sequences(b_run_tests)
-			#(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
-			#		os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
-			#		os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
-			#		True if sample.is_type_fastq_gz_sequencing() else False)
 			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
-					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)),\
-					True)			
+					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
+					os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
+					True if sample.is_type_fastq_gz_sequencing() else False)
+			#(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
+			#		os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)),\
+			#		True)			
 			## copy the contigs from spades
-			#if (sample.is_type_fastq_gz_sequencing()):	## illumina
-			if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
-			if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
-			#else:
-			#	if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))
+			if (sample.is_type_fastq_gz_sequencing()):	## illumina
+				if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
+				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
+			else:
+				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
 			if not out_file_clean is None: self.utils.remove_file(out_file_clean)
@@ -503,11 +503,11 @@ class Software(object):
 				MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(),
 				self.software_names.get_abricate_version()))
 		else:
-			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
-				MetaKeyAndValue.META_VALUE_Success, "Success, Flye(%s), Abricate(%s)" % (self.software_names.SOFTWARE_FLYE_VERSION,
-				self.software_names.get_abricate_version()))			
 			#manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
-			#	MetaKeyAndValue.META_VALUE_Success, "Success, Abricate(%s)" % (self.software_names.get_abricate_version()))
+			#	MetaKeyAndValue.META_VALUE_Success, "Success, Flye(%s), Abricate(%s)" % (self.software_names.SOFTWARE_FLYE_VERSION,
+			#	self.software_names.get_abricate_version()))			
+			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
+				MetaKeyAndValue.META_VALUE_Success, "Success, Abricate(%s)" % (self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
 			MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
 		self.utils.remove_dir(out_dir_result)

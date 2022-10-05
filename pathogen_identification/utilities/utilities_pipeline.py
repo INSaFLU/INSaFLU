@@ -185,8 +185,8 @@ class Utility_Pipeline_Manager:
             install_type="docker",
         )
         self.pipeline_order = [
-            CS.PIPELINE_NAME_assembly,
             CS.PIPELINE_NAME_viral_enrichment,
+            CS.PIPELINE_NAME_assembly,
             CS.PIPELINE_NAME_contig_classification,
             CS.PIPELINE_NAME_read_classification,
             CS.PIPELINE_NAME_remapping,
@@ -207,9 +207,6 @@ class Utility_Pipeline_Manager:
         return self.create_pipe_tree()
 
     def process_combined_table(self, combined_table):
-        print(self.technology)
-        print(combined_table.technology.unique())
-        print(combined_table[combined_table.technology.isna()].software_name.unique())
         combined_table = combined_table[combined_table.technology == self.technology]
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
@@ -221,6 +218,20 @@ class Utility_Pipeline_Manager:
         ]
         self.software_name_list = combined_table.software_name.unique().tolist()
         self.combined_table = combined_table
+
+        def round_parameter_float(row):
+            new_param = row.parameter
+            if row.type_data == Parameter.PARAMETER_float:
+
+                if row.parameter and row.can_change:
+                    new_param = round(float(row.parameter), 2)
+                    new_param = str(new_param)
+
+            return new_param
+
+        self.combined_table["parameter"] = self.combined_table.apply(
+            round_parameter_float, axis=1
+        )
 
     def check_software_is_installed(self, software_name: str) -> bool:
         software_lower = software_name.lower()
@@ -427,10 +438,12 @@ class Utility_Pipeline_Manager:
         nodes_dict = {x: [] for x in pipeline_tree.nodes}
 
         for edge in pipeline_tree.edges:
-            nodes_dict[edge[0]].append([edge[1]])
+            parent = pipeline_tree.nodes[edge[0]]
+            child = pipeline_tree.nodes[edge[1]]
+            nodes_dict[parent].append(child)
 
         nodes_dict = {
-            x: pd.DataFrame(y, columns=["child"]).set_index("child")
+            x: pd.DataFrame([[z] for z in y], columns=["child"]).set_index("child")
             for x, y in nodes_dict.items()
         }
 
@@ -443,16 +456,14 @@ class Utility_Pipeline_Manager:
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
 
-        print(pipe_tree.nodes)
         nodes_index_dict = self.node_index_dict(pipe_tree)
-        print(nodes_index_dict)
 
         explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
-        print("hello")
         parent = explicit_path[0]
+
         for child in explicit_path[1:]:
-            if child in pipe_tree.leaves:
-                return child
+            if nodes_index_dict[child] in pipe_tree.leaves:
+                return nodes_index_dict[child]
             if child not in explicit_edge_dict[parent].index:
                 print(f"Child {child} not in parent {parent}")
                 return False
@@ -489,9 +500,7 @@ class Parameter_DB_Utility:
             if not row.can_change or not row.range_available:
                 return [row.parameter]
             else:
-                print("####")
-                print(row.software_name)
-                print(row.parameter_name)
+
                 row_type = row.type_data
                 range_min = row.range_min
                 range_max = row.range_max
@@ -515,7 +524,6 @@ class Parameter_DB_Utility:
                         for x in np.arange(range_min, range_max, range_step)
                     ]
 
-                print(new_range)
                 return new_range
 
         combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
@@ -573,6 +581,17 @@ class Parameter_DB_Utility:
             return True
 
         except SoftwareTree.DoesNotExist:
+            return None
+
+    def get_software_tree_index(self, owner: User, technology: str, global_index: int):
+
+        if self.check_default_software_tree_exists(owner, technology, global_index):
+            software_tree = SoftwareTree.objects.get(
+                owner=owner, global_index=global_index, technology=technology
+            )
+
+            return software_tree.pk
+        else:
             return None
 
     def query_software_default_tree(
@@ -694,6 +713,11 @@ class Utils_Manager:
 
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
+
+    def get_software_tree_index(self, technology: str):
+        return self.parameter_util.get_software_tree_index(
+            self.owner, technology, self.global_index
+        )
 
     def generate_software_tree(self, technology):
 

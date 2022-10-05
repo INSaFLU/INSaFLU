@@ -2085,6 +2085,7 @@ class ProcessControler(models.Model):
     PREFIX_SAMPLE = "sample_"
     PREFIX_PROJECT_SAMPLE = "project_sample_"
     PREFIX_PROJECT = "project_"
+    PREFIX_TELEVIR_PROJECT = "televir_project_"
     PREFIX_UPLOAD_FILES = "upload_files_"
     PREFIX_LINK_FILES_USER = "link_files_user_"
     PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
@@ -2115,6 +2116,7 @@ class ProcessControler(models.Model):
         ordering = ["creation_date"]
 
     ### get names for samples, project and project samples
+
     def get_name_sample(self, sample):
         return "{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk)
 
@@ -2135,6 +2137,11 @@ class ProcessControler(models.Model):
 
     def get_name_collect_all_projects_user(self, user):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
+
+    def get_name_televir_project(self, televir_project):
+        return "{}{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, televir_project.pk
+        )
 
     def __str__(self):
         return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(

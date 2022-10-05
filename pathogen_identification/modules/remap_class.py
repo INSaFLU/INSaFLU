@@ -9,13 +9,17 @@ import numpy as np
 import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+)
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
@@ -725,7 +729,7 @@ class Remapping:
         available_methods = {
             "bwa": self.remap_bwa,
             "snippy": self.remap_snippy,
-            "minimap-rem": self.remap_minimap2,
+            "minimap2": self.remap_minimap2,
             "minimap2_no_ref": self.remap_minimap2_no_ref,
             "bowtie": self.remap_bowtie,
         }

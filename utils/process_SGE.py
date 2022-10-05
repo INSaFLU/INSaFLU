@@ -69,10 +69,7 @@ class ProcessSGE(object):
             settings.SGE_ROOT, file_name, temp_file
         )
         exist_status = os.system(cmd)
-        print("submitting job")
-        print(cmd)
-        with open(file_name, "r") as f:
-            print(f.read())
+
         if exist_status != 0:
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
@@ -84,7 +81,6 @@ class ProcessSGE(object):
             )
             raise Exception("Fail to submit qsub")
         ## read output
-        print("########## PREP JOB")
         vect_out = self.utils.read_text_file(temp_file)
         if os.path.exists(temp_file):
             os.unlink(temp_file)
@@ -786,6 +782,44 @@ class ProcessSGE(object):
             if sge_id != None:
                 self.set_process_controlers(
                     user, process_controler.get_name_upload_files(upload_files), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    def set_submit_televir_job(self, user, sample_pk, project_pk, pipeline_pk):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_job --user_id {} --sample_id {} --project_id {} --pipeline_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                user_pk,
+                sample_pk,
+                project_pk,
+                pipeline_pk,
+                out_dir,
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
+        )
+        print(path_file)
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_televir_project(), sge_id
                 )
         except:
             raise Exception("Fail to submit the job.")

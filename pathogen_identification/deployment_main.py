@@ -20,7 +20,6 @@ from pathogen_identification.models import (
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
     Update_QC_report,
-    Update_Sample,
     Update_Sample_Runs,
 )
 from pathogen_identification.utilities.utilities_general import simplify_name
@@ -88,9 +87,7 @@ class PathogenIdentification_deployment:
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
-        self.config["type"] = ["SE", "PE"][
-            int(os.path.isfile(self.config["r2"] is not None))
-        ]
+        self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
         self.config["technology"] = self.technology
 
     def get_constants(self):
@@ -186,6 +183,7 @@ class Run_Main_from_Leaf:
         project: Projects,
         pipeline_leaf: SoftwareTreeNode,
         pipeline_tree: SoftwareTree,
+        odir: str,
     ):
         self.user = user
         self.sample = input_data
@@ -213,14 +211,10 @@ class Run_Main_from_Leaf:
             simplify_name(os.path.basename(input_data.name)),
         )
 
-        self.static_dir = os.path.join(
-            ConstantsSettings.static_directory, self.static_dir
-        )
+        self.static_dir = os.path.join(odir, self.static_dir)
 
         prefix = f"{simplify_name(input_data.name)}_{input_data.sample.pk}"
 
-        print("#####")
-        print(input_data.name)
         self.container = PathogenIdentification_deployment(
             pipeline_index=pipeline_leaf.index,
             sample=input_data.name,
@@ -284,10 +278,6 @@ class Run_Main_from_Leaf:
 
     def Update_dbs(self):
 
-        # Update_Sample(
-        #    self.container.run_engine.sample,
-        # )
-
         Update_QC_report(self.container.run_engine.sample)
         Update_Sample_Runs(self.container.run_engine)
 
@@ -320,8 +310,7 @@ class Run_Main_from_Leaf:
 
         # self.register_submission()
         self.configure()
-        print(self.container.config["directories"].keys())
         self.Deploy()
         self.Update_dbs()
         self.container.close()
-        # self.register_completion()
+        self.register_completion()

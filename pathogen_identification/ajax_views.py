@@ -3,9 +3,10 @@ import json
 import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
+from utils.process_SGE import ProcessSGE
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import PIProject_Sample, Projects, SoftwareTreeNode
@@ -29,6 +30,8 @@ def deploy_ProjectPI(request):
     prepare data for deployment of pathogen identification.
     """
     if request.is_ajax():
+        process_SGE = ProcessSGE()
+
         data = {"is_ok": False}
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
@@ -37,39 +40,42 @@ def deploy_ProjectPI(request):
         samples = PIProject_Sample.objects.filter(project=project)
 
         utils = Utils_Manager(owner=request.user)
-        combined_table = utils.parameter_util.generate_combined_parameters_table(
-            utils.owner
-        )
 
-        # print(combined_table[["range_available", "can_change", "type_data"]].head())
-        full_table = utils.parameter_util.expand_parameters_table(combined_table)
-
-        all_paths = utils.get_all_technology_pipelines(technology)
         pipeline_tree = utils.generate_software_tree(technology)
+        pipeline_tree_index = utils.get_software_tree_index(technology)
 
-        print(all_paths)
         print("user pk: ", request.user.pk)
         print("project pk: ", project.pk)
         print("sample pk: ", samples[0].pk)
-
-        leaf_node_key = SoftwareTreeNode.LEAF_node
-        leaf_node = SoftwareTreeNode.objects.filter(
-            software_tree__technology=technology, node_place=leaf_node_key
-        )
-        # print(pipeline_tree.edges)
-        # print("leaf node pk: ", leaf_node[0].pk)
-        print(pipeline_tree.leaves)
+        print("pipeline_tree_index: ", pipeline_tree_index)
 
         local_tree = utils.generate_current_tree(technology)
-        print("i")
-        print(local_tree.leaves)
+
         local_paths = local_tree.get_all_graph_paths_explicit()
+        print("local paths: ", local_paths.keys())
 
-        path_selected = local_paths[14]
-        print(path_selected)
-        print("het")
+        try:
+            for leaf, path in local_paths.items():
+                print("leaf: ", leaf)
 
-        matched_path = utils.utility_manager.match_path_to_tree(
-            path_selected, pipeline_tree
-        )
-        print(matched_path)
+                matched_path = utils.utility_manager.match_path_to_tree(
+                    path, pipeline_tree
+                )
+
+                matched_path_pk = SoftwareTreeNode.objects.get(
+                    software_tree__pk=pipeline_tree_index, index=matched_path
+                ).pk
+
+                print("matched path: ", leaf, matched_path)
+                if matched_path:
+                    taskID = process_SGE.set_submit_televir_job(
+                        user=request.user,
+                        sample_pk=samples[1].pk,
+                        project_pk=project.pk,
+                        pipeline_pk=matched_path_pk,
+                    )
+            data = {"is_ok": True}
+        except:
+            data = {"is_ok": False}
+
+        return JsonResponse(data)

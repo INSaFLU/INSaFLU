@@ -50,6 +50,7 @@ class Constants(object):
     QUEUE_SGE_NAME_GLOBAL = "all.q"
     QUEUE_SGE_NAME_FAST = "fast.q"  ## jobs that are fast to run
     QUEUE_SGE_NAME_INSA = "insa.q"  ## insa queue
+    QUEUE_SGE_NAME_TELEVIR = "televir.q"
     ##	QUEUE_SGE_NAME_EMAIL = 'email.q' direct for now...
 
     ### separators

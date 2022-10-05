@@ -9,7 +9,7 @@ from settings.constants_settings import ConstantsSettings as CS
 
 class ConstantsSettings:
 
-    project_directory = "/mnt/sdc/TELEVIR/projects/"
+    project_directory = "/tmp/televir/projects/"
     static_directory = STATICFILES_DIRS[0]
     static_directory_deployment = "projects"
     PAGINATE_NUMBER = 10

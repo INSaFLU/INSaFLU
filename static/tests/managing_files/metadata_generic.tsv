@@ -1,0 +1,21 @@
+strain	date	virus	region	gisaid_epi_isl	genbank_accession	length	segment	sex	age	host	vaccine status	week	latitude	longitude	type-subtype	putative mixed-infection	Center Name	Country	Lineage (Pangolin)
+Wuhan/Hu-1/2019	2019-12-26	ncov	Asia	EPI_ISL_402125	MN908947	29903	genome	?	?	?	?	?	?	?	?	?	?	?	?
+Wuhan/WH01/2019	2019-12-26	ncov	Asia	EPI_ISL_406798	LR757998	29866	genome	?	?	?	?	?	?	?	?	?	?	?	?
+ULSGuarda_871033_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.221
+Synlab_PLEB916_2021	2022-06-21	ncov	Europe	?	?	29907	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	P.1
+Synlab_PLEB599_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.351
+Synlab_AMY4725_2021	2022-06-21	ncov	Europe	?	?	29907	genome	?	?	Human	?	?	?	?	BetaCoV	No	INSA	Portugal	P.1
+INSA_CV85709_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV	No	INSA	Portugal	B.1.1.7
+INSA_CV118385_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1
+INSA_CV117390_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	Yes	INSA	Portugal	B.1.1.7
+HNM_Funchal_33861616_CV116586_2021_REP	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+HGO_21311914_CV114515_2021_3_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+HGO_21311914_CV114515_2021_2_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+HGO_21311914_CV114515_2021_1_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+GS_HI52854_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV	No	INSA	Portugal	B.1.351
+CHMT_1985157_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+CHMT_1983336_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+CHMT_1981931_2021	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+CEDOC_SCML2_9877_3_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+CEDOC_SCML2_9877_2_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7
+CEDOC_SCML2_9877_1_TEST	2022-06-21	ncov	Europe	?	?	29903	genome	?	?	Human	?	?	?	?	BetaCoV-SARS_CoV_2	No	INSA	Portugal	B.1.1.7

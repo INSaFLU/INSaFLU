@@ -63,6 +63,7 @@ $('#id-save-button').on('click', function(){
 				 $('#id_tbody').append('<tr id="row_' + data['id'] + '" class="odd">' +
 	                '<td class="name"><a href="#id_remove_modal" id="id_remove_dataset_modal" data-toggle="modal" title="Delete" ref_name="' +
 					data['dataset_name'] + '" pk="' + data['id'] + '"><i class="fa fa-trash"></i> </a>' + data['dataset_name'] + '</td>' +
+					'<td class="build">Generic</td>' +
 	                '<td class="last_change_date">Not set yet</td>' +
 	                '<td class="creation_date">' + data['date_created'] + '</td>' +
 					'<td class="totla_alerts">0</td>' +
@@ -76,7 +77,8 @@ $('#id-save-button').on('click', function(){
 					'Add References</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_projects_dataset">' +
 					' Add Consensus from Projects</a><a rel="nofollow" class="dropdown-item" href="/datasets/datasets/' + data['id'] + '/add_consensus_dataset">' +
 					' Add your own Consensus</a></div>' +
-					'<td class="results"></td>' +
+					'<td class="results"><a rel="nofollow" href="/datasets/' + data['id'] + '/show_dataset_settings" data-toggle="tooltip" title="Dataset settings">' +
+					'<span ><i class="fa fa-magic padding-button-table"></i></span></a></td>' +
 					'</div>' +
 	                '</td></tr>')
           }

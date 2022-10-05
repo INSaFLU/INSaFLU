@@ -347,27 +347,26 @@ class Command(BaseCommand):
 					continue
 				
 				try:
-					original_file_not_removed = False
-					## Do not remove Quality Control outputs 
+					original_file_not_removed = False 
 					if (sample.is_type_fastq_gz_sequencing()):	### illumina
 						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 						files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
 						if (not sample.is_original_fastq_removed()):
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, False))
-							#files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
-							#files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))
+							files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
 							original_file_not_removed = True
-						#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
-						#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+						files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
 						files_to_remove.append(sample.get_abricate_output(TypePath.MEDIA_ROOT))
 					else:	### minion
 						if (not sample.is_original_fastq_removed()):
 							files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-							#files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+							files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
 							original_file_not_removed = True
 						files_to_remove.append(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
-						#files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+						files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
 						
 					if (only_identify_files):
 						files_removed = files_to_remove.copy()
@@ -446,13 +445,14 @@ class Command(BaseCommand):
 				
 			## can be removed already
 			try:
+				## Do not remove Quality Control outputs
 				files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, True))
-				if (sample.is_type_fastq_gz_sequencing()): files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))		## illumina default reads
-				else: files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
+				#if (sample.is_type_fastq_gz_sequencing()): files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, True))		## illumina default reads
+				#else: files_to_remove.append(sample.get_rabbitQC_output(TypePath.MEDIA_ROOT))
 
 				if (sample.is_valid_2): 
 					files_to_remove.append(sample.get_fastq(TypePath.MEDIA_ROOT, False))
-					files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
+					#files_to_remove.append(sample.get_fastqc_output(TypePath.MEDIA_ROOT, False))
 
 				## test the days/date removed
 				if (self.is_out_date_to_delete(sample.creation_date)):
@@ -535,15 +535,16 @@ class Command(BaseCommand):
 				#self.out_message("Not remove physically: {}; fail the date/remove days test {}.".format(sample.name, str(sample.creation_date)), False)
 				continue
 			try:
+				## Do not remove Quality Control outputs
 				if (sample.is_type_fastq_gz_sequencing()):	### illumina
 					files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, True))
 					files_to_remove.append(sample.get_trimmomatic_file(TypePath.MEDIA_ROOT, False))
-					files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
-					files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
+					#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, True))
+					#files_to_remove.append(sample.get_fastq_trimmomatic(TypePath.MEDIA_ROOT, False))
 					# files_to_remove.append(sample.get_abricate_output(TypePath.MEDIA_ROOT))
 				else:	### minion
 					files_to_remove.append(sample.get_nanofilt_file(TypePath.MEDIA_ROOT))
-					files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
+					#files_to_remove.append(sample.get_rabbitQC_nanofilt(TypePath.MEDIA_ROOT))
 					
 				if (only_identify_files):
 					files_removed = files_to_remove.copy()

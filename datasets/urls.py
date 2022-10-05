@@ -10,6 +10,8 @@ urlpatterns = [
     url(r'(?P<pk>\d+)/add_projects_dataset$', views.AddDatasetsProjectsView.as_view(), name='add-projects-dataset'),
     url(r'(?P<pk>\d+)/show_dataset_consensus$', views.ShowDatasetsConsensusView.as_view(), name='show-dataset-consensus'),
     
+    url(r'(?P<pk>\d+)/show_dataset_settings$', views.DatasetsSettingsView.as_view(), name='dataset-settings'),
+
     url(r'(?P<pk>\d+)/dataset_update_metadata$', views.UpdateMetadataDataset.as_view(), name='dataset-update-metadata'),     ## upload new matadata to replace the exist
     url(r'(?P<pk>\d+)/dataset_update_metadata_file$', views.AddSingleMetadataDatasetFile.as_view(), name='dataset-add-single-csv-file-metadata'),     ## upload new matadata to replace the exist
     
@@ -21,7 +23,7 @@ urlpatterns = [
     url(r'^ajax/remove_consensus$', ajax_views.remove_consensus, name='remove_consensus'),      ## remove a consensus name and file
     url(r'^ajax/remove_consensus_in_dataset$', ajax_views.remove_consensus_in_dataset, name='remove_consensus_in_dataset'),      ## remove a consensus dataset
     url(r'^ajax/validate_consensus_name$', ajax_views.validate_consensus_name, name='validate-consensus-name'), ## Validate consensus name 
-    
+    url(r'^ajax/dataset_rebuild$', ajax_views.dataset_rebuild, name='dataset_rebuild'),            ## rebuild results of a dataset
  
     url(r'^ajax/show_phylo_canvas$', ajax_views.show_phylo_canvas, name='show-phylo-canvas-datasets'),
     url(r'^ajax/show_msa_nucleotide$', ajax_views.show_msa_nucleotide, name='show-msa-nucleotide-datasets'),

@@ -1042,6 +1042,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
 			### software
 			if (sample.is_type_fastq_gz_sequencing()):  ### for illumina
+
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_sample is None):
 					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
@@ -1070,6 +1071,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 					result = decodeResult.decode_result(meta_sample.description)
 					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
 					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+
 			else:	### Software Minion
 				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success)
 				if (meta_sample == None):
@@ -1087,10 +1089,23 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 							else "Nanofilt not ran."
 
 				### abricate type/subtype				
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-				if (not meta_sample is None):
-					lst_data = meta_sample.description.split(',')
-					if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
+				#meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+				#if (not meta_sample is None):
+				#	lst_data = meta_sample.description.split(',')
+				#	if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
+				### species identification, only in Illumina
+				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
+				if (meta_sample is None):
+					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+					if (meta_sample != None):
+						lst_data = meta_sample.description.split(',')
+						context['spades_software'] = lst_data[1].strip()
+						context['abricate_software'] = lst_data[2].strip()
+				else:
+					decodeResult = DecodeObjects()
+					result = decodeResult.decode_result(meta_sample.description)
+					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_FLYE_name)
+					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)				
 						
 			##### extra data sample, columns added by the user
 			## [[header1, value1], [header2, value2], [header3, value3], ...]
@@ -1115,21 +1130,21 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['vect_identify_virus'] = vect_identify_virus
 
 			## files with contigs
-			if (sample.is_type_fastq_gz_sequencing()):
-				if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and\
-					os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
-					context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
-											'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
-											os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
-					context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
-											'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
-											os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
-					context['has_draft_contigs'] = True
-			elif (os.path.exists(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))):
-				context['file_draft_reads_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_reads_abricate_output(TypePath.MEDIA_URL) +\
-										'" download="' + os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
-										os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
-				context['has_draft_reads'] = True
+			#if (sample.is_type_fastq_gz_sequencing()):
+			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and\
+				os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
+				context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['has_draft_contigs'] = True
+			#elif (os.path.exists(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))):
+			#	context['file_draft_reads_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_reads_abricate_output(TypePath.MEDIA_URL) +\
+			#							'" download="' + os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+			#							os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+			#	context['has_draft_reads'] = True
 				
 			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):
@@ -1713,7 +1728,7 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, project, None, None) ## the user can have defaults yet
+		default_software.test_all_defaults(self.request.user, project, None, None, None) ## the user can have defaults yet
 		
 		all_tables = []	## order by Technology, PipelineStep, table
 						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -1739,7 +1754,8 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set,project, None, None, count_project_sample == 0)])
+								SoftwaresTable(query_set, project = project, project_sample = None,  sample = None, b_enable_options = count_project_sample == 0)])
+
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
 				all_tables.append([technology.replace(' ', '').replace('/', ''),
@@ -1797,7 +1813,7 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set, None, project_sample, None)])
+								SoftwaresTable(query_set, project = None, project_sample = project_sample, sample = None)])
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
 				all_tables.append([technology.replace(' ', '').replace('/', ''),
@@ -1830,7 +1846,7 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 		
 		### test all defaults first, if exist in database
 		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, None, None, sample) ## the user can have defaults yet
+		default_software.test_all_defaults(user=self.request.user, project=None, project_sample=None, sample=sample, dataset=None) ## the user can have defaults yet
 		
 		all_tables = []	## order by Technology, PipelineStep, table
 						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -1855,11 +1871,11 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
 								technology.replace(' ', '').replace('/', '')),
 								pipeline_step,
-								SoftwaresTable(query_set, None, None, sample)])
+								SoftwaresTable(query_set, project = None, project_sample = None, sample = sample)])
+
 			## if there is software for the pipeline step
 			if len(vect_pipeline_step) > 0:
-				all_tables.append([technology.replace(' ', '').replace('/', ''),
-								technology, vect_pipeline_step])
+				all_tables.append([technology.replace(' ', '').replace('/', ''), technology, vect_pipeline_step])
 				
 		context['all_softwares'] = all_tables
 		context['sample'] = sample

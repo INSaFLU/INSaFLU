@@ -3,6 +3,7 @@ Created on 10/04/2021
 
 @author: mmp
 '''
+import logging
 import os
 from django.conf import settings
 from settings.models import Software, Parameter, PipelineStep, Technology
@@ -103,25 +104,16 @@ class DefaultParameters(object):
 			## set sequential number
 			dt_out_sequential[parameter.sequence_out] = 1
 	
-	#####################################
-	#### TODO
-	# update settings_parameter set software_id = 229 where software_id = 50
-	# update settings_parameter set software_id = 228 where software_id = 49
-	# delete from settings_software where id = 49
-	# delete from settings_software where id = 50
-	
-	# select * from settings_software where owner_id=38 and technology_id is not null order by name, type_of_use
-	#
-	# select * from settings_parameter where software_id = 50 order by id
-	# select * from settings_parameter where software_id = 229  order by id
-	# select * from settings_parameter where software_id = 49  order by id
-	# select * from settings_parameter where software_id = 228  order by id
 
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina):
+				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina, dataset=None):
 		"""
 		get software_name parameters, if it saved in database...
 		"""
+
+		#logger = logging.getLogger("fluWebVirus.debug")
+		#logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
 						type_of_use = type_of_use,
@@ -134,13 +126,17 @@ class DefaultParameters(object):
 							type_of_use=type_of_use,
 							version_parameters = self.get_software_parameters_version(software_name))
 				except Software.DoesNotExist:
-					return None
+					return None	
 			else: return None
+
+		#logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
 		## get parameters for a specific user
 		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample)
-	
+						project_sample=project_sample, sample=sample, dataset=dataset)
+
+		#logger.debug("Get parameters: {}".format(parameters))
+
 		### if only one parameter and it is don't care, return dont_care 
 		if len(list(parameters)) == 1 and list(parameters)[0].name in \
 				[DefaultParameters.MASK_not_applicable, DefaultParameters.MASK_DONT_care]:
@@ -177,13 +173,13 @@ class DefaultParameters(object):
 				else:
 					for _ in range(len(dict_out[par_name][0])):
 						return_parameter += "{}{}".format(dict_out[par_name][0][_], dict_out[par_name][1][_])
-					
+		#logger.debug("Get parameters return output: {}".format(return_parameter))			
 		#### This is the case where all the options can be "not to set"
 		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
 		return return_parameter.strip()
 
 	def get_list_parameters(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina):
+				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina, dataset=None):
 		"""
 		get software_name parameters, if it saved in database...
 		"""
@@ -204,14 +200,14 @@ class DefaultParameters(object):
 
 		## get parameters for a specific user
 		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample)
+						project_sample=project_sample, sample=sample, dataset=dataset)
 	
 		### if only one parameter and it is don't care, return dont_care 
 		return list(parameters)
 
 
 	def is_software_to_run(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name):
+				sample, technology_name, dataset=None):
 		""" Test if it is necessary to run this software, By default return True """
 		try:
 			software = Software.objects.get(name=software_name, owner=user,\
@@ -234,7 +230,7 @@ class DefaultParameters(object):
 		
 		## get parameters for a specific sample, project or project_sample
 		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample)
+						project_sample=project_sample, sample=sample, dataset=dataset)
 	
 		### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
 		for parameter in parameters:
@@ -242,7 +238,7 @@ class DefaultParameters(object):
 		return True
 	
 	def set_software_to_run(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name, is_to_run):
+				sample, technology_name, is_to_run, dataset=None):
 		""" set software to run ON/OFF 
 		:output True if the is_to_run is changed"""
 		
@@ -265,11 +261,11 @@ class DefaultParameters(object):
 		if not software.can_be_on_off_in_pipeline: return False
 
 		self.set_software_to_run_by_software(software, project, project_sample,
-								sample, is_to_run)
+								sample, is_to_run, dataset=dataset)
 		return True
 		
 	def set_software_to_run_by_software(self, software, project, project_sample,
-				sample, is_to_run = None):
+				sample, is_to_run = None, dataset=None):
 		""" set software to run ON/OFF 
 		:output True if the is_to_run is changed"""
 		
@@ -277,7 +273,7 @@ class DefaultParameters(object):
 	
 			## get parameters for a specific sample, project or project_sample
 			parameters = Parameter.objects.filter(software=software, project=project,
-					project_sample=project_sample, sample=sample)
+					project_sample=project_sample, sample=sample, dataset=dataset)
 
 			## if None need to take the value from database
 			if is_to_run is None:
@@ -299,7 +295,7 @@ class DefaultParameters(object):
 	
 			## get parameters for a specific sample, project or project_sample
 			parameters = Parameter.objects.filter(software=software, project=project,
-								project_sample=project_sample, sample=sample)
+								project_sample=project_sample, sample=sample, dataset=dataset)
 			
 			### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
 			for parameter in parameters:
@@ -347,6 +343,8 @@ class DefaultParameters(object):
 		elif (software.name == SoftwareNames.SOFTWARE_FREEBAYES_name):
 			return self.get_freebayes_default(software.owner, Software.TYPE_OF_USE_global,
 					ConstantsSettings.TECHNOLOGY_illumina if software.technology is None else software.technology.name)
+		elif (software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
+			return self.get_nextstrain_default(software.owner)					
 		else: return None
 
 
@@ -411,9 +409,9 @@ class DefaultParameters(object):
 		parameter.can_change = True
 		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
-		parameter.range_available = "[5:100]"
-		parameter.range_max = "50"
-		parameter.range_min = "10"
+		parameter.range_available = "[0:100]"
+		parameter.range_max = "100"
+		parameter.range_min = "0"
 		parameter.description = "MAPQUAL: is the minimum mapping quality to accept in variant calling (–mapqual 20)."
 		vect_parameters.append(parameter)
 		
@@ -593,6 +591,50 @@ class DefaultParameters(object):
 		vect_parameters.append(parameter)
 		
 		return vect_parameters
+
+	def get_nextstrain_default(self, user, dataset=None):
+		"""
+		build: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)
+		"""
+		software = Software()
+		software.name = SoftwareNames.SOFTWARE_NEXTSTRAIN_name
+		software.name_extended = SoftwareNames.SOFTWARE_NEXTSTRAIN_name_extended
+		# TODO Add version 
+		software.version = SoftwareNames.SOFTWARE_NEXTSTRAIN_VERSION
+		software.type_of_use = Software.TYPE_OF_USE_dataset
+		software.type_of_software = Software.TYPE_SOFTWARE
+		software.version_parameters = self.get_software_parameters_version(software.name)
+		software.technology = self.get_technology(ConstantsSettings.TECHNOLOGY_generic)
+		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
+		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
+	
+		###  small description of software
+		software.help_text = ""
+	
+		###  which part of pipeline is going to run
+		software.pipeline_step = None
+		software.owner = user
+		
+		vect_parameters =  []
+		
+		# For the moment only has one parameter...
+		parameter = Parameter()
+		parameter.name = "build"
+		parameter.parameter = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+		parameter.type_data = Parameter.PARAMETER_char_list
+		parameter.software = software
+		parameter.dataset = dataset
+		parameter.union_char = " "
+		parameter.can_change = True
+		parameter.is_to_run = True			
+		parameter.sequence_out = 1
+		parameter.not_set_value = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+		parameter.description = "Define the build to be used"
+
+		vect_parameters.append(parameter)
+		
+		return vect_parameters
+
 
 	def get_mask_consensus_threshold_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
 		"""

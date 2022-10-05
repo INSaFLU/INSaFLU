@@ -87,7 +87,7 @@ function show_aln2pheno() {
 	    					grid_layout: {
 	    						width: '100%'
 	    					},
-	    			// Sequence	NTD	RBD	RBM	RBD_RBM	S2	FP	S1	S1_other	SP	Flagged mutations	All mutations	Nflagged	Nmutations
+	    			// Sequence	NTD	RBD	RBM	RBD_RBM	S2	FP	S1	S1_other	SP	Flagged mutations	All mutations	Nflagged	Nmutations	lineage
 	    			     // columns data types
 	    			        col_types: [
 	    			            'string',	// Sequence
@@ -103,6 +103,7 @@ function show_aln2pheno() {
 	    			            'string',	// All mutations
 	    			            'number',	// Nflagged
 	    			            'number',	// Nmutations
+								'string',	// lineage 
 	    			        ],
 	    			        col_widths: [
 	    			        	"10%",	// Sequence
@@ -118,6 +119,7 @@ function show_aln2pheno() {
 	    			            "7%",	// All mutations
 	    			            null,	// Nflagged
 	    			            null,	// Nmutations
+								"7%",	// lineage
 	    			        ],
 	    			        
 	    			        col_1: 'select',
@@ -129,6 +131,7 @@ function show_aln2pheno() {
 	    			        col_7: 'select',
                             col_8: 'select',
                             col_9: 'select',
+							col_14: 'select',
 	    			        // Sort extension: in this example the column data types are provided by the
 	    			        // 'col_types' property. The sort extension also has a 'types' property
 	    			        // defining the columns data type for column sorting. If the 'types'
@@ -148,7 +151,7 @@ function show_aln2pheno() {
 	    			}
 
 	    			// hide loading icon
-	    			$('#loader_showvariantsasatable').hide();
+	    			$('#loader_showaln2pheno').hide();
 	    		});
 	      }
 	      else{

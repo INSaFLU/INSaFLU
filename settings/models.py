@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from managing_files.models import Project, ProjectSample, Sample
+from datasets.models import Dataset
 # Create your models here.
 
 class Technology(models.Model):
@@ -42,7 +43,8 @@ class Software(models.Model):
 	TYPE_OF_USE_project = 1				### Used in a particular project
 	TYPE_OF_USE_project_sample = 2		### Used in a particular project sample
 	TYPE_OF_USE_sample = 3				### Used in a particular sample
-	
+	TYPE_OF_USE_dataset = 4				### Used in a particular dataset
+
 	### if it is a software parameter or a general parameter (INSaFLU parameter)
 	TYPE_SOFTWARE = 0				### normal software
 	TYPE_INSAFLU_PARAMETER = 1		### it is a general parameter (INSaFLU parameter)
@@ -116,13 +118,17 @@ class Parameter(models.Model):
 	type_data = models.SmallIntegerField()
 	software = models.ForeignKey(Software, related_name='parameter', on_delete=models.PROTECT)
 	
+
 	### this allow to have software parameters in projects
 	project = models.ForeignKey(Project, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
 	### this allow to have software parameters in project sample
 	project_sample = models.ForeignKey(ProjectSample, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
 	### this allow software to use in sample
 	sample = models.ForeignKey(Sample, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
-	
+
+	### this allow to have software parameters in datasets
+	dataset = models.ForeignKey(Dataset, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
+
 	union_char = models.CharField(max_length=10, default="")	### ":" in the case LEADING:3
 	can_change = models.BooleanField(default=True)	### TOPHRED33 can change, and it is not to show in change dialog
 	sequence_out = models.SmallIntegerField()

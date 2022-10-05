@@ -3,6 +3,7 @@ Created on 22/05/2022
 
 @author: mmp
 '''
+from constants.software_names import SoftwareNames
 import django_tables2 as tables
 from django.urls import reverse
 from django.conf import settings
@@ -13,6 +14,7 @@ from constants.constants import Constants
 from settings.constants_settings import ConstantsSettings
 from managing_files.models import Reference, Project, UploadFiles
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Parameter
 
 
 class DatasetTable(tables.Table):
@@ -21,6 +23,9 @@ class DatasetTable(tables.Table):
     ### P -> sequences from projects
     ### C -> sequences from consensus
     ### R -> sequences from references
+
+    # build cannot be orderable because it is not (yet?) an explicit field of the Dataset model
+    build = tables.Column('NextStrain Build', orderable=False, empty_values=())
     sequences = tables.Column('#Sequences (P/C/R)', orderable=False, empty_values=())
     last_change_date = tables.Column('Last Change date', empty_values=())
     creation_date = tables.Column('Creation date', empty_values=())
@@ -28,15 +33,16 @@ class DatasetTable(tables.Table):
     
     class Meta:
         model = Dataset
-        fields = ('name', 'last_change_date','creation_date', 'totla_alerts', 'sequences', 'results')
+        fields = ('name',  'build', 'last_change_date','creation_date', 'totla_alerts', 'sequences', 'results')
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Datasets to show..."
     
     def render_name(self, record):
+
         from crequest.middleware import CrequestMiddleware
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
-    
+
         ## there's nothing to show
         count = record.number_of_sequences_from_projects + record.number_of_sequences_from_consensus + record.number_of_sequences_from_references
         if (count > 0):
@@ -49,8 +55,33 @@ class DatasetTable(tables.Table):
         if (user.username == record.owner.username):
             return mark_safe('<a href="#id_remove_modal" id="id_remove_dataset_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"' +\
                     ' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-trash"></i></span> </a>' + project_sample)
-        return project_sample;
-    
+        return project_sample
+
+
+    def render_build(self, **kwargs):
+        
+        record = kwargs.pop("record")
+        
+        build = 'NA'
+        parameters = Parameter.objects.filter(dataset__pk=record.pk)
+        if(len(parameters) > 0):
+            build = parameters[0].parameter
+        
+        for [id, desc] in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC:
+            if id == build:
+                build = desc
+                break
+
+        return build
+
+
+    #def order_build(self, queryset, is_descending):
+    #    queryset = queryset.annotate(
+    #        amount=F("shirts") + F("pants")
+    #    ).order_by(("-" if is_descending else "") + "amount")
+    #    return (queryset, True)
+
+
     def render_sequences(self, record):
         """
         return a reference name
@@ -89,14 +120,16 @@ class DatasetTable(tables.Table):
         if (count > 0):
             sz_project_sample = '<a href=' + reverse('show-dataset-consensus', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
                 '<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
+            if(not record.is_processed):
+                # Do not change this data-toggle="modal"...
+                sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
+                    ' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-flask padding-button-table"></i></span> </a>'
             ## Can also launch all the sequeneces in the NextTrain
-            # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-            #    '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
-            # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-            #    '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-        # else:    ## can change settings
-        #     sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-        #         '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+            sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
+                '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+        else:    ## can change settings
+            sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
+                 '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
     
         return mark_safe(sz_project_sample)
 

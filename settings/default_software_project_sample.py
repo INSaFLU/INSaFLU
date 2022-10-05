@@ -3,6 +3,7 @@ Created on 03/05/2020
 
 @author: mmp
 '''
+import logging
 from settings.models import Software, Parameter
 from constants.software_names import SoftwareNames
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -22,7 +23,7 @@ class DefaultProjectSoftware(object):
 		self.default_parameters = DefaultParameters()
 		self.change_values_software = {}	### the key is the name of the software
 		
-	def test_all_defaults(self, user, project, project_sample, sample):
+	def test_all_defaults(self, user, project, project_sample, sample, dataset=None):
 		"""
 		test all defaults for all software available
 		"""
@@ -56,6 +57,12 @@ class DefaultProjectSoftware(object):
 			self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,\
  							user, Software.TYPE_OF_USE_project, project, None, None,
  							ConstantsSettings.TECHNOLOGY_minion)
+		## only for dataset
+		elif (not dataset is None):
+			self.test_default_db(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, user, Software.TYPE_OF_USE_dataset, 
+							project=None, project_sample=None, sample=None, 
+							technology_name=ConstantsSettings.TECHNOLOGY_generic, dataset=dataset)
+
 		## only for project sample and by technology
 		elif (not project_sample is None):
 			
@@ -112,7 +119,7 @@ class DefaultProjectSoftware(object):
 						ConstantsSettings.TECHNOLOGY_illumina)
 
 	def test_default_db(self, software_name, user, type_of_use, project, project_sample, 
-					sample, technology_name):
+					sample, technology_name, dataset=None):
 		"""
 		test if exist, if not persist in database
 		"""
@@ -120,18 +127,22 @@ class DefaultProjectSoftware(object):
 		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 			list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
 					parameter__project=project, parameter__project_sample=project_sample,
-					parameter__sample=sample,
+					parameter__sample=sample, parameter__dataset=dataset,
 					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
 					technology__name = technology_name).distinct("name")
+			
+			#logger = logging.getLogger("fluWebVirus.debug")
+			#logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
+
 			### if not exist need to save
 			if len(list_software) == 0:
 				vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project,
-					project_sample, sample, technology_name)
+					project_sample, sample, technology_name, dataset)
 				if (len(vect_parameters) > 0): ### persist
 					self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
 	def _get_default_parameters(self, software_name, user, type_of_use, project, project_sample,
-					sample, technology_name):
+					sample, technology_name, dataset):
 		if (software_name == SoftwareNames.SOFTWARE_SNIPPY_name):
 			vect_parameters = self.default_parameters.get_snippy_default(user, type_of_use, technology_name, project, project_sample)		### base values
 			if (not project is None): vect_parameters = self._get_default_project(user,\
@@ -219,6 +230,9 @@ class DefaultProjectSoftware(object):
 			if (not sample is None): vect_parameters = self._get_default_project(user,\
 				software_name, None, vect_parameters, technology_name)		### base values
 			return vect_parameters
+		elif (software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
+			vect_parameters = self.default_parameters.get_nextstrain_default(user=user, dataset=dataset)
+			return vect_parameters			
 		return []
 
 	#####################################################
@@ -1410,20 +1424,20 @@ class DefaultProjectSoftware(object):
 		key_value = "{}_{}_{}".format(software_name, technology_name, user_name)
 		return self.change_values_software.get(key_value, False)
 
-	def can_change_values_for_this_software(self, software, project, project_sample, sample):
+	def can_change_values_for_this_software(self, software, project, project_sample, sample, dataset=None):
 		""" Return True if some of can_change is True """
 		parameters = Parameter.objects.filter(software=software, project=project,
-					project_sample=project_sample, sample=sample)
+					project_sample=project_sample, sample=sample, dataset=dataset)
 		for parameter in parameters:
 			if parameter.can_change: return True
 		return False
 
 	def get_parameters(self, software_name, user, type_of_use, project, project_sample, sample,
-				technology_name = ConstantsSettings.TECHNOLOGY_illumina):
+				technology_name = ConstantsSettings.TECHNOLOGY_illumina, dataset=None):
 		"""
 		"""
-		self.test_default_db(software_name, user, type_of_use, project, project_sample, sample, technology_name)
-		return self.default_parameters.get_parameters(software_name, user, type_of_use, project, project_sample, sample, technology_name)
+		self.test_default_db(software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+		return self.default_parameters.get_parameters(software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
 	def get_all_software(self):
 		"""

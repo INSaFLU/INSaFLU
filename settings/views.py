@@ -1,5 +1,6 @@
 from django.views.generic import ListView, UpdateView
 from braces.views import LoginRequiredMixin
+from datasets.models import Dataset
 from settings.models import Software, Parameter
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
@@ -197,7 +198,82 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
 	## static method, not need for now.
 	form_valid_message = ""		## need to have this
 	
+
+class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
+
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersDatasetView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_dataset'] = self.kwargs.get('pk_dataset')
+		return kw
 	
+	def get_success_url(self):
+		"""
+		get source_pk from update project, need to pass it in context
+		"""
+		dataset_pk = self.kwargs.get('pk_dataset')
+		return reverse_lazy('dataset-settings', kwargs={'pk': dataset_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersDatasetView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['pk_dataset'] = self.kwargs.get('pk_dataset')
+		context['nav_dataset'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
+		## save it...
+		with transaction.atomic():
+			software = form.save(commit=False)
+		
+			dataset_id = self.kwargs.get('pk_dataset')
+			dataset = None
+			if (not dataset_id is None):
+				try:
+					dataset = Dataset.objects.get(pk=dataset_id)
+				except Dataset.DoesNotExist:
+					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					return super(UpdateParametersDatasetView, self).form_valid(form)
+				
+			paramers = Parameter.objects.filter(software=software, dataset=dataset)
+			b_change = False
+			for parameter in paramers:
+				if (not parameter.can_change): continue
+				if (parameter.get_unique_id() in form.cleaned_data):
+					value_from_form = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (value_from_form != parameter.parameter):
+						b_change = True 
+						parameter.parameter = value_from_form
+						parameter.save()
+			
+			if (b_change):
+				messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters were successfully updated for dataset '" + dataset.name + "'.", fail_silently=True)
+			else:
+				messages.success(self.request, "No parameters to update for {} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' for dataset '" + dataset.name + "'.", fail_silently=True)
+		return super(UpdateParametersDatasetView, self).form_valid(form)
+
+
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+
+
+
 class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
 	model = Software
 	form_class = SoftwareForm

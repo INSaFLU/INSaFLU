@@ -45,6 +45,7 @@ class SoftwareNames(object):
 	SOFTWARE_IGVTOOLS_name = "igvtools"
 	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
 	SOFTWARE_IGVTOOLS_PARAMETERS = ""
+	
 	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 #	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
@@ -89,7 +90,9 @@ class SoftwareNames(object):
 					'TruSeq2-SE.fa',
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
-					'TruSeq3-SE.fa']
+					'TruSeq3-SE.fa',
+					'MPXV-primer_seqs.fa',
+					'cov-amplicon-v4.1_seqs.fa']
 	### collect stat data for ILLUMINA, in form of key value
 	SOFTWARE_ILLUMINA_stat = "illumina_stat"
 	SOFTWARE_ILLUMINA_stat_collect = [
@@ -177,10 +180,10 @@ class SoftwareNames(object):
 	
 	## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
 	## ll temp/assembly.fasta
-	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "Flye/bin/flye")
-	SOFTWARE_FLYE_name = "Flye"
+	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "flye/flye.sh")
+	SOFTWARE_FLYE_name = "flye"
 	SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
-	SOFTWARE_FLYE_VERSION = "2.9-b1778"
+	SOFTWARE_FLYE_VERSION = "2.9.1-b1780"
 	SOFTWARE_FLYE_PARAMETERS = "--no-alt-contigs "	## genomeSize=<number>[g|m|k] file1 file2
 
 	### used to create a file with variations table
@@ -335,12 +338,54 @@ class SoftwareNames(object):
 	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
 
 	### algn2pheno
-	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/run_algn2pheno.sh")
+	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/aln2pheno.sh")
 
 	### Nextstrain
+	SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
-	SOFTWARE_NEXTSTRAIN_NCOV_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/ncov")
-		
+	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
+	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
+	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
+	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu = [ 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y
+	]
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS = [ 
+		SOFTWARE_NEXTSTRAIN_BUILDS_generic, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_ncov, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_mpx 
+	]
+	SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [ 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],		
+		[SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"] 
+	]
+
+	# default build
+	SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic
+	SOFTWARE_NEXTSTRAIN_name = "Nextstrain"
+	SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
+
 	###################################
 	###################################
 	#####

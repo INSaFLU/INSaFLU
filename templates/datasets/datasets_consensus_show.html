@@ -134,6 +134,11 @@
 				      			<tr>
 				                    <th colspan="9">
 					                    <div class="btn-group">
+
+										<!-- Info -->
+										<a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="Download the json files and drag-and drop the files in auspice.us">
+											<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a>
+
 											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			    								Download
 			  								</button>
@@ -146,13 +151,11 @@
 			    									{{ all_consensus }}
 			    								{% endif %}
 			    								
-			    								{% if nextstrain_default_build or nextstrain_error or dataset_file_nextstrain_tsv%}
+												{% if nextstrain_auspice_zip or nextstrain_error or dataset_file_nextstrain_tsv %}	
 			    									<div class="dropdown-divider"></div>
-			    									{{ nextstrain_default_build }}
-			    									{{ nextstrain_build_root }}
-			    									{{ nextstrain_build_tip }}
-			    									{{ dataset_file_nextstrain_tsv }}
 			    									{{ nextstrain_error }}
+												{{ dataset_file_nextstrain_tsv }}
+												{{ nextstrain_auspice_zip }}
 			    								{% endif %}
 			    								{% if download_all_files %}
 			    									<div class="dropdown-divider"></div>
@@ -163,9 +166,9 @@
 										
 										<!-- Meta Data -->
 										<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
-											data-title="Upload metadata to update '{{dataset.name}}' dataset from a csv/tsv file"
+											title="Upload metadata to update '{{dataset.name}}' dataset from a csv/tsv file"
 											class="btn btn-small btn-primary dark"
-                    						data-toggle="tolltip">
+                    						data-toggle="tooltip">
                     						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
                     					</a>
 										

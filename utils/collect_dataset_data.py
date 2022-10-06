@@ -405,15 +405,14 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')                                     
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
-            ref_name = dataset.get_first_reference_name()
-            if( (ref_name is None) or (ref_name == "") ):
+            reference = dataset.get_first_reference()
+            if( (reference is None) or (reference == "") ):
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 with open(out_file_file_system, 'w') as handle_write: 
                     handle_write.write("No Reference was found. The generic build needs at least one reference")                
                 return None, Dataset.RUN_out_path
             try:
                 # Check for user?
-                reference = Reference.objects.get(name=ref_name)
                 tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
                     ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT)) 
             except Reference.DoesNotExist:

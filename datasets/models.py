@@ -233,7 +233,16 @@ class Dataset(models.Model):
             if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
             if not dataset_consensus.reference is None: return dataset_consensus.reference.name
         return ""
-    
+
+    def get_first_reference(self):
+        """
+        return first reference name 
+        """
+        for dataset_consensus in self.dataset_consensus.all():
+            if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
+            if not dataset_consensus.reference is None: return dataset_consensus.reference
+        return ""
+
 class DatasetConsensus(models.Model):
     
     ## Name from sample, reference or consensus, to improve the search by name 

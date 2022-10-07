@@ -17,4 +17,14 @@ class Migration(migrations.Migration):
             name='last_change_date',
             field=models.DateTimeField(blank=True, null=True, verbose_name='last change date'),
         ),
+		migrations.AlterField(
+            model_name='sample',
+            name='type_subtype',
+            field=models.CharField(blank=True, max_length=150, null=True),
+        ),
+		migrations.AddField(
+            model_name='reference',
+            name='specie_tag',
+            field=models.CharField(default='', max_length=20),
+        ),
     ]

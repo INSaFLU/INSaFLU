@@ -281,6 +281,10 @@ class DatasetConsensus(models.Model):
         elif not self.consensus is None: return self.consensus.get_consensus_fasta(type_data)
         elif not self.reference is None: return self.reference.get_reference_fasta(type_data)
         return ""
+       
+    def get_project_name(self):
+        if not self.project_sample is None: return self.project_sample.project.name
+        return ""
         
 
 class UploadFiles(models.Model):

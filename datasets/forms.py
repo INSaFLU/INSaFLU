@@ -181,24 +181,24 @@ class ConsensusForm(forms.ModelForm):
 			
 			## test the max numbers
 			if (number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA):
-				self.add_error('consensus_fasta', _('Max allow number of contigs in Multi-Fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA)))
+				self.add_error('consensus_fasta', 'Max allow number of contigs in Multi-Fasta: {}'.format(Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA))
 				some_error_in_files = True
 			total_length_fasta = self.utils.get_total_length_fasta(reference_fasta_temp_file_name.name)
-			if (not some_error_in_files and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA):
+			if (not some_error_in_files and total_length_fasta > settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA):
 				some_error_in_files = True
-				self.add_error('consensus_fasta', _('The max sum length of the sequences in fasta: {}'.format(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA)))
+				self.add_error('consensus_fasta', 'The max sum length of the sequences in fasta: {}'.format(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA))
 			
 			n_seq_name_bigger_than = self.utils.get_number_seqs_names_bigger_than(reference_fasta_temp_file_name.name,
 							Constants.MAX_LENGTH_CONTIGS_SEQ_NAME, len(name))
 			if (not some_error_in_files and n_seq_name_bigger_than > 0):
 				some_error_in_files = True
 				if (n_seq_name_bigger_than == 1):
-					self.add_error('consensus_fasta', _('There is one sequence name length bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_CONTIGS_SEQ_NAME)))
+					self.add_error('consensus_fasta', 'There is one sequence name length bigger than {0}. The max. length name is {0}.'.format(Constants.MAX_LENGTH_CONTIGS_SEQ_NAME))
 				else:
-					self.add_error('consensus_fasta', _('There are {0} sequences with name length bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_CONTIGS_SEQ_NAME)))
+					self.add_error('consensus_fasta', 'There are {0} sequences with name length bigger than {1}. The max. length name is {1}.'.format(n_seq_name_bigger_than, Constants.MAX_LENGTH_CONTIGS_SEQ_NAME))
 					
-				## if some errors in the files, fasta or genBank, return
-				if (some_error_in_files): return cleaned_data
+			## if some errors in the files, fasta or genBank, return
+			if (some_error_in_files): return cleaned_data
 				
 			### check if there all seq names are present in the database yet
 			b_pass = False

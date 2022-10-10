@@ -24,7 +24,7 @@ class Consensus(models.Model):
     ## Size 100K
     consensus_fasta = ContentTypeRestrictedFileField(upload_to=consensus_directory_path, content_types=['application/octet-stream',
                                                                                                         'text/plain'],\
-                                        max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
+                                        max_upload_size=settings.MAX_CONSENSUS_FASTA_FILE, blank=True, null=True, max_length=500)
     consensus_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
     hash_consensus_fasta = models.CharField(max_length=50, blank=True, null=True)
 
@@ -233,7 +233,16 @@ class Dataset(models.Model):
             if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
             if not dataset_consensus.reference is None: return dataset_consensus.reference.name
         return ""
-    
+
+    def get_first_reference(self):
+        """
+        return first reference 
+        """
+        for dataset_consensus in self.dataset_consensus.all():
+            if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
+            if not dataset_consensus.reference is None: return dataset_consensus.reference
+        return ""
+
 class DatasetConsensus(models.Model):
     
     ## Name from sample, reference or consensus, to improve the search by name 

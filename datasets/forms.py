@@ -107,8 +107,8 @@ class ConsensusForm(forms.ModelForm):
 			('display_name', 'Sequence names to upload, can be separated by comma', 'If you want to upload specific sequences from multifasta sequences, '
 			'set the names where separated by comma, if more than one. If empty, upload all.', False),
 			('consensus_fasta', 'Consensus (Fasta/Multi-Fasta)', "Consensus file in fasta format.<br>" +\
-				"Max total sequence length: {}<br>".format(filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA))  +\
-				"Max FASTA file size: {}".format(filesizeformat(settings.MAX_REF_FASTA_FILE)), True),
+				"Max total sequence length: {}<br>".format(filesizeformat(settings.MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA))  +\
+				"Max FASTA file size: {}".format(filesizeformat(settings.MAX_CONSENSUS_FASTA_FILE)), True),
 		]
 		for x in field_text:
 			self.fields[x[0]].label = x[1]

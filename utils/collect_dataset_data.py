@@ -405,15 +405,14 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')                                     
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
-            ref_name = dataset.get_first_reference_name()
-            if( (ref_name is None) or (ref_name == "") ):
+            reference = dataset.get_first_reference()
+            if( (reference is None) or (reference == "") ):
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 with open(out_file_file_system, 'w') as handle_write: 
                     handle_write.write("No Reference was found. The generic build needs at least one reference")                
                 return None, Dataset.RUN_out_path
             try:
                 # Check for user?
-                reference = Reference.objects.get(name=ref_name)
                 tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
                     ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT)) 
             except Reference.DoesNotExist:
@@ -451,9 +450,27 @@ class CollectExtraDatasetData(object):
             if (dataset_consensus.is_error): continue
             
             ## add metadata to reference
-            if not dataset_consensus.reference is None: continue
+            if not dataset_consensus.reference is None: 
+                # At the moment there is no upload of metadata so we just go with 'id'
+                if dataset_consensus.reference.name not in dt_out_id_project:
+                    data_columns.add_header(dataset_consensus.reference.name, ['id'])
+                    data_columns.add_metadata(dataset_consensus.reference.name, 
+                                                 dataset_consensus.reference.name,
+                                                 dataset_consensus.seq_name_all_consensus, 
+                                                 [dataset_consensus.seq_name_all_consensus])
+                continue
+
             ## add metadata to consensus
-            if not dataset_consensus.consensus is None: continue
+            if not dataset_consensus.consensus is None: 
+                # At the moment there is no upload of metadata so we just go with 'id'
+                if dataset_consensus.consensus.name not in dt_out_id_project:
+                    data_columns.add_header(dataset_consensus.consensus.name, ['id'])
+                    data_columns.add_metadata(dataset_consensus.consensus.name, 
+                                                 dataset_consensus.consensus.name,
+                                                 dataset_consensus.seq_name_all_consensus, 
+                                                 [dataset_consensus.seq_name_all_consensus])
+
+                continue
             
             ## read metadata from file
             if not dataset_consensus.project_sample is None:
@@ -526,10 +543,26 @@ class CollectExtraDatasetData(object):
             ## add metadata to reference
             if not dataset_consensus.reference is None: 
                 #print("Need to do metadata for reference: {}".format(dataset_consensus.reference))
+                if dataset_consensus.reference.name not in dt_out_id_project:
+                    data_columns.add_header(dataset_consensus.reference.name, ['id'])
+                    consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                    data_columns.add_metadata(dataset_consensus.reference.name, 
+                                                 dataset_consensus.reference.name,
+                                                 dataset_consensus.seq_name_all_consensus, 
+                                                 [dataset_consensus.seq_name_all_consensus],
+                                                 consensus_length)                
                 continue
             ## add metadata to consensus
             if not dataset_consensus.consensus is None: 
                 #print("Need to do metadata for user-provided consensus: {}".format(dataset_consensus.consensus))
+                if dataset_consensus.consensus.name not in dt_out_id_project:
+                    data_columns.add_header(dataset_consensus.consensus.name, ['id'])
+                    consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                    data_columns.add_metadata(dataset_consensus.consensus.name, 
+                                                 dataset_consensus.consensus.name,
+                                                 dataset_consensus.seq_name_all_consensus, 
+                                                 [dataset_consensus.seq_name_all_consensus],
+                                                 consensus_length)                
                 continue
             
             ## read metadata from file

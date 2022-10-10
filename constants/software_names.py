@@ -74,7 +74,7 @@ class SoftwareNames(object):
 					"Both Surviving:",
 					"Forward Only Surviving:",
 					"Reverse Only Surviving:",
-					"Dropped:",]
+					"Dropped:"]
 	
 	SOFTWARE_TRIMMOMATIC_illuminaclip = "ILLUMINACLIP"
 	SOFTWARE_TRIMMOMATIC_addapter_to_replace = "ADAPTER_FILE"
@@ -91,8 +91,10 @@ class SoftwareNames(object):
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
 					'TruSeq3-SE.fa',
-					'MPXV-primer_seqs.fa',
-					'cov-amplicon-v4.1_seqs.fa']
+					'SARS_CoV_2_MN908947_artic_3.fa',
+					'SARS_CoV_2_MN908947_artic_4.1.fa',
+					'MPXV_MT903345_Yale_PrimalSeq_v.1.fa',
+					'MPXV_comb-ccc7sszn.fa']
 	### collect stat data for ILLUMINA, in form of key value
 	SOFTWARE_ILLUMINA_stat = "illumina_stat"
 	SOFTWARE_ILLUMINA_stat_collect = [

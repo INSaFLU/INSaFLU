@@ -193,8 +193,6 @@ class Metadata(object):
         count = 0
         for project_sample_pk in self.dt_rows_id:
 
-            print("Handling sample id {}".format(project_sample_pk))
-
             # Avoid repeating samples?      
             if project_sample_pk in dt_out_id_project_sample: continue
 
@@ -202,17 +200,12 @@ class Metadata(object):
 
             ## NEXTSTRAIN_strain
             vect_out = [self.dt_rows_id[project_sample_pk].seq_name_consensus]
-            print("Handling sample id {}: ".format(vect_out))
 
             dt_out_header = {}
             for column in vect_header_out:
 
-                print("Processing column {}: ".format(column))
-
                 if column == NEXTSTRAIN_strain: continue    ## already out
                 if column in dt_out_header: continue        ## already out, can be synonymous
-                
-                print("Processing column 2 {}: ".format(column))
 
                 ## exception
                 if column == NEXTSTRAIN_length:
@@ -223,8 +216,6 @@ class Metadata(object):
                         vect_out.append(str(self.dt_rows_id[project_sample_pk].consensus_length))
                     else: vect_out.append('?')
                     continue
-                
-                print("Processing column 3 {}: ".format(column))
 
                 ### date column, has data
                 if (column == NEXTSTRAIN_date and self.dt_header.get(column, -1) > 0 and \
@@ -232,7 +223,6 @@ class Metadata(object):
                     vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
                     continue
                 
-                print("Processing column 4 {}: ".format(column))
                 ### test synonymous, And try date synonymous
                 b_found = False
                 for column_insaflu in DICT_NEXTSTRAIN_to_INSAFLU.get(column, []):     
@@ -243,19 +233,14 @@ class Metadata(object):
                         b_found = True
                         break
                 
-                print("Processing column 5 {}: ".format(column))
-
                 ## found synonymous before
                 if b_found: continue
                 if (column == NEXTSTRAIN_date):     ## need to add default date
                     vect_out.append(date.today().strftime(settings.DATE_FORMAT_FOR_SHOW))
                     continue
                 
-                print("Processing column 6 {}: ".format(column))
-
                 ## test default NEXTstrain columns names
                 if column in DICT_MANDATORY_FIELDS[build]:
-                    print("Processing mandatory field {}: ".format(column))
                     if self.dt_header.get(column, -1) > 0 and \
                         len(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]]) > 0:
                         vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
@@ -276,7 +261,10 @@ class Metadata(object):
     
 
 class Reference(object):
-    
+    '''
+    This is to represent build-specific references which have their own metadata tsv
+    '''
+
     def __init__(self, file_name):
         self.file_name = file_name
         self._read_file()
@@ -407,33 +395,20 @@ class DataColumns(object):
         """
         count = 0 ## number of rows saved
         
-        print("Going to write header")
         ## save header
         csv_writer.writerow(self._get_header_nextstrain())
-        
-        print("Wrote header")
 
-        print("Going to write Reference {}".format(count))
         # read NextStrain reference 
         if(reference_tsv != None):
             reference = Reference(reference_tsv)
             ### save reference
             count += reference.save_out_nextstrain(csv_writer, self.vect_header_out, self.build)
-        
-        print("Wrote Reference {}".format(count))
-
-        print("Going to write Consensus Metadata")
 
         ## save data
         for key_metadata in self.dt_project:
-            print("Going to write {}".format(key_metadata))
             
             count += self.dt_project[key_metadata].get_vect_out_nextstrain(
                     self.vect_header_out, self.dt_header_normal_out, csv_writer, self.build)            
-
-            print("Wrote {} : {}".format(key_metadata, count))
-        
-        print("Wrote Consensus Metadata {}".format(count))
 
         return count
         

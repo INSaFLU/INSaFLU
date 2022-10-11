@@ -1067,7 +1067,7 @@ class DefaultParameters(object):
 		parameter.can_change = True
 		parameter.is_to_run = True			### by default it's True
 		parameter.sequence_out = 1
-		parameter.description = "To clip the Illumina adapters from the input file using the adapter sequences.\n" +\
+		parameter.description = "To clip the Illumina adapters or PCR primers from the input file using the adapter / primer sequences.\n" +\
 			"ILLUMINACLIP:<ADAPTER_FILE>:3:30:10:6:true"
 		vect_parameters.append(parameter)
 		

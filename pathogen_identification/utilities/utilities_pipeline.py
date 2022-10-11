@@ -8,7 +8,14 @@ import pandas as pd
 from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
-from pathogen_identification.models import SoftwareTree, SoftwareTreeNode
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Processed,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
@@ -184,13 +191,10 @@ class Utility_Pipeline_Manager:
             db_path=ConstantsSettings.docker_app_directory,
             install_type="docker",
         )
-        self.pipeline_order = [
-            CS.PIPELINE_NAME_viral_enrichment,
-            CS.PIPELINE_NAME_assembly,
-            CS.PIPELINE_NAME_contig_classification,
-            CS.PIPELINE_NAME_read_classification,
-            CS.PIPELINE_NAME_remapping,
-        ]
+
+        self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
+
+        self.pipeline_order = ConstantsSettings.PIPELINE_STEP_ORDER
 
         self.binaries = Deployment_Params.BINARIES
 
@@ -415,6 +419,8 @@ class Utility_Pipeline_Manager:
         """ """
         self.pipeline_tree = self.fill_dict(0, {})
         # self.pipeline_tree = {("root", None, None): self.pipeline_tree}
+        print("hhi")
+        print(self.pipeline_software)
 
         node_index, edge_dict, leaves = self.tree_index(
             self.pipeline_tree,
@@ -533,13 +539,46 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self, owner: User):
+    def get_software_tables_global(self, owner):
+        """
+        Get software tables for a user
+        """
 
-        software_available = Software.objects.filter(owner=owner)
-        parameters_available = Parameter.objects.filter(software__in=software_available)
+        software_available = Software.objects.filter(
+            owner=owner, type_of_use=Software.TYPE_OF_USE_televir_global
+        )
+
+        parameters_available = Parameter.objects.filter(
+            software__in=software_available, televir_project=None
+        )
 
         software_table = pd.DataFrame(software_available.values())
+
         parameters_table = pd.DataFrame(parameters_available.values())
+
+        return software_table, parameters_table
+
+    def get_software_tables_project(self, owner: User, project: Projects):
+        """
+        Get software tables for a user
+        """
+
+        software_available = Software.objects.filter(
+            owner=owner, type_of_use=Software.TYPE_OF_USE_televir_project
+        )
+
+        parameters_available = Parameter.objects.filter(
+            software__in=software_available, televir_project=project
+        )
+
+        software_table = pd.DataFrame(software_available.values())
+
+        parameters_table = pd.DataFrame(parameters_available.values())
+
+        return software_table, parameters_table
+
+    def merge_software_tables(self, software_table, parameters_table):
+        """"""
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
         ).rename(
@@ -570,8 +609,30 @@ class Parameter_DB_Utility:
 
         return combined_table
 
+    def generate_combined_parameters_table(self, owner: User):
+        """"""
+        software_table, parameters_table = self.get_software_tables_global(owner)
+
+        return self.merge_software_tables(software_table, parameters_table)
+
+    def generate_combined_parameters_table_project(
+        self, owner: User, project: Projects
+    ):
+        """"""
+        software_table, parameters_table = self.get_software_tables_project(
+            owner, project
+        )
+
+        print("parameters for this project: ", parameters_table.shape)
+
+        if parameters_table.shape[0] == 0:
+            print("No parameters for this project, using global")
+            software_table, parameters_table = self.get_software_tables_global(owner)
+
+        return self.merge_software_tables(software_table, parameters_table)
+
     def check_default_software_tree_exists(
-        self, owner: User, technology: str, global_index: int
+        self, owner: User, technology: Technology, global_index: int
     ):
 
         try:
@@ -583,7 +644,9 @@ class Parameter_DB_Utility:
         except SoftwareTree.DoesNotExist:
             return None
 
-    def get_software_tree_index(self, owner: User, technology: str, global_index: int):
+    def get_software_tree_index(
+        self, owner: User, technology: Technology, global_index: int
+    ):
 
         if self.check_default_software_tree_exists(owner, technology, global_index):
             software_tree = SoftwareTree.objects.get(
@@ -591,6 +654,57 @@ class Parameter_DB_Utility:
             )
 
             return software_tree.pk
+        else:
+            return None
+
+    def check_ParameterSet_exists(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        print("Checking if ParameterSet exists")
+        try:
+            parameter_set = ParameterSet.objects.get(
+                sample=sample, leaf=leaf, project=project
+            )
+            return True
+
+        except ParameterSet.DoesNotExist:
+            return False
+
+    def check_ParameterSet_processed(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return False
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        try:
+            processed = Processed.objects.get(parameter_set=parameter_set)
+
+            return True
+        except Processed.DoesNotExist:
+            return False
+
+    def get_software_tree_node_index(
+        self, owner: User, technology: str, global_index: int, node_index: int
+    ):
+
+        software_tree_index = self.get_software_tree_index(
+            owner, technology, global_index
+        )
+
+        if software_tree_index:
+            try:
+                software_tree_node = SoftwareTreeNode.objects.get(
+                    software_tree=software_tree_index, index=node_index
+                )
+                return software_tree_node.pk
+
+            except SoftwareTreeNode.DoesNotExist:
+                return None
         else:
             return None
 
@@ -714,7 +828,7 @@ class Utils_Manager:
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
 
-    def get_software_tree_index(self, technology: str):
+    def get_software_tree_index(self, technology: Technology):
         return self.parameter_util.get_software_tree_index(
             self.owner, technology, self.global_index
         )
@@ -746,9 +860,10 @@ class Utils_Manager:
 
             return pipeline_tree
 
-    def generate_current_tree(self, technology):
-        combined_table = self.parameter_util.generate_combined_parameters_table(
-            self.owner
+    def generate_project_tree(self, technology, project: Projects):
+
+        combined_table = self.parameter_util.generate_combined_parameters_table_project(
+            self.owner, project
         )
 
         utility_drone = Utility_Pipeline_Manager()

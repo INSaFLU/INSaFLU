@@ -9,7 +9,7 @@ from settings import ajax_views, views
 
 urlpatterns = [
     url(
-        r"pathogenID-pipeline",
+        r"pathogenID-pipeline/(?P<level>\d+)$",
         views.PISettingsView.as_view(),
         name="pathogenID_pipeline",
     ),

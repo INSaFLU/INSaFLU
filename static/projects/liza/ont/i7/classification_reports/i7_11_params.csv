@@ -1,9 +1,0 @@
-module	software	parameter	value
-Assembly	raven	RAVEN_ARGS	--kmer-len 15 --window-len 5 -p 2
-Viral enrichment	centrifuge	CENTRIFUGE_ARGS	--min-hitlen 22 -k 1
-Viral enrichment	centrifuge	CENTRIFUGE_DB	/televir/mngs_benchmark/ref_db/centrifuge/viral/index
-Contig classification	blastn	BLASTN_ARGS	--evalue 1e-5 --outfmt 6
-Contig classification	blastn	BLASTN_DB	/televir/mngs_benchmark/ref_db/blast/NUC/refseq_viral_genome
-Read classification	centrifuge	CENTRIFUGE_ARGS	--min-hitlen 22 -k 1
-Read classification	centrifuge	CENTRIFUGE_DB	/televir/mngs_benchmark/ref_db/centrifuge/viral/index
-Remapping	minimap2	MINIMAP2_ARGS	--secondary=no  -x map-ont 

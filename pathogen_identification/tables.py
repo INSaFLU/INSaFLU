@@ -6,43 +6,86 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
+from settings.models import Technology
 
 from pathogen_identification.models import (
+    ParameterSet,
     PIProject_Sample,
+    Processed,
     Projects,
     ReferenceContigs,
     RunMain,
     SampleQC,
+    Submitted,
 )
 
 
 class ProjectTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
-    description = tables.Column(verbose_name="Description")
+    description = tables.Column(verbose_name="Description", orderable=False)
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
+    results = tables.Column("Results", orderable=False, empty_values=())
+    technology = tables.Column(
+        verbose_name="Technology", orderable=False, empty_values=()
+    )
+    running_processes = tables.Column("Running", orderable=False, empty_values=())
 
     class Meta:
         model = Projects
 
         fields = (
             "name",
+            "results",
+            "samples",
             "last_change_date",
             "creation_date",
-            "samples",
-            "results",
-            "page",
+            "description",
+            "technology",
+            "running_processes",
         )
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
 
-    page = tables.LinkColumn(
-        "PIproject_samples",
-        text="project page",
-        args=[tables.A("pk")],
-    )
+    def render_technology(self, record):
+        """
+        return a reference name
+        """
+        return record.technology
+
+    def render_running_processes(self, record):
+        """
+        return number of running processes in this project"""
+
+        running = 0
+        parameter_sets = ParameterSet.objects.filter(project=record)
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_RUNNING:
+                running += 1
+
+        return running
+
+    def render_results(self, record):
+        """
+        return a reference name
+        """
+        results = (
+            "<a href="
+            + reverse("PIproject_samples", args=[record.pk])
+            + ' data-toggle="tooltip" title="See Results">'
+            + "<i class='fa fa-bar-chart'></i></a>"
+        )
+
+        parameters = (
+            "<a href="
+            + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
+            + ' data-toggle="tooltip" title="Manage settings">'
+            + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
+        )
+
+        return mark_safe(results + " " + parameters)
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware
@@ -127,11 +170,9 @@ class SampleTable(tables.Table):
         verbose_name="Combinations", orderable=False, empty_values=()
     )
     input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
-    technology = tables.Column(
-        verbose_name="Technology", orderable=False, empty_values=()
-    )
-    type = tables.Column(verbose_name="Type", orderable=False, empty_values=())
+
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    running_processes = tables.Column("Running", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -142,9 +183,22 @@ class SampleTable(tables.Table):
             "combinations",
             "report",
             "input",
-            "technology",
-            "type",
+            "running_processes",
         )
+
+    def render_running_processes(self, record):
+        """
+        return number of running processes in this project"""
+
+        running = 0
+        parameter_sets = ParameterSet.objects.filter(
+            sample=record, project=record.project
+        )
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_RUNNING:
+                running += 1
+
+        return running
 
     def render_combinations(self, record):
         return RunMain.objects.filter(

@@ -6,7 +6,10 @@ Created on 03/05/2020
 from curses.ascii import SO
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -24,6 +27,7 @@ class DefaultSoftware(object):
     def __init__(self):
         """change values"""
         self.default_parameters = DefaultParameters()
+        self.televir_utiltity = Utility_Pipeline_Manager()
         self.change_values_software = {}  ### the key is the name of the software
 
     def generate_default_PI_software_trees(self, user):
@@ -132,7 +136,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -141,7 +147,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
                 user,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
@@ -151,7 +157,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -159,7 +167,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             self.default_parameters.get_kraken2_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -168,7 +178,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_KAIJU_name,
             self.default_parameters.get_kaiju_default(
                 user,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
@@ -179,7 +189,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_KAIJU_name,
             self.default_parameters.get_kaiju_default(
                 user,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
@@ -189,7 +199,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_DIAMOND_name,
             self.default_parameters.get_diamond_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -197,14 +209,18 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
             self.default_parameters.get_krakenuniq_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
         self.test_default_db(
             SoftwareNames.SOFTWARE_BLAST_name,
             self.default_parameters.get_blast_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -212,7 +228,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_BLAST_name,
             self.default_parameters.get_blast_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -220,7 +238,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             self.default_parameters.get_fastviromeexplorer_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -228,7 +248,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             self.default_parameters.get_fastviromeexplorer_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -236,7 +258,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_SPAdes_name,
             self.default_parameters.get_spades_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -244,7 +268,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_RAVEN_name,
             self.default_parameters.get_raven_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -252,7 +278,9 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_SNIPPY_PI_name,
             self.default_parameters.get_snippy_pi_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_illumina
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -260,25 +288,64 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             self.default_parameters.get_minimap2_remap_ONT_default(
-                user, Software.TYPE_OF_USE_pident, ConstantsSettings.TECHNOLOGY_minion
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
 
         self.generate_default_PI_software_trees(user)
 
+    def assess_db_dependency_met(self, vect_parameters, software_name):
+        """for pipeline steps where sequence dbs are required, check that they exist."""
+        if (
+            vect_parameters[0].software.type_of_use
+            == Software.TYPE_OF_USE_televir_global
+        ):
+            if (
+                vect_parameters[0].software.pipeline_step.name
+                in self.televir_utiltity.steps_db_dependant
+            ):
+
+                if not self.televir_utiltity.check_software_db_available(
+                    software_name=software_name,
+                ):
+                    return False
+
+        return True
+
     def test_default_db(self, software_name, vect_parameters, user):
         """
         test if exist, if not persist in database
         """
         type_of_use = Software.TYPE_OF_USE_global
+
+        if not self.assess_db_dependency_met(vect_parameters, software_name):
+            return
+
+        if (
+            vect_parameters[0].software.type_of_use
+            == Software.TYPE_OF_USE_televir_global
+        ):
+            if (
+                vect_parameters[0].software.pipeline_step.name
+                in self.televir_utiltity.steps_db_dependant
+            ):
+
+                if not self.televir_utiltity.check_software_db_available(
+                    software_name=software_name,
+                ):
+                    return
         ## lock because more than one process can duplicate software names
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+
             print(
                 software_name,
                 vect_parameters[0].software.pipeline_step,
                 vect_parameters[0].software.technology.name,
             )
+            print(vect_parameters[0].software.pipeline_step)
             print(
                 Software.objects.filter(
                     name=software_name,
@@ -445,7 +512,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KAIJU_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -457,7 +524,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -469,7 +536,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -481,7 +548,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_DIAMOND_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -493,7 +560,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_BLAST_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -505,7 +572,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -517,7 +584,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_DESAMBA_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -529,7 +596,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_RAVEN_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -541,7 +608,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_SPAdes_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -553,7 +620,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -565,7 +632,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_SNIPPY_PI_name,
             user,
-            Software.TYPE_OF_USE_pident,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -742,7 +809,30 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_CENTRIFUGE_name,
                 self.default_parameters.get_centrifuge_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
+                self.default_parameters.get_centrifuge_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                ),
+                user,
+            )
+
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_CENTRIFUGE_name,
+                self.default_parameters.get_centrifuge_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
                 ),
                 user,
             )
@@ -752,7 +842,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_KRAKEN2_name,
                 self.default_parameters.get_kraken2_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -762,7 +852,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_DIAMOND_name,
                 self.default_parameters.get_diamond_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -772,7 +862,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
                 self.default_parameters.get_krakenuniq_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -783,7 +873,7 @@ class DefaultSoftware(object):
                 SoftwareNames.SOFTWARE_KAIJU_name,
                 self.default_parameters.get_kaiju_default(
                     user,
-                    Software.TYPE_OF_USE_pident,
+                    Software.TYPE_OF_USE_televir_global,
                     technology_name,
                     pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
                 ),
@@ -795,7 +885,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_BLAST_name,
                 self.default_parameters.get_blast_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -805,7 +895,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_DESAMBA_name,
                 self.default_parameters.get_desamba_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -815,7 +905,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_RAVEN_name,
                 self.default_parameters.get_raven_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -825,7 +915,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
                 self.default_parameters.get_fastviromeexplorer_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -835,7 +925,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_SPAdes_name,
                 self.default_parameters.get_spades_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )
@@ -845,7 +935,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_SNIPPY_PI_name,
                 self.default_parameters.get_snippy_pi_default(
-                    user, Software.TYPE_OF_USE_pident, technology_name
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
                 ),
                 user,
             )

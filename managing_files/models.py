@@ -7,10 +7,8 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -2138,9 +2136,9 @@ class ProcessControler(models.Model):
     def get_name_collect_all_projects_user(self, user):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
-    def get_name_televir_project(self, televir_project):
+    def get_name_televir_project(self, project_pk):
         return "{}{}".format(
-            ProcessControler.PREFIX_TELEVIR_PROJECT, televir_project.pk
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk
         )
 
     def __str__(self):

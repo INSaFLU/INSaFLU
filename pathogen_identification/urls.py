@@ -63,7 +63,7 @@ urlpatterns = [
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
-        "<slug:project>/sample_<slug:sample>/<slug:run>/<slug:reference>",
+        r"Scaffold/project_(?P<project>[a-zA-Z0-9]+)/sample_(?P<sample>[a-zA-Z0-9]+)/run_(?P<run>[a-zA-Z0-9_]+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap,
         name="scaffold_remap",
     ),

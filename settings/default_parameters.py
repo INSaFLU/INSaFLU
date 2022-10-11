@@ -161,7 +161,7 @@ class DefaultParameters(object):
                 if type_of_use in [
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_pident,
+                    Software.TYPE_OF_USE_televir_global,
                 ]:
                     try:
                         software = Software.objects.get(
@@ -192,7 +192,7 @@ class DefaultParameters(object):
                 if type_of_use in [
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_pident,
+                    Software.TYPE_OF_USE_televir_global,
                 ]:
                     try:
                         software = Software.objects.get(
@@ -301,7 +301,7 @@ class DefaultParameters(object):
             if type_of_use in [
                 Software.TYPE_OF_USE_global,
                 Software.TYPE_OF_USE_qc,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
             ]:
                 try:
                     software = Software.objects.get(
@@ -573,32 +573,32 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             return self.get_kraken2_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
         elif software.name == SoftwareNames.SOFTWARE_KRAKENUNIQ_name:
             return self.get_krakenuniq_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
         elif software.name == SoftwareNames.SOFTWARE_DIAMOND_name:
             return self.get_diamond_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
         elif software.name == SoftwareNames.SOFTWARE_KAIJU_name:
             return self.get_kaiju_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             )
@@ -606,44 +606,44 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_DESAMBA_name:
             return self.get_desamba_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
         elif software.name == SoftwareNames.SOFTWARE_BLAST_name:
             return self.get_blast_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
         elif software.name == SoftwareNames.SOFTWARE_RAVEN_name:
             return self.get_raven_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
         elif software.name == SoftwareNames.SOFTWARE_SPAdes_name:
             return self.get_spades_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
         elif software.name == SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name:
             return self.get_fastviromeexplorer_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             )
         elif software.name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
             return self.get_snippy_pi_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             return self.get_minimap2_remap_ONT_default(
                 software.owner,
-                Software.TYPE_OF_USE_pident,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             )
         else:

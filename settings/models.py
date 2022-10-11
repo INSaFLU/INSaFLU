@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import Projects as TelevirProject
 
 # Create your models here.
 
@@ -55,7 +56,8 @@ class Software(models.Model):
     TYPE_OF_USE_project_sample = 2  ### Used in a particular project sample
     TYPE_OF_USE_sample = 3  ### Used in a particular sample
     TYPE_OF_USE_qc = 4  ### Used for  quality control
-    TYPE_OF_USE_pident = 5  ### used for pathogen_identification.
+    TYPE_OF_USE_televir_global = 5  ### used for pathogen_identification.
+    TYPE_OF_USE_televir_project = 6  ### Used for  pathogen_identification_projects.
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)
@@ -165,6 +167,13 @@ class Parameter(models.Model):
     ### this allow to have software parameters in projects
     project = models.ForeignKey(
         Project,
+        related_name="parameter",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    televir_project = models.ForeignKey(
+        TelevirProject,
         related_name="parameter",
         on_delete=models.PROTECT,
         blank=True,

@@ -7,6 +7,7 @@ from django.views.generic import ListView, TemplateView, UpdateView
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
+from pathogen_identification.models import Projects as PIProjects
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage
 
@@ -41,14 +42,65 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
+    def duplicate_software_params_global_project(self, project):
+        """
+        duplicate software global to project
+        """
+        print("duplicate_software_global_project")
+        ### get all global software
+        query_set = Software.objects.filter(
+            owner=self.request.user,
+            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_software=Software.TYPE_SOFTWARE,
+            is_obsolete=False,
+        )
+        project = PIProjects.objects.get(pk=project.pk)
+        for software in query_set:
+
+            software_parameters = Parameter.objects.filter(
+                software=software,
+            )
+
+            # software.pk = None
+            # software.type_of_use = Software.TYPE_OF_USE_televir_project
+            # software.save()
+            # print(project, project.name)
+
+            for parameter in software_parameters:
+                parameter.pk = None
+                parameter.software = software
+                parameter.televir_project = project
+                parameter.save()
+
+    def check_project_params_exist(self, project):
+        """
+        check if project parameters exist
+        """
+        print("check_project_params_exist")
+        print(project.pk)
+
+        query_set = Parameter.objects.filter(televir_project=project.pk)
+        if query_set.count() == 0:
+            return False
+        return True
+
     def get_context_data(self, **kwargs):
         context = super(PISettingsView, self).get_context_data(**kwargs)
+        project = None
+        print(self.kwargs)
 
+        if int(self.kwargs["level"]) > 0:
+            project = PIProjects.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
         default_software.test_all_defaults(
             self.request.user
         )  ## the user can have defaults yet
+
+        ### project parameters
+        if project:
+            if not self.check_project_params_exist(project):
+                self.duplicate_software_params_global_project(project)
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
@@ -60,17 +112,32 @@ class PISettingsView(LoginRequiredMixin, ListView):
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
-                query_set = Software.objects.filter(
-                    owner=self.request.user,
-                    type_of_use=Software.TYPE_OF_USE_pident,
-                    type_of_software__in=[
-                        Software.TYPE_SOFTWARE,
-                        Software.TYPE_INSAFLU_PARAMETER,
-                    ],
-                    technology__name=technology,
-                    pipeline_step__name=pipeline_step,
-                    is_obsolete=False,
-                )
+                if project == None:
+                    query_set = Software.objects.filter(
+                        owner=self.request.user,
+                        type_of_use=Software.TYPE_OF_USE_televir_global,
+                        type_of_software__in=[
+                            Software.TYPE_SOFTWARE,
+                            Software.TYPE_INSAFLU_PARAMETER,
+                        ],
+                        technology__name=technology,
+                        pipeline_step__name=pipeline_step,
+                        is_obsolete=False,
+                    )
+
+                else:
+                    query_set = Software.objects.filter(
+                        owner=self.request.user,
+                        type_of_use=Software.TYPE_OF_USE_televir_global,
+                        type_of_software__in=[
+                            Software.TYPE_SOFTWARE,
+                            Software.TYPE_INSAFLU_PARAMETER,
+                        ],
+                        technology__name=technology,
+                        pipeline_step__name=pipeline_step,
+                        parameter__televir_project=project,
+                        is_obsolete=False,
+                    )
 
                 ### if there are software
                 if query_set.count() > 0:

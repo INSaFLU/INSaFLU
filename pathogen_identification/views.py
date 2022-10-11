@@ -729,9 +729,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_name = self.kwargs["run_name"]
         sample_name = self.kwargs["sample_name"]
         user = self.request.user
-        print(sample_name)
-        print(run_name)
-        print(run_name)
 
         project_main = Projects.objects.get(name=project_name, owner=user)
         project_pk = Projects.objects.get(name=project_name, owner=user).pk
@@ -758,6 +755,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
         #
+        print("#####")
+        for value in final_report:
+            print(value.refa_dotplot)
+            print(value.covplot)
+            print(value.covplot_exists)
+
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )
@@ -925,7 +928,7 @@ def download_file(requestdst):
             print(BASE_DIR)
             print(filepath)
 
-            filepath = BASE_DIR + filepath
+            # filepath = BASE_DIR + filepath
 
             if "//" in filepath:
                 filepath = "/" + filepath.split("//")[1]

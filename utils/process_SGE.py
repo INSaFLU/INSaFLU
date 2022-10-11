@@ -68,7 +68,9 @@ class ProcessSGE(object):
         cmd = "export SGE_ROOT={}; qsub {} > {}".format(
             settings.SGE_ROOT, file_name, temp_file
         )
+        print(cmd)
         exist_status = os.system(cmd)
+        print("cmd: {}".format(cmd))
 
         if exist_status != 0:
             if os.path.exists(temp_file):
@@ -787,7 +789,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_job(self, user, sample_pk, project_pk, pipeline_pk):
+    def set_submit_televir_job(self, user, project_pk):
         """
         submit the job to televir
         """
@@ -796,12 +798,10 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job --user_id {} --sample_id {} --project_id {} --pipeline_id {} -o {}".format(
+            "python3 {} submit_televir_job --user_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
-                sample_pk,
                 project_pk,
-                pipeline_pk,
                 out_dir,
             )
         ]
@@ -817,9 +817,10 @@ class ProcessSGE(object):
         print(path_file)
         try:
             sge_id = self.submitte_job(path_file)
+            print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
-                    user, process_controler.get_name_televir_project(), sge_id
+                    user, process_controler.get_name_televir_project(project_pk), sge_id
                 )
         except:
             raise Exception("Fail to submit the job.")

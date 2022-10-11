@@ -92,6 +92,11 @@ class RunDetail_main:
     depleted_reads_dir: str
 
     log_dir: str
+
+    dir_classification: str = f"classification_reports"
+    dir_plots: str = f"plots"
+    igv_dir: str = f"igv"
+
     ## output content
     report: pd.DataFrame
 
@@ -130,48 +135,60 @@ class RunDetail_main:
         self.start_time = time.perf_counter()
         self.exec_time = 0
 
-        # directories
-        self.root = config["directories"]["root"]
+        ######## DIRECTORIES ########
+
+        self.deployment_root_dir = config["deployment_root_dir"]
+        self.substructure_dir = config["sub_directory"]
+        self.deployment_dir = os.path.join(
+            self.deployment_root_dir, self.substructure_dir
+        )
+
+        self.media_dir = os.path.join(
+            ConstantsSettings.media_directory, self.substructure_dir
+        )
+
+        ###
+
+        self.media_dir_classification = os.path.join(
+            self.media_dir,
+            self.dir_classification,
+        )
+
+        self.static_dir_plots = os.path.join(
+            self.substructure_dir,
+            self.dir_plots,
+        )
+
+        self.media_dir_igv = os.path.join(
+            self.media_dir,
+            self.igv_dir,
+        )
+
+        os.makedirs(
+            self.media_dir_classification,
+            exist_ok=True,
+        )
+
+        os.makedirs(
+            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
+            exist_ok=True,
+        )
+
+        os.makedirs(
+            self.media_dir_igv,
+            exist_ok=True,
+        )
+
+        print(self.media_dir_classification)
+        print(self.static_dir_plots)
+        print(self.media_dir_igv)
+
         self.filtered_reads_dir = config["directories"][
             CS.PIPELINE_NAME_read_quality_analysis
         ]
         self.log_dir = config["directories"]["log_dir"]
 
-        self.static_dir = config["static_dir"]
-        self.full_static_dir = os.path.join(
-            ConstantsSettings.static_directory, self.static_dir
-        )
-        self.static_dir_classification = f"classification_reports"
-        os.makedirs(
-            os.path.join(
-                ConstantsSettings.static_directory,
-                self.static_dir,
-                self.static_dir_classification,
-            ),
-            exist_ok=True,
-        )
-
-        self.static_dir_plots = f"plots"
-        os.makedirs(
-            os.path.join(
-                ConstantsSettings.static_directory,
-                self.static_dir,
-                self.static_dir_plots,
-            ),
-            exist_ok=True,
-        )
-
-        self.static_dir_igv = f"igv"
-        os.makedirs(
-            os.path.join(
-                ConstantsSettings.static_directory,
-                self.static_dir,
-                self.static_dir_igv,
-            ),
-            exist_ok=True,
-        )
-
-        # input
+        ######### INPUT
         self.sample_name = config["sample_name"]
         self.type = config["type"]
 
@@ -216,7 +233,7 @@ class RunDetail_main:
         ### mapping parameters
         self.min_scaffold_length = config["assembly_contig_min_length"]
         self.minimum_coverage = int(config["minimum_coverage_threshold"])
-        self.maximum_coverage = 100000
+        self.maximum_coverage = 1000000000
 
         ### metadata
         self.metadata_tool = Metadata_handler(
@@ -303,39 +320,27 @@ class RunDetail_main:
 
         ### output files
         self.params_file_path = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_params.csv",
         )
         self.remap_plan_path = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_remap_plan.csv",
         )
         self.full_report = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_full_report.tsv",
         )
         self.assembly_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_aclass_summary.tsv",
         )
         self.read_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_rclass_summary.tsv",
         )
         self.merged_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_mclass_summary.tsv",
         )
 
@@ -359,7 +364,6 @@ class RunDetail_main:
         self.start_time = time.perf_counter()
 
         # directories
-        self.root = config["directories"]["root"]
         self.filtered_reads_dir = config["directories"][
             CS.PIPELINE_NAME_read_quality_analysis
         ]
@@ -441,40 +445,27 @@ class RunDetail_main:
 
         ### output files
         self.params_file_path = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_params.csv",
         )
         self.remap_plan_path = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_remap_plan.csv",
         )
-
         self.full_report = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_full_report.tsv",
         )
         self.assembly_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_aclass_summary.tsv",
         )
         self.read_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_rclass_summary.tsv",
         )
         self.merged_classification_summary = os.path.join(
-            ConstantsSettings.static_directory,
-            self.static_dir,
-            self.static_dir_classification,
+            self.media_dir_classification,
             f"{self.prefix}_mclass_summary.tsv",
         )
 
@@ -625,8 +616,9 @@ class Run_Deployment_Methods(RunDetail_main):
         )
 
         self.remap_manager.run_mappings()
-        self.remap_manager.move_plots_to_static(self.static_dir, self.static_dir_plots)
-        self.remap_manager.move_igv_to_static(self.static_dir, self.static_dir_igv)
+        self.remap_manager.move_plots_to_static(self.static_dir_plots)
+        self.remap_manager.move_igv_to_static(self.media_dir_igv)
+        self.remap_manager.export_mapping_files(self.media_dir_igv)
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
@@ -742,42 +734,25 @@ class RunMain_class(Run_Deployment_Methods):
             header=True,
         )
 
+    def save_df_check_exists(self, df: pd.DataFrame, path: str):
+        if not os.path.exists(path):
+            df.to_csv(path, index=False, sep="\t", header=True)
+
     def export_intermediate_reports(self):
+        export_dict = {
+            self.params_file_path: self.method_args,
+            self.remap_plan_path: self.remap_plan,
+            self.assembly_classification_summary: self.aclass_summary,
+            self.read_classification_summary: self.rclass_summary,
+            self.merged_classification_summary: self.merged_targets,
+        }
+        for output_df_path, df in export_dict.items():
 
-        ### params
-        self.method_args.to_csv(
-            self.params_file_path, index=False, sep="\t", header=True
-        )
+            self.save_df_check_exists(df, output_df_path)
 
-        ### remap plan
-        self.remap_plan.to_csv(self.remap_plan_path, index=False, sep="\t", header=True)
-
-        ### contig classification report
-        self.aclass_summary.to_csv(
-            self.assembly_classification_summary,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-        ### read classification report
-        self.rclass_summary.to_csv(
-            self.read_classification_summary,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-        ### merged classification report
-
-        self.merged_targets.to_csv(
-            self.merged_classification_summary,
-            index=False,
-            sep="\t",
-            header=True,
-        )
-
-        ###
+    def export_sequences(self):
+        self.sample.export_reads(self.media_dir)
+        self.assembly_drone.export_assembly(self.media_dir)
 
     def Summarize(self):
 

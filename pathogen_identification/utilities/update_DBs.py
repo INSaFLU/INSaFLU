@@ -1,5 +1,6 @@
 import os
 import sys
+from ast import Param
 from typing import Type
 
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
     FinalReport,
+    ParameterSet,
     PIProject_Sample,
     Projects,
     ReadClassification,
@@ -175,7 +177,7 @@ def Update_sample_qc(sample_class: Sample_runClass):
         processed_report.close()
 
 
-def Update_QC_report(sample_class: Sample_runClass):
+def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet):
     """
     Update QC data for sample_class.
 
@@ -185,9 +187,6 @@ def Update_QC_report(sample_class: Sample_runClass):
     user = User.objects.get(username=sample_class.user_name)
     project = Projects.objects.get(name=sample_class.project_name, owner=user)
 
-    print("###")
-    print(project.name)
-    print("sample_class.sample_name: ", sample_class.sample_name)
     sample = PIProject_Sample.objects.get(
         project=project, name=sample_class.sample_name
     )
@@ -215,7 +214,7 @@ def Update_QC_report(sample_class: Sample_runClass):
         qc_report.save()
 
 
-def Update_Sample_Runs(run_class: Type[RunMain_class]):
+def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
     - RunMain,
@@ -232,9 +231,9 @@ def Update_Sample_Runs(run_class: Type[RunMain_class]):
     :return: run_data
     """
 
-    Update_RunMain(run_class)
-    Update_Sample_Runs_DB(run_class)
-    Update_RefMap_DB(run_class)
+    Update_RunMain(run_class, parameter_set)
+    Update_Sample_Runs_DB(run_class, parameter_set)
+    Update_RefMap_DB(run_class, parameter_set)
 
 
 def retrieve_number_of_runs(project_name, sample_name, username):
@@ -284,7 +283,7 @@ def RunIndex_Update_Retrieve_Key(project_name, sample_name):
     return new_name
 
 
-def Update_RunMain(run_class: Type[RunMain_class]):
+def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
     :param run_class:
@@ -314,10 +313,12 @@ def Update_RunMain(run_class: Type[RunMain_class]):
             suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
+            parameter_set=parameter_set,
         )
     except RunMain.DoesNotExist:
 
         runmain = RunMain(
+            parameter_set=parameter_set,
             suprun=run_class.suprun,
             project=project,
             sample=sample,
@@ -344,7 +345,7 @@ def Update_RunMain(run_class: Type[RunMain_class]):
             contig_classification=run_class.contig_classification_drone.classifier_method.name,
             runtime=f"{run_class.exec_time / 60:.2f} m",
             report="report",
-            static_dir=run_class.static_dir,
+            # static_dir=run_class.static_dir,
         )
 
         runmain.save()
@@ -365,7 +366,7 @@ def Sample_update_combinations(run_class: Type[RunMain_class]):
     sample.save()
 
 
-def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
+def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:
     - RunMain,
@@ -381,7 +382,7 @@ def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
     :param run_class:
     :return: run_data
     """
-    Sample_update_combinations(run_class)
+    # Sample_update_combinations(run_class)
 
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(name=run_class.project_name, owner=user)
@@ -397,6 +398,7 @@ def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
             suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
+            parameter_set=parameter_set,
         )
 
     except RunMain.DoesNotExist:
@@ -553,7 +555,7 @@ def Update_Sample_Runs_DB(run_class: Type[RunMain_class]):
             report_row.save()
 
 
-def Update_RefMap_DB(run_class: Type[RunMain_class]):
+def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     Update Remap TABLES with info on this run.
 
@@ -564,15 +566,13 @@ def Update_RefMap_DB(run_class: Type[RunMain_class]):
 
     for ref_map in run_class.remap_manager.mapped_instances:
 
-        Update_ReferenceMap(
-            ref_map,
-            run_class,
-        )
+        Update_ReferenceMap(ref_map, run_class, parameter_set)
 
 
 def Update_ReferenceMap(
-    ref_map: Type[Mapping_Instance],
-    run_class: Type[RunMain_class],
+    ref_map: Mapping_Instance,
+    run_class: RunMain_class,
+    parameter_set: ParameterSet,
 ):
     """
     Updates the reference map data to TABLES.
@@ -593,6 +593,7 @@ def Update_ReferenceMap(
         suprun=run_class.suprun,
         name=run_class.prefix,
         sample=sample,
+        parameter_set=parameter_set,
     )
 
     try:

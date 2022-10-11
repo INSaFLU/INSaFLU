@@ -1081,10 +1081,10 @@ class Classifier:
         """
         configure classifier.
         """
-        os.makedirs(self.output_path, exist_ok=True)
 
         try:
             classifier = self.available_software[self.classifier_method.name.lower()]
+            os.makedirs(self.output_path, exist_ok=True)
             return classifier(
                 db_path=self.classifier_method.db,
                 query_path=self.r1,

@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
 from managing_files.models import Sample
-from settings.models import Parameter
 
 # Create your models here.
 
@@ -48,11 +47,19 @@ class Projects(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
+    results = models.CharField(
+        max_length=200, db_index=True, blank=True, null=True, verbose_name="Results"
+    )
+
+    running_processes = models.IntegerField(
+        default=0
+    )  ## has the number of running processes
+
     class Meta:
         ordering = ["project__id", "-creation_date"]
 
     def __str__(self):
-        return self.name + " " + self.name + " " + self.description
+        return self.name + " " + self.description
 
 
 class SoftwareTree(models.Model):
@@ -176,19 +183,50 @@ class PIProject_Sample(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
+    running_processes = models.IntegerField(
+        default=0
+    )  ## has the number of running processes
+
     class Meta:
         ordering = ["project__id", "-creation_date"]
 
     def __str__(self):
-        return self.project.name
+        return self.sample.name
 
 
 class ParameterSet(models.Model):
-    sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
-    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+
+    STATUS_NOT_STARTED = 0
+    STATUS_RUNNING = 1
+    STATUS_FINISHED = 2
+    STATUS_ERROR = 3
+    STATUS_CHOICES = (
+        (STATUS_NOT_STARTED, "Not started"),
+        (STATUS_RUNNING, "Running"),
+        (STATUS_FINISHED, "Finished"),
+        (STATUS_ERROR, "Error"),
+    )
+
+    sample = models.ForeignKey(PIProject_Sample, on_delete=models.PROTECT)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)
+    leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.PROTECT, null=True)
+
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_NOT_STARTED)
+
+    def register_subprocess(self):
+        self.status = self.STATUS_RUNNING
+        self.save()
+
+    def register_finished(self):
+        self.status = self.STATUS_FINISHED
+        self.save()
+
+    def register_error(self):
+        self.status = self.STATUS_ERROR
+        self.save()
 
     def __str__(self):
-        return self.sample.name + " " + self.leaf.index
+        return self.sample.name + " " + str(self.leaf.index)
 
 
 class Submitted(models.Model):
@@ -207,18 +245,15 @@ class Processed(models.Model):
     date_processed = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.index
+        return self.parameter_set.sample.name + " " + str(self.parameter_set.leaf.index)
 
 
 class SampleQC(models.Model):
     """Results of sample quality control."""
 
-    # project = models.ForeignKey(
-    #    Projects,
-    #    null=True,
-    #    blank=True,
-    #    on_delete=models.CASCADE,
-    # )
+    ParameterSet = models.ForeignKey(
+        ParameterSet, on_delete=models.CASCADE, related_name="sample_qc", default=None
+    )
 
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -289,6 +324,8 @@ class QC_REPORT(models.Model):
     RAW = "input"
     PROCESSED = "processed"
 
+    # sample_qc= models.ForeignKey(SampleQC, on_delete=models.CASCADE)
+
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )  ## sample
@@ -320,6 +357,10 @@ class RunIndex(models.Model):
 
 
 class RunMain(models.Model):
+
+    parameter_set = models.ForeignKey(
+        ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
+    )
 
     project = models.ForeignKey(
         Projects,
@@ -658,7 +699,7 @@ class FinalReport(models.Model):
     simple_id = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=150, blank=True, null=True)
 
-    ref_db = models.CharField(max_length=200, blank=True, null=True)
+    ref_db = models.CharField(max_length=300, blank=True, null=True)
     reference_contig_str = models.CharField(max_length=100, blank=True, null=True)
 
     accid = models.CharField(max_length=20, blank=True, null=True)
@@ -676,14 +717,14 @@ class FinalReport(models.Model):
     refa_dotplot_exists = models.BooleanField(default=False)
     covplot = models.TextField(blank=True, null=True)
     covplot_exists = models.BooleanField(default=False)
-    bam_path = models.CharField(max_length=200, blank=True, null=True)
-    bai_path = models.CharField(max_length=200, blank=True, null=True)
-    reference_path = models.CharField(max_length=200, blank=True, null=True)
-    reference_index_path = models.CharField(max_length=200, blank=True, null=True)
-    reference_assembly_paf = models.CharField(max_length=200, blank=True, null=True)
-    mapped_scaffolds_path = models.CharField(max_length=200, blank=True, null=True)
+    bam_path = models.CharField(max_length=300, blank=True, null=True)
+    bai_path = models.CharField(max_length=300, blank=True, null=True)
+    reference_path = models.CharField(max_length=300, blank=True, null=True)
+    reference_index_path = models.CharField(max_length=300, blank=True, null=True)
+    reference_assembly_paf = models.CharField(max_length=300, blank=True, null=True)
+    mapped_scaffolds_path = models.CharField(max_length=300, blank=True, null=True)
     mapped_scaffolds_index_path = models.CharField(
-        max_length=200, blank=True, null=True
+        max_length=300, blank=True, null=True
     )
 
 

@@ -1,6 +1,7 @@
 import itertools as it
 import logging
 import os
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -113,7 +114,7 @@ class RunCMD:
         self.logger.info(f"running: {self.bin}{cmd}")
 
         start_time = time.perf_counter()
-
+        print(f"{self.bin}{cmd}")
         proc_prep = subprocess.Popen(
             f"{self.bin}{cmd}",
             shell=True,
@@ -414,14 +415,30 @@ class Read_class:
         else:
             return 0
 
+    def export_reads(self, directory):
+        """
+        Export reads to directory.
+        """
+        if not self.exists:
+            return
+
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+
+        if os.path.exists(os.path.join(directory, os.path.basename(self.current))):
+            os.remove(os.path.join(directory, os.path.basename(self.current)))
+
+        shutil.move(self.current, directory)
+        self.current = os.path.join(directory, os.path.basename(self.current))
+
     def __str__(self):
         return self.filepath
 
 
 class Sample_runClass:
 
-    r1: Type[Read_class]
-    r2: Type[Read_class]
+    r1: Read_class
+    r2: Read_class
     report: str
     qcdata: dict
     reads_before_processing: int = 0
@@ -432,6 +449,7 @@ class Sample_runClass:
     processed_fastqc_report: os.PathLike
     threads: int = 1
     user_name: str
+    reads_subdirectory: str = "reads"
 
     def __init__(
         self,
@@ -617,6 +635,18 @@ class Sample_runClass:
             os.rename(tempfq + "_1P.fastq.gz", self.r1.current)
             os.rename(tempfq + "_2P.fastq.gz", self.r2.current)
 
+    def export_reads(self, reads_dir: str = "reads/clean/"):
+        """export reads to reads_dir
+
+        :param reads_dir:
+        :return: None
+        """
+        if self.type == "SE":
+            self.r1.export_reads(reads_dir)
+        else:
+            self.r1.export_reads(reads_dir)
+            self.r2.export_reads(reads_dir)
+
 
 class Software_detail:
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
@@ -679,6 +709,10 @@ class Software_detail:
                 self.dir = config["directories"][module]
             except KeyError:
                 self.dir = ""
+
+            print(
+                f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}"
+            )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
 

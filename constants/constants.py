@@ -23,8 +23,8 @@ class Constants(object):
 	META_KEY_VALUE_NOT_NEED = "value not needed"
 	
 	## MAX LOCUS FROM FASTA
-	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
-	MAX_SEQUENCES_FROM_CONTIGS_FASTA = 100		### update this values
+	MAX_SEQUENCES_FROM_FASTA = 20		### update this value
+	MAX_SEQUENCES_FROM_CONTIGS_FASTA = 1000		### update this value
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
 	MAX_LENGTH_CONTIGS_SEQ_NAME = 190	###  it must be less than 190 because of the Consensus.name field  
 	SHORT_NAME_LENGTH = 20				### cut length name to show in the tables

@@ -239,6 +239,7 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
 				dataset.last_change_date = datetime.datetime.now()
 				dataset.number_of_sequences_from_references += reference_add
 				dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
+				dataset.is_processed = True
 				dataset.save()
 			
 			if (reference_add == 0):
@@ -400,6 +401,7 @@ class AddDatasetsConsensusView(LoginRequiredMixin, FormValidMessageMixin, generi
 			if (reference_add > 0):
 				dataset.last_change_date = datetime.datetime.now()
 				dataset.number_of_sequences_from_consensus += reference_add
+				dataset.is_processed = True
 				dataset.save()
 			
 			if (reference_add == 0):
@@ -597,6 +599,7 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
 				dataset.number_of_sequences_from_projects += consensus_add
 				dataset.number_of_sequences_from_references += reference_add
 				dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
+				dataset.is_processed = True
 				dataset.save()
 			
 			if (reference_add == 0 and consensus_add == 0):
@@ -608,12 +611,12 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
 				else:
 					messages.success(self.request, "One consensus/reference from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
 					
-				## need to run processing: TODO user has to explicitly click for it to run...
-				try:
-					process_SGE = ProcessSGE()
-					taskID =  process_SGE.set_collect_dataset_global_files(dataset, self.request.user)
-				except:
-					return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+				## need to run processing: user has to explicitly click for it to run...
+				#try:
+				#	process_SGE = ProcessSGE()
+				#	taskID =  process_SGE.set_collect_dataset_global_files(dataset, self.request.user)
+				#except:
+				#	return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
 			return HttpResponseRedirect(reverse_lazy('datasets'))
 		else:
 			return super(AddDatasetsProjectsView, self).form_invalid(form)

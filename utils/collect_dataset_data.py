@@ -50,11 +50,17 @@ class CollectExtraDatasetData(object):
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(user, process_controler.get_name_dataset(dataset), ProcessControler.FLAG_RUNNING)
         
+        dataset.is_processed = False
+        dataset.save()
+
         ## need to add a delay for the test in command line
         if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
         
         ## run collect data
         self.__collect_extra_data_for_dataset(dataset, user)
+
+        dataset.is_processed = True
+        dataset.save()
     
     def collect_update_extra_metadata_for_dataset(self, dataset, user):
         """
@@ -125,7 +131,6 @@ class CollectExtraDatasetData(object):
             start = time.time()
             self.logger.info("COLLECT_EXTRA_FILES: Start")
             
-            print("Start")
             ## calculate the max sample label size of the samples that belong to this dataset
             ## used in MSA viewer 
             b_calculate_again = True
@@ -133,38 +138,27 @@ class CollectExtraDatasetData(object):
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
             start = time.time()
-            
-            print("Start consensus")
+
             ## collect all consensus files for a dataset
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
             start = time.time()
-            print("End consensus")
 
-
-            print("Start metadata")
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
-            print("metadata 1")
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
-            print("metadata 2")            
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
-            print("metadata 3")            
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)
-            print("metadata 4")            
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)      
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)        
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)       
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1 
-            print("End metadata")
 
-            print("Start nextstrain")
             start = time.time()
             #self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_default_build, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_nextstrain_auspice_zip, dataset)
             self.logger.info("RUN nextStrain: Step {}  diff_time:{}".format(count, time.time() - start))
             count += 1
-            print("End nextstrain")
 
             ### create trees; this is now replaced by nextstrain results
             #createTree = CreateTree()

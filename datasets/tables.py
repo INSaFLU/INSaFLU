@@ -120,13 +120,17 @@ class DatasetTable(tables.Table):
 		if (count > 0):
 			sz_project_sample = '<a href=' + reverse('show-dataset-consensus', args=[record.pk]) + ' data-toggle="tooltip" title="See Results"> ' +\
 				'<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a> '
-			if(not record.is_processed):
-				# Do not change this data-toggle="modal"...
-				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
-					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><i class="fa fa-flask padding-button-table"></i></span> </a>'
 			## Can also launch all the sequeneces in the NextTrain
 			sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
 				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+			# TODO Make this a query to ProcessSGE instead
+			if(record.is_processed):
+				# Do not change this data-toggle="modal"...
+				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-flask" style="color:#55aa55;"></i></span> </a>'
+			else:
+				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Waiting for Dataset Results (click to rebuild at your own risk)"' +\
+					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-spinner fa-spin" style="color:#ff0000;"></i></span> </a>'				
 		else:	## can change settings
 			sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
 				 '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'

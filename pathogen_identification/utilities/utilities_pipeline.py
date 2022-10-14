@@ -8,11 +8,15 @@ import pandas as pd
 from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
-from pathogen_identification.models import (ParameterSet, PIProject_Sample,
-                                            Processed, Projects, SoftwareTree,
-                                            SoftwareTreeNode)
-from pathogen_identification.utilities.utilities_televir_dbs import \
-    Utility_Repository
+from pathogen_identification.models import (
+    ParameterSet,
+    PIProject_Sample,
+    Processed,
+    Projects,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
+from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d
@@ -85,10 +89,11 @@ class PipelineTree:
 
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
-        all_paths_explicit= [self.get_path_explicit(path) for path in all_paths]
+        all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
 
         path_dict = {
-            all_paths_explicit[x][-1][0]: self.df_from_path(path) for x, path in enumerate(all_paths)
+            all_paths_explicit[x][-1][0]: self.df_from_path(path)
+            for x, path in enumerate(all_paths)
         }
 
         return path_dict
@@ -689,11 +694,9 @@ class Parameter_DB_Utility:
             sample=sample, leaf=leaf, project=project
         )
 
-        try:
-            processed = Processed.objects.get(parameter_set=parameter_set)
-
+        if parameter_set.status == ParameterSet.STATUS_FINISHED:
             return True
-        except Processed.DoesNotExist:
+        else:
             return False
 
     def get_software_tree_node_index(
@@ -806,6 +809,9 @@ class Parameter_DB_Utility:
             self.update_SoftwareTree_nodes(software_tree, tree)
 
 
+from django.db.models import Q
+
+
 class Utils_Manager:
     """Combines Utility classes to create a manager for the pipeline."""
 
@@ -828,6 +834,26 @@ class Utils_Manager:
             owner
         )
         self.utility_manager = Utility_Pipeline_Manager()
+
+    def check_runs_to_deploy(self, project: Projects):
+        """
+        Check if there are runs to run
+        """
+
+        local_tree = self.generate_project_tree(project.technology, project)
+
+        local_paths = local_tree.get_all_graph_paths()
+        n_samples = PIProject_Sample.objects.filter(project=project).count()
+        runs = ParameterSet.objects.filter(
+            Q(project=project) & Q(status=ParameterSet.STATUS_FINISHED)
+        ).count()
+
+        runs_to_deploy = len(local_paths) * n_samples - runs
+
+        if runs_to_deploy > 0:
+            return True
+
+        return False
 
     def get_all_technology_pipelines(self, technology: str) -> dict:
 

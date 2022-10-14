@@ -30,7 +30,7 @@ def deploy_ProjectPI(request):
     prepare data for deployment of pathogen identification.
     """
     if request.is_ajax():
-        data = {"is_ok": False}
+        data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
         user = request.user
@@ -38,9 +38,17 @@ def deploy_ProjectPI(request):
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
 
-        taskID = process_SGE.set_submit_televir_job(
-            user=request.user,
-            project_pk=project.pk,
-        )
+        utils = Utils_Manager(user)
+        print("hgi")
+        runs_to_deploy = utils.check_runs_to_deploy(project)
+
+        if runs_to_deploy:
+
+            taskID = process_SGE.set_submit_televir_job(
+                user=request.user,
+                project_pk=project.pk,
+            )
+            data["is_deployed"] = True
+
         data = {"is_ok": True}
         return JsonResponse(data)

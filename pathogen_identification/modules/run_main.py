@@ -173,7 +173,7 @@ class RunDetail_main:
         )
 
         os.makedirs(
-            self.static_dir,
+            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
             exist_ok=True,
         )
 

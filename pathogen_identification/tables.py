@@ -1,3 +1,4 @@
+import os
 from typing import DefaultDict
 
 import django_tables2 as tables
@@ -9,14 +10,14 @@ from managing_files.manage_database import ManageDatabase
 from settings.models import Technology
 
 from pathogen_identification.models import (
+    FinalReport,
     ParameterSet,
     PIProject_Sample,
-    Processed,
     Projects,
+    ReadClassification,
     ReferenceContigs,
     RunMain,
     SampleQC,
-    Submitted,
 )
 
 
@@ -27,11 +28,13 @@ class ProjectTable(tables.Table):
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
-    results = tables.Column("Results", orderable=False, empty_values=())
+    results = tables.Column("Project Samples", orderable=False, empty_values=())
     technology = tables.Column(
         verbose_name="Technology", orderable=False, empty_values=()
     )
+    finished_processes = tables.Column("Finished", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
+    queued_processes = tables.Column("Queued", orderable=False, empty_values=())
 
     class Meta:
         model = Projects
@@ -67,6 +70,30 @@ class ProjectTable(tables.Table):
 
         return running
 
+    def render_queued_processes(self, record):
+        """
+        return number of queued processes in this project"""
+
+        queued = 0
+        parameter_sets = ParameterSet.objects.filter(project=record)
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_QUEUED:
+                queued += 1
+
+        return queued
+
+    def render_finished_processes(self, record):
+        """
+        return number of finished processes in this project"""
+
+        finished = 0
+        parameter_sets = ParameterSet.objects.filter(project=record)
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_FINISHED:
+                finished += 1
+
+        return finished
+
     def render_results(self, record):
         """
         return a reference name
@@ -75,7 +102,7 @@ class ProjectTable(tables.Table):
             "<a href="
             + reverse("PIproject_samples", args=[record.pk])
             + ' data-toggle="tooltip" title="See Results">'
-            + "<i class='fa fa-bar-chart'></i></a>"
+            + "Samples</a>"
         )
 
         parameters = (
@@ -85,7 +112,7 @@ class ProjectTable(tables.Table):
             + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
         )
 
-        return mark_safe(results + " " + parameters)
+        return mark_safe(parameters + " " + results)
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware
@@ -166,13 +193,14 @@ class ProjectTable(tables.Table):
 
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
+
+    input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
-
-    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    report = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
+    queued_processes = tables.Column("Queued", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -180,9 +208,9 @@ class SampleTable(tables.Table):
         attrs = {"class": "paleblue"}
         fields = (
             "name",
-            "combinations",
             "report",
             "input",
+            "combinations",
             "running_processes",
         )
 
@@ -200,6 +228,20 @@ class SampleTable(tables.Table):
 
         return running
 
+    def render_queued_processes(self, record):
+        """
+        return number of running processes in this project"""
+
+        queued = 0
+        parameter_sets = ParameterSet.objects.filter(
+            sample=record, project=record.project
+        )
+        for parameter_set in parameter_sets:
+            if parameter_set.status == ParameterSet.STATUS_QUEUED:
+                queued += 1
+
+        return queued
+
     def render_combinations(self, record):
         return RunMain.objects.filter(
             sample__name=record.name, project=record.project
@@ -215,7 +257,7 @@ class SampleTable(tables.Table):
             '<a href="'
             + reverse("sample_main", args=[record.project.name, record.name])
             + '">'
-            + "report"
+            + "Run Panel"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:
@@ -290,18 +332,34 @@ class SampleQCTable(tables.Table):
 
 
 class ContigTable(tables.Table):
+
+    contig = tables.Column(verbose_name="Contig")
+    depth = tables.Column(verbose_name="Depth")
+    depthr = tables.Column(verbose_name="Depth Covered")
+    coverage = tables.Column(verbose_name="Coverage")
+
     class Meta:
         model = ReferenceContigs
-        attrs = {
-            "class": "paleblue",
-        }
         fields = ("contig", "depth", "depthr", "coverage")
+
+    def render_contig(self, record):
+        return record.contig
+
+    def render_depth(self, record):
+        return round(float(record.depth), 3)
+
+    def render_depthr(self, record):
+        return round(float(record.depthr), 3)
+
+    def render_coverage(self, record):
+        return round(float(record.coverage), 3)
 
 
 class RunMainTable(tables.Table):
 
     name = tables.Column(verbose_name="Run Name")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
     enrichment = tables.Column(
         verbose_name="Enrichment", orderable=False, empty_values=()
     )
@@ -317,6 +375,7 @@ class RunMainTable(tables.Table):
     contig_classification = tables.Column(
         verbose_name="Contig Classification", orderable=False, empty_values=()
     )
+
     runtime = tables.Column(verbose_name="Runtime", orderable=False, empty_values=())
 
     class Meta:
@@ -334,32 +393,43 @@ class RunMainTable(tables.Table):
             "contig_classification",
         )
 
-    def renderinf_report(self, record):
+    def render_success(self, record):
+        success = False
+        final_reports = FinalReport.objects.filter(run=record)
+        for final_report in final_reports:
+            if final_report.coverage:
+                if final_report.coverage > 0.2:
+                    success = True
+                    break
+
+        if success:
+            return mark_safe('<i class="fa fa-check"></i>')
+        else:
+            return mark_safe('<i class="fa fa-times"></i>')
+
+    def render_report(self, record):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
+
         record_name = (
-            "<a url="
-            + "sample_detail"
-            + " project_name="
-            + record.project.name
-            + " sample_name="
-            + record.sample.name
-            + " run_name="
-            + record.name
-            + ">"
-            + "report"
+            '<a href="'
+            + reverse(
+                "sample_detail",
+                args=[record.project.name, record.sample.name, record.name],
+            )
+            + '">'
+            + "<i class='fa fa-bar-chart'></i>"
             + "</a>"
         )
-        print(user.username)
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
 
-    report = tables.LinkColumn(
-        "sample_detail",
-        text="Details",
-        args=[tables.A("project.name"), tables.A("sample.name"), tables.A("name")],
-    )
+    # report = tables.LinkColumn(
+    #    "sample_detail",
+    #    text="<i class='fa fa-bar-chart'></i>",
+    #    args=[tables.A("project.name"), tables.A("sample.name"), tables.A("name")],
+    # )

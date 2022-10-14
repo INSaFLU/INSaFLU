@@ -18,7 +18,7 @@
 
 {% block breadcrumbs %}
 {{ block.super }}
-{% breadcrumb "Projects" "projects" %}
+{% breadcrumb "Televir Projects" "PIprojects_main" %}
 {% endblock %}
 
 {% block content %}
@@ -111,7 +111,7 @@
 
 			<!-- Modal body -->
 			<div class="modal-body mx-auto mw-100">
-				<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_project' %}">
+				<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_televir_project' %}">
 					<label id="id-label-remove" class="col-form-label">Folder Name</label>
 				</div>
 			</div>
@@ -125,13 +125,14 @@
 	</div>
 </div>
 
+
 {% endblock content %}
 
 
 {% block js %}
 
 {% load static from staticfiles %}
-<script type="text/javascript" src="{% static 'js/project/remove_projects.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_projects.js' %}"></script>
 
 <script>
 	$(document).ready(function () {

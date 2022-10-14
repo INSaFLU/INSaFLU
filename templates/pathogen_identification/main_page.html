@@ -2,26 +2,19 @@
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
-
+{% load django_bootstrap_breadcrumbs %}
+{% load bootstrap4 %}
 {% load static %}
 
 
+{% block breadcrumbs %}
+{{block.super}}
+{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb project_name  "" %}
+{% endblock %}
+
+
 {% block content %}
-
-<style>
-    .button {
-        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-        border-collapse: collapse;
-        width: 100%;
-    }
-</style>
-
-<div>
-    <ul class="breadcrumb">
-        <li><a href="{% url 'PIprojects_main' %}">Home</a></li>
-    </ul>
-</div>
-
 
 
 <div class="table-container">
@@ -34,7 +27,7 @@
                 <tr>
                     <th colspan="9">
                         <div class="btn-group">
-                            <button type="button" class="btn-deploy" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
                                 <a><span class="hidden-phone"> Deploy Pathogen identification </span></a>
                               </button>
                                
@@ -85,6 +78,34 @@
 </div>
 
 
+<!-- The remove Modal -->
+<div class="modal fade" id="id_remove_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Remove a sample</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_televir_project_sample' %}">
+					<label id="id-label-remove" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 {% endblock content %}
 
 {% block js %}
@@ -115,5 +136,27 @@
     })
 </script>
 
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
+<script>
+	$(document).ready(function () {
+		$('#id-cancel-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+	});
+
+	/// set wait screen
+	$(document).on("click", "a", function (e) {
+		var id_ = $(this).attr('id');
+		var href = $(this).attr('href');
+		var onclick = $(this).attr('onclick');
+		if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+			!href.startsWith('/media') && !href.startsWith('http')) {
+			wait_screen();
+		}
+	});
+</script>
 
 {% endblock js %}

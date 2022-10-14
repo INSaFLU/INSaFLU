@@ -3,7 +3,7 @@
 {%load html_tags%}
 
 {% load static %}
-{%load plotly_dash%}
+
 
 {%load report_colors %}
 
@@ -32,8 +32,8 @@
         showChromosomeWidget: true,
         reference: {
             id: "{{ data.reference_name }}",
-            fastaURL: "{% static data.static_dir %}{{ data.path_reference }}",
-            indexURL: "{% static data.static_dir %}{{ data.path_reference_index }}",
+            fastaURL: "{{ data.path_reference }}",
+            indexURL: "{{ data.path_reference_index }}",
         },
         trackDefaults: {
             bam: {
@@ -41,8 +41,8 @@
             }
         },
         tracks: [{
-            url: "{% static data.static_dir %}{{ data.path_bam }}",
-            indexURL: "{% static data.static_dir %}{{ data.path_bai }}",
+            url: "{{ data.path_bam }}",
+            indexURL: "{{ data.path_bai }}",
             format: "bam",
             type: "alignment",
             autoHeight: false,

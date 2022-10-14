@@ -246,31 +246,33 @@ class Run_Main_from_Leaf:
 
         self.pk = self.parameter_set.pk
 
-    def check_submission(self, parameter_set):
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=parameter_set,
-            )
+    def get_status(self):
+        return self.parameter_set.status
 
-            print("Sample Run already submitted. Please wait for results")
-            True
+    def get_in_line(self):
 
-        except Submitted.DoesNotExist:
-            print("Sample Run not submitted. Submitting now.")
-            return False
+        self.parameter_set.status = ParameterSet.STATUS_QUEUED
+        self.parameter_set.save()
 
-    def check_processed(self, parameter_set):
-        try:
-            processed = Processed.objects.get(
-                parameter_set=parameter_set,
-            )
+    def check_submission(self):
+        if self.parameter_set.status in [
+            ParameterSet.STATUS_RUNNING,
+        ]:
 
-            print("Sample Run already processed. Please wait for results")
             return True
 
-        except Processed.DoesNotExist:
-            print("Sample Run not processed. Processing now.")
-            False
+        else:
+            return False
+
+    def check_processed(self):
+        if self.parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+        ]:
+
+            return True
+
+        else:
+            return False
 
     def register_parameter_set(self):
 
@@ -413,9 +415,7 @@ class Run_Main_from_Leaf:
 
     def Submit(self):
 
-        if not self.check_submission(self.parameter_set) and not self.check_processed(
-            self.parameter_set
-        ):
+        if not self.check_submission() and not self.check_processed():
             self.register_submission()
             self.configure()
             run_success = self.Deploy()

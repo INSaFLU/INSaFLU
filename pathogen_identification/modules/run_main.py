@@ -116,8 +116,8 @@ class RunDetail_main:
         )
         self.threads = config["threads"]
 
-        self.logger_level_main = logging.INFO
-        self.logger_level_detail = logging.INFO
+        self.logger_level_main = logging.ERROR
+        self.logger_level_detail = logging.ERROR
         self.logger = logging.getLogger("main {}".format(self.prefix))
         self.logger.setLevel(self.logger_level_main)
 
@@ -146,6 +146,9 @@ class RunDetail_main:
         self.media_dir = os.path.join(
             ConstantsSettings.media_directory, self.substructure_dir
         )
+        self.static_dir = os.path.join(
+            ConstantsSettings.static_directory, self.substructure_dir
+        )
 
         ###
 
@@ -160,7 +163,7 @@ class RunDetail_main:
         )
 
         self.media_dir_igv = os.path.join(
-            self.media_dir,
+            self.static_dir,
             self.igv_dir,
         )
 
@@ -170,7 +173,7 @@ class RunDetail_main:
         )
 
         os.makedirs(
-            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
+            self.static_dir,
             exist_ok=True,
         )
 

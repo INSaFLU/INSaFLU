@@ -167,9 +167,19 @@ urlpatterns = [
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     url(
+        r"^ajax/remove_televir_project$",
+        ajax_views.remove_televir_project,
+        name="remove_televir_project",
+    ),  ## remove a project
+    url(
         r"^ajax/remove_project_sample$",
         ajax_views.remove_project_sample,
         name="remove_project_sample",
+    ),  ## remove a project sample
+    url(
+        r"^ajax/remove_televir_project_sample$",
+        ajax_views.remove_televir_project_sample,
+        name="remove_televir_project_sample",
     ),  ## remove a project sample
     url(
         r"^ajax/remove_uploaded_file$",

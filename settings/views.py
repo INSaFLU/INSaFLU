@@ -7,7 +7,7 @@ from django.views.generic import ListView, TemplateView, UpdateView
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.models import Projects as PIProjects
+from pathogen_identification.models import Projects as Televir_Project
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage
 
@@ -54,17 +54,16 @@ class PISettingsView(LoginRequiredMixin, ListView):
             type_of_software=Software.TYPE_SOFTWARE,
             is_obsolete=False,
         )
-        project = PIProjects.objects.get(pk=project.pk)
+        project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
 
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
 
-            # software.pk = None
-            # software.type_of_use = Software.TYPE_OF_USE_televir_project
-            # software.save()
-            # print(project, project.name)
+            software.pk = None
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+            software.save()
 
             for parameter in software_parameters:
                 parameter.pk = None
@@ -76,8 +75,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """
         check if project parameters exist
         """
-        print("check_project_params_exist")
-        print(project.pk)
 
         query_set = Parameter.objects.filter(televir_project=project.pk)
         if query_set.count() == 0:
@@ -87,10 +84,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(PISettingsView, self).get_context_data(**kwargs)
         project = None
-        print(self.kwargs)
 
         if int(self.kwargs["level"]) > 0:
-            project = PIProjects.objects.get(pk=int(self.kwargs["level"]))
+            project = Televir_Project.objects.get(pk=int(self.kwargs["level"]))
         ### test all defaults first, if exist in database
         default_software = DefaultSoftware()
         default_software.test_all_defaults(
@@ -112,7 +108,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
-                if project == None:
+                if project is None:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
                         type_of_use=Software.TYPE_OF_USE_televir_global,
@@ -128,7 +124,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 else:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
-                        type_of_use=Software.TYPE_OF_USE_televir_global,
+                        type_of_use=Software.TYPE_OF_USE_televir_project,
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
@@ -137,7 +133,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         pipeline_step__name=pipeline_step,
                         parameter__televir_project=project,
                         is_obsolete=False,
-                    )
+                    ).distinct()
 
                 ### if there are software
                 if query_set.count() > 0:

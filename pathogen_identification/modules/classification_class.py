@@ -106,6 +106,8 @@ class run_kaiju(Classifier_init):
 
         try:
             dbdir = os.path.dirname(self.db_path)
+            print("dvd")
+            print(dbdir)
             self.nodes = os.path.join(dbdir, "nodes.dmp")
             if not os.path.isfile(self.nodes):
                 raise FileNotFoundError(

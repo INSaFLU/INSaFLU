@@ -114,7 +114,6 @@ class RunCMD:
         self.logger.info(f"running: {self.bin}{cmd}")
 
         start_time = time.perf_counter()
-        print(f"{self.bin}{cmd}")
         proc_prep = subprocess.Popen(
             f"{self.bin}{cmd}",
             shell=True,

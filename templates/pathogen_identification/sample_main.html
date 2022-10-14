@@ -2,19 +2,22 @@
 {% load querystring from django_tables2 %}
 {% load title from django_tables2 %}
 {% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load bootstrap4 %}
 
 {% load static %}
+
+{% block breadcrumbs %}
+{{block.super}}
+
+{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb project_name "PIproject_samples"  pk=project_index  %}
+{% breadcrumb name "" %}
+{% endblock %}
 
 
 {% block content %}
 
-<div>
-    <ul class="breadcrumb">
-        <li><a href="{% url 'PIprojects_main' %}">Home</a></li>
-        <li><a href="{% url 'PIproject_samples' pk=project_index %}"> project {{project_name}}</a></li>
-        <li>sample {{name}}</li>
-    </ul>
-</div>
 
 <div class="table-container">
     {% block table %}
@@ -60,5 +63,7 @@
     </div>
     {% endblock table %}
 </div>
+<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+
 
 {% endblock content %}

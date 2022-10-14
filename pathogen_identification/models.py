@@ -122,6 +122,16 @@ class SoftwareTreeNode(models.Model):
         ordering = ["name"]
 
 
+# class SoftwareTree_Path(models.Model):
+#    software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
+#    software_tree_node = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
+#    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+#
+#    class Meta:
+#        ordering = ["software_tree_node"]
+#
+
+
 class PIProject_Sample(models.Model):
     """
     Main sample information. Connects to the RunMain and QC models.
@@ -200,11 +210,13 @@ class ParameterSet(models.Model):
     STATUS_RUNNING = 1
     STATUS_FINISHED = 2
     STATUS_ERROR = 3
+    STATUS_QUEUED = 4
     STATUS_CHOICES = (
         (STATUS_NOT_STARTED, "Not started"),
         (STATUS_RUNNING, "Running"),
         (STATUS_FINISHED, "Finished"),
         (STATUS_ERROR, "Error"),
+        (STATUS_QUEUED, "Queued"),
     )
 
     sample = models.ForeignKey(PIProject_Sample, on_delete=models.PROTECT)

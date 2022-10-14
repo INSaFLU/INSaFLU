@@ -8,15 +8,11 @@ import pandas as pd
 from django.contrib.auth.models import User
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Processed,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Processed, Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d
@@ -70,7 +66,7 @@ class PipelineTree:
     def get_path_explicit(self, path: list) -> list:
         """return nodes names for nodes index list"""
 
-        return [self.node_from_index(x) for x in path]
+        return [(x, self.node_from_index(x)) for x in path]
 
     def generate_graph(self):
         """
@@ -89,9 +85,10 @@ class PipelineTree:
 
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
+        all_paths_explicit= [self.get_path_explicit(path) for path in all_paths]
 
         path_dict = {
-            leaf: self.df_from_path(all_paths[x]) for x, leaf in enumerate(self.leaves)
+            all_paths_explicit[x][-1][0]: self.df_from_path(path) for x, path in enumerate(all_paths)
         }
 
         return path_dict
@@ -103,11 +100,8 @@ class PipelineTree:
 
         self.generate_graph()
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
-
-        path_dict = {
-            leaf: self.get_path_explicit(all_paths[x])
-            for x, leaf in enumerate(self.leaves)
-        }
+        all_paths = [self.get_path_explicit(path) for path in all_paths]
+        path_dict = {path[-1][0]: path for x, path in enumerate(all_paths)}
 
         return path_dict
 
@@ -116,6 +110,7 @@ class PipelineTree:
         Generate a dataframe from a path
         """
         path = self.get_path_explicit(path)
+        path = [x[1] for x in path]
         df = []
         path = [x for x in path if x[0] != "root"]
         current_module = None
@@ -418,9 +413,6 @@ class Utility_Pipeline_Manager:
     def create_pipe_tree(self) -> PipelineTree:
         """ """
         self.pipeline_tree = self.fill_dict(0, {})
-        # self.pipeline_tree = {("root", None, None): self.pipeline_tree}
-        print("hhi")
-        print(self.pipeline_software)
 
         node_index, edge_dict, leaves = self.tree_index(
             self.pipeline_tree,
@@ -441,11 +433,11 @@ class Utility_Pipeline_Manager:
 
     def generate_explicit_edge_dict(self, pipeline_tree: PipelineTree) -> dict:
         """ """
-        nodes_dict = {x: [] for x in pipeline_tree.nodes}
+        nodes_dict = {(i, x): [] for i, x in enumerate(pipeline_tree.nodes)}
 
         for edge in pipeline_tree.edges:
-            parent = pipeline_tree.nodes[edge[0]]
-            child = pipeline_tree.nodes[edge[1]]
+            parent = (edge[0], pipeline_tree.nodes[edge[0]])
+            child = (edge[1], pipeline_tree.nodes[edge[1]])
             nodes_dict[parent].append(child)
 
         nodes_dict = {
@@ -457,7 +449,7 @@ class Utility_Pipeline_Manager:
 
     def node_index_dict(self, pipe_tree: PipelineTree) -> dict:
         """ """
-        return {x: i for i, x in enumerate(pipe_tree.nodes)}
+        return {(i, x): i for i, x in enumerate(pipe_tree.nodes)}
 
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
@@ -466,14 +458,30 @@ class Utility_Pipeline_Manager:
 
         explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
         parent = explicit_path[0]
+        parent_main = (0, ("root", None, None))
+        child_main = None
+
+        def match_nodes(node, node_list):
+
+            for nd in node_list:
+                if node[1] == nd[1]:
+                    return nd
+            return node
 
         for child in explicit_path[1:]:
-            if nodes_index_dict[child] in pipe_tree.leaves:
-                return nodes_index_dict[child]
-            if child not in explicit_edge_dict[parent].index:
+
+            child_main = match_nodes(
+                child, explicit_edge_dict[parent_main].index.tolist()
+            )
+
+            if nodes_index_dict[child_main] in pipe_tree.leaves:
+                return nodes_index_dict[child_main]
+            if child_main not in explicit_edge_dict[parent_main].index:
                 print(f"Child {child} not in parent {parent}")
+
                 return False
             parent = child
+            parent_main = child_main
 
 
 class Parameter_DB_Utility:

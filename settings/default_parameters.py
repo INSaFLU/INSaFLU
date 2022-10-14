@@ -2127,7 +2127,7 @@ class DefaultParameters(object):
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = "[0.2:0.4]"
-        parameter.range_max = "0.5"
+        parameter.range_max = "0.4"
         parameter.range_min = "0.2"
         parameter.description = "value of ratio criteria, default 0.3"
         vect_parameters.append(parameter)
@@ -2196,6 +2196,21 @@ class DefaultParameters(object):
         software.owner = user
 
         vect_parameters = []
+        parameter = Parameter()
+        parameter.name = ""
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = False
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = ""
+        vect_parameters.append(parameter)
 
         return vect_parameters
 

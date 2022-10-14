@@ -20,6 +20,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
+from pathogen_identification.models import PIProject_Sample
+from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -1328,6 +1330,106 @@ def remove_project(request):
             process_SGE.set_create_sample_list_by_user(request.user, [])
             process_SGE.set_create_project_list_by_user(request.user)
             data = {"is_ok": True}
+        return JsonResponse(data)
+
+
+@transaction.atomic
+@csrf_protect
+def remove_televir_project(request):
+    """
+    remove a project.
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+        project_id_a = "project_id"
+
+        if project_id_a in request.GET:
+            print("hiola")
+
+            ## some pre-requisites
+            if not request.user.is_active or not request.user.is_authenticated:
+                return JsonResponse(data)
+            try:
+                profile = Profile.objects.get(user__pk=request.user.pk)
+            except Profile.DoesNotExist:
+                return JsonResponse(data)
+            if profile.only_view_project:
+                return JsonResponse(data)
+
+            project_id = request.GET[project_id_a]
+            try:
+                project = Televir_Project.objects.get(pk=project_id)
+            except Televir_Project.DoesNotExist:
+                return JsonResponse(data)
+
+            ## different owner or belong to a project not deleted
+            if project.owner.pk != request.user.pk:
+                return JsonResponse(data)
+
+            ### now you can remove
+            project.is_deleted = True
+            project.is_deleted_in_file_system = False
+            project.date_deleted = datetime.now()
+            project.save()
+
+            ### delete all project samples
+            ### this is only necessary for consistency
+            for project_sample in PIProject_Sample.objects.filter(project=project):
+                project_sample.is_deleted = True
+                project_sample.is_deleted_in_file_system = False
+                project_sample.date_deleted = datetime.now()
+                project_sample.save()
+
+            ## refresh sample and project list for this user
+            # process_SGE = ProcessSGE()
+            # process_SGE.set_create_sample_list_by_user(request.user, [])
+            # process_SGE.set_create_project_list_by_user(request.user)
+            data = {"is_ok": True}
+        return JsonResponse(data)
+
+
+@transaction.atomic
+@csrf_protect
+def remove_televir_project_sample(request):
+    """
+    remove a project sample.
+    """
+    print("hello sample")
+    print(request.is_ajax())
+    if request.is_ajax():
+        data = {"is_ok": False}
+        project_sample_id_a = "project_sample_id"
+        print(project_sample_id_a in request.GET)
+
+        if project_sample_id_a in request.GET:
+
+            ## some pre-requisites
+            if not request.user.is_active or not request.user.is_authenticated:
+                return JsonResponse(data)
+            try:
+                profile = Profile.objects.get(user__pk=request.user.pk)
+            except Profile.DoesNotExist:
+                return JsonResponse(data)
+            if profile.only_view_project:
+                return JsonResponse(data)
+
+            project_sample_id = request.GET[project_sample_id_a]
+            try:
+                project_sample = PIProject_Sample.objects.get(pk=project_sample_id)
+            except PIProject_Sample.DoesNotExist:
+                return JsonResponse(data)
+
+            ## different owner or belong to a project not deleted
+            if project_sample.project.owner.pk != request.user.pk:
+                return JsonResponse(data)
+
+            ### now you can remove
+            project_sample.is_deleted = True
+            project_sample.is_deleted_in_file_system = False
+            project_sample.date_deleted = datetime.now()
+            project_sample.save()
+            data = {"is_ok": True}
+
         return JsonResponse(data)
 
 

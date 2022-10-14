@@ -628,7 +628,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context = super(MainPage, self).get_context_data(**kwargs)
 
         project = Projects.objects.get(pk=self.kwargs["pk"])
-        query_set = PIProject_Sample.objects.filter(project=project)
+        query_set = PIProject_Sample.objects.filter(project=project, is_deleted=False)
 
         samples = SampleTable(query_set)
         print(pd.DataFrame(query_set.values()).columns)
@@ -639,6 +639,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context = {}
         context["table"] = samples
         context["project_index"] = project.pk
+        context["project_name"] = project.name
         context["nav_sample"] = True
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -718,12 +719,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
     home page
     """
 
-    print("going to sample detail")
-
     template_name = "pathogen_identification/sample_detail.html"
 
     def get_context_data(self, **kwargs):
-        print(self.kwargs)
 
         project_name = self.kwargs["project_name"]
         run_name = self.kwargs["run_name"]
@@ -789,6 +787,63 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         return context
 
 
+# def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
+class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
+    """
+    scaffold remap
+    """
+
+    template_name = "pathogen_identification/scaffold_remap.html"
+
+    def get_context_data(self, **kwargs):
+        """"""
+        # context = super().get_context_data(**kwargs)
+
+        project_name = self.kwargs["project"]
+        run_name = self.kwargs["run"]
+        sample_name = self.kwargs["sample"]
+        reference = self.kwargs["reference"]
+        user = self.request.user
+
+        project_main = Projects.objects.get(name=project_name, owner=user)
+        project_pk = Projects.objects.get(name=project_name, owner=user).pk
+
+        sample_main = PIProject_Sample.objects.get(
+            name=sample_name, project=project_main
+        )
+        #
+
+        run_main = RunMain.objects.get(
+            project=project_main, sample=sample_main, name=run_name
+        )
+        try:
+            ref_main = ReferenceMap_Main.objects.get(
+                reference=reference, sample=sample_main, run=run_main
+            )
+            map_db = ReferenceContigs.objects.filter(
+                reference=ref_main,
+                run=run_main,
+            )
+        except ReferenceMap_Main.DoesNotExist:
+
+            return Http404("Sample not found")
+
+        context = {
+            "nav_sample": True,
+            "total_items": map_db.count(),
+            "show_paginatior": map_db.count() > ConstantsSettings.PAGINATE_NUMBER,
+            "show_info_main_page": ShowInfoMainPage(),
+            "table": ContigTable(map_db),
+            "project": project_name,
+            "project_index": project_pk,
+            "sample": sample_name,
+            "run_name": run_name,
+            "reference": reference,
+        }
+
+        return context
+
+
 def IGV_display(requestdst):
     """display python plotly app"""
     template_name = "pathogen_identification/IGV.html"
@@ -807,8 +862,9 @@ def IGV_display(requestdst):
             print(project_name)
             print(reference)
 
-            print(Sample.objects.filter(name=sample_name, project__name=project_name))
-            sample = Sample.objects.get(project__name=project_name, name=sample_name)
+            sample = PIProject_Sample.objects.get(
+                project__name=project_name, name=sample_name
+            )
             run = RunMain.objects.get(name=run_name, sample=sample)
             ref_map = ReferenceMap_Main.objects.get(
                 reference=reference, sample=sample, run=run
@@ -818,16 +874,24 @@ def IGV_display(requestdst):
             )
 
             def remove_pre_static(path, pattern):
-                path = path.split(pattern)[1]
-                path = f"/{pattern}{path}"
+                # path = path.split(pattern)[1]
+                # path = f"/{pattern}{path}"
+                # path = \path.replace(pattern, "")
                 print(path)
                 return path
 
-            path_name_bam = remove_pre_static(ref_map.bam_file_path, "igv")
-            path_name_bai = remove_pre_static(ref_map.bai_file_path, "igv")
-            path_name_reference = remove_pre_static(ref_map.fasta_file_path, "igv")
-            path_name_reference_index = remove_pre_static(ref_map.fai_file_path, "igv")
-            reference_name = final_report.reference_contig_str
+            path_name_bam = remove_pre_static(
+                ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_bai = remove_pre_static(
+                ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_reference = remove_pre_static(
+                ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_reference_index = remove_pre_static(
+                ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
+            )
 
             data["is_ok"] = True
 
@@ -947,35 +1011,3 @@ def download_file(requestdst):
             ] = "attachment; filename=%s" % os.path.basename(filepath)
             # Return the response value
             return response
-
-
-def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
-    """
-    home page
-    """
-    template_name = "pathogen_identification/scaffold_remap.html"
-    ##
-
-    sample_main = Sample.objects.get(project__name=project, name=sample)
-    #
-    run_main = RunMain.objects.get(sample=sample_main, name=run)
-
-    try:
-        ref_main = ReferenceMap_Main.objects.get(
-            reference=reference, sample=sample_main, run=run_main
-        )
-        map_db = ReferenceContigs.objects.filter(
-            reference=ref_main,
-            run=run_main,
-        )
-    except ReferenceMap_Main.DoesNotExist:
-
-        return Http404("Sample not found")
-
-    return render(
-        requesdst,
-        template_name,
-        {
-            "table": ContigTable(map_db),
-        },
-    )

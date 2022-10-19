@@ -65,7 +65,7 @@ SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
 MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA', default=50000, cast=int)
 MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
 MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
-	
+MAX_CONSENSUS_FASTA_FILE = config('MAX_CONSENSUS_FASTA_FILE', default=400000, cast=int)			## 100k
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
 ## make the down size of the fastq files to 50MB

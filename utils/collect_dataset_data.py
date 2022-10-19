@@ -4,7 +4,6 @@ Created on 12/06/2022
 @author: mmp
 '''
 import os, csv, time, logging, json, glob
-import sys
 from constants.software_names import SoftwareNames
 from settings.models import Parameter
 from utils.exceptions import CmdException
@@ -18,7 +17,6 @@ from managing_files.models import ProcessControler, Project, Reference
 from datasets.models import Dataset
 from constants.meta_key_and_values import MetaKeyAndValue
 from datasets.manage_database import ManageDatabase
-from utils.tree import CreateTree
 
 class CollectExtraDatasetData(object):
     '''
@@ -450,6 +448,7 @@ class CollectExtraDatasetData(object):
                     data_columns.add_header(dataset_consensus.reference.name, ['id'])
                     data_columns.add_metadata(dataset_consensus.reference.name, 
                                                  dataset_consensus.reference.name,
+                                                 dataset_consensus.reference.name,
                                                  dataset_consensus.seq_name_all_consensus, 
                                                  [dataset_consensus.seq_name_all_consensus])
                 continue
@@ -460,6 +459,7 @@ class CollectExtraDatasetData(object):
                 if dataset_consensus.consensus.name not in dt_out_id_project:
                     data_columns.add_header(dataset_consensus.consensus.name, ['id'])
                     data_columns.add_metadata(dataset_consensus.consensus.name, 
+                                                 dataset_consensus.consensus.name,
                                                  dataset_consensus.consensus.name,
                                                  dataset_consensus.seq_name_all_consensus, 
                                                  [dataset_consensus.seq_name_all_consensus])
@@ -474,6 +474,7 @@ class CollectExtraDatasetData(object):
                     if not row is None:
                         data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
                             dataset_consensus.project_sample.pk,
+                            dataset_consensus.project_sample.project.name,
                             dataset_consensus.seq_name_all_consensus, row)
                     continue
                 
@@ -496,6 +497,7 @@ class CollectExtraDatasetData(object):
                 if not row is None:
                     data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
                             dataset_consensus.project_sample.pk,
+                            dataset_consensus.project_sample.project.name,
                             dataset_consensus.seq_name_all_consensus, row)
         
         ## save file
@@ -513,7 +515,6 @@ class CollectExtraDatasetData(object):
             return None
         return out_file
     
-
 
     def collect_nextstrain_table(self, dataset, column_separator, build):
         """
@@ -542,6 +543,7 @@ class CollectExtraDatasetData(object):
                     consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
                     data_columns.add_metadata(dataset_consensus.reference.name, 
                                                  dataset_consensus.reference.name,
+                                                 dataset_consensus.reference.name,
                                                  dataset_consensus.seq_name_all_consensus, 
                                                  [dataset_consensus.seq_name_all_consensus],
                                                  consensus_length)                
@@ -553,6 +555,7 @@ class CollectExtraDatasetData(object):
                     data_columns.add_header(dataset_consensus.consensus.name, ['id'])
                     consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
                     data_columns.add_metadata(dataset_consensus.consensus.name, 
+                                                 dataset_consensus.consensus.name,
                                                  dataset_consensus.consensus.name,
                                                  dataset_consensus.seq_name_all_consensus, 
                                                  [dataset_consensus.seq_name_all_consensus],
@@ -572,6 +575,7 @@ class CollectExtraDatasetData(object):
                         consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
                         data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
                             dataset_consensus.project_sample.pk,
+                            dataset_consensus.project_sample.project.name, 
                             dataset_consensus.seq_name_all_consensus, row,
                             consensus_length)
                     continue
@@ -597,6 +601,7 @@ class CollectExtraDatasetData(object):
                     consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
                     data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
                             dataset_consensus.project_sample.pk,
+                            dataset_consensus.project_sample.project.name, 
                             dataset_consensus.seq_name_all_consensus, row,
                             consensus_length)
         

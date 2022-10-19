@@ -268,6 +268,7 @@ class Test(unittest.TestCase):
 		out_nextstrain_metadata = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "out_nextstrain_metadata.tsv")
 		out_file = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV)
 		self.assertTrue(os.path.exists(out_file))
+		print(out_file, out_nextstrain_metadata)
 		self.assertTrue(filecmp.cmp(out_file, out_nextstrain_metadata))
 		
 		### get sample result file

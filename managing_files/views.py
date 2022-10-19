@@ -1130,21 +1130,21 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 				context['vect_identify_virus'] = vect_identify_virus
 
 			## files with contigs
-			#if (sample.is_type_fastq_gz_sequencing()):
-			if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and\
-				os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
-				context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
-										'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
-										os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
-				context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
-										'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
-										os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
-				context['has_draft_contigs'] = True
-			#elif (os.path.exists(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))):
-			#	context['file_draft_reads_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_reads_abricate_output(TypePath.MEDIA_URL) +\
-			#							'" download="' + os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
-			#							os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
-			#	context['has_draft_reads'] = True
+			if (sample.is_type_fastq_gz_sequencing()):
+				if (os.path.exists(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) and\
+					os.path.exists(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))):
+					context['file_draft_contigs'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_output(TypePath.MEDIA_URL) +\
+											'" download="' + os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '">' +\
+											os.path.basename(sample.get_draft_contigs_output(TypePath.MEDIA_ROOT)) + '</a>')
+					context['file_draft_contigs_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_contigs_abricate_output(TypePath.MEDIA_URL) +\
+											'" download="' + os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+											os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+					context['has_draft_contigs'] = True
+			elif (os.path.exists(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))):
+				context['file_draft_reads_abricate'] = mark_safe('<a rel="nofollow" href="' + sample.get_draft_reads_abricate_output(TypePath.MEDIA_URL) +\
+										'" download="' + os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '">' +\
+										os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)) + '</a>')
+				context['has_draft_reads'] = True
 				
 			
 		elif (sample.candidate_file_name_1 != None and len(sample.candidate_file_name_1) > 0):

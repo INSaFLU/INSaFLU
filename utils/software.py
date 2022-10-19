@@ -473,18 +473,19 @@ class Software(object):
 		## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
 		try:
 			contigs_2_sequences = Contigs2Sequences(b_run_tests)
-			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
-					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
-					os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
-					True if sample.is_type_fastq_gz_sequencing() else False)
 			#(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
-			#		os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)),\
-			#		True)			
+			#		os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
+			#		os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
+			#		True if sample.is_type_fastq_gz_sequencing() else False)
+			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
+					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)),\
+					True)			
 			## copy the contigs from spades
 			if (sample.is_type_fastq_gz_sequencing()):	## illumina
 				if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
 				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
 			else:
+				print("Should be writing abricate results to {}".format(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)))
 				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
@@ -2944,7 +2945,6 @@ class Contigs2Sequences(object):
 		. " blastn -db \Q$db_path\E -outfmt '$format' -num_threads 3"
 		"""
 		software = Software()
-		
 		### get database file name, if it is not passed
 		(version, database_file_name) = self.get_most_recent_database()
 		database_name = self.get_database_name()
@@ -2956,24 +2956,23 @@ class Contigs2Sequences(object):
 		out_file = self.utils.get_temp_file('abricate_contig2seq', FileExtensions.FILE_TXT)
 		### run abricate
 		software.run_abricate(database_name, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
-
 		parseOutFiles = ParseOutFiles()
 		(dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out,
 									SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
-		
 		out_file_fasta = None
 		if b_create_fasta:
 			vect_out_fasta = []
 			vect_out_fasta_without_id = []
 			out_file_fasta = self.utils.get_temp_file('abricate_out_identified', FileExtensions.FILE_FASTA)
 			with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
-				for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
+				for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):					
 					vect_possible_id = []
 	#				for dict_data in vect_data:
 	#					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
 					for dict_data in dict_data_out.get(record.name, []):
 						vect_possible_id.append(dict_data['Gene'])
 					if (len(vect_possible_id) > 0):
+						#print("identify contigs: process id {}".format(record.id))
 						vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
 													description=";".join(vect_possible_id)))
 					## NEED to check coverage for CANU
@@ -2982,6 +2981,7 @@ class Contigs2Sequences(object):
 						vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
 	
 				if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
+					
 					vect_out_fasta.extend(vect_out_fasta_without_id)
 					SeqIO.write(vect_out_fasta, handle_out, "fasta")
 		

@@ -882,6 +882,14 @@ class Utils_Manager:
                 self.owner
             )
 
+            if len(combined_table) == 0:
+                return PipelineTree(
+                    technology=technology,
+                    nodes=[],
+                    edges={},
+                    leaves=[],
+                )
+
             full_table = self.parameter_util.expand_parameters_table(combined_table)
 
             self.utility_manager.input(full_table, technology=technology)

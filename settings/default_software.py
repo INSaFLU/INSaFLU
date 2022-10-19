@@ -334,40 +334,8 @@ class DefaultSoftware(object):
         if not self.assess_db_dependency_met(vect_parameters, software_name):
             return
 
-        if (
-            vect_parameters[0].software.type_of_use
-            == Software.TYPE_OF_USE_televir_global
-        ):
-            if (
-                vect_parameters[0].software.pipeline_step.name
-                in self.televir_utiltity.steps_db_dependant
-            ):
-
-                if not self.televir_utiltity.check_software_db_available(
-                    software_name=software_name,
-                ):
-                    return
         ## lock because more than one process can duplicate software names
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-
-            print(
-                software_name,
-                vect_parameters[0].software.pipeline_step,
-                vect_parameters[0].software.technology.name,
-            )
-            print(vect_parameters[0].software.pipeline_step)
-            print(
-                Software.objects.filter(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=vect_parameters[0].software.type_of_use,
-                    technology__name=vect_parameters[0].software.technology.name,
-                    version_parameters=self.default_parameters.get_software_parameters_version(
-                        software_name
-                    ),
-                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
-                ).count()
-            )
 
             try:
                 Software.objects.get(

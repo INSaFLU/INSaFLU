@@ -46,7 +46,8 @@ NEXTSTRAIN_sex = "sex"		  ## host sex; if not available needs to be “?”
 NEXTSTRAIN_age = "age"		  ## host age; if not available needs to be “?” 
 NEXTSTRAIN_host = "host"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
 NEXTSTRAIN_clade = "clade"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
-NEXTSTRAIN_INSAFLU_project_name = "project_name"	## project name or empty, if not from project
+
+DATASET_LIST_INSAFLU_project_name = "project_name"	## project name or empty, if not from project
 
 VECT_NEXTSTRAIN_mandatory_ncov = [
 		NEXTSTRAIN_strain,
@@ -60,7 +61,6 @@ VECT_NEXTSTRAIN_mandatory_ncov = [
 		NEXTSTRAIN_sex, 
 		NEXTSTRAIN_age, 
 		NEXTSTRAIN_host,
-		NEXTSTRAIN_INSAFLU_project_name,
 	]
 
 VECT_NEXTSTRAIN_mandatory_mpx = [
@@ -71,7 +71,6 @@ VECT_NEXTSTRAIN_mandatory_mpx = [
 		NEXTSTRAIN_region,
 		NEXTSTRAIN_host, 
 		NEXTSTRAIN_clade,
-		NEXTSTRAIN_INSAFLU_project_name,
 	]	
 
 VECT_NEXTSTRAIN_mandatory_generic = [
@@ -80,7 +79,6 @@ VECT_NEXTSTRAIN_mandatory_generic = [
 		NEXTSTRAIN_genbank_accession,		 
 		NEXTSTRAIN_region,
 		NEXTSTRAIN_host,
-		NEXTSTRAIN_INSAFLU_project_name,
 	]
 
 DICT_MANDATORY_FIELDS = {
@@ -103,7 +101,6 @@ DICT_NEXTSTRAIN_default_ncov = {
 		NEXTSTRAIN_sex : "?",
 		NEXTSTRAIN_age : "?",
 		NEXTSTRAIN_host : "?",
-		NEXTSTRAIN_INSAFLU_project_name : "?",
 	}
 
 DICT_NEXTSTRAIN_default_mpx = {
@@ -111,14 +108,12 @@ DICT_NEXTSTRAIN_default_mpx = {
 		NEXTSTRAIN_genbank_accession : "?",
 		NEXTSTRAIN_host : "Homo sapiens",
 		NEXTSTRAIN_clade : "hMPXV-1",
-		NEXTSTRAIN_INSAFLU_project_name : "?",		
 	}
 
 DICT_NEXTSTRAIN_default_generic = {
 		NEXTSTRAIN_genbank_accession : "?",		 
 		NEXTSTRAIN_region : "Europe",
 		NEXTSTRAIN_host : "?",
-		NEXTSTRAIN_INSAFLU_project_name : "?",
 	}
 
 DICT_MANDATORY_FIELDS_DEFAULTS = {
@@ -189,6 +184,7 @@ class Metadata(object):
 			if project_sample_pk in dt_out_id_project_sample: continue
 			dt_out_id_project_sample[project_sample_pk] = 1
 			vect_out = [self.dt_rows_id[project_sample_pk].seq_name_consensus]
+			vect_out.append(self.dt_rows_id[project_sample_pk].project_name)
 				
 			for column in vect_header_out:
 				if column == CollectExtraData.HEADER_SAMPLE_OUT_ID: continue 
@@ -223,11 +219,6 @@ class Metadata(object):
 				if column == NEXTSTRAIN_strain: continue	## already out
 				if column in dt_out_header: continue		## already out, can be synonymous
 
-				## project name
-				if column == NEXTSTRAIN_INSAFLU_project_name:
-					vect_out.append(self.dt_rows_id[project_sample_pk].project_name)
-					continue
-				
 				## exception
 				if column == NEXTSTRAIN_length:
 					if self.dt_header.get(column, -1) > 0 and \
@@ -363,7 +354,7 @@ class DataColumns(object):
 						self.vect_header_out.pop(self.vect_header_out.index(CollectExtraData.HEADER_SAMPLE_OUT_ID))
 					except ValueError as e:
 						pass
-					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID] + self.vect_header_out
+					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID, DATASET_LIST_INSAFLU_project_name] + self.vect_header_out
 					dt_header_out = dict(zip(self.vect_header_out, [1] * len(self.vect_header_out)))
 				else:
 					for column in self.dt_project[key_metadata].header:
@@ -388,6 +379,7 @@ class DataColumns(object):
 
 		## try to find others in the other file
 		for regular_name in regular_header:
+			if regular_name in DATASET_LIST_INSAFLU_project_name: continue	## exclude project_name of regular header
 			if regular_name in DICT_INSAFLU_to_NEXTSTRAIN: continue
 			if regular_name in self.vect_header_out: continue
 			self.vect_header_out.append(regular_name)

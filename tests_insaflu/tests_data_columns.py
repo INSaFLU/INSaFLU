@@ -34,7 +34,6 @@ class Test(unittest.TestCase):
 		
 		data_columns.add_header(2, ['id', '2', '3'])
 		data_columns.add_metadata(2, 4, project_name, "xpto2", ['id', 'a1', 'b1'])  
-
 		expected_file_coverage = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_DATASET_FILES, "insa_flu_dataset_list_output.csv")
 		
 		out_file = self.utils.get_temp_file('dataset_list', FileExtensions.FILE_CSV)

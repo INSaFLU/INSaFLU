@@ -74,11 +74,9 @@ class SoftwareMinion(object):
 		sample.save()
 		
 		try:
-			print("Start run_clean_minion")
+
 			### run stat and rabbit for Images
 			b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
-			
-			print("Result run_clean_minion: " + str(b_has_data))
 			
 			### test Abricate ON/OFF
 			default_software_project = DefaultProjectSoftware()

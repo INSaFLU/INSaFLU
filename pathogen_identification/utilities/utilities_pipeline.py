@@ -198,7 +198,7 @@ class Utility_Pipeline_Manager:
 
         self.binaries = Deployment_Params.BINARIES
 
-    def input(self, combined_table: pd.DataFrame, technology="nanopore"):
+    def input(self, combined_table: pd.DataFrame, technology="ONT"):
         self.technology = technology
         self.process_combined_table(combined_table)
 
@@ -211,7 +211,9 @@ class Utility_Pipeline_Manager:
         return self.create_pipe_tree()
 
     def process_combined_table(self, combined_table):
-        combined_table = combined_table[combined_table.technology == self.technology]
+        combined_table = combined_table[
+            combined_table.technology.str.contains(self.technology)
+        ]
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
 
@@ -282,6 +284,8 @@ class Utility_Pipeline_Manager:
             .tolist()
             for software in self.software_name_list
         }
+
+        print(self.software_name_list)
 
     def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
 
@@ -642,7 +646,9 @@ class Parameter_DB_Utility:
             print("No parameters for this project, using global")
             software_table, parameters_table = self.get_software_tables_global(owner)
 
-        return self.merge_software_tables(software_table, parameters_table)
+        merged_table = self.merge_software_tables(software_table, parameters_table)
+
+        return merged_table
 
     def check_default_software_tree_exists(
         self, owner: User, technology: Technology, global_index: int
@@ -910,6 +916,7 @@ class Utils_Manager:
 
         utility_drone = Utility_Pipeline_Manager()
         utility_drone.input(combined_table, technology=technology)
+        print(combined_table)
 
         pipeline_tree = utility_drone.generate_default_software_tree()
 

@@ -39,9 +39,10 @@ def deploy_ProjectPI(request):
         project = Projects.objects.get(id=int(project_id))
 
         utils = Utils_Manager(user)
-        print("hgi")
-        runs_to_deploy = utils.check_runs_to_deploy(project)
+        print("checking", project.technology)
 
+        runs_to_deploy = utils.check_runs_to_deploy(project)
+        print(runs_to_deploy)
         if runs_to_deploy:
 
             taskID = process_SGE.set_submit_televir_job(
@@ -50,5 +51,6 @@ def deploy_ProjectPI(request):
             )
             data["is_deployed"] = True
 
+        print(data)
         data = {"is_ok": True}
         return JsonResponse(data)

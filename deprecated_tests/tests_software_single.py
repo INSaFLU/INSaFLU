@@ -64,6 +64,7 @@ class Test(TestCase):
 		pass
 	
 	
+
 	def test_get_species_tag(self):
 		"""
 		test SARS cov 
@@ -153,3 +154,7 @@ class Test(TestCase):
 			self.assertFail("Record must exist")
 		
 		self.assertEqual(Reference.SPECIES_SARS_COV_2, reference_test.specie_tag)
+
+		
+
+

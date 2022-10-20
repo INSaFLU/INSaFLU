@@ -583,7 +583,7 @@ class Software(object):
 			elif (identify_virus.seq_virus.kind_type.name.lower() == "subtype" and
 				(identify_virus.seq_virus.name.startswith("H") or
 				identify_virus.seq_virus.name.startswith("N"))): number_right_influenza += 1
-			elif (identify_virus.seq_virus.name == "MPXV" and
+			elif (identify_virus.seq_virus.name == Reference.SPECIES_MPXV and
 				identify_virus.seq_virus.kind_type.name.lower() == "species"): number_right_mpxv += 1
 
 		## if right at least two		
@@ -2181,7 +2181,7 @@ class Software(object):
 		file_size_max = 0
 		if (os.path.exists(path_1)):
 			file_size_max = os.path.getsize(path_1)
-		if (path_2 != None and os.path.exists(path_2) and file_size_max < os.path.getsize(path_2)): 
+		if (not path_2 is None and os.path.exists(path_2) and file_size_max < os.path.getsize(path_2)): 
 			file_size_max = os.path.getsize(path_2)
 			
 		### need to make the down size
@@ -2195,10 +2195,10 @@ class Software(object):
 			path_1_temp = self.utils.get_temp_file_from_dir(path_to_work, 'fastq_1', '.fastq')
 			path_2_temp = self.utils.get_temp_file_from_dir(path_to_work, 'fastq_2', '.fastq')
 			
-			self.utils.uncompress_files(self.software_names.get_bgzip(), path_1, path_1_temp)
+			self.utils.uncompress_files(self.software_names.get_gzip(), path_1, path_1_temp)
 			file_names = path_1_temp
 			if (path_2 != None and os.path.exists(path_2)):
-				self.utils.uncompress_files(self.software_names.get_bgzip(), path_2, path_2_temp)
+				self.utils.uncompress_files(self.software_names.get_gzip(), path_2, path_2_temp)
 				file_names += " " + path_2_temp
 
 			cmd = "{} -p {:.2f} -o {}/sample {}".format(self.software_names.get_fastqtools_sample(), ratio, path_to_work, file_names)
@@ -2209,13 +2209,13 @@ class Software(object):
 				self.logger_debug.error('Fail to run: ' + cmd)
 				raise Exception("Fail to downsize") 
 		
-			if (path_2 != None and os.path.exists(path_2)):
-				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.1.fastq'))
+			if (not path_2 is None and os.path.exists(path_2)):
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.1.fastq'))
 				path_1_temp = os.path.join(path_to_work, 'sample.1.fastq' + FileExtensions.FILE_GZ)
-				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.2.fastq'))
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.2.fastq'))
 				path_2_temp = os.path.join(path_to_work, 'sample.2.fastq' + FileExtensions.FILE_GZ)
 			else:
-				self.utils.compress_files(self.software_names.get_bgzip(), os.path.join(path_to_work, 'sample.fastq'))
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.fastq'))
 				path_1_temp = os.path.join(path_to_work, 'sample.fastq' + FileExtensions.FILE_GZ)
 				
 			return(True, path_1_temp, path_2_temp if (path_2 != None and os.path.exists(path_2)) else None)

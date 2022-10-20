@@ -3226,14 +3226,16 @@ class Test(TestCase):
 		self.assertTrue(os.path.isfile(fastq1_1))
 		self.assertTrue(os.path.isfile(fastq1_2))
 		
+		self.assertEquals(os.path.getsize(fastq1_1), 5314574)
+		self.assertEquals(os.path.getsize(fastq1_2), 5715245)
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 2000000)	## downsize to 2M
 		
 		self.assertEquals(is_downsized, True)
 		self.assertTrue(os.path.exists(file_name_1))
 		self.assertTrue(os.path.exists(file_name_2))
 		
-		self.assertEquals(os.path.getsize(file_name_1), 233201)
-		self.assertEquals(os.path.getsize(file_name_2), 255802)
+		self.assertEquals(os.path.getsize(file_name_1), 1724181)
+		self.assertEquals(os.path.getsize(file_name_2), 1924367)
 		self.utils.remove_dir(os.path.dirname(file_name_1))
 
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, None, 2000000)	## downsize to 2M
@@ -3242,7 +3244,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(file_name_1))
 		self.assertTrue(file_name_2 == None)
 		
-		self.assertEquals(os.path.getsize(file_name_1), 248769)
+		self.assertEquals(os.path.getsize(file_name_1), 1839658)
 		self.utils.remove_dir(os.path.dirname(file_name_1))
 		
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 20000000)	## downsize to 2M

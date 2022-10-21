@@ -107,19 +107,18 @@ function show_aln2pheno() {
 	    			        ],
 	    			        col_widths: [
 	    			        	"10%",	// Sequence
-	    			            "6%",	// NTD
+								"7%",	// lineage								
+	    			            "7%",	// NTD
 	    			            "7%",	// RDB
-	    			            "7%",	// RBD_RBM
 	    			            "7%",	// S2
 	    			            "7%",	// F1
 	    			            "7%",   // S1
 	    			            "7%",	// S1_other
 	    			            "7%",	// SP
 	    			            "7%",	// Flagged mutations
-	    			            "7%",	// All mutations
-	    			            null,	// Nflagged
-	    			            null,	// Nmutations
-								"7%",	// lineage
+	    			            null,	// All mutations
+	    			            "7%",	// Nflagged
+	    			            "7%",	// Nmutations
 	    			        ],
 	    			        
 	    			        col_1: 'select',
@@ -131,7 +130,6 @@ function show_aln2pheno() {
 	    			        col_7: 'select',
                             col_8: 'select',
                             col_9: 'select',
-							col_14: 'select',
 	    			        // Sort extension: in this example the column data types are provided by the
 	    			        // 'col_types' property. The sort extension also has a 'types' property
 	    			        // defining the columns data type for column sorting. If the 'types'

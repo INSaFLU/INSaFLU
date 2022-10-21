@@ -91,9 +91,9 @@ function show_aln2pheno() {
 	    			     // columns data types
 	    			        col_types: [
 	    			            'string',	// Sequence
+	    			            'string',	// lineage
 	    			            'string',	// NTD
 	    			            'string',	// RDB
-	    			            'string',	// RBD_RBM
 	    			            'string',	// S2
 	    			            'string',	// F1
 	    			            'string',	// S1
@@ -103,7 +103,6 @@ function show_aln2pheno() {
 	    			            'string',	// All mutations
 	    			            'number',	// Nflagged
 	    			            'number',	// Nmutations
-								'string',	// lineage 
 	    			        ],
 	    			        col_widths: [
 	    			        	"10%",	// Sequence

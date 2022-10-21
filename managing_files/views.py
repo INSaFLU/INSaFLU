@@ -5,10 +5,11 @@ import ntpath
 import os
 import sys
 from datetime import datetime
+from itertools import chain
+from operator import attrgetter
 
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
@@ -39,20 +40,35 @@ from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
-from managing_files.forms import (AddSampleProjectForm, ReferenceForm,
-                                  ReferenceProjectFormSet, SampleForm,
-                                  SamplesUploadDescriptionForm,
-                                  SamplesUploadDescriptionMetadataForm,
-                                  SamplesUploadMultipleFastqForm)
+from managing_files.forms import (
+    AddSampleProjectForm,
+    ReferenceForm,
+    ReferenceProjectFormSet,
+    SampleForm,
+    SamplesUploadDescriptionForm,
+    SamplesUploadDescriptionMetadataForm,
+    SamplesUploadMultipleFastqForm,
+)
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (MetaKey, Project, ProjectSample, Reference,
-                                   Sample, UploadFiles)
-from managing_files.tables import (AddSamplesFromCvsFileTable,
-                                   AddSamplesFromCvsFileTableMetadata,
-                                   AddSamplesFromFastqFileTable, ProjectTable,
-                                   ReferenceProjectTable, ReferenceTable,
-                                   SampleTable, SampleToProjectsTable,
-                                   ShowProjectSamplesResults)
+from managing_files.models import (
+    MetaKey,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+)
+from managing_files.tables import (
+    AddSamplesFromCvsFileTable,
+    AddSamplesFromCvsFileTableMetadata,
+    AddSamplesFromFastqFileTable,
+    ProjectTable,
+    ReferenceProjectTable,
+    ReferenceTable,
+    SampleTable,
+    SampleToProjectsTable,
+    ShowProjectSamplesResults,
+)
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
@@ -311,8 +327,8 @@ class ReferenceAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormVi
             )
         )
 
-		### set specie tag
-		software.get_species_tag(reference)
+        ### set specie tag
+        software.get_species_tag(reference)
 
         ## remove genbank temp dir if exist
         if temp_genbank_dir != None:
@@ -567,7 +583,7 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
 
         ## refresh sample list for this user  ### REMOVE ALSO THIS LINE IF LOCAL (WITHOUT SGE)
         if not job_name is None:
-           process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
+            process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
         ###
         manageDatabase = ManageDatabase()
         manageDatabase.set_sample_metakey(
@@ -2404,56 +2420,8 @@ class AddSamplesProjectsView(
         else:
             return super(AddSamplesProjectsView, self).form_invalid(form)
 
-    form_valid_message = ""  ## need to have this, even empty
+        form_valid_message = ""  ## need to have this, even empty
 
-        if os.path.exists(
-            project.get_global_file_by_project(
-                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
-            )
-        ):
-            context["sample_file_result_csv"] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
-                )
-            )
-        if os.path.exists(
-            project.get_global_file_by_project(
-                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
-            )
-        ):
-            context["sample_file_result_tsv"] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
-                )
-            )
-        if os.path.exists(
-            project.get_global_file_by_project(
-                TypePath.MEDIA_ROOT,
-                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
-            )
-        ):
-            context[
-                "samples_file_settings_statistics_csv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
-                )
-            )
-        if os.path.exists(
-            project.get_global_file_by_project(
-                TypePath.MEDIA_ROOT,
-                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
-            )
-        ):
-            context[
-                "samples_file_settings_statistics_tsv"
-            ] = get_link_for_dropdown_item(
-                project.get_global_file_by_project(
-                    TypePath.MEDIA_URL,
-                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
-                )
-            )
 
 class ShowSampleProjectsView(LoginRequiredMixin, ListView):
     model = Project
@@ -2464,7 +2432,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         context = super(ShowSampleProjectsView, self).get_context_data(**kwargs)
         project = Project.objects.get(pk=self.kwargs["pk"])
         software_pangolin = SoftwarePangolin()
-		software = Software()
+        software = Software()
 
         ### can't see this project
         context["nav_project"] = True
@@ -2528,92 +2496,213 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             project=project, is_deleted=False, is_error=True, is_finished=False
         ).count()
 
-		## Files
-		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
-		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		
-		## coverage
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)):
-			context['samples_file_coverage'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_COVERAGE))
-		## variants
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)):
-			context['samples_file_variants'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY))
-		## minor intra host
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
-			context['samples_file_minor_intra_host'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
-		## all files zipped
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped)):
-			context['download_all_files'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
-				"{}_{}_{}".format(os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
-				project.get_clean_project_name(), datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
-		
-		
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
-			context['sample_file_result_csv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)):
-			context['sample_file_result_tsv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV)):
-			context['samples_file_settings_statistics_csv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV)):
-			context['samples_file_settings_statistics_tsv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV))
-		
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)):
-			context['sample_file_all_consensus'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
-		
-		### need to test because in the past this file was not created
-		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
-		file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
-		if (not os.path.exists(file_name)):
-			collect_extra_data = CollectExtraData()
-			collect_extra_data.calculate_count_variations(project)
-		if (os.path.exists(file_name)):
-			context['variations_statistics_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
-		
-		utils = Utils()
-		vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
-		if (vect_elements != None and len(vect_elements) > 0): 
-			context['elements'] = vect_elements
-		vect_elements_protein = utils.get_elements_with_CDS_from_db(project.reference, self.request.user)
-		if (vect_elements_protein != None and len(vect_elements_protein) > 0): 
-			context['elements_protein'] = vect_elements_protein ## because some does not have CDS
-			### get a vect of genes name
-			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements_protein[0],
-						project.reference, self.request.user)
-			
-		### pangolin data
-		context['update_pangolin'] = False
-		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
-		## first condition is to the ones without pangolin lineage
-		### need at least one sequence fasta to run pangolin
-		specie_tag = software.get_species_tag(project.reference)
-		if (project.number_passed_sequences != 0 and \
-			(not os.path.exists(file_pangolin_result) and specie_tag == Reference.SPECIES_SARS_COV_2) or \
-			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
-			context['update_pangolin'] = True
-			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
+        ## Files
+        context["coverage_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_COVERAGE
+        )
+        context["main_variations_snippy_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+        )
 
-		## pangolin file			
-		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
-			context['pangolin_lineage'] = get_link_for_dropdown_item(project.get_global_file_by_project(TypePath.MEDIA_URL,
-															Project.PROJECT_FILE_NAME_Pangolin_lineage))
-		
-		#### nextclade link
-		if (os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)) and \
-				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
-			context = _get_constext_nextclade(
-					project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus),
-					context, get_current_site(self.request), specie_tag)
-			
-		return context
+        ## coverage
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE
+            )
+        ):
+            context["samples_file_coverage"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_COVERAGE
+                )
+            )
+        ## variants
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+            )
+        ):
+            context["samples_file_variants"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+                )
+            )
+        ## minor intra host
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES
+            )
+        ):
+            context["samples_file_minor_intra_host"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES,
+                )
+            )
+        ## all files zipped
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped
+            )
+        ):
+            context["download_all_files"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped
+                ),
+                "{}_{}_{}".format(
+                    os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
+                    project.get_clean_project_name(),
+                    datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
+                ),
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+            )
+        ):
+            context["sample_file_result_csv"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
+            )
+        ):
+            context["sample_file_result_tsv"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+            )
+        ):
+            context[
+                "samples_file_settings_statistics_csv"
+            ] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+            )
+        ):
+            context[
+                "samples_file_settings_statistics_tsv"
+            ] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+                )
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+            )
+        ):
+            context["sample_file_all_consensus"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+                )
+            )
+
+        ### need to test because in the past this file was not created
+        context["freebays_variations_50_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES
+        )
+        file_name = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+        )
+        if not os.path.exists(file_name):
+            collect_extra_data = CollectExtraData()
+            collect_extra_data.calculate_count_variations(project)
+        if os.path.exists(file_name):
+            context[
+                "variations_statistics_file"
+            ] = project.get_global_file_by_project_web(
+                Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+            )
+
+        utils = Utils()
+        vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
+        if vect_elements != None and len(vect_elements) > 0:
+            context["elements"] = vect_elements
+        vect_elements_protein = utils.get_elements_with_CDS_from_db(
+            project.reference, self.request.user
+        )
+        if vect_elements_protein != None and len(vect_elements_protein) > 0:
+            context[
+                "elements_protein"
+            ] = vect_elements_protein  ## because some does not have CDS
+            ### get a vect of genes name
+            context["genes"] = utils.get_vect_cds_from_element_from_db(
+                vect_elements_protein[0], project.reference, self.request.user
+            )
+
+        ### pangolin data
+        context["update_pangolin"] = False
+        file_pangolin_result = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage
+        )
+        ## first condition is to the ones without pangolin lineage
+        ### need at least one sequence fasta to run pangolin
+        specie_tag = software.get_species_tag(project.reference)
+        if (
+            project.number_passed_sequences != 0
+            and (
+                not os.path.exists(file_pangolin_result)
+                and specie_tag == Reference.SPECIES_SARS_COV_2
+            )
+            or (
+                os.path.exists(file_pangolin_result)
+                and software_pangolin.pangolin_results_out_date(project)
+            )
+        ):
+            context["update_pangolin"] = True
+            context["update_pangolin_message"] = mark_safe(
+                software_pangolin.get_update_message(project)
+            )
+
+        ## pangolin file
+        if project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result):
+            context["pangolin_lineage"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Pangolin_lineage
+                )
+            )
+
+        #### nextclade link
+        if (
+            os.path.exists(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_ROOT,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+                )
+            )
+            and settings.SHOW_NEXTCLADE_LINK
+        ):  ## docker versions doesn't show NextClade link
+            context = _get_constext_nextclade(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+                ),
+                context,
+                get_current_site(self.request),
+                specie_tag,
+            )
+
+        return context
 
 
 class ProjectsSettingsView(LoginRequiredMixin, ListView):
@@ -2868,199 +2957,328 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
 
 
 class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
-	"""
-	"""
-	utils = Utils()
-	software = Software()
-	model = ProjectSample
-	template_name = 'project_sample/project_sample_single_detail.html'
-	context_object_name = 'project_sample'
-	
-	def get_context_data(self, **kwargs):
-		context = super(ShowSampleProjectsDetailsView, self).get_context_data(**kwargs)
-		try:
-			### can't see this project
-			project_sample = ProjectSample.objects.get(pk=self.kwargs['pk'])
-			context['nav_project'] = True
-			if (project_sample.project.owner.id != self.request.user.id): 
-				context['error_cant_see'] = "1"
-				return context
-			
-			## several data to show
-			context['project_sample'] = project_sample
-			context['num_alerts'] = project_sample.alert_first_level + project_sample.alert_second_level
-			context['nav_project'] = True
-			context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-			
-			## collect alerts
-			alert_out = []
-			manageDatabase = ManageDatabase()
-			metaKeyAndValue = MetaKeyAndValue()
-			vect_elements = self.utils.get_elements_from_db(project_sample.project.reference, project_sample.project.owner)
-			for element_temp in vect_elements:
-				for key_message in metaKeyAndValue.VECT_MESSAGE_ALERT_COVERAGE:
-					meta_key = metaKeyAndValue.get_meta_key(key_message, element_temp)
-					meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success)
-					if (meta_data != None):
-						alert_out.append(meta_data.description)
-			
-			### get different types of alerts
-			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_projects_details_view():
-				meta_data = manageDatabase.get_project_sample_metakey_last(project_sample, key, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_data != None): alert_out.append(meta_data.description)
-			context['alerts'] = alert_out
-			
-			##### extra data sample, columns added by the user
-			## [[header1, value1], [header2, value2], [header3, value3], ...]
-			### if it's to big expand button is better
-			tag_names = project_sample.sample.get_tag_names()
-			context['extra_data_sample_expand'] = (tag_names != None) ## (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
-			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
-			
-			default_software = DefaultProjectSoftware()
-			context['consensus_file'] = project_sample.get_consensus_file_web(not default_software.include_consensus(project_sample))
-			software_used = []	### has a list with all software used... [name, parameters]
-			### only for illumina
-			decode_result = DecodeObjects()
-			if (project_sample.is_sample_illumina()):
-				context['snippy_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name)
-				context['freebayes_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name)
-				b_second_choice = True
-				context['freebayes_variants_file_snp_indel'] = project_sample.get_file_web(FileType.FILE_TAB,
-						SoftwareNames.SOFTWARE_FREEBAYES_name, b_second_choice)
-				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name)
-				context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name)
-			
-				#### software versions...
-				software_used.append([SoftwareNames.SOFTWARE_SNIPPY_name, "Fail"])
-				software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
-				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None)
-				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Snippy_Freebayes == list_meta[0].meta_tag.name):
-					result = decode_result.decode_result(list_meta[0].description)
-					if (not result is None):
-						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_SNIPPY_name)
-						software_used[1][1] = result.get_software(SoftwareNames.SOFTWARE_FREEBAYES_name)
-						
-						### could have or not, in older versions
-						msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
-						if (len(msa_markers_software) > 0):
-							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
-								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
-						
-			else:
-				context['medaka_variants_file'] = project_sample.get_file_web(FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name)
-				context['depth_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_Medaka_name)
-				context['depth_tbi_file'] = project_sample.get_file_web(FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_Medaka_name)
-			
-				#### software versions...
-				software_used.append([SoftwareNames.SOFTWARE_Medaka_name, "Fail"])
-				list_meta = manageDatabase.get_project_sample_metakey(project_sample, MetaKeyAndValue.META_KEY_Medaka, None)
-				if (list_meta[0].value == MetaKeyAndValue.META_VALUE_Success and MetaKeyAndValue.META_KEY_Medaka == list_meta[0].meta_tag.name):
-					result = decode_result.decode_result(list_meta[0].description)
-					if (not result is None):
-						software_used[0][1] = result.get_software(SoftwareNames.SOFTWARE_Medaka_name)
-						
-						software_software = result.get_software(SoftwareNames.SOFTWARE_SAMTOOLS_name)
-						if (len(software_software) > 0):
-							software_used.append([SoftwareNames.SOFTWARE_SAMTOOLS_name,
-								result.get_software(SoftwareNames.SOFTWARE_SAMTOOLS_name)])
-							
-						### could have or not, in older versions
-						msa_markers_software = result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)
-						if (len(msa_markers_software) > 0):
-							software_used.append([SoftwareNames.SOFTWARE_MSA_MASKER_name,
-								result.get_software(SoftwareNames.SOFTWARE_MSA_MASKER_name)])
-							
-						software_software = result.get_software(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name)
-						if (len(software_software) > 0):
-							software_used.append([SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended,
-								result.get_software(SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name)])
-						
-						software_software = result.get_software(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name)
-						if (len(software_software) > 0):
-							software_used.append([SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended,
-								result.get_software(SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name)])
-							
-						software_software = result.get_software(SoftwareNames.SOFTWARE_BCFTOOLS_name)
-						if (len(software_software) > 0):
-							software_used.append([SoftwareNames.SOFTWARE_BCFTOOLS_name,
-								result.get_software(SoftwareNames.SOFTWARE_BCFTOOLS_name)])
-			
-			## pangolin version, it is transversel (illumina e ONT)
-			meta_key = manageDatabase.get_project_metakey_last(project_sample.project, 
-										MetaKeyAndValue.META_KEY_Identify_pangolin,
-										MetaKeyAndValue.META_VALUE_Success)
-			if (not meta_key is None):
-				result = decode_result.decode_result(meta_key.description)
-				## only need to call first Pangolin, PangolinLearn is added automatically
-				software_used.append([SoftwareNames.SOFTWARE_Pangolin_name,
-						result.get_software(SoftwareNames.SOFTWARE_Pangolin_name_search_name)])
-				
-			### list of software to used
-			context['software_used'] = software_used	
+    """ """
 
-			#### nextclade link
-			#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-			specie_tag = self.software.get_species_tag(project_sample.project.reference)
-			if (os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT)) and \
-					settings.SHOW_NEXTCLADE_LINK and default_software.include_consensus(project_sample)):		## docker versions doesn't show NextClade link
-				context = _get_constext_nextclade(project_sample.get_consensus_file(TypePath.MEDIA_URL),
-						context, get_current_site(self.request), specie_tag)
-			
-		except ProjectSample.DoesNotExist:
-			context['error_cant_see'] = 1
-		return context
+    utils = Utils()
+    software = Software()
+    model = ProjectSample
+    template_name = "project_sample/project_sample_single_detail.html"
+    context_object_name = "project_sample"
+
+    def get_context_data(self, **kwargs):
+        context = super(ShowSampleProjectsDetailsView, self).get_context_data(**kwargs)
+        try:
+            ### can't see this project
+            project_sample = ProjectSample.objects.get(pk=self.kwargs["pk"])
+            context["nav_project"] = True
+            if project_sample.project.owner.id != self.request.user.id:
+                context["error_cant_see"] = "1"
+                return context
+
+            ## several data to show
+            context["project_sample"] = project_sample
+            context["num_alerts"] = (
+                project_sample.alert_first_level + project_sample.alert_second_level
+            )
+            context["nav_project"] = True
+            context[
+                "show_info_main_page"
+            ] = ShowInfoMainPage()  ## show main information about the institute
+
+            ## collect alerts
+            alert_out = []
+            manageDatabase = ManageDatabase()
+            metaKeyAndValue = MetaKeyAndValue()
+            vect_elements = self.utils.get_elements_from_db(
+                project_sample.project.reference, project_sample.project.owner
+            )
+            for element_temp in vect_elements:
+                for key_message in metaKeyAndValue.VECT_MESSAGE_ALERT_COVERAGE:
+                    meta_key = metaKeyAndValue.get_meta_key(key_message, element_temp)
+                    meta_data = manageDatabase.get_project_sample_metakey_last(
+                        project_sample, meta_key, MetaKeyAndValue.META_VALUE_Success
+                    )
+                    if meta_data != None:
+                        alert_out.append(meta_data.description)
+
+            ### get different types of alerts
+            for (
+                key
+            ) in metaKeyAndValue.get_keys_show_alerts_in_sample_projects_details_view():
+                meta_data = manageDatabase.get_project_sample_metakey_last(
+                    project_sample, key, MetaKeyAndValue.META_VALUE_Success
+                )
+                if meta_data != None:
+                    alert_out.append(meta_data.description)
+            context["alerts"] = alert_out
+
+            ##### extra data sample, columns added by the user
+            ## [[header1, value1], [header2, value2], [header3, value3], ...]
+            ### if it's to big expand button is better
+            tag_names = project_sample.sample.get_tag_names()
+            context["extra_data_sample_expand"] = (
+                tag_names != None
+            )  ## (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
+            if tag_names != None:
+                context["extra_data_sample"] = self.utils.grouped(tag_names, 4)
+
+            default_software = DefaultProjectSoftware()
+            context["consensus_file"] = project_sample.get_consensus_file_web(
+                not default_software.include_consensus(project_sample)
+            )
+            software_used = (
+                []
+            )  ### has a list with all software used... [name, parameters]
+            ### only for illumina
+            decode_result = DecodeObjects()
+            if project_sample.is_sample_illumina():
+                context["snippy_variants_file"] = project_sample.get_file_web(
+                    FileType.FILE_TAB, SoftwareNames.SOFTWARE_SNIPPY_name
+                )
+                context["freebayes_variants_file"] = project_sample.get_file_web(
+                    FileType.FILE_TAB, SoftwareNames.SOFTWARE_FREEBAYES_name
+                )
+                b_second_choice = True
+                context[
+                    "freebayes_variants_file_snp_indel"
+                ] = project_sample.get_file_web(
+                    FileType.FILE_TAB,
+                    SoftwareNames.SOFTWARE_FREEBAYES_name,
+                    b_second_choice,
+                )
+                context["depth_file"] = project_sample.get_file_web(
+                    FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_SNIPPY_name
+                )
+                context["depth_tbi_file"] = project_sample.get_file_web(
+                    FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_SNIPPY_name
+                )
+
+                #### software versions...
+                software_used.append([SoftwareNames.SOFTWARE_SNIPPY_name, "Fail"])
+                software_used.append([SoftwareNames.SOFTWARE_FREEBAYES_name, "Fail"])
+                list_meta = manageDatabase.get_project_sample_metakey(
+                    project_sample, MetaKeyAndValue.META_KEY_Snippy_Freebayes, None
+                )
+                if (
+                    list_meta[0].value == MetaKeyAndValue.META_VALUE_Success
+                    and MetaKeyAndValue.META_KEY_Snippy_Freebayes
+                    == list_meta[0].meta_tag.name
+                ):
+                    result = decode_result.decode_result(list_meta[0].description)
+                    if not result is None:
+                        software_used[0][1] = result.get_software(
+                            SoftwareNames.SOFTWARE_SNIPPY_name
+                        )
+                        software_used[1][1] = result.get_software(
+                            SoftwareNames.SOFTWARE_FREEBAYES_name
+                        )
+
+                        ### could have or not, in older versions
+                        msa_markers_software = result.get_software(
+                            SoftwareNames.SOFTWARE_MSA_MASKER_name
+                        )
+                        if len(msa_markers_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.SOFTWARE_MSA_MASKER_name,
+                                    result.get_software(
+                                        SoftwareNames.SOFTWARE_MSA_MASKER_name
+                                    ),
+                                ]
+                            )
+
+            else:
+                context["medaka_variants_file"] = project_sample.get_file_web(
+                    FileType.FILE_TAB, SoftwareNames.SOFTWARE_Medaka_name
+                )
+                context["depth_file"] = project_sample.get_file_web(
+                    FileType.FILE_DEPTH_GZ, SoftwareNames.SOFTWARE_Medaka_name
+                )
+                context["depth_tbi_file"] = project_sample.get_file_web(
+                    FileType.FILE_DEPTH_GZ_TBI, SoftwareNames.SOFTWARE_Medaka_name
+                )
+
+                #### software versions...
+                software_used.append([SoftwareNames.SOFTWARE_Medaka_name, "Fail"])
+                list_meta = manageDatabase.get_project_sample_metakey(
+                    project_sample, MetaKeyAndValue.META_KEY_Medaka, None
+                )
+                if (
+                    list_meta[0].value == MetaKeyAndValue.META_VALUE_Success
+                    and MetaKeyAndValue.META_KEY_Medaka == list_meta[0].meta_tag.name
+                ):
+                    result = decode_result.decode_result(list_meta[0].description)
+                    if not result is None:
+                        software_used[0][1] = result.get_software(
+                            SoftwareNames.SOFTWARE_Medaka_name
+                        )
+
+                        software_software = result.get_software(
+                            SoftwareNames.SOFTWARE_SAMTOOLS_name
+                        )
+                        if len(software_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.SOFTWARE_SAMTOOLS_name,
+                                    result.get_software(
+                                        SoftwareNames.SOFTWARE_SAMTOOLS_name
+                                    ),
+                                ]
+                            )
+
+                        ### could have or not, in older versions
+                        msa_markers_software = result.get_software(
+                            SoftwareNames.SOFTWARE_MSA_MASKER_name
+                        )
+                        if len(msa_markers_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.SOFTWARE_MSA_MASKER_name,
+                                    result.get_software(
+                                        SoftwareNames.SOFTWARE_MSA_MASKER_name
+                                    ),
+                                ]
+                            )
+
+                        software_software = result.get_software(
+                            SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name
+                        )
+                        if len(software_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name_extended,
+                                    result.get_software(
+                                        SoftwareNames.INSAFLU_PARAMETER_LIMIT_COVERAGE_ONT_name
+                                    ),
+                                ]
+                            )
+
+                        software_software = result.get_software(
+                            SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
+                        )
+                        if len(software_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name_extended,
+                                    result.get_software(
+                                        SoftwareNames.INSAFLU_PARAMETER_VCF_FREQ_ONT_name
+                                    ),
+                                ]
+                            )
+
+                        software_software = result.get_software(
+                            SoftwareNames.SOFTWARE_BCFTOOLS_name
+                        )
+                        if len(software_software) > 0:
+                            software_used.append(
+                                [
+                                    SoftwareNames.SOFTWARE_BCFTOOLS_name,
+                                    result.get_software(
+                                        SoftwareNames.SOFTWARE_BCFTOOLS_name
+                                    ),
+                                ]
+                            )
+
+            ## pangolin version, it is transversel (illumina e ONT)
+            meta_key = manageDatabase.get_project_metakey_last(
+                project_sample.project,
+                MetaKeyAndValue.META_KEY_Identify_pangolin,
+                MetaKeyAndValue.META_VALUE_Success,
+            )
+            if not meta_key is None:
+                result = decode_result.decode_result(meta_key.description)
+                ## only need to call first Pangolin, PangolinLearn is added automatically
+                software_used.append(
+                    [
+                        SoftwareNames.SOFTWARE_Pangolin_name,
+                        result.get_software(
+                            SoftwareNames.SOFTWARE_Pangolin_name_search_name
+                        ),
+                    ]
+                )
+
+            ### list of software to used
+            context["software_used"] = software_used
+
+            #### nextclade link
+            # is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+            specie_tag = self.software.get_species_tag(project_sample.project.reference)
+            if (
+                os.path.exists(project_sample.get_consensus_file(TypePath.MEDIA_ROOT))
+                and settings.SHOW_NEXTCLADE_LINK
+                and default_software.include_consensus(project_sample)
+            ):  ## docker versions doesn't show NextClade link
+                context = _get_constext_nextclade(
+                    project_sample.get_consensus_file(TypePath.MEDIA_URL),
+                    context,
+                    get_current_site(self.request),
+                    specie_tag,
+                )
+
+        except ProjectSample.DoesNotExist:
+            context["error_cant_see"] = 1
+        return context
 
 
-def _get_constext_nextclade(media_url_path, context, current_site, specie_identification):
-	""" 
-	:param specie_identification """
-	
-	## sarscov 2
-	if (specie_identification == Reference.SPECIES_SARS_COV_2):
-		context['nextclade_link_covid'] = "{}{}://{}{}".format(
-			Constants.NEXTCLADE_LINK_sars_cov_2,
-			settings.WEB_SITE_HTTP_NAME,
-			current_site,
-			media_url_path)
-	elif (specie_identification == Reference.SPECIES_MPXV):
-		context['nextclade_link_mpxv_hmpxv_b1'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_hMPXV_B1,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-		context['nextclade_link_mpxv_hmpxv'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_hMPXV,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-		context['nextclade_link_mpxv_all_clades'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_MPXV_All_clades,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-	elif (specie_identification == Reference.SPECIES_INFLUENZA):
-		context['nextclade_link_a_h3n2'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_A_H3N2,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-		context['nextclade_link_a_h1n1'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_A_H1N1,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-		context['nextclade_link_b_yamagata'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_B_Yamagata,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-		context['nextclade_link_b_victoria'] = "{}{}://{}{}".format(
-				Constants.NEXTCLADE_LINK_B_Victoria,
-				settings.WEB_SITE_HTTP_NAME,
-				current_site,
-				media_url_path)
-	return context
+def _get_constext_nextclade(
+    media_url_path, context, current_site, specie_identification
+):
+    """
+    :param specie_identification"""
+
+    ## sarscov 2
+    if specie_identification == Reference.SPECIES_SARS_COV_2:
+        context["nextclade_link_covid"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_sars_cov_2,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+    elif specie_identification == Reference.SPECIES_MPXV:
+        context["nextclade_link_mpxv_hmpxv_b1"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_hMPXV_B1,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+        context["nextclade_link_mpxv_hmpxv"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_hMPXV,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+        context["nextclade_link_mpxv_all_clades"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_MPXV_All_clades,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+    elif specie_identification == Reference.SPECIES_INFLUENZA:
+        context["nextclade_link_a_h3n2"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_A_H3N2,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+        context["nextclade_link_a_h1n1"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_A_H1N1,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+        context["nextclade_link_b_yamagata"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_B_Yamagata,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+        context["nextclade_link_b_victoria"] = "{}{}://{}{}".format(
+            Constants.NEXTCLADE_LINK_B_Victoria,
+            settings.WEB_SITE_HTTP_NAME,
+            current_site,
+            media_url_path,
+        )
+    return context
 
 
 def is_all_check_box_in_session(vect_check_to_test, request):

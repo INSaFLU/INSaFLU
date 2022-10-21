@@ -7,8 +7,10 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -73,14 +75,14 @@ class MetaKey(models.Model):
 
 
 class Reference(models.Model):
-	
-	### species
-	SPECIES_SARS_COV_2 = "SARS_COV_2"
-	SPECIES_MPXV = "MPXV"
-	SPECIES_INFLUENZA  = "INFLUENZA"
-	SPECIES_NOT_SET  = "NOT_SET"
-	SPECIES_INFLUENZA_segment_four  = "4"		## Name of segment 4
-	
+
+    ### species
+    SPECIES_SARS_COV_2 = "SARS_COV_2"
+    SPECIES_MPXV = "MPXV"
+    SPECIES_INFLUENZA = "INFLUENZA"
+    SPECIES_NOT_SET = "NOT_SET"
+    SPECIES_INFLUENZA_segment_four = "4"  ## Name of segment 4
+
     name = models.CharField(
         max_length=200, db_index=True, verbose_name="Reference name"
     )
@@ -143,10 +145,10 @@ class Reference(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
-	### specie_tag, Has tag name of the specie;
-	### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
-	specie_tag = models.CharField(max_length=20, default='')
-	
+    ### specie_tag, Has tag name of the specie;
+    ### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
+    specie_tag = models.CharField(max_length=20, default="")
+
     def __str__(self):
         return self.name
 
@@ -2149,9 +2151,7 @@ class ProcessControler(models.Model):
         return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
     def get_name_televir_project(self, project_pk):
-        return "{}{}".format(
-            ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk
-        )
+        return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
 
     def __str__(self):
         return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(

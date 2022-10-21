@@ -166,8 +166,8 @@ class CollectExtraData(object):
 		try:
 
 			## test SARS cov
-			if (self.software_pangolin.is_ref_sars_cov_2(project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))):
-								
+			if (self.software.get_species_tag(project.reference) == Reference.SPECIES_SARS_COV_2):
+
 				geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
 				
 				### create for single sequences
@@ -178,7 +178,9 @@ class CollectExtraData(object):
 					if(os.path.exists(file_alignments)): break
 					
 				if(os.path.exists(file_alignments)):
-	
+
+					file_aln2pheno_zip = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip)
+
 					file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
 					file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
 
@@ -201,7 +203,7 @@ class CollectExtraData(object):
 					# add output as parameters of individual files, or output a zip with the folder...
 					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME), 
 								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
-								flagged=file_aln2pheno_flagged_COG_UK, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv")
+								flagged=file_aln2pheno_flagged_COG_UK, db="DB_SARS_CoV_2_Spike_COG_UK_Antigenic_2022_10_20.tsv")
 
 					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
 					report_data = report_data.merge(pangolin_data, on=["Sequence"])
@@ -223,7 +225,7 @@ class CollectExtraData(object):
 					# add output as parameters of individual files, or output a zip with the folder...
 					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
 								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
-								flagged=file_aln2pheno_flagged_pokay, db="pokay_2022-04-28.tsv")
+								flagged=file_aln2pheno_flagged_pokay, db="DB_SARS_CoV_2_Spike_Pokay_2022_07_28.tsv")
 
 					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
 					report_data = report_data.merge(pangolin_data, on=["Sequence"])
@@ -231,14 +233,24 @@ class CollectExtraData(object):
 					report_data.to_csv(file_aln2pheno_report_pokay, sep=Constants.SEPARATOR_TAB, index=False)
 
 					self.utils.remove_temp_file(tmp_aln2pheno)
-
+					
+					temp_dir = self.utils.get_temp_dir()
+					self.utils.copy_file(file_aln2pheno_report_COG_UK, temp_dir)
+					self.utils.copy_file(file_aln2pheno_flagged_COG_UK, temp_dir)
+					self.utils.copy_file(file_aln2pheno_report_pokay, temp_dir)
+					self.utils.copy_file(file_aln2pheno_flagged_pokay, temp_dir)
+					# README file to be always added
+					self.utils.copy_file(SoftwareNames.SOFTWARE_ALN2PHENO_README, temp_dir)
+					zip_out = self.software.zip_files_in_path(temp_dir)
+					self.utils.move_file(zip_out, file_aln2pheno_zip)
+					temp_dir = self.utils.remove_dir(temp_dir)
 
 		except Exception as e:
 			## finished with error
 			self.logger_debug.info("Aln2pheno Gave an error {}".format(e))
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return
-		
+
 		if (b_mark_sge_success):
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 
@@ -265,6 +277,13 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
+
+			## (re)calculate the phenotype table, as it uses metadata
+			self.__collect_aln2pheno(project, user, False)
+			self.logger_production.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
 			
 			### zip several files to download 
 			self.zip_several_files(project)
@@ -857,18 +876,21 @@ class CollectExtraData(object):
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Pangolin_lineage))
 
 		### aln2pheno data
-		file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+		#file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+		file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip)
 		## aln2pheno files			
 		if (project.number_passed_sequences > 0 and os.path.exists(file_aln2pheno_result)):
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))																		
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
-			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay),
-						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))											
-		
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip),
+					os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_zip))
+
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))																		
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))													
 			
 		## all files zipped
 		zip_out = self.software.zip_files_in_path(temp_dir)

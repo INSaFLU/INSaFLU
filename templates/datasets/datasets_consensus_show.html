@@ -38,12 +38,12 @@
 			<div class="card">
 				<div class="card-header" role="tab" id="headingOne">
 					<h5 class="mb-0">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+						<!-- <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne"> -->
 							<strong>Dataset</strong> '{{ dataset.name }}'
-	        			</a>
+	        			<!-- </a> -->
 	      			</h5>
 	    		</div>
-	
+	<!--
 	    		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
 	      			<div class="card-block">
 	      				<div style="padding: 20px">
@@ -63,6 +63,8 @@
 						</div>
 	      			</div>
 	    		</div>
+		-->
+
 	  		</div>
 	
 	  
@@ -136,8 +138,6 @@
 					                    <div class="btn-group">
 
 										<!-- Info -->
-										<a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="Download the json files and drag-and drop the files in auspice.us">
-											<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i></span></a>
 
 											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			    								Download
@@ -195,7 +195,14 @@
 												</div>
 											</div>  
 										{% endif %} -->
+
 										
+											<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i>
+												Download the json files and drag-and drop the files in <a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="auspice.us">auspice.us</a>.
+												You can also upload the nextstrain metadata file in auspice.us to update the displayed metadata.
+											</span>
+
+
 				                        <form method="get" action="" class="form-inline form-search pull-right">
 				                        	{% csrf_token %}
 				                            <div class="pull-right form-search">

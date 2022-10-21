@@ -68,22 +68,22 @@ class PathogenIdentification_deployment:
         self.technology = technology
         self.install_registry = Deployment_Params
 
+    def input_read_project_path(self, filepath):
+        if not os.path.isfile(filepath):
+            return ""
+        rname = os.path.basename(filepath)
+        new_rpath = os.path.join(self.dir, "reads") + "/" + rname
+        shutil.copy(filepath, new_rpath)
+        return new_rpath
+
     def configure(self, r1_path: str, r2_path: str = "") -> None:
         self.get_constants()
         self.configure_params()
         self.generate_config_file()
         self.prep_test_env()
 
-        r1_name = os.path.basename(r1_path)
-        new_r1_path = os.path.join(self.dir, "reads") + "/" + r1_name
-        shutil.copy(r1_path, new_r1_path)
-
-        if r2_path:
-            r2_name = os.path.basename(r1_path)
-            new_r2_path = os.path.join(self.dir, "reads") + "/" + r2_name
-            shutil.copy(r2_path, new_r2_path)
-        else:
-            new_r2_path = ""
+        new_r1_path = self.input_read_project_path(r1_path)
+        new_r2_path = self.input_read_project_path(r2_path)
 
         self.config["sample_name"] = self.sample
         self.config["r1"] = new_r1_path
@@ -92,7 +92,7 @@ class PathogenIdentification_deployment:
 
     def get_constants(self):
 
-        if self.technology == "Illumina/IonTorrent":
+        if self.technology in "Illumina/IonTorrent":
             self.constants = ConstantsSettings.CONSTANTS_ILLUMINA
         if self.technology == "ONT":
             self.constants = ConstantsSettings.CONSTANTS_ONT
@@ -101,6 +101,7 @@ class PathogenIdentification_deployment:
         user = User.objects.get(username=self.username)
 
         utils = Utils_Manager(user)
+        print(self.technology)
 
         all_paths = utils.get_all_technology_pipelines(self.technology)
 
@@ -212,11 +213,9 @@ class Run_Main_from_Leaf:
             self.file_r2 = ""
 
         self.technology = input_data.sample.get_type_technology()
-        # self.user = user.username
         self.project_name = project.name
         self.date_created = project.creation_date
         self.date_modified = project.last_change_date
-        # self.pk = input_data.pk
 
         self.deployment_directory_structure = os.path.join(
             ConstantsSettings.televir_subdirectory,
@@ -239,6 +238,7 @@ class Run_Main_from_Leaf:
             prefix=prefix,
             username=self.user.username,
             deployment_root_dir=odir,
+            technology=self.technology,
             dir_branch=self.deployment_directory_structure,
         )
 
@@ -421,7 +421,7 @@ class Run_Main_from_Leaf:
             run_success = self.Deploy()
             if run_success:
                 self.Update_dbs()
-                self.container.close()
+                # self.container.close()
                 self.register_completion()
                 self.delete_submission()
                 self.update_project_change_date()

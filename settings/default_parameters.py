@@ -690,13 +690,22 @@ class DefaultParameters(object):
         return technology
 
     def get_snippy_default(
-        self, user, type_of_use, technology_name, project=None, project_sample=None
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        project=None,
+        project_sample=None,
+        pipeline_step=None,
     ):
         """
         –mapqual: minimum mapping quality to allow (–mapqual 20)
         —mincov: minimum coverage of variant site (–mincov 10)
         –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
         """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_variant_detection
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SNIPPY_name
         software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_name_extended
@@ -716,9 +725,7 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_variant_detection
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
         software.owner = user
 
         vect_parameters = []
@@ -2246,7 +2253,7 @@ class DefaultParameters(object):
         vect_parameters = []
 
         parameter = Parameter()
-        parameter.name = "--k"
+        parameter.name = "-k"
         parameter.parameter = "31"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
@@ -2259,22 +2266,6 @@ class DefaultParameters(object):
         parameter.range_max = "41"
         parameter.range_min = "31"
         parameter.description = "value of k-mer size, default 31"
-        vect_parameters.append(parameter)
-
-        parameter = Parameter()
-        parameter.name = "--meta"
-        parameter.parameter = ""
-        parameter.type_data = Parameter.PARAMETER_char
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = False
-        parameter.is_to_run = True
-        parameter.sequence_out = 2
-        parameter.range_available = ""
-        parameter.range_max = ""
-        parameter.range_min = ""
-        parameter.description = "use meta-SPAdes"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -2414,7 +2405,7 @@ class DefaultParameters(object):
         snippy default
         """
         software = Software()
-        software.name = SoftwareNames.SOFTWARE_SNIPPY_name
+        software.name = SoftwareNames.SOFTWARE_SNIPPY_PI_name
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION

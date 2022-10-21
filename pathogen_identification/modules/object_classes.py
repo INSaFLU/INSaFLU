@@ -38,7 +38,7 @@ class RunCMD:
         self.logs = []
 
         self.logger = logging.getLogger(f"{prefix}_{task}")
-        self.logger.setLevel(logging.CRITICAL)
+        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
 
@@ -86,11 +86,12 @@ class RunCMD:
 
         return cmd_out
 
-    def output_disposal(self, cmd: str, err: str, out: str, exec_time: float):
+    def output_disposal(self, cmd: str, err: str, out: str, exec_time: float, bin: str):
         if self.logdir:
             with open(os.path.join(self.logdir, self.logfile), "a") as f:
                 software = cmd.split(" ")[0]
                 f.write(f"exec\t{software}\t{exec_time}\n")
+                f.write(f"bin\t{bin}\n")
                 f.write(f"{cmd}\n")
 
                 out = self.process_cmd_log(out)
@@ -128,7 +129,7 @@ class RunCMD:
             self.logger.error(f"errror in command: {self.bin}{cmd}")
             raise Exception(err.decode("utf-8"))
 
-        self.output_disposal(cmd, err, out, exec_time)
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
 
     def run_python(self, cmd):
         """
@@ -156,7 +157,7 @@ class RunCMD:
             self.logger.error(f"errror in command: {self.bin}{cmd}")
             raise Exception(err.decode("utf-8"))
 
-        self.output_disposal(cmd, err, out, exec_time)
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
 
     def run_java(self, cmd):
         """
@@ -184,7 +185,7 @@ class RunCMD:
             self.logger.error(f"errror in command: {self.bin}{cmd}")
             raise Exception(err.decode("utf-8"))
 
-        self.output_disposal(cmd, err, out, exec_time)
+        self.output_disposal(cmd, err, out, exec_time, self.bin)
 
     def run_bash(self, cmd):
         """
@@ -209,7 +210,7 @@ class RunCMD:
             self.logger.error(f"errror in command: {self.bin}{cmd}")
             raise Exception(err.decode("utf-8"))
 
-        self.output_disposal(cmd, err, out, exec_time)
+        self.output_disposal(cmd, err, out, exec_time, "")
 
     def run_bash_return(self, cmd):
         """
@@ -236,7 +237,7 @@ class RunCMD:
             self.logger.error(f"errror in command: {self.bin}{cmd}")
             raise Exception(err.decode("utf-8"))
 
-        self.output_disposal(cmd, err, "", exec_time)
+        self.output_disposal(cmd, err, "", exec_time, "")
 
         return out
 
@@ -452,8 +453,8 @@ class Sample_runClass:
 
     def __init__(
         self,
-        r1: Type[Read_class],
-        r2: Type[Read_class],
+        r1: Read_class,
+        r2: Read_class,
         sample_name: str,
         project_name: str,
         user_name: str,

@@ -220,6 +220,8 @@ class Assembly_class:
         "flye": Assembly_flye,
     }
 
+    assembler: Assembly_init
+
     def __init__(
         self,
         r1,
@@ -291,6 +293,9 @@ class Assembly_class:
         self.assembly_process()
         self.get_contig_summary()
         self.get_assembly_stats()
+
+    def fake_run(self):
+        self.assembly_configure()
 
     def assembly_configure(self):
         """

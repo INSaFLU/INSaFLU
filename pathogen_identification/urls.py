@@ -36,17 +36,17 @@ urlpatterns = [
         name="remove-sample-PIproject",
     ),
     url(
-        r"Projects/(?P<project>[a-zA-Z0-9]+)/all_reports$",
+        r"Projects/(?P<project>[a-zA-Z0-9_]+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
     ),
     url(
-        r"Projects/project_(?P<project_name>[a-zA-Z0-9]+)/sample_(?P<sample_name>[a-zA-Z0-9]+)",
+        r"Projects/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",
     ),
     url(
-        r"Summary/project_(?P<project_name>[a-zA-Z0-9]+)/sample_(?P<sample_name>[a-zA-Z0-9]+)/run_(?P<run_name>[a-zA-Z0-9_]+)",
+        r"Summary/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)/run_(?P<run_name>[a-zA-Z0-9_]+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",
     ),
@@ -63,7 +63,7 @@ urlpatterns = [
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
-        r"Scaffold/project_(?P<project>[a-zA-Z0-9]+)/sample_(?P<sample>[a-zA-Z0-9]+)/run_(?P<run>[a-zA-Z0-9_]+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
+        r"Scaffold/project_(?P<project>[a-zA-Z0-9_]+)/sample_(?P<sample>[a-zA-Z0-9_]+)/run_(?P<run>[a-zA-Z0-9_]+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",
     ),

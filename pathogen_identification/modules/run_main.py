@@ -205,6 +205,10 @@ class RunDetail_main:
             ),
         )
 
+        print("####################")
+        print(config["r2"])
+        print(config["r2"])
+
         self.r2 = Read_class(
             config["r2"],
             config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
@@ -543,7 +547,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
         self.enrichment_drone.run()
 
-    def deploy_ASSEMBLY(self):
+    def deploy_ASSEMBLY(self, fake_run: bool = False):
         self.assembly_drone = Assembly_class(
             self.sample.r1.current,
             self.assembly_method,
@@ -559,7 +563,10 @@ class Run_Deployment_Methods(RunDetail_main):
             log_dir=self.log_dir,
         )
 
-        self.assembly_drone.run()
+        if fake_run:
+            self.assembly_drone.fake_run()
+        else:
+            self.assembly_drone.run()
 
     def deploy_CONTIG_CLASSIFICATION(self):
 
@@ -665,6 +672,8 @@ class RunMain_class(Run_Deployment_Methods):
             import shutil
 
             shutil.copy(self.sample.r1.current, self.sample.r1.clean)
+            print("################ sample r2")
+            print(self.sample.r2.exists, self.sample.r2.clean)
             if self.sample.r2.exists:
                 shutil.copy(self.sample.r2.current, self.sample.r2.clean)
 
@@ -701,6 +710,8 @@ class RunMain_class(Run_Deployment_Methods):
 
         if self.assembly:
             self.deploy_ASSEMBLY()
+        else:
+            self.deploy_ASSEMBLY(fake_run=True)
 
         if self.classification:
             self.deploy_READ_CLASSIFICATION()

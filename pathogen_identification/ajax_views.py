@@ -42,13 +42,14 @@ def deploy_ProjectPI(request):
         print("checking", project.technology)
 
         runs_to_deploy = utils.check_runs_to_deploy(project)
+
         print(runs_to_deploy)
         if runs_to_deploy:
-
             taskID = process_SGE.set_submit_televir_job(
                 user=request.user,
                 project_pk=project.pk,
             )
+
             data["is_deployed"] = True
 
         print(data)

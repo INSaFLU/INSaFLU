@@ -60,12 +60,17 @@ class ConstantsSettings(object):
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
         "Centrifuge",
+        "Snippy",
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
     polyvalent_software_pipelines = {
         "Centrifuge": [
             PIPELINE_NAME_viral_enrichment,
             PIPELINE_NAME_read_classification,
+        ],
+        "Snippy": [
+            PIPELINE_NAME_variant_detection,
+            PIPELINE_NAME_remapping,
         ],
     }
 

@@ -395,13 +395,11 @@ class RunMainTable(tables.Table):
 
     def render_success(self, record):
         success = False
-        final_reports = FinalReport.objects.filter(run=record)
-        for final_report in final_reports:
-            if final_report.coverage:
-                if final_report.coverage > 0.2:
-                    success = True
-                    break
-
+        final_reports = FinalReport.objects.filter(run=record).count()
+        for final_report in FinalReport.objects.filter(run=record):
+            if final_report.classification_success != "none":
+                success = True
+        success = final_reports > 0
         if success:
             return mark_safe('<i class="fa fa-check"></i>')
         else:

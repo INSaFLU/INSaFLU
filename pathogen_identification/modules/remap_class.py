@@ -258,7 +258,286 @@ class coverage_parse:
         self.report.to_csv(self.output, sep="\t", index=False)
 
 
+class RemapMethod_init:
+    def __init__(
+        self,
+        method: Software_detail,
+        r1,
+        r2,
+        args,
+        type,
+        prefix,
+        reference,
+        outdir,
+        threads,
+        force,
+        logdir,
+    ):
+        self.r1 = r1
+        self.r2 = r2
+        self.args = args
+        self.type = type
+        self.prefix = prefix
+        self.reference = reference
+        self.outdir = outdir
+        self.threads = threads
+        self.force = force
+
+        self.outbam = os.path.join(outdir, prefix + ".bam")
+        self.outsam = os.path.join(outdir, prefix + ".sam")
+
+        self.cmd = RunCMD(
+            method.bin, logdir=logdir, prefix=prefix, task="remap_software"
+        )
+
+
+class Remap_Snippy(RemapMethod_init):
+    def __init__(
+        self,
+        method: Software_detail,
+        r1,
+        r2,
+        args,
+        type,
+        prefix,
+        reference,
+        outdir,
+        threads,
+        force,
+        logdir,
+    ):
+        super().__init__(
+            method,
+            r1,
+            r2,
+            args,
+            type,
+            prefix,
+            reference,
+            outdir,
+            threads,
+            force,
+            logdir,
+        )
+
+        self.rundir = os.path.join(outdir, "snippy")
+        os.makedirs(self.rundir, exist_ok=True)
+        self.runbam = os.path.join(self.rundir, "snps.bam")
+
+    def export(self):
+        if os.path.exists(self.runbam):
+            shutil.copy(self.runbam, self.outbam)
+
+    def remap(self):
+        """
+        Remap reads to reference using snippy."""
+        if self.type == "SE":
+            self.remap_SE()
+        elif self.type == "PE":
+            self.remap_PE()
+        else:
+            raise ValueError
+
+    def remap_SE(self):
+        """
+        Remap reads to reference using snippy for single end reads."""
+        cmd = [
+            "snippy",
+            self.args,
+            "--cpus",
+            self.threads,
+            "--ref",
+            self.reference,
+            "--outdir",
+            self.rundir,
+            "--se",
+            self.r1,
+            "--force",
+        ]
+        self.cmd.run(cmd)
+        self.export()
+
+    def remap_PE(self):
+        """
+        Remap reads to reference using snippy for paired end reads."""
+        cmd = [
+            "snippy",
+            self.args,
+            "--cpus",
+            self.threads,
+            "--ref",
+            self.reference,
+            "--outdir",
+            self.rundir,
+            "--R1",
+            self.r1,
+            "--R2",
+            self.r2,
+            "--force",
+        ]
+        self.cmd.run(cmd)
+        self.export()
+
+
+class Remap_Bwa(RemapMethod_init):
+    def remap(self):
+        """
+        Remap reads to reference using bwa."""
+        if self.type == "SE":
+            self.remap_SE()
+        elif self.type == "PE":
+            self.remap_PE()
+        else:
+            raise ValueError
+
+    def remap_SE(self):
+        """
+        Remap reads to reference using bwa for single end reads."""
+        cmd = [
+            "bwa",
+            "mem",
+            self.args,
+            "-t",
+            self.threads,
+            self.reference,
+            self.r1,
+            "|",
+            "samtools",
+            "view",
+            "-b",
+            "-o",
+            self.outbam,
+            "-",
+        ]
+        self.cmd.run(cmd)
+
+    def remap_PE(self):
+        """
+        Remap reads to reference using bwa for paired end reads."""
+        cmd = [
+            "bwa",
+            "mem",
+            self.args,
+            "-t",
+            self.threads,
+            self.reference,
+            self.r1,
+            self.r2,
+            "|",
+            "samtools",
+            "view",
+            "-b",
+            "-o",
+            self.outbam,
+            "-",
+        ]
+        self.cmd.run(cmd)
+
+
+class Remap_Minimap2(RemapMethod_init):
+    def remap(self):
+        """
+        Remap reads to reference using minimap2."""
+        if self.type == "SE":
+            self.remap_SE()
+        elif self.type == "PE":
+            self.remap_PE()
+        else:
+            raise ValueError
+
+    def remap_SE(self):
+        """
+        Remap reads to reference using minimap2 for single end reads."""
+        cmd = [
+            "minimap2",
+            self.args,
+            "-t",
+            self.threads,
+            self.reference,
+            self.r1,
+            "|",
+            "samtools",
+            "view",
+            "-b",
+            "-o",
+            self.outbam,
+            "-",
+        ]
+        self.cmd.run(cmd)
+
+    def remap_PE(self):
+        """
+        Remap reads to reference using minimap2 for paired end reads."""
+        cmd = [
+            "minimap2",
+            self.args,
+            "-t",
+            self.threads,
+            self.reference,
+            self.r1,
+            self.r2,
+            "|",
+            "samtools",
+            "view",
+            "-b",
+            "-o",
+            self.outbam,
+            "-",
+        ]
+        self.cmd.run(cmd)
+
+
+class Remap_Bowtie2(RemapMethod_init):
+    def remap(self):
+        """
+        Remap reads to reference using bowtie2."""
+        if self.type == "SE":
+            self.remap_SE()
+        elif self.type == "PE":
+            self.remap_PE()
+        else:
+            raise ValueError
+
+    def remap_SE(self):
+        """
+        Remap reads to reference using bowtie2 for single end reads."""
+        cmd = [
+            "bowtie2",
+            self.args,
+            "-p",
+            self.threads,
+            "-x",
+            self.reference,
+            "-U",
+            self.r1,
+            "-S",
+            self.outsam,
+        ]
+        self.cmd.run(cmd)
+
+    def remap_PE(self):
+        """
+        Remap reads to reference using bowtie2 for paired end reads."""
+        cmd = [
+            "bowtie2",
+            self.args,
+            "-p",
+            self.threads,
+            "-x",
+            self.reference,
+            "-1",
+            self.r1,
+            "-2",
+            self.r2,
+            "-S",
+            self.outsam,
+        ]
+        self.cmd.run(cmd)
+
+
 class Remapping:
+    remap_engine = RemapMethod_init
+
     def __init__(
         self,
         r1: str,
@@ -292,6 +571,7 @@ class Remapping:
         :param logging_level: logging level to use.
         """
         self.method = method.name
+        self.method_object = method
         self.args = method.args
         self.rdir = rdir
         self.cleanup = False
@@ -310,8 +590,9 @@ class Remapping:
         self.r1 = r1
         self.r2 = r2
         self.minimum_coverage = minimum_coverage
+        self.logdir = log_dir
 
-        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping")
+        self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_main")
 
         os.makedirs(self.rdir, exist_ok=True)
 
@@ -406,8 +687,8 @@ class Remapping:
             shutil.move(filepath, final_file)
             return final_file
 
-        else:
-            print(f"PATH {filepath} does not exist")
+        # else:
+        #    print(f"PATH {filepath} does not exist")
 
     def relocate_mapping_files(self, destination):
 
@@ -625,7 +906,7 @@ class Remapping:
             return
 
         for accid in self.mapped_contigs:
-            cmd = f"samtools faidx {self.assembly_path} {accid} >> {self.mapped_contigs_fasta}"
+            cmd = f"samtools faidx {self.assembly_path} '{accid}' >> {self.mapped_contigs_fasta}"
             self.cmd.run(cmd)
 
     def index_mapped_contigs_fasta(self):
@@ -645,13 +926,24 @@ class Remapping:
         open(self.reference_file, "w").close()
 
         for accid in self.target.accid_in_file:
-            cmd = f"samtools faidx {self.target.file} {accid} >> {self.reference_file}"
+            cmd = (
+                f"samtools faidx {self.target.file} '{accid}' >> {self.reference_file}"
+            )
             self.cmd.run(cmd)
+
+        import sys
 
         self.reference_file_exists = (
             os.path.isfile(self.reference_file)
             and os.path.getsize(self.reference_file) > 0
         )
+
+        if not self.reference_file_exists:
+            self.logger.error(
+                f"Reference file {self.reference_file} does not exist or is empty"
+            )
+
+            sys.exit(1)
 
     def get_reference_fasta_length(self):
         """
@@ -663,113 +955,6 @@ class Remapping:
                 if line.startswith(">"):
                     continue
                 self.reference_fasta_length += len(line.strip())
-
-    def remap_bwa(self):
-        """
-        Remap reads to reference using bwa.
-        """
-        cmd = f"bwa mem -t {self.threads} {self.reference_file} {self.r1} {self.r2} > {self.read_map_sam}"
-        self.cmd.run(cmd)
-        self.logger.info("Finished remapping")
-
-    def remap_snippy(self):
-        """
-        Remap reads to reference using snippy."""
-        if self.type == "SE":
-            self.remap_snippy_SE()
-        elif self.type == "PE":
-            self.remap_snippy_PE()
-        else:
-            self.logger.error(f"Remap type {self.type} not available")
-            raise ValueError
-
-    def remap_snippy_SE(self):
-        """
-        Remap reads to reference using snippy for single end reads."""
-        cmd = [
-            "snippy",
-            self.args,
-            "--cpus",
-            self.threads,
-            "--ram",
-            "4",
-            "--ref",
-            self.reference_file,
-            "--outdir",
-            self.rdir,
-            "--prefix",
-            self.prefix,
-            "--se",
-            self.r1,
-            "--force",
-        ]
-        self.cmd.run(cmd)
-
-    def remap_snippy_PE(self):
-        """
-        Remap reads to reference using snippy for paired end reads."""
-        cmd = [
-            "snippy",
-            self.args,
-            "--cpus",
-            self.threads,
-            "--ram",
-            "4",
-            "--ref",
-            self.reference_file,
-            "--outdir",
-            self.rdir,
-            "--prefix",
-            self.prefix,
-            "--R1",
-            self.r1,
-            "--R2",
-            self.r2,
-            "--force",
-        ]
-        self.cmd.run(cmd)
-
-    def remap_minimap2(self):
-        """
-        Remap reads to reference using minimap2. ONT data."""
-        if self.type == "SE":
-            self.remap_minimap2_SE()
-        elif self.type == "PE":
-            self.remap_minimap2_PE()
-
-    def remap_minimap2_SE(self):
-
-        cmd = f"minimap2 -t {self.threads} -ax map-ont {self.reference_file} {self.r1} > {self.read_map_sam}"
-        self.cmd.run(cmd)
-
-    def remap_minimap2_PE(self):
-
-        cmd = f"minimap2 -t {self.threads} -ax map-ont {self.reference_file} {self.r1} {self.r2} > {self.read_map_sam}"
-        self.cmd.run(cmd)
-
-    def remap_minimap2_no_ref(self):
-        cmd = f"minimap2 -t {self.threads} {self.r1} {self.r2} > {self.read_map_sam}"
-        self.cmd.run(cmd)
-
-    def remap_bowtie(self):
-        if self.type == "SE":
-            self.remap_bowtie_SE()
-        elif self.type == "PE":
-            self.remap_bowtie_PE()
-
-    def remap_bowtie_SE(self):
-        """
-        Remap reads to reference using bowtie.
-        """
-        cmd = f"bowtie -p {self.threads} -x {self.reference_file} -U {self.r1} -S {self.read_map_sam}"
-        self.cmd.run(cmd)
-
-    def remap_bowtie_PE(self):
-        """
-        Remap reads to reference using bowtie.
-        """
-        cmd = f"bowtie2 -x {self.reference_file} -1 {self.r1} -2 {self.r2} -S {self.read_map_sam}"
-        self.cmd.run(cmd)
 
     def minimap2_assembly_map(self):
         """
@@ -796,18 +981,36 @@ class Remapping:
         Configure which remapping method to use."""
 
         available_methods = {
-            "bwa": self.remap_bwa,
-            "snippy": self.remap_snippy,
-            "minimap2": self.remap_minimap2,
-            "minimap2_no_ref": self.remap_minimap2_no_ref,
-            "bowtie": self.remap_bowtie,
+            "bwa": Remap_Bwa,
+            "snippy": Remap_Snippy,
+            "minimap2": Remap_Minimap2,
+            "bowtie": Remap_Bowtie2,
         }
 
-        try:
-            available_methods[self.method]()
-        except KeyError:
-            self.logger.error(f"Remap Method {self.method} not available")
-            raise KeyError
+        if self.method in available_methods:
+            self.logger.info(f"Remapping with {self.method}")
+            self.remap_engine = available_methods[self.method](
+                self.method_object,
+                self.r1,
+                self.r2,
+                self.args,
+                self.type,
+                self.prefix,
+                self.reference_file,
+                self.rdir,
+                self.threads,
+                False,
+                self.logdir,
+            )
+            try:
+                self.remap_engine.remap()
+            except Exception as e:
+                self.logger.error(f"Remapping failed with {e}")
+                raise e
+
+        else:
+            self.logger.error(f"Remapping method {self.method} not available")
+            raise ValueError
 
     def check_remap_status_sam(self):
         if os.path.exists(self.read_map_sam) and os.path.getsize(self.read_map_sam) > 0:

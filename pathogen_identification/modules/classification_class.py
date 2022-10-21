@@ -5,7 +5,8 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -106,8 +107,7 @@ class run_kaiju(Classifier_init):
 
         try:
             dbdir = os.path.dirname(self.db_path)
-            print("dvd")
-            print(dbdir)
+
             self.nodes = os.path.join(dbdir, "nodes.dmp")
             if not os.path.isfile(self.nodes):
                 raise FileNotFoundError(

@@ -57,7 +57,7 @@ class ConstantsSettings:
         "QCONTROL": False,
         "ENRICH": True,
         "DEPLETE": False,
-        "ASSEMBLE": False,
+        "ASSEMBLE": True,
         "CLASSIFY": True,
         "REMAP": True,
         "PHAGE_DEPL": True,

@@ -453,15 +453,12 @@ class Remap_Minimap2(RemapMethod_init):
             self.args,
             "-t",
             self.threads,
+            "-ax",
+            "map-ont",
             self.reference,
             self.r1,
-            "|",
-            "samtools",
-            "view",
-            "-b",
-            "-o",
-            self.outbam,
-            "-",
+            ">",
+            self.outsam,
         ]
         self.cmd.run(cmd)
 
@@ -473,16 +470,13 @@ class Remap_Minimap2(RemapMethod_init):
             self.args,
             "-t",
             self.threads,
+            "-ax",
+            "map-ont",
             self.reference,
             self.r1,
             self.r2,
-            "|",
-            "samtools",
-            "view",
-            "-b",
-            "-o",
-            self.outbam,
-            "-",
+            ">",
+            self.outsam,
         ]
         self.cmd.run(cmd)
 

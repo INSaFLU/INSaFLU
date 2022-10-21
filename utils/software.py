@@ -25,7 +25,7 @@ from manage_virus.models import UploadFile
 from manage_virus.uploadFiles import UploadFiles
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import (MixedInfectionsTag, ProcessControler,
-                                   ProjectSample, Sample)
+                                   ProjectSample, Reference, Sample)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -846,35 +846,110 @@ class Software(object):
         self.utils.remove_file(clean_abricate_file)
         return True
 
-    def run_fastq(self, file_name_1, file_name_2):
-        """
-        run fastQ, return output directory
-        -o OUT_FOLDER --nogroup --format fastq --threads 10 --dir OUT_FOLDER FILE1 FILE2
-        """
-        temp_dir = self.utils.get_temp_dir()
-        if not file_name_2 is None and len(file_name_2) > 0:
-            cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (
-                self.software_names.get_fastq(),
-                temp_dir,
-                settings.THREADS_TO_RUN_FASTQC,
-                temp_dir,
-                file_name_1,
-                file_name_2,
-            )
-        else:
-            cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (
-                self.software_names.get_fastq(),
-                temp_dir,
-                settings.THREADS_TO_RUN_FASTQC,
-                temp_dir,
-                file_name_1,
-            )
-        exist_status = os.system(cmd)
-        if exist_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
-            raise Exception("Fail to run run_fastq")
-        return temp_dir
+
+	def get_species_tag(self, reference):
+		"""
+		:param reference instance, database
+		:return specie TAGs: Reference.SPECIES_SARS_COV_2; Reference.SPECIES_MPXV; Reference.SPECIES_INFLUENZA, ...
+		"""
+
+		### Done
+		if len(reference.specie_tag) > 0 and reference.specie_tag != Reference.SPECIES_NOT_SET:
+			return reference.specie_tag
+			
+		### test id abricate has the database
+		try:
+			uploadFile = UploadFile.objects.order_by('-version')[0]
+		except UploadFile.DoesNotExist:
+			return Reference.SPECIES_NOT_SET
+
+		## if not exist try to create it
+		if (not self.is_exist_database_abricate(uploadFile.abricate_name)):
+			try:
+				self.create_database_abricate(uploadFile.abricate_name, uploadFile.path)
+			except Exception:
+				return Reference.SPECIES_NOT_SET
+		
+		## run abricate
+		out_file_abricate = self.utils.get_temp_file("temp_abricate", ".txt")
+		try:
+			cmd = self.run_abricate(uploadFile.abricate_name, reference.get_reference_fasta(TypePath.MEDIA_ROOT), 
+				SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS, out_file_abricate)
+		except Exception:
+			return Reference.SPECIES_NOT_SET
+		
+		if (not os.path.exists(out_file_abricate)):
+			return Reference.SPECIES_NOT_SET
+
+		parseOutFiles = ParseOutFiles()
+		(vect_data, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file_abricate,
+				"doesnt_mather.txt",\
+				SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
+		## don't need this file, only need vect_data_file
+		self.utils.remove_file(clean_abricate_file)
+		self.utils.remove_file(out_file_abricate)
+		
+		uploadFiles = UploadFiles()
+		try:
+			## could fail some identification, so, return False if it occurs
+			vect_data = uploadFiles.uploadIdentifyVirus(vect_data, uploadFile.abricate_name)
+			if (len(vect_data) == 0):
+				return Reference.SPECIES_NOT_SET
+		except Exception as e:
+			return Reference.SPECIES_NOT_SET
+		
+		### test number of right segments
+		number_right_beta_cov, number_right_mpxv, number_right_influenza = (0, 0, 0) 
+		for identify_virus in vect_data:
+			if (identify_virus.seq_virus.name == "BetaCoV" and
+				identify_virus.seq_virus.kind_type.name == "Genus"): number_right_beta_cov += 1
+			### need to read from the file 
+			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
+				identify_virus.seq_virus.kind_type.name == "Human"): number_right_beta_cov += 1
+			elif (identify_virus.seq_virus.name in ("A", "B") and
+				identify_virus.seq_virus.kind_type.name == "Type"): number_right_influenza += 1
+			elif (identify_virus.seq_virus.name in ("Yamagata", "Victoria") and
+				identify_virus.seq_virus.kind_type.name.lower() == "lineage"): number_right_influenza += 1
+			elif (identify_virus.seq_virus.kind_type.name.lower() == "subtype" and
+				(identify_virus.seq_virus.name.startswith("H") or
+				identify_virus.seq_virus.name.startswith("N"))): number_right_influenza += 1
+			elif (identify_virus.seq_virus.name == Reference.SPECIES_MPXV and
+				identify_virus.seq_virus.kind_type.name.lower() == "species"): number_right_mpxv += 1
+
+		## if right at least two		
+		if (number_right_beta_cov > 0):
+			reference.specie_tag = Reference.SPECIES_SARS_COV_2
+			reference.save()
+			return Reference.SPECIES_SARS_COV_2
+		elif (number_right_mpxv > 0):
+			reference.specie_tag = Reference.SPECIES_MPXV
+			reference.save()
+			return Reference.SPECIES_MPXV
+		elif (number_right_influenza > 0):
+			reference.specie_tag = Reference.SPECIES_INFLUENZA
+			reference.save()
+			return Reference.SPECIES_INFLUENZA
+
+		## Not ser
+		return Reference.SPECIES_NOT_SET
+	
+	def run_fastq(self, file_name_1, file_name_2):
+		"""
+		run fastQ, return output directory
+		-o OUT_FOLDER --nogroup --format fastq --threads 10 --dir OUT_FOLDER FILE1 FILE2
+		"""
+		temp_dir = self.utils.get_temp_dir()
+		if (not file_name_2 is None and len(file_name_2) > 0):
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FASTQC, 
+										temp_dir, file_name_1, file_name_2)
+		else: 
+			cmd = "%s -o %s --nogroup --format fastq --threads %d --dir %s %s" % (self.software_names.get_fastq(), temp_dir, settings.THREADS_TO_RUN_FASTQC, temp_dir, file_name_1)
+		exist_status = os.system(cmd)
+		if (exist_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run run_fastq")
+		return temp_dir
 
     def run_prokka(self, fasta_file_name, original_file_name):
         """
@@ -3433,8 +3508,8 @@ class Software(object):
         file_size_max = 0
         if os.path.exists(path_1):
             file_size_max = os.path.getsize(path_1)
-        if (
-            path_2 != None
+        if (not 
+            path_2 is None
             and os.path.exists(path_2)
             and file_size_max < os.path.getsize(path_2)
         ):
@@ -3457,52 +3532,34 @@ class Software(object):
             )
 
             self.utils.uncompress_files(
-                self.software_names.get_bgzip(), path_1, path_1_temp
+                self.software_names.get_gzip(), path_1, path_1_temp
             )
             file_names = path_1_temp
             if path_2 != None and os.path.exists(path_2):
                 self.utils.uncompress_files(
-                    self.software_names.get_bgzip(), path_2, path_2_temp
+                    self.software_names.get_gzip(), path_2, path_2_temp
                 )
                 file_names += " " + path_2_temp
 
-            cmd = "{} -p {:.2f} -o {}/sample {}".format(
-                self.software_names.get_fastqtools_sample(),
-                ratio,
-                path_to_work,
-                file_names,
-            )
-            print(cmd)
-            print(self.software_names)
-            exist_status = os.system(cmd)
-            if exist_status != 0:
-                self.logger_production.error("Fail to run: " + cmd)
-                self.logger_debug.error("Fail to run: " + cmd)
-                raise Exception("Fail to downsize")
-
-            if path_2 != None and os.path.exists(path_2):
-                self.utils.compress_files(
-                    self.software_names.get_bgzip(),
-                    os.path.join(path_to_work, "sample.1.fastq"),
-                )
-                path_1_temp = os.path.join(
-                    path_to_work, "sample.1.fastq" + FileExtensions.FILE_GZ
-                )
-                self.utils.compress_files(
-                    self.software_names.get_bgzip(),
-                    os.path.join(path_to_work, "sample.2.fastq"),
-                )
-                path_2_temp = os.path.join(
-                    path_to_work, "sample.2.fastq" + FileExtensions.FILE_GZ
-                )
-            else:
-                self.utils.compress_files(
-                    self.software_names.get_bgzip(),
-                    os.path.join(path_to_work, "sample.fastq"),
-                )
-                path_1_temp = os.path.join(
-                    path_to_work, "sample.fastq" + FileExtensions.FILE_GZ
-                )
+			cmd = "{} -p {:.2f} -o {}/sample {}".format(self.software_names.get_fastqtools_sample(), ratio, path_to_work, file_names)
+#			print(cmd)
+			exist_status = os.system(cmd)
+			if (exist_status != 0):
+				self.logger_production.error('Fail to run: ' + cmd)
+				self.logger_debug.error('Fail to run: ' + cmd)
+				raise Exception("Fail to downsize") 
+		
+			if (not path_2 is None and os.path.exists(path_2)):
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.1.fastq'))
+				path_1_temp = os.path.join(path_to_work, 'sample.1.fastq' + FileExtensions.FILE_GZ)
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.2.fastq'))
+				path_2_temp = os.path.join(path_to_work, 'sample.2.fastq' + FileExtensions.FILE_GZ)
+			else:
+				self.utils.compress_files(self.software_names.get_gzip(), os.path.join(path_to_work, 'sample.fastq'))
+				path_1_temp = os.path.join(path_to_work, 'sample.fastq' + FileExtensions.FILE_GZ)
+				
+			return(True, path_1_temp, path_2_temp if (path_2 != None and os.path.exists(path_2)) else None)
+		return(False, path_1, path_2)
 
             return (
                 True,

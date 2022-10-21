@@ -52,6 +52,97 @@ class Test(TestCase):
 		pass
 
 
+	def test_get_species_tag(self):
+		"""
+		test SARS cov 
+		"""
+		
+		ref_name = "File 1"
+		reference_fasta = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, ConstantsTestsCase.MANAGING_FILES_COVID_FASTA)
+		ref_name_2 = "File 2"
+		consensus_file_1 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "SARSCoVDec200153.consensus.fasta")
+		ref_name_3 = "File 3"
+		consensus_file_2 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "A_H3N2_A_Hong_Kong_4801_2014.fasta")
+		ref_name_4 = "File 4"
+		consensus_file_3 = os.path.join(self.baseDirectory, ConstantsTestsCase.MANAGING_DIR, "monkeypox_MT903344_MPXV_UK_P2_wo_NN.fasta")
+		
+		self.assertTrue(os.path.exists(reference_fasta))
+		self.assertTrue(os.path.exists(consensus_file_1))
+		self.assertTrue(os.path.exists(consensus_file_2))
+		self.assertTrue(os.path.exists(consensus_file_3))
+		try:
+			user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+		except User.DoesNotExist:
+			user = User()
+			user.username = ConstantsTestsCase.TEST_USER_NAME
+			user.is_active = False
+			user.password = ConstantsTestsCase.TEST_USER_NAME
+			user.save()
+
+		try:
+			reference = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			reference = Reference()
+			reference.name = ref_name
+			reference.reference_fasta.name = reference_fasta
+			reference.reference_fasta_name = os.path.basename(reference_fasta)
+			reference.owner = user
+			reference.save()
+			
+		try:
+			reference1 = Reference.objects.get(name=ref_name_2)
+		except Reference.DoesNotExist:
+			reference1 = Reference()
+			reference1.name = ref_name_2
+			reference1.reference_fasta.name = consensus_file_1
+			reference1.reference_fasta_name = os.path.basename(consensus_file_1)
+			reference1.owner = user
+			reference1.save()
+		
+		try:
+			reference2 = Reference.objects.get(name=ref_name_3)
+		except Reference.DoesNotExist:
+			reference2 = Reference()
+			reference2.name = ref_name_3
+			reference2.reference_fasta.name = consensus_file_2
+			reference2.reference_fasta_name = os.path.basename(consensus_file_2)
+			reference2.owner = user
+			reference2.save()
+			
+		try:
+			reference3 = Reference.objects.get(name=ref_name_4)
+		except Reference.DoesNotExist:
+			reference3 = Reference()
+			reference3.name = ref_name_3
+			reference3.reference_fasta.name = consensus_file_3
+			reference3.reference_fasta_name = os.path.basename(consensus_file_3)
+			reference3.owner = user
+			reference3.save()
+		
+		uploadFiles = UploadFiles()
+		version = 1
+		file = os.path.join(self.baseDirectory, Constants.DIR_TYPE_IDENTIFICATION, "test_covid_typing.fasta")
+		self.assertTrue(os.path.exists(file))
+		uploadFiles.upload_file(version, file)	## upload file
+		
+		database_name = "xpto_sars_cov"
+		if (not self.software.is_exist_database_abricate(database_name)):
+			self.software.create_database_abricate(database_name, file)
+
+		self.assertEquals(Reference.SPECIES_INFLUENZA, self.software.get_species_tag(reference2))		
+		self.assertEquals(Reference.SPECIES_MPXV, self.software.get_species_tag(reference3))
+		self.assertEquals(Reference.SPECIES_SARS_COV_2, self.software.get_species_tag(reference))
+		self.assertEquals(Reference.SPECIES_SARS_COV_2, self.software.get_species_tag(reference1))
+		
+		##
+		try:
+			reference_test = Reference.objects.get(name=ref_name)
+		except Reference.DoesNotExist:
+			self.assertFail("Record must exist")
+		
+		self.assertEqual(Reference.SPECIES_SARS_COV_2, reference_test.specie_tag)
+		
+
 	def test_fasta_2_upper(self):
 		"""
 		Test samtools fai index
@@ -3134,14 +3225,16 @@ class Test(TestCase):
 		self.assertTrue(os.path.isfile(fastq1_1))
 		self.assertTrue(os.path.isfile(fastq1_2))
 		
+		self.assertEquals(os.path.getsize(fastq1_1), 5314574)
+		self.assertEquals(os.path.getsize(fastq1_2), 5715245)
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 2000000)	## downsize to 2M
 		
 		self.assertEquals(is_downsized, True)
 		self.assertTrue(os.path.exists(file_name_1))
 		self.assertTrue(os.path.exists(file_name_2))
 		
-		self.assertEquals(os.path.getsize(file_name_1), 233201)
-		self.assertEquals(os.path.getsize(file_name_2), 255802)
+		self.assertEquals(os.path.getsize(file_name_1), 1724181)
+		self.assertEquals(os.path.getsize(file_name_2), 1924367)
 		self.utils.remove_dir(os.path.dirname(file_name_1))
 
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, None, 2000000)	## downsize to 2M
@@ -3150,7 +3243,7 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(file_name_1))
 		self.assertTrue(file_name_2 == None)
 		
-		self.assertEquals(os.path.getsize(file_name_1), 248769)
+		self.assertEquals(os.path.getsize(file_name_1), 1839658)
 		self.utils.remove_dir(os.path.dirname(file_name_1))
 		
 		(is_downsized, file_name_1, file_name_2) = self.software.make_downsize(fastq1_1, fastq1_2, 20000000)	## downsize to 2M

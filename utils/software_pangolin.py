@@ -201,16 +201,16 @@ class SoftwarePangolin(object):
 			return False
 		
 		### test number of right segments
-		number_right =0 
+		number_right_bet_cov =0 
 		for identify_virus in vect_data:
 			if (identify_virus.seq_virus.name == "BetaCoV" and
-				identify_virus.seq_virus.kind_type.name == "Genus"): number_right += 1
+				identify_virus.seq_virus.kind_type.name == "Genus"): number_right_bet_cov += 1
 			### need to read from the file 
 			elif (identify_virus.seq_virus.name in ("SARS_CoV_2", "SARS_CoV", "SCoV2_potential_Omicron", "HCoV_OC43", "HCoV_HKU1", "MERS_CoV") and
-				identify_virus.seq_virus.kind_type.name == "Human"): number_right += 1
+				identify_virus.seq_virus.kind_type.name == "Human"): number_right_bet_cov += 1
 
 		## if right at least two		
-		if (number_right > 1): return True
+		if (number_right_bet_cov > 1): return True
 		return False
 
 	def pangolin_results_out_date(self, project):

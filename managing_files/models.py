@@ -73,6 +73,14 @@ class MetaKey(models.Model):
 
 
 class Reference(models.Model):
+	
+	### species
+	SPECIES_SARS_COV_2 = "SARS_COV_2"
+	SPECIES_MPXV = "MPXV"
+	SPECIES_INFLUENZA  = "INFLUENZA"
+	SPECIES_NOT_SET  = "NOT_SET"
+	SPECIES_INFLUENZA_segment_four  = "4"		## Name of segment 4
+	
     name = models.CharField(
         max_length=200, db_index=True, verbose_name="Reference name"
     )
@@ -135,6 +143,10 @@ class Reference(models.Model):
         blank=True, null=True, verbose_name="Date attached"
     )  ## this date has the time of deleted by web page
 
+	### specie_tag, Has tag name of the specie;
+	### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
+	specie_tag = models.CharField(max_length=20, default='')
+	
     def __str__(self):
         return self.name
 
@@ -486,7 +498,7 @@ class Sample(models.Model):
     ### Type/Subtype Virus
     identify_virus = models.ManyToManyField(IdentifyVirus)
     type_subtype = models.CharField(
-        max_length=50, blank=True, null=True
+        max_length=150, blank=True, null=True
     )  ## has the type/subtype collected
     number_alerts = models.IntegerField(
         verbose_name="Alerts", default=0, blank=True, null=True

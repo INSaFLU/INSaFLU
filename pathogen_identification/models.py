@@ -640,7 +640,7 @@ class RunRemapMain(models.Model):
     performed = models.BooleanField(default=False)
 
     method = models.CharField(
-        max_length=250, blank=True, null=True
+        max_length=350, blank=True, null=True
     )  # remap method if any
 
     found_total = models.IntegerField(blank=True, null=True)

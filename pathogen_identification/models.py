@@ -636,7 +636,7 @@ class RunRemapMain(models.Model):
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
-    merged_log = models.CharField(max_length=200, blank=True, null=True)
+    merged_log = models.CharField(max_length=350, blank=True, null=True)
     performed = models.BooleanField(default=False)
 
     method = models.CharField(
@@ -649,7 +649,7 @@ class RunRemapMain(models.Model):
     coverage_maximum = models.IntegerField(blank=True, null=True)
 
     success = models.IntegerField(blank=True, null=True)
-    remap_plan = models.CharField(max_length=200, blank=True, null=True)
+    remap_plan = models.CharField(max_length=350, blank=True, null=True)
 
     class Meta:
         ordering = [

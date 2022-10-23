@@ -776,7 +776,7 @@ class Remapping:
             self.reference_file,
             "|",
             "sed",
-            "s/>//g",
+            "'s/>//g'",
         ]
         self.reference_fasta_string = self.cmd.run_bash_return(cmd)
 

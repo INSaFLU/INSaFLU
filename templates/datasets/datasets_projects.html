@@ -52,7 +52,7 @@
 		                        <form method="get" action="" class="form-inline form-search pull-right">
 		                        	{% csrf_token %}
 		                            <div class="pull-right form-search">
-		                            	<input id="search_form_id" name="search_references" type="text" class="form-control col-sm-9" placeholder="Name, Owner"{% if search_references %} value="{{ search_references }}"{% endif %}>
+		                            	<input id="search_form_id" name="search_consensus" type="text" class="form-control col-sm-9" placeholder="Name"{% if search_consensus %} value="{{ search_consensus }}"{% endif %}>
 		                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
 		                            </div>              
 		                        </form>

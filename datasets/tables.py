@@ -299,11 +299,11 @@ class DatasetConsensusTable(tables.Table):
 	"""
 	
 	name = tables.Column('Name', empty_values=())
-	project_name = tables.Column('Project Name', empty_values=())		## when came from projects
-	source = tables.Column('Source', empty_values=())
-	type_and_subtype = tables.LinkColumn('Classification', empty_values=())
+	project_name = tables.Column('Project Name', orderable=False, empty_values=())		## when came from projects
+	source = tables.Column('Source', orderable=False, empty_values=())
+	type_and_subtype = tables.LinkColumn('Classification', orderable=False, empty_values=())
 	alerts = tables.Column('Alerts', empty_values=())
-	technology = tables.Column('Technology', empty_values=())
+	technology = tables.Column('Technology', orderable=False, empty_values=())
 	consensus_file = tables.LinkColumn('Consensus File', orderable=False, empty_values=())
 	results = tables.LinkColumn('Options', orderable=False, empty_values=())
 	EMPTY = "---"
@@ -313,7 +313,7 @@ class DatasetConsensusTable(tables.Table):
 		fields = ('name', 'project_name', 'source', 'type_and_subtype', 'technology',\
 			'alerts', 'consensus_file', 'results')
 		attrs = {"class": "table-striped table-bordered"}
-		empty_text = "There are no samples processed to show..."
+		empty_text = "There are no consensus to show..."
 	
 	def render_project_name(self, record):
 		"""

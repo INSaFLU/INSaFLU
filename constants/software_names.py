@@ -341,14 +341,15 @@ class SoftwareNames(object):
 
 	### algn2pheno
 	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/aln2pheno.sh")
+	SOFTWARE_ALN2PHENO_README = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/algn2pheno_readme.txt")
 
 	### Nextstrain
 	SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
 	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
-	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
-	
+
 	### Several types of builds for NEXTSTRAIN
+	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_builds/")	
 	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
 	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
 	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"

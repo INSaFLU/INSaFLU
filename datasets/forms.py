@@ -237,7 +237,7 @@ class ConsensusForm(forms.ModelForm):
 			### some sequences names suggested are not present in the file
 			vect_fail_seqs = [key for key in dict_names if dict_names[key] == 0]
 			if len(vect_fail_seqs) > 0:
-				self.add_error('display_name', "Sequences names '{}' that does not have match in the file".format(
+				self.add_error('display_name', "Sequences names '{}' does not have match in the file".format(
 						", '".join(vect_fail_seqs)))
 				
 		except IOError as e:	## (e.errno, e.strerror)

@@ -18,7 +18,7 @@ from django.urls import reverse
 from constants.constants import Constants
 from utils.software import Software
 from Bio import SeqIO
-from utils.parse_in_files import ParseInFiles
+from utils.parse_in_files_nextstrain import ParseNextStrainFiles
 
 class AddReferencesDatasetForm(forms.ModelForm):
 	"""
@@ -286,15 +286,15 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
 		self.helper = FormHelper()
 		self.helper.form_method = 'POST'
 		self.helper.layout = Layout(
-			HTML('<p> </p>'),
-			HTML('<div class="alert alert-dark"> <span><i class="fa fa-download"></i></span> ' + \
-					dataset_name.get_global_file_by_dataset_web(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV) + \
-					" Last metadata file 'csv' for '{}' </div>".format(
-					dataset_name.name)),
+#			HTML('<p> </p>'),
+#			HTML('<div class="alert alert-dark"> <span><i class="fa fa-download"></i></span> ' + \
+#					dataset_name.get_global_file_by_dataset_web(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV) + \
+#					" Last metadata file 'csv' for '{}' dataset</div>".format(
+#					dataset_name.name)),
 			HTML('<p> </p>'),
 			HTML('<div class="alert alert-dark"> <span><i class="fa fa-download"></i></span> ' + \
 					 dataset_name.get_global_file_by_dataset_web(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV) + \
-					" Last metadata file 'tsv' for '{}' </div>".format(
+					" Last metadata file 'tsv' for '{}' dataset.</div>".format(
 					dataset_name.name)),
 			HTML('<p> </p>'),
 			Div('path_name', css_class="col-lm-3"),
@@ -310,6 +310,7 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
 		"""
 		Clean all 
 		"""
+		software = Software()
 		cleaned_data = super(DatastesUploadDescriptionMetadataForm, self).clean()
 		
 		### get path name
@@ -320,11 +321,12 @@ class DatastesUploadDescriptionMetadataForm(forms.ModelForm):
 		temp_file_name.write(path_name.file.read())
 		temp_file_name.flush()
 		temp_file_name.close()
+		software.dos_2_unix(temp_file_name.name)
 		
-		parse_in_files = ParseInFiles()
+		parse_in_files = ParseNextStrainFiles()
 		b_test_char_encoding = True
-		parse_in_files.parse_sample_files(temp_file_name.name, self.request.user, b_test_char_encoding,\
-									ParseInFiles.STATE_READ_metadata_only_detect_errors_and_chech_samples)
+		parse_in_files.parse_nextstrain_files(temp_file_name.name, self.request.user, b_test_char_encoding,\
+									ParseNextStrainFiles.STATE_READ_metadata_only_detect_errors_and_chech_nexttrain)
 		
 		os.unlink(temp_file_name.name)
 		if (parse_in_files.get_errors().has_errors()):

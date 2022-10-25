@@ -194,7 +194,7 @@ class Metadata(object):
 			csv_writer.writerow(vect_out)
 		return count
 	
-	def get_vect_out_nextstrain(self, vect_header_out, dt_header_normal_out, csv_writer, build):
+	def get_vect_out_nextstrain(self, vect_header_out, dt_header_normal_out, csv_writer, build, parse_in_files):
 		"""
 		:param vect_header_out all headers out
 		:param dt_header_normal_out keys that are present only in INSAFLu list files
@@ -205,7 +205,7 @@ class Metadata(object):
 		count = 0
 		for project_sample_pk in self.dt_rows_id:
 
-			# Avoid repeating samples?	  yep
+			# Avoid repeating samples
 			if project_sample_pk in dt_out_id_project_sample: continue
 
 			dt_out_id_project_sample[project_sample_pk] = 1
@@ -219,6 +219,12 @@ class Metadata(object):
 				if column == NEXTSTRAIN_strain: continue	## already out
 				if column in dt_out_header: continue		## already out, can be synonymous
 
+				### set nextstrain metadata, uploaded by file
+				value = parse_in_files.get_value(vect_out[0], column)
+				if not value is None:
+					vect_out.append(value)
+					continue
+				
 				## exception
 				if column == NEXTSTRAIN_length:
 					if self.dt_header.get(column, -1) > 0 and \
@@ -291,7 +297,7 @@ class Reference(object):
 				else: self.dt_out_rows[row[0]] = row
 		## done
 
-	def save_out_nextstrain(self, csv_writer, vect_header_out, build):
+	def save_out_nextstrain(self, csv_writer, vect_header_out, build, parse_in_files):
 		"""
 		"""
 		
@@ -313,7 +319,7 @@ class DataColumns(object):
 	Depends on the nextstrain build
 	'''
 
-	def __init__(self, build):
+	def __init__(self, build = None):
 		'''
 		Constructor
 		'''
@@ -335,6 +341,41 @@ class DataColumns(object):
 		if project_pk in self.dt_project:
 			self.dt_project[project_pk].add_metadata(project_sample_pk, project_name, seq_name_consensus, row, consensus_length)
 		
+	def get_type_header_nextstrain_and_check_repeated(self, vect_header):
+		"""
+		get type header and repeated
+		:out TypeHeader, Dict with repeated
+		:
+		"""
+		## check repeated
+		dict_out_value = {}
+		for value in vect_header:
+			if value in dict_out_value: dict_out_value[value] += 1
+			else: dict_out_value[value] = 1
+		dict_repeated = { key:dict_out_value[key] for key in dict_out_value if dict_out_value[key] > 1 }
+		
+		if self.__test_type_header(vect_header, VECT_NEXTSTRAIN_mandatory_ncov):
+			return SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov, dict_repeated
+		if self.__test_type_header(vect_header, VECT_NEXTSTRAIN_mandatory_mpx):
+			return SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx, dict_repeated
+		if self.__test_type_header(vect_header, VECT_NEXTSTRAIN_mandatory_generic):
+			return SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, dict_repeated
+		return None, dict_repeated
+
+	def __test_type_header(self, vect_header, vect_reference):
+		"""
+		:param vect_header		-> pass the header to test
+		:param vect_reference	-> vector to find match
+		Test if the header passed is equal to a specific vect, like:
+		1) VECT_NEXTSTRAIN_mandatory_ncov
+		2) VECT_NEXTSTRAIN_mandatory_mpx
+		3) VECT_NEXTSTRAIN_mandatory_generic
+		"""
+		
+		dict_to_test = dict(zip(vect_reference, [0] * len(vect_reference)))
+		for value in vect_header:
+			if value in dict_to_test: dict_to_test[value] += 1
+		return len([value for value in dict_to_test if dict_to_test[value] > 0]) == len(vect_reference)
 		
 	def _get_header(self):
 		"""
@@ -364,7 +405,7 @@ class DataColumns(object):
 		return self.vect_header_out
 
 
-	def _get_header_nextstrain(self):
+	def _get_header_nextstrain(self, parse_in_files):
 		"""
 		return header
 		## CollectExtraData.HEADER_SAMPLE_OUT_CSV_simple
@@ -384,6 +425,30 @@ class DataColumns(object):
 			if regular_name in self.vect_header_out: continue
 			self.vect_header_out.append(regular_name)
 			self.dt_header_normal_out[regular_name] = 1
+		
+		### check remove or add columns
+		if not parse_in_files is None and len(parse_in_files.vect_header) > 0:
+			for value in parse_in_files.vect_header:
+				if value in DICT_MANDATORY_FIELDS[self.build]: continue
+				
+				### add if not there
+				if not value in self.vect_header_out: 
+					self.vect_header_out.append(value)
+					self.dt_header_normal_out[value] = 1
+			
+			### NOT to remove because cna bring the case that a column never appears		
+			### remove if not in 
+			vect_index_to_remove = []
+			for index, value in enumerate(self.vect_header_out):
+				if value in DICT_MANDATORY_FIELDS[self.build]: continue
+				if not value in parse_in_files.vect_header:
+					vect_index_to_remove.append(index)
+			
+			## reverse
+			#vect_index_to_remove = vect_index_to_remove[::-1]
+			#for index in vect_index_to_remove:
+			#	del self.dt_header_normal_out[self.vect_header_out[index]]
+			#	self.vect_header_out.pop(index)
 		return self.vect_header_out
 
 	
@@ -403,26 +468,28 @@ class DataColumns(object):
 		return count
 
 
-	def save_rows_nextstrain(self, csv_writer, reference_tsv=None):
+	def save_rows_nextstrain(self, csv_writer, reference_tsv, parse_in_files):
 		"""
+		:param reference_tsv has the data that has the template to save this
+		:param parse_in_files has thedata that came from metadata files imported by users
 		create file for nextstrain
 		"""
 		count = 0 ## number of rows saved
 		
 		## save header
-		csv_writer.writerow(self._get_header_nextstrain())
+		csv_writer.writerow(self._get_header_nextstrain(parse_in_files))
 
-		# read NextStrain reference 
+		# read NextStrain reference (obsolete)
 		if(not reference_tsv is None):
 			reference = Reference(reference_tsv)
 			### save reference
-			count += reference.save_out_nextstrain(csv_writer, self.vect_header_out, self.build)
+			count += reference.save_out_nextstrain(csv_writer, self.vect_header_out, self.build, parse_in_files)
 
 		## save data
 		for key_metadata in self.dt_project:
 			
 			count += self.dt_project[key_metadata].get_vect_out_nextstrain(
-					self.vect_header_out, self.dt_header_normal_out, csv_writer, self.build)			
+					self.vect_header_out, self.dt_header_normal_out, csv_writer, self.build, parse_in_files)			
 
 		return count
 		

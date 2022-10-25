@@ -5,11 +5,11 @@ from django.views import generic
 from braces.views import LoginRequiredMixin, FormValidMessageMixin
 from django.conf import settings
 from constants.software_names import SoftwareNames
-from managing_files.models import Reference, Project, ProjectSample, MetaKey
+from managing_files.models import Reference, Project, ProjectSample
 from datasets.forms import ConsensusForm
 from django.views.generic import ListView
 from utils.utils import Utils
-from datasets.models import Dataset, DatasetConsensus, Consensus, UploadFiles
+from datasets.models import Dataset, DatasetConsensus, Consensus, UploadFiles, MetaKey
 from datasets.tables import DatasetTable, ReferenceTable, ConsensusTable, ProjectTable
 from datasets.tables import DatasetConsensusTable, AddDatasetFromCvsFileTableMetadata
 from datasets.forms import AddReferencesDatasetForm, AddConsensusDatasetForm, AddProjectsDatasetForm
@@ -30,7 +30,6 @@ from utils.software import Software
 from django.db import transaction
 from Bio import SeqIO
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.process_SGE import ProcessSGE
 from settings.models import Software as SoftwareSettings
 from settings.constants_settings import ConstantsSettings
 from settings.tables import SoftwaresTable
@@ -789,6 +788,9 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 				dataset.get_clean_dataset_name(), datetime.datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
 
 		context['different_references'] = dataset.get_number_different_references()
+		context['number_of_consensus'] = dataset.number_of_sequences_from_consensus
+		context['number_of_references'] = dataset.number_of_sequences_from_references
+		context['n_consensus_from_projects'] = dataset.number_of_sequences_from_projects
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
@@ -829,7 +831,8 @@ class UpdateMetadataDataset(LoginRequiredMixin, FormValidMessageMixin, generic.C
 		
 		tag_search = 'search_datasets'
 		query_set = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata).order_by('-creation_date')
+				type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata, is_valid=True,
+				dataset=dataset).order_by('-creation_date')
 		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
 			query_set = query_set.filter(Q(file_name__icontains=self.request.GET.get(tag_search)) |\
 										Q(owner__username__icontains=self.request.GET.get(tag_search)))
@@ -841,14 +844,11 @@ class UpdateMetadataDataset(LoginRequiredMixin, FormValidMessageMixin, generic.C
 		context['nav_dataset'] = True
 		context['disable_upload_files'] = disable_upload_files
 		
-		### test if exists files to process to match with (csv/tsv) file
-		context['does_not_exists_fastq_files_to_process'] = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata).order_by('-creation_date').count() == 0
-				
 		### test if can add other csv file
 		count_not_complete = UploadFiles.objects.filter(owner__id=self.request.user.id, is_deleted=False,\
-				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False).count()
-		if (count_not_complete > 0): 
+				type_file__name=TypeFile.TYPE_FILE_sample_file_metadata, is_processed=False, is_valid=True,
+				dataset=dataset).count()
+		if (count_not_complete > 0):
 			context['can_add_other_file'] = "You cannot add other file because there is a file in pipeline."
 			context['disable_upload_files'] = True
 			
@@ -916,8 +916,8 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
 		
 		context['nav_dataset'] = True
 		context['disable_upload_files'] = disable_upload_files
-		context['nav_modal'] = True			  ## short the size of modal window
-		context['dataset'] = dataset			 ## dataset in analysis
+		context['nav_modal'] = True			## short the size of modal window
+		context['dataset'] = dataset		## dataset in analysis
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
 		return context
 
@@ -933,6 +933,7 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
 			pass
 
 		utils = Utils()
+		software = Software()
 		path_name = form.cleaned_data['path_name']
 
 		## create a genbank file
@@ -968,6 +969,7 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
 													TypeFile.TYPE_FILE_dataset_file_metadata), upload_files.file_name)
 			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
+			software.dos_2_unix(sz_file_to)
 			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_dataset_file_metadata), ntpath.basename(sz_file_to))
 			upload_files.save()

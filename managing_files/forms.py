@@ -612,6 +612,7 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
 		"""
 		Clean all 
 		"""
+		software = Software()
 		cleaned_data = super(SamplesUploadDescriptionForm, self).clean()
 		
 		### get path name
@@ -622,6 +623,7 @@ class SamplesUploadDescriptionForm(forms.ModelForm):
 		temp_file_name.write(path_name.file.read())
 		temp_file_name.flush()
 		temp_file_name.close()
+		software.dos_2_unix(temp_file_name.name)
 		
 		parse_in_files = ParseInFiles()
 		b_test_char_encoding = True
@@ -687,6 +689,7 @@ class SamplesUploadDescriptionMetadataForm(forms.ModelForm):
 		"""
 		Clean all 
 		"""
+		software = Software()
 		cleaned_data = super(SamplesUploadDescriptionMetadataForm, self).clean()
 		
 		### get path name
@@ -697,6 +700,7 @@ class SamplesUploadDescriptionMetadataForm(forms.ModelForm):
 		temp_file_name.write(path_name.file.read())
 		temp_file_name.flush()
 		temp_file_name.close()
+		software.dos_2_unix(temp_file_name.name)
 		
 		parse_in_files = ParseInFiles()
 		b_test_char_encoding = True

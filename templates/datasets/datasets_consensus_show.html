@@ -54,8 +54,7 @@
 							</div>
 							<hr>
 							<div class="row">
-							  	<div class="col-lg-4"><strong>#References:</strong> {{ n_references }}</div>
-							  	<div class="col-lg-4"><strong>#Consensus:</strong> {{ n_consensus }}</div>
+							  	<div class="col-lg-4"><strong>#References:</strong> {{ number_of_references }}</div>
 							  	<div class="col-lg-4"><strong>#Consensus from projects:</strong> {{ n_consensus_from_projects }}</div>
 							</div>
 							<hr>
@@ -166,7 +165,7 @@
 										
 										<!-- Meta Data -->
 										<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
-											title="Upload metadata to update '{{dataset.name}}' dataset from a csv/tsv file"
+											title="Upload metadata to update '{{dataset.name}}' dataset from a tsv file"
 											class="btn btn-small btn-primary dark"
                     						data-toggle="tooltip">
                     						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
@@ -254,7 +253,7 @@
 				{% endif %}
 		
 				<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
-				
+				<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 				<!-- The Modal -->
 				<!-- The remove Modal -->
 				<div class="modal fade" id="id_remove_modal">

@@ -7,6 +7,12 @@ import unittest, os, filecmp, csv
 from datetime import date
 from django.conf import settings
 from utils.data_columns import DataColumns
+from utils.data_columns import VECT_NEXTSTRAIN_mandatory_ncov
+from utils.data_columns import VECT_NEXTSTRAIN_mandatory_mpx
+from utils.data_columns import VECT_NEXTSTRAIN_mandatory_generic
+from utils.data_columns import NEXTSTRAIN_strain
+from utils.data_columns import NEXTSTRAIN_host
+from utils.data_columns import NEXTSTRAIN_segment
 from utils.utils import Utils, FileExtensions
 from utils.software import Software
 from constants.constantsTestsCase import ConstantsTestsCase
@@ -115,6 +121,24 @@ class Test(unittest.TestCase):
 		
 		self.assertTrue(filecmp.cmp(out_file, temp_file_compare))
 		if (os.path.exists(out_file)): os.unlink(out_file)
+
+	def test_vect_header_nextstrain_file(self):
+		
+		data_columns = DataColumns()
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov, {}), data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_ncov))
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx, {}), data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_mpx))
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, {}), data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_generic))
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, {NEXTSTRAIN_strain : 2}),
+				data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_generic + [NEXTSTRAIN_strain]))
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, {NEXTSTRAIN_host : 2}),
+				data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_generic + [NEXTSTRAIN_host]))
+		self.assertEqual((SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, {}),
+				data_columns.get_type_header_nextstrain_and_check_repeated(VECT_NEXTSTRAIN_mandatory_generic + [NEXTSTRAIN_segment]))
+		vect_temp = [value for value in VECT_NEXTSTRAIN_mandatory_generic]
+		vect_temp.pop()
+		self.assertEqual((None, {}),
+				data_columns.get_type_header_nextstrain_and_check_repeated(vect_temp + [NEXTSTRAIN_segment]))
+
 
 
 if __name__ == "__main__":

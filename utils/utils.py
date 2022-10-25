@@ -85,8 +85,11 @@ class Utils(object):
 		user_id ->
 		type_file -> TypeFile.TYPE_FILE_sample_file, TypeFile.TYPE_FILE_fastq_gz
 		"""
+		file_path = 'csv_sample_file'
+		if type_file == TypeFile.TYPE_FILE_fastq_gz: file_path = 'fastq_files'
+		if type_file == TypeFile.TYPE_FILE_dataset_file_metadata: file_path = 'tsv_dataset_file'
 		return os.path.join(Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES, "userId_{0}".format(user_id),\
-				"{}".format('fastq_files' if type_file == TypeFile.TYPE_FILE_fastq_gz else 'csv_sample_file'))
+				"{}".format(file_path))
 		
 	def get_unique_file(self, file_name):
 		"""
@@ -1138,6 +1141,16 @@ class Utils(object):
 				raise ValueError("Incorrect data format, should be dd/mm/YYYY")
 		return date_
 	
+	def validate_date_format(self, date_text, format_, text_format):
+		"""
+		The international format yyyy-mm-dd or yyyy/mm/dd
+		validate date time
+		"""
+		try:
+			date_ = datetime.strptime(date_text, format_)
+		except ValueError:
+			raise ValueError("Incorrect data format, should be " + text_format)
+		return date_
 	
 	def clean_fasta_file(self, in_file, out_file):
 		"""

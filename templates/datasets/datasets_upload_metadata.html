@@ -31,7 +31,7 @@
 	            <thead>                 
 	                <tr>
 	                    <th colspan="7">
-	                    	<a href="{% url "dataset-add-single-csv-file-metadata" dataset.pk %}" data-title="Load new metadata to replace the exist one from a (csv/tsv) file" 
+	                    	<a href="{% url 'dataset-add-single-file-metadata' dataset.pk %}" data-title="Load new metadata to replace the exist one from a tsv file" 
 	                    		class="btn btn-small btn-primary dark {% if disable_upload_files %} disabled {% endif %}"><span class="hidden-phone"><i class="fa fa-upload"></i> Load new file</span></a>
 	                    	{% if can_add_other_file %} <label> {{ can_add_other_file }} </label>{% endif %}
 	                        <form method="get" class="form-inline form-search pull-right">
@@ -91,6 +91,7 @@
 
 	<a id="id_go_back_button" href="{% url 'show-dataset-consensus' dataset.pk %}" class="btn btn-small btn-primary dark">
 		<span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 {% endblock content %}
 
 {% block js %}

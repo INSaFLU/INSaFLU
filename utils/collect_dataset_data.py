@@ -7,7 +7,7 @@ import os, csv, time, logging, json, glob
 from constants.software_names import SoftwareNames
 from settings.models import Parameter
 from utils.exceptions import CmdException
-from constants.constants import Constants, TypePath, FileExtensions
+from constants.constants import Constants, TypePath, FileExtensions, TypeFile
 from utils.utils import Utils
 from django.conf import settings
 from utils.software import Software
@@ -17,6 +17,8 @@ from managing_files.models import ProcessControler, Project, Reference
 from datasets.models import Dataset
 from constants.meta_key_and_values import MetaKeyAndValue
 from datasets.manage_database import ManageDatabase
+from datasets.models import UploadFiles
+from utils.parse_in_files_nextstrain import ParseNextStrainFiles
 
 class CollectExtraDatasetData(object):
     '''
@@ -50,6 +52,9 @@ class CollectExtraDatasetData(object):
         
         dataset.is_processed = False
         dataset.save()
+        
+        ### set user globally
+        self.user = user
 
         ## need to add a delay for the test in command line
         if (settings.RUN_TEST_IN_COMMAND_LINE): time.sleep(4)
@@ -398,7 +403,7 @@ class CollectExtraDatasetData(object):
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
             reference = dataset.get_first_reference()
-            if( (reference is None) or (reference == "") ):
+            if reference is None or reference == "":
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 with open(out_file_file_system, 'w') as handle_write: 
                     handle_write.write("No Reference was found. The generic build needs at least one reference")                
@@ -430,6 +435,7 @@ class CollectExtraDatasetData(object):
         id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude
         :param type_list
         2) sample list, used to upload in the tree
+        "onset date" is the date
         
         """
         
@@ -509,7 +515,7 @@ class CollectExtraDatasetData(object):
             
             ### save metadata
             n_count = data_columns.save_rows(csv_writer)
-                       
+
         if (n_count == 0):
             os.unlink(out_file)
             return None
@@ -567,7 +573,6 @@ class CollectExtraDatasetData(object):
 
                 ## test if already processed
                 if dataset_consensus.project_sample.project.pk in dt_out_id_project:
-
                     row = dt_out_id_project[dataset_consensus.project_sample.project.pk].get(dataset_consensus.project_sample.sample.name, None)
 
                     if not row is None:
@@ -606,12 +611,23 @@ class CollectExtraDatasetData(object):
                             consensus_length)
         
 
-        ## get reference file (if it exists)                
+        ## get reference file (if it exists)
         reference_tsv = os.path.join(getattr(settings, "STATIC_ROOT", None), SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE, build, "data", "references_metadata.tsv")
 
         if not os.path.exists(reference_tsv):
             reference_tsv = None
     
+        ## read last metadata nextstrain file, can exist from external upload
+        upload_metadata_file = UploadFiles.objects.filter(owner__id=self.user.id, is_deleted=False,\
+            type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata, is_valid=True,
+            dataset=dataset).order_by('-creation_date').first()
+        
+        parse_in_files = ParseNextStrainFiles()
+        if not upload_metadata_file is None:
+            b_test_char_encoding = True
+            parse_in_files.parse_nextstrain_files(upload_metadata_file.get_path_to_file(TypePath.MEDIA_ROOT), None, b_test_char_encoding,\
+                                    ParseNextStrainFiles.STATE_READ_metadata_dont_detect_errors_and_chech_nexttrain)
+        
         ## save file
         out_file = self.utils.get_temp_file('dataset_out', FileExtensions.FILE_CSV if\
                     column_separator == Constants.SEPARATOR_COMMA else FileExtensions.FILE_TSV)
@@ -621,13 +637,17 @@ class CollectExtraDatasetData(object):
                         quoting=csv.QUOTE_MINIMAL if column_separator == Constants.SEPARATOR_COMMA else csv.QUOTE_ALL)
             
             ### save metadata
-            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv)
-                       
+            n_count = data_columns.save_rows_nextstrain(csv_writer, reference_tsv, parse_in_files)
+
         if (n_count == 0):
             os.unlink(out_file)
             return None
+        
+        ### update the metadata file status, only process the last one
+        if not upload_metadata_file is None:
+            upload_metadata_file.is_processed = True
+            upload_metadata_file.save()
         return out_file
-
 
 
     def zip_several_files(self, dataset):
@@ -647,4 +667,5 @@ class CollectExtraDatasetData(object):
                 dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped))
         else:
             self.utils.remove_file(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_all_files_zipped))
+
 

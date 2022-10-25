@@ -5,7 +5,7 @@ import os
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
-from managing_files.models import ProjectSample, Reference, MetaKey, user_directory_path
+from managing_files.models import ProjectSample, Reference, user_directory_path
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from constants.constants import Constants, TypePath, FileExtensions
 # Create your models here.
@@ -295,6 +295,17 @@ class DatasetConsensus(models.Model):
         if not self.project_sample is None: return self.project_sample.project.name
         return ""
         
+class MetaKey(models.Model):
+    """
+    Has meta tags to put values, for example, quality in the files, or samples
+    """
+    name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name', ]
+
 
 class UploadFiles(models.Model):
     """
@@ -328,6 +339,9 @@ class UploadFiles(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='dataset_upload_metadata_file', blank=True, null=True, on_delete=models.CASCADE)
     description = models.TextField(default="")                ## has a json result.ProcessResults instance with errors or successes
     
+    ## constants
+    constants = Constants()
+    
     class Meta:
         ordering = ['-creation_date']
 
@@ -353,20 +367,9 @@ class UploadFiles(models.Model):
         if (os.path.exists(out_file)):
             return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_path_to_file(\
                         TypePath.MEDIA_URL), os.path.basename(self.get_path_to_file(TypePath.MEDIA_ROOT)),
-                        self.constants.short_name(self.name, Constants.SHORT_NAME_LENGTH)))
+                        self.constants.short_name(self.file_name, Constants.SHORT_NAME_LENGTH)))
         return 'File not available.'
 
-class MetaKey(models.Model):
-    """
-    Has meta tags to put values, for example, quality in the files, or samples
-    """
-    name = models.CharField(max_length=200, db_index=True, blank=True, null=True)
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        ordering = ['name', ]
-        
 class MetaKeyDataset(models.Model):
     """
     Relation ManyToMany in 

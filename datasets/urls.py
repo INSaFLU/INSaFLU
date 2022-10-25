@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'(?P<pk>\d+)/show_dataset_settings$', views.DatasetsSettingsView.as_view(), name='dataset-settings'),
 
     url(r'(?P<pk>\d+)/dataset_update_metadata$', views.UpdateMetadataDataset.as_view(), name='dataset-update-metadata'),     ## upload new matadata to replace the exist
-    url(r'(?P<pk>\d+)/dataset_update_metadata_file$', views.AddSingleMetadataDatasetFile.as_view(), name='dataset-add-single-csv-file-metadata'),     ## upload new matadata to replace the exist
+    url(r'(?P<pk>\d+)/dataset_update_metadata_file$', views.AddSingleMetadataDatasetFile.as_view(), name='dataset-add-single-file-metadata'),     ## upload new matadata to replace the exist
     
     url(r'^ajax/remove_dataset$', ajax_views.remove_dataset, name='remove_dataset'),            ## remove a dataset
     url(r'^ajax/add_dataset_name$', ajax_views.add_dataset_name, name='add_dataset_name'),      ## add a dataset 

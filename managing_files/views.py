@@ -589,6 +589,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			pass
 
 		utils = Utils()
+		software = Software()
 		path_name = form.cleaned_data['path_name']
 
 		## create a genbank file
@@ -620,6 +621,7 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 													TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
 			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
+			software.dos_2_unix(sz_file_to)
 			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
 			upload_files.save()
@@ -675,6 +677,7 @@ class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMess
 			pass
 
 		utils = Utils()
+		software = Software()
 		path_name = form.cleaned_data['path_name']
 
 		## create a genbank file
@@ -706,6 +709,7 @@ class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMess
 													TypeFile.TYPE_FILE_sample_file_metadata), upload_files.file_name)
 			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
+			software.dos_2_unix(sz_file_to)
 			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_sample_file_metadata), ntpath.basename(sz_file_to))
 			upload_files.save()

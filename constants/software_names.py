@@ -347,22 +347,23 @@ class SoftwareNames(object):
 	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
 	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
 	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")	
+	
+	### Several types of builds for NEXTSTRAIN
 	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
 	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
+	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
 
 	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
 	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
 	SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
 	SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
 
-	SOFTWARE_NEXTSTRAIN_BUILDS_flu = [ 
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
 		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
 		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
 		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
 		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y
 	]
-
-	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
 
 	SOFTWARE_NEXTSTRAIN_BUILDS = [ 
 		SOFTWARE_NEXTSTRAIN_BUILDS_generic, 

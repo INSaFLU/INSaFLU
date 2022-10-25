@@ -1,0 +1,10 @@
+strain	date	virus	region	gisaid_epi_isl	genbank_accession	length	segment	sex	age	host	vaccine status	week	latitude	longitude	type-subtype	putative mixed-infection	Lineage (Pangolin)	classification	Lineage Pangolin	Scorpio Pangolin
+SARS_CoV_2_Wuhan_Hu_1_MN908947	2019-12-26	ncov	Asia	EPI_ISL_402125	MN908947	29903	genome	?	?	?	?	?	?	?	?	?	?	?	?	?
+to_4	2019-12-26	ncov	Asia	EPI_ISL_406798	LR757998	29866	genome	?	?	?	?	?	?	?	?	?	?	?	?	?
+ERR4082026_covid_minion	2022-06-20	ncov	Europe	?	?	29903	genome	?	?	?	?	?	?	?	Not assigned	No	B.1.1	?	?	?
+ERR4082025_covid_minion	2022-06-20	ncov	Europe	?	?	29905	genome	?	?	?	?	?	?	?	Not assigned	No	B.1	?	?	?
+ERR4569681	2022-06-20	ncov	Europe	?	?	29910	genome	?	?	?	?	?	?	?	Not assigned	No	B.1.1.301	?	?	?
+test_covid_4082026	20-05-2022	ncov	Europe	?	?	29903	genome	?	?	?	?	?	?	?	?	NA (not applicable)	?	NA (not applicable)	B.1.1	?
+ERR4082027_covid_minion	2022-02-20	ncov	Europe	?	?	2d903	genome	?	?	?	?	?	?	?	?	NA (not applicable)	?	Not assigned	B.1.1	?
+ERR4082026_covid_minion_1	2022-06-20	ncov	Europe	?	?	29903	genome	?	s	?	?	?	?	?	?	NA (not applicable)	?	Not assigned	B.1.1	?
+ERR4082025_covid_minion_1	2022-06-20	ncov	Europe	?	?	29903	genome	?	4	?	?	?	?	?	?	NA (not applicable)	?	Not assigned	B.1.93	?

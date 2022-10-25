@@ -680,6 +680,10 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			consensus.consensus_fasta_name = utils.clean_name(ntpath.basename(consensus_fasta.name))
 			consensus.save()
 	
+			## has the names thar need to pass, if empty pass all
+			vect_names_to_upload = self.request.session[Constants.SEQUENCES_TO_PASS].split(',') if \
+				len(self.request.session[Constants.SEQUENCES_TO_PASS]) > 0 else []
+			
 			## clean file
 			original_file_name = os.path.join(settings.MEDIA_ROOT, consensus.consensus_fasta.name)
 			software.dos_2_unix(original_file_name)
@@ -691,8 +695,17 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			vect_fail, vect_pass = [], []
 			with open(os.path.join(settings.MEDIA_ROOT, consensus.consensus_fasta.name)) as handle_in:
 				for record in SeqIO.parse(handle_in, "fasta"):
+					
+					## name
+					seq_name = "{}_{}".format(name, record.id) if len(name) > 0 else record.id
+					
+					## check the select ones
+					if (len(vect_names_to_upload)) > 0 and not record.id in vect_names_to_upload:
+						vect_fail.append(seq_name)
+						continue
+					
+					## try to upload
 					try:
-						seq_name = "{}_{}".format(name, record.id) if len(name) > 0 else record.id
 						Consensus.objects.get(name__iexact=seq_name, owner=self.request.user, is_obsolete=False, is_deleted=False)
 						vect_fail.append(seq_name)	### seq fail
 					except Consensus.DoesNotExist:
@@ -720,7 +733,7 @@ class UploadNewConsensusView(LoginRequiredMixin, FormValidMessageMixin, generic.
 			
 			utils.remove_file(original_file_name)
 			message = "Consensus '" + "', '".join(vect_pass) + "' were created successfully."
-			if len(vect_fail) > 0: message += " Not uploaded consensus '" + "', '".join(vect_fail) + "'"
+			if len(vect_fail) > 0: message += " Not uploaded consensus '" + "', '".join(vect_fail) + "'."
 			messages.success(self.request, message, fail_silently=True)
 			return super(UploadNewConsensusView, self).form_valid(form)
 		else:

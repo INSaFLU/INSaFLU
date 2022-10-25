@@ -135,13 +135,12 @@ class ParseNextStrainFiles(object):
 		f.seek(0)
 		reader = csv.reader(f, delimiter=delimiter)
 		header = None
-		lst_header = []
-		(count_row, count_column) = (1, 1)
+		count_row = 1
 		for row in reader:
-			if (header == None):
+			if (header is None):
 				(header, dict_repeated) = data_columns.get_type_header_nextstrain_and_check_repeated(row)
 
-				## test repetion in header				
+				## test repetition in header				
 				if (not header is None):
 					self.vect_header = row
 					self.dict_header = dict(zip((row), range(len(row))))
@@ -150,7 +149,7 @@ class ParseNextStrainFiles(object):
 											format(repeated_column, count_row))))
 
 			elif (not header is None): ## line with data
-				self.process_row_metadata(row, count_row, lst_header, user, read_state)
+				self.process_row_metadata(row, count_row, self.vect_header, user, read_state)
 			count_row += 1
 		if (header is None):
 			self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Header not found in the file. Please, check the names in the header, must be equal and have the same order of the template file.")))

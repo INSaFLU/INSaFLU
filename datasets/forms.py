@@ -149,6 +149,8 @@ class ConsensusForm(forms.ModelForm):
 		name = self.cleaned_data.get('name', '').strip()
 		vect_names_to_upload = self.cleaned_data.get('display_name', '').strip().split(',') if \
 			len(self.cleaned_data.get('display_name', '').strip()) > 0 else []
+		dict_names = dict(zip(vect_names_to_upload, [0] * len(vect_names_to_upload)))
+		
 		# if (len(name) == 0):
 		#	 self.add_error('name', "Error: You must give a unique name.")
 		#	 return cleaned_data
@@ -178,6 +180,7 @@ class ConsensusForm(forms.ModelForm):
 		try:
 			number_locus = self.utils.is_fasta(reference_fasta_temp_file_name.name)
 			self.request.session[Constants.NUMBER_LOCUS_FASTA_FILE] = number_locus
+			self.request.session[Constants.SEQUENCES_TO_PASS] = ""
 			
 			## test the max numbers
 			if (number_locus > Constants.MAX_SEQUENCES_FROM_CONTIGS_FASTA):
@@ -202,10 +205,11 @@ class ConsensusForm(forms.ModelForm):
 				
 			### check if there all seq names are present in the database yet
 			b_pass = False
-			vect_error, vect_fail_seqs = [], []
+			vect_error, vect_fail_seqs, vect_pass_seqs = [], [], []
 			with open(reference_fasta_temp_file_name.name) as handle_in:
 				for record in SeqIO.parse(handle_in, "fasta"):
 					## only these ones can get in
+					if record.id in dict_names: dict_names[record.id] = 1
 					if (len(vect_names_to_upload)) > 0 and not record.id in vect_names_to_upload:
 						vect_fail_seqs.append(record.id)
 						continue
@@ -216,16 +220,26 @@ class ConsensusForm(forms.ModelForm):
 						Consensus.objects.get(name__iexact=seq_name, owner=self.request.user, is_obsolete=False, is_deleted=False)
 						vect_error.append("Seq. name: '" + seq_name +"' already exist in database.")
 					except Consensus.DoesNotExist:
+						vect_pass_seqs.append(record.id)
 						b_pass = True
-						break
 
 			## if none of them pass throw an error
 			if not b_pass: 
 				some_error_in_files = True
-				if len(vect_names_to_upload) > 0 and len(vect_fail_seqs) == len(vect_names_to_upload):
-					self.add_error('display_name', "None of these names match to the sequences names")
+				if len(vect_names_to_upload) > 0 and len(vect_pass_seqs) == 0:
+					self.add_error('display_name', "None of these names '{}' match to the sequences names".format(
+						"', '".join(vect_names_to_upload)))
 				for message in vect_error: self.add_error('consensus_fasta', message)
-			
+			else:
+				## if empty load all
+				self.request.session[Constants.SEQUENCES_TO_PASS] = ",".join(vect_pass_seqs)
+				
+			### some sequences names suggested are not present in the file
+			vect_fail_seqs = [key for key in dict_names if dict_names[key] == 0]
+			if len(vect_fail_seqs) > 0:
+				self.add_error('display_name', "Sequences names '{}' that does not have match in the file".format(
+						", '".join(vect_fail_seqs)))
+				
 		except IOError as e:	## (e.errno, e.strerror)
 			os.unlink(reference_fasta_temp_file_name.name)
 			some_error_in_files = True
@@ -248,9 +262,6 @@ class ConsensusForm(forms.ModelForm):
 		#		 some_error_in_files = True
 		#		 self.add_error('consensus_fasta', e.args[0])
 			
-		## if some errors in the files, fasta or genBank, return
-		if (some_error_in_files): return cleaned_data
-		
 		## remove temp files
 		os.unlink(reference_fasta_temp_file_name.name)
 		return cleaned_data

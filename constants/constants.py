@@ -34,6 +34,7 @@ class Constants(object):
 	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
+	SEQUENCES_TO_PASS = "sequences_to_pass"
 	
 	## https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 	## translate table number

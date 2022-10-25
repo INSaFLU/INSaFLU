@@ -142,7 +142,6 @@ class DefaultSoftware(object):
             ),
             user,
         )
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
@@ -160,6 +159,26 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
         )
@@ -510,6 +529,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bwa_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_BWA_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_kraken2_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KRAKEN2_name,
@@ -840,6 +871,16 @@ class DefaultSoftware(object):
             )
             return self.get_kraken2_parameters(user, technology_name)
 
+        if software_name == SoftwareNames.SOFTWARE_BWA_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_BWA_name,
+                self.default_parameters.get_bwa_default(
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
+                ),
+                user,
+            )
+            return self.get_bwa_parameters(user, technology_name)
+
         if software_name == SoftwareNames.SOFTWARE_DIAMOND_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_DIAMOND_name,
@@ -922,16 +963,6 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_spades_parameters(user, technology_name)
-
-        # if software_name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
-        #    self.test_default_db(
-        #        SoftwareNames.SOFTWARE_SNIPPY_PI_name,
-        #        self.default_parameters.get_snippy_pi_default(
-        #            user, Software.TYPE_OF_USE_televir_global, technology_name
-        #        ),
-        #        user,
-        #    )
-        #    return self.get_snippy_pi_parameters(user, technology_name)
 
     def get_all_software(self):
         """

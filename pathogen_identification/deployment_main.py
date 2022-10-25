@@ -67,6 +67,8 @@ class PathogenIdentification_deployment:
         self.pk = pk
         self.technology = technology
         self.install_registry = Deployment_Params
+        self.parameter_set = ParameterSet.objects.get(pk=pk)
+        self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
     def input_read_project_path(self, filepath):
         if not os.path.isfile(filepath):
@@ -103,7 +105,7 @@ class PathogenIdentification_deployment:
         utils = Utils_Manager(user)
         print(self.technology)
 
-        all_paths = utils.get_all_technology_pipelines(self.technology)
+        all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         leaf_index = self.pipeline_index
 
@@ -231,6 +233,9 @@ class Run_Main_from_Leaf:
             odir, self.deployment_directory_structure
         )
 
+        self.parameter_set = self.register_parameter_set()
+        self.pk = self.parameter_set.pk
+
         self.container = PathogenIdentification_deployment(
             pipeline_index=pipeline_leaf.index,
             sample=input_data.name,
@@ -240,14 +245,22 @@ class Run_Main_from_Leaf:
             deployment_root_dir=odir,
             technology=self.technology,
             dir_branch=self.deployment_directory_structure,
+            pk=self.pk,
         )
 
-        self.parameter_set = self.register_parameter_set()
-
-        self.pk = self.parameter_set.pk
+        self.is_available = self.check_availability()
 
     def get_status(self):
         return self.parameter_set.status
+
+    def check_finished(self):
+        return self.parameter_set.status == ParameterSet.STATUS_FINISHED
+
+    def check_availability(self):
+        return self.parameter_set.status not in [
+            ParameterSet.STATUS_RUNNING,
+            ParameterSet.STATUS_FINISHED,
+        ]
 
     def get_in_line(self):
 

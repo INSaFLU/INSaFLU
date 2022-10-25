@@ -8,6 +8,10 @@ import os
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
+from pathogen_identification.utilities.utilities_pipeline import (
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -49,7 +53,13 @@ class DefaultParameters(object):
         """
         Constructor
         """
-        pass
+        televir_util = Parameter_DB_Utility()
+        software_list = televir_util.get_software_list()
+
+        self.televir_db_manager = Utility_Pipeline_Manager()
+
+        self.televir_db_manager.set_software_list(software_list)
+        self.televir_db_manager.get_software_db_dict()
 
     def get_software_parameters_version(self, software_name):
         """
@@ -424,12 +434,12 @@ class DefaultParameters(object):
             return False
 
         self.set_software_to_run_by_software(
-            software, project, project_sample, sample, is_to_run
+            software, project, None, project_sample, sample, is_to_run=is_to_run
         )
         return True
 
     def set_software_to_run_by_software(
-        self, software, project, project_sample, sample, is_to_run=None
+        self, software, project, televir_project, project_sample, sample, is_to_run=None
     ):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
@@ -441,12 +451,16 @@ class DefaultParameters(object):
                 software=software,
                 project=project,
                 project_sample=project_sample,
+                televir_project=televir_project,
                 sample=sample,
             )
 
             ## if None need to take the value from database
             if is_to_run is None:
-                if software.type_of_use == Software.TYPE_OF_USE_global:
+                if software.type_of_use in [
+                    Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_televir_global,
+                ]:
                     is_to_run = not software.is_to_run
                 elif len(parameters) > 0:
                     is_to_run = not parameters[0].is_to_run
@@ -455,7 +469,10 @@ class DefaultParameters(object):
 
             ## if the software can not be change return False
             if not software.can_be_on_off_in_pipeline:
-                if software.type_of_use == Software.TYPE_OF_USE_global:
+                if software.type_of_use in [
+                    Software.TYPE_OF_USE_global,
+                    Software.TYPE_OF_USE_televir_global,
+                ]:
                     return software.is_to_run
                 elif len(parameters) > 0:
                     return parameters[0].is_to_run
@@ -463,7 +480,10 @@ class DefaultParameters(object):
 
             ### if it is Global it is software that is mandatory
             ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
-            if software.type_of_use == Software.TYPE_OF_USE_global:
+            if software.type_of_use in [
+                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_televir_global,
+            ]:
                 software.is_to_run = is_to_run
                 software.save()
 
@@ -471,6 +491,7 @@ class DefaultParameters(object):
             parameters = Parameter.objects.filter(
                 software=software,
                 project=project,
+                televir_project=televir_project,
                 project_sample=project_sample,
                 sample=sample,
             )
@@ -479,6 +500,7 @@ class DefaultParameters(object):
             for parameter in parameters:
                 parameter.is_to_run = is_to_run
                 parameter.save()
+
             return is_to_run
 
     def get_vect_parameters(self, software):
@@ -572,6 +594,13 @@ class DefaultParameters(object):
         ####
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            )
+
+        elif software.name == SoftwareNames.SOFTWARE_BWA_name:
+            return self.get_bwa_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -1614,7 +1643,7 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_CENTRIFUGE_name
-        # software.name_extended = SoftwareNames.SOFTWARE_CENTRIFUGE_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_CENTRIFUGE_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_CENTRIFUGE_VERSION
@@ -1673,19 +1702,6 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_centrifuge_default_read_classification(
-        self, user, type_of_use, technology_name, sample=None
-    ):
-        vect_parameters = self.get_centrifuge_default(
-            user,
-            type_of_use,
-            technology_name,
-            sample=sample,
-            # pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
-        )
-        # print("returning vevct_parameters")
-        return vect_parameters
-
     def get_kraken2_default(
         self, user, type_of_use, technology_name, sample=None, pipeline_step=""
     ):
@@ -1698,7 +1714,7 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKEN2_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KRAKEN2_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKEN2_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_KRAKEN2_VERSION
@@ -1765,7 +1781,7 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KAIJU_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KAIJU_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KAIJU_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_KAIJU_VERSION
@@ -1855,7 +1871,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_DIAMOND_name
-        # software.name_extended = SoftwareNames.SOFTWARE_DIAMOND_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_DIAMOND_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_DIAMOND_VERSION
@@ -1960,7 +1976,7 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKENUNIQ_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_KRAKENUNIQ_VERSION
@@ -2021,13 +2037,62 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+    def get_bwa_default(self, user, type_of_use, technology_name, sample=None):
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_BWA_name
+        software.name_extended = SoftwareNames.SOFTWARE_BWA_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_BWA_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True
+
+        ###  small description of software
+        software.help_text = ""
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_host_depletion
+        )
+
+        software.owner = user
+
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name, ["None"]
+        )
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
     def get_blast_default(self, user, type_of_use, technology_name, sample=None):
         """
         blast default
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BLAST_name
-        # software.name_extended = SoftwareNames.SOFTWARE_BLAST_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_BLAST_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_BLAST_VERSION
@@ -2096,7 +2161,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_VERSION
@@ -2179,7 +2244,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_DESAMBA_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_DESAMBA_VERSION
@@ -2227,7 +2292,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SPAdes_name
-        # software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_SPAdes_VERSION
@@ -2308,6 +2373,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_RAVEN_name
+        software.name_extended = SoftwareNames.SOFTWARE_KRAKENUNIQ_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_RAVEN_VERSION
@@ -2406,6 +2472,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SNIPPY_PI_name
+        software.name_extended = SoftwareNames.SOFTWARE_SNIPPY_PI_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_SNIPPY_VERSION
@@ -2472,6 +2539,7 @@ class DefaultParameters(object):
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name
+        software.name_extended = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name_extended
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_VERSION

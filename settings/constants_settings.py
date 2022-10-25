@@ -34,6 +34,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_alignment,
         PIPELINE_NAME_intra_host_minor_variant_detection,
         PIPELINE_NAME_viral_enrichment,
+        PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
         PIPELINE_NAME_assembly,

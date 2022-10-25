@@ -279,6 +279,19 @@ class Read_class:
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
 
+    def get_read_names_fastq(self, filepath):
+        """
+        Get read names from fastq file.
+        """
+
+        read_names = []
+        with gzip.open(filepath, "rt") as f:
+            for line in f:
+                if line.startswith("@"):
+                    read_names.append(line.split()[0][1:])
+
+        return read_names
+
     def determine_read_name(self, filepath):
 
         if not self.exists:
@@ -354,8 +367,11 @@ class Read_class:
         filter reads and aset current status to depleted.
         """
 
+        current_reads= self.get_read_names_fastq(self.current)
+        read_list_to_keep= list(set(current_reads) - set(read_list))
+
         if len(read_list) > 0:
-            self.read_filter_move(self.current, read_list, self.depleted)
+            self.read_filter_move(self.current, read_list_to_keep, self.depleted)
             self.is_depleted()
 
     def is_clean(self):

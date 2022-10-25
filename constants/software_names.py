@@ -445,16 +445,32 @@ class SoftwareNames(object):
         "host_depletion/hostdep_env/bin/centrifuge",
     )
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
+    SOFTWARE_CENTRIFUGE_name_extended = "Centrifuge"
 
     SOFTWARE_CENTRIFUGE_VERSION = "1.0.0"
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
+
+    ### BWA
+    SOFTWARE_BWA = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/preproc/bin/bwa",
+    )
+
+    SOFTWARE_BWA_name = "BWA"
+    SOFTWARE_BWA_name_extended = "BWA"
+    SOFTWARE_BWA_VERSION = "0.7.17"
+    SOFTWARE_BWA_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    SOFTWARE_BWA_PARAMETERS_TWO_SEQUENCES = (
+        "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
+    )
 
     ### KRAKEN2
     SOFTWARE_KRAKEN2 = os.path.join(
         settings.DIR_SOFTWARE, "kraken2/kraken_env/bin/kraken2"
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
+    SOFTWARE_KRAKEN2_name_extended = "Kraken2"
     SOFTWARE_KRAKEN2_VERSION = "2.0.5"
     SOFTWARE_KRAKEN2_parameters = "--threads 4 --gzip-compressed  --confidence .5"
     SOFTWARE_KRAKEN2_PARAMETERS_TWO_SEQUENCES = (
@@ -466,6 +482,7 @@ class SoftwareNames(object):
         "host_depletion/hostdep_env/bin/krakenuniq",
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
+    SOFTWARE_KRAKENUNIQ_name_extended = "Krakenuniq"
     SOFTWARE_KRAKENUNIQ_VERSION = "1.0.0"
     SOFTWARE_KRAKENUNIQ_parameters = (
         "--threads 4 --gzip-compressed --fastq-input --hll-precision 12"
@@ -477,6 +494,7 @@ class SoftwareNames(object):
     ### FAST VIROME EXPLORER
 
     SOFTWARE_FASTVIROMEEXPLORER_name = "FastViromeExplorer"
+    SOFTWARE_FASTVIROMEEXPLORER_name_extended = "FastViromeExplorer"
     SOFTWARE_FASTVIROMEEXPLORER = os.path.join(
         settings.DIR_SOFTWARE,
         "FastViromeExplorer/FastViromeExplorer/bin/FastViromeExplorer",
@@ -486,6 +504,7 @@ class SoftwareNames(object):
 
     ### DIAMOND
     SOFTWARE_DIAMOND_name = "Diamond"
+    SOFTWARE_DIAMOND_name_extended = "Diamond"
     SOFTWARE_DIAMOND = os.path.join(
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/diamond",
@@ -497,6 +516,7 @@ class SoftwareNames(object):
 
     ### BLASTN
     SOFTWARE_BLAST_name = "Blastn"
+    SOFTWARE_BLAST_name_extended = "Blastn"
     SOFTWARE_BLAST = os.path.join(
         settings.DIR_SOFTWARE, "hostDepletion/hostdep_env/bin/blast"
     )
@@ -509,6 +529,7 @@ class SoftwareNames(object):
         "hostDepletion/hostdep_env/bin/kaiju",
     )
     SOFTWARE_KAIJU_name = "Kaiju"
+    SOFTWARE_KAIJU_name_extended = "Kaiju"
     SOFTWARE_KAIJU_VERSION = "2.0.1"
     SOFTWARE_KAIJU_parameters = (
         "-t 4 -z -f kaiju_db/nodes.dmp -i kaiju_db/kaiju_db.fmi -o -v -x -u -v"
@@ -521,11 +542,13 @@ class SoftwareNames(object):
         "classm_lc/deSAMBA/bin/deSAMBA",
     )
     SOFTWARE_DESAMBA_name = "Desamba"
+    SOFTWARE_DESAMBA_name_extended = "deSAMBA"
     SOFTWARE_DESAMBA_VERSION = "1.0.0"
     SOFTWARE_DESAMBA_parameters = ""
     ### RAVEN
 
     SOFTWARE_RAVEN_name = "Raven"
+    SOFTWARE_RAVEN_name_extended = "Raven"
     SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
     SOFTWARE_RAVEN_VERSION = "1.0.0"
     SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
@@ -533,6 +556,7 @@ class SoftwareNames(object):
     ### SNIPPY
 
     SOFTWARE_SNIPPY_PI_name = "Snippy"
+    SOFTWARE_SNIPPY_PI_name_extended = "Snippy"
     SOFTWARE_SNIPPY_PI = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/snippy",
@@ -543,6 +567,7 @@ class SoftwareNames(object):
     ### MINIMAP2 REMAP
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2"
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",

@@ -63,13 +63,8 @@ class Projects(models.Model):
 
 
 class SoftwareTree(models.Model):
-    global_index = models.CharField(
-        max_length=200,
-        db_index=True,
-        blank=True,
-        null=True,
-        verbose_name="Software name",
-    )
+    global_index = models.IntegerField(default=0)
+
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     technology = models.CharField(
         max_length=100,

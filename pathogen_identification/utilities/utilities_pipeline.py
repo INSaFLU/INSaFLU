@@ -6,12 +6,15 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
-from pathogen_identification.constants_settings import ConstantsSettings
+from django.db.models import Q
+from pathogen_identification.constants_settings import (
+    ConstantsSettings,
+    Pipeline_Makeup,
+)
 from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
-    Processed,
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
@@ -39,13 +42,17 @@ class PipelineTree:
     nodes: list
     edges: dict
     leaves: list
+    makeup: int
 
-    def __init__(self, technology: str, nodes: list, edges: dict, leaves: list):
+    def __init__(
+        self, technology: str, nodes: list, edges: dict, leaves: list, makeup: int
+    ):
         self.technology = technology
         self.nodes = nodes
         self.edges = edges
         self.leaves = leaves
         self.edge_dict = [(x[0], x[1]) for x in self.edges]
+        self.makeup = makeup
 
     def get_parents_dict(self):
         """
@@ -182,10 +189,11 @@ class Utility_Pipeline_Manager:
     combined_table: pd.DataFrame
     software_dbs_dict: dict
     technology: str
+    new_variable: int
+    pipeline_order: list
+    pipeline_makeup: int
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
 
         self.utility_repository = Utility_Repository(
             db_path=ConstantsSettings.docker_app_directory,
@@ -193,39 +201,55 @@ class Utility_Pipeline_Manager:
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
-
-        self.pipeline_order = ConstantsSettings.PIPELINE_STEP_ORDER
-
         self.binaries = Deployment_Params.BINARIES
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
+        """
+        Input a combined table
+
+        Args:
+
+            combined_table (pd.DataFrame): Combined table with the following columns:
+            - sample_name
+            - sample_id
+            - pipeline_step
+            - software_name
+            - parameter
+            - value
+
+            technology (str): Technology of the pipeline. Default is "ONT"
+        """
         self.technology = technology
-        self.process_combined_table(combined_table)
 
-    def generate_default_software_tree(self):
-
-        self.get_software_db_dict()
-
-        self.generate_software_parameter_dict()
-
-        return self.create_pipe_tree()
-
-    def process_combined_table(self, combined_table):
-        combined_table = combined_table[
-            combined_table.technology.str.contains(self.technology)
-        ]
+        combined_table = self.process_combined_table(combined_table)
+        pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-
-        ####
+        self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
+            pipelines_available
+        )
+        self.pipeline_order = pipe_makeup_manager.get_makeup(self.pipeline_makeup)
 
         self.existing_pipeline_order = [
             x for x in self.pipeline_order if x in pipelines_available
         ]
+
         self.software_name_list = combined_table.software_name.unique().tolist()
+
         self.combined_table = combined_table
 
+    def process_combined_table(self, combined_table):
+        """
+        Process the combined table to make it compatible with the pipeline tree
+        """
+        combined_table = combined_table[
+            combined_table.technology.str.contains(self.technology)
+        ]
+
         def round_parameter_float(row):
+            """
+            Round float parameters to 2 decimals
+            """
             new_param = row.parameter
             if row.type_data == Parameter.PARAMETER_float:
 
@@ -235,11 +259,27 @@ class Utility_Pipeline_Manager:
 
             return new_param
 
-        self.combined_table["parameter"] = self.combined_table.apply(
+        combined_table["parameter"] = combined_table.apply(
             round_parameter_float, axis=1
         )
 
+        return combined_table
+
+    def generate_default_software_tree(self):
+        """
+        Generate a default software tree
+        """
+
+        self.get_software_db_dict()
+
+        self.generate_software_parameter_dict()
+
+        return self.create_pipe_tree()
+
     def check_software_is_installed(self, software_name: str) -> bool:
+        """
+        Check if a software is installed
+        """
         software_lower = software_name.lower()
         if software_lower in self.binaries["software"].keys():
             bin_path = os.path.join(
@@ -271,10 +311,27 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
+        print("Checking software db available")
+        print(
+            software_name,
+            self.utility_repository.check_exists(
+                "software", "name", software_name.lower()
+            ),
+        )
 
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
+
+    def set_software_list(self, software_list):
+
+        self.software_name_list = software_list
+
+    def get_software_list(self):
+
+        self.software_name_list = Software.objects.filter(
+            type_of_use=Software.TYPE_OF_USE_televir_global
+        ).values_list("name", flat=True)
 
     def get_software_db_dict(self):
 
@@ -284,8 +341,6 @@ class Utility_Pipeline_Manager:
             .tolist()
             for software in self.software_name_list
         }
-
-        print(self.software_name_list)
 
     def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
 
@@ -438,6 +493,7 @@ class Utility_Pipeline_Manager:
             nodes=[x[1] for x in node_index],
             edges=edge_dict,
             leaves=leaves,
+            makeup=self.pipeline_makeup,
         )
 
     def generate_explicit_edge_dict(self, pipeline_tree: PipelineTree) -> dict:
@@ -500,13 +556,13 @@ class Parameter_DB_Utility:
         - get and store pipeline trees in tables SoftwareTree and SoftwareTree_node
     """
 
-    def get_technologies_available(self, owner):
+    def get_technologies_available(self):
         """
         Get technologies available for a user
         """
 
         technologies_available = (
-            Software.objects.filter(owner=owner)
+            Software.objects.filter(type_of_use=Software.TYPE_OF_USE_televir_global)
             .values_list("technology__name", flat=True)
             .distinct()
         )
@@ -514,6 +570,18 @@ class Parameter_DB_Utility:
         technologies_available = list(set(technologies_available))
 
         return technologies_available
+
+    def get_software_list(self):
+        """
+        Get software list available for a user
+        """
+        software_list = (
+            Software.objects.filter(type_of_use=Software.TYPE_OF_USE_televir_global)
+            .values_list("name", flat=True)
+            .distinct()
+        )
+        software_list = list(set(software_list))
+        return software_list
 
     @staticmethod
     def expand_parameters_table(combined_table):
@@ -556,13 +624,13 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def get_software_tables_global(self, owner):
+    def get_software_tables_global(self):
         """
         Get software tables for a user
         """
 
         software_available = Software.objects.filter(
-            owner=owner, type_of_use=Software.TYPE_OF_USE_televir_global
+            type_of_use=Software.TYPE_OF_USE_televir_global
         )
 
         parameters_available = Parameter.objects.filter(
@@ -626,9 +694,9 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self, owner: User):
+    def generate_combined_parameters_table(self):
         """"""
-        software_table, parameters_table = self.get_software_tables_global(owner)
+        software_table, parameters_table = self.get_software_tables_global()
 
         return self.merge_software_tables(software_table, parameters_table)
 
@@ -644,7 +712,7 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             print("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables_global(owner)
+            software_table, parameters_table = self.get_software_tables_global()
 
         merged_table = self.merge_software_tables(software_table, parameters_table)
 
@@ -754,6 +822,7 @@ class Parameter_DB_Utility:
             nodes=[x[1] for x in sorted(nodes)],
             edges=edges,
             leaves=leaves,
+            makeup=global_index,
         )
 
     def update_SoftwareTree_nodes(
@@ -793,10 +862,12 @@ class Parameter_DB_Utility:
                 )
                 tree_node.save()
 
-    def update_software_tree(self, tree: PipelineTree, owner: User, global_index: int):
+    def update_software_tree(self, tree: PipelineTree, owner: User):
         """
         Update SoftwareTree table
         """
+        global_index = tree.makeup
+
         try:
             software_tree = SoftwareTree.objects.get(
                 owner=owner, global_index=global_index, technology=tree.technology
@@ -815,9 +886,6 @@ class Parameter_DB_Utility:
             self.update_SoftwareTree_nodes(software_tree, tree)
 
 
-from django.db.models import Q
-
-
 class Utils_Manager:
     """Combines Utility classes to create a manager for the pipeline."""
 
@@ -830,15 +898,13 @@ class Utils_Manager:
 
         ###
         self.parameter_util = Parameter_DB_Utility()
-        self.global_index = ConstantsSettings.USER_TREE_INDEX
+
         self.utility_repository = Utility_Repository(
             db_path=ConstantsSettings.docker_app_directory,
             install_type="docker",
         )
 
-        self.utility_technologies = self.parameter_util.get_technologies_available(
-            owner
-        )
+        self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
 
     def check_runs_to_deploy(self, project: Projects):
@@ -861,32 +927,45 @@ class Utils_Manager:
 
         return False
 
-    def get_all_technology_pipelines(self, technology: str) -> dict:
+    def get_all_technology_pipelines(self, technology: str, tree_makeup: int) -> dict:
+        """
+        Get all pipelines for a technology
+        """
 
-        pipeline_tree = self.generate_software_tree(technology)
+        pipeline_tree = self.generate_software_tree(technology, tree_makeup)
 
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
 
-    def get_software_tree_index(self, technology: Technology):
+    def get_software_tree_index(self, technology: Technology, tree_makeup: int):
+        """
+        Get the software tree index from model
+        """
         return self.parameter_util.get_software_tree_index(
-            self.owner, technology, self.global_index
+            self.owner, technology, tree_makeup
         )
 
-    def generate_software_tree(self, technology):
+    def generate_software_tree(self, technology, tree_makeup: int):
+        """
+        Generate a software tree for a technology and a tree makeup
+        """
 
         if self.parameter_util.check_default_software_tree_exists(
-            self.owner, technology, global_index=self.global_index
+            self.owner, technology, global_index=tree_makeup
         ):
             return self.parameter_util.query_software_default_tree(
-                self.owner, technology, global_index=self.global_index
+                self.owner, technology, global_index=tree_makeup
             )
 
         else:
+            pipeline_setup = Pipeline_Makeup()
+            makeup_steps = pipeline_setup.get_makeup(tree_makeup)
 
-            combined_table = self.parameter_util.generate_combined_parameters_table(
-                self.owner
-            )
+            combined_table = self.parameter_util.generate_combined_parameters_table()
+
+            combined_table = combined_table[
+                combined_table.pipeline_step.isin(makeup_steps)
+            ]
 
             if len(combined_table) == 0:
                 return PipelineTree(
@@ -894,6 +973,7 @@ class Utils_Manager:
                     nodes=[],
                     edges={},
                     leaves=[],
+                    makeup=tree_makeup,
                 )
 
             full_table = self.parameter_util.expand_parameters_table(combined_table)
@@ -902,13 +982,14 @@ class Utils_Manager:
 
             pipeline_tree = self.utility_manager.generate_default_software_tree()
 
-            self.parameter_util.update_software_tree(
-                pipeline_tree, self.owner, global_index=self.global_index
-            )
+            self.parameter_util.update_software_tree(pipeline_tree, self.owner)
 
             return pipeline_tree
 
     def generate_project_tree(self, technology, project: Projects):
+        """
+        Generate a project tree
+        """
 
         combined_table = self.parameter_util.generate_combined_parameters_table_project(
             self.owner, project
@@ -923,6 +1004,14 @@ class Utils_Manager:
         return pipeline_tree
 
     def generate_default_trees(self):
+        """
+        Generate default trees for all technologies and makeups
+        """
         technology_trees = {}
+        pipeline_makeup = Pipeline_Makeup()
         for technology in self.utility_technologies:
-            technology_trees[technology] = self.generate_software_tree(technology)
+            for makeup in pipeline_makeup.get_makeup_list():
+
+                technology_trees[technology] = self.generate_software_tree(
+                    technology, makeup
+                )

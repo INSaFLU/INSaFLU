@@ -1360,11 +1360,14 @@ class Mapping_Instance:
 
     def export_mapping_files(self, destination):
         """move files to media directory"""
-        self.reference.relocate_mapping_files(destination)
 
-        if self.assembly:
+        if self.classification_success is not "none":
+            # self.reference.move_igv_files(destination)
+            self.reference.relocate_mapping_files(destination)
 
-            self.assembly.relocate_mapping_files(destination)
+            if self.assembly:
+
+                self.assembly.relocate_mapping_files(destination)
 
     def generate_full_mapping_report_entry(self):
 
@@ -1650,7 +1653,6 @@ class Mapping_Manager(Tandem_Remap):
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")
         for instance in self.mapped_instances:
-            print(instance.reference.number_of_reads_mapped)
 
             if instance.reference.number_of_reads_mapped > 0:
                 instance.reference.move_igv_files(static_dir)

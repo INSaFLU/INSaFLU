@@ -627,7 +627,7 @@ class Run_Deployment_Methods(RunDetail_main):
 
         self.remap_manager.run_mappings()
         self.remap_manager.move_plots_to_static(self.static_dir_plots)
-        self.remap_manager.move_igv_to_static(self.media_dir_igv)
+        # self.remap_manager.move_igv_to_static(self.media_dir_igv)
         self.remap_manager.export_mapping_files(self.media_dir_igv)
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()

@@ -48,17 +48,18 @@ class Command(BaseCommand):
 
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
+        local_tree = utils.generate_project_tree(technology, project)
+        tree_makeup = local_tree.makeup
+
         print(samples)
 
-        pipeline_tree = utils.generate_software_tree(technology)
-        pipeline_tree_index = utils.get_software_tree_index(technology)
+        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
         print("user pk: ", user.pk)
         print("project pk: ", project.pk)
         print("sample pk: ", samples[0].pk)
         print("pipeline_tree_index: ", pipeline_tree_index)
-
-        local_tree = utils.generate_project_tree(technology, project)
 
         local_paths = local_tree.get_all_graph_paths_explicit()
         print("local paths: ", local_paths.keys())
@@ -110,9 +111,9 @@ class Command(BaseCommand):
                     odir=options["outdir"],
                 )
 
-                run.get_in_line()
-
-                submission_dict[sample].append(run)
+                if run.is_available:
+                    run.get_in_line()
+                    submission_dict[sample].append(run)
 
         for sample, runs in submission_dict.items():
             for run in runs:

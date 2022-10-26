@@ -15,7 +15,7 @@ from utils.utils import Utils
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
 # http://biohpc.blogspot.pt/2016/10/sge-installation-of-son-of-grid-engine.html ## centos 7
-# http://star.mit.edu/cluster/docs/0.93.3/guides/sge.html		### explain who to use SGE
+# http://star.mit.edu/cluster/docs/0.93.3/guides/sge.html        ### explain who to use SGE
 
 # /usr/share/gridengine/scripts/init_cluster
 
@@ -52,10 +52,10 @@ class ProcessSGE(object):
 
     ###########################################
     ###
-    ###		BEGIN main methods
+    ###        BEGIN main methods
     ###
-    ###		IMPORTANT
-    ###			Put qsub in /usr/bin/qsub
+    ###        IMPORTANT
+    ###            Put qsub in /usr/bin/qsub
     ###
 
     def submitte_job(self, file_name):
@@ -155,16 +155,16 @@ class ProcessSGE(object):
         ## other value, keeping running
         ## also returns a vector with jobId already finish
 
-        #	* d(eletion)
-        #	* E(rror)
-        #	* h(old)
-        #	* r(unning)
-        #	* R(estarted)
-        #	* s(uspended),
-        #	* S(uspended)
-        #	* t(ransfering)
-        #	* T(hreshold)
-        #	* w(aiting)
+        #    * d(eletion)
+        #    * E(rror)
+        #    * h(old)
+        #    * r(unning)
+        #    * R(estarted)
+        #    * s(uspended),
+        #    * S(uspended)
+        #    * t(ransfering)
+        #    * T(hreshold)
+        #    * w(aiting)
         """
         tagsSGERunning = ("r", "t")
         tagsSGEWaiting = ("hqw", "qw", "w")
@@ -913,98 +913,130 @@ class ProcessSGE(object):
             elif flags == ProcessControler.FLAG_RUNNING:
                 process_controler.is_running = True
             process_controler.save()
-=======
 
-	##### set collect global files
-	def set_collect_dataset_global_files(self, dataset, user):
-		"""
-		job_name = "job_name_<user_id>_<seq_id>"
-		"""
+    ##### set collect global files
+    def set_collect_dataset_global_files(self, dataset, user):
+        """
+        job_name = "job_name_<user_id>_<seq_id>"
+        """
 
-		# TODO: If dataset is running, do not run again... fail with error... 
+        # TODO: If dataset is running, do not run again... fail with error...
 
-		process_controler = ProcessControler()
-		vect_command = ['python3 {} collect_global_dataset_files --dataset_id {} --user_id {}'.format(\
-				os.path.join(settings.BASE_DIR, 'manage.py'), dataset.pk, user.pk)]
-		self.logger_production.info('Processing: ' + ";".join(vect_command))
-		self.logger_debug.info('Processing: ' + ";".join(vect_command))
-		out_dir = self.utils.get_temp_dir()
-		
-		queue_name = user.profile.queue_name_sge
-		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		
-		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL)
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, [job_name_wait])
-		try:
-			sge_id = self.submitte_job(path_file)
-			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_dataset(dataset), sge_id)
-		except:
-			raise Exception('Fail to submit the job.')
-		return sge_id
+        process_controler = ProcessControler()
+        vect_command = [
+            "python3 {} collect_global_dataset_files --dataset_id {} --user_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        out_dir = self.utils.get_temp_dir()
 
+        queue_name = user.profile.queue_name_sge
+        if queue_name == None:
+            queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
 
-	##### set collect global files
-	def set_collect_dataset_global_files_for_update_metadata(self, dataset, user):
-		"""
-		job_name = "job_name_<user_id>_<seq_id>"
-		only run this task after all second_stage_snippy
-		"""
-		process_controler = ProcessControler()
-		vect_command = ['python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}'.format(\
-				os.path.join(settings.BASE_DIR, 'manage.py'), dataset.pk, user.pk)]
-		self.logger_production.info('Processing: ' + ";".join(vect_command))
-		self.logger_debug.info('Processing: ' + ";".join(vect_command))
-		out_dir = self.utils.get_temp_dir()
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_dataset(dataset), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
 
+    ##### set collect global files
+    def set_collect_dataset_global_files_for_update_metadata(self, dataset, user):
+        """
+        job_name = "job_name_<user_id>_<seq_id>"
+        only run this task after all second_stage_snippy
+        """
+        process_controler = ProcessControler()
+        vect_command = [
+            "python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        out_dir = self.utils.get_temp_dir()
 
-	##### set collect global files
-	def set_collect_dataset_global_files(self, dataset, user):
-		"""
-		job_name = "job_name_<user_id>_<seq_id>"
-		"""
+    ##### set collect global files
+    def set_collect_dataset_global_files(self, dataset, user):
+        """
+        job_name = "job_name_<user_id>_<seq_id>"
+        """
 
-		# TODO: If dataset is running, do not run again... fail with error... 
+        # TODO: If dataset is running, do not run again... fail with error...
 
-		process_controler = ProcessControler()
-		vect_command = ['python3 {} collect_global_dataset_files --dataset_id {} --user_id {}'.format(\
-				os.path.join(settings.BASE_DIR, 'manage.py'), dataset.pk, user.pk)]
-		self.logger_production.info('Processing: ' + ";".join(vect_command))
-		self.logger_debug.info('Processing: ' + ";".join(vect_command))
-		out_dir = self.utils.get_temp_dir()
-		
-		queue_name = user.profile.queue_name_sge
-		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		
-		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL)
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, [job_name_wait])
-		try:
-			sge_id = self.submitte_job(path_file)
-			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_dataset(dataset), sge_id)
-		except:
-			raise Exception('Fail to submit the job.')
-		return sge_id
+        process_controler = ProcessControler()
+        vect_command = [
+            "python3 {} collect_global_dataset_files --dataset_id {} --user_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        out_dir = self.utils.get_temp_dir()
 
+        queue_name = user.profile.queue_name_sge
+        if queue_name == None:
+            queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
 
-	##### set collect global files
-	def set_collect_dataset_global_files_for_update_metadata(self, dataset, user):
-		"""
-		job_name = "job_name_<user_id>_<seq_id>"
-		only run this task after all second_stage_snippy
-		"""
-		process_controler = ProcessControler()
-		vect_command = ['python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}'.format(\
-				os.path.join(settings.BASE_DIR, 'manage.py'), dataset.pk, user.pk)]
-		self.logger_production.info('Processing: ' + ";".join(vect_command))
-		self.logger_debug.info('Processing: ' + ";".join(vect_command))
-		out_dir = self.utils.get_temp_dir()
-		
-		queue_name = user.profile.queue_name_sge
-		if (queue_name == None): queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
-		(job_name_wait, job_name) = user.profile.get_name_sge_seq(Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL)
-		path_file = self.set_script_run_sge(out_dir, queue_name, vect_command, job_name, True, [job_name_wait])
-		try:
-			sge_id = self.submitte_job(path_file)
-			if (sge_id != None): self.set_process_controlers(user, process_controler.get_name_dataset(dataset), sge_id)
-		except:
-			raise Exception('Fail to submit the job.')
-		return sge_id
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_dataset(dataset), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
+    ##### set collect global files
+    def set_collect_dataset_global_files_for_update_metadata(self, dataset, user):
+        """
+        job_name = "job_name_<user_id>_<seq_id>"
+        only run this task after all second_stage_snippy
+        """
+        process_controler = ProcessControler()
+        vect_command = [
+            "python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"), dataset.pk, user.pk
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        out_dir = self.utils.get_temp_dir()
+
+        queue_name = user.profile.queue_name_sge
+        if queue_name == None:
+            queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_datasets, Profile.SGE_GLOBAL
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, True, [job_name_wait]
+        )
+        try:
+            sge_id = self.submitte_job(path_file)
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_dataset(dataset), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id

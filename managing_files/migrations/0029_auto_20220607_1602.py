@@ -22,9 +22,5 @@ class Migration(migrations.Migration):
             name='type_subtype',
             field=models.CharField(blank=True, max_length=150, null=True),
         ),
-		migrations.AddField(
-            model_name='reference',
-            name='specie_tag',
-            field=models.CharField(default='', max_length=20),
-        ),
+
     ]

@@ -59,7 +59,7 @@ class Software(models.Model):
     TYPE_OF_USE_qc = 4  ### Used for  quality control
     TYPE_OF_USE_televir_global = 5  ### used for pathogen_identification.
     TYPE_OF_USE_televir_project = 6  ### Used for  pathogen_identification_projects.
-	TYPE_OF_USE_dataset = 7				### Used in a particular dataset
+    TYPE_OF_USE_dataset = 7  ### Used in a particular dataset
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)
@@ -197,8 +197,14 @@ class Parameter(models.Model):
         blank=True,
         null=True,
     )
-	### this allow to have software parameters in datasets
-	dataset = models.ForeignKey(Dataset, related_name='parameter', on_delete=models.PROTECT, blank=True, null=True)
+    ### this allow to have software parameters in datasets
+    dataset = models.ForeignKey(
+        Dataset,
+        related_name="parameter",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
 
     union_char = models.CharField(
         max_length=10, default=""

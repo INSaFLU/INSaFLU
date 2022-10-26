@@ -824,9 +824,9 @@ def turn_on_off_software(request):
 
                                 return JsonResponse(data)
 
-                if not project_id is None:  ##	project
+                if not project_id is None:  ##    project
                     project = Project.objects.get(pk=project_id)
-                elif not project_sample_id is None:  ##	project sample
+                elif not project_sample_id is None:  ##    project sample
                     project_sample = ProjectSample.objects.get(pk=project_sample_id)
 
                     ## sample is not ready for run again, To prevent to many ON|OFF

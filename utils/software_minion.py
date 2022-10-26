@@ -13,8 +13,12 @@ from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (MixedInfectionsTag, ProcessControler,
-                                   ProjectSample, Sample)
+from managing_files.models import (
+    MixedInfectionsTag,
+    ProcessControler,
+    ProjectSample,
+    Sample,
+)
 from pysam import pysam
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -26,8 +30,15 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
-                          Result, ResultAverageAndNumberReads, SoftwareDesc)
+from utils.result import (
+    CountHits,
+    DecodeObjects,
+    KeyValue,
+    MaskingConsensus,
+    Result,
+    ResultAverageAndNumberReads,
+    SoftwareDesc,
+)
 from utils.software import Software
 from utils.utils import Utils
 
@@ -75,28 +86,30 @@ class SoftwareMinion(object):
             )
             return True
 
-		################################
-		##################################
-		### remove possible previous alerts from others run
-		manage_database = ManageDatabase()
-		for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
-			manage_database.remove_sample_start_metakey(sample, keys_to_remove)
-		
-		### remove some other 
-		sample.identify_virus.all().delete()
-		if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag = None
-		sample.number_alerts = 0
-		sample.save()
-		
-		try:
+        ################################
+        ##################################
+        ### remove possible previous alerts from others run
+        manage_database = ManageDatabase()
+        for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
+            manage_database.remove_sample_start_metakey(sample, keys_to_remove)
 
-			### run stat and rabbit for Images
-			b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
-			
-			### test Abricate ON/OFF
-			default_software_project = DefaultProjectSoftware()
-			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
-												ConstantsSettings.TECHNOLOGY_minion)
+        ### remove some other
+        sample.identify_virus.all().delete()
+        if not sample.mixed_infections_tag is None:
+            sample.mixed_infections_tag = None
+        sample.number_alerts = 0
+        sample.save()
+
+        try:
+
+            ### run stat and rabbit for Images
+            b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
+
+            ### test Abricate ON/OFF
+            default_software_project = DefaultProjectSoftware()
+            b_make_identify_species = default_software_project.is_to_run_abricate(
+                sample.owner, sample, ConstantsSettings.TECHNOLOGY_minion
+            )
 
             ### queue the quality check and
             if (
@@ -555,11 +568,11 @@ class SoftwareMinion(object):
                 STDEV read length:                  17.2
                 Total bases:               103,672,824.0
                 Number, percentage and megabases of reads above quality cutoffs
-                >Q5:	211388 (100.0%) 103.7Mb
-                >Q7:	211388 (100.0%) 103.7Mb
-                >Q10:	191968 (90.8%) 93.9Mb
-                >Q12:	136331 (64.5%) 66.5Mb
-                >Q15:	16830 (8.0%) 8.2Mb
+                >Q5:    211388 (100.0%) 103.7Mb
+                >Q7:    211388 (100.0%) 103.7Mb
+                >Q10:    191968 (90.8%) 93.9Mb
+                >Q12:    136331 (64.5%) 66.5Mb
+                >Q15:    16830 (8.0%) 8.2Mb
         """
 
         if number_sequences == 0:
@@ -669,8 +682,8 @@ class SoftwareMinion(object):
         return temp_file_name
 
     """
-	Global processing, Medaka, Coverage, and MixedInfections
-	"""
+    Global processing, Medaka, Coverage, and MixedInfections
+    """
 
     def process_second_stage_medaka(self, project_sample, user):
         """
@@ -1369,7 +1382,7 @@ class SoftwareMinion(object):
 
         ### create depth
         depth_file = os.path.join(temp_dir, sample_name + ".depth.gz")
-        ##		cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
+        ##        cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
         cmd = "{} depth {} {} | {} -c > {}".format(
             self.software_names.get_samtools(),
             parameters_depth,
@@ -1392,7 +1405,7 @@ class SoftwareMinion(object):
         ### vcf
         vcf_before_file = os.path.join(temp_dir, sample_name + "_before_annotation.vcf")
         cmd = "{} {} variant --verbose {} {} {};".format(
-            # 		cmd =  "{} {} snp --verbose {} {} {}".format(
+            #         cmd =  "{} {} snp --verbose {} {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             reference_fasta_medaka,

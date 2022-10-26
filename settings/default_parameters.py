@@ -10,7 +10,9 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -67,6 +69,7 @@ class DefaultParameters(object):
         """
         if software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name:
             return 1
+
         if software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
             return 1
         ## all others remain zero, didn't change anything
@@ -147,15 +150,15 @@ class DefaultParameters(object):
         project,
         project_sample,
         sample,
-        technology_name=ConstantsSettings.TECHNOLOGY_illumina, dataset=None,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
     ):
         """
         get software_name parameters, if it saved in database...
         """
 
-		#logger = logging.getLogger("fluWebVirus.debug")
-		#logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-
+        # logger = logging.getLogger("fluWebVirus.debug")
+        # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         if self.check_software_is_polyvalent(software_name):
             prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
@@ -187,7 +190,7 @@ class DefaultParameters(object):
                             pipeline_step__name=prefered_pipeline,
                         )
                     except Software.DoesNotExist:
-                        return None	
+                        return None
                 else:
                     return None
         else:
@@ -221,81 +224,124 @@ class DefaultParameters(object):
                 else:
                     return None
 
-		#logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-
-		## get parameters for a specific user
-		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample, dataset=dataset)
-
-		#logger.debug("Get parameters: {}".format(parameters))
-
-		### if only one parameter and it is don't care, return dont_care 
-		if len(list(parameters)) == 1 and list(parameters)[0].name in \
-				[DefaultParameters.MASK_not_applicable, DefaultParameters.MASK_DONT_care]:
-			return DefaultParameters.MASK_not_applicable
-		
-		### parse them
-		dict_out = {}
-		vect_order_ouput = []
-		for parameter in parameters:
-			### don't set the not set parameters
-			if (not parameter.not_set_value is None and parameter.parameter == parameter.not_set_value): continue
-			
-			### create a dict with parameters
-			if (parameter.name in dict_out): 
-				dict_out[parameter.name][1].append(parameter.parameter)
-				dict_out[parameter.name][0].append(parameter.union_char)
-			else:
-				vect_order_ouput.append(parameter.name) 
-				dict_out[parameter.name] = [[parameter.union_char], [parameter.parameter]]
-		
-		return_parameter = ""
-		for par_name in vect_order_ouput:
-			if (len(dict_out[par_name][1]) == 1 and len(dict_out[par_name][1][0]) == 0):
-				return_parameter += " {}".format(par_name)
-			else:
-				return_parameter += " {}".format(par_name)
-				### exception SOFTWARE_TRIMMOMATIC_illuminaclip SOFTWARE_TRIMMOMATIC_name
-				if (software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name and \
-					par_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip):
-					return_parameter += "{}{}{}".format(dict_out[par_name][0][0],
-									os.path.join(settings.DIR_SOFTWARE, "trimmomatic/adapters",
-									dict_out[par_name][1][0]),
-									SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble)
-				else:
-					for _ in range(len(dict_out[par_name][0])):
-						return_parameter += "{}{}".format(dict_out[par_name][0][_], dict_out[par_name][1][_])
-		#logger.debug("Get parameters return output: {}".format(return_parameter))			
-		#### This is the case where all the options can be "not to set"
-		if (len(return_parameter.strip()) == 0 and len(parameters) == 0): return None
-		return return_parameter.strip()
-
-	def get_list_parameters(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name = ConstantsSettings.TECHNOLOGY_illumina, dataset=None):
-		"""
-		get software_name parameters, if it saved in database...
-		"""
-		try:
-			software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use = type_of_use,
-						technology__name = technology_name,
-						version_parameters = self.get_software_parameters_version(software_name))
-		except Software.DoesNotExist:
-			if (type_of_use == Software.TYPE_OF_USE_global):
-				try:
-					software = Software.objects.get(name=software_name, owner=user,\
-							type_of_use=type_of_use,
-							version_parameters = self.get_software_parameters_version(software_name))
-				except Software.DoesNotExist:
-					return None
-			else: return None
+        # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         ## get parameters for a specific user
         parameters = Parameter.objects.filter(
             software=software,
             project=project,
             project_sample=project_sample,
-            sample=sample, dataset=dataset,
+            sample=sample,
+            dataset=dataset,
+        )
+
+        # logger.debug("Get parameters: {}".format(parameters))
+
+        ### if only one parameter and it is don't care, return dont_care
+        if len(list(parameters)) == 1 and list(parameters)[0].name in [
+            DefaultParameters.MASK_not_applicable,
+            DefaultParameters.MASK_DONT_care,
+        ]:
+            return DefaultParameters.MASK_not_applicable
+
+        ### parse them
+        dict_out = {}
+        vect_order_ouput = []
+        for parameter in parameters:
+            ### don't set the not set parameters
+            if (
+                not parameter.not_set_value is None
+                and parameter.parameter == parameter.not_set_value
+            ):
+                continue
+
+            ### create a dict with parameters
+            if parameter.name in dict_out:
+                dict_out[parameter.name][1].append(parameter.parameter)
+                dict_out[parameter.name][0].append(parameter.union_char)
+            else:
+                vect_order_ouput.append(parameter.name)
+                dict_out[parameter.name] = [
+                    [parameter.union_char],
+                    [parameter.parameter],
+                ]
+
+        return_parameter = ""
+        for par_name in vect_order_ouput:
+            if len(dict_out[par_name][1]) == 1 and len(dict_out[par_name][1][0]) == 0:
+                return_parameter += " {}".format(par_name)
+            else:
+                return_parameter += " {}".format(par_name)
+                ### exception SOFTWARE_TRIMMOMATIC_illuminaclip SOFTWARE_TRIMMOMATIC_name
+                if (
+                    software_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+                    and par_name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
+                ):
+                    return_parameter += "{}{}{}".format(
+                        dict_out[par_name][0][0],
+                        os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ),
+                        SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
+                    )
+                else:
+                    for _ in range(len(dict_out[par_name][0])):
+                        return_parameter += "{}{}".format(
+                            dict_out[par_name][0][_], dict_out[par_name][1][_]
+                        )
+        # logger.debug("Get parameters return output: {}".format(return_parameter))
+        #### This is the case where all the options can be "not to set"
+        if len(return_parameter.strip()) == 0 and len(parameters) == 0:
+            return None
+        return return_parameter.strip()
+
+    def get_list_parameters(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
+    ):
+        """
+        get software_name parameters, if it saved in database...
+        """
+        try:
+            software = Software.objects.get(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                technology__name=technology_name,
+                version_parameters=self.get_software_parameters_version(software_name),
+            )
+        except Software.DoesNotExist:
+            if type_of_use == Software.TYPE_OF_USE_global:
+                try:
+                    software = Software.objects.get(
+                        name=software_name,
+                        owner=user,
+                        type_of_use=type_of_use,
+                        version_parameters=self.get_software_parameters_version(
+                            software_name
+                        ),
+                    )
+                except Software.DoesNotExist:
+                    return None
+            else:
+                return None
+
+        ## get parameters for a specific user
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
         )
 
         ### if only one parameter and it is don't care, return dont_care
@@ -309,7 +355,8 @@ class DefaultParameters(object):
         project,
         project_sample,
         sample,
-        technology_name, dataset=None,
+        technology_name,
+        dataset=None,
     ):
         """Test if it is necessary to run this software, By default return True"""
         try:
@@ -336,50 +383,88 @@ class DefaultParameters(object):
             else:
                 return True
 
-		### if it is Global it is software that is mandatory
-		if (type_of_use == Software.TYPE_OF_USE_global):
-			return software.is_to_run
-		
-		## get parameters for a specific sample, project or project_sample
-		parameters = Parameter.objects.filter(software=software, project=project,
-						project_sample=project_sample, sample=sample, dataset=dataset)
-	
-		### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
-		for parameter in parameters:
-			if (parameter.sequence_out == 1): return parameter.is_to_run 
-		return True
-	
-	def set_software_to_run(self, software_name, user, type_of_use, project, project_sample,
-				sample, technology_name, is_to_run, dataset=None):
-		""" set software to run ON/OFF 
-		:output True if the is_to_run is changed"""
-		
-		try:
-			software = Software.objects.get(name=software_name, owner=user,\
-						type_of_use = type_of_use,
-						technology__name = technology_name,
-						version_parameters = self.get_software_parameters_version(software_name))
-		except Software.DoesNotExist:
-			if (type_of_use == Software.TYPE_OF_USE_global):
-				try:
-					software = Software.objects.get(name=software_name, owner=user,\
-							type_of_use=type_of_use,
-							version_parameters = self.get_software_parameters_version(software_name))
-				except Software.DoesNotExist:
-					return False
-			else: return False
+        ### if it is Global it is software that is mandatory
+        if type_of_use == Software.TYPE_OF_USE_global:
+            return software.is_to_run
+
+        ## get parameters for a specific sample, project or project_sample
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+        )
+
+        ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
+        for parameter in parameters:
+            if parameter.sequence_out == 1:
+                return parameter.is_to_run
+        return True
+
+    def set_software_to_run(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name,
+        is_to_run,
+        dataset=None,
+    ):
+        """set software to run ON/OFF
+        :output True if the is_to_run is changed"""
+
+        try:
+            software = Software.objects.get(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                technology__name=technology_name,
+                version_parameters=self.get_software_parameters_version(software_name),
+            )
+        except Software.DoesNotExist:
+            if type_of_use == Software.TYPE_OF_USE_global:
+                try:
+                    software = Software.objects.get(
+                        name=software_name,
+                        owner=user,
+                        type_of_use=type_of_use,
+                        version_parameters=self.get_software_parameters_version(
+                            software_name
+                        ),
+                    )
+                except Software.DoesNotExist:
+                    return False
+            else:
+                return False
 
         ## if the software can not be change return False
         if not software.can_be_on_off_in_pipeline:
             return False
 
         self.set_software_to_run_by_software(
-            software, project, None, project_sample, sample, is_to_run, dataset=dataset=is_to_run
+            software,
+            project,
+            None,
+            project_sample,
+            sample,
+            is_to_run=is_to_run,
+            dataset=dataset,
         )
         return True
 
     def set_software_to_run_by_software(
-        self, software, project, televir_project, project_sample, sample, is_to_run=None, dataset=None
+        self,
+        software,
+        project,
+        televir_project,
+        project_sample,
+        sample,
+        is_to_run=None,
+        dataset=None,
     ):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
@@ -392,7 +477,8 @@ class DefaultParameters(object):
                 project=project,
                 project_sample=project_sample,
                 televir_project=televir_project,
-                sample=sample, dataset=dataset,
+                sample=sample,
+                dataset=dataset,
             )
 
             ## if None need to take the value from database
@@ -433,7 +519,8 @@ class DefaultParameters(object):
                 project=project,
                 televir_project=televir_project,
                 project_sample=project_sample,
-                sample=sample, dataset=dataset,
+                sample=sample,
+                dataset=dataset,
             )
 
             ### Try to find the parameter of sequence_out == 1. It is the one that has the flag to run or not.
@@ -529,8 +616,8 @@ class DefaultParameters(object):
                 if software.technology is None
                 else software.technology.name,
             )
-		elif (software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
-			return self.get_nextstrain_default(software.owner)		
+        elif software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+            return self.get_nextstrain_default(software.owner)
 
         ####
         #### PATHOGEN IDENTIFICATION
@@ -910,91 +997,104 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-	def get_nextstrain_default(self, user, dataset=None):
-		"""
-		build: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)
-		"""
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_NEXTSTRAIN_name
-		software.name_extended = SoftwareNames.SOFTWARE_NEXTSTRAIN_name_extended
-		# TODO Add version 
-		software.version = SoftwareNames.SOFTWARE_NEXTSTRAIN_VERSION
-		software.type_of_use = Software.TYPE_OF_USE_dataset
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.version_parameters = self.get_software_parameters_version(software.name)
-		software.technology = self.get_technology(ConstantsSettings.TECHNOLOGY_generic)
-		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
-		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
-	
-		###  small description of software
-		software.help_text = ""
-	
-		###  which part of pipeline is going to run
-		software.pipeline_step = None
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		# For the moment only has one parameter...
-		parameter = Parameter()
-		parameter.name = "build"
-		parameter.parameter = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
-		parameter.type_data = Parameter.PARAMETER_char_list
-		parameter.software = software
-		parameter.dataset = dataset
-		parameter.union_char = " "
-		parameter.can_change = True
-		parameter.is_to_run = True			
-		parameter.sequence_out = 1
-		parameter.not_set_value = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
-		parameter.description = "Define the build to be used"
+    def get_nextstrain_default(self, user, dataset=None):
+        """
+        build: excludes read alignments from analysis if they have a mapping quality less than Q (–min-mapping-quality 20)
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_NEXTSTRAIN_name
+        software.name_extended = SoftwareNames.SOFTWARE_NEXTSTRAIN_name_extended
+        # TODO Add version
+        software.version = SoftwareNames.SOFTWARE_NEXTSTRAIN_VERSION
+        software.type_of_use = Software.TYPE_OF_USE_dataset
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(ConstantsSettings.TECHNOLOGY_generic)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
 
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
+        ###  small description of software
+        software.help_text = ""
 
+        ###  which part of pipeline is going to run
+        software.pipeline_step = None
+        software.owner = user
 
-	def get_mask_consensus_threshold_default(self, user, type_of_use, technology_name, project = None, project_sample = None):
-		"""
-		Threshold of mask not consensus coverage
-		"""
-		software = Software()
-		software.name = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name
-		software.name_extended = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
-		software.version = "1.0"
-		software.version_parameters = self.get_software_parameters_version(software.name)
-		software.technology = self.get_technology(technology_name)
-		software.can_be_on_off_in_pipeline = False		## set to True if can be ON/OFF in pipeline, otherwise always ON
-		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
-	
-		###  small description of software
-		software.help_text = ""
-	
-		###  which part of pipeline is going to run
-		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_coverage_analysis)
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = DefaultParameters.MASK_CONSENSUS_threshold
-		parameter.parameter = "70"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.is_to_run = True			### by default it's True
-		parameter.sequence_out = 1
-		parameter.range_available = "[50:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "50"
-		parameter.description = "Minimum percentage of locus horizontal coverage with depth of coverage equal or above –mincov (see Snippy) to generate consensus sequence."
-		vect_parameters.append(parameter)
-		return vect_parameters
+        vect_parameters = []
+
+        # For the moment only has one parameter...
+        parameter = Parameter()
+        parameter.name = "build"
+        parameter.parameter = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.dataset = dataset
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.not_set_value = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        parameter.description = "Define the build to be used"
+
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_mask_consensus_threshold_default(
+        self, user, type_of_use, technology_name, project=None, project_sample=None
+    ):
+        """
+        Threshold of mask not consensus coverage
+        """
+        software = Software()
+        software.name = SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name
+        software.name_extended = (
+            SoftwareNames.INSAFLU_PARAMETER_MASK_CONSENSUS_name_extended
+        )
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.version = "1.0"
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_coverage_analysis
+        )
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.MASK_CONSENSUS_threshold
+        parameter.parameter = "70"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.range_available = "[50:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "50"
+        parameter.description = "Minimum percentage of locus horizontal coverage with depth of coverage equal or above –mincov (see Snippy) to generate consensus sequence."
+        vect_parameters.append(parameter)
+        return vect_parameters
 
     def get_clean_human_reads_default(self, user, type_of_use, technology_name):
         """
@@ -1357,224 +1457,242 @@ class DefaultParameters(object):
             ConstantsSettings.PIPELINE_NAME_coverage_analysis
         )
 
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		parameter = Parameter()
-		parameter.name = "-q"
-		parameter.parameter = "0"	## default model
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = False
-		parameter.is_to_run = True			### by default it's True
-		parameter.sequence_out = 1
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "-q <Quality> base quality threshold."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "-Q"
-		parameter.parameter = "0"	## default model
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = " "
-		parameter.can_change = False
-		parameter.sequence_out = 2
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "-Q <Quality> mapping quality threshold."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "-aa"
-		parameter.parameter = ""	## default model
-		parameter.type_data = Parameter.PARAMETER_null
-		parameter.software = software
-		parameter.project = project
-		parameter.project_sample = project_sample
-		parameter.union_char = ""
-		parameter.can_change = False
-		parameter.sequence_out = 3
-		parameter.description = "Output absolutely all positions, including unused ref. sequences."
-		vect_parameters.append(parameter)
-		
-		return vect_parameters
-	
-	def get_trimmomatic_default(self, user, type_of_use, technology_name, sample = None):
-		
-		software = Software()
-		software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
-		software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
-		software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
-		software.type_of_use = type_of_use
-		software.type_of_software = Software.TYPE_SOFTWARE
-		software.version_parameters = self.get_software_parameters_version(software.name)
-		software.technology = self.get_technology(technology_name)
-		software.can_be_on_off_in_pipeline = True		## set to True if can be ON/OFF in pipeline, otherwise always ON
-		software.is_to_run = True						## set to True if it is going to run, for example Trimmomatic can run or not
-	
-		###  small description of software
-		software.help_text = ""
-	
-		###  which part of pipeline is going to run
-		software.pipeline_step = self._get_pipeline(ConstantsSettings.PIPELINE_NAME_read_quality_analysis)
-		software.owner = user
-		
-		vect_parameters =  []
-		
-		# ILLUMINACLIP:/usr/local/software/bioinformatics/trimmomatic/adapters/adapters.fa:3:30:10:6:true
-		parameter = Parameter()
-		parameter.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
-		parameter.parameter = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
-		parameter.type_data = Parameter.PARAMETER_char_list
-		parameter.software = software
-		parameter.sample = sample
-		parameter.not_set_value = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.is_to_run = True			### by default it's True
-		parameter.sequence_out = 1
-		parameter.description = "To clip the Illumina adapters or PCR primers from the input file using the adapter / primer sequences.\n" +\
-			"ILLUMINACLIP:<ADAPTER_FILE>:3:30:10:6:true"
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "HEADCROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 2
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "CROP"
-		parameter.parameter = "0"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 3
-		parameter.range_available = "[0:400]"
-		parameter.range_max = "400"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "CROP:<length> Cut the read to a specified length."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "SLIDINGWINDOW"
-		parameter.parameter = "5"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 4
-		parameter.range_available = "[3:50]"
-		parameter.range_max = "50"
-		parameter.range_min = "3"
-		parameter.description = "SLIDINGWINDOW:<windowSize> specifies the number of bases to average across"
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "SLIDINGWINDOW"
-		parameter.parameter = "20"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 5
-		parameter.range_available = "[10:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "10"
-		parameter.description = "SLIDINGWINDOW:<requiredQuality> specifies the average quality required"
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "LEADING"
-		parameter.parameter = "3"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 6
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "LEADING:<quality> Remove low quality bases from the beginning."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "TRAILING"
-		parameter.parameter = "3"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 7
-		parameter.range_available = "[0:100]"
-		parameter.range_max = "100"
-		parameter.range_min = "0"
-		parameter.not_set_value = "0"
-		parameter.description = "TRAILING:<quality> Remove low quality bases from the end."
-		vect_parameters.append(parameter)
-		
-		parameter = Parameter()
-		parameter.name = "MINLEN"
-		parameter.parameter = "35"
-		parameter.type_data = Parameter.PARAMETER_int
-		parameter.software = software
-		parameter.sample = sample
-		parameter.union_char = ":"
-		parameter.can_change = True
-		parameter.sequence_out = 8
-		parameter.range_available = "[5:500]"
-		parameter.range_max = "500"
-		parameter.range_min = "5"
-		parameter.description = "MINLEN:<length> This module removes reads that fall below the specified minimal length."
-		vect_parameters.append(parameter)
+        software.owner = user
 
-        ##		Only available in 0.30 version
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "-q"
+        parameter.parameter = "0"  ## default model
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = "-q <Quality> base quality threshold."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-Q"
+        parameter.parameter = "0"  ## default model
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.sequence_out = 2
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = "-Q <Quality> mapping quality threshold."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-aa"
+        parameter.parameter = ""  ## default model
+        parameter.type_data = Parameter.PARAMETER_null
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = ""
+        parameter.can_change = False
+        parameter.sequence_out = 3
+        parameter.description = (
+            "Output absolutely all positions, including unused ref. sequences."
+        )
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_trimmomatic_default(self, user, type_of_use, technology_name, sample=None):
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+        software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
+        software.version = SoftwareNames.SOFTWARE_TRIMMOMATIC_VERSION
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_read_quality_analysis
+        )
+        software.owner = user
+
+        vect_parameters = []
+
+        # ILLUMINACLIP:/usr/local/software/bioinformatics/trimmomatic/adapters/adapters.fa:3:30:10:6:true
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
+        parameter.parameter = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.not_set_value = SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_not_apply
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.description = (
+            "To clip the Illumina adapters or PCR primers from the input file using the adapter / primer sequences.\n"
+            + "ILLUMINACLIP:<ADAPTER_FILE>:3:30:10:6:true"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "HEADCROP"
+        parameter.parameter = "0"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 2
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = "HEADCROP:<length> Cut the specified number of bases from the start of the read."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "CROP"
+        parameter.parameter = "0"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 3
+        parameter.range_available = "[0:400]"
+        parameter.range_max = "400"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = "CROP:<length> Cut the read to a specified length."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "SLIDINGWINDOW"
+        parameter.parameter = "5"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 4
+        parameter.range_available = "[3:50]"
+        parameter.range_max = "50"
+        parameter.range_min = "3"
+        parameter.description = (
+            "SLIDINGWINDOW:<windowSize> specifies the number of bases to average across"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "SLIDINGWINDOW"
+        parameter.parameter = "20"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 5
+        parameter.range_available = "[10:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "10"
+        parameter.description = (
+            "SLIDINGWINDOW:<requiredQuality> specifies the average quality required"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "LEADING"
+        parameter.parameter = "3"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 6
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = (
+            "LEADING:<quality> Remove low quality bases from the beginning."
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "TRAILING"
+        parameter.parameter = "3"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 7
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.not_set_value = "0"
+        parameter.description = (
+            "TRAILING:<quality> Remove low quality bases from the end."
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "MINLEN"
+        parameter.parameter = "35"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = ":"
+        parameter.can_change = True
+        parameter.sequence_out = 8
+        parameter.range_available = "[5:500]"
+        parameter.range_max = "500"
+        parameter.range_min = "5"
+        parameter.description = "MINLEN:<length> This module removes reads that fall below the specified minimal length."
+        vect_parameters.append(parameter)
+
+        ##        Only available in 0.30 version
         #
-        # 		parameter = Parameter()
-        # 		parameter.name = "AVGQUAL"
-        # 		parameter.parameter = "0"
-        # 		parameter.type_data = Parameter.PARAMETER_int
-        # 		parameter.software = software
-        # 		parameter.sample = sample
-        # 		parameter.union_char = ":"
-        # 		parameter.can_change = True
-        # 		parameter.sequence_out = 8
-        # 		parameter.range_available = "[0:100]"
-        # 		parameter.range_max = "100"
-        # 		parameter.range_min = "0"
-        # 		parameter.not_set_value = "0"
-        # 		parameter.description = "AVGQUAL:<quality> Drop the read if the average quality is below the specified level."
-        # 		vect_parameters.append(parameter)
+        #         parameter = Parameter()
+        #         parameter.name = "AVGQUAL"
+        #         parameter.parameter = "0"
+        #         parameter.type_data = Parameter.PARAMETER_int
+        #         parameter.software = software
+        #         parameter.sample = sample
+        #         parameter.union_char = ":"
+        #         parameter.can_change = True
+        #         parameter.sequence_out = 8
+        #         parameter.range_available = "[0:100]"
+        #         parameter.range_max = "100"
+        #         parameter.range_min = "0"
+        #         parameter.not_set_value = "0"
+        #         parameter.description = "AVGQUAL:<quality> Drop the read if the average quality is below the specified level."
+        #         vect_parameters.append(parameter)
 
         parameter = Parameter()
         parameter.name = "TOPHRED33"

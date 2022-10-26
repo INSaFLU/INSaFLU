@@ -7,7 +7,9 @@ from curses.ascii import SO
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -70,9 +72,9 @@ class DefaultSoftware(object):
             ),
             user,
         )
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
-        # 				self.default_parameters.get_clean_human_reads_default(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+        #                 self.default_parameters.get_clean_human_reads_default(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina), user)
 
         ## ONT software
         self.test_default_db(
@@ -104,9 +106,9 @@ class DefaultSoftware(object):
             user,
         )
 
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
-        # 				self.default_parameters.get_samtools_depth_default_ONT(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+        #                 self.default_parameters.get_samtools_depth_default_ONT(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_NanoFilt_name,
@@ -124,9 +126,9 @@ class DefaultSoftware(object):
             user,
         )
 
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
-        # 				self.default_parameters.get_clean_human_reads_default(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+        #                 self.default_parameters.get_clean_human_reads_default(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 
         #############
         ############# PATHOGEN IDENTIFICATION SOFTWARE
@@ -659,10 +661,17 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-	def get_nextstrain_parameters(self, user):
-		result = self.default_parameters.get_parameters(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, user,
-					Software.TYPE_OF_USE_global, None, None, None, ConstantsSettings.TECHNOLOGY_generic)
-		return "" if result is None else result
+    def get_nextstrain_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_generic,
+        )
+        return "" if result is None else result
 
     ####
     ####
@@ -830,9 +839,13 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_abricate_parameters(user, technology_name)
-		if (software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
-			self.test_default_db(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, self.default_parameters.get_nextstrain_default(user), user)
-			return self.get_nextstrain_parameters(user)			
+        if software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+                self.default_parameters.get_nextstrain_default(user),
+                user,
+            )
+            return self.get_nextstrain_parameters(user)
 
         ##########################################
         ############### TELEVIR SOFTWARE #########
@@ -1001,7 +1014,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_spades_parameters(user, technology_name)
-        
+
         return ""
 
     def get_all_software(self):

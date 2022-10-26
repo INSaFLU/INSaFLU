@@ -7,16 +7,16 @@ import os
 
 from constants.software_names import SoftwareNames
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
-                                 Submit)
+from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
 from datasets.models import Dataset
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from managing_files.models import Project, ProjectSample
-from pathogen_identification.utilities.utilities_pipeline import \
-    Utility_Pipeline_Manager
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utility_Pipeline_Manager,
+)
 from utils.utils import Utils
 
 from settings.default_parameters import DefaultParameters
@@ -52,33 +52,34 @@ class SoftwareForm(forms.ModelForm):
             kwargs.pop("pk_project")
             project = Project.objects.get(pk=pk_project)
 
-		project_sample = None
-		pk_project_sample = kwargs.get('pk_project_sample')
-		if (not pk_project_sample is None):
-			kwargs.pop('pk_project_sample')
-			project_sample = ProjectSample.objects.get(pk=pk_project_sample)
-			
-		sample = None
-		pk_sample = kwargs.get('pk_sample')
-		if (not pk_sample is None):
-			kwargs.pop('pk_sample')
-			sample = Sample.objects.get(pk=pk_sample)
+        project_sample = None
+        pk_project_sample = kwargs.get("pk_project_sample")
+        if not pk_project_sample is None:
+            kwargs.pop("pk_project_sample")
+            project_sample = ProjectSample.objects.get(pk=pk_project_sample)
 
-		dataset = None
-		pk_dataset = kwargs.get('pk_dataset')
-		if (not pk_dataset is None):
-			kwargs.pop('pk_dataset')
-			dataset = Dataset.objects.get(pk=pk_dataset)
-			
-		## end
-		super(SoftwareForm, self).__init__(*args, **kwargs)
+        sample = None
+        pk_sample = kwargs.get("pk_sample")
+        if not pk_sample is None:
+            kwargs.pop("pk_sample")
+            sample = Sample.objects.get(pk=pk_sample)
+
+        dataset = None
+        pk_dataset = kwargs.get("pk_dataset")
+        if not pk_dataset is None:
+            kwargs.pop("pk_dataset")
+            dataset = Dataset.objects.get(pk=pk_dataset)
+
+        ## end
+        super(SoftwareForm, self).__init__(*args, **kwargs)
 
         ### return the parameters that is possible to change
         paramers = Parameter.objects.filter(
             software=self.instance,
             project=project,
             project_sample=project_sample,
-            sample=sample, dataset=dataset
+            sample=sample,
+            dataset=dataset,
         )
         dt_fields = {}
         vect_divs = []
@@ -108,149 +109,228 @@ class SoftwareForm(forms.ModelForm):
                     )
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
-			elif (parameter.is_float()):
-				dt_fields[parameter.get_unique_id()] = forms.FloatField(max_value=float(parameter.range_max),\
-							min_value=float(parameter.range_min), required = True)
-				help_text = parameter.description + " Range: {}.".format(parameter.range_available)
-				if (not parameter.not_set_value is None):
-					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
-				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
-			### this is use for Medaka and Trimmomatic
-			elif (parameter.is_char_list()):
+            elif parameter.is_float():
+                dt_fields[parameter.get_unique_id()] = forms.FloatField(
+                    max_value=float(parameter.range_max),
+                    min_value=float(parameter.range_min),
+                    required=True,
+                )
+                help_text = parameter.description + " Range: {}.".format(
+                    parameter.range_available
+                )
+                if not parameter.not_set_value is None:
+                    help_text += (
+                        " If value equal to {} this parameter is excluded.".format(
+                            parameter.not_set_value
+                        )
+                    )
+                dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+            ### this is use for Medaka and Trimmomatic
+            elif parameter.is_char_list():
 
-				if (parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
-					list_data = [data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC]
-				elif (parameter.software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
-					list_data = [[data_, data_] for data_ in self.utils.get_all_medaka_models()]
-				elif (parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip and \
-					parameter.software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
-					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available]
-				elif (parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS and \
-					parameter.software.name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name):
-					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available]
-				else:
-					list_data = [[parameter.parameter, parameter.parameter]]
+                if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+                    list_data = [
+                        data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC
+                    ]
+                elif (
+                    parameter.software.name
+                    == SoftwareNames.SOFTWARE_Medaka_name_consensus
+                ):
+                    list_data = [
+                        [data_, data_] for data_ in self.utils.get_all_medaka_models()
+                    ]
+                elif (
+                    parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
+                    and parameter.software.name
+                    == SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
+                    ]
+                elif (
+                    parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
+                    and parameter.software.name
+                    == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available
+                    ]
+                else:
+                    list_data = [[parameter.parameter, parameter.parameter]]
 
-				dt_fields[parameter.get_unique_id()] = forms.ChoiceField(choices = list_data)
-				dt_fields[parameter.get_unique_id()].empty_label = None
-				
-				help_text = parameter.description
-				dt_fields[parameter.get_unique_id()].help_text = escape(help_text) 
-			else:
-				dt_fields[parameter.get_unique_id()] = forms.CharField(required = True)
-				help_text = parameter.description
-				if (not parameter.not_set_value is None):
-					help_text += " If value equal to {} this parameter is excluded.".format(parameter.not_set_value)
-				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+                dt_fields[parameter.get_unique_id()] = forms.ChoiceField(
+                    choices=list_data
+                )
+                dt_fields[parameter.get_unique_id()].empty_label = None
 
-			dt_fields[parameter.get_unique_id()].label = parameter.name
-			if (not parameter.can_change and len(parameter.parameter) == 0): dt_fields[parameter.get_unique_id()].initial = parameter.name
-			else: dt_fields[parameter.get_unique_id()].initial = parameter.parameter
-			vect_divs.append(Div(parameter.get_unique_id(), css_class = "col-sm-4"))
-		
-		### set all fields
-		self.fields.update(dt_fields)
+                help_text = parameter.description
+                dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
+            else:
+                dt_fields[parameter.get_unique_id()] = forms.CharField(required=True)
+                help_text = parameter.description
+                if not parameter.not_set_value is None:
+                    help_text += (
+                        " If value equal to {} this parameter is excluded.".format(
+                            parameter.not_set_value
+                        )
+                    )
+                dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 
-		vect_rows_divs = []
-		for _ in range(0, len(vect_divs), 3):
-			if (_ + 2 < len(vect_divs)): vect_rows_divs.append(Div(vect_divs[_], vect_divs[_ + 1], vect_divs[_ + 2], css_class = 'row'))
-			elif (_ + 1 < len(vect_divs)): vect_rows_divs.append(Div(vect_divs[_], vect_divs[_ + 1], css_class = 'row'))
-			else: vect_rows_divs.append(Div(vect_divs[_], css_class = 'row'))
-		
-		self.helper = FormHelper()
-		self.helper.form_method = 'POST'
-		
-		#### message in form
-		form_message = 'Update {} parameters for -{}-'.format("software" if self.instance.is_software() else "INSaFLU",\
-					self.instance.name)
-		if (not project is None):
-			form_message = "Update {} parameters for -{}- project:'{}'".format(\
-				"software" if self.instance.is_software() else "INSaFLU",\
-				self.instance.name, project.name)
-		if (not dataset is None):
-			form_message = "Update {} parameters for -{}- dataset:'{}'".format(\
-				"software" if self.instance.is_software() else "INSaFLU",\
-				self.instance.name, dataset.name)				
-		if (not project_sample is None):
-			form_message = "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(\
-				"software" if self.instance.is_software() else "INSaFLU",\
-				self.instance.name, project_sample.project.name, project_sample.sample.name)
-		if (not sample is None):
-			form_message = "Update {} parameters for -{}- sample:'{}'.".format(\
-				"software" if self.instance.is_software() else "INSaFLU",\
-				self.instance.name, sample.name)
+            dt_fields[parameter.get_unique_id()].label = parameter.name
+            if not parameter.can_change and len(parameter.parameter) == 0:
+                dt_fields[parameter.get_unique_id()].initial = parameter.name
+            else:
+                dt_fields[parameter.get_unique_id()].initial = parameter.parameter
+            vect_divs.append(Div(parameter.get_unique_id(), css_class="col-sm-4"))
 
-		if (len(vect_rows_divs) == 1):
-			self.helper.layout = Layout(
-				Fieldset(
-					form_message,
-					vect_rows_divs[0],
-					css_class = 'article-content'
-				),
-				ButtonHolder(
-					Submit('save', 'Save', css_class='btn-primary'),
-					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample, dataset)))
-				)
-			)
-		elif (len(vect_rows_divs) == 2):
-			self.helper.layout = Layout(
-				Fieldset(
-					form_message,
-					vect_rows_divs[0],
-					vect_rows_divs[1],
-					css_class = 'article-content'
-				),
-				ButtonHolder(
-					Submit('save', 'Save', css_class='btn-primary'),
-					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample, dataset)))
-				)
-			)
-		elif (len(vect_rows_divs) == 3):
-			self.helper.layout = Layout(
-				Fieldset(
-					form_message,
-					vect_rows_divs[0],
-					vect_rows_divs[1],
-					vect_rows_divs[2],
-					css_class = 'article-content'
-				),
-				ButtonHolder(
-					Submit('save', 'Save', css_class='btn-primary'),
-					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample, dataset)))
-				)
-			)
-		elif (len(vect_rows_divs) == 4):
-			self.helper.layout = Layout(
-				Fieldset(
-					form_message,
-					vect_rows_divs[0],
-					vect_rows_divs[1],
-					vect_rows_divs[2],
-					vect_rows_divs[3],
-					css_class = 'article-content'
-				),
-				ButtonHolder(
-					Submit('save', 'Save', css_class='btn-primary'),
-					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample. dataset)))
-				)
-			)
-		
-	def _get_reverse(self, project, project_sample, sample, dataset):
-		"""
-		"""
-		if (not project is None):
-			return reverse('project-settings', args=[project.pk])
-		if (not dataset is None):
-			return reverse('dataset-settings', args=[dataset.pk])			
-		if (not project_sample is None):
-			return reverse('sample-project-settings', args=[project_sample.pk])
-		if (not sample is None):
-			return reverse('sample-settings', args=[sample.pk])
-		return reverse('settings')
+        ### set all fields
+        self.fields.update(dt_fields)
+
+        vect_rows_divs = []
+        for _ in range(0, len(vect_divs), 3):
+            if _ + 2 < len(vect_divs):
+                vect_rows_divs.append(
+                    Div(
+                        vect_divs[_],
+                        vect_divs[_ + 1],
+                        vect_divs[_ + 2],
+                        css_class="row",
+                    )
+                )
+            elif _ + 1 < len(vect_divs):
+                vect_rows_divs.append(
+                    Div(vect_divs[_], vect_divs[_ + 1], css_class="row")
+                )
+            else:
+                vect_rows_divs.append(Div(vect_divs[_], css_class="row"))
+
+        self.helper = FormHelper()
+        self.helper.form_method = "POST"
+
+        #### message in form
+        form_message = "Update {} parameters for -{}-".format(
+            "software" if self.instance.is_software() else "INSaFLU", self.instance.name
+        )
+        if not project is None:
+            form_message = "Update {} parameters for -{}- project:'{}'".format(
+                "software" if self.instance.is_software() else "INSaFLU",
+                self.instance.name,
+                project.name,
+            )
+        if not dataset is None:
+            form_message = "Update {} parameters for -{}- dataset:'{}'".format(
+                "software" if self.instance.is_software() else "INSaFLU",
+                self.instance.name,
+                dataset.name,
+            )
+        if not project_sample is None:
+            form_message = (
+                "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(
+                    "software" if self.instance.is_software() else "INSaFLU",
+                    self.instance.name,
+                    project_sample.project.name,
+                    project_sample.sample.name,
+                )
+            )
+        if not sample is None:
+            form_message = "Update {} parameters for -{}- sample:'{}'.".format(
+                "software" if self.instance.is_software() else "INSaFLU",
+                self.instance.name,
+                sample.name,
+            )
+
+        if len(vect_rows_divs) == 1:
+            self.helper.layout = Layout(
+                Fieldset(form_message, vect_rows_divs[0], css_class="article-content"),
+                ButtonHolder(
+                    Submit("save", "Save", css_class="btn-primary"),
+                    Button(
+                        "cancel",
+                        "Cancel",
+                        css_class="btn-secondary",
+                        onclick='window.location.href="{}"'.format(
+                            self._get_reverse(project, project_sample, sample, dataset)
+                        ),
+                    ),
+                ),
+            )
+        elif len(vect_rows_divs) == 2:
+            self.helper.layout = Layout(
+                Fieldset(
+                    form_message,
+                    vect_rows_divs[0],
+                    vect_rows_divs[1],
+                    css_class="article-content",
+                ),
+                ButtonHolder(
+                    Submit("save", "Save", css_class="btn-primary"),
+                    Button(
+                        "cancel",
+                        "Cancel",
+                        css_class="btn-secondary",
+                        onclick='window.location.href="{}"'.format(
+                            self._get_reverse(project, project_sample, sample, dataset)
+                        ),
+                    ),
+                ),
+            )
+        elif len(vect_rows_divs) == 3:
+            self.helper.layout = Layout(
+                Fieldset(
+                    form_message,
+                    vect_rows_divs[0],
+                    vect_rows_divs[1],
+                    vect_rows_divs[2],
+                    css_class="article-content",
+                ),
+                ButtonHolder(
+                    Submit("save", "Save", css_class="btn-primary"),
+                    Button(
+                        "cancel",
+                        "Cancel",
+                        css_class="btn-secondary",
+                        onclick='window.location.href="{}"'.format(
+                            self._get_reverse(project, project_sample, sample, dataset)
+                        ),
+                    ),
+                ),
+            )
+        elif len(vect_rows_divs) == 4:
+            self.helper.layout = Layout(
+                Fieldset(
+                    form_message,
+                    vect_rows_divs[0],
+                    vect_rows_divs[1],
+                    vect_rows_divs[2],
+                    vect_rows_divs[3],
+                    css_class="article-content",
+                ),
+                ButtonHolder(
+                    Submit("save", "Save", css_class="btn-primary"),
+                    Button(
+                        "cancel",
+                        "Cancel",
+                        css_class="btn-secondary",
+                        onclick='window.location.href="{}"'.format(
+                            self._get_reverse(project, project_sample, sample.dataset)
+                        ),
+                    ),
+                ),
+            )
+
+    def _get_reverse(self, project, project_sample, sample, dataset):
+        """ """
+        if not project is None:
+            return reverse("project-settings", args=[project.pk])
+        if not dataset is None:
+            return reverse("dataset-settings", args=[dataset.pk])
+        if not project_sample is None:
+            return reverse("sample-project-settings", args=[project_sample.pk])
+        if not sample is None:
+            return reverse("sample-settings", args=[sample.pk])
+        return reverse("settings")
 
     def clean(self):
         """

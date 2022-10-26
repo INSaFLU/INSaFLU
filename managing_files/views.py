@@ -9,8 +9,7 @@ from itertools import chain
 from operator import attrgetter
 
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
@@ -36,11 +35,44 @@ from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
-from utils.session_variables import (clean_check_box_in_session,
-                                     is_all_check_box_in_session)
+from utils.session_variables import (
+    clean_check_box_in_session,
+    is_all_check_box_in_session,
+)
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
+from utils.utils import Utils
+
+from managing_files.forms import (
+    AddSampleProjectForm,
+    ReferenceForm,
+    ReferenceProjectFormSet,
+    SampleForm,
+    SamplesUploadDescriptionForm,
+    SamplesUploadDescriptionMetadataForm,
+    SamplesUploadMultipleFastqForm,
+)
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import (
+    MetaKey,
+    Project,
+    ProjectSample,
+    Reference,
+    Sample,
+    UploadFiles,
+)
+from managing_files.tables import (
+    AddSamplesFromCvsFileTable,
+    AddSamplesFromCvsFileTableMetadata,
+    AddSamplesFromFastqFileTable,
+    ProjectTable,
+    ReferenceProjectTable,
+    ReferenceTable,
+    SampleTable,
+    SampleToProjectsTable,
+    ShowProjectSamplesResults,
+)
 
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
@@ -404,8 +436,10 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
     success_url = reverse_lazy("samples")
     template_name = "samples/sample_add.html"
 
-	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
-	else: logger = logging.getLogger("fluWebVirus.production")
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
     def get_form_kwargs(self):
         """
@@ -530,27 +564,43 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
                 )
             sample.save()
 
-		### create a task to perform the analysis of fastq and trimmomatic
-		try:
-			process_SGE = ProcessSGE()
-			(job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE)
-			if sample.is_type_fastq_gz_sequencing():	### default is Illumina
-				taskID = process_SGE.set_run_trimmomatic_species(sample, self.request.user, job_name)
-			else:										### Minion, codify with other
-				taskID = process_SGE.set_run_clean_minion(sample, self.request.user, job_name)
-		except Exception as e:
-			self.logger.error('Fail to run: ProcessSGE - ' + str(e))
-			return super(SamplesAddView, self).form_invalid(form)
-		
-		## refresh sample list for this user
-		if not job_name is None:
-			process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
-		### 
-		manageDatabase = ManageDatabase()
-		manageDatabase.set_sample_metakey(sample, self.request.user, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue, taskID)
-		
-		messages.success(self.request, "Sample '" + name + "' was created successfully", fail_silently=True)
-		return super(SamplesAddView, self).form_valid(form)
+        ### create a task to perform the analysis of fastq and trimmomatic
+        try:
+            process_SGE = ProcessSGE()
+            (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
+                Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
+            )
+            if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
+                taskID = process_SGE.set_run_trimmomatic_species(
+                    sample, self.request.user, job_name
+                )
+            else:  ### Minion, codify with other
+                taskID = process_SGE.set_run_clean_minion(
+                    sample, self.request.user, job_name
+                )
+        except Exception as e:
+            self.logger.error("Fail to run: ProcessSGE - " + str(e))
+            return super(SamplesAddView, self).form_invalid(form)
+
+        ## refresh sample list for this user
+        if not job_name is None:
+            process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
+        ###
+        manageDatabase = ManageDatabase()
+        manageDatabase.set_sample_metakey(
+            sample,
+            self.request.user,
+            MetaKeyAndValue.META_KEY_Queue_TaskID,
+            MetaKeyAndValue.META_VALUE_Queue,
+            taskID,
+        )
+
+        messages.success(
+            self.request,
+            "Sample '" + name + "' was created successfully",
+            fail_silently=True,
+        )
+        return super(SamplesAddView, self).form_valid(form)
 
     form_valid_message = ""  ## need to have this, even empty
 
@@ -842,52 +892,76 @@ class SamplesUploadDescriptionFileView(
             pass
 
         utils = Utils()
-		software = Software()
+        software = Software()
         path_name = form.cleaned_data["path_name"]
 
-		## create a genbank file
-		if (not path_name is None):
-			upload_files = form.save(commit=False)
-			upload_files.is_valid = True
-			upload_files.is_processed = False
-			upload_files.is_deleted = False
-			upload_files.number_errors = 0
-			upload_files.number_files_processed = 0
-			upload_files.number_files_to_process = form.number_files_to_process
-			
-			try:
-				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
-			except MetaKey.DoesNotExist:
-				type_file = MetaKey()
-				type_file.name = TypeFile.TYPE_FILE_sample_file
-				type_file.save()
-			
-			upload_files.type_file = type_file
-			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-			upload_files.owner = self.request.user
-			
-			upload_files.description = ""
-			upload_files.save()
-		
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
-													TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
-			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
-			software.dos_2_unix(sz_file_to)
-			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
-			upload_files.save()
-			
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_read_sample_file(upload_files, self.request.user)
-			except:
-				return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
-			
-			messages.success(self.request, "File '" + upload_files.file_name + "' with samples was uploaded successfully", fail_silently=True)
-			return super(SamplesUploadDescriptionFileView, self).form_valid(form)
-		return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+        ## create a genbank file
+        if not path_name is None:
+            upload_files = form.save(commit=False)
+            upload_files.is_valid = True
+            upload_files.is_processed = False
+            upload_files.is_deleted = False
+            upload_files.number_errors = 0
+            upload_files.number_files_processed = 0
+            upload_files.number_files_to_process = form.number_files_to_process
+
+            try:
+                type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file)
+            except MetaKey.DoesNotExist:
+                type_file = MetaKey()
+                type_file.name = TypeFile.TYPE_FILE_sample_file
+                type_file.save()
+
+            upload_files.type_file = type_file
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
+
+            upload_files.description = ""
+            upload_files.save()
+
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file
+                ),
+                upload_files.file_name,
+            )
+            sz_file_to = utils.get_unique_file(
+                sz_file_to
+            )  ## get unique file name, user can upload files with same name...
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name
+                ),
+                sz_file_to,
+            )
+            software.dos_2_unix(sz_file_to)
+            upload_files.path_name.name = os.path.join(
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file
+                ),
+                ntpath.basename(sz_file_to),
+            )
+            upload_files.save()
+
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_read_sample_file(
+                    upload_files, self.request.user
+                )
+            except:
+                return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
+
+            messages.success(
+                self.request,
+                "File '"
+                + upload_files.file_name
+                + "' with samples was uploaded successfully",
+                fail_silently=True,
+            )
+            return super(SamplesUploadDescriptionFileView, self).form_valid(form)
+        return super(SamplesUploadDescriptionFileView, self).form_invalid(form)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
@@ -946,53 +1020,83 @@ class SamplesUploadDescriptionFileViewMetadata(
         except Profile.DoesNotExist:
             pass
 
-		utils = Utils()
-		software = Software()
-		path_name = form.cleaned_data['path_name']
+        utils = Utils()
+        software = Software()
+        path_name = form.cleaned_data["path_name"]
 
-		## create a genbank file
-		if (not path_name is None):
-			upload_files = form.save(commit=False)
-			upload_files.is_valid = True
-			upload_files.is_processed = False
-			upload_files.is_deleted = False
-			upload_files.number_errors = 0
-			upload_files.number_files_processed = 0
-			upload_files.number_files_to_process = form.number_files_to_process
-			
-			try:
-				type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_sample_file_metadata)
-			except MetaKey.DoesNotExist:
-				type_file = MetaKey()
-				type_file.name = TypeFile.TYPE_FILE_sample_file_metadata
-				type_file.save()
-			
-			upload_files.type_file = type_file
-			upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-			upload_files.owner = self.request.user
-			
-			upload_files.description = ""
-			upload_files.save()				## need this save because of 
-		
-			## move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
-													TypeFile.TYPE_FILE_sample_file_metadata), upload_files.file_name)
-			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
-			software.dos_2_unix(sz_file_to)
-			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
-									TypeFile.TYPE_FILE_sample_file_metadata), ntpath.basename(sz_file_to))
-			upload_files.save()
-			
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
-			except:
-				return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
-			
-			messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully", fail_silently=True)
-			return super(SamplesUploadDescriptionFileViewMetadata, self).form_valid(form)
-		return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
+        ## create a genbank file
+        if not path_name is None:
+            upload_files = form.save(commit=False)
+            upload_files.is_valid = True
+            upload_files.is_processed = False
+            upload_files.is_deleted = False
+            upload_files.number_errors = 0
+            upload_files.number_files_processed = 0
+            upload_files.number_files_to_process = form.number_files_to_process
+
+            try:
+                type_file = MetaKey.objects.get(
+                    name=TypeFile.TYPE_FILE_sample_file_metadata
+                )
+            except MetaKey.DoesNotExist:
+                type_file = MetaKey()
+                type_file.name = TypeFile.TYPE_FILE_sample_file_metadata
+                type_file.save()
+
+            upload_files.type_file = type_file
+            upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
+            upload_files.owner = self.request.user
+
+            upload_files.description = ""
+            upload_files.save()  ## need this save because of
+
+            ## move the files to the right place
+            sz_file_to = os.path.join(
+                getattr(settings, "MEDIA_ROOT", None),
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
+                ),
+                upload_files.file_name,
+            )
+            sz_file_to = utils.get_unique_file(
+                sz_file_to
+            )  ## get unique file name, user can upload files with same name...
+            utils.move_file(
+                os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name
+                ),
+                sz_file_to,
+            )
+            software.dos_2_unix(sz_file_to)
+            upload_files.path_name.name = os.path.join(
+                utils.get_path_upload_file(
+                    self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
+                ),
+                ntpath.basename(sz_file_to),
+            )
+            upload_files.save()
+
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_read_sample_file_with_metadata(
+                    upload_files, self.request.user
+                )
+            except:
+                return super(
+                    SamplesUploadDescriptionFileViewMetadata, self
+                ).form_invalid(form)
+
+            messages.success(
+                self.request,
+                "File '"
+                + upload_files.file_name
+                + "' with metadata was uploaded successfully",
+                fail_silently=True,
+            )
+            return super(SamplesUploadDescriptionFileViewMetadata, self).form_valid(
+                form
+            )
+        return super(SamplesUploadDescriptionFileViewMetadata, self).form_invalid(form)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this
@@ -1106,41 +1210,51 @@ class SamplesAddFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.For
         """
         return super(SamplesAddFastQView, self).form_valid(form)
 
-	form_valid_message = ""		## need to have this, even empty
-	
-class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Create a new reference
-	"""
-	form_class = SamplesUploadMultipleFastqForm
-	success_url = reverse_lazy('sample-add-fastq')
-	template_name = 'samples/samples_upload_fastq_files.html'
-	utils = Utils()
+    form_valid_message = ""  ## need to have this, even empty
 
-	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
-	else: logger = logging.getLogger("fluWebVirus.production")
-	
-	def get_form_kwargs(self):
-		"""
-		Set the request to pass in the form
-		"""
-		kw = super(SamplesUploadFastQView, self).get_form_kwargs()
-		kw['request'] = self.request 	# get error
-		return kw
-	
-	def get_context_data(self, **kwargs):
-		context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
-		context['nav_sample'] = True
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		context['show_note_message_down_size'] = False
-		if (settings.DOWN_SIZE_FASTQ_FILES):
-			context['show_note_message_down_size'] = True
-			context['message_note_2'] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
-				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
-				filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
-				filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD))
-				)		## show main information about the institute
+
+class SamplesUploadFastQView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.FormView
+):
+    """
+    Create a new reference
+    """
+
+    form_class = SamplesUploadMultipleFastqForm
+    success_url = reverse_lazy("sample-add-fastq")
+    template_name = "samples/samples_upload_fastq_files.html"
+    utils = Utils()
+
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
+
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(SamplesUploadFastQView, self).get_form_kwargs()
+        kw["request"] = self.request  # get error
+        return kw
+
+    def get_context_data(self, **kwargs):
+        context = super(SamplesUploadFastQView, self).get_context_data(**kwargs)
+        context["nav_sample"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_note_message_down_size"] = False
+        if settings.DOWN_SIZE_FASTQ_FILES:
+            context["show_note_message_down_size"] = True
+            context[
+                "message_note_2"
+            ] = "Files between {}-{} will be downsized randomly to ~{} before analysis.".format(
+                filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+                filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE)),
+                filesizeformat(int(settings.MAX_FASTQ_FILE_UPLOAD)),
+            )  ## show main information about the institute
 
             context["message_note_1"] = "Maximum size per fastq.gz file is {}.".format(
                 filesizeformat(int(settings.MAX_FASTQ_FILE_WITH_DOWNSIZE))
@@ -1177,66 +1291,99 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
                     }
                     return JsonResponse(data)
 
-				upload_files = UploadFiles()
-				upload_files.file_name = utils.clean_name(ntpath.basename(path_name.name))
-				## move the files to the right place
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
-														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
-				sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
-				
-				## because sometimes has 
-				if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
-					temp_file = self.utils.get_temp_file("upload_file", ".dat")
-					with open(temp_file, 'wb') as out: ## Open temporary file as bytes
-						path_name.file.seek(0)
-						out.write(path_name.file.read())                ## Read bytes into file
-					self.utils.move_file(temp_file, sz_file_to)
-				else: self.utils.copy_file(path_name.file.name, sz_file_to)
-				self.logger.info("Starting for file: " + str(upload_files.file_name))
-			
-				## test if file exist
-				if (not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10):
-					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, fail to copy file.' }
-					return JsonResponse(data)
-				
-				upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
-										TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
-				try:
-					type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
-				except MetaKey.DoesNotExist:
-					type_file = MetaKey()
-					type_file.name = TypeFile.TYPE_FILE_fastq_gz
-					type_file.save()
-	
-				upload_files.is_valid = True
-				upload_files.is_processed = False			## True when all samples are set
-				upload_files.owner = request.user
-				upload_files.type_file = type_file
-				upload_files.number_files_to_process = 1
-				upload_files.number_files_processed = 0
-				upload_files.description = ""
-				upload_files.save()
-	
-				data = {'is_valid': True, 'name': upload_files.file_name, 'url': mark_safe(upload_files.get_path_to_file(TypePath.MEDIA_URL)) }
-			else:
-				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : str(form.errors['path_name'][0]) }
-		except:
-			self.logger.error(sys.exc_info())
-			data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, unknown error.' }
-			return JsonResponse(data)
-	
-		## if is last file send a message to link files with sample csv file
-		if ('is_valid' in data and data['is_valid']): 
-			try:
-				process_SGE = ProcessSGE()
-				taskID = process_SGE.set_link_files(self.request.user)
-			except:
-				data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Fail to submit SGE job.' }
-				return JsonResponse(data)
-		return JsonResponse(data)
-	
-	form_valid_message = ""		## need to have this, even empty
+                upload_files = UploadFiles()
+                upload_files.file_name = utils.clean_name(
+                    ntpath.basename(path_name.name)
+                )
+                ## move the files to the right place
+                sz_file_to = os.path.join(
+                    getattr(settings, "MEDIA_ROOT", None),
+                    self.utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
+                    ),
+                    upload_files.file_name,
+                )
+                sz_file_to = self.utils.get_unique_file(
+                    sz_file_to
+                )  ## get unique file name, user can upload files with same name...
 
+                ## because sometimes has
+                if str(type(path_name.file)) == "<class '_io.BytesIO'>":
+                    temp_file = self.utils.get_temp_file("upload_file", ".dat")
+                    with open(temp_file, "wb") as out:  ## Open temporary file as bytes
+                        path_name.file.seek(0)
+                        out.write(path_name.file.read())  ## Read bytes into file
+                    self.utils.move_file(temp_file, sz_file_to)
+                else:
+                    self.utils.copy_file(path_name.file.name, sz_file_to)
+                self.logger.info("Starting for file: " + str(upload_files.file_name))
+
+                ## test if file exist
+                if not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10:
+                    data = {
+                        "is_valid": False,
+                        "name": self.request.FILES["path_name"].name,
+                        "message": "Internal server error, fail to copy file.",
+                    }
+                    return JsonResponse(data)
+
+                upload_files.path_name.name = os.path.join(
+                    self.utils.get_path_upload_file(
+                        self.request.user.id, TypeFile.TYPE_FILE_fastq_gz
+                    ),
+                    ntpath.basename(sz_file_to),
+                )
+                try:
+                    type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
+                except MetaKey.DoesNotExist:
+                    type_file = MetaKey()
+                    type_file.name = TypeFile.TYPE_FILE_fastq_gz
+                    type_file.save()
+
+                upload_files.is_valid = True
+                upload_files.is_processed = False  ## True when all samples are set
+                upload_files.owner = request.user
+                upload_files.type_file = type_file
+                upload_files.number_files_to_process = 1
+                upload_files.number_files_processed = 0
+                upload_files.description = ""
+                upload_files.save()
+
+                data = {
+                    "is_valid": True,
+                    "name": upload_files.file_name,
+                    "url": mark_safe(upload_files.get_path_to_file(TypePath.MEDIA_URL)),
+                }
+            else:
+                data = {
+                    "is_valid": False,
+                    "name": self.request.FILES["path_name"].name,
+                    "message": str(form.errors["path_name"][0]),
+                }
+        except:
+            self.logger.error(sys.exc_info())
+            data = {
+                "is_valid": False,
+                "name": self.request.FILES["path_name"].name,
+                "message": "Internal server error, unknown error.",
+            }
+            return JsonResponse(data)
+
+        ## if is last file send a message to link files with sample csv file
+        if "is_valid" in data and data["is_valid"]:
+            try:
+                process_SGE = ProcessSGE()
+                taskID = process_SGE.set_link_files(self.request.user)
+            except:
+                data = {
+                    "is_valid": False,
+                    "name": self.request.FILES["path_name"].name,
+                    "message": "Fail to submit SGE job.",
+                }
+                return JsonResponse(data)
+        return JsonResponse(data)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
 class SamplesDetailView(LoginRequiredMixin, DetailView):
@@ -1464,94 +1611,156 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                 if not stat_data is None:
                     context["data_nanostat"] = stat_data
 
-			### software
-			if (sample.is_type_fastq_gz_sequencing()):  ### for illumina
+            ### software
+            if sample.is_type_fastq_gz_sequencing():  ### for illumina
 
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample is None):
-					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Fastq_Trimmomatic, MetaKeyAndValue.META_VALUE_Success)
-					if (not meta_sample is None):
-						lst_data = meta_sample.description.split(',')
-						context['fastq_software'] = lst_data[1].strip()
-						context['trimmomatic_software'] = lst_data[2].strip()
-				else:
-					decodeResult = DecodeObjects()
-					result = decodeResult.decode_result(meta_sample.description)
-					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_FASTQ_name)
-					trimmomatic_software = result.get_software(SoftwareNames.SOFTWARE_TRIMMOMATIC_name)
-					context['trimmomatic_software'] = trimmomatic_software if len(trimmomatic_software) > 0 \
-							else "Trimmomatic not ran."
-							
-				### species identification, only in Illumina
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample is None):
-					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-					if (meta_sample != None):
-						lst_data = meta_sample.description.split(',')
-						context['spades_software'] = lst_data[1].strip()
-						context['abricate_software'] = lst_data[2].strip()
-				else:
-					decodeResult = DecodeObjects()
-					result = decodeResult.decode_result(meta_sample.description)
-					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_SPAdes_name)
-					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)
+                meta_sample = manageDatabase.get_sample_metakey_last(
+                    sample,
+                    MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software,
+                    MetaKeyAndValue.META_VALUE_Success,
+                )
+                if meta_sample is None:
+                    meta_sample = manageDatabase.get_sample_metakey_last(
+                        sample,
+                        MetaKeyAndValue.META_KEY_Fastq_Trimmomatic,
+                        MetaKeyAndValue.META_VALUE_Success,
+                    )
+                    if not meta_sample is None:
+                        lst_data = meta_sample.description.split(",")
+                        context["fastq_software"] = lst_data[1].strip()
+                        context["trimmomatic_software"] = lst_data[2].strip()
+                else:
+                    decodeResult = DecodeObjects()
+                    result = decodeResult.decode_result(meta_sample.description)
+                    context["fastq_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_FASTQ_name
+                    )
+                    trimmomatic_software = result.get_software(
+                        SoftwareNames.SOFTWARE_TRIMMOMATIC_name
+                    )
+                    context["trimmomatic_software"] = (
+                        trimmomatic_software
+                        if len(trimmomatic_software) > 0
+                        else "Trimmomatic not ran."
+                    )
 
-			else:	### Software Minion
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample == None):
-					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_NanoStat_NanoFilt, MetaKeyAndValue.META_VALUE_Success)
-					if (not meta_sample is None):
-						lst_data = meta_sample.description.split(',')
-						context['fastq_software'] = lst_data[1].strip()
-						context['trimmomatic_software'] = lst_data[2].strip()
-				else:
-					decodeResult = DecodeObjects()
-					result = decodeResult.decode_result(meta_sample.description)
-					context['fastq_software'] = result.get_software(SoftwareNames.SOFTWARE_NanoStat_name)
-					nanofilt_software = result.get_software(SoftwareNames.SOFTWARE_NanoFilt_name)
-					context['trimmomatic_software'] = nanofilt_software if len(nanofilt_software) > 0 \
-							else "Nanofilt not ran."
+                ### species identification, only in Illumina
+                meta_sample = manageDatabase.get_sample_metakey_last(
+                    sample,
+                    MetaKeyAndValue.META_KEY_Identify_Sample_Software,
+                    MetaKeyAndValue.META_VALUE_Success,
+                )
+                if meta_sample is None:
+                    meta_sample = manageDatabase.get_sample_metakey_last(
+                        sample,
+                        MetaKeyAndValue.META_KEY_Identify_Sample,
+                        MetaKeyAndValue.META_VALUE_Success,
+                    )
+                    if meta_sample != None:
+                        lst_data = meta_sample.description.split(",")
+                        context["spades_software"] = lst_data[1].strip()
+                        context["abricate_software"] = lst_data[2].strip()
+                else:
+                    decodeResult = DecodeObjects()
+                    result = decodeResult.decode_result(meta_sample.description)
+                    context["spades_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_SPAdes_name
+                    )
+                    context["abricate_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_ABRICATE_name
+                    )
 
-				### abricate type/subtype				
-				#meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-				#if (not meta_sample is None):
-				#	lst_data = meta_sample.description.split(',')
-				#	if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
-				### species identification, only in Illumina
-				meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample_Software, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_sample is None):
-					meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
-					if (meta_sample != None):
-						lst_data = meta_sample.description.split(',')
-						context['spades_software'] = lst_data[1].strip()
-						context['abricate_software'] = lst_data[2].strip()
-				else:
-					decodeResult = DecodeObjects()
-					result = decodeResult.decode_result(meta_sample.description)
-					context['spades_software'] = result.get_software(SoftwareNames.SOFTWARE_FLYE_name)
-					context['abricate_software'] = result.get_software(SoftwareNames.SOFTWARE_ABRICATE_name)				
-						
-			##### extra data sample, columns added by the user
-			## [[header1, value1], [header2, value2], [header3, value3], ...]
-			### if it's to big expand button is better
-			tag_names = sample.get_tag_names()
-			context['extra_data_sample_expand'] = (tag_names != None and tag_names.count()  > (Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS))
-			if (tag_names != None): context['extra_data_sample'] = self.utils.grouped(tag_names, 4)
-			
-			### get different types of alerts
-			metaKeyAndValue = MetaKeyAndValue()
-			alert_out = []
-			for key in metaKeyAndValue.get_keys_show_alerts_in_sample_details_view():
-				meta_data = manageDatabase.get_sample_metakey_last(sample, key, MetaKeyAndValue.META_VALUE_Success)
-				if (meta_data != None): alert_out.append(meta_data.description)
-			context['alerts'] = alert_out
-			context['has_type_subtype'] = sample.identify_virus.all().count() > 0
-			if (sample.identify_virus.all().count() > 0):
-				vect_identify_virus = []
-				for identify_virus in sample.identify_virus.all():
-					if (not identify_virus in vect_identify_virus):
-						vect_identify_virus.append(identify_virus)
-				context['vect_identify_virus'] = vect_identify_virus
+            else:  ### Software Minion
+                meta_sample = manageDatabase.get_sample_metakey_last(
+                    sample,
+                    MetaKeyAndValue.META_KEY_NanoStat_NanoFilt_Software,
+                    MetaKeyAndValue.META_VALUE_Success,
+                )
+                if meta_sample == None:
+                    meta_sample = manageDatabase.get_sample_metakey_last(
+                        sample,
+                        MetaKeyAndValue.META_KEY_NanoStat_NanoFilt,
+                        MetaKeyAndValue.META_VALUE_Success,
+                    )
+                    if not meta_sample is None:
+                        lst_data = meta_sample.description.split(",")
+                        context["fastq_software"] = lst_data[1].strip()
+                        context["trimmomatic_software"] = lst_data[2].strip()
+                else:
+                    decodeResult = DecodeObjects()
+                    result = decodeResult.decode_result(meta_sample.description)
+                    context["fastq_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_NanoStat_name
+                    )
+                    nanofilt_software = result.get_software(
+                        SoftwareNames.SOFTWARE_NanoFilt_name
+                    )
+                    context["trimmomatic_software"] = (
+                        nanofilt_software
+                        if len(nanofilt_software) > 0
+                        else "Nanofilt not ran."
+                    )
+
+                ### abricate type/subtype
+                # meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+                # if (not meta_sample is None):
+                #    lst_data = meta_sample.description.split(',')
+                #    if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
+                ### species identification, only in Illumina
+                meta_sample = manageDatabase.get_sample_metakey_last(
+                    sample,
+                    MetaKeyAndValue.META_KEY_Identify_Sample_Software,
+                    MetaKeyAndValue.META_VALUE_Success,
+                )
+                if meta_sample is None:
+                    meta_sample = manageDatabase.get_sample_metakey_last(
+                        sample,
+                        MetaKeyAndValue.META_KEY_Identify_Sample,
+                        MetaKeyAndValue.META_VALUE_Success,
+                    )
+                    if meta_sample != None:
+                        lst_data = meta_sample.description.split(",")
+                        context["spades_software"] = lst_data[1].strip()
+                        context["abricate_software"] = lst_data[2].strip()
+                else:
+                    decodeResult = DecodeObjects()
+                    result = decodeResult.decode_result(meta_sample.description)
+                    context["spades_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_FLYE_name
+                    )
+                    context["abricate_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_ABRICATE_name
+                    )
+
+            ##### extra data sample, columns added by the user
+            ## [[header1, value1], [header2, value2], [header3, value3], ...]
+            ### if it's to big expand button is better
+            tag_names = sample.get_tag_names()
+            context[
+                "extra_data_sample_expand"
+            ] = tag_names != None and tag_names.count() > (
+                Constants.START_EXPAND_SAMPLE_TAG_NAMES_ROWS
+            )
+            if tag_names != None:
+                context["extra_data_sample"] = self.utils.grouped(tag_names, 4)
+
+            ### get different types of alerts
+            metaKeyAndValue = MetaKeyAndValue()
+            alert_out = []
+            for key in metaKeyAndValue.get_keys_show_alerts_in_sample_details_view():
+                meta_data = manageDatabase.get_sample_metakey_last(
+                    sample, key, MetaKeyAndValue.META_VALUE_Success
+                )
+                if meta_data != None:
+                    alert_out.append(meta_data.description)
+            context["alerts"] = alert_out
+            context["has_type_subtype"] = sample.identify_virus.all().count() > 0
+            if sample.identify_virus.all().count() > 0:
+                vect_identify_virus = []
+                for identify_virus in sample.identify_virus.all():
+                    if not identify_virus in vect_identify_virus:
+                        vect_identify_virus.append(identify_virus)
+                context["vect_identify_virus"] = vect_identify_virus
 
             ## files with contigs
             if sample.is_type_fastq_gz_sequencing():
@@ -1625,14 +1834,13 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
         ] = ShowInfoMainPage()  ## show main information about the institute
         return context
 
->>>>>>> 3b7dc1dd4ebd92628e6b8d14fc8e1863e2bdb5f0
 
 class ProjectsView(LoginRequiredMixin, ListView):
     utils = Utils()
     model = Project
     template_name = "project/projects.html"
     context_object_name = "projects"
-    ##	group_required = u'company-user' security related with GroupRequiredMixin
+    ##    group_required = u'company-user' security related with GroupRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsView, self).get_context_data(**kwargs)
@@ -1930,28 +2138,34 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
         )
         return super(ProjectCreateView, self).form_valid(form)
 
-class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	Create a new reference
-	"""
-	utils = Utils()
-	model = Sample
-	fields = ['name']
-	success_url = reverse_lazy('projects')
-	template_name = 'project_sample/project_sample_add.html'
-	
-	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
-	else: logger = logging.getLogger("fluWebVirus.production")
-	
-	def get_context_data(self, **kwargs):
-		context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
-		
-		### test if the user is the same of the page
-		project = Project.objects.get(pk=self.kwargs['pk'])
-		context['nav_project'] = True
-		if (project.owner.id != self.request.user.id): 
-			context['error_cant_see'] = "1"
-			return context
+
+class AddSamplesProjectsView(
+    LoginRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Create a new reference
+    """
+
+    utils = Utils()
+    model = Sample
+    fields = ["name"]
+    success_url = reverse_lazy("projects")
+    template_name = "project_sample/project_sample_add.html"
+
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
+
+    def get_context_data(self, **kwargs):
+        context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
+
+        ### test if the user is the same of the page
+        project = Project.objects.get(pk=self.kwargs["pk"])
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
 
         ## catch everything that is not in connection with project
         count_active_projects = ProjectSample.objects.filter(
@@ -1989,41 +2203,59 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
                 self.request,
             )
 
-		context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
-		## need to clean all the others if are reject in filter
-		dt_sample_id_add_temp = {}
-		if (context[Constants.CHECK_BOX_ALL]):
-			for sample in query_set: dt_sample_id_add_temp[sample.id] = 1	## add the ids that are in the tables
-			for key in self.request.session.keys():
-				if (key.startswith(Constants.CHECK_BOX) and len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
-					### this is necessary because of the search. Can occur some checked box that are out of filter.
-					if (int(key.split('_')[2]) not in dt_sample_id_add_temp):
-						self.request.session[key] = False
-					else: self.request.session[key] = True
-		## END need to clean all the others if are reject in filter
-		
-		### check if it was shown the settings message
-		key_session_name_project_settings = "project_settings_{}".format(project.name)
-		if (not key_session_name_project_settings in self.request.session):
-			self.request.session[key_session_name_project_settings] = True
-		else: self.request.session[key_session_name_project_settings] = False
-		
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
-		if (self.request.GET.get(tag_search) != None): context[tag_search] = self.request.GET.get(tag_search)
-		context['table'] = table
-		context['show_paginatior'] = query_set.count() > Constants.PAGINATE_NUMBER
-		context['query_set_count'] = query_set.count()
-		context['project_name'] = project.name
-		context['nav_modal'] = True	## short the size of modal window
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		context['show_message_change_settings'] = (count_active_projects == 0 and
-					self.request.session[key_session_name_project_settings]) ## Show message to change settings to the project
-		context['add_all_samples_message'] = "Add {} sample{}".format(query_set.count(), pluralize(query_set.count(), ',s'))
-		if self.request.POST: 
-			context['project_sample'] = AddSampleProjectForm(self.request.POST)
-		else: 
-			context['project_sample'] = AddSampleProjectForm()
-		return context
+        context[Constants.CHECK_BOX_ALL] = self.request.session[Constants.CHECK_BOX_ALL]
+        ## need to clean all the others if are reject in filter
+        dt_sample_id_add_temp = {}
+        if context[Constants.CHECK_BOX_ALL]:
+            for sample in query_set:
+                dt_sample_id_add_temp[
+                    sample.id
+                ] = 1  ## add the ids that are in the tables
+            for key in self.request.session.keys():
+                if (
+                    key.startswith(Constants.CHECK_BOX)
+                    and len(key.split("_")) == 3
+                    and self.utils.is_integer(key.split("_")[2])
+                ):
+                    ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                    if int(key.split("_")[2]) not in dt_sample_id_add_temp:
+                        self.request.session[key] = False
+                    else:
+                        self.request.session[key] = True
+        ## END need to clean all the others if are reject in filter
+
+        ### check if it was shown the settings message
+        key_session_name_project_settings = "project_settings_{}".format(project.name)
+        if not key_session_name_project_settings in self.request.session:
+            self.request.session[key_session_name_project_settings] = True
+        else:
+            self.request.session[key_session_name_project_settings] = False
+
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
+        if self.request.GET.get(tag_search) != None:
+            context[tag_search] = self.request.GET.get(tag_search)
+        context["table"] = table
+        context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
+        context["query_set_count"] = query_set.count()
+        context["project_name"] = project.name
+        context["nav_modal"] = True  ## short the size of modal window
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["show_message_change_settings"] = (
+            count_active_projects == 0
+            and self.request.session[key_session_name_project_settings]
+        )  ## Show message to change settings to the project
+        context["add_all_samples_message"] = "Add {} sample{}".format(
+            query_set.count(), pluralize(query_set.count(), ",s")
+        )
+        if self.request.POST:
+            context["project_sample"] = AddSampleProjectForm(self.request.POST)
+        else:
+            context["project_sample"] = AddSampleProjectForm()
+        return context
 
     def form_valid(self, form):
         """
@@ -2085,80 +2317,127 @@ class AddSamplesProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic.
             ):
                 dt_sample_out[project_sample.sample.id] = 1
 
-			### start adding...
-			(job_name_wait, job_name) = ("", "")
-			project_sample_add = 0
-			for id_sample in vect_sample_id_add:
-				## keep track of samples out
-				if id_sample in dt_sample_out: continue
-				dt_sample_out[id_sample] = 1
-				
-				try:
-					sample = Sample.objects.get(pk=id_sample)
-				except Sample.DoesNotExist:
-					## log
-					self.logger.error('Fail to get sample_id {} in ProjectSample'.format(key.split('_')[2]))
-					continue
-				
-				## the sample can be deleted by other session
-				if (sample.is_deleted): continue
-				
-				## get project sample
-				try:
-					project_sample = ProjectSample.objects.get(project__id=project.id, sample__id=sample.id)
-					
-					### if exist can be deleted, pass to active
-					if (project_sample.is_deleted and not project_sample.is_error and not project_sample.is_deleted_in_file_system):
-						project_sample.is_deleted = False
-						project_sample.is_finished = False
-						project_sample.save()
-						project_sample_add += 1
-					
-				except ProjectSample.DoesNotExist:
-					project_sample = ProjectSample()
-					project_sample.project = project
-					project_sample.sample = sample
-					project_sample.save()
-					project_sample_add += 1
-					
-				### create a task to perform the analysis of snippy and freebayes
-				### Important, it is necessary to run again because can have some changes in the parameters.
-				try:
-					if len(job_name_wait) == 0: (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
-						Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL)
-					if (sample.is_type_fastq_gz_sequencing()):
-						taskID = process_SGE.set_second_stage_snippy(project_sample, self.request.user, job_name, [job_name_wait])
-					else:
-						taskID = process_SGE.set_second_stage_medaka(project_sample, self.request.user, job_name, [job_name_wait])
-						
-					### set project sample queue ID
-					manageDatabase.set_project_sample_metakey(project_sample, self.request.user,\
-									metaKeyAndValue.get_meta_key_queue_by_project_sample_id(project_sample.id),\
-									MetaKeyAndValue.META_VALUE_Queue, taskID)
-				except:
-					pass
-					
-			### necessary to calculate the global results again 
-			if (project_sample_add > 0):
-				try:
-					taskID = process_SGE.set_collect_global_files(project, self.request.user)
-					manageDatabase.set_project_metakey(project, self.request.user, metaKeyAndValue.get_meta_key(\
-							MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id),
-							MetaKeyAndValue.META_VALUE_Queue, taskID)
-				except:
-					pass
-			
-			if (project_sample_add == 0):
-				messages.warning(self.request, "No sample was added to the project '{}'".format(project.name))
-			else:
-				if (project_sample_add > 1):
-					messages.success(self.request, "'{}' samples were added to your project.".format(\
-								project_sample_add), fail_silently=True)
-				else:
-					messages.success(self.request, "One sample was added to your project.", fail_silently=True)
-			return HttpResponseRedirect(reverse_lazy('projects'))
-		else:
-			return super(AddSamplesProjectsView, self).form_invalid(form)
+            ### start adding...
+            (job_name_wait, job_name) = ("", "")
+            project_sample_add = 0
+            for id_sample in vect_sample_id_add:
+                ## keep track of samples out
+                if id_sample in dt_sample_out:
+                    continue
+                dt_sample_out[id_sample] = 1
+
+                try:
+                    sample = Sample.objects.get(pk=id_sample)
+                except Sample.DoesNotExist:
+                    ## log
+                    self.logger.error(
+                        "Fail to get sample_id {} in ProjectSample".format(
+                            key.split("_")[2]
+                        )
+                    )
+                    continue
+
+                ## the sample can be deleted by other session
+                if sample.is_deleted:
+                    continue
+
+                ## get project sample
+                try:
+                    project_sample = ProjectSample.objects.get(
+                        project__id=project.id, sample__id=sample.id
+                    )
+
+                    ### if exist can be deleted, pass to active
+                    if (
+                        project_sample.is_deleted
+                        and not project_sample.is_error
+                        and not project_sample.is_deleted_in_file_system
+                    ):
+                        project_sample.is_deleted = False
+                        project_sample.is_finished = False
+                        project_sample.save()
+                        project_sample_add += 1
+
+                except ProjectSample.DoesNotExist:
+                    project_sample = ProjectSample()
+                    project_sample.project = project
+                    project_sample.sample = sample
+                    project_sample.save()
+                    project_sample_add += 1
+
+                ### create a task to perform the analysis of snippy and freebayes
+                ### Important, it is necessary to run again because can have some changes in the parameters.
+                try:
+                    if len(job_name_wait) == 0:
+                        (
+                            job_name_wait,
+                            job_name,
+                        ) = self.request.user.profile.get_name_sge_seq(
+                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
+                        )
+                    if sample.is_type_fastq_gz_sequencing():
+                        taskID = process_SGE.set_second_stage_snippy(
+                            project_sample, self.request.user, job_name, [job_name_wait]
+                        )
+                    else:
+                        taskID = process_SGE.set_second_stage_medaka(
+                            project_sample, self.request.user, job_name, [job_name_wait]
+                        )
+
+                    ### set project sample queue ID
+                    manageDatabase.set_project_sample_metakey(
+                        project_sample,
+                        self.request.user,
+                        metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
+                            project_sample.id
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+                except:
+                    pass
+
+            ### necessary to calculate the global results again
+            if project_sample_add > 0:
+                try:
+                    taskID = process_SGE.set_collect_global_files(
+                        project, self.request.user
+                    )
+                    manageDatabase.set_project_metakey(
+                        project,
+                        self.request.user,
+                        metaKeyAndValue.get_meta_key(
+                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
+                        ),
+                        MetaKeyAndValue.META_VALUE_Queue,
+                        taskID,
+                    )
+                except:
+                    pass
+
+            if project_sample_add == 0:
+                messages.warning(
+                    self.request,
+                    "No sample was added to the project '{}'".format(project.name),
+                )
+            else:
+                if project_sample_add > 1:
+                    messages.success(
+                        self.request,
+                        "'{}' samples were added to your project.".format(
+                            project_sample_add
+                        ),
+                        fail_silently=True,
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "One sample was added to your project.",
+                        fail_silently=True,
+                    )
+            return HttpResponseRedirect(reverse_lazy("projects"))
+        else:
+            return super(AddSamplesProjectsView, self).form_invalid(form)
 
         form_valid_message = ""  ## need to have this, even empty
 
@@ -2236,90 +2515,210 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             project=project, is_deleted=False, is_error=True, is_finished=False
         ).count()
 
-		## Files
-		context['coverage_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_COVERAGE)
-		context['main_variations_snippy_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)
-		
-		## coverage
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE)):
-			context['samples_file_coverage'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_COVERAGE))
-		## variants
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY)):
-			context['samples_file_variants'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY))
-		## minor intra host
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
-			context['samples_file_minor_intra_host'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
-				
-		## aln2pheno result		
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)):
-			context['aln2pheno_report_cog'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
-		#if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
-		#	context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
-		#		project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip)):
-			context['aln2pheno_zip'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_zip))
+        ## Files
+        context["coverage_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_COVERAGE
+        )
+        context["main_variations_snippy_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+        )
 
-		## all files zipped
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped)):
-			context['download_all_files'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped),
-				"{}_{}_{}".format(os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
-				project.get_clean_project_name(), datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW)))
-		
-		
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
-			context['sample_file_result_csv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV)):
-			context['sample_file_result_tsv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV)):
-			context['samples_file_settings_statistics_csv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV))
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV)):
-			context['samples_file_settings_statistics_tsv'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV))
-		
-		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)):
-			context['sample_file_all_consensus'] = get_link_for_dropdown_item(
-				project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus))
-		
-		### need to test because in the past this file was not created
-		context['freebays_variations_50_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)
-		file_name = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
-		if (not os.path.exists(file_name)):
-			collect_extra_data = CollectExtraData()
-			collect_extra_data.calculate_count_variations(project)
-		if (os.path.exists(file_name)):
-			context['variations_statistics_file'] = project.get_global_file_by_project_web(Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS)
-		
-		utils = Utils()
-		vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
-		if (vect_elements != None and len(vect_elements) > 0): 
-			context['elements'] = vect_elements
-		vect_elements_protein = utils.get_elements_with_CDS_from_db(project.reference, self.request.user)
-		if (vect_elements_protein != None and len(vect_elements_protein) > 0): 
-			context['elements_protein'] = vect_elements_protein ## because some does not have CDS
-			### get a vect of genes name
-			context['genes'] = utils.get_vect_cds_from_element_from_db(vect_elements_protein[0],
-						project.reference, self.request.user)
-			
-		### pangolin data
-		context['update_pangolin'] = False
-		file_pangolin_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
-		## first condition is to the ones without pangolin lineage
-		### need at least one sequence fasta to run pangolin
-		specie_tag = software.get_species_tag(project.reference)
-		if (project.number_passed_sequences != 0 and \
-			(not os.path.exists(file_pangolin_result) and specie_tag == Reference.SPECIES_SARS_COV_2) or \
-			(os.path.exists(file_pangolin_result) and software_pangolin.pangolin_results_out_date(project)) ):
-			context['update_pangolin'] = True
-			context['update_pangolin_message'] = mark_safe(software_pangolin.get_update_message(project))
+        ## coverage
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_COVERAGE
+            )
+        ):
+            context["samples_file_coverage"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_COVERAGE
+                )
+            )
+        ## variants
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+            )
+        ):
+            context["samples_file_variants"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY
+                )
+            )
+        ## minor intra host
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES
+            )
+        ):
+            context["samples_file_minor_intra_host"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES,
+                )
+            )
+
+        ## aln2pheno result
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK
+            )
+        ):
+            context["aln2pheno_report_cog"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                )
+            )
+        # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
+        #    context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
+        #        project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
+            )
+        ):
+            context["aln2pheno_zip"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_zip
+                )
+            )
+
+        ## all files zipped
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_all_files_zipped
+            )
+        ):
+            context["download_all_files"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_all_files_zipped
+                ),
+                "{}_{}_{}".format(
+                    os.path.splitext(Project.PROJECT_FILE_NAME_all_files_zipped)[0],
+                    project.get_clean_project_name(),
+                    datetime.now().strftime(settings.DATE_FORMAT_FOR_SHOW),
+                ),
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+            )
+        ):
+            context["sample_file_result_csv"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
+            )
+        ):
+            context["sample_file_result_tsv"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+            )
+        ):
+            context[
+                "samples_file_settings_statistics_csv"
+            ] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV,
+                )
+            )
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+            )
+        ):
+            context[
+                "samples_file_settings_statistics_tsv"
+            ] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV,
+                )
+            )
+
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT,
+                Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+            )
+        ):
+            context["sample_file_all_consensus"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
+                )
+            )
+
+        ### need to test because in the past this file was not created
+        context["freebays_variations_50_file"] = project.get_global_file_by_project_web(
+            Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES
+        )
+        file_name = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+        )
+        if not os.path.exists(file_name):
+            collect_extra_data = CollectExtraData()
+            collect_extra_data.calculate_count_variations(project)
+        if os.path.exists(file_name):
+            context[
+                "variations_statistics_file"
+            ] = project.get_global_file_by_project_web(
+                Project.PROJECT_FILE_NAME_TOTAL_VARIATIONS
+            )
+
+        utils = Utils()
+        vect_elements = utils.get_elements_from_db(project.reference, self.request.user)
+        if vect_elements != None and len(vect_elements) > 0:
+            context["elements"] = vect_elements
+        vect_elements_protein = utils.get_elements_with_CDS_from_db(
+            project.reference, self.request.user
+        )
+        if vect_elements_protein != None and len(vect_elements_protein) > 0:
+            context[
+                "elements_protein"
+            ] = vect_elements_protein  ## because some does not have CDS
+            ### get a vect of genes name
+            context["genes"] = utils.get_vect_cds_from_element_from_db(
+                vect_elements_protein[0], project.reference, self.request.user
+            )
+
+        ### pangolin data
+        context["update_pangolin"] = False
+        file_pangolin_result = project.get_global_file_by_project(
+            TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage
+        )
+        ## first condition is to the ones without pangolin lineage
+        ### need at least one sequence fasta to run pangolin
+        specie_tag = software.get_species_tag(project.reference)
+        if (
+            project.number_passed_sequences != 0
+            and (
+                not os.path.exists(file_pangolin_result)
+                and specie_tag == Reference.SPECIES_SARS_COV_2
+            )
+            or (
+                os.path.exists(file_pangolin_result)
+                and software_pangolin.pangolin_results_out_date(project)
+            )
+        ):
+            context["update_pangolin"] = True
+            context["update_pangolin_message"] = mark_safe(
+                software_pangolin.get_update_message(project)
+            )
 
         ## pangolin file
         if project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result):
@@ -2353,65 +2752,96 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
 
 
 class ProjectsSettingsView(LoginRequiredMixin, ListView):
-	"""
-	can change settings in the projects
-	"""
-	model = Project
-	template_name = 'settings/settings.html'
-	context_object_name = 'project'
-	
-	def get_context_data(self, **kwargs):
-		
-		context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
-		project = Project.objects.get(pk=self.kwargs['pk'])
-		
-		### can't see this project
-		context['nav_project'] = True
-		if (project.owner.id != self.request.user.id): 
-			context['error_cant_see'] = "1"
-			return context
-		
-		### test all defaults first, if exist in database
-		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(self.request.user, project, None, None, None) ## the user can have defaults yet
-		
-		all_tables = []	## order by Technology, PipelineStep, table
-						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
-						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
-						## Mix parameters with software
+    """
+    can change settings in the projects
+    """
 
-		### count samples already assigned to Project
-		count_project_sample = ProjectSample.objects.filter(project=project, is_deleted=False).count()
-		### IMPORTANT, must have technology__name, because old versions don't
-		for technology in ConstantsSettings.vect_technology:	## run over all technology
-			vect_pipeline_step = [ ] 
-			for pipeline_step in ConstantsSettings.vect_pipeline_names:
-				query_set = SoftwareSettings.objects.filter(owner=self.request.user, type_of_use=SoftwareSettings.TYPE_OF_USE_project,
-					parameter__project=project, parameter__project_sample=None,
-					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE, SoftwareSettings.TYPE_INSAFLU_PARAMETER],
-					technology__name=technology,
-					pipeline_step__name=pipeline_step,
-					is_obsolete = False).distinct()
-				
-				### if there are software
-				if query_set.count() > 0:
-					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
-								technology.replace(' ', '').replace('/', '')),
-								pipeline_step,
-								SoftwaresTable(query_set, project = project, project_sample = None,  sample = None, b_enable_options = count_project_sample == 0)])
+    model = Project
+    template_name = "settings/settings.html"
+    context_object_name = "project"
 
-			## if there is software for the pipeline step
-			if len(vect_pipeline_step) > 0:
-				all_tables.append([technology.replace(' ', '').replace('/', ''),
-								technology, vect_pipeline_step])
-		
-		context['all_softwares'] = all_tables
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		context['project'] = project
-		context['main_settings'] = False
-		context['project_settings'] = True
-		return context
+    def get_context_data(self, **kwargs):
+
+        context = super(ProjectsSettingsView, self).get_context_data(**kwargs)
+        project = Project.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this project
+        context["nav_project"] = True
+        if project.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            self.request.user, project, None, None, None
+        )  ## the user can have defaults yet
+
+        all_tables = []  ## order by Technology, PipelineStep, table
+        ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+        ## Mix parameters with software
+
+        ### count samples already assigned to Project
+        count_project_sample = ProjectSample.objects.filter(
+            project=project, is_deleted=False
+        ).count()
+        ### IMPORTANT, must have technology__name, because old versions don't
+        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                query_set = SoftwareSettings.objects.filter(
+                    owner=self.request.user,
+                    type_of_use=SoftwareSettings.TYPE_OF_USE_project,
+                    parameter__project=project,
+                    parameter__project_sample=None,
+                    type_of_software__in=[
+                        SoftwareSettings.TYPE_SOFTWARE,
+                        SoftwareSettings.TYPE_INSAFLU_PARAMETER,
+                    ],
+                    technology__name=technology,
+                    pipeline_step__name=pipeline_step,
+                    is_obsolete=False,
+                ).distinct()
+
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step,
+                            SoftwaresTable(
+                                query_set,
+                                project=project,
+                                project_sample=None,
+                                sample=None,
+                                b_enable_options=count_project_sample == 0,
+                            ),
+                        ]
+                    )
+
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        context["project"] = project
+        context["main_settings"] = False
+        context["project_settings"] = True
+        return context
 
 
 class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
@@ -2442,97 +2872,152 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
 
-		### IMPORTANT, must have technology__name, because old versions don't
-		for technology in ConstantsSettings.vect_technology:	## run over all technology
-			vect_pipeline_step = [ ] 
-			for pipeline_step in ConstantsSettings.vect_pipeline_names:
-				query_set = SoftwareSettings.objects.filter(owner=self.request.user, type_of_use=SoftwareSettings.TYPE_OF_USE_project_sample,
-					parameter__project=None, parameter__project_sample=project_sample,
-					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE, SoftwareSettings.TYPE_INSAFLU_PARAMETER],
-					technology__name=technology,
-					pipeline_step__name=pipeline_step,
-					is_obsolete = False).distinct()
-				
-				### if there are software
-				if query_set.count() > 0:
-					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
-								technology.replace(' ', '').replace('/', '')),
-								pipeline_step,
-								SoftwaresTable(query_set, project = None, project_sample = project_sample, sample = None)])
-			## if there is software for the pipeline step
-			if len(vect_pipeline_step) > 0:
-				all_tables.append([technology.replace(' ', '').replace('/', ''),
-								technology, vect_pipeline_step])
-				
-		context['all_softwares'] = all_tables
-		context['project_sample'] = project_sample
-		context['project_sample_settings'] = True
-		context['main_settings'] = False
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-class SampleSettingsView(LoginRequiredMixin, ListView):
-	"""
-	can change settings in the projects
-	"""
-	model = Sample
-	template_name = 'settings/settings.html'
-	context_object_name = 'sample'
-	
-	def get_context_data(self, **kwargs):
-		context = super(SampleSettingsView, self).get_context_data(**kwargs)
-		sample = Sample.objects.get(pk=self.kwargs['pk'])
-		
-		### can't see this sample
-		context['nav_sample'] = True
-		if (sample.owner.id != self.request.user.id): 
-			context['error_cant_see'] = "1"
-			return context
-		
-		### test all defaults first, if exist in database
-		default_software = DefaultProjectSoftware()
-		default_software.test_all_defaults(user=self.request.user, project=None, project_sample=None, sample=sample, dataset=None) ## the user can have defaults yet
-		
-		all_tables = []	## order by Technology, PipelineStep, table
-						## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-						##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
-						## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
-						## Mix parameters with software
-						
-		### IMPORTANT, must have technology__name, because old versions don't
-		for technology in ConstantsSettings.vect_technology:	## run over all technology
-			vect_pipeline_step = [ ] 
-			for pipeline_step in ConstantsSettings.vect_pipeline_names:
-				query_set = SoftwareSettings.objects.filter(owner=self.request.user,
-					type_of_use=SoftwareSettings.TYPE_OF_USE_sample,
-					parameter__sample=sample,
-					type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE],
-					technology__name=technology,
-					pipeline_step__name=pipeline_step,
-					is_obsolete = False).distinct()
-				
-				### if there are software
-				if query_set.count() > 0:
-					vect_pipeline_step.append(["{}_{}".format(pipeline_step.replace(' ', '').replace('/', ''),
-								technology.replace(' ', '').replace('/', '')),
-								pipeline_step,
-								SoftwaresTable(query_set, project = None, project_sample = None, sample = sample)])
+        ### IMPORTANT, must have technology__name, because old versions don't
+        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                query_set = SoftwareSettings.objects.filter(
+                    owner=self.request.user,
+                    type_of_use=SoftwareSettings.TYPE_OF_USE_project_sample,
+                    parameter__project=None,
+                    parameter__project_sample=project_sample,
+                    type_of_software__in=[
+                        SoftwareSettings.TYPE_SOFTWARE,
+                        SoftwareSettings.TYPE_INSAFLU_PARAMETER,
+                    ],
+                    technology__name=technology,
+                    pipeline_step__name=pipeline_step,
+                    is_obsolete=False,
+                ).distinct()
 
-			## if there is software for the pipeline step
-			if len(vect_pipeline_step) > 0:
-				all_tables.append([technology.replace(' ', '').replace('/', ''), technology, vect_pipeline_step])
-				
-		context['all_softwares'] = all_tables
-		context['sample'] = sample
-		context['sample_settings'] = True
-		context['main_settings'] = False
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step,
+                            SoftwaresTable(
+                                query_set,
+                                project=None,
+                                project_sample=project_sample,
+                                sample=None,
+                            ),
+                        ]
+                    )
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context["project_sample"] = project_sample
+        context["project_sample_settings"] = True
+        context["main_settings"] = False
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+
+class SampleSettingsView(LoginRequiredMixin, ListView):
+    """
+    can change settings in the projects
+    """
+
+    model = Sample
+    template_name = "settings/settings.html"
+    context_object_name = "sample"
+
+    def get_context_data(self, **kwargs):
+        context = super(SampleSettingsView, self).get_context_data(**kwargs)
+        sample = Sample.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this sample
+        context["nav_sample"] = True
+        if sample.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        ### test all defaults first, if exist in database
+        default_software = DefaultProjectSoftware()
+        default_software.test_all_defaults(
+            user=self.request.user,
+            project=None,
+            project_sample=None,
+            sample=sample,
+            dataset=None,
+        )  ## the user can have defaults yet
+
+        all_tables = []  ## order by Technology, PipelineStep, table
+        ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
+        ## Mix parameters with software
+
+        ### IMPORTANT, must have technology__name, because old versions don't
+        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+            vect_pipeline_step = []
+            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                query_set = SoftwareSettings.objects.filter(
+                    owner=self.request.user,
+                    type_of_use=SoftwareSettings.TYPE_OF_USE_sample,
+                    parameter__sample=sample,
+                    type_of_software__in=[SoftwareSettings.TYPE_SOFTWARE],
+                    technology__name=technology,
+                    pipeline_step__name=pipeline_step,
+                    is_obsolete=False,
+                ).distinct()
+
+                ### if there are software
+                if query_set.count() > 0:
+                    vect_pipeline_step.append(
+                        [
+                            "{}_{}".format(
+                                pipeline_step.replace(" ", "").replace("/", ""),
+                                technology.replace(" ", "").replace("/", ""),
+                            ),
+                            pipeline_step,
+                            SoftwaresTable(
+                                query_set,
+                                project=None,
+                                project_sample=None,
+                                sample=sample,
+                            ),
+                        ]
+                    )
+
+            ## if there is software for the pipeline step
+            if len(vect_pipeline_step) > 0:
+                all_tables.append(
+                    [
+                        technology.replace(" ", "").replace("/", ""),
+                        technology,
+                        vect_pipeline_step,
+                    ]
+                )
+
+        context["all_softwares"] = all_tables
+        context["sample"] = sample
+        context["sample_settings"] = True
+        context["main_settings"] = False
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+
 class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
     """ """
 
@@ -2916,6 +3401,7 @@ def clean_check_box_in_session(request):
             vect_keys_to_remove.append(key)
     for key in vect_keys_to_remove:
         del request.session[key]
+
 
 def get_first_pk_from_session(request):
     """

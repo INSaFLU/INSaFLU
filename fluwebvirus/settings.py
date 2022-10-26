@@ -69,6 +69,9 @@ MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config(
     "MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA", default=50000, cast=int
 )
 MAX_REF_FASTA_FILE = config("MAX_REF_FASTA_FILE", default=100000, cast=int)  ## 100k
+MAX_CONSENSUS_FASTA_FILE = config(
+    "MAX_CONSENSUS_FASTA_FILE", default=400000, cast=int
+)  ## 100k
 MAX_REF_GENBANK_FILE = config("MAX_REF_GENBANK_FILE", default=150000, cast=int)  ## 150k
 
 MAX_FASTQ_FILE_UPLOAD = config(

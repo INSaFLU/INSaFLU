@@ -121,7 +121,7 @@ class DefaultProjectSoftware(object):
 
             ############# PATHOGEN IDENTIFICATION SOFTWARE
             #############
-            #self.test_default_db(
+            # self.test_default_db(
             #    SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             #    user,
             #    Software.TYPE_OF_USE_televir_project,
@@ -129,11 +129,18 @@ class DefaultProjectSoftware(object):
             #    None,
             #    None,
             #    ConstantsSettings.TECHNOLOGY_illumina,
-            #)
-		elif (not dataset is None):
-			self.test_default_db(SoftwareNames.SOFTWARE_NEXTSTRAIN_name, user, Software.TYPE_OF_USE_dataset, 
-							project=None, project_sample=None, sample=None, 
-							technology_name=ConstantsSettings.TECHNOLOGY_generic, dataset=dataset)
+            # )
+        elif not dataset is None:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+                user,
+                Software.TYPE_OF_USE_dataset,
+                project=None,
+                project_sample=None,
+                sample=None,
+                technology_name=ConstantsSettings.TECHNOLOGY_generic,
+                dataset=dataset,
+            )
 
             ## only for project sample and by technology
         elif not project_sample is None:
@@ -276,28 +283,55 @@ class DefaultProjectSoftware(object):
                     ConstantsSettings.TECHNOLOGY_illumina,
                 )
 
-	def test_default_db(self, software_name, user, type_of_use, project, project_sample, 
-					sample, technology_name, dataset=None):
-		"""
-		test if exist, if not persist in database
-		"""
-		## lock because more than one process can duplicate software names
-		with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-			list_software = Software.objects.filter(name=software_name, owner=user, type_of_use=type_of_use,
-					parameter__project=project, parameter__project_sample=project_sample,
-					parameter__sample=sample, parameter__dataset=dataset,
-					version_parameters = self.default_parameters.get_software_parameters_version(software_name),
-					technology__name = technology_name).distinct("name")
-			
-			#logger = logging.getLogger("fluWebVirus.debug")
-			#logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
+    def test_default_db(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name,
+        dataset=None,
+    ):
+        """
+        test if exist, if not persist in database
+        """
+        ## lock because more than one process can duplicate software names
+        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+            list_software = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                parameter__project=project,
+                parameter__project_sample=project_sample,
+                parameter__sample=sample,
+                parameter__dataset=dataset,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                technology__name=technology_name,
+            ).distinct("name")
 
-			### if not exist need to save
-			if len(list_software) == 0:
-				vect_parameters = self._get_default_parameters(software_name, user, type_of_use, project,
-					project_sample, sample, technology_name, dataset)
-				if (len(vect_parameters) > 0): ### persist
-					self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+            # logger = logging.getLogger("fluWebVirus.debug")
+            # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
+
+            ### if not exist need to save
+            if len(list_software) == 0:
+                vect_parameters = self._get_default_parameters(
+                    software_name,
+                    user,
+                    type_of_use,
+                    project,
+                    project_sample,
+                    sample,
+                    technology_name,
+                    dataset,
+                )
+                if len(vect_parameters) > 0:  ### persist
+                    self.default_parameters.persist_parameters(
+                        vect_parameters, type_of_use
+                    )
 
     def _get_default_parameters(
         self,
@@ -493,14 +527,16 @@ class DefaultProjectSoftware(object):
                     user, software_name, None, vect_parameters, technology_name
                 )  ### base values
             return vect_parameters
-		elif (software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
-			vect_parameters = self.default_parameters.get_nextstrain_default(user=user, dataset=dataset)
-			return vect_parameters	
+        elif software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+            vect_parameters = self.default_parameters.get_nextstrain_default(
+                user=user, dataset=dataset
+            )
+            return vect_parameters
         return []
 
     #####################################################
     #####
-    #####		snippy
+    #####        snippy
     #####
 
     def get_snippy_parameters(self, user, type_of_use, project, project_sample):
@@ -668,13 +704,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END snippy
+    #####        END snippy
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		BEGIN -- Freebayes
+    #####        BEGIN -- Freebayes
     #####
 
     def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
@@ -724,13 +760,13 @@ class DefaultProjectSoftware(object):
         )
 
     #####
-    #####		END -- Freebayes
+    #####        END -- Freebayes
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		nanofilt
+    #####        nanofilt
     #####
 
     def get_nanofilt_parameters(self, user, type_of_use, sample):
@@ -914,13 +950,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END nanofilt
+    #####        END nanofilt
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Trimmomatic
+    #####        Trimmomatic
     #####
 
     def get_trimmomatic_parameters(self, user, type_of_use, sample):
@@ -1110,13 +1146,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END trimmomatic
+    #####        END trimmomatic
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Abricate
+    #####        Abricate
     #####
 
     def get_abricate_parameters(self, user, type_of_use, sample, technology_name):
@@ -1307,13 +1343,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END abricate
+    #####        END abricate
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Medaka
+    #####        Medaka
     #####
 
     def get_medaka_parameters(self, user, type_of_use, project, project_sample):
@@ -1484,13 +1520,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END medaka
+    #####        END medaka
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Samtools ONT
+    #####        Samtools ONT
     #####
 
     def get_samtools_parameters_ONT(self, user, type_of_use, project, project_sample):
@@ -1663,13 +1699,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END samtools ONT
+    #####        END samtools ONT
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Mask consensus
+    #####        Mask consensus
     #####
 
     def get_mask_consensus_parameters(
@@ -1855,13 +1891,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END Mask consensus
+    #####        END Mask consensus
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Generate consensus
+    #####        Generate consensus
     #####
 
     def include_consensus(self, project_sample):
@@ -1884,13 +1920,13 @@ class DefaultProjectSoftware(object):
         return True
 
     #####
-    #####		END Generate consensus
+    #####        END Generate consensus
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Coverage limit ONT
+    #####        Coverage limit ONT
     #####
 
     def get_limit_coverage_ONT_parameters(
@@ -2070,13 +2106,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END Coverage limit ONT
+    #####        END Coverage limit ONT
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		FREQ VCF ONT
+    #####        FREQ VCF ONT
     #####
 
     def get_freq_vcf_ONT_parameters(self, user, type_of_use, project, project_sample):
@@ -2248,7 +2284,7 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END -- FREQ VCF ONT
+    #####        END -- FREQ VCF ONT
     #####
     #####################################################
 
@@ -2297,20 +2333,54 @@ class DefaultProjectSoftware(object):
         key_value = "{}_{}_{}".format(software_name, technology_name, user_name)
         return self.change_values_software.get(key_value, False)
 
-	def can_change_values_for_this_software(self, software, project, project_sample, sample, dataset=None):
-		""" Return True if some of can_change is True """
-		parameters = Parameter.objects.filter(software=software, project=project,
-					project_sample=project_sample, sample=sample, dataset=dataset)
-		for parameter in parameters:
-			if parameter.can_change: return True
-		return False
+    def can_change_values_for_this_software(
+        self, software, project, project_sample, sample, dataset=None
+    ):
+        """Return True if some of can_change is True"""
+        parameters = Parameter.objects.filter(
+            software=software,
+            project=project,
+            project_sample=project_sample,
+            sample=sample,
+            dataset=dataset,
+        )
+        for parameter in parameters:
+            if parameter.can_change:
+                return True
+        return False
 
-	def get_parameters(self, software_name, user, type_of_use, project, project_sample, sample,
-				technology_name = ConstantsSettings.TECHNOLOGY_illumina, dataset=None):
-		"""
-		"""
-		self.test_default_db(software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
-		return self.default_parameters.get_parameters(software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
+    def get_parameters(
+        self,
+        software_name,
+        user,
+        type_of_use,
+        project,
+        project_sample,
+        sample,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
+    ):
+        """ """
+        self.test_default_db(
+            software_name,
+            user,
+            type_of_use,
+            project,
+            project_sample,
+            sample,
+            technology_name,
+            dataset,
+        )
+        return self.default_parameters.get_parameters(
+            software_name,
+            user,
+            type_of_use,
+            project,
+            project_sample,
+            sample,
+            technology_name,
+            dataset,
+        )
 
     def get_all_software(self):
         """

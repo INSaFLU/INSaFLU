@@ -102,7 +102,7 @@ class ReferenceProjectTable(tables.Table):
         verbose_name=("Select One"), accessor="pk", orderable=False
     )
     owner = tables.Column("Owner", orderable=True, empty_values=())
-    # 	number_of_locus = tables.Column(orderable=False)
+    #     number_of_locus = tables.Column(orderable=False)
 
     class Meta:
         model = Reference
@@ -183,7 +183,7 @@ class SampleTable(tables.Table):
         orderable=False,
         empty_values=(),
     )
-    # 	extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
+    #     extra_info = tables.LinkColumn('sample-description', args=[tables.A('pk')], orderable=False, verbose_name='Extra Information', empty_values=())
     extra_info = tables.LinkColumn(
         "Extra Information", orderable=False, empty_values=()
     )
@@ -589,9 +589,9 @@ class ProjectTable(tables.Table):
         """
         add_remove = ""
         # if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
-        # 	TODO
-        # 	add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-        # 	add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
+        #     TODO
+        #     add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
+        #     add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 
         n_processed = ProjectSample.objects.filter(
             project__id=record.id, is_deleted=False, is_error=False, is_finished=True
@@ -610,7 +610,7 @@ class ProjectTable(tables.Table):
             + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
             + "<a href="
             + reverse("add-sample-project", args=[record.pk])
-            + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  # 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
+            + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  #         return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove
         )
 
@@ -646,7 +646,7 @@ class ProjectTable(tables.Table):
             )
             ## only can change settings when has projects finished
             # sz_project_sample += '<a href=' + reverse('project-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Software settings">' +\
-            # 	'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
+            #     '<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
             sz_project_sample += (
                 "<a href="
                 + reverse("project-settings", args=[record.pk])
@@ -721,7 +721,7 @@ class ShowProjectSamplesResults(tables.Table):
                 + '" pk="'
                 + str(record.pk)
                 + '" +\
-					" ref_project="'
+                    " ref_project="'
                 + record.project.name
                 + '" data-toggle="tooltip" title="Remove sample">'
                 + '<i class="fa fa-trash"></i></span> </a>'

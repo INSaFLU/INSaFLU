@@ -8,6 +8,7 @@ from constants.software_names import SoftwareNames
 from managing_files.models import Reference, Project, ProjectSample
 from datasets.forms import ConsensusForm
 from django.views.generic import ListView
+from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
 from datasets.models import Dataset, DatasetConsensus, Consensus, UploadFiles, MetaKey
 from datasets.tables import DatasetTable, ReferenceTable, ConsensusTable, ProjectTable
@@ -249,6 +250,14 @@ class AddDatasetsReferencesView(LoginRequiredMixin, FormValidMessageMixin, gener
 								reference_add, dataset.name), fail_silently=True)
 				else:
 					messages.success(self.request, "One reference was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+
+			## need to run metadata
+			try:
+				process_SGE = ProcessSGE()
+				taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
+			except:
+				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)					
+			
 			return HttpResponseRedirect(reverse_lazy('datasets'))
 		else:
 			return super(AddDatasetsReferencesView, self).form_invalid(form)
@@ -411,6 +420,14 @@ class AddDatasetsConsensusView(LoginRequiredMixin, FormValidMessageMixin, generi
 								reference_add, dataset.name), fail_silently=True)
 				else:
 					messages.success(self.request, "One consensus was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+
+				## need to run metadata
+				try:
+					process_SGE = ProcessSGE()
+					taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
+				except:
+					return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
 			return HttpResponseRedirect(reverse_lazy('datasets'))
 		else:
 			return super(AddDatasetsConsensusView, self).form_invalid(form)
@@ -610,12 +627,13 @@ class AddDatasetsProjectsView(LoginRequiredMixin, FormValidMessageMixin, generic
 				else:
 					messages.success(self.request, "One consensus/reference from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
 					
-				## need to run processing: user has to explicitly click for it to run...
-				#try:
-				#	process_SGE = ProcessSGE()
-				#	taskID =  process_SGE.set_collect_dataset_global_files(dataset, self.request.user)
-				#except:
-				#	return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+				## need to run metadata
+				try:
+					process_SGE = ProcessSGE()
+					taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
+				except:
+					return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+					
 			return HttpResponseRedirect(reverse_lazy('datasets'))
 		else:
 			return super(AddDatasetsProjectsView, self).form_invalid(form)

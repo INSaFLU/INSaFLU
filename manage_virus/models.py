@@ -28,7 +28,7 @@ class SeqVirus(models.Model):
 	The file must have this name <name>_<V1>.fasta, to get the version of the file
 	"""
 	accession = models.CharField(max_length=50, blank=True, null=True)
-	name = models.CharField(max_length=50, blank=True, null=True)
+	name = models.CharField(max_length=100, blank=True, null=True)
 	kind_type = models.ForeignKey(Tags, related_name='seq_virus', blank=True, null=True, on_delete=models.CASCADE)
 	file = models.ForeignKey(UploadFile, related_name='seq_virus', blank=True, null=True, on_delete=models.CASCADE)
 	description = models.CharField(max_length=500, blank=True, null=True)

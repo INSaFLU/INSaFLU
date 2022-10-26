@@ -1,0 +1,14 @@
+strain	date	virus	region	gisaid_epi_isl	genbank_accession	length	segment	sex	age	host	vaccine status	week	latitude	longitude	type-subtype	putative mixed-infection	ALT	day	month	note	Region	year
+influenza_14	2016-11-25	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	47	40.197724	-8.403456	?	?	?	22	11	NOT REAL DATA	Coimbra	2016
+influenza_13	2016-11-22	ncov	Europe	?	?	13133	genome	?	?	human	VACCINATED	46	41.18909	-8.389192	?	?	?	19	11	NOT REAL DATA	Porto	2016
+influenza_12	2016-12-04	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACCINATED	48	38.969211	-9.415351	?	?	?	1	12	NOT REAL DATA	Lisbon	2016
+influenza_11	2016-11-30	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	47	40.197724	-8.403456	?	?	?	27	11	NOT REAL DATA	Coimbra	2016
+influenza_10	2016-11-23	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	46	41.18909	-8.389192	?	?	?	20	11	NOT REAL DATA	Porto	2016
+influenza_09	2016-11-19	ncov	Europe	?	?	982	genome	?	?	human	VACCINATED	46	32.648622	-16.924075	?	?	?	16	11	NOT REAL DATA	Madeira	2016
+influenza_08	2016-11-18	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	46	40.197724	-8.403456	?	?	?	15	11	NOT REAL DATA	Coimbra	2016
+influenza_06	2016-12-25	ncov	Europe	?	?	13133	genome	?	?	human	VACCINATED	51	38.969211	-9.415351	?	?	?	23	12	NOT REAL DATA	Lisbon	2016
+influenza_05	2016-11-21	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	47	37.76161	-25.682478	?	?	?	18	11	NOT REAL DATA	Azores	2016
+influenza_04	2016-11-16	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	45	40.406698	-8.130182	?	?	?	13	11	NOT REAL DATA	Viseu	2016
+influenza_03	2016-11-15	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	45	37.76161	-25.682478	?	?	?	12	11	NOT REAL DATA	Azores	2016
+influenza_02	2016-11-14	ncov	Europe	?	?	982	genome	?	?	human	NOTVACC	45	40.406698	-8.130182	A-H3N2	No	VACC YES	11	11	NOT REAL DATA	Viseu	2016
+influenza_01	2016-11-15	ncov	Europe	?	?	13133	genome	?	?	human	NOTVACC	45	38.969211	-9.415351	A-H3N2	No	year_2015	12	11	NOT REAL DATA	Lisbon	2016

@@ -13,12 +13,8 @@ from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MixedInfectionsTag,
-    ProcessControler,
-    ProjectSample,
-    Sample,
-)
+from managing_files.models import (MixedInfectionsTag, ProcessControler,
+                                   ProjectSample, Sample)
 from pysam import pysam
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -30,15 +26,8 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (
-    CountHits,
-    DecodeObjects,
-    KeyValue,
-    MaskingConsensus,
-    Result,
-    ResultAverageAndNumberReads,
-    SoftwareDesc,
-)
+from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
+                          Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.software import Software
 from utils.utils import Utils
 
@@ -86,34 +75,28 @@ class SoftwareMinion(object):
             )
             return True
 
-        ################################
-        ##################################
-        ### remove possible previous alerts from others run
-        manage_database = ManageDatabase()
-        for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
-            manage_database.remove_sample_start_metakey(sample, keys_to_remove)
+		################################
+		##################################
+		### remove possible previous alerts from others run
+		manage_database = ManageDatabase()
+		for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
+			manage_database.remove_sample_start_metakey(sample, keys_to_remove)
+		
+		### remove some other 
+		sample.identify_virus.all().delete()
+		if (not sample.mixed_infections_tag is None): sample.mixed_infections_tag = None
+		sample.number_alerts = 0
+		sample.save()
+		
+		try:
 
-        ### remove some other # TODO deal with this
-        if sample.identify_virus.all().count() > 0:
-            sample.identify_virus.all().delete()
-        if not sample.mixed_infections_tag is None:
-            sample.mixed_infections_tag = None
-        sample.number_alerts = 0
-        sample.save()
-
-        try:
-            print("Start run_clean_minion")
-            ### run stat and rabbit for Images
-            b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
-
-            print("Result run_clean_minion: " + str(b_has_data))
-
-            ### test Abricate ON/OFF
-            default_software_project = DefaultProjectSoftware()
-            b_make_identify_species = default_software_project.is_to_run_abricate(
-                sample.owner, sample, ConstantsSettings.TECHNOLOGY_minion
-            )
-            print("b_make_identify_species: " + str(b_make_identify_species))
+			### run stat and rabbit for Images
+			b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
+			
+			### test Abricate ON/OFF
+			default_software_project = DefaultProjectSoftware()
+			b_make_identify_species = default_software_project.is_to_run_abricate(sample.owner, sample,
+												ConstantsSettings.TECHNOLOGY_minion)
 
             ### queue the quality check and
             if (

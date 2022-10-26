@@ -1,5 +1,6 @@
 from braces.views import LoginRequiredMixin
 from constants.meta_key_and_values import MetaKeyAndValue
+from datasets.models import Dataset
 from django.contrib import messages
 from django.db import transaction
 from django.urls import reverse_lazy
@@ -391,142 +392,117 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
 
 
 class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
-    model = Software
-    form_class = SoftwareForm
-    template_name = "settings/software_update.html"
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
 
-    ## Other solution to get the reference
-    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
-    def get_form_kwargs(self):
-        """
-        Set the request to pass in the form
-        """
-        kw = super(UpdateParametersProjView, self).get_form_kwargs()
-        kw["request"] = self.request  # the trick!
-        kw["pk_project"] = self.kwargs.get("pk_proj")
-        return kw
-
-    def get_success_url(self):
-        """
-        get source_pk from update project, need to pass it in context
-        """
-        project_pk = self.kwargs.get("pk_proj")
-        return reverse_lazy("project-settings", kwargs={"pk": project_pk})
-
-    def get_context_data(self, **kwargs):
-        context = super(UpdateParametersProjView, self).get_context_data(**kwargs)
-
-        context["error_cant_see"] = self.request.user != context["software"].owner
-        context["pk_project"] = self.kwargs.get("pk_proj")
-        context["nav_project"] = True
-        context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
-        return context
-
-    def form_valid(self, form):
-        """
-        form update
-        """
-        ## save it...
-        with transaction.atomic():
-            software = form.save(commit=False)
-
-            project_id = self.kwargs.get("pk_proj")
-            project = None
-            if not project_id is None:
-                try:
-                    project = Project.objects.get(pk=project_id)
-                except Project.DoesNotExist:
-                    messages.error(
-                        self.request,
-                        "Software '" + software.name + "' parameters was not updated",
-                    )
-                    return super(UpdateParametersProjView, self).form_valid(form)
-
-            paramers = Parameter.objects.filter(software=software, project=project)
-            b_change = False
-            for parameter in paramers:
-                if not parameter.can_change:
-                    continue
-                if parameter.get_unique_id() in form.cleaned_data:
-                    value_from_form = "{}".format(
-                        form.cleaned_data[parameter.get_unique_id()]
-                    )
-                    if value_from_form != parameter.parameter:
-                        b_change = True
-                        parameter.parameter = value_from_form
-                        parameter.save()
-
-            if b_change:
-                messages.success(
-                    self.request,
-                    "{} '".format("Software" if software.is_software() else "INSaFLU")
-                    + software.name
-                    + "' parameters were successfully updated for project '"
-                    + project.name
-                    + "'.",
-                    fail_silently=True,
-                )
-            else:
-                messages.success(
-                    self.request,
-                    "No parameters to update for {} '".format(
-                        "Software" if software.is_software() else "INSaFLU"
-                    )
-                    + software.name
-                    + "' for project '"
-                    + project.name
-                    + "'.",
-                    fail_silently=True,
-                )
-        return super(UpdateParametersProjView, self).form_valid(form)
-
-    ## static method, not need for now.
-    form_valid_message = ""  ## need to have this
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersProjView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_project'] = self.kwargs.get('pk_proj')
+		return kw
+	
+	def get_success_url(self):
+		"""
+		get source_pk from update project, need to pass it in context
+		"""
+		project_pk = self.kwargs.get('pk_proj')
+		return reverse_lazy('project-settings', kwargs={'pk': project_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersProjView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['pk_project'] = self.kwargs.get('pk_proj')
+		context['nav_project'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
+		## save it...
+		with transaction.atomic():
+			software = form.save(commit=False)
+		
+			project_id = self.kwargs.get('pk_proj')
+			project = None
+			if (not project_id is None):
+				try:
+					project = Project.objects.get(pk=project_id)
+				except Project.DoesNotExist:
+					messages.error(self.request, "Software '" + software.name + "' parameters was not updated")
+					return super(UpdateParametersProjView, self).form_valid(form)
+				
+			paramers = Parameter.objects.filter(software=software, project=project)
+			b_change = False
+			for parameter in paramers:
+				if (not parameter.can_change): continue
+				if (parameter.get_unique_id() in form.cleaned_data):
+					value_from_form = "{}".format(form.cleaned_data[parameter.get_unique_id()])
+					if (value_from_form != parameter.parameter):
+						b_change = True 
+						parameter.parameter = value_from_form
+						parameter.save()
+			
+			if (b_change):
+				messages.success(self.request, "{} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' parameters were successfully updated for project '" + project.name + "'.", fail_silently=True)
+			else:
+				messages.success(self.request, "No parameters to update for {} '".format("Software" if software.is_software() else "INSaFLU") +\
+					software.name + "' for project '" + project.name + "'.", fail_silently=True)
+		return super(UpdateParametersProjView, self).form_valid(form)
 
 
+	## static method, not need for now.
+	form_valid_message = ""		## need to have this
+	
+	
 class UpdateParametersProjSampleView(LoginRequiredMixin, UpdateView):
-    model = Software
-    form_class = SoftwareForm
-    template_name = "settings/software_update.html"
+	model = Software
+	form_class = SoftwareForm
+	template_name = 'settings/software_update.html'
 
-    ## Other solution to get the reference
-    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
-    def get_form_kwargs(self):
-        """
-        Set the request to pass in the form
-        """
-        kw = super(UpdateParametersProjSampleView, self).get_form_kwargs()
-        kw["request"] = self.request  # the trick!
-        kw["pk_project_sample"] = self.kwargs.get("pk_proj_sample")
-        return kw
-
-    def get_success_url(self):
-        """
-        get source_pk from update project, need to pass it in context
-        """
-        project_sample_pk = self.kwargs.get("pk_proj_sample")
-        return reverse_lazy("sample-project-settings", kwargs={"pk": project_sample_pk})
-
-    def get_context_data(self, **kwargs):
-        context = super(UpdateParametersProjSampleView, self).get_context_data(**kwargs)
-
-        context["error_cant_see"] = self.request.user != context["software"].owner
-        context["nav_project"] = True
-        context["pk_proj_sample"] = self.kwargs.get("pk_proj_sample")
-        context["sample_project_settings"] = True
-        context["nav_modal"] = True  ## short the size of modal window
-        context[
-            "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute
-        return context
-
-    def form_valid(self, form):
-        """
-        form update
-        """
+	## Other solution to get the reference
+	## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+	def get_form_kwargs(self):
+		"""
+		Set the request to pass in the form
+		"""
+		kw = super(UpdateParametersProjSampleView, self).get_form_kwargs()
+		kw['request'] = self.request # the trick!
+		kw['pk_project_sample'] = self.kwargs.get('pk_proj_sample')
+		return kw
+	
+	def get_success_url(self):
+		"""
+		get source_pk from update project, need to pass it in context
+		"""
+		project_sample_pk = self.kwargs.get('pk_proj_sample')
+		return reverse_lazy('sample-project-settings', kwargs={'pk': project_sample_pk})
+	
+	def get_context_data(self, **kwargs):
+		context = super(UpdateParametersProjSampleView, self).get_context_data(**kwargs)
+		
+		context['error_cant_see'] = self.request.user != context['software'].owner
+		context['nav_project'] = True
+		context['pk_proj_sample'] = self.kwargs.get('pk_proj_sample')
+		context['sample_project_settings'] = True
+		context['nav_modal'] = True	## short the size of modal window
+		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute	
+		return context
+	
+	def form_valid(self, form):
+		"""
+		form update 
+		"""
 
         ## save it...
         with transaction.atomic():

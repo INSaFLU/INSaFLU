@@ -7,10 +7,8 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -28,9 +26,8 @@ def reference_directory_path(instance, filename):
 
 
 def user_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/<filename>
-    return "uploads/generic_data/user_{0}/{1}".format(instance.owner.id, filename)
-
+	# file will be uploaded to MEDIA_ROOT/<filename>
+	return 'uploads/generic_data/user_{0}/{1}'.format(instance.owner.id, filename)
 
 class SeasonReference(models.Model):
     """
@@ -75,223 +72,161 @@ class MetaKey(models.Model):
 
 
 class Reference(models.Model):
+	
+	### species
+	SPECIES_SARS_COV_2 = "SARS_COV_2"
+	SPECIES_MPXV = "MPXV"
+	SPECIES_INFLUENZA  = "INFLUENZA"
+	SPECIES_NOT_SET  = "NOT_SET"
+	SPECIES_INFLUENZA_segment_four  = "4"		## Name of segment 4
+	
+	name = models.CharField(max_length=200, db_index=True, verbose_name='Reference name')
+	display_name = models.CharField(max_length=200, db_index=True, default='', verbose_name='Display name')
+	isolate_name = models.CharField(max_length=200, default='', verbose_name='Isolate Name')
+	creation_date = models.DateTimeField(auto_now_add=True, verbose_name='Uploaded Date')
+	
+	## Size 100K
+	reference_fasta = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream'],\
+										max_upload_size=settings.MAX_REF_FASTA_FILE, blank=True, null=True, max_length=500)
+	reference_fasta_name = models.CharField(max_length=200, default='', verbose_name='Fasta file')
+	hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
 
-    ### species
-    SPECIES_SARS_COV_2 = "SARS_COV_2"
-    SPECIES_MPXV = "MPXV"
-    SPECIES_INFLUENZA = "INFLUENZA"
-    SPECIES_NOT_SET = "NOT_SET"
-    SPECIES_INFLUENZA_segment_four = "4"  ## Name of segment 4
+	## Size 200K
+	## application/x-gameboy-rom because of 'gb' extension file of gbk
+	reference_genbank = ContentTypeRestrictedFileField(upload_to=reference_directory_path, content_types=['application/octet-stream',\
+								    'application/x-gameboy-rom', 'text/plain'],\
+									max_upload_size=settings.MAX_REF_GENBANK_FILE, blank=True, null=True, max_length=500)
+	reference_genbank_name = models.CharField(max_length=200, default='', verbose_name='Genbank file')
+	hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
 
-    name = models.CharField(
-        max_length=200, db_index=True, verbose_name="Reference name"
-    )
-    display_name = models.CharField(
-        max_length=200, db_index=True, default="", verbose_name="Display name"
-    )
-    isolate_name = models.CharField(
-        max_length=200, default="", verbose_name="Isolate Name"
-    )
-    creation_date = models.DateTimeField(
-        auto_now_add=True, verbose_name="Uploaded Date"
-    )
+	owner = models.ForeignKey(User, related_name='reference', blank=True, null=True, on_delete=models.CASCADE)
+	is_obsolete = models.BooleanField(default=False, verbose_name='Obsolete')
+	is_deleted = models.BooleanField(default=False, verbose_name='Deleted')
+	number_of_locus = models.IntegerField(default=0, verbose_name='#Locus')
+	
+	season = models.ManyToManyField(SeasonReference)		## can have the season
+	description = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name='Description')
 
-    ## Size 100K
-    reference_fasta = ContentTypeRestrictedFileField(
-        upload_to=reference_directory_path,
-        content_types=["application/octet-stream"],
-        max_upload_size=settings.MAX_REF_FASTA_FILE,
-        blank=True,
-        null=True,
-        max_length=500,
-    )
-    reference_fasta_name = models.CharField(
-        max_length=200, default="", verbose_name="Fasta file"
-    )
-    hash_reference_fasta = models.CharField(max_length=50, blank=True, null=True)
+	### if is deleted in file system
+	is_deleted_in_file_system = models.BooleanField(default=False)			## if this file was removed in file system
+	date_deleted = models.DateTimeField(blank=True, null=True, verbose_name='Date attached') ## this date has the time of deleted by web page
+	
+	### specie_tag, Has tag name of the specie;
+	### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
+	specie_tag = models.CharField(max_length=20, default='')
+	
+	def __str__(self):
+		return self.name
 
-    ## Size 200K
-    ## application/x-gameboy-rom because of 'gb' extension file of gbk
-    reference_genbank = ContentTypeRestrictedFileField(
-        upload_to=reference_directory_path,
-        content_types=["application/octet-stream", "application/x-gameboy-rom"],
-        max_upload_size=settings.MAX_REF_GENBANK_FILE,
-        blank=True,
-        null=True,
-        max_length=500,
-    )
-    reference_genbank_name = models.CharField(
-        max_length=200, default="", verbose_name="Genbank file"
-    )
-    hash_reference_genbank = models.CharField(max_length=50, blank=True, null=True)
+	def get_reference_gbk(self, type_path):
+		"""
+		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+	
+	def get_reference_fasta(self, type_path):
+		"""
+		get a path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_fasta.name
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+	
+	def get_reference_fasta_index(self, type_path):
+		"""
+		get a fasta fai path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		return self.get_reference_fasta(type_path) + FileExtensions.FILE_FAI
 
-    owner = models.ForeignKey(
-        User, related_name="reference", blank=True, null=True, on_delete=models.CASCADE
-    )
-    is_obsolete = models.BooleanField(default=False, verbose_name="Obsolete")
-    is_deleted = models.BooleanField(default=False, verbose_name="Deleted")
-    number_of_locus = models.IntegerField(default=0, verbose_name="#Locus")
+	def get_reference_bed(self, type_path):
+		"""
+		get a fasta bed path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		file_name = self.get_reference_gbk(type_path)
+		return file_name[:file_name.rfind('.')] + FileExtensions.FILE_BED
+	
+	def get_reference_bed_index(self, type_path):
+		"""
+		get a fasta bed.idx path, type_path, from MEDIA_URL or MEDIA_ROOT
+		"""
+		return self.get_reference_bed(type_path) + FileExtensions.FILE_IDX
 
-    season = models.ManyToManyField(SeasonReference)  ## can have the season
-    description = models.CharField(
-        max_length=500, default="", blank=True, null=True, verbose_name="Description"
-    )
+	def get_reference_fasta_web(self):
+		"""
+		return web link for reference
+		"""
+		out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_fasta(\
+						TypePath.MEDIA_URL), os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
+						self.constants.short_name(self.reference_fasta_name, Constants.SHORT_NAME_LENGTH)))
+		return _('File not available.')
+	
+	def get_reference_gb_web(self):
+		"""
+		return web link for reference
+		"""
+		out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
+		if (os.path.exists(out_file)):
+			return mark_safe('<a href="{}" download="{}"> {}</a>'.format(self.get_reference_gbk(\
+						TypePath.MEDIA_URL), os.path.basename(self.get_reference_gbk(TypePath.MEDIA_ROOT)),
+						self.constants.short_name(self.reference_genbank_name, Constants.SHORT_NAME_LENGTH)))
+		return _('File not available.')
 
-    ### if is deleted in file system
-    is_deleted_in_file_system = models.BooleanField(
-        default=False
-    )  ## if this file was removed in file system
-    date_deleted = models.DateTimeField(
-        blank=True, null=True, verbose_name="Date attached"
-    )  ## this date has the time of deleted by web page
+	def get_gff3(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
 
-    ### specie_tag, Has tag name of the specie;
-    ### possible values SPECIES_SARS_COV_2, SPECIES_MPXV, etc...
-    specie_tag = models.CharField(max_length=20, default="")
+	def get_gff3_with_gene_annotation(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + ".gene_annotation" + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
+		
+	def get_gff3_comulative_positions(self, type_path):
+		"""
+		get GFF3 obtain form genbank
+		:param type_path from MEDIA_URL or MEDIA_ROOT
+		"""
+		path_to_find = self.reference_genbank.name
+		path_to_find = path_to_find[:path_to_find.rfind('.')] + ".comulative_positions" + FileExtensions.FILE_GFF3
+		if (type_path == TypePath.MEDIA_ROOT): 
+			if not path_to_find.startswith('/'): path_to_find = os.path.join(getattr(settings, "MEDIA_ROOT", None), path_to_find)
+		else:
+			path_to_find = os.path.join(getattr(settings, "MEDIA_URL", None), path_to_find)
+		return path_to_find
 
-    def __str__(self):
-        return self.name
-
-    def get_reference_gbk(self, type_path):
-        """
-        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.reference_genbank.name
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_reference_fasta(self, type_path):
-        """
-        get a path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.reference_fasta.name
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_reference_fasta_index(self, type_path):
-        """
-        get a fasta fai path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        return self.get_reference_fasta(type_path) + FileExtensions.FILE_FAI
-
-    def get_reference_bed(self, type_path):
-        """
-        get a fasta bed path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        file_name = self.get_reference_gbk(type_path)
-        return file_name[: file_name.rfind(".")] + FileExtensions.FILE_BED
-
-    def get_reference_bed_index(self, type_path):
-        """
-        get a fasta bed.idx path, type_path, from MEDIA_URL or MEDIA_ROOT
-        """
-        return self.get_reference_bed(type_path) + FileExtensions.FILE_IDX
-
-    def get_reference_fasta_web(self):
-        """
-        return web link for reference
-        """
-        out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
-        if os.path.exists(out_file):
-            return mark_safe(
-                '<a href="{}" download="{}"> {}</a>'.format(
-                    self.get_reference_fasta(TypePath.MEDIA_URL),
-                    os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
-                    self.name,
-                )
-            )
-        return _("File not available.")
-
-    def get_gff3(self, type_path):
-        """
-        get GFF3 obtain form genbank
-        :param type_path from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.reference_genbank.name
-        path_to_find = (
-            path_to_find[: path_to_find.rfind(".")] + FileExtensions.FILE_GFF3
-        )
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_gff3_with_gene_annotation(self, type_path):
-        """
-        get GFF3 obtain form genbank
-        :param type_path from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.reference_genbank.name
-        path_to_find = (
-            path_to_find[: path_to_find.rfind(".")]
-            + ".gene_annotation"
-            + FileExtensions.FILE_GFF3
-        )
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    def get_gff3_comulative_positions(self, type_path):
-        """
-        get GFF3 obtain form genbank
-        :param type_path from MEDIA_URL or MEDIA_ROOT
-        """
-        path_to_find = self.reference_genbank.name
-        path_to_find = (
-            path_to_find[: path_to_find.rfind(".")]
-            + ".comulative_positions"
-            + FileExtensions.FILE_GFF3
-        )
-        if type_path == TypePath.MEDIA_ROOT:
-            if not path_to_find.startswith("/"):
-                path_to_find = os.path.join(
-                    getattr(settings, "MEDIA_ROOT", None), path_to_find
-                )
-        else:
-            path_to_find = os.path.join(
-                getattr(settings, "MEDIA_URL", None), path_to_find
-            )
-        return path_to_find
-
-    class Meta:
-        verbose_name = "Reference"
-        verbose_name_plural = "References"
-        ordering = [
-            "-creation_date",
-        ]
-        indexes = [
-            models.Index(fields=["name"], name="name_idx"),
-        ]
-
+	class Meta:
+		verbose_name = 'Reference'
+		verbose_name_plural = 'References'
+		ordering = ['-creation_date', ]
+		indexes = [
+			models.Index(fields=['name'], name='name_idx'),
+		]
 
 class MetaKeyReference(models.Model):
     """
@@ -412,31 +347,20 @@ class MixedInfectionsTag(models.Model):
 
 
 class MixedInfections(models.Model):
-    """
-    Used to identify mixed infections
-    """
-
-    tag = models.ForeignKey(
-        MixedInfectionsTag,
-        related_name="mixed_infections",
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-    )
-    average_value = models.FloatField(default=0.0)
-    description = models.TextField(default="")
-    creation_date = models.DateTimeField("uploaded date", auto_now_add=True)
-    last_change_date = models.DateTimeField("uploaded date", blank=True, null=True)
-    has_master_vector = models.BooleanField(
-        default=False
-    )  ## if it has the master vector, has the vector to compare to all others
-    ## and is not used in projectSample,
-    ## It can change across time
-    ## to trace the change of tag is set a metaValue in ProjectSample
-    class Meta:
-        ordering = [
-            "tag",
-        ]
+	"""
+	Used to identify mixed infections
+	"""
+	tag = models.ForeignKey(MixedInfectionsTag, related_name='mixed_infections', blank=True, null=True, on_delete=models.CASCADE)
+	average_value = models.FloatField(default=0.0)
+	description = models.TextField(default="")
+	creation_date = models.DateTimeField('uploaded date', auto_now_add=True)
+	last_change_date = models.DateTimeField('uploaded date', blank=True, null=True)
+	has_master_vector = models.BooleanField(default=False)  ## if it has the master vector, has the vector to compare to all others
+															## and is not used in projectSample,
+															## It can change across time
+															## to trace the change of tag is set a metaValue in ProjectSample
+	class Meta:
+		ordering = ['tag', ]
 
 
 class Sample(models.Model):
@@ -1307,58 +1231,55 @@ class MetaKeySample(models.Model):
 
 
 class Project(models.Model):
-    """
-    Project for run a pipeline in the data,
-    It's possible to run several times and add data to the project
-    """
+	"""
+	Project for run a pipeline in the data,
+	It's possible to run several times and add data to the project
+	"""
+	### has the path for main result
+	PATH_MAIN_RESULT = 'main_result'
+	
+	PROJECT_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
+	PROJECT_FILE_NAME_FASTA = "All_nt.fasta"
+	PROJECT_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
+	PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
+	PROJECT_FILE_NAME_nex = "Alignment_nt_All.nex"
+	PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
+	PROJECT_FILE_NAME_TOTAL_VARIATIONS = "proportions_iSNVs_graph.tsv"
+	PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv" 
+	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv" 	## remove del and ins and everything bigger than >50
+	PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv" 	## with snps, del and ins and everything bigger than >50
+	##					MIGUEL
+	##					"Minor intra-host variants (inc. indels):"
+	## freebayes_variants_file_snp_indel
+	PERCENTAGE_validated_minor_variants = 51		## only pass <= 50
+	PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV = "Sample_list_settings.tsv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV = "Sample_list_settings.csv" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
+	PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv" 	### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
+																			### this file is only used for to show the manging_files.views.ShowSampleProjectsView
+	PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json" 	### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to 
+	PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = "AllConsensus.fasta" 	### all consensus sequences for a project sample
+	PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = "mask_all_consensus" 		### masking all consensus, defined by user
+	
+	PROJECT_FILE_NAME_Pangolin_lineage = "PangolinLineage.csv"			### has the result of pangolin lineage
 
-    ### has the path for main result
-    PATH_MAIN_RESULT = "main_result"
 
-    PROJECT_FILE_NAME_MAFFT = "Alignment_nt_All.fasta"
-    PROJECT_FILE_NAME_FASTA = "All_nt.fasta"
-    PROJECT_FILE_NAME_FASTTREE = "Tree_ML_All.nwk"
-    PROJECT_FILE_NAME_FASTTREE_tree = "Tree_ML_All.tree"
-    PROJECT_FILE_NAME_nex = "Alignment_nt_All.nex"
-    PROJECT_FILE_NAME_COVERAGE = "coverage.tsv"
-    PROJECT_FILE_NAME_TOTAL_VARIATIONS = "proportions_iSNVs_graph.tsv"
-    PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv"
-    PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv"  ## remove del and ins and everything bigger than >50
-    PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv"  ## with snps, del and ins and everything bigger than >50
-    ##					MIGUEL
-    ##					"Minor intra-host variants (inc. indels):"
-    ## freebayes_variants_file_snp_indel
-    PERCENTAGE_validated_minor_variants = 51  ## only pass <= 50
-    PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    PROJECT_FILE_NAME_SAMPLE_RESULT_CSV = "Sample_list.csv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV = "Sample_list_settings.tsv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV = "Sample_list_settings.csv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
-    PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple = "Sample_list_simple.csv"  ### first column must be ID because of manging_files.ajax_views.show_phylo_canvas
-    ### this file is only used for to show the manging_files.views.ShowSampleProjectsView
-    PROJECT_FILE_NAME_SAMPLE_RESULT_json = "Sample_list_simple.json"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact, to download to
-    PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus = (
-        "AllConsensus.fasta"  ### all consensus sequences for a project sample
-    )
-    PROJECT_FILE_NAME_SAMPLE_mask_all_consensus = (
-        "mask_all_consensus"  ### masking all consensus, defined by user
-    )
+	PROJECT_FILE_NAME_Aln2pheno_report_COG_UK = "aln2pheno_final_report_COG_UK.tsv"					### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK = "aln2pheno_flagged_mutation_report_COG_UK.tsv"		### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_report_pokay = "aln2pheno_final_report_pokay.tsv"					### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_flagged_pokay = "aln2pheno_flagged_mutation_report_pokay.tsv"		### has results of aln2pheno
+	PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"												### has results of aln2pheno
 
-    PROJECT_FILE_NAME_Pangolin_lineage = (
-        "PangolinLineage.csv"  ### has the result of pangolin lineage
-    )
 
-    PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
-
-    ## put the type file here to clean if there isn't enough sequences to create the trees and alignments
-    vect_clean_file = [
-        PROJECT_FILE_NAME_MAFFT,
-        PROJECT_FILE_NAME_FASTTREE,
-        PROJECT_FILE_NAME_FASTTREE_tree,
-        PROJECT_FILE_NAME_nex,
-        PROJECT_FILE_NAME_FASTA,
-    ]
-
-    vect_exclude_clean_file_from_proteins = [PROJECT_FILE_NAME_FASTA]
+	PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"					### Several files zipped
+	
+	## put the type file here to clean if there isn't enough sequences to create the trees and alignments
+	vect_clean_file = [PROJECT_FILE_NAME_MAFFT, PROJECT_FILE_NAME_FASTTREE,\
+					PROJECT_FILE_NAME_FASTTREE_tree,\
+					PROJECT_FILE_NAME_nex, PROJECT_FILE_NAME_FASTA]
+	
+	vect_exclude_clean_file_from_proteins = [PROJECT_FILE_NAME_FASTA]
 
     ## obsolete
     PROJECT_FILE_NAME_GRAPH_MINO_VAR_HTML = "graph_minor_var.html"
@@ -2127,28 +2048,23 @@ class ProcessControler(models.Model):
     class Meta:
         ordering = ["creation_date"]
 
-    ### get names for samples, project and project samples
-
-    def get_name_sample(self, sample):
-        return "{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk)
-
-    def get_name_project_sample(self, project_sample):
-        return "{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk)
-
-    def get_name_project(self, project):
-        return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
-
-    def get_name_upload_files(self, upload_files):
-        return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
-
-    def get_name_link_files_user(self, user):
-        return "{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk)
-
-    def get_name_collect_all_samples_user(self, user):
-        return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_SAMPLES_USER, user.pk)
-
-    def get_name_collect_all_projects_user(self, user):
-        return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
+	### get names for samples, project and project samples
+	def get_name_sample(self, sample):
+		return "{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk)
+	def get_name_project_sample(self, project_sample):
+		return "{}{}".format(ProcessControler.PREFIX_PROJECT_SAMPLE, project_sample.pk)
+	def get_name_project(self, project):
+		return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
+	def get_name_dataset(self, dataset):
+		return "{}{}".format(ProcessControler.PREFIX_DATASET, dataset.pk)
+	def get_name_upload_files(self, upload_files):
+		return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
+	def get_name_link_files_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_LINK_FILES_USER, user.pk)
+	def get_name_collect_all_samples_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_SAMPLES_USER, user.pk)
+	def get_name_collect_all_projects_user(self, user):
+		return "{}{}".format(ProcessControler.PREFIX_COLLECT_ALL_PROJECTS_USER, user.pk)
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)

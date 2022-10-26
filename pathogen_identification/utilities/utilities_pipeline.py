@@ -253,12 +253,7 @@ class Utility_Pipeline_Manager:
             """
             Round float parameters to 2 decimals
             """
-            print("###")
-
-            print(row)
-
             new_param = row.parameter
-            print("param: ", new_param)
 
             if row.type_data == Parameter.PARAMETER_float:
 

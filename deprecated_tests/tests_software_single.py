@@ -35,7 +35,8 @@ from settings.default_software import DefaultSoftware
 from settings.models import Software as SoftwareSettings, Parameter
 from utils.parse_coverage_file import GetCoverage
 from plotly.figure_factory._dendrogram import scs
-from managing_files.models import Software as SoftwareModel, TagName
+from managing_files.models import TagName
+from managing_files.models import Software as SoftwareModel
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -138,9 +139,8 @@ class Test(TestCase):
 		self.assertTrue(os.path.exists(file))
 		uploadFiles.upload_file(version, file)	## upload file
 		
-		database_name = "xpto_sars_cov"
-		if (not self.software.is_exist_database_abricate(database_name)):
-			self.software.create_database_abricate(database_name, file)
+		os.unlink(out_file)
+		os.unlink(out_file_consensus)
 
 		self.assertEquals(Reference.SPECIES_INFLUENZA, self.software.get_species_tag(reference2))		
 		self.assertEquals(Reference.SPECIES_MPXV, self.software.get_species_tag(reference3))

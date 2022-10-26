@@ -49,6 +49,7 @@ class SoftwareNames(object):
     SOFTWARE_IGVTOOLS_name = "igvtools"
     SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
     SOFTWARE_IGVTOOLS_PARAMETERS = ""
+	
     SOFTWARE_SPAdes = os.path.join(
         settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py"
     )
@@ -89,7 +90,7 @@ class SoftwareNames(object):
         "Both Surviving:",
         "Forward Only Surviving:",
         "Reverse Only Surviving:",
-        "Dropped:",
+        "Dropped:"
     ]
 
     SOFTWARE_TRIMMOMATIC_illuminaclip = "ILLUMINACLIP"
@@ -109,7 +110,11 @@ class SoftwareNames(object):
         "TruSeq3-PE-2.fa",
         "TruSeq3-PE.fa",
         "TruSeq3-SE.fa",
-    ]
+    ,
+					'SARS_CoV_2_MN908947_artic_3.fa',
+					'SARS_CoV_2_MN908947_artic_4.1.fa',
+					'MPXV_MT903345_Yale_PrimalSeq_v.1.fa',
+					'MPXV_comb-ccc7sszn.fa']
     ### collect stat data for ILLUMINA, in form of key value
     SOFTWARE_ILLUMINA_stat = "illumina_stat"
     SOFTWARE_ILLUMINA_stat_collect = [
@@ -184,34 +189,25 @@ class SoftwareNames(object):
         os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate")
     )
     SOFTWARE_Pangolin = "pangolin"
-    SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
+    #SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
+	SOFTWARE_Pangolin_VERSION = "v4.0.6"					## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
     SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"  ## Pangolin
     SOFTWARE_Pangolin_name_search_name = (
         "Pango"  ## only to help on the search of Pango Name in output
     )
 
-    # <<<<<<< HEAD
-    # 	SOFTWARE_Pangolin_name = "Pangolin"
-    # 	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
-    # 	SOFTWARE_Pangolin_designation_name = "Pango-designation"
-    # 	SOFTWARE_Pangolin_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
-    # 	SOFTWARE_Pangolin_VERSION = "2.3.8"				## this value is going to increase across time
-    # 	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
-    # 	SOFTWARE_Pangolin_designation_VERSION = "v1.2.12"	## this value is going to increase across time
-    # =======
-    # 	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
-    # 	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
-    # 	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
-    # 	SOFTWARE_Pangolin_designation_name = "Pango-designation"		## Pango Designation
-    # 	SOFTWARE_Pangolin_constellations_name = "Constellations"	## Constelations
-    # 	SOFTWARE_Pangolin_scorpio_name = "scorpio"					## Scorpio
-    # 	SOFTWARE_Pangolin_name_extended = "Phylogenetic Assignment of Named Global Outbreak LINeages (Pangolin)"
-    # 	SOFTWARE_Pangolin_learn_VERSION = "2021-09-28"		## Version Name: pangoLearn
-    # 	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
-    # 	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
-    # 	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
-    # >>>>>>> refs/heads/develop
+#	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
+#	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
+#	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
+#	SOFTWARE_Pangolin_designation_name = "Pango-designation"		## Pango Designation
+#	SOFTWARE_Pangolin_constellations_name = "Constellations"	## Constelations
+#	SOFTWARE_Pangolin_scorpio_name = "scorpio"					## Scorpio
+#	SOFTWARE_Pangolin_name_extended = "Phylogenetic Assignment of Named Global Outbreak LINeages (Pangolin)"
+#	SOFTWARE_Pangolin_learn_VERSION = "2021-09-28"		## Version Name: pangoLearn
+#	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
+#	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
+#	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
 
     # 	VECT_PANGOLIN_TO_TEST = [
     # 		SOFTWARE_Pangolin_name,
@@ -221,20 +217,18 @@ class SoftwareNames(object):
     # 		SOFTWARE_Pangolin_scorpio_name,
     # 		]
 
-    SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
-    SOFTWARE_BCFTOOLS_name = "bcftools"
-    SOFTWARE_BCFTOOLS_VERSION = "1.9"
-    SOFTWARE_BCFTOOLS_NEX_PARAMETERS = ""
-
-    ## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
-    ## ll temp/assembly.fasta
-    SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "Flye/bin/flye")
-    SOFTWARE_FLYE_name = "Flye"
-    SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
-    SOFTWARE_FLYE_VERSION = "2.9-b1778"
-    SOFTWARE_FLYE_PARAMETERS = (
-        "--no-alt-contigs "  ## genomeSize=<number>[g|m|k] file1 file2
-    )
+	SOFTWARE_BCFTOOLS = os.path.join(settings.DIR_SOFTWARE, "medaka/bin/bcftools")
+	SOFTWARE_BCFTOOLS_name = "bcftools"
+	SOFTWARE_BCFTOOLS_VERSION = "1.9"
+	SOFTWARE_BCFTOOLS_NEX_PARAMETERS = ""
+	
+	## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
+	## ll temp/assembly.fasta
+	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "flye/flye.sh")
+	SOFTWARE_FLYE_name = "flye"
+	SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
+	SOFTWARE_FLYE_VERSION = "2.9.1-b1780"
+	SOFTWARE_FLYE_PARAMETERS = "--no-alt-contigs "	## genomeSize=<number>[g|m|k] file1 file2
 
     ### used to create a file with variations table
     ## git: https://github.com/SantosJGND/INSA

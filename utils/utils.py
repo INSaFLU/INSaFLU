@@ -17,6 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
 from constants.software_names import SoftwareNames
+from datasets.models import DatasetConsensus
 ## Add 'Ter' to dictonary
 ## http://www.hgmd.cf.ac.uk/docs/cd_amino.html
 protein_letters_3to1['Ter'] = 'X'
@@ -50,6 +51,12 @@ class Utils(object):
 		get the path to reference
 		"""
 		return os.path.join(Constants.DIR_PROCESSED_FILES_REFERENCE, "userId_{0}".format(user_id), "refId_{0}".format(ref_id))
+
+	def get_path_to_consensus_file(self, user_id, ref_id):
+		"""
+		get the path to reference
+		"""
+		return os.path.join(Constants.DIR_PROCESSED_FILES_CONSENSUS, "userId_{0}".format(user_id), "consensusId_{0}".format(ref_id))
 	
 	def get_path_to_fastq_file(self, user_id, sample_id):
 		"""
@@ -78,20 +85,25 @@ class Utils(object):
 		user_id ->
 		type_file -> TypeFile.TYPE_FILE_sample_file, TypeFile.TYPE_FILE_fastq_gz
 		"""
+		file_path = 'csv_sample_file'
+		if type_file == TypeFile.TYPE_FILE_fastq_gz: file_path = 'fastq_files'
+		if type_file == TypeFile.TYPE_FILE_dataset_file_metadata: file_path = 'tsv_dataset_file'
 		return os.path.join(Constants.DIR_PROCESSED_FILES_MULTIPLE_SAMPLES, "userId_{0}".format(user_id),\
-				"{}".format('fastq_files' if type_file == TypeFile.TYPE_FILE_fastq_gz else 'csv_sample_file'))
+				"{}".format(file_path))
 		
 	def get_unique_file(self, file_name):
 		"""
 		get unique file name from a file_name
-		return '<path file_name>/<random number>_<file_name>'
+		return '<path file_name>/<file_name>'
+		OR if exists
+		return '<path file_name>/<random number>/<file_name>'
 		"""
-		temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+		temp_file_name = ntpath.basename(file_name.replace(" ", "_"))
 		main_path = os.path.dirname(file_name)
 		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
 		while 1:
 			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
-			temp_file_name = "{}_{}".format(random.randrange(10000000, 99999999, 10), ntpath.basename(file_name))
+			temp_file_name = os.path.join(str(random.randrange(10000000, 99999999, 10)), ntpath.basename(file_name))
 		return os.path.join(main_path, temp_file_name.replace(" ", "_"))
 
 	def get_temp_file(self, file_name, sz_type):
@@ -227,7 +239,8 @@ class Utils(object):
 				raise Exception("Fail to make a copy a file") 
 			
 			### set attributes to file 664
-			os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
+			if os.path.isfile(sz_file_to):
+				os.chmod(sz_file_to, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 			
 	def make_path(self, path_name):
 		if (not os.path.isdir(path_name) and not os.path.isfile(path_name)):
@@ -366,7 +379,7 @@ class Utils(object):
 		return True		
 
 
-	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length):
+	def get_number_seqs_names_bigger_than(self, sz_file_name, size_limit_length, prefix_sum = 0):
 		"""
 		Test Fasta file
 		"""
@@ -374,7 +387,7 @@ class Utils(object):
 		record_dict = SeqIO.index(sz_file_name, "fasta")
 		n_count = 0
 		for key in record_dict:
-			if (len(key) > size_limit_length): n_count += 1
+			if ((len(key) + prefix_sum) > size_limit_length): n_count += 1
 		return n_count
 	
 	def has_degenerated_bases(self, sz_file_name):
@@ -421,10 +434,10 @@ class Utils(object):
 		get max length fasta
 		"""
 		n_total = 0
-		record_dict = SeqIO.index(sz_file_name, "fasta")
-		if (len(record_dict) > 0): return len(record_dict)
-		for seq in record_dict:
-			n_total += len(record_dict[seq].seq)
+		if os.path.exists(sz_file_name):
+			record_dict = SeqIO.index(sz_file_name, "fasta")
+			for seq in record_dict:
+				n_total += len(record_dict[seq].seq)
 		return n_total
 
 							
@@ -1128,6 +1141,16 @@ class Utils(object):
 				raise ValueError("Incorrect data format, should be dd/mm/YYYY")
 		return date_
 	
+	def validate_date_format(self, date_text, format_, text_format):
+		"""
+		The international format yyyy-mm-dd or yyyy/mm/dd
+		validate date time
+		"""
+		try:
+			date_ = datetime.strptime(date_text, format_)
+		except ValueError:
+			raise ValueError("Incorrect data format, should be " + text_format)
+		return date_
 	
 	def clean_fasta_file(self, in_file, out_file):
 		"""
@@ -1348,7 +1371,59 @@ class Utils(object):
 			if (len(vect_out_fasta) > 0):
 				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
 		return len(vect_out_fasta)
-	
+
+	def merge_fasta_files_and_join_multifasta(self, vect_sample_path_and_name, out_file, segment=None):
+		"""
+		:param vect_sample_path_and_name = [[path_file, name, ID],
+					[path_file, name, ID], ... ]
+		:param outfile file 
+		"""
+		vect_out_fasta_total = []
+		dt_out_name = {}
+		
+		for data_file in vect_sample_path_and_name:
+			
+			if (not os.path.exists(data_file[0])): continue
+			fasta_out = ""
+			with open(data_file[0], "rU") as handle_fasta:
+				for record in SeqIO.parse(handle_fasta, "fasta"):
+					# In case of multiple segments we may concatenate all or retrieve a specific segment
+					if( (segment is None) or (segment == record.id) ):
+						fasta_out += str(record.seq)
+			
+			## none fasta sequence
+			if (len(fasta_out) == 0): continue
+			
+			###
+			count = 1
+			sample_name = data_file[1].replace(" ", "_")
+			possible_name = sample_name
+			while True:
+				if possible_name in dt_out_name:
+					possible_name = "{}_{}".format(sample_name, count)
+					count += 1
+				else: 
+					dt_out_name[possible_name] = 1
+					break
+						
+			vect_out_fasta_total.append(SeqRecord(Seq(fasta_out), id=possible_name, description=""))
+			
+			### set all_consensus name in table dataset_consensus
+			if data_file[2] != -1:
+				try:
+					dataset_consensus = DatasetConsensus.objects.get(id=data_file[2])
+					## if the sample starts like this
+					dataset_consensus.seq_name_all_consensus = possible_name
+					dataset_consensus.save()
+				except DatasetConsensus.DoesNotExist:	## need to create with last version
+					continue
+						
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta_total) > 0):
+				SeqIO.write(vect_out_fasta_total, handle_fasta_out, "fasta")
+		return len(vect_out_fasta_total)
+
 	def parse_amino_HGVS_code(self, amino_value):
 		""" p.Asn292Asn -> p.Asn292Asn"""
 		match = re.search("p.(?P<first_amino>[A-Za-z*]+)(?P<position>[0-9]+)(?P<second_amino>[A-Za-z*]+)", amino_value)

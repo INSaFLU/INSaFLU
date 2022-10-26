@@ -13,6 +13,11 @@ urlpatterns = [
         views.PISettingsView.as_view(),
         name="pathogenID_pipeline",
     ),
+    url(
+        r"software_dataset_update/soft_(?P<pk>\d+)/dataset_(?P<pk_dataset>\d+)$",
+        views.UpdateParametersDatasetView.as_view(),
+        name="software-dataset-update",
+    ),
     url(r"^$", views.index.as_view(), name="settings-index"),
     url(r"set_quality", views.QCSettingsView.as_view(), name="settings_qc"),
     url(r"403/$", views.Maintenance.as_view(), name="under_construction"),

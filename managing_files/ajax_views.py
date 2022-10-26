@@ -10,7 +10,8 @@ import logging
 import os
 from datetime import datetime
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
@@ -32,17 +33,9 @@ from utils.software import Software
 from utils.utils import Utils
 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    DataSet,
-    MetaKey,
-    ProcessControler,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-    VaccineStatus,
-)
+from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
+                                   ProjectSample, Reference, Sample,
+                                   UploadFiles, VaccineStatus)
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
@@ -223,6 +216,39 @@ def show_phylo_canvas(request):
                         Project.PROJECT_FILE_NAME_FASTTREE_tree,
                     )
 
+				if (os.path.exists(file_name_root_nwk) and os.path.exists(file_name_root_sample)):
+					string_file_content = utils.read_file_to_string(file_name_root_nwk).strip()
+					
+					if not os.path.exists(file_name_root_json) or os.path.getsize(file_name_root_json) == 0:
+						with open(file_name_root_json, 'w', encoding='utf-8') as handle_write, open(file_name_root_sample) as handle_in_csv:
+							reader = csv.DictReader(handle_in_csv)
+							all_data = json.loads(json.dumps(list(reader)))
+							dt_result = {}
+							for dict_data in all_data:
+								if ('id' in dict_data):
+									dt_out = dict_data.copy()
+									del dt_out['id']
+									dt_result[dict_data['id']] = dt_out
+							if len(dt_result) == len(all_data):
+								handle_write.write(json.dumps(dt_result))
+							else:
+								logger_production.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project_id, len(dt_result), len(all_data)))
+								logger_debug.error('ProjectID: {}  different number of lines processing Sample {} -> JSON {}'.format(project_id, len(dt_result), len(all_data)))
+								string_file_content = None	## return error
+								
+					if (string_file_content != None and len(string_file_content) > 0):
+						data['is_ok'] = True
+						data['tree'] = string_file_content
+						data['root'] = project.reference.name
+						data['url_sample'] = file_name_url_json
+						data['tree_nwk_id'] = mark_safe('<strong>Tree (.nwk):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_nwk,
+														os.path.basename(file_name_nwk), os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe('<strong>Tree (.tree):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_tree,
+												os.path.basename(file_name_tree), os.path.basename(file_name_tree)))
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)
+
                 if os.path.exists(file_name_root_nwk) and os.path.exists(
                     file_name_root_sample
                 ):
@@ -279,7 +305,6 @@ def show_phylo_canvas(request):
                 pass
         return JsonResponse(data)
 
-
 @csrf_protect
 def show_variants_as_a_table(request):
     """
@@ -313,6 +338,32 @@ def show_variants_as_a_table(request):
             except Project.DoesNotExist:
                 pass
         return JsonResponse(data)
+
+
+@csrf_protect
+def show_aln2pheno(request):
+	"""
+	return table with variants
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			try:
+				project = Project.objects.get(id=project_id)
+				out_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+							Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+				if (os.path.exists(out_file) and os.stat(out_file).st_size > 0):
+					data['is_ok'] = True
+					data['url_path_aln2pheno'] = mark_safe(request.build_absolute_uri(
+						project.get_global_file_by_project(TypePath.MEDIA_URL,
+						Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)))
+					data['static_table_filter'] = mark_safe(request.build_absolute_uri(
+						os.path.join(settings.STATIC_URL, "vendor/tablefilter")))
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)		
 
 
 @csrf_protect

@@ -1,7 +1,5 @@
 from django.conf.urls import url
 
-from managing_files import ajax_views, views
-
 urlpatterns = [
     url(r"references/references$", views.ReferenceView.as_view(), name="references"),
     url(
@@ -51,7 +49,6 @@ urlpatterns = [
         views.SamplesUploadFastQView.as_view(),
         name="sample-upload-fastq",
     ),  ## upload several fastq.gz
-    url(r"project-index", views.ProjectIndex.as_view(), name="project-index"),
     url(r"project/projects$", views.ProjectsView.as_view(), name="projects"),
     url(r"project/project_add$", views.ProjectCreateView.as_view(), name="project-add"),
     url(
@@ -110,6 +107,7 @@ urlpatterns = [
         ajax_views.show_variants_as_a_table,
         name="show-variants-as-a-table",
     ),
+    url(r"^ajax/show_aln2pheno$", ajax_views.show_aln2pheno, name="show-aln2pheno"),
     url(
         r"^ajax/show_coverage_as_a_table$",
         ajax_views.show_coverage_as_a_table,
@@ -167,19 +165,9 @@ urlpatterns = [
         r"^ajax/remove_project$", ajax_views.remove_project, name="remove_project"
     ),  ## remove a project
     url(
-        r"^ajax/remove_televir_project$",
-        ajax_views.remove_televir_project,
-        name="remove_televir_project",
-    ),  ## remove a project
-    url(
         r"^ajax/remove_project_sample$",
         ajax_views.remove_project_sample,
         name="remove_project_sample",
-    ),  ## remove a project sample
-    url(
-        r"^ajax/remove_televir_project_sample$",
-        ajax_views.remove_televir_project_sample,
-        name="remove_televir_project_sample",
     ),  ## remove a project sample
     url(
         r"^ajax/remove_uploaded_file$",

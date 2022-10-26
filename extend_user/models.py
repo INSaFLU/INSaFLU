@@ -23,6 +23,7 @@ class Profile(models.Model):
 	## related with projects...
 	SGE_PROCESS_projects = "ps";	## set_second_stage_snippy; set_second_stage_medaka;
 			## collect_global_files
+	SGE_PROCESS_datasets = "ds";	## process datasets;
 	SGE_PROCESS_link_files = "l";	## set_link_files
 	
 	user = models.OneToOneField(User, on_delete=models.CASCADE)

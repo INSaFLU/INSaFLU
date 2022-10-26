@@ -5,8 +5,7 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -894,6 +893,99 @@ class run_minimap2_illumina(Classifier_init):
         ).rename(columns={0: "acc", 1: "qseqid"})
 
 
+class run_bwa_mem(Classifier_init):
+    method_name = "bwa_illumina"
+    report_suffix = ".sam"
+    full_report_suffix = ".bwa_illumina"
+
+    def run_SE(self, threads: int = 3):
+        cmd = f"bwa mem -t {threads} {self.args} {self.db_path} {self.query_path} > {self.report_path}"
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        cmd = f"bwa mem -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path}"
+        self.cmd.run(cmd)
+
+    def get_report(self) -> pd.DataFrame:
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        return pd.read_csv(self.report_path, sep="\t", header=None).rename(
+            columns={
+                0: "acc",
+                1: "flag",
+                2: "qseqid",
+                3: "pos",
+                4: "mapq",
+                5: "cigar",
+                6: "rnext",
+                7: "pnext",
+                8: "tlen",
+                9: "seq",
+                10: "qual",
+            }
+        )
+
+    def get_report_simple(self) -> pd.DataFrame:
+        """
+        read classifier output, return only query and reference sequence id columns.
+        """
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        return pd.read_csv(
+            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+        ).rename(columns={0: "acc", 1: "qseqid"})
+
+
+class run_bowtie2_ONT(Classifier_init):
+    method_name = "bowtie2_ONT"
+    report_suffix = ".sam"
+    full_report_suffix = ".bowtie2_ONT"
+
+    def run_SE(self, threads: int = 3):
+        cmd = f"bowtie2 -a -t --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -U {self.query_path} -S {self.report_path}"
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        cmd = f"bowtie2 -a -t --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -1 {self.query_path} -2 {self.r2} -S {self.report_path}"
+        self.cmd.run(cmd)
+
+    def get_report(self) -> pd.DataFrame:
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        return pd.read_csv(self.report_path, sep="\t", header=None).rename(
+            columns={
+                0: "acc",
+                1: "flag",
+                2: "qseqid",
+                3: "pos",
+                4: "mapq",
+                5: "cigar",
+                6: "rnext",
+                7: "pnext",
+                8: "tlen",
+                9: "seq",
+                10: "qual",
+            }
+        )
+
+    def get_report_simple(self) -> pd.DataFrame:
+        """
+        read classifier output, return only query and reference sequence id columns.
+        """
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        return pd.read_csv(
+            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+        ).rename(columns={0: "acc", 1: "qseqid"})
+
+
 class run_minimap2_ONT(Classifier_init):
     method_name = "minimap2_ONT"
     report_suffix = ".sam"
@@ -986,7 +1078,7 @@ class run_minimap2_asm(Classifier_init):
 
 
 class Empty_classifier(Classifier_init):
-    method_name = "blast"
+    method_name = "None"
     report_suffix = ".blast_results.tsv"
     full_report_suffix = ".blast_full_results.tsv"
 
@@ -1010,6 +1102,8 @@ class Classifier:
         "krakenuniq": run_krakenuniq,
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
+        "bowtie": run_bowtie2_ONT,
+        "bwa": run_bwa_mem,
     }
 
     def __init__(
@@ -1067,17 +1161,23 @@ class Classifier:
         """
         deploy classifier method. read classifier output, return only query and reference sequence id columns.
         """
-        self.deployed = True
+
+        if self.classifier.method_name == "None":
+            self.logger.info("No classifier method selected.")
+            return
+
         if not self.check_r1():
             self.collect_report()
             self.finished = self.check_classifier_output()
-            return
+
         else:
             if not self.check_classifier_output():
                 self.classify()
 
             self.collect_report()
             self.finished = self.check_classifier_output()
+
+        self.deployed = True
 
     def classifier_configure(self):
         """

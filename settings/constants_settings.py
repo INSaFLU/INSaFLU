@@ -4,6 +4,8 @@ Created on Dec 14, 2017
 @author: mmp
 """
 
+from re import S
+
 
 class ConstantsSettings(object):
     """
@@ -57,23 +59,6 @@ class ConstantsSettings(object):
         TECHNOLOGY_minion,
         TECHNOLOGY_Undefined,
     ]
-
-    ### software with application in multiple pipeline_steps:
-    polyvalent_software = [
-        "Centrifuge",
-        "Snippy",
-    ]
-    # pipeline_steps per software, for software with multiple pipeline_steps.
-    polyvalent_software_pipelines = {
-        "Centrifuge": [
-            PIPELINE_NAME_viral_enrichment,
-            PIPELINE_NAME_read_classification,
-        ],
-        "Snippy": [
-            PIPELINE_NAME_variant_detection,
-            PIPELINE_NAME_remapping,
-        ],
-    }
 
     ###### Relation between software and technology
     def get_list_software_names_by_technology(self, technology_name):

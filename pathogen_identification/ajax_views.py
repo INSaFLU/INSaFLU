@@ -4,12 +4,7 @@ from django.views.decorators.http import require_POST
 from utils.process_SGE import ProcessSGE
 
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
-from pathogen_identification.models import (
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.models import Projects
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
 
@@ -39,10 +34,8 @@ def deploy_ProjectPI(request):
         project = Projects.objects.get(id=int(project_id))
 
         utils = Utils_Manager(user)
-        print("checking", project.technology)
 
-        runs_to_deploy = utils.check_runs_to_deploy(project)
-
+        runs_to_deploy = utils.check_runs_to_deploy(user, project)
         print(runs_to_deploy)
         if runs_to_deploy:
             taskID = process_SGE.set_submit_televir_job(
@@ -52,6 +45,5 @@ def deploy_ProjectPI(request):
 
             data["is_deployed"] = True
 
-        print(data)
         data = {"is_ok": True}
         return JsonResponse(data)

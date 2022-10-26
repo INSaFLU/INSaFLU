@@ -69,10 +69,10 @@ $(document).on("click", "a", function(e){
 		var software_id = $(this).attr('software_id');
 		var type_of_use_id = $(this).attr('type_of_use_id');
         var technology_id = $(this).attr('technology_id');
+		var televir_project_id= $(this).attr('televir_project_id');
 		var project_id = $('#id_show_turn_on_off_modal').attr('project_id');
 		var project_sample_id = $('#id_show_turn_on_off_modal').attr('project_sample_id');
 		var sample_id = $('#id_show_turn_on_off_modal').attr('sample_id');
-		var televir_project_id= $('#id_show_turn_on_off_modal').attr('televir_project_id');
 	
 		//block all page
 		wait_screen();

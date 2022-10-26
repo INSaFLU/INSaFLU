@@ -49,17 +49,17 @@ class SoftwaresTable(tables.Table):
         self,
         query_set,
         project=None,
-        televir_project=None,
         project_sample=None,
         sample=None,
+        televir_project=None,
         b_enable_options=True,
     ):
         tables.Table.__init__(self, query_set)
         self.project = project
         self.project_sample = project_sample
         self.sample = sample
-        self.televir_project = televir_project
         self.b_enable_options = b_enable_options
+        self.televir_project = televir_project
 
         self.count_project_sample = 0
         ### get number of samples inside of this project, if project exist
@@ -110,8 +110,13 @@ class SoftwaresTable(tables.Table):
                 if record.can_be_on_off_in_pipeline and b_enable_options
                 else "",
             )
-            + 'data-toggle="modal" type_of_use_id="{}" software_id="{}" {}'.format(
-                record.type_of_use, record.id, sz_ids
+            + 'data-toggle="modal" type_of_use_id="{}" {} software_id="{}" {}'.format(
+                record.type_of_use,
+                f'televir_project_id="{self.televir_project.id}"'
+                if self.televir_project
+                else "",
+                record.id,
+                sz_ids,
             )
             + '><input name="select_to_run" id="{}_{}" type="checkbox" value="{}" {} {}/> </a>'.format(
                 Constants.CHECK_BOX,
@@ -469,8 +474,8 @@ class SoftwaresTable(tables.Table):
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project.id)
-        if not self.televir_project is None:
-            sz_ids += 'televir_project_id="{}"'.format(self.televir_project.id)
+        # if not self.televir_project is None:
+        #    sz_ids += 'televir_project_id="{}"'.format(self.televir_project.id)
         if not self.project_sample is None:
             sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
         if not self.sample is None:

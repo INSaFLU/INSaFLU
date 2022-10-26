@@ -54,6 +54,7 @@ class SoftwareNames(object):
     )
     # 	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
     SOFTWARE_SPAdes_name = "SPAdes"
+    SOFTWARE_SPAdes_name_extended = "SPAdes"
     SOFTWARE_SPAdes_VERSION = "3.11.1"  ### older version change at 25/11/2109 to 3.
     # 	SOFTWARE_SPAdes_VERSION = "3.13.0"
     SOFTWARE_SPAdes_PARAMETERS = "--only-assembler"
@@ -664,6 +665,29 @@ class SoftwareNames(object):
     }
     ###
     ###################################
+
+    ### software with application in multiple pipeline_steps:
+    polyvalent_software = [
+        SOFTWARE_CENTRIFUGE_name,
+        SOFTWARE_SNIPPY_name,
+        SOFTWARE_MINIMAP2_REMAP_ONT_name,
+    ]
+    # pipeline_steps per software, for software with multiple pipeline_steps.
+    polyvalent_software_pipelines = {
+        SOFTWARE_CENTRIFUGE_name: [
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
+        SOFTWARE_SNIPPY_name: [
+            ConstantsSettings.PIPELINE_NAME_variant_detection,
+            ConstantsSettings.PIPELINE_NAME_remapping,
+        ],
+        SOFTWARE_MINIMAP2_REMAP_ONT_name: [
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
+        ],
+    }
+
     ###################################
 
     def __init__(self):
@@ -1357,8 +1381,8 @@ class SoftwareNames(object):
     def get_kraken2_parameters(self):
         return self.SOFTWARE_KRAKEN2_parameters
 
-    def get_krakenuniq(self):
-        return self.SOFTWARE_KRAKENUNIQ
+    def get_krakenuniq_parameters(self):
+        return self.SOFTWARE_KRAKENUNIQ_parameters
 
     def get_krakenuniq_name(self):
         return self.SOFTWARE_KRAKENUNIQ_name

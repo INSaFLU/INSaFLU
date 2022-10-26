@@ -3,8 +3,14 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
+from logging import RootLogger
+
+import networkx as nx
 from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
 from settings.constants_settings import ConstantsSettings as CS
+from settings.models import Software
+
+from pathogen_identification.models import Projects as PIprojects
 
 
 class Pipeline_Makeup:
@@ -12,138 +18,164 @@ class Pipeline_Makeup:
     Pipeline steps
     """
 
-    MAKEUP_FULL = 0
-    MAKEUP_NO_ASSEMBLY = 1
-    MAKEUP_NO_ENRICHMENT = 2
-    MAKEUP_NO_DEPLETION = 3
-    MAKEUP_NO_READS = 4
-    MAKEUP_READS_ENRICHMENT = 5
-    MAKEUP_READS_DEPLETION = 6
-    MAKEUP_READS_ONLY = 7
-    MAKEUP_CONTIGS_ENRICHMENT = 8
-    MAKEUP_CONTIGS_DEPLETION = 9
-    MAKEUP_CONTIGS_ONLY = 10
+    ROOT = "root"
+    ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
+    VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
 
-    FULL = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_host_depletion,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    NO_ENRICHMENT = [
-        CS.PIPELINE_NAME_host_depletion,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    NO_DEPLETION = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    NO_ASSEMBLY = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_host_depletion,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    NO_READS = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_host_depletion,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    READS_ONLY_ENRICHMENT = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    READS_ONLY_DEPLETION = [
-        CS.PIPELINE_NAME_host_depletion,
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    READS_ONLY = [
-        CS.PIPELINE_NAME_read_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    CONTIGS_ONLY_ENRICHMENT = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    CONTIGS_ONLY_DEPLETION = [
-        CS.PIPELINE_NAME_viral_enrichment,
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    CONTIGS_ONLY = [
-        CS.PIPELINE_NAME_assembly,
-        CS.PIPELINE_NAME_contig_classification,
-        CS.PIPELINE_NAME_remapping,
-    ]
-
-    MAKEUP = {
-        MAKEUP_FULL: FULL,
-        MAKEUP_NO_ASSEMBLY: NO_ASSEMBLY,
-        MAKEUP_NO_READS: NO_READS,
-        MAKEUP_NO_ENRICHMENT: NO_ENRICHMENT,
-        MAKEUP_NO_DEPLETION: NO_DEPLETION,
-        MAKEUP_READS_ENRICHMENT: READS_ONLY_ENRICHMENT,
-        MAKEUP_READS_DEPLETION: READS_ONLY_DEPLETION,
-        MAKEUP_READS_ONLY: READS_ONLY,
-        MAKEUP_CONTIGS_ENRICHMENT: CONTIGS_ONLY_ENRICHMENT,
-        MAKEUP_CONTIGS_DEPLETION: CONTIGS_ONLY_DEPLETION,
-        MAKEUP_CONTIGS_ONLY: CONTIGS_ONLY,
+    dependencies_graph_edges = {
+        CS.PIPELINE_NAME_viral_enrichment: [ROOT],
+        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT],
+        CS.PIPELINE_NAME_host_depletion: [
+            ROOT,
+            CS.PIPELINE_NAME_viral_enrichment,
+        ],
+        CS.PIPELINE_NAME_read_classification: [
+            ROOT,
+            VIRAL_ENRICHMENT_SPECIAL_STEP,
+            CS.PIPELINE_NAME_host_depletion,
+        ],
+        CS.PIPELINE_NAME_assembly: [
+            ROOT,
+            CS.PIPELINE_NAME_read_classification,
+            CS.PIPELINE_NAME_host_depletion,
+            VIRAL_ENRICHMENT_SPECIAL_STEP,
+        ],
+        ASSEMBLY_SPECIAL_STEP: [
+            CS.PIPELINE_NAME_read_classification,
+        ],
+        CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
+        CS.PIPELINE_NAME_remapping: [
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+            ASSEMBLY_SPECIAL_STEP,
+        ],
     }
 
+    dependencies_graph_root = CS.PIPELINE_NAME_remapping
+    dependencies_graph_sink = ROOT
+
+    def generate_dependencies_graph(self):
+        """
+        Generates a graph of dependencies between pipeline steps
+        """
+        G = nx.DiGraph()
+        for (
+            pipeline_step,
+            dependencies,
+        ) in self.dependencies_graph_edges.items():
+            for dependency in dependencies:
+                G.add_edge(pipeline_step, dependency)
+        return G
+
+    def process_path(self, dpath: list):
+        """
+        Processes the path to remove the root node
+        """
+        dpath = [
+            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly).replace(
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
+            )
+            for x in dpath
+            if x != self.dependencies_graph_sink
+        ]
+
+        return dpath[::-1]
+
+    def get_denpendencies_paths_dict(self):
+        """
+        Returns a dictionary with the dependencies between pipeline steps
+        """
+        G = self.generate_dependencies_graph()
+        paths = nx.all_simple_paths(
+            G,
+            self.dependencies_graph_root,
+            self.dependencies_graph_sink,
+        )
+
+        paths = {x: self.process_path(path) for x, path in enumerate(paths)}
+        return paths
+
     def __init__(self):
-        pass
+        self.MAKEUP = self.get_denpendencies_paths_dict()
 
-    @staticmethod
-    def get_makeup(makeup: int):
-        return Pipeline_Makeup.MAKEUP[makeup]
+    def get_makeup(self, makeup: int):
+        return self.MAKEUP[makeup]
 
-    @staticmethod
-    def get_makeup_name(makeup: int):
-        return Pipeline_Makeup.MAKEUP[makeup][0]
+    def get_makeup_name(self, makeup: int):
+        return self.MAKEUP[makeup][0]
 
-    @staticmethod
-    def get_makeup_list():
-        return list(Pipeline_Makeup.MAKEUP.keys())
+    def get_makeup_list(
+        self,
+    ):
+        return list(self.MAKEUP.keys())
 
-    @staticmethod
-    def get_makeup_list_names():
-        return list(Pipeline_Makeup.MAKEUP.values())
+    def get_makeup_list_names(
+        self,
+    ):
+        return list(self.MAKEUP.values())
 
     def match_makeup_name_from_list(self, makeup_list: list):
 
-        for makeup, mlist in Pipeline_Makeup.MAKEUP.items():
+        for makeup, mlist in self.MAKEUP.items():
 
             if set(makeup_list) == set(mlist):
                 return makeup
         return None
 
     def makeup_available(self, makeup: int):
-        return makeup in Pipeline_Makeup.MAKEUP
+        return makeup in self.MAKEUP
+
+    def get_software_pipeline_list_including(
+        self, software: Software, televir_project: PIprojects = None
+    ):
+        type_of_use = Software.TYPE_OF_USE_televir_global
+        if televir_project:
+            type_of_use = Software.TYPE_OF_USE_televir_project
+
+        pipeline_steps_project = Software.objects.filter(
+            type_of_use=type_of_use,
+            technology=software.technology,
+            parameter__televir_project=televir_project,
+            is_to_run=True,
+        ).values_list("pipeline_step__name", flat=True)
+        return list(pipeline_steps_project)
+
+    def get_software_pipeline_list_excluding(
+        self, software: Software, televir_project: PIprojects = None
+    ):
+        type_of_use = Software.TYPE_OF_USE_televir_global
+        if televir_project:
+            type_of_use = Software.TYPE_OF_USE_televir_project
+
+        pipeline_steps_project = (
+            Software.objects.filter(
+                type_of_use=type_of_use,
+                technology=software.technology,
+                parameter__televir_project=televir_project,
+                is_to_run=True,
+            )
+            .exclude(pk=software.pk)
+            .values_list("pipeline_step__name", flat=True)
+        )
+
+        return list(pipeline_steps_project)
+
+    def get_pipeline_makeup_result_of_operation(
+        self, software, turn_off=True, televir_project: PIprojects = None
+    ):
+        pipeline_steps_project = []
+
+        if turn_off:
+            pipeline_steps_project = self.get_software_pipeline_list_excluding(
+                software, televir_project=televir_project
+            )
+
+        else:
+            pipeline_steps_project = self.get_software_pipeline_list_including(
+                software, televir_project=televir_project
+            )
+
+        return pipeline_steps_project
 
 
 class ConstantsSettings:

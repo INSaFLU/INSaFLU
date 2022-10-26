@@ -828,6 +828,9 @@ class DefaultSoftware(object):
             )
             return self.get_abricate_parameters(user, technology_name)
 
+        ##########################################
+        ############### TELEVIR SOFTWARE #########
+
         if software_name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_CENTRIFUGE_name,
@@ -861,6 +864,33 @@ class DefaultSoftware(object):
             )
             return self.get_centrifuge_parameters(user, technology_name)
 
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
+                self.default_parameters.get_minimap2_remap_ONT_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+                ),
+                user,
+            )
+
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
+                self.default_parameters.get_minimap2_remap_ONT_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_remap_ont_parameters(
+                user, ConstantsSettings.TECHNOLOGY_minion
+            )
+
         if software_name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_KRAKEN2_name,
@@ -875,7 +905,9 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_BWA_name,
                 self.default_parameters.get_bwa_default(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
                 ),
                 user,
             )

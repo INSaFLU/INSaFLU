@@ -76,6 +76,8 @@ class Deployment_Params:
         "ENRICH": True,
         "DEPLETE": False,
         "ASSEMBLE": False,
+        "CLASSIFY_READS": True,
+        "CLASSIFY_CONTIGS": True,
         "CLASSIFY": True,
         "REMAP": True,
         "PHAGE_DEPL": True,

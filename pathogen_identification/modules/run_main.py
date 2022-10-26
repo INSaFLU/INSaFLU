@@ -250,17 +250,6 @@ class RunDetail_main:
         self.max_remap = config["max_output_number"]
         self.taxid_limit = config["taxid_limit"]
 
-        ### actions
-        self.subsample = False
-        self.quality_control = config["actions"]["QCONTROL"]
-        self.sift = config["actions"]["SIFT"]
-        self.depletion = config["actions"]["DEPLETE"]
-        self.enrichment = config["actions"]["ENRICH"]
-        self.assembly = config["actions"]["ASSEMBLE"]
-        self.classification = config["actions"]["CLASSIFY"]
-        self.remapping = config["actions"]["REMAP"]
-        self.house_cleaning = config["actions"]["CLEAN"]
-
         ### methods
         self.preprocess_method = Software_detail(
             CS.PIPELINE_NAME_read_quality_analysis,
@@ -307,6 +296,18 @@ class RunDetail_main:
             config,
             self.prefix,
         )
+
+        ### actions
+        self.subsample = False
+        self.quality_control = config["actions"]["QCONTROL"]
+        self.sift = config["actions"]["SIFT"]
+        self.depletion = bool(self.depletion_method.name != "None")
+        self.depletion = bool(self.depletion_method.name != "None")
+        self.enrichment = bool(self.enrichment_method.name != "None")
+        self.assembly = bool(self.assembly_method.name != "None")
+        self.classification = config["actions"]["CLASSIFY"]
+        self.remapping = config["actions"]["REMAP"]
+        self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
         self.depletion_drone = Classifier(

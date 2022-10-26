@@ -220,6 +220,7 @@ class Utility_Pipeline_Manager:
             technology (str): Technology of the pipeline. Default is "ONT"
         """
         self.technology = technology
+        print(combined_table.head())
 
         combined_table = self.process_combined_table(combined_table)
         pipe_makeup_manager = Pipeline_Makeup()
@@ -246,14 +247,23 @@ class Utility_Pipeline_Manager:
             combined_table.technology.str.contains(self.technology)
         ]
 
+        print(combined_table.head())
+
         def round_parameter_float(row):
             """
             Round float parameters to 2 decimals
             """
+            print("###")
+
+            print(row)
+
             new_param = row.parameter
+            print("param: ", new_param)
+
             if row.type_data == Parameter.PARAMETER_float:
 
                 if row.parameter and row.can_change:
+
                     new_param = round(float(row.parameter), 2)
                     new_param = str(new_param)
 
@@ -262,6 +272,7 @@ class Utility_Pipeline_Manager:
         combined_table["parameter"] = combined_table.apply(
             round_parameter_float, axis=1
         )
+        print("HI")
 
         return combined_table
 
@@ -624,17 +635,21 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def get_software_tables_global(self):
+    def get_software_tables_global(self, technology: str):
         """
         Get software tables for a user
         """
 
         software_available = Software.objects.filter(
-            type_of_use=Software.TYPE_OF_USE_televir_global
+            type_of_use=Software.TYPE_OF_USE_televir_global,
+            technology__name=technology,
+            is_to_run=True,
         )
 
         parameters_available = Parameter.objects.filter(
-            software__in=software_available, televir_project=None
+            software__in=software_available,
+            televir_project=None,
+            is_to_run=True,
         )
 
         software_table = pd.DataFrame(software_available.values())
@@ -647,13 +662,16 @@ class Parameter_DB_Utility:
         """
         Get software tables for a user
         """
-
+        print(project.technology)
         software_available = Software.objects.filter(
-            owner=owner, type_of_use=Software.TYPE_OF_USE_televir_project
+            owner=owner,
+            type_of_use=Software.TYPE_OF_USE_televir_project,
+            technology__name=project.technology,
+            is_to_run=True,
         )
 
         parameters_available = Parameter.objects.filter(
-            software__in=software_available, televir_project=project
+            software__in=software_available, televir_project=project, is_to_run=True
         )
 
         software_table = pd.DataFrame(software_available.values())
@@ -694,9 +712,9 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self):
+    def generate_combined_parameters_table(self, technology: str):
         """"""
-        software_table, parameters_table = self.get_software_tables_global()
+        software_table, parameters_table = self.get_software_tables_global(technology)
 
         return self.merge_software_tables(software_table, parameters_table)
 
@@ -712,7 +730,9 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             print("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables_global()
+            software_table, parameters_table = self.get_software_tables_global(
+                project.technology
+            )
 
         merged_table = self.merge_software_tables(software_table, parameters_table)
 
@@ -907,20 +927,53 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
 
-    def check_runs_to_deploy(self, project: Projects):
+    def check_runs_to_deploy(self, user: User, project: Projects):
         """
         Check if there are runs to run
         """
 
-        local_tree = self.generate_project_tree(project.technology, project)
+        utils = Utils_Manager(owner=user)
 
-        local_paths = local_tree.get_all_graph_paths()
-        n_samples = PIProject_Sample.objects.filter(project=project).count()
-        runs = ParameterSet.objects.filter(
-            Q(project=project) & Q(status=ParameterSet.STATUS_FINISHED)
-        ).count()
+        technology = project.technology
+        samples = PIProject_Sample.objects.filter(project=project)
+        local_tree = utils.generate_project_tree(technology, project)
+        tree_makeup = local_tree.makeup
 
-        runs_to_deploy = len(local_paths) * n_samples - runs
+        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+
+        local_paths = local_tree.get_all_graph_paths_explicit()
+        sample = samples[0]
+
+        runs_to_deploy = 0
+
+        for sample in samples:
+
+            for leaf, path in local_paths.items():
+
+                matched_path = utils.utility_manager.match_path_to_tree(
+                    path, pipeline_tree
+                )
+
+                matched_path_node = SoftwareTreeNode.objects.get(
+                    software_tree__pk=pipeline_tree_index, index=matched_path
+                )
+
+                exists = utils.parameter_util.check_ParameterSet_exists(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+
+                if exists:
+
+                    if utils.parameter_util.check_ParameterSet_processed(
+                        sample=sample, leaf=leaf, project=project
+                    ):
+                        print("parameter set processed")
+
+                        continue
+
+                else:
+                    runs_to_deploy += 1
 
         if runs_to_deploy > 0:
             return True
@@ -961,7 +1014,9 @@ class Utils_Manager:
             pipeline_setup = Pipeline_Makeup()
             makeup_steps = pipeline_setup.get_makeup(tree_makeup)
 
-            combined_table = self.parameter_util.generate_combined_parameters_table()
+            combined_table = self.parameter_util.generate_combined_parameters_table(
+                technology
+            )
 
             combined_table = combined_table[
                 combined_table.pipeline_step.isin(makeup_steps)
@@ -995,11 +1050,15 @@ class Utils_Manager:
             self.owner, project
         )
 
+        print(combined_table.head())
+
         utility_drone = Utility_Pipeline_Manager()
         utility_drone.input(combined_table, technology=technology)
         print(combined_table)
 
         pipeline_tree = utility_drone.generate_default_software_tree()
+        print(pipeline_tree.makeup)
+        print(combined_table.software_name.unique())
 
         return pipeline_tree
 

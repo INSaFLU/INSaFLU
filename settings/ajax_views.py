@@ -722,7 +722,6 @@ def turn_on_off_software(request):
         project_sample_id_a = "project_sample_id"
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
-        technology_id_a = "technology_id"
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -733,6 +732,7 @@ def turn_on_off_software(request):
             return JsonResponse(data)
         if profile.only_view_project:
             return JsonResponse(data)
+
         pipeline_makeup = Pipeline_Makeup()
 
         sample_id = None
@@ -740,10 +740,7 @@ def turn_on_off_software(request):
         televir_project_id = None
         project_sample_id = None
         type_of_use_id = None
-        technology_id = None
 
-        if technology_id_a in request.GET:
-            technology_id = int(request.GET[technology_id_a])
         if type_of_use_id_a in request.GET:
             type_of_use_id = int(request.GET[type_of_use_id_a])
         if televir_project_id_a in request.GET:
@@ -754,13 +751,6 @@ def turn_on_off_software(request):
             project_id = request.GET[project_id_a]
         elif project_sample_id_a in request.GET:
             project_sample_id = request.GET[project_sample_id_a]
-
-        print("##################")
-        print(televir_project_id)
-        print(type_of_use_id)
-        print(Software.TYPE_OF_USE_televir_global)
-        print(request.GET)
-        print(technology_id)
 
         default_parameters = DefaultParameters()
         if software_id_a in request.GET:
@@ -776,86 +766,61 @@ def turn_on_off_software(request):
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
                 if not televir_project_id is None:
+
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
-                    pipeline_step_id = software.pipeline_step.pk
-                    if not pipeline_step_id is None:
-
-                        if current_is_to_run:
-                            pipeline_steps_project = (
-                                Software.objects.filter(
-                                    type_of_use=Software.TYPE_OF_USE_televir_project,
-                                    televir_project__pk=televir_project_id,
-                                    technology=software.technology,
-                                    is_to_run=True,
-                                )
-                                .exclude(pk=software_id)
-                                .values_list("pipeline_step", flat=True)
-                            )
-                        else:
-                            pipeline_steps_project = Software.objects.filter(
-                                type_of_use=Software.TYPE_OF_USE_televir_project,
-                                televir_project__pk=televir_project_id,
-                                technology=software.technology,
-                                is_to_run=True,
-                            ).values_list("pipeline_step", flat=True)
-
-                    if (
-                        pipeline_makeup.match_makeup_name_from_list(
-                            pipeline_steps_project
+                    pipeline_steps_project = (
+                        pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                            software,
+                            turn_off=current_is_to_run,
+                            televir_project=televir_project,
                         )
-                        is None
-                    ):
+                    )
+
+                    makeup = pipeline_makeup.match_makeup_name_from_list(
+                        pipeline_steps_project
+                    )
+
+                    if makeup is None:
                         if current_is_to_run:
                             data[
                                 "message"
-                            ] = f"You cannot do this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
+                            ] = f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
 
                             return JsonResponse(data)
+
+                print("$$$$$$$$")
+                print(type_of_use_id)
+                print(software.name)
+                print(software.pipeline_step)
 
                 if not type_of_use_id is None:
                     if type_of_use_id == Software.TYPE_OF_USE_televir_global:
 
-                        pipeline_step_id = software.pipeline_step.pk
-
-                        if current_is_to_run:
-
-                            pipeline_steps_project = (
-                                Software.objects.filter(
-                                    type_of_use=Software.TYPE_OF_USE_televir_global,
-                                    technology=software.technology,
-                                    is_to_run=True,
-                                )
-                                .exclude(pk=software_id)
-                                .values_list("pipeline_step__name", flat=True)
+                        pipeline_steps_project = (
+                            pipeline_makeup.get_pipeline_makeup_result_of_operation(
+                                software, turn_off=current_is_to_run
                             )
-                        else:
-                            pipeline_steps_project = Software.objects.filter(
-                                type_of_use=Software.TYPE_OF_USE_televir_global,
-                                technology=software.technology,
-                            ).values_list("pipeline_step__name", flat=True)
+                        )
 
-                        pipeline_steps_project = list(pipeline_steps_project)
+                        print(current_is_to_run)
 
-                        print("#")
-                        print(pipeline_steps_project)
+                        print("#############")
+                        print(set(pipeline_steps_project))
 
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_project
                         )
-                        print(makeup is None)
                         print(makeup)
+
                         if makeup:
                             print(pipeline_makeup.get_makeup(makeup))
-
-                        print("HI")
-                        print(current_is_to_run)
 
                         if makeup is None:
                             if current_is_to_run:
 
                                 data[
                                     "message"
-                                ] = "You cannot do this operation. Deployment would not meet minimum pipeline step requirements."
+                                ] = "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."
 
                                 return JsonResponse(data)
 
@@ -891,6 +856,7 @@ def turn_on_off_software(request):
                             ) = request.user.profile.get_name_sge_seq(
                                 Profile.SGE_PROCESS_dont_care, Profile.SGE_GLOBAL
                             )
+
                             if project_sample.is_sample_illumina():
                                 taskID = process_SGE.set_second_stage_snippy(
                                     project_sample,
@@ -989,8 +955,6 @@ def turn_on_off_software(request):
                         )
 
                 ## set ON|OFF software
-                print("SOFTWARE")
-                print(televir_project)
                 is_to_run = default_parameters.set_software_to_run_by_software(
                     software, project, televir_project, project_sample, sample
                 )
@@ -1056,10 +1020,6 @@ def get_software_name_to_turn_on_off(request):
         elif project_sample_id_a in request.GET:
             project_sample_id = request.GET[project_sample_id_a]
 
-        print("#### turn off")
-        print(type_of_use_id)
-        print(televir_project_id)
-        print(request.GET)
         if software_id_a in request.GET:
             software_id = request.GET[software_id_a]
             try:

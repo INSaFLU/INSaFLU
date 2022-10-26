@@ -14,6 +14,7 @@ from numpy import ERR_CALL
 from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
+import gzip
 import time
 
 import matplotlib.pyplot as plt
@@ -285,10 +286,12 @@ class Read_class:
         """
 
         read_names = []
-        with gzip.open(filepath, "rt") as f:
-            for line in f:
-                if line.startswith("@"):
-                    read_names.append(line.split()[0][1:])
+
+        if self.exists:
+            with gzip.open(filepath, "rt") as f:
+                for line in f:
+                    if line.startswith("@"):
+                        read_names.append(line.split()[0][1:])
 
         return read_names
 
@@ -367,8 +370,8 @@ class Read_class:
         filter reads and aset current status to depleted.
         """
 
-        current_reads= self.get_read_names_fastq(self.current)
-        read_list_to_keep= list(set(current_reads) - set(read_list))
+        current_reads = self.get_read_names_fastq(self.current)
+        read_list_to_keep = list(set(current_reads) - set(read_list))
 
         if len(read_list) > 0:
             self.read_filter_move(self.current, read_list_to_keep, self.depleted)

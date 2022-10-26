@@ -42,7 +42,7 @@ from utils.session_variables import (
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
-from utils.utils import Utils
+from utils.utils import ShowInfoMainPage, Utils
 
 from managing_files.forms import (
     AddSampleProjectForm,

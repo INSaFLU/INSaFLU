@@ -658,6 +658,7 @@ class Parameter_DB_Utility:
         Get software tables for a user
         """
         print(project.technology)
+
         software_available = Software.objects.filter(
             owner=owner,
             type_of_use=Software.TYPE_OF_USE_televir_project,
@@ -675,8 +676,14 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def merge_software_tables(self, software_table, parameters_table):
+    def merge_software_tables(
+        self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
+    ):
         """"""
+
+        print(software_table.head())
+        print(parameters_table.head())
+
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
         ).rename(
@@ -933,6 +940,7 @@ class Utils_Manager:
         samples = PIProject_Sample.objects.filter(project=project)
         local_tree = utils.generate_project_tree(technology, project)
         tree_makeup = local_tree.makeup
+        print(tree_makeup)
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)

@@ -188,6 +188,7 @@ class Metadata(object):
 				
 			for column in vect_header_out:
 				if column == CollectExtraData.HEADER_SAMPLE_OUT_ID: continue 
+				if column == DATASET_LIST_INSAFLU_project_name: continue
 				if column in self.dt_header: vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
 				else: vect_out.append("")
 			count += 1 
@@ -395,7 +396,8 @@ class DataColumns(object):
 						self.vect_header_out.pop(self.vect_header_out.index(CollectExtraData.HEADER_SAMPLE_OUT_ID))
 					except ValueError as e:
 						pass
-					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID, DATASET_LIST_INSAFLU_project_name] + self.vect_header_out
+					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID, DATASET_LIST_INSAFLU_project_name] +\
+						self.vect_header_out
 					dt_header_out = dict(zip(self.vect_header_out, [1] * len(self.vect_header_out)))
 				else:
 					for column in self.dt_project[key_metadata].header:

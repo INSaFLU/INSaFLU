@@ -130,7 +130,7 @@ class ProcessSGE(object):
 		tagsSGEWaiting = ('hqw', 'qw', 'w')
 		# test with qstat
 		file_result = self.utils.get_temp_file('sge_stat', '.txt')
-		cline = 'qstat > %s' % (file_result)
+		cline = 'export SGE_ROOT={}; qstat > {}'.format(settings.SGE_ROOT, file_result)
 		os.system(cline)
 			
 		## read the FILE
@@ -166,7 +166,7 @@ class ProcessSGE(object):
 		test if there any tasks running...
 		"""
 		file_result = self.utils.get_temp_file('sge_stat', '.txt')
-		cline = 'qstat > %s' % (file_result)
+		cline = 'export SGE_ROOT={}; qstat > {}'.format(settings.SGE_ROOT, file_result)
 		os.system(cline)
 		## read the FILE
 		with open(file_result) as handle_result:
@@ -186,7 +186,7 @@ class ProcessSGE(object):
 		
 		"""
 		file_result = self.utils.get_temp_file('sge_stat', '.txt')
-		cline = 'qstat -j {}* > {}'.format(prefix_id, file_result)
+		cline = 'export SGE_ROOT={}; qstat -j {}* > {}'.format(settings.SGE_ROOT, prefix_id, file_result)
 		os.system(cline)
 		## read the FILE
 		vect_job_ids = []

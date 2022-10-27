@@ -1679,6 +1679,7 @@ class Mapping_Manager(Tandem_Remap):
     def clean_final_report(self):
 
         self.report.ngaps = self.report.ngaps.fillna(0)
+        self.report = self.report[self.report.coverage > 0]
         self.report = self.report.sort_values(["coverage", "Hdepth"], ascending=False)
 
     def collect_final_report_summary_statistics(self):

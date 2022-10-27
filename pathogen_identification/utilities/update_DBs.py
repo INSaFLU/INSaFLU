@@ -519,6 +519,7 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             )
         except FinalReport.DoesNotExist:
             print(row["covplot_path"])
+
             report_row = FinalReport(
                 run=runmain,
                 sample=sample,

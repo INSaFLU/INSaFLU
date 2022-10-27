@@ -706,7 +706,7 @@ class FinalReport(models.Model):
     simple_id = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=150, blank=True, null=True)
 
-    ref_db = models.CharField(max_length=300, blank=True, null=True)
+    ref_db = models.CharField(max_length=400, blank=True, null=True)
     reference_contig_str = models.CharField(max_length=100, blank=True, null=True)
 
     accid = models.CharField(max_length=20, blank=True, null=True)
@@ -724,14 +724,14 @@ class FinalReport(models.Model):
     refa_dotplot_exists = models.BooleanField(default=False)
     covplot = models.TextField(blank=True, null=True)
     covplot_exists = models.BooleanField(default=False)
-    bam_path = models.CharField(max_length=300, blank=True, null=True)
-    bai_path = models.CharField(max_length=300, blank=True, null=True)
-    reference_path = models.CharField(max_length=300, blank=True, null=True)
-    reference_index_path = models.CharField(max_length=300, blank=True, null=True)
-    reference_assembly_paf = models.CharField(max_length=300, blank=True, null=True)
-    mapped_scaffolds_path = models.CharField(max_length=300, blank=True, null=True)
+    bam_path = models.CharField(max_length=400, blank=True, null=True)
+    bai_path = models.CharField(max_length=400, blank=True, null=True)
+    reference_path = models.CharField(max_length=400, blank=True, null=True)
+    reference_index_path = models.CharField(max_length=400, blank=True, null=True)
+    reference_assembly_paf = models.CharField(max_length=400, blank=True, null=True)
+    mapped_scaffolds_path = models.CharField(max_length=400, blank=True, null=True)
     mapped_scaffolds_index_path = models.CharField(
-        max_length=300, blank=True, null=True
+        max_length=400, blank=True, null=True
     )
 
 

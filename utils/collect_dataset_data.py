@@ -92,18 +92,24 @@ class CollectExtraDatasetData(object):
         metaKeyAndValue = MetaKeyAndValue()
         
         try:
+
+            manage_database.get_max_length_label(dataset, user, True)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
+
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset, user)
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset, user)
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset, user)
-            ## IMPORTANT -> this need to be after of Dataset.DATASET_FILE_NAME_RESULT_CSV
-            #self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset, user)
-            
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)       
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
+
             ### zip several files to download 
             self.zip_several_files(dataset)
-        except:
+
+        except Exception as e:
             ## finished with error
             process_SGE.set_process_controler(user, process_controler.get_name_dataset(dataset), ProcessControler.FLAG_ERROR)
+            print(e)
             return
         
         ## seal the tag        
@@ -531,7 +537,6 @@ class CollectExtraDatasetData(object):
         2) sample list, used to upload in the tree
         
         """
-
         # May change depending on the build
 
         data_columns = DataColumns(build)
@@ -618,10 +623,9 @@ class CollectExtraDatasetData(object):
             reference_tsv = None
     
         ## read last metadata nextstrain file, can exist from external upload
-        upload_metadata_file = UploadFiles.objects.filter(owner__id=self.user.id, is_deleted=False,\
+        upload_metadata_file = UploadFiles.objects.filter(owner__id=dataset.owner.id, is_deleted=False,\
             type_file__name=TypeFile.TYPE_FILE_dataset_file_metadata, is_valid=True,
             dataset=dataset).order_by('-creation_date').first()
-        
         parse_in_files = ParseNextStrainFiles()
         if not upload_metadata_file is None:
             b_test_char_encoding = True

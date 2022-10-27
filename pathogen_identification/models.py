@@ -673,10 +673,10 @@ class ReferenceMap_Main(models.Model):
 
     plotly_dotplot = models.TextField(blank=True, null=True)
 
-    bam_file_path = models.CharField(max_length=250, blank=True, null=True)
-    bai_file_path = models.CharField(max_length=250, blank=True, null=True)
-    fasta_file_path = models.CharField(max_length=250, blank=True, null=True)
-    fai_file_path = models.CharField(max_length=250, blank=True, null=True)
+    bam_file_path = models.CharField(max_length=350, blank=True, null=True)
+    bai_file_path = models.CharField(max_length=350, blank=True, null=True)
+    fasta_file_path = models.CharField(max_length=350, blank=True, null=True)
+    fai_file_path = models.CharField(max_length=350, blank=True, null=True)
 
     class Meta:
 

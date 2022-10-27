@@ -550,8 +550,11 @@ function radioDetect (metaData, max) {
         for (let j = 0; j < Object.keys(Object.values(metaData)[0]).length; j++) {
         	
             for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-            
-            	if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === "" || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === " " || Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined) {
+				if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+					continue;	
+				}
+            	if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined || 
+									Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === "") {
 
                     color[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j] + Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j]] = "white";
 
@@ -573,6 +576,10 @@ function radioDetect (metaData, max) {
 
                 for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
 
+					if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+						continue;	
+					}
+				
                     (window.PhylocanvasTree.leaves[i].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j]] = (window.PhylocanvasTree.leaves[i].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j]] || {};
 
                     (window.PhylocanvasTree.leaves[i].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j]]["colour"] = color[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j] + Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j]];
@@ -592,6 +599,9 @@ function radioDetect (metaData, max) {
 
                 for (let i = 0; i < window.PhylocanvasTree.leaves.length; i++) {
 
+					if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+						continue;	
+					}
                     delete (window.PhylocanvasTree.leaves[i].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j]];
 
                 }

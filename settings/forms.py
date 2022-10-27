@@ -7,6 +7,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Layout, ButtonHolder, Submit, Button, Fieldset
 from django.urls import reverse
 from django import forms
+from datasets.models import Dataset
 from settings.models import Software, Parameter, Sample
 from managing_files.models import Project, ProjectSample
 from django.utils.html import escape
@@ -47,16 +48,23 @@ class SoftwareForm(forms.ModelForm):
 		if (not pk_sample is None):
 			kwargs.pop('pk_sample')
 			sample = Sample.objects.get(pk=pk_sample)
+
+		dataset = None
+		pk_dataset = kwargs.get('pk_dataset')
+		if (not pk_dataset is None):
+			kwargs.pop('pk_dataset')
+			dataset = Dataset.objects.get(pk=pk_dataset)
 			
 		## end
 		super(SoftwareForm, self).__init__(*args, **kwargs)
 
 		### return the parameters that is possible to change
-		paramers = Parameter.objects.filter(software=self.instance, project=project,
-						project_sample=project_sample, sample=sample)
+		parameters = Parameter.objects.filter(software=self.instance, project=project,
+						project_sample=project_sample, sample=sample, dataset=dataset)
 		dt_fields = {}
 		vect_divs = []
-		for parameter in paramers:
+		for parameter in parameters:
+			
 			if (not parameter.can_change or parameter.is_null()):
 				dt_fields[parameter.get_unique_id()] = forms.CharField(disabled=True, required = False,)
 				dt_fields[parameter.get_unique_id()].help_text = escape(parameter.description) 
@@ -77,7 +85,10 @@ class SoftwareForm(forms.ModelForm):
 				dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
 			### this is use for Medaka and Trimmomatic
 			elif (parameter.is_char_list()):
-				if (parameter.software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
+
+				if (parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name):
+					list_data = [data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC]
+				elif (parameter.software.name == SoftwareNames.SOFTWARE_Medaka_name_consensus):
 					list_data = [[data_, data_] for data_ in self.utils.get_all_medaka_models()]
 				elif (parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip and \
 					parameter.software.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_name):
@@ -87,6 +98,7 @@ class SoftwareForm(forms.ModelForm):
 					list_data = [[data_, data_] for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available]
 				else:
 					list_data = [[parameter.parameter, parameter.parameter]]
+
 				dt_fields[parameter.get_unique_id()] = forms.ChoiceField(choices = list_data)
 				dt_fields[parameter.get_unique_id()].empty_label = None
 				
@@ -103,6 +115,7 @@ class SoftwareForm(forms.ModelForm):
 			if (not parameter.can_change and len(parameter.parameter) == 0): dt_fields[parameter.get_unique_id()].initial = parameter.name
 			else: dt_fields[parameter.get_unique_id()].initial = parameter.parameter
 			vect_divs.append(Div(parameter.get_unique_id(), css_class = "col-sm-4"))
+		
 		### set all fields
 		self.fields.update(dt_fields)
 
@@ -122,6 +135,10 @@ class SoftwareForm(forms.ModelForm):
 			form_message = "Update {} parameters for -{}- project:'{}'".format(\
 				"software" if self.instance.is_software() else "INSaFLU",\
 				self.instance.name, project.name)
+		if (not dataset is None):
+			form_message = "Update {} parameters for -{}- dataset:'{}'".format(\
+				"software" if self.instance.is_software() else "INSaFLU",\
+				self.instance.name, dataset.name)				
 		if (not project_sample is None):
 			form_message = "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(\
 				"software" if self.instance.is_software() else "INSaFLU",\
@@ -141,7 +158,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample)))
+						self._get_reverse(project, project_sample, sample, dataset)))
 				)
 			)
 		elif (len(vect_rows_divs) == 2):
@@ -155,7 +172,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample)))
+						self._get_reverse(project, project_sample, sample, dataset)))
 				)
 			)
 		elif (len(vect_rows_divs) == 3):
@@ -170,7 +187,7 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample)))
+						self._get_reverse(project, project_sample, sample, dataset)))
 				)
 			)
 		elif (len(vect_rows_divs) == 4):
@@ -186,15 +203,17 @@ class SoftwareForm(forms.ModelForm):
 				ButtonHolder(
 					Submit('save', 'Save', css_class='btn-primary'),
 					Button('cancel', 'Cancel', css_class='btn-secondary', onclick='window.location.href="{}"'.format(
-						self._get_reverse(project, project_sample, sample)))
+						self._get_reverse(project, project_sample, sample. dataset)))
 				)
 			)
 		
-	def _get_reverse(self, project, project_sample, sample):
+	def _get_reverse(self, project, project_sample, sample, dataset):
 		"""
 		"""
 		if (not project is None):
 			return reverse('project-settings', args=[project.pk])
+		if (not dataset is None):
+			return reverse('dataset-settings', args=[dataset.pk])			
 		if (not project_sample is None):
 			return reverse('sample-project-settings', args=[project_sample.pk])
 		if (not sample is None):

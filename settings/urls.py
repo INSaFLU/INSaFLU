@@ -11,6 +11,7 @@ urlpatterns = [
 	url(r'settings', views.SettingsView.as_view(), name='settings'),
 	url(r'software_update/(?P<pk>\d+)$', views.UpdateParametersView.as_view(), name='software-update'),
 	url(r'software_project_update/soft_(?P<pk>\d+)/proj_(?P<pk_proj>\d+)$', views.UpdateParametersProjView.as_view(), name='software-project-update'),
+	url(r'software_dataset_update/soft_(?P<pk>\d+)/dataset_(?P<pk_dataset>\d+)$', views.UpdateParametersDatasetView.as_view(), name='software-dataset-update'),	
 	url(r'software_project_sample_update/soft_(?P<pk>\d+)/proj_sample_(?P<pk_proj_sample>\d+)$', views.UpdateParametersProjSampleView.as_view(), name='software-project-sample-update'),
 	url(r'software_sample_update/soft_(?P<pk>\d+)/sample_(?P<pk_sample>\d+)$', views.UpdateParametersSampleView.as_view(), name='software-sample-update'),
 	

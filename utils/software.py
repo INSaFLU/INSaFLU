@@ -5,6 +5,7 @@ Created on Oct 28, 2017
 '''
 import os, gzip, logging, cmd, re, subprocess, datetime
 from ete3 import Tree
+from utils.exceptions import CmdException
 from utils.coverage import DrawAllCoverage
 from utils.utils import Utils
 from utils.parse_out_files import ParseOutFiles
@@ -226,7 +227,31 @@ class Software(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to run spades")
 		return cmd
-	
+
+	def run_flye(self, fastq_1, out_dir):
+		"""
+		Run flye
+		"""
+		if (not os.path.exists(fastq_1)):
+			self.logger_production.error('Fastq 1 not found: ' + fastq_1)
+			self.logger_debug.error('Fastq 1 not found: ' + fastq_1)
+			raise Exception('Fastq 1 not found: ' + fastq_1)
+		
+		cmd = "%s --nano-raw %s --threads %d --out-dir %s %s" % (self.software_names.SOFTWARE_FLYE, fastq_1,
+					settings.THREADS_TO_RUN_FAST, out_dir, self.software_names.SOFTWARE_FLYE_PARAMETERS)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run flye")
+
+		orig = os.path.join(out_dir, "assembly.fasta")
+		dest = os.path.join(out_dir, "contigs.fasta")
+		self.utils.copy_file(orig, dest)
+
+		return cmd		
+
 	def convert_fastq_to_fasta(self, fastq_1, fasta_out_file):
 		"""
 		Convert fastq to Fasta
@@ -339,6 +364,17 @@ class Software(object):
 				self.utils.remove_dir(out_dir_result)
 				return False
 		else:	### for minion
+			#try:
+			#	cmd = self.run_flye(fastq1_1, out_dir_result)
+			#	parameters = self.software_names.get_flye_parameters()
+			#	result_all.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), parameters))
+			#except Exception:
+			#	result = Result()
+			#	result.set_error("Flye (%s) fail to run" % (self.software_names.get_flye_version()))
+			#	result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))
+			#	manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			#	self.utils.remove_dir(out_dir_result)
+			#	return False			
 			try:
 				cmd = self.convert_fastq_to_fasta(fastq1_1, os.path.join(out_dir_result, "contigs.fasta"))
 			except Exception:
@@ -357,6 +393,8 @@ class Software(object):
 				result.set_error("Spades (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_spades_version()))
 				result.add_software(SoftwareDesc(self.software_names.get_spades_name(), self.software_names.get_spades_version(), self.software_names.get_spades_parameters()))
 			else:
+				#result.set_error("Flye (%s) fail to run, empty contigs.fasta file." % (self.software_names.get_flye_version()))
+				#result.add_software(SoftwareDesc(self.software_names.get_flye_name(), self.software_names.get_flye_version(), self.software_names.get_flye_parameters()))				
 				result.set_error("Low number of reads in fasta file. Came from fastq.gz")
 				result.add_software(SoftwareDesc("sed", "", ""))
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Error, result.to_json())
@@ -435,15 +473,19 @@ class Software(object):
 		## Only identify Contigs for Illuminua, because Spades runs. In ONT doesn't run because it is identify in reads.
 		try:
 			contigs_2_sequences = Contigs2Sequences(b_run_tests)
+			#(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
+			#		os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
+			#		os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
+			#		True if sample.is_type_fastq_gz_sequencing() else False)
 			(out_file_clean, clean_abricate_file) = contigs_2_sequences.identify_contigs(file_out_contigs,\
-					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)) if sample.is_type_fastq_gz_sequencing() else \
-					os.path.basename(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)),
-					True if sample.is_type_fastq_gz_sequencing() else False)
+					os.path.basename(sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT)),\
+					True)			
 			## copy the contigs from spades
 			if (sample.is_type_fastq_gz_sequencing()):	## illumina
 				if (os.path.exists(out_file_clean)): self.utils.copy_file(out_file_clean, sample.get_draft_contigs_output(TypePath.MEDIA_ROOT))
 				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_contigs_abricate_output(TypePath.MEDIA_ROOT))
 			else:
+				print("Should be writing abricate results to {}".format(sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT)))
 				if (os.path.exists(clean_abricate_file)): self.utils.copy_file(clean_abricate_file, sample.get_draft_reads_abricate_output(TypePath.MEDIA_ROOT))
 			result_all.add_software(SoftwareDesc(self.software_names.get_abricate_name(), self.software_names.get_abricate_version(),\
 						self.software_names.get_abricate_parameters_mincov_30() + " for segments/references assignment"))
@@ -462,6 +504,9 @@ class Software(object):
 				MetaKeyAndValue.META_VALUE_Success, "Success, Spades(%s), Abricate(%s)" % (self.software_names.get_spades_version(),
 				self.software_names.get_abricate_version()))
 		else:
+			#manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
+			#	MetaKeyAndValue.META_VALUE_Success, "Success, Flye(%s), Abricate(%s)" % (self.software_names.SOFTWARE_FLYE_VERSION,
+			#	self.software_names.get_abricate_version()))			
 			manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample, 
 				MetaKeyAndValue.META_VALUE_Success, "Success, Abricate(%s)" % (self.software_names.get_abricate_version()))
 		manageDatabase.set_sample_metakey(sample, owner, MetaKeyAndValue.META_KEY_Identify_Sample_Software,
@@ -1634,7 +1679,6 @@ class Software(object):
 					message = "Info: Abricate turned OFF by the user."
 					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
 								MetaKeyAndValue.META_VALUE_Success, message)
-				sample_to_update.save()
 			else:
 				manage_database = ManageDatabase()
 				manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
@@ -1644,7 +1688,7 @@ class Software(object):
 				else: sample_to_update.number_alerts += 1
 				sample_to_update.is_ready_for_projects = False
 				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-				sample_to_update.save()
+			sample_to_update.save()
 			
 			### set the flag of the end of the task		
 			meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
@@ -2091,7 +2135,7 @@ class Software(object):
 		os.chdir(path_name)		## change to path that will be compressed
 		
 		file_name_zip = "zip_file_out.zip"
-		cmd = "zip {} *".format(file_name_zip)
+		cmd = "zip -r {} *".format(file_name_zip)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			os.chdir(current_dir)
@@ -2114,7 +2158,20 @@ class Software(object):
 			self.logger_production.error('Fail to run: ' + cmd)
 			self.logger_debug.error('Fail to run: ' + cmd)
 			raise Exception("Fail to create index")
-	
+
+	def set_first_sequence_fasta(self, file_name):
+		"""
+		covert fasta 2 upper
+		"""
+		vect_record = []
+		with open(file_name) as handle_in:
+			for record in SeqIO.parse(handle_in, "fasta"):
+				vect_record.append(record)
+				break
+			
+			if len(vect_record) > 0:
+				with open(file_name, "w") as handle_fasta_out_align:
+					SeqIO.write(vect_record, handle_fasta_out_align, "fasta")
 
 	def make_downsize(self, path_1, path_2, max_fastq_file):
 		"""
@@ -2386,7 +2443,451 @@ class Software(object):
 			if (out_dir_temp is None): self.utils.remove_dir(out_dir)
 		return seq_ref, seq_other
 
+
+	# TODO remove after everything is settled with the specific builds...
+	# Actually make it a generic function that calls specific subsections related to builds
+	def run_nextstrain(self, alignments, metadata, build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter, cores=1):
+		"""
+		run nextstrain_ncov
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  build: the specific nextstrain build to be used (defaults to a generic build)		
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
+		self.utils.copy_file(alignments, os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
+
+		# Copy the build-specific config file to the appropriate place in the temp folder
+		config_file = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, build, "config.yaml")	
+		self.utils.copy_file(config_file, os.path.join(temp_dir, 'config', "config.yaml"))
+
+		# to generate the include: may need to remove "" from the names...
+		cmd = "cat " + metadata + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > " +  os.path.join(temp_dir, 'data', "include.txt")
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to generate include file in temp folder " + temp_dir)
+
+		### add reference sequence Fasta to global alignment
+		reference_fasta = os.path.join(getattr(settings, "STATIC_ROOT", None), Constants.DIR_NEXTSTRAIN_tables, build, "references_sequences.fasta")		
+		cmd = "cat {} >> {}".format(reference_fasta, os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.utils.remove_dir(temp_dir)
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run nextstrain. Command: " + cmd)
+
+		# Run nextstrain
+		# right now this is an exception... eventually make it generic, as the sofware swtup may be different according to the build?
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+		if(build == 'mpx'):
+			cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+			
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException("Fail to run nextstrain.", cmd, temp_dir)
+
+		# Collect results
+
+		return temp_dir
+
+
+	def run_nextstrain_ncov(self, alignments, metadata, cores=1):
+		"""
+		run nextstrain_ncov
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties	
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		build = "ncov"
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+
+		# TODO?: Add this to the collect_consensus section...?
+		# Add references from the build to the consensus sequences (TODO merge fasta with function instead with a cat...)
+		cmd = "cat {} {} > {}".format(alignments, os.path.join(temp_dir, 'data', 'references_sequences.fasta'), os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate ncov references with alignments in temp folder " + temp_dir)
+
+		# Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
+		
+		# TODO do a proper integration of tables? This should already be taken care of in DataColumns ... test if it is working properly...
+		cmd = "cat {} {} > {}".format(metadata, os.path.join(temp_dir, 'data', 'references_metadata.tsv'), os.path.join(temp_dir, 'data', 'metadata.tsv'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate ncov reference metadata with metadata in temp folder " + temp_dir)	
+
+
+
+		cmd = "cat " + metadata + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > " +  os.path.join(temp_dir, 'data', "include.txt")
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to generate include file in temp folder " + temp_dir)
+
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores) + " --configfile " + temp_dir + "/config/config.yaml"
+		
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
+
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'ncov_current.json'), 
+													 tree_file)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)
+
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
+
+		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		# Put out the alignments too...
+		#results/aligned_current.fasta.xz
+		exit_status = os.system("xz -d {}".format(os.path.join(temp_dir, 'results', 'aligned_current.fasta.xz')))
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run unzip alignment file.", cmd=cmd, output_path=temp_dir)	
+
+		alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'aligned_current.fasta'),alignment_file)		
+
+		self.utils.remove_dir(temp_dir)
+
+		return [tree_file, alignment_file, auspice_zip]
+
+
+	def run_nextstrain_generic(self, alignments, metadata, ref_fasta, ref_genbank, cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  ref_fasta: the reference fasta file to be used
+		:param  ref_genbank: the reference genbank file to be used (MUST correspond to fasta)
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# make sure fasta and genbank correspond...
+		self.utils.compare_locus_fasta_gb(ref_fasta, ref_genbank)
+
+		# Assume the reference as one of the segments: this is unlikely to work if there is more than one segment
+		reference = self.utils.get_elements_and_genes(ref_genbank).get_sorted_elements()[0]
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "generic"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add reference.gb and reference.fasta to data folder
+		self.utils.copy_file(ref_fasta, os.path.join(temp_dir, 'data', 'reference.fasta'))
+		self.utils.copy_file(ref_genbank, os.path.join(temp_dir, 'data', 'reference.gb'))
+
+		# add sequences.fasta and metadata.tsv to data folder
+		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', 'metadata.tsv'))
+
+		# add 'root = "reference_id"' at the top of Snakefile_base, creating the final Snakefile
+		cmd = "cat {} | sed 's/REFID/{}/' > {}".format(os.path.join(temp_dir, 'Snakefile_base'), reference, os.path.join(temp_dir, 'Snakefile'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to change root in config file in temp folder " + temp_dir)	
+
+		# Now run Nextstrain
+		cmd = SoftwareNames.SOFTWARE_NEXTSTRAIN + " build --native " + temp_dir + " --cores " + str(cores)			
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
+
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'generic.json'), 
+													 tree_file)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)			
+
+		
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
+
+
+		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'aligned.fasta'),alignment_file)		
+
+		self.utils.remove_dir(temp_dir)
+
+		#results/aligned.fasta
+
+		return [tree_file, alignment_file, auspice_zip]
+
+
+
+	def run_nextstrain_flu(self, alignments, metadata, strain="h3n2", period="12y", cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  strain: flu strain (one of: h3n2, h1n1pdm, vic, yam)
+		:param  period: the reference time period (one of: 6m, 2y, 3y, 6y, 12y, 60y)
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "flu"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add sequences.fasta and metadata.tsv to data folder
+		self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences_" + strain + "_ha.fasta"))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata_" + strain + "_ha.tsv"))
+
+		# Now run Nextstrain
+		cmd = "{} build --native {} targets/flu_{}_ha_{} --cores {}".format(SoftwareNames.SOFTWARE_NEXTSTRAIN, temp_dir, strain, period, str(cores))	
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
+
+
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'flu_' + strain + '_ha_' + period + '.json'), 
+													 tree_file)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)	
+
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
+
+		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		#results/aligned_h3n2_ha_12y.fasta
+		alignment_file = self.utils.get_temp_file('aligned.fasta', sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', "aligned_{}_ha_{}.fasta".format(strain, period)),alignment_file)		
+
+		self.utils.remove_dir(temp_dir)
+
+		return [tree_file, alignment_file, auspice_zip]
+
+
+	def run_nextstrain_mpx(self, alignments, metadata, cores=1):
+		"""
+		run nextstrain
+		:param  alignments: sequence file with nucleotides
+		:param  metadata: tabbed table file with properties
+		:param  cores: the number of cores to be used in nextstrain (defaults to 1)
+		:out temp folder with all data (including results) 
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# copy the base nexstrain folder to a temp folder
+		# TODO Make a function copy_folder in utils
+		build = "mpx"
+		cmd = "cp -r " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir 
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to copy nexstrain folder " + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE + "/" + build + "/* " + temp_dir )
+
+		# add sequences.fasta and metadata.tsv to data folder
+		#self.utils.copy_file(alignments,os.path.join(temp_dir, 'data', "sequences.fasta"))
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
+
+		cmd = "cat {} {} > {}".format(os.path.join(temp_dir, 'data', 'references_sequences.fasta'), alignments, os.path.join(temp_dir, 'data', 'sequences.fasta'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to concatenate references with consensus in temp folder ")
+
+		# Now run Nextstrain
+		cmd = "{} build --native {} --cores {}  --configfile config/config_hmpxv1_big.yaml".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_MPX, temp_dir, str(cores))	
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir)
+
+		tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+		# Convert json to tree
+		cmd = "{} --tree {} --output-tree {}".format(os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+													 os.path.join(temp_dir, 'auspice', 'monkeypox_hmpxv1_big.json'), 
+													 tree_file)
+
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to run conversion of json to tree.", cmd=cmd, output_path=temp_dir)	
+
+		# Copy log folder to auspice to be included in the zip
+		cmd = "cp -r {} {}".format(os.path.join(temp_dir, '.snakemake', 'log'), os.path.join(temp_dir, 'auspice'))
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise CmdException(message="Fail to copy log to output folder.", cmd=cmd, output_path=temp_dir)
+
+		# Collect results
+		zip_out = self.zip_files_in_path(os.path.join(temp_dir, 'auspice'))
+		auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+		self.utils.move_file(zip_out,auspice_zip)
+
+		#results/hmpxv1_big/aligned.fasta
+		alignment_file = self.utils.get_temp_file('aligned.fasta', sz_type="fasta")
+		self.utils.move_file(os.path.join(temp_dir, 'results', 'hmpxv1_big', "aligned.fasta"),alignment_file)		
+
+		self.utils.remove_dir(temp_dir)
+
+		return [tree_file, alignment_file, auspice_zip]
+
+
+
+	def run_aln2pheno(self, sequences, reference, gene, report, flagged, db="DB_COG_UK_antigenic_mutations_2022-05-30.tsv"):
+		"""
+		run aln2pheno
+		:param sequences: sequence file with aminoacids from the SARS-CoV-2 S protein
+		:param reference: name of the reference (must be one of the sequences)
+		:param reference: name of the gene in use		
+		:param report: output file with final report
+		:param flagged: output file with flagged mutations	
+		:param db: database for aln2pheno
+		:out exit status
+		"""
+
+		# Create a temp folder
+		temp_dir = self.utils.get_temp_dir()
+
+		# Add as parameter...
+		db_file =  os.path.join(settings.STATIC_ROOT, Constants.DIR_TYPE_ALN2PHENO, db)
+		
+		# Run aln2pheno
+		cmd = "{} --db {} -g {} --algn {} -r {} --odir {} --output prefix -f".format(SoftwareNames.SOFTWARE_ALN2PHENO,
+				db_file, gene, sequences, reference, temp_dir)
+		
+		exit_status = os.system(cmd)
+		if (exit_status != 0):
+			self.logger_production.error('Fail to run: ' + cmd)
+			self.logger_debug.error('Fail to run: ' + cmd)
+			raise Exception("Fail to run aln2pheno in temp folder " + temp_dir)
+
+		# copy results to output
+		self.utils.copy_file(temp_dir + '/prefix_final_report.tsv', report)
+		self.utils.copy_file(temp_dir + '/prefix_flagged_mutation_report.tsv', flagged)
 	
+		###
+		self.utils.remove_dir(temp_dir)
+		return exit_status
+
+	
+
 class Contigs2Sequences(object):
 	'''
 	classdocs
@@ -2444,7 +2945,6 @@ class Contigs2Sequences(object):
 		. " blastn -db \Q$db_path\E -outfmt '$format' -num_threads 3"
 		"""
 		software = Software()
-		
 		### get database file name, if it is not passed
 		(version, database_file_name) = self.get_most_recent_database()
 		database_name = self.get_database_name()
@@ -2456,24 +2956,23 @@ class Contigs2Sequences(object):
 		out_file = self.utils.get_temp_file('abricate_contig2seq', FileExtensions.FILE_TXT)
 		### run abricate
 		software.run_abricate(database_name, file_name, SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30, out_file)
-
 		parseOutFiles = ParseOutFiles()
 		(dict_data_out, clean_abricate_file) = parseOutFiles.parse_abricate_file(out_file, file_name_out,
 									SoftwareNames.SOFTWARE_SPAdes_CLEAN_HITS_BELLOW_VALUE)
-		
 		out_file_fasta = None
 		if b_create_fasta:
 			vect_out_fasta = []
 			vect_out_fasta_without_id = []
 			out_file_fasta = self.utils.get_temp_file('abricate_out_identified', FileExtensions.FILE_FASTA)
 			with open(file_name) as handle_in, open(out_file_fasta, 'w') as handle_out:
-				for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):
+				for record in SeqIO.parse(handle_in, Constants.FORMAT_FASTA):					
 					vect_possible_id = []
 	#				for dict_data in vect_data:
 	#					if (dict_data['Seq_Name'] == record.name): vect_possible_id.append(dict_data['Gene'])
 					for dict_data in dict_data_out.get(record.name, []):
 						vect_possible_id.append(dict_data['Gene'])
 					if (len(vect_possible_id) > 0):
+						#print("identify contigs: process id {}".format(record.id))
 						vect_out_fasta.append(SeqRecord(Seq(str(record.seq)), id = "_".join(record.id.split('.')[0].split('_')[:4]),\
 													description=";".join(vect_possible_id)))
 					## NEED to check coverage for CANU
@@ -2482,6 +2981,7 @@ class Contigs2Sequences(object):
 						vect_out_fasta_without_id.append(SeqRecord(Seq(str(record.seq)), id = record.id, description=""))
 	
 				if (len(vect_out_fasta) > 0 or len(vect_out_fasta_without_id) > 0):
+					
 					vect_out_fasta.extend(vect_out_fasta_without_id)
 					SeqIO.write(vect_out_fasta, handle_out, "fasta")
 		

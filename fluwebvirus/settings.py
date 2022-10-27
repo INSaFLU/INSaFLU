@@ -61,8 +61,10 @@ THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
 
 ## MAX LENGTH_SEQUENCE_FROM_FASTA - REFERENCE
 MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA', default=50000, cast=int)
-MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
-MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
+MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA', default=500000, cast=int)
+MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=400000, cast=int)			## 100k
+MAX_CONSENSUS_FASTA_FILE = config('MAX_CONSENSUS_FASTA_FILE', default=400000, cast=int)			## 100k
+MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=450000, cast=int)		## 150k
 	
 MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
 
@@ -123,6 +125,7 @@ INSTALLED_APPS = [
     'django_bootstrap_breadcrumbs',
     'managing_files.apps.ManagingFilesConfig',
     'manage_virus.apps.ManageVirusConfig',
+	'datasets.apps.DatasetsConfig',
     'phylogeny.apps.PhylogenyConfig',
     'settings.apps.SettingsConfig',
     'log_login.apps.LogLoginConfig',

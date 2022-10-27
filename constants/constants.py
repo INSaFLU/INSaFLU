@@ -23,14 +23,18 @@ class Constants(object):
 	META_KEY_VALUE_NOT_NEED = "value not needed"
 	
 	## MAX LOCUS FROM FASTA
-	MAX_SEQUENCES_FROM_FASTA = 20		### update this values
+	MAX_SEQUENCES_FROM_FASTA = 20		### update this value
+	MAX_SEQUENCES_FROM_CONTIGS_FASTA = 1000		### update this value
 	MAX_LENGTH_SEQ_NAME = 20			###  it must be less than 20 because of prokka constrainments 
+	MAX_LENGTH_CONTIGS_SEQ_NAME = 190	###  it must be less than 190 because of the Consensus.name field  
+	SHORT_NAME_LENGTH = 20				### cut length name to show in the tables
 	
 	### has the minimun number of files to calculate global files
 	MINIMUN_NUMER_SAMPLES_CACULATE_GLOBAL_FILES = 2
 	
 	### Session variables
 	NUMBER_LOCUS_FASTA_FILE = "number_locus_fasta_file"
+	SEQUENCES_TO_PASS = "sequences_to_pass"
 	
 	## https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 	## translate table number
@@ -55,9 +59,11 @@ class Constants(object):
 
 	## DIR_PROCESSED_FILES_FROM_WEB/userId_<id>/refId_<id>
 	DIR_PROCESSED_FILES_REFERENCE = DIR_PROCESSED_FILES_UPLOADS + "/references"
+	DIR_PROCESSED_FILES_CONSENSUS = DIR_PROCESSED_FILES_UPLOADS + "/consensus"
 	DIR_PROCESSED_FILES_FASTQ = DIR_PROCESSED_FILES_UPLOADS + "/fastq"
 	DIR_PROCESSED_FILES_PROJECT = "projects/result"
 	DIR_PROCESSED_FILES_MULTIPLE_SAMPLES = DIR_PROCESSED_FILES_UPLOADS + "/multiple_samples"
+	DIR_PROCESSED_FILES_DATASETS = "datasets/result"
 
 	DIR_ICONS = "icons"
 	DIR_TEMPLATE_INPUT = "template_input"
@@ -92,12 +98,15 @@ class Constants(object):
 	DIR_TYPE_CONTIGS_2_SEQUENCES = "db/contigs2sequences/"
 	DIR_TYPE_IDENTIFICATION = "db/type_identification/"
 	DIR_TYPE_REFERENCES = "db/references/"
+	DIR_NEXTSTRAIN_tables = "db/nextstrain"
 	DIR_TEST_TYPE_REFERENCES = "tests/db/references/"
-	
+	DIR_TYPE_ALN2PHENO = "db/Alignment2phenotype/"
+
 	INSAFLU_NAME = 'insaflu'
 	
 	### key for a session with project name
 	PROJECT_NAME_SESSION = 'project_name_session'
+	REFERENCE_NAME_SESSION = 'reference_name_session'
 	
 	#####
 	DIR_STATIC = "static"
@@ -291,6 +300,7 @@ class TypeFile(object):
 	TYPE_FILE_fastq_gz = "fastq.gz"								## fastq.fz files
 	TYPE_FILE_sample_file = "sample-file imported" 				## file that the user import with sample descriptions
 	TYPE_FILE_sample_file_metadata = "sample-file metadata" 	## file that the user import with new metadata
+	TYPE_FILE_dataset_file_metadata = "dataset-file metadata" 	## file that the user import with new metadata
 
 	
 class FileExtensions(object):

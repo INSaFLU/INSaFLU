@@ -162,8 +162,10 @@ def show_phylo_canvas(request):
 						data['tree'] = string_file_content
 						data['root'] = project.reference.name
 						data['url_sample'] = file_name_url_json
-						data['tree_nwk_id'] = mark_safe("<strong>Tree (.nwk):</strong> <a href=\"{}\" download> {}</a>".format(file_name_nwk, os.path.basename(file_name_nwk)))
-						data['tree_tree_id'] = mark_safe("<strong>Tree (.tree):</strong> <a href=\"{}\" download> {}</a>".format(file_name_tree, os.path.basename(file_name_tree)))
+						data['tree_nwk_id'] = mark_safe('<strong>Tree (.nwk):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_nwk,
+														os.path.basename(file_name_nwk), os.path.basename(file_name_nwk)))
+						data['tree_tree_id'] = mark_safe('<strong>Tree (.tree):</strong> <a href="{}" download="{}"> {}</a>'.format(file_name_tree,
+												os.path.basename(file_name_tree), os.path.basename(file_name_tree)))
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)
@@ -194,6 +196,33 @@ def show_variants_as_a_table(request):
 			except Project.DoesNotExist:
 				pass
 		return JsonResponse(data)
+
+
+@csrf_protect
+def show_aln2pheno(request):
+	"""
+	return table with variants
+	"""
+	if request.is_ajax():
+		data = { 'is_ok' : False }
+		key_with_project_id = 'project_id'
+		if (key_with_project_id in request.GET):
+			project_id = int(request.GET.get(key_with_project_id))
+			try:
+				project = Project.objects.get(id=project_id)
+				out_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT,
+							Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+				if (os.path.exists(out_file) and os.stat(out_file).st_size > 0):
+					data['is_ok'] = True
+					data['url_path_aln2pheno'] = mark_safe(request.build_absolute_uri(
+						project.get_global_file_by_project(TypePath.MEDIA_URL,
+						Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)))
+					data['static_table_filter'] = mark_safe(request.build_absolute_uri(
+						os.path.join(settings.STATIC_URL, "vendor/tablefilter")))
+			except Project.DoesNotExist:
+				pass
+		return JsonResponse(data)		
+
 
 @csrf_protect
 def show_coverage_as_a_table(request):

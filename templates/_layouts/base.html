@@ -51,22 +51,28 @@
             <span class="nav-link-text">Home</span>
           </a>
         </li>
-        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References">
+        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References Management">
           <a class="nav-link " href="{% url 'references' %}">
             <i class="fa fa-fw fa-bug "></i>
             <span class="nav-link-text ">References</span>
           </a>
         </li>
-        <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples">
+        <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples Management">
           <a class="nav-link" href="{% url 'samples' %}">
             <i class="fa fa-fw fa-wrench"></i>
             <span class="nav-link-text">Samples</span>
           </a>
         </li>
-        <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects">
+        <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects (Join samples in a same Reference)">
           <a class="nav-link" href="{% url 'projects' %}">
             <i class="fa fa-fw fa-table "></i>
             <span class="nav-link-text active">Projects</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_dataset %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Datasets (Join several consensus)">
+          <a class="nav-link" href="{% url 'datasets' %}">
+            <i class="fa fa-fw fa-share-alt "></i>
+            <span class="nav-link-text active">Datasets</span>
           </a>
         </li>
         <!-- 

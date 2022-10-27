@@ -1,0 +1,146 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Datasets" "datasets" %}
+	{% breadcrumb "Add references to dataset" "add-references-dataset" %}
+{% endblock %}
+
+{% block content %}
+
+	{% if error_cant_see %}
+		<hr>
+		<p><strong>There are no references available...</strong></p>
+	{% else %}
+		<div class="alert alert-info" role="alert">
+		  <strong>Dataset name</strong> -> {{ dataset_name }}
+		</div>
+	
+		{% if table.page and show_paginatior %}
+		  <div class="table-container">
+		{% endif %}
+
+       	{% block table %}
+		    <div class="table-responsive">
+		        <table id="table_with_check_id" check_box_all="{{ check_box_all }}" class="table table-hover table-bordered table-striped" set-check-box-values-url="{% url 'set-check-box-values' %}" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+		            {% block table.thead %}
+		            <thead>                 
+		      			<tr>
+		                    <th colspan="7">
+	                            <div class="pull-left">
+		                            <form method="post" action="" id="id_add_all_checked" class="form-inline pull-left">
+		                            	{% csrf_token %}
+		                              	<button type="submit" id="id_submit_checked" name="submit_checked" class="btn btn-small btn-primary dark"><i class="fa fa-check-square"></i> Add all selected references</button>
+		                            </form>
+ 		                            <form method="post" id="id_add_all_references" class="form-inline pull-left">
+		                            	{% csrf_token %}
+		                              	<button type="submit" id="id_submit_all" name="submit_all" class="btn btn-small btn-primary dark" style="margin-left: 8px;"><i class="fa fa-plus-square"></i> {{ add_all_references_message }}</button>
+		                            </form>
+		                        </div> 
+		                        
+		                        <form method="get" action="" class="form-inline form-search pull-right">
+		                        	{% csrf_token %}
+		                            <div class="pull-right form-search">
+		                            	<input id="search_form_id" name="search_references" type="text" class="form-control col-sm-9" placeholder="Name, Owner"{% if search_references %} value="{{ search_references }}"{% endif %}>
+		                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+		                            </div>              
+		                        </form>
+		                    </th>                  
+		                </tr>
+		             
+		              <tr>
+		                {% for column in table.columns %}
+		                   {% if column.orderable %}
+		                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+		                    {% else %}
+		                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+		                    {% endif %}
+		                {% endfor %}
+		              </tr>
+		            </thead>
+		            {% endblock table.thead %}
+		            {% block table.tbody %}
+		            <tbody>
+		                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+		                  {% block table.tbody.row %}
+		                  <tr class="{% cycle 'odd' 'even' %}">
+		                      {% for column, cell in row.items %}
+		                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+		                      {% endfor %}
+		                  </tr>
+		                  {% endblock table.tbody.row %}
+		                {% empty %}
+		                  {% if table.empty_text %}
+		                  {% block table.tbody.empty_text %}
+		                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+		                  {% endblock table.tbody.empty_text %}
+		                  {% endif %}
+		                {% endfor %}
+		            </tbody>
+		            {% endblock table.tbody %}
+		            {% block table.tfoot %}
+		            	<tfoot></tfoot>
+		            {% endblock table.tfoot %}
+		        </table>
+		    </div>
+		{% endblock table %}
+			
+		{% if table.page and show_paginatior %}
+		    {% block pagination %}
+		    	<label id="id-total-list" class="pull-right">Total References: {{ query_set_count }}</label>
+		        {% bootstrap_pagination table.page url=request.get_full_path %}
+		    {% endblock pagination %}
+		  </div>
+		{% else %}
+			<label id="id-total-list" class="pull-right">Total References: {{ query_set_count }}</label>
+		{% endif %}
+	
+		<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		
+	{% endif %}
+{% endblock content %}
+
+ {% block js %}
+ 		
+	<script>
+		
+/* 		$('#post-form').on('submit', function(event){
+		    event.preventDefault();
+		    console.log("form submitted!")  // sanity check
+		    create_post();
+		}); */
+		
+		/// set wait screen
+	    $('#id_submit_all').click(function() { 
+	    	wait_screen();
+	    });
+		    
+	    $('#id_submit_checked').click(function() { 
+	    	wait_screen();
+	    }); 
+		
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+		
+	</script>
+ 		
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages -->
+	    	<script type="text/javascript" src="{% static 'js/check-box-general.js' %}"></script>
+			
+     
+ {% endblock %}
+
+

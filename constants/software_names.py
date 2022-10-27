@@ -45,6 +45,7 @@ class SoftwareNames(object):
 	SOFTWARE_IGVTOOLS_name = "igvtools"
 	SOFTWARE_IGVTOOLS_VERSION = "2.3.98"
 	SOFTWARE_IGVTOOLS_PARAMETERS = ""
+	
 	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.11.1-Linux/bin/spades.py")
 #	SOFTWARE_SPAdes = os.path.join(settings.DIR_SOFTWARE, "SPAdes-3.13.0-Linux/bin/spades.py")
 	SOFTWARE_SPAdes_name = "SPAdes" 
@@ -73,7 +74,7 @@ class SoftwareNames(object):
 					"Both Surviving:",
 					"Forward Only Surviving:",
 					"Reverse Only Surviving:",
-					"Dropped:",]
+					"Dropped:"]
 	
 	SOFTWARE_TRIMMOMATIC_illuminaclip = "ILLUMINACLIP"
 	SOFTWARE_TRIMMOMATIC_addapter_to_replace = "ADAPTER_FILE"
@@ -89,7 +90,11 @@ class SoftwareNames(object):
 					'TruSeq2-SE.fa',
 					'TruSeq3-PE-2.fa',
 					'TruSeq3-PE.fa',
-					'TruSeq3-SE.fa']
+					'TruSeq3-SE.fa',
+					'SARS_CoV_2_MN908947_artic_3.fa',
+					'SARS_CoV_2_MN908947_artic_4.1.fa',
+					'MPXV_MT903345_Yale_PrimalSeq_v.1.fa',
+					'MPXV_comb-ccc7sszn.fa']
 	### collect stat data for ILLUMINA, in form of key value
 	SOFTWARE_ILLUMINA_stat = "illumina_stat"
 	SOFTWARE_ILLUMINA_stat_collect = [
@@ -144,20 +149,12 @@ class SoftwareNames(object):
 	
 	SOFTWARE_Pangolin_Env = ". {};".format(os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate"))
 	SOFTWARE_Pangolin = "pangolin"
-	SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin
+	#SOFTWARE_Pangolin_VERSION = "v3.1.14"					## Version Name: pangolin
+	SOFTWARE_Pangolin_VERSION = "v4.0.6"					## Version Name: pangolin
 	SOFTWARE_Pangolin_name = "Pangolin"					## Pangolin
 	SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"	## Pangolin
 	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
 
-# <<<<<<< HEAD
-# 	SOFTWARE_Pangolin_name = "Pangolin"
-# 	SOFTWARE_Pangolin_learn_name = "PangolinLearn"
-# 	SOFTWARE_Pangolin_designation_name = "Pango-designation"
-# 	SOFTWARE_Pangolin_name_extended = "Filtering and trimming of ONT sequencing data (NanoFilt)"
-# 	SOFTWARE_Pangolin_VERSION = "2.3.8"				## this value is going to increase across time 
-# 	SOFTWARE_Pangolin_learn_VERSION = "2021-04-01"	## this value is going to increase across time
-# 	SOFTWARE_Pangolin_designation_VERSION = "v1.2.12"	## this value is going to increase across time
-# =======
 #	SOFTWARE_Pangolin_name_search_name = "Pango"		## only to help on the search of Pango Name in output
 #	SOFTWARE_Pangolin_learn_name_old = "PangolinLearn" 		## was "PangolinLearn", now PangoLearn
 #	SOFTWARE_Pangolin_learn_name = "PangoLearn" 		## was "PangolinLearn", now PangoLearn
@@ -169,7 +166,6 @@ class SoftwareNames(object):
 #	SOFTWARE_Pangolin_designation_VERSION = "v1.2.86"	## Version Name: pango
 #	SOFTWARE_Pangolin_scorpio_VERSION = "v0.3.12"	## Version Name: pango
 #	SOFTWARE_Pangolin_constellations_VERSION = "v0.0.16"	## Version Name: pango
-#>>>>>>> refs/heads/develop
 
 #	VECT_PANGOLIN_TO_TEST = [
 #		SOFTWARE_Pangolin_name,
@@ -186,10 +182,10 @@ class SoftwareNames(object):
 	
 	## --nano-raw ../flu_minion/test_minion_seq.fastq.gz --no-alt-contigs -o temp -t 4
 	## ll temp/assembly.fasta
-	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "Flye/bin/flye")
-	SOFTWARE_FLYE_name = "Flye"
+	SOFTWARE_FLYE = os.path.join(settings.DIR_SOFTWARE, "flye/flye.sh")
+	SOFTWARE_FLYE_name = "flye"
 	SOFTWARE_FLYE_name_extended = "Assembly ONT (Flye)"
-	SOFTWARE_FLYE_VERSION = "2.9-b1778"
+	SOFTWARE_FLYE_VERSION = "2.9.1-b1780"
 	SOFTWARE_FLYE_PARAMETERS = "--no-alt-contigs "	## genomeSize=<number>[g|m|k] file1 file2
 
 	### used to create a file with variations table
@@ -342,7 +338,58 @@ class SoftwareNames(object):
 	SOFTWARE_GENERATE_CONSENSUS_name_extended = "Generate consensus"
 	SOFTWARE_GENERATE_CONSENSUS_vesion = "1"
 	SOFTWARE_GENERATE_CONSENSUS_parameters = ""	## don't have anything by default
-		
+
+	### algn2pheno
+	SOFTWARE_ALN2PHENO = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/aln2pheno.sh")
+	SOFTWARE_ALN2PHENO_README = os.path.join(settings.DIR_SOFTWARE, "aln2pheno/algn2pheno_readme.txt")
+
+	### Nextstrain
+	SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
+	SOFTWARE_NEXTSTRAIN = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh")
+	SOFTWARE_NEXTSTRAIN_MPX = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh")
+
+	### Several types of builds for NEXTSTRAIN
+	SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(settings.DIR_SOFTWARE, "nextstrain/nextstrain_builds/")	
+	SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
+	SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
+	SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y = "flu_h3n2_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
+
+	SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y
+	]
+
+	SOFTWARE_NEXTSTRAIN_BUILDS = [ 
+		SOFTWARE_NEXTSTRAIN_BUILDS_generic, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_ncov, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, 
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
+		SOFTWARE_NEXTSTRAIN_BUILDS_mpx 
+	]
+	SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [ 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"], 
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
+		[SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],		
+		[SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"] 
+	]
+
+	# default build
+	SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic
+	SOFTWARE_NEXTSTRAIN_name = "Nextstrain"
+	SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
+
 	###################################
 	###################################
 	#####

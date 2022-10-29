@@ -315,6 +315,7 @@ class RunCMD:
             found_flag = os.path.exists(bash_flag)
 
         err = open(bash_log).read()
+        out = open(bash_log).read()
 
         exec_time = time.perf_counter() - start_time
 
@@ -326,6 +327,59 @@ class RunCMD:
         os.remove(bash_flag)
 
         self.output_disposal(cmd, err, out, exec_time, "")
+
+    def run_script_return(self, cmd):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        start_time = time.perf_counter()
+
+        bash_script, bash_log, bash_flag = self.temp_script_log()
+        bash_script = os.path.join(self.logdir, bash_script)
+        bash_log = os.path.join(self.logdir, bash_log)
+        bash_flag = os.path.join(self.logdir, bash_flag)
+
+        with open(bash_script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            f.write(cmd)
+            f.write("\n")
+            f.write("touch " + bash_flag)
+
+        proc_prep = subprocess.Popen(
+            "bash " + bash_script + " &> " + bash_log,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        out, err = proc_prep.communicate()
+
+        found_flag = False
+
+        while not found_flag:
+            time.sleep(1)
+            found_flag = os.path.exists(bash_flag)
+
+        err = open(bash_log).read()
+        out = open(bash_log).read()
+
+        exec_time = time.perf_counter() - start_time
+
+        if self.flag_error(err):
+            self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        os.remove(bash_script)
+        os.remove(bash_log)
+        os.remove(bash_flag)
+
+        self.output_disposal(cmd, err, out, exec_time, "")
+
+        return out.strip()
 
     def run_bash_return(self, cmd):
         """

@@ -298,9 +298,17 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     )
 
     reads_after_processing = run_class.sample.reads_after_processing
-    reads_proc_percent = (
-        reads_after_processing / run_class.sample.reads_before_processing
-    ) * 100
+
+    if run_class.sample.reads_before_processing > 0:
+        reads_proc_percent = (
+            reads_after_processing / run_class.sample.reads_before_processing
+        ) * 100
+
+    else:
+        print("no input reads??")
+        print(reads_after_processing)
+        print(reads_proc_percent)
+        reads_proc_percent = 0
 
     enrichment_method = run_class.enrichment_drone.classifier_method.name
     enrichment = run_class.enrichment_drone.deployed

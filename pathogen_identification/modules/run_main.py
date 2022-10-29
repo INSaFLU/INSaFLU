@@ -626,11 +626,11 @@ class Run_Deployment_Methods(RunDetail_main):
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
-        self.remap_manager.run_mappings()
-
         self.remap_manager.run_mappings_move_clean(
             self.static_dir_plots, self.media_dir_igv
         )
+
+        # self.remap_manager.run_mappings()
         # self.remap_manager.move_plots_to_static(self.static_dir_plots)
         # self.remap_manager.move_igv_to_static(self.media_dir_igv)
         # self.remap_manager.export_mapping_files(self.media_dir_igv)

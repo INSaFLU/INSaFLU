@@ -392,8 +392,10 @@ class Remap_Bwa(RemapMethod_init):
 
     def remap_SE(self):
         """
+
         Remap reads to reference using bwa for single end reads."""
-        cmd = [
+        temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
+        cmd_01 = [
             "bwa",
             "mem",
             self.args,
@@ -401,19 +403,24 @@ class Remap_Bwa(RemapMethod_init):
             self.threads,
             self.reference,
             self.r1,
-            "|",
+            ">",
+            temp_sam,
+        ]
+        cmd_samtools = [
             "samtools",
             "view",
             "-b",
             "-o",
             self.outbam,
-            "-",
+            temp_sam,
         ]
-        self.cmd.run(cmd)
+        self.cmd.run_script(cmd_01)
+        self.cmd.run_script(cmd_samtools)
 
     def remap_PE(self):
         """
         Remap reads to reference using bwa for paired end reads."""
+        temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
         cmd = [
             "bwa",
             "mem",
@@ -423,15 +430,19 @@ class Remap_Bwa(RemapMethod_init):
             self.reference,
             self.r1,
             self.r2,
-            "|",
+            ">",
+            temp_sam,
+        ]
+        cmd_samtools = [
             "samtools",
             "view",
             "-b",
             "-o",
             self.outbam,
-            "-",
+            temp_sam,
         ]
-        self.cmd.run(cmd)
+        self.cmd.run_script(cmd)
+        self.cmd.run_script(cmd_samtools)
 
 
 class Remap_Minimap2(RemapMethod_init):
@@ -1135,7 +1146,7 @@ class Remapping:
         self.cmd.run(cmd)
 
         cmd2 = f"samtools view -h {temp_file} | grep -v '^@' | cut -f1 | sort | uniq > {self.mapped_reads}"
-        self.cmd.run(cmd2)
+        self.cmd.run_script_software(cmd2)
         os.remove(temp_file)
 
     def get_mapped_reads_number(self):
@@ -1151,13 +1162,13 @@ class Remapping:
         Subset mapped reads to R1, use seqtk."""
 
         cmd = f"seqtk subseq {self.r1} {tempfile} | gzip > {self.mapped_subset_r1}"
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def subset_mapped_reads_r2(self, tempfile=""):
         """
         Subset mapped reads to R2, use seqtk."""
         cmd = f"seqtk subseq {self.r2} {tempfile} | gzip > {self.mapped_subset_r2}"
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def subset_mapped_reads(self):
         """
@@ -1641,7 +1652,7 @@ class Mapping_Manager(Tandem_Remap):
 
             self.mapped_instances.append(mapped_instance)
 
-    def run_mappings_move_clean(self, static__plots_dir, media_dir):
+    def run_mappings_move_clean(self, static_plots_dir, media_dir):
         for target in self.remap_targets:
             mapped_instance = self.reciprocal_map(target)
 
@@ -1649,16 +1660,17 @@ class Mapping_Manager(Tandem_Remap):
 
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
+            print("###########")
+            print("apres", apres)
+            print("rpres", rpres)
             if rpres:
-                mapped_instance.reference.move_coverage_plot(static__plots_dir)
-
-            if apres:
-                mapped_instance.reference.move_dotplot(static__plots_dir)
-
-            if mapped_instance.reference.number_of_reads_mapped > 0:
+                mapped_instance.reference.move_coverage_plot(static_plots_dir)
                 mapped_instance.export_mapping_files(media_dir)
             else:
                 mapped_instance.reference.cleanup_files()
+
+            if apres:
+                mapped_instance.reference.move_dotplot(static_plots_dir)
 
     def move_plots_to_static(self, static_dir):
         for instance in self.mapped_instances:

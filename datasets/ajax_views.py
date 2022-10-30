@@ -368,7 +368,7 @@ def validate_consensus_name(request):
 	test if exist this reference name
 	"""
 	if request.is_ajax():
-		dataset_id = request.GET.get('consensus_name')
+		consensus_name = request.GET.get('consensus_name')
 		
 		data = {
 			'is_taken': Consensus.objects.filter(name__iexact=consensus_name,

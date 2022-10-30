@@ -44,7 +44,6 @@ function phylTree(metaData, data_input, root_name) {
             if (document.getElementById("optionMetadata"+j).selected) {
 
                 for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-
                 	window.PhylocanvasTree.leaves[i].setDisplay({
 
                         leafStyle: {
@@ -550,7 +549,7 @@ function radioDetect (metaData, max) {
         for (let j = 0; j < Object.keys(Object.values(metaData)[0]).length; j++) {
         	
             for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-				if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+				if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
 					continue;	
 				}
             	if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined || 

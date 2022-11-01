@@ -63,7 +63,9 @@ class ProjectTable(tables.Table):
         return number of running processes in this project"""
 
         running = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_RUNNING:
                 running += 1
@@ -75,7 +77,9 @@ class ProjectTable(tables.Table):
         return number of queued processes in this project"""
 
         queued = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_QUEUED:
                 queued += 1
@@ -87,7 +91,9 @@ class ProjectTable(tables.Table):
         return number of finished processes in this project"""
 
         finished = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_FINISHED:
                 finished += 1

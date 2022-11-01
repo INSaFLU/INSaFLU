@@ -106,7 +106,7 @@
 			<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 		{% endif %}
 	
-		<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" onClick="javascript:history.go(-1);" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		{% if show_message_change_settings %}
 			<div class="modal fade" id="modal_show_settings_allert">

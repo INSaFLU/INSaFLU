@@ -31,6 +31,7 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
+from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
 from utils.process_SGE import ProcessSGE
@@ -320,10 +321,18 @@ class AddSamples_PIProjectsView(
     logger_production = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
+
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
         project = Projects.objects.get(pk=self.kwargs["pk"])
+        technology = None
+
+        if project.technology == CS.TECHNOLOGY_minion:
+            technology = Sample.TYPE_OF_FASTQ_minion
+        elif project.technology == CS.TECHNOLOGY_illumina:
+            technology = Sample.TYPE_OF_FASTQ_illumina
+
         context["nav_project"] = True
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -342,11 +351,12 @@ class AddSamples_PIProjectsView(
             is_deleted=False,
             is_deleted_processed_fastq=False,
             is_ready_for_projects=True,
-            technology__name=project.technology,
+            type_of_fastq=technology,
         ).exclude(pk__in=samples_out)
 
         print("#####################")
-
+        print(technology)
+        print(project.technology)
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
@@ -612,7 +622,7 @@ class AddSamples_PIProjectsView(
                         "One sample was added to your project.",
                         fail_silently=True,
                     )
-            return HttpResponseRedirect(reverse_lazy("projects"))
+            return HttpResponseRedirect(reverse_lazy("PIprojects_main"))
         else:
             return super(AddSamples_PIProjectsView, self).form_invalid(form)
 

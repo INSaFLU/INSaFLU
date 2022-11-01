@@ -342,6 +342,7 @@ class DefaultProjectSoftware(object):
         project_sample,
         sample,
         technology_name,
+        dataset=None,
     ):
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             vect_parameters = self.default_parameters.get_snippy_default(

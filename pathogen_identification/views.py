@@ -32,6 +32,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Technology
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
 
@@ -341,7 +342,10 @@ class AddSamples_PIProjectsView(
             is_deleted=False,
             is_deleted_processed_fastq=False,
             is_ready_for_projects=True,
+            technology__name=project.technology,
         ).exclude(pk__in=samples_out)
+
+        print("#####################")
 
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(

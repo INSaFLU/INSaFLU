@@ -51,7 +51,6 @@ function draw_phylo_canvas() {
     	complete: function(){
     		$('#loader_phylocanvas').hide();
     	},
-    	
 	    data : { 
 	    	dataset_id : $('#phylocanvas').attr("dataset_id"),
 			csrfmiddlewaretoken: '{{ csrf_token }}'

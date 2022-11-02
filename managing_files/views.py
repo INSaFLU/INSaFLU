@@ -2136,7 +2136,7 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             "Project '" + name + "' was created successfully",
             fail_silently=True,
         )
-        return super(ProjectCreateView, self).form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class AddSamplesProjectsView(

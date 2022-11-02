@@ -7,16 +7,16 @@ import os
 
 from constants.software_names import SoftwareNames
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from datasets.models import Dataset
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from managing_files.models import Project, ProjectSample
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from utils.utils import Utils
 
 from settings.default_parameters import DefaultParameters
@@ -156,6 +156,17 @@ class SoftwareForm(forms.ModelForm):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_vect_available
+                    ]
+                elif (
+                    parameter.name == "--db"
+                    and parameter.software.pipeline_step.name
+                    in self.televir_utiltity.steps_db_dependant
+                ):
+                    list_data = [
+                        [data_, os.path.basename(data_)]
+                        for data_ in self.televir_utiltity.software_dbs_dict.get(
+                            parameter.software.name.lower(), []
+                        )
                     ]
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]

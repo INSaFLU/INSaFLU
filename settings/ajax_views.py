@@ -788,11 +788,6 @@ def turn_on_off_software(request):
 
                             return JsonResponse(data)
 
-                print("$$$$$$$$")
-                print(type_of_use_id)
-                print(software.name)
-                print(software.pipeline_step)
-
                 if not type_of_use_id is None:
                     if type_of_use_id == Software.TYPE_OF_USE_televir_global:
 
@@ -802,18 +797,9 @@ def turn_on_off_software(request):
                             )
                         )
 
-                        print(current_is_to_run)
-
-                        print("#############")
-                        print(set(pipeline_steps_project))
-
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_project
                         )
-                        print(makeup)
-
-                        if makeup:
-                            print(pipeline_makeup.get_makeup(makeup))
 
                         if makeup is None:
                             if current_is_to_run:

@@ -2137,6 +2137,7 @@ class ProcessControler(models.Model):
     PREFIX_SAMPLE = "sample_"
     PREFIX_PROJECT_SAMPLE = "project_sample_"
     PREFIX_PROJECT = "project_"
+    PREFIX_DATASET = "dataset_"
     PREFIX_TELEVIR_PROJECT = "televir_project_"
     PREFIX_UPLOAD_FILES = "upload_files_"
     PREFIX_LINK_FILES_USER = "link_files_user_"

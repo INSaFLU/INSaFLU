@@ -96,6 +96,8 @@ class Metadata_handler:
         """
 
         df = self.merge_report_to_metadata(df)
+        print("## df after processing")
+        print(df)
 
         df = self.map_hit_report(df)
 
@@ -276,6 +278,9 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
+        print("rclass before report: ")
+        print(report_1)
+
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
 

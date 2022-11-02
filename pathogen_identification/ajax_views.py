@@ -36,7 +36,7 @@ def deploy_ProjectPI(request):
         utils = Utils_Manager(user)
 
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
-        print(runs_to_deploy)
+        
         if runs_to_deploy:
             taskID = process_SGE.set_submit_televir_job(
                 user=request.user,

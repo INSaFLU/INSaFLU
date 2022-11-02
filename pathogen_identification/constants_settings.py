@@ -6,7 +6,7 @@ Ceated on 06/05/2022
 from logging import RootLogger
 
 import networkx as nx
-from fluwebvirus.settings import MEDIA_ROOT, STATICFILES_DIRS
+from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Software
 
@@ -185,7 +185,7 @@ class ConstantsSettings:
 
     project_directory = "/tmp/televir/projects/"
     media_directory = MEDIA_ROOT
-    static_directory = STATICFILES_DIRS[0]
+    static_directory = STATIC_ROOT
     televir_subdirectory = "televir_projects"
     PAGINATE_NUMBER = 10
     docker_app_directory = "/televir/mngs_benchmark/"

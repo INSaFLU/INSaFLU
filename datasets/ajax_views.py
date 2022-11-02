@@ -6,7 +6,6 @@ Created on Dec 6, 2017
 import logging, os, csv, json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
-from constants.software_names import SoftwareNames
 from extend_user.models import Profile
 from django.conf import settings
 from datetime import datetime
@@ -14,7 +13,6 @@ from django.db import transaction
 from django.utils.safestring import mark_safe
 from datasets.models import Dataset, Consensus, DatasetConsensus
 from settings.default_parameters import DefaultParameters
-from settings.default_software import DefaultSoftware
 from settings.models import Software
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -462,11 +460,12 @@ def show_phylo_canvas(request):
 		if (key_with_dataset_id in request.GET):
 			dataset_id = int(request.GET.get(key_with_dataset_id))
 			try:
+				vect_remove_keys = ['strain', 'fastq1', 'fastq2', 'data set', 'latitude', 'longitude']
 				dataset = Dataset.objects.get(id=dataset_id)
 				file_name_root_json = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_json)
 				file_name_url_json = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_json)
-				### this is a little version of PROJECT_FILE_NAME_RESULT_CSV
-				file_name_root_sample = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_CSV)
+				## the input it is DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV
+				file_name_root_sample = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV)
 					
 				file_name_root_nwk = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree)
 				file_name_nwk = dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_FASTTREE)
@@ -481,10 +480,14 @@ def show_phylo_canvas(request):
 							all_data = json.loads(json.dumps(list(reader)))
 							dt_result = {}
 							for dict_data in all_data:
-								if ('id' in dict_data):
+								if ('strain' in dict_data):
 									dt_out = dict_data.copy()
-									del dt_out['id']
-									dt_result[dict_data['id']] = dt_out
+									for key_to_remove in vect_remove_keys:
+										try:
+											del dt_out[key_to_remove]
+										except KeyError:
+											pass
+									dt_result[dict_data['strain']] = {key: '' if dt_out[key] == '?' else dt_out[key] for key in dt_out}
 							if len(dt_result) == len(all_data):
 								handle_write.write(json.dumps(dt_result))
 							else:
@@ -504,4 +507,3 @@ def show_phylo_canvas(request):
 			except Dataset.DoesNotExist:
 				pass
 		return JsonResponse(data)
-

@@ -21,8 +21,8 @@
         <div class="card mb-2">
             <img class="img-index" src="{% static "img/QC.jpg" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ 'QC' }}</h5>
-                <p class="card-text">{{ 'Global Quality Control' }}</p>
+                <h5 class="card-title">{{ 'Reads QC, improvement and classification' }}</h5>
+                <p class="card-text">{{ 'From reads to quality-processed reads and rapid classification.' }}</p>
                 <a href="{% url 'settings_qc' %}"
                    class="btn btn-primary">
                     Settings
@@ -34,8 +34,8 @@
         <div class="card mb-2">
             <img class="img-index" src="{% static "img/insa.jpg" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ 'RefMap' }}</h5>
-                <p class="card-text">{{ 'Sample profiling' }}</p>
+                <h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
+                <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pang classification, etc.' }}</p>
                 <a href="{% url 'settings' %}"
                    class="btn btn-primary">
                     Settings
@@ -47,8 +47,8 @@
         <div class="card mb-2">
             <img class="img-index" src="{% static "img/televir.jpg" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ "PathoFinder"}}</h5>
-                <p class="card-text">{{ "Viral Pathogen identification" }}</p>
+                <h5 class="card-title">{{ "Virus Detection"}}</h5>
+                <p class="card-text">{{ "From Reads to viral detection" }}</p>
                 <a href="{% url 'pathogenID_pipeline' level=0 %}"
                    class="btn btn-primary">
                    Settings
@@ -60,8 +60,8 @@
         <div class="card mb-2">
             <img class="img-index" src="{% static "img/nextrain.jpg" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ "PhyloTree" }}</h5>
-                <p class="card-text">{{ "Perform phylogenetic analysis" }}</p>
+                <h5 class="card-title">{{ "Nextrain" }}</h5>
+                <p class="card-text">{{ "From consensus sequences to phylogeographic and temporal analysis and metadatada navigation" }}</p>
                 <a href="{% url 'under_construction' %}"
                    class="btn btn-primary">
                     Go to page

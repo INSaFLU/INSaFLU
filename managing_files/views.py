@@ -2136,7 +2136,9 @@ class ProjectCreateView(LoginRequiredMixin, FormValidMessageMixin, generic.Creat
             "Project '" + name + "' was created successfully",
             fail_silently=True,
         )
-        return HttpResponseRedirect(self.get_success_url())
+        return super(ProjectCreateView, self).form_valid(form)
+
+    form_valid_message = ""  ## need to have this, even empty
 
 
 class AddSamplesProjectsView(
@@ -2439,7 +2441,7 @@ class AddSamplesProjectsView(
         else:
             return super(AddSamplesProjectsView, self).form_invalid(form)
 
-        form_valid_message = ""  ## need to have this, even empty
+    form_valid_message = ""  ## need to have this, even empty
 
 
 class ShowSampleProjectsView(LoginRequiredMixin, ListView):

@@ -267,7 +267,6 @@ class Utility_Pipeline_Manager:
         combined_table["parameter"] = combined_table.apply(
             round_parameter_float, axis=1
         )
-        print("HI")
 
         return combined_table
 

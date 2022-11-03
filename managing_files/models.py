@@ -1351,8 +1351,8 @@ class Project(models.Model):
     PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv"
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv"  ## remove del and ins and everything bigger than >50
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv"  ## with snps, del and ins and everything bigger than >50
-    ##                    MIGUEL
-    ##                    "Minor intra-host variants (inc. indels):"
+    ##					MIGUEL
+    ##					"Minor intra-host variants (inc. indels):"
     ## freebayes_variants_file_snp_indel
     PERCENTAGE_validated_minor_variants = 51  ## only pass <= 50
     PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
@@ -1539,7 +1539,6 @@ class Project(models.Model):
     ):
         """
         clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
-
         """
         for key in dict_to_clean:
             name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
@@ -1551,7 +1550,7 @@ class Project(models.Model):
     def get_global_file_by_project(self, type_path, file_name):
         """
         type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
-        file_name:    Project.PROJECT_FILE_NAME_MAFFT, ....
+        file_name: Project.PROJECT_FILE_NAME_MAFFT, ....
         """
         return os.path.join(self.__get_global_path__(type_path, None), file_name)
 
@@ -1572,20 +1571,14 @@ class Project(models.Model):
         if not element is None and len(element) > 0:
             return (
                 Constants.DIR_PROCESSED_FILES_PROJECT
-                + "/user_{0}/project_{1}/{3}/{4}".format(
-                    self.owner.id,
-                    self.project_directory_template,
-                    self.pk,
-                    self.PATH_MAIN_RESULT,
-                    element,
+                + "/user_{0}/project_{1}/{2}/{3}".format(
+                    self.owner.id, self.pk, self.PATH_MAIN_RESULT, element
                 )
             )
         return (
             Constants.DIR_PROCESSED_FILES_PROJECT
             + "/user_{0}/project_{1}/{2}".format(
-                self.owner.id,
-                self.pk,
-                self.PATH_MAIN_RESULT,
+                self.owner.id, self.pk, self.PATH_MAIN_RESULT
             )
         )
 

@@ -490,9 +490,9 @@ class Sample(models.Model):
 		try first trimmomatic/nanofilt, then return fastq
 		"""
 		file_name = self.get_trimmomatic_file(type_path, b_first_file)
-		if os.path.exists(file_name): return file_name
+		if (file_name is not None) and os.path.exists(file_name): return file_name
 		file_name = self.get_nanofilt_file(type_path)
-		if os.path.exists(file_name): return file_name
+		if (file_name is not None) and os.path.exists(file_name): return file_name
 		return self.get_fastq(type_path, b_first_file)
 		
 	def is_original_fastq_removed(self):

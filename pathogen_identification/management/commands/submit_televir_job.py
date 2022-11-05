@@ -44,11 +44,11 @@ class Command(BaseCommand):
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
 
-        utils = Utils_Manager(owner=user)
+        utils = Utils_Manager()
 
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = utils.generate_project_tree(technology, project)
+        local_tree = utils.generate_project_tree(technology, project, user)
         tree_makeup = local_tree.makeup
 
         print(samples)

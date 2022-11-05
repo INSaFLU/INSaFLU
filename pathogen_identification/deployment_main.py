@@ -102,7 +102,7 @@ class PathogenIdentification_deployment:
     def configure_params(self):
         user = User.objects.get(username=self.username)
 
-        utils = Utils_Manager(user)
+        utils = Utils_Manager()
         print(self.technology)
 
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)

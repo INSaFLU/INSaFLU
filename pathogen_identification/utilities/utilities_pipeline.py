@@ -740,25 +740,23 @@ class Parameter_DB_Utility:
         return merged_table
 
     def check_default_software_tree_exists(
-        self, owner: User, technology: Technology, global_index: int
+        self, technology: Technology, global_index: int
     ):
 
         try:
             software_tree = SoftwareTree.objects.get(
-                owner=owner, global_index=global_index, technology=technology
+                global_index=global_index, technology=technology
             )
             return True
 
         except SoftwareTree.DoesNotExist:
             return None
 
-    def get_software_tree_index(
-        self, owner: User, technology: Technology, global_index: int
-    ):
+    def get_software_tree_index(self, technology: Technology, global_index: int):
 
-        if self.check_default_software_tree_exists(owner, technology, global_index):
+        if self.check_default_software_tree_exists(technology, global_index):
             software_tree = SoftwareTree.objects.get(
-                owner=owner, global_index=global_index, technology=technology
+                global_index=global_index, technology=technology
             )
 
             return software_tree.pk
@@ -798,9 +796,7 @@ class Parameter_DB_Utility:
         self, owner: User, technology: str, global_index: int, node_index: int
     ):
 
-        software_tree_index = self.get_software_tree_index(
-            owner, technology, global_index
-        )
+        software_tree_index = self.get_software_tree_index(technology, global_index)
 
         if software_tree_index:
             try:
@@ -815,14 +811,14 @@ class Parameter_DB_Utility:
             return None
 
     def query_software_default_tree(
-        self, owner: User, technology: str, global_index: int
+        self, technology: str, global_index: int
     ) -> PipelineTree:
         """
         Generate a default software tree for a user
         """
 
         software_tree = SoftwareTree.objects.get(
-            owner=owner, global_index=global_index, technology=technology
+            global_index=global_index, technology=technology
         )
 
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
@@ -883,7 +879,7 @@ class Parameter_DB_Utility:
                 )
                 tree_node.save()
 
-    def update_software_tree(self, tree: PipelineTree, owner: User):
+    def update_software_tree(self, tree: PipelineTree):
         """
         Update SoftwareTree table
         """
@@ -891,13 +887,12 @@ class Parameter_DB_Utility:
 
         try:
             software_tree = SoftwareTree.objects.get(
-                owner=owner, global_index=global_index, technology=tree.technology
+                global_index=global_index, technology=tree.technology
             )
 
         except SoftwareTree.DoesNotExist:
             print("Creating new software tree")
             software_tree = SoftwareTree(
-                owner=owner,
                 global_index=global_index,
                 technology=tree.technology,
             )
@@ -914,8 +909,7 @@ class Utils_Manager:
     parameter_util: Parameter_DB_Utility
     utility_manager: Utility_Pipeline_Manager
 
-    def __init__(self, owner: User):
-        self.owner = owner
+    def __init__(self):
 
         ###
         self.parameter_util = Parameter_DB_Utility()
@@ -933,11 +927,11 @@ class Utils_Manager:
         Check if there are runs to run
         """
 
-        utils = Utils_Manager(owner=user)
+        utils = Utils_Manager()
 
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = utils.generate_project_tree(technology, project)
+        local_tree = utils.generate_project_tree(technology, project, user)
         tree_makeup = local_tree.makeup
         print(tree_makeup)
 
@@ -996,9 +990,7 @@ class Utils_Manager:
         """
         Get the software tree index from model
         """
-        return self.parameter_util.get_software_tree_index(
-            self.owner, technology, tree_makeup
-        )
+        return self.parameter_util.get_software_tree_index(technology, tree_makeup)
 
     def generate_software_tree(self, technology, tree_makeup: int):
         """
@@ -1006,10 +998,10 @@ class Utils_Manager:
         """
 
         if self.parameter_util.check_default_software_tree_exists(
-            self.owner, technology, global_index=tree_makeup
+            technology, global_index=tree_makeup
         ):
             return self.parameter_util.query_software_default_tree(
-                self.owner, technology, global_index=tree_makeup
+                technology, global_index=tree_makeup
             )
 
         else:
@@ -1039,17 +1031,17 @@ class Utils_Manager:
 
             pipeline_tree = self.utility_manager.generate_default_software_tree()
 
-            self.parameter_util.update_software_tree(pipeline_tree, self.owner)
+            self.parameter_util.update_software_tree(pipeline_tree)
 
             return pipeline_tree
 
-    def generate_project_tree(self, technology, project: Projects):
+    def generate_project_tree(self, technology, project: Projects, owner: User):
         """
         Generate a project tree
         """
 
         combined_table = self.parameter_util.generate_combined_parameters_table_project(
-            self.owner, project
+            owner, project
         )
 
         print(combined_table.head())

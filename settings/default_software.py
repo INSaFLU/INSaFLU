@@ -8,7 +8,6 @@ from curses.ascii import SO
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
-    Utils_Manager,
 )
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
@@ -29,10 +28,6 @@ class DefaultSoftware(object):
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.change_values_software = {}  ### the key is the name of the software
-
-    def generate_default_PI_software_trees(self, user):
-        utils = Utils_Manager(owner=user)
-        utils.generate_default_trees()
 
     def test_all_defaults(self, user):
 
@@ -323,8 +318,6 @@ class DefaultSoftware(object):
             ),
             user,
         )
-
-        self.generate_default_PI_software_trees(user)
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""

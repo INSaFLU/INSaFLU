@@ -141,6 +141,7 @@ class SoftwaresTable(tables.Table):
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
+        print(self.dataset)
 
         record = kwargs.pop("record")
         technology_name = (
@@ -148,10 +149,17 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
-        if self.project is None and self.project_sample is None and self.sample is None:
+        if (
+            self.project is None
+            and self.project_sample is None
+            and self.sample is None
+            and self.dataset is None
+        ):
             default_software = DefaultSoftware()
             return default_software.get_parameters(record.name, user, technology_name)
-        elif not self.dataset is None:
+        elif self.dataset is not None:
+            print(self.dataset)
+
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
             # TODO need to make this work...
@@ -160,11 +168,13 @@ class SoftwaresTable(tables.Table):
             #    technology_name=ConstantsSettings.TECHNOLOGY_generic, dataset=self.dataset)
             # logger.debug("Dataset parameters:{}".format(parameters))
             # return parameters
-            parameters_list = Parameter.objects.filter(dataset=self.dataset)
+            parameters_list = Parameter.objects.filter(dataset__name=self.dataset)
+            print("##")
+            print(parameters_list)
             if len(list(parameters_list)) == 1:
                 return list(parameters_list)[0].parameter
             else:
-                return None
+                return "Hello"
         elif not self.project is None:
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(

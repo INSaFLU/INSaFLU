@@ -144,6 +144,14 @@ DICT_NEXTSTRAIN_to_INSAFLU = {
 		NEXTSTRAIN_date : ['collection date', 'onset date', 'lab reception date'],
 }
 
+
+##### Important, array with exceptions for nextstrain TSV file 
+NEXTSTRAIN_exception_nextstrain_file = [
+	'Wuhan/Hu-1/2019',
+	'MK783032',
+	'MK783030',
+]
+
 class MetaRow(object):
 	
 	def __init__(self, project_name, seq_name_consensus, row, consensus_length):

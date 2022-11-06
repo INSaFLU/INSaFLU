@@ -16,6 +16,7 @@ from utils.data_columns import DataColumns
 from utils.data_columns import NEXTSTRAIN_age
 from utils.data_columns import NEXTSTRAIN_length
 from utils.data_columns import NEXTSTRAIN_date
+from utils.data_columns import NEXTSTRAIN_exception_nextstrain_file
 
 class ParseNextStrainFiles(object):
 	'''
@@ -177,34 +178,35 @@ class ParseNextStrainFiles(object):
 			if len(row) > 0 and len(row[0].strip()) > 0:
 				sample_name = row[0].strip()
 				
-				## test clean name
-				try:
-					sample = Sample.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
-				except Sample.DoesNotExist as error:
-					
-					### try repeated nams of samples
-					b_found = False
-					if (self.utils.is_integer(sample_name.split('_')[-1])):
-						repeated_name = "_".join(sample_name.split('_')[:-1])
-						if len(repeated_name) > 0:
-							try:
-								sample = Sample.objects.get(name__iexact=repeated_name, owner=user, is_deleted=False)
-								b_found = True
-							except Sample.DoesNotExist as error:
-								pass
-					
-					if (not b_found):
-						try:
-							consensus = Consensus.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
-						except Consensus.DoesNotExist as error:
-							try:
-								reference = Reference.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
-							except Reference.DoesNotExist as error:
+				if not sample_name in NEXTSTRAIN_exception_nextstrain_file:
+					## test clean name
+					try:
+						sample = Sample.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
+					except Sample.DoesNotExist as error:
+						
+						### try repeated names of samples
+						b_found = False
+						if (self.utils.is_integer(sample_name.split('_')[-1])):
+							repeated_name = "_".join(sample_name.split('_')[:-1])
+							if len(repeated_name) > 0:
 								try:
-									reference = Reference.objects.get(name__iexact=sample_name, owner__username=Constants.DEFAULT_USER, is_deleted=False)
-								except Reference.DoesNotExist as error:
-									self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Name '{}' doesn't exists in database. Line: {} Column: {}".format(sample_name, count_row, 1))))
+									sample = Sample.objects.get(name__iexact=repeated_name, owner=user, is_deleted=False)
+									b_found = True
+								except Sample.DoesNotExist as error:
 									pass
+						
+						if (not b_found):
+							try:
+								consensus = Consensus.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
+							except Consensus.DoesNotExist as error:
+								try:
+									reference = Reference.objects.get(name__iexact=sample_name, owner=user, is_deleted=False)
+								except Reference.DoesNotExist as error:
+									try:
+										reference = Reference.objects.get(name__iexact=sample_name, owner__username=Constants.DEFAULT_USER, is_deleted=False)
+									except Reference.DoesNotExist as error:
+										self.errors.add_single_result(SingleResult(SingleResult.ERROR, _("Name '{}' doesn't exists in database. Line: {} Column: {}".format(sample_name, count_row, 1))))
+										pass
 				
 				## test repeated samples
 				if (sample_name in self.dict_samples_out):

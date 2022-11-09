@@ -234,10 +234,14 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
     r2pres = 1
 
+    full_descriptor = r1
+
     if len(r2):
         r2pres = 2
         if "description" in r2.columns:
             r2 = r2[~r2.description.str.contains(exclude)]
+
+        full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
 
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
@@ -249,7 +253,9 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
         if maxt < 0:
             r1 = shared
+
         else:
+
             r2 = (
                 pd.merge(r2, shared, indicator=True, how="outer")
                 .query('_merge=="left_only"')
@@ -263,4 +269,20 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
                 .reset_index(drop=True)
             )
 
-    return r1.head(maxt * r2pres)
+    full_descriptor = full_descriptor.fillna(0)
+    full_descriptor["excluded"] = full_descriptor["taxid"].isin(r1["taxid"])
+    full_descriptor["source"] = full_descriptor["taxid"].apply(
+        lambda x: "reads" if x in r1["taxid"].tolist() else "contigs"
+    )
+    full_descriptor["taxid"] = full_descriptor["taxid"].astype(str)
+
+    if "accid" in full_descriptor.columns:
+        full_descriptor["accid"] = full_descriptor["accid"].apply(
+            lambda x: x.split(".")[0]
+        )
+    else:
+        full_descriptor["accid"] = "None"
+
+    full_descriptor["taxid"] = full_descriptor["taxid"].astype(str)
+
+    return r1.head(maxt * r2pres), full_descriptor

@@ -182,10 +182,6 @@ class RunDetail_main:
             exist_ok=True,
         )
 
-        print(self.media_dir_classification)
-        print(self.static_dir_plots)
-        print(self.media_dir_igv)
-
         self.filtered_reads_dir = config["directories"][
             CS.PIPELINE_NAME_read_quality_analysis
         ]
@@ -204,10 +200,6 @@ class RunDetail_main:
                 config["bin"], CS.PIPELINE_NAME_read_quality_analysis
             ),
         )
-
-        print("####################")
-        print(config["r2"])
-        print(config["r2"])
 
         self.r2 = Read_class(
             config["r2"],
@@ -646,6 +638,8 @@ class RunMain_class(Run_Deployment_Methods):
 
     def Run(self):
 
+        self.logger.info("Starting Pipeline")
+
         self.logger.info(f"quality control: {self.quality_control}")
         self.logger.info(f"enrichment: {self.enrichment}")
         self.logger.info(f"depletion: {self.depletion}")
@@ -653,8 +647,6 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"classification: {self.classification}")
         self.logger.info(f"sift: {self.sift}")
         self.logger.info(f"remapping: {self.remapping}")
-
-        print("starting pipeline")
 
         if self.quality_control:
             self.deploy_QC()
@@ -677,8 +669,7 @@ class RunMain_class(Run_Deployment_Methods):
             import shutil
 
             shutil.copy(self.sample.r1.current, self.sample.r1.clean)
-            print("################ sample r2")
-            print(self.sample.r2.exists, self.sample.r2.clean)
+
             if self.sample.r2.exists:
                 shutil.copy(self.sample.r2.current, self.sample.r2.clean)
 
@@ -690,12 +681,8 @@ class RunMain_class(Run_Deployment_Methods):
 
             self.sample.r1.is_clean()
             self.sample.r2.is_clean()
-            # self.sample.fake_quality_strings()
             self.sample.reads_after_processing = self.sample.current_total_read_number()
             self.sample.get_fake_qc_data()
-            print(self.r1.current)
-            print(self.sample.reads_after_processing)
-            print(self.preprocess_drone.preprocess_name_fastq_gz)
 
         if self.enrichment:
             self.deploy_EN()
@@ -731,7 +718,9 @@ class RunMain_class(Run_Deployment_Methods):
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass
             self.merged_targets = self.metadata_tool.merged_targets
+            self.raw_targets = self.metadata_tool.raw_targets
             self.remap_plan = self.metadata_tool.remap_plan
+
             self.export_intermediate_reports()
 
         if self.remapping:

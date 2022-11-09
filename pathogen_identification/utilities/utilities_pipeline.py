@@ -1016,7 +1016,7 @@ class Utils_Manager:
                 combined_table.pipeline_step.isin(makeup_steps)
             ]
 
-            if len(combined_table) == 0:
+            if len(combined_table) == 0 or "can_change" not in combined_table.columns:
                 return PipelineTree(
                     technology=technology,
                     nodes=[],

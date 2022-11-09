@@ -758,7 +758,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
         #
-        print(run_assembly)
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
         #
         read_classification = ReadClassification.objects.get(
@@ -767,12 +766,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
         #
-        print("#####")
-        for value in final_report:
-            print(value.refa_dotplot)
-            print(value.covplot)
-            print(value.covplot_exists)
-
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )

@@ -625,6 +625,26 @@ class ContigClassification(models.Model):
         return self.method
 
 
+class RawReference(models.Model):
+
+    STATUS_MAPPED = 0
+    STATUS_UNMAPPED = 1
+    STATUS_MAPPING = 2
+    STATUS_CHOICES = (
+        (STATUS_MAPPED, "Mapped"),
+        (STATUS_UNMAPPED, "Unmapped"),
+        (STATUS_MAPPING, "Mapping"),
+    )
+
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_UNMAPPED)
+
+    taxid = models.CharField(max_length=100, blank=True, null=True)
+    accid = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=100, blank=True, null=True)
+    classification_source = models.CharField(max_length=15, blank=True, null=True)
+
+
 class RunRemapMain(models.Model):
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)

@@ -96,8 +96,6 @@ class Metadata_handler:
         """
 
         df = self.merge_report_to_metadata(df)
-        print("## df after processing")
-        print(df)
 
         df = self.map_hit_report(df)
 
@@ -278,8 +276,6 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-        print("rclass before report: ")
-        print(report_1)
 
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
@@ -290,10 +286,16 @@ class Metadata_handler:
     ):
         """merge the reports and filter them."""
 
-        targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
+        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
+
+        raw_targets = self.merge_check_column_types(
+            raw_targets, self.taxonomy_to_description, "taxid"
+        )
+
         targets.dropna(subset=["taxid"], inplace=True)
         targets["taxid"] = targets["taxid"].astype(int)
 
+        self.raw_targets = raw_targets
         self.merged_targets = targets
 
     def generate_mapping_targets(

@@ -10,9 +10,7 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -2116,7 +2114,7 @@ class DefaultParameters(object):
         """
 
         if not pipeline_step:
-            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKENUNIQ_name

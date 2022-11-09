@@ -12,6 +12,7 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -514,6 +515,29 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             success=run_class.remap_main.success,
         )
         remap_main.save()
+
+    for ref, row in run_class.raw_targets.iterrows():
+        if row.excluded:
+            status = RawReference.STATUS_UNMAPPED
+        else:
+            status = RawReference.STATUS_MAPPED
+
+        try:
+            remap_target = RawReference.objects.get(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+            )
+        except RawReference.DoesNotExist:
+            remap_target = RawReference(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+                status=status,
+                description=row.description,
+                classification_source=row.source,
+            )
+            remap_target.save()
 
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":

@@ -1538,7 +1538,7 @@ class Tandem_Remap:
 
         assembly_target = Remap_Target(
             "none",
-            "assembly",
+            f"{reference_remap.target.name}_assembly",
             "none",
             self.assembly_file,
             self.prefix,
@@ -1616,7 +1616,7 @@ class Mapping_Manager(Tandem_Remap):
 
         self.mapped_instances = []
         self.remap_targets = remap_targets
-        self.reads_before_processing = r1.read_number_raw + r2.read_number_raw
+        self.reads_before_processing = r1.read_number_clean + r2.read_number_clean
         self.reads_after_processing = (
             r1.get_current_fastq_read_number() + r2.get_current_fastq_read_number()
         )

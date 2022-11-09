@@ -70,6 +70,9 @@ class Command(BaseCommand):
         for sample in samples:
             print("sample: ", sample)
 
+            if sample.is_deleted:
+                continue
+
             for leaf, path in local_paths.items():
                 print("leaf: ", leaf)
                 print("path: ", path)

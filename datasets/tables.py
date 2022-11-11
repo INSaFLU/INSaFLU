@@ -114,6 +114,11 @@ class DatasetTable(tables.Table):
 		"""
 		icon with link to extra info
 		"""
+
+		from crequest.middleware import CrequestMiddleware
+		current_request = CrequestMiddleware.get_request()
+		user = current_request.user
+		
 		## there's nothing to show
 		count = record.number_of_sequences_from_projects + record.number_of_sequences_from_consensus + record.number_of_sequences_from_references
 		sz_project_sample = ""
@@ -124,7 +129,7 @@ class DatasetTable(tables.Table):
 			sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
 				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
 			# TODO Make this a query to ProcessSGE instead
-			if(record.is_processed):
+			if(record.is_processed and (user.username != Constants.USER_ANONYMOUS)):
 				# Do not change this data-toggle="modal"...
 				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
 					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-flask" style="color:#55aa55;"></i></span> </a>'

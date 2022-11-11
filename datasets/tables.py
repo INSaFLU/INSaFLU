@@ -129,10 +129,11 @@ class DatasetTable(tables.Table):
 			sz_project_sample += '<a href=' + reverse('dataset-settings', args=[record.pk]) + ' data-toggle="tooltip" title="Dataset settings">' +\
 				'<span ><i class="fa fa-magic padding-button-table"></i></span></a>'
 			# TODO Make this a query to ProcessSGE instead
-			if(record.is_processed and (user.username != Constants.USER_ANONYMOUS)):
-				# Do not change this data-toggle="modal"...
-				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
-					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-flask" style="color:#55aa55;"></i></span> </a>'
+			if(record.is_processed):
+				if(user.username != Constants.USER_ANONYMOUS):
+					# Do not change this data-toggle="modal"...
+					sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Rebuild Dataset Results"' +\
+						' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-flask" style="color:#55aa55;"></i></span> </a>'
 			else:
 				sz_project_sample += '<a href="#id_rebuild_modal" id="id_rebuild_dataset_modal" data-toggle="modal" title="Waiting for Dataset Results (click to rebuild at your own risk)"' +\
 					' ref_name="' + record.name + '" pk="' + str(record.pk) + '"><span ><i class="fa fa-spinner fa-spin" style="color:#ff0000;"></i></span> </a>'				

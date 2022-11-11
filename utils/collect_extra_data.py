@@ -280,10 +280,6 @@ class CollectExtraData(object):
 
 			## (re)calculate the phenotype table, as it uses metadata
 			self.__collect_aln2pheno(project, user, False)
-			self.logger_production.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
-			self.logger_debug.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
-			count += 1
-			start = time.time()
 			
 			### zip several files to download 
 			self.zip_several_files(project)

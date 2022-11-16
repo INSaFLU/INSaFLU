@@ -14,7 +14,7 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
-    ReadClassification,
+    RawReference,
     ReferenceContigs,
     RunMain,
     SampleQC,
@@ -320,6 +320,50 @@ class SampleTable(tables.Table):
     report = tables.LinkColumn(
         "sample_main", text="Report", args=[tables.A("project__name"), tables.A("name")]
     )
+
+
+class RawReferenceTable(tables.Table):
+    taxid = tables.Column(verbose_name="Taxid")
+    accid = tables.Column(verbose_name="Accid")
+    description = tables.Column(verbose_name="Description")
+    counts = tables.Column(verbose_name="Counts")
+    status = tables.Column(verbose_name="Status")
+
+    class Meta:
+        model = RawReference
+        attrs = {"class": "paleblue"}
+        fields = (
+            "taxid",
+            "accid",
+            "description",
+            "counts",
+            "status",
+        )
+
+    def render_status(self, record):
+
+        if record.status == RawReference.STATUS_MAPPING:
+            return "Running"
+        elif record.status == RawReference.STATUS_MAPPED:
+            taxids_in_report = FinalReport.objects.filter(run=record.run).values_list(
+                "taxid", flat=True
+            )
+            if record.taxid in taxids_in_report:
+                return "Mapped"
+            else:
+                return "Mapped (0 reads)"
+
+        elif record.status == RawReference.STATUS_FAIL:
+            return "Fail"
+        elif record.status == RawReference.STATUS_UNMAPPED:
+
+            button = (
+                "<a "
+                + 'href="#" '
+                + 'class="remap_reference" '
+                + ""
+                + '"><i class="fa fa-trash"></i></span> </a>'
+            )
 
 
 class SampleQCTable(tables.Table):

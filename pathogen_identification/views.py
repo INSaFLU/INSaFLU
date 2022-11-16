@@ -44,6 +44,7 @@ from pathogen_identification.models import (
     FinalReport,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -56,8 +57,8 @@ from pathogen_identification.models import (
 from pathogen_identification.tables import (
     ContigTable,
     ProjectTable,
+    RawReferenceTable,
     RunMainTable,
-    SampleQCTable,
     SampleTable,
 )
 
@@ -749,10 +750,15 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             name=sample_name, project=project_main
         )
         #
-
         run_main = RunMain.objects.get(
             project=project_main, sample=sample_main, name=run_name
         )
+
+        #
+        raw_references = RawReference.objects.filter(run=run_main)
+
+        raw_reference_table = RawReferenceTable(raw_references)
+
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
@@ -789,6 +795,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_remap_main": reference_remap_main,
             "final_report": final_report,
             "project_index": project_pk,
+            "reference_table": raw_reference_table,
         }
 
         return context

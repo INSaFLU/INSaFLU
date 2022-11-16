@@ -517,11 +517,11 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         remap_main.save()
 
     for ref, row in run_class.raw_targets.iterrows():
-        if row.excluded:
-            status = RawReference.STATUS_UNMAPPED
-        else:
-            status = RawReference.STATUS_MAPPED
 
+        if row.status:
+            status = RawReference.STATUS_MAPPED
+        else:
+            status = RawReference.STATUS_UNMAPPED
         try:
             remap_target = RawReference.objects.get(
                 run=runmain,
@@ -535,8 +535,10 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
                 accid=row.accid,
                 status=status,
                 description=row.description,
+                counts=row.counts,
                 classification_source=row.source,
             )
+
             remap_target.save()
 
     Update_FinalReport(run_class, runmain, sample)

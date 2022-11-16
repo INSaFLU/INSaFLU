@@ -231,6 +231,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         )
 
     r1 = r1[["taxid", "counts"]]
+    r1_raw = r1.copy()
 
     r2pres = 1
 
@@ -249,6 +250,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         shared = pd.merge(r1, r2, on=["taxid"], how="inner").sort_values(
             "counts_x", ascending=False
         )
+
         maxt = maxt - shared.shape[0]
 
         if maxt < 0:
@@ -270,19 +272,37 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             )
 
     full_descriptor = full_descriptor.fillna(0)
-    full_descriptor["excluded"] = full_descriptor["taxid"].isin(r1["taxid"])
-    full_descriptor["source"] = full_descriptor["taxid"].apply(
-        lambda x: "reads" if x in r1["taxid"].tolist() else "contigs"
-    )
-    full_descriptor["taxid"] = full_descriptor["taxid"].astype(str)
+    full_descriptor["status"] = full_descriptor["taxid"].isin(r1["taxid"])
 
-    if "accid" in full_descriptor.columns:
-        full_descriptor["accid"] = full_descriptor["accid"].apply(
-            lambda x: x.split(".")[0]
-        )
-    else:
-        full_descriptor["accid"] = "None"
+    def get_source(taxid):
 
-    full_descriptor["taxid"] = full_descriptor["taxid"].astype(str)
+        if taxid in r1_raw.taxid.astype(int).tolist():
+
+            if taxid in r2.taxid.astype(int).tolist():
+                return 3
+
+            return 1
+
+        return 2
+
+    def get_counts(taxid):
+        taxid = int(taxid)
+
+        r1p = r1.rename(columns={"counts_x": "counts"})
+        r2p = r2.rename(columns={"counts_x": "counts"})
+        r1p["taxid"] = r1p["taxid"].astype(int)
+        r2p["taxid"] = r2p["taxid"].astype(int)
+
+        if taxid in r1p.taxid.tolist():
+            if taxid in r2p.taxid.tolist():
+                return f"{r1p[r1p.taxid== taxid].counts.values[0]} / {r2p[r2p.taxid==taxid].counts.values[0]}"
+
+            return f"{r1p[r1p.taxid==taxid].counts.values[0]}"
+
+        return f"{r2p[r2p.taxid==taxid].counts.values[0]}"
+
+    full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
+    full_descriptor["source"] = full_descriptor["taxid"].apply(get_source)
+    full_descriptor["counts"] = full_descriptor["taxid"].apply(get_counts)
 
     return r1.head(maxt * r2pres), full_descriptor

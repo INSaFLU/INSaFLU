@@ -280,6 +280,28 @@ class Metadata_handler:
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
 
+    def get_taxid_representative_accid(self, taxid: int) -> str:
+        """
+        Return representative accession for a given taxid.
+        """
+        if int(taxid) not in self.accession_to_taxid.taxid.astype(int).unique():
+            return "-"
+
+        return self.accession_to_taxid[
+            self.accession_to_taxid.taxid.astype(int) == int(taxid)
+        ].acc.iloc[0]
+
+    def get_taxid_representative_description(self, taxid: int) -> str:
+        """
+        Return representative accession for a given taxid.
+        """
+        if int(taxid) not in self.taxonomy_to_description.taxid.astype(int).unique():
+            return "-"
+
+        return self.taxonomy_to_description[
+            self.taxonomy_to_description.taxid.astype(int) == int(taxid)
+        ].description.iloc[0]
+
     def merge_reports_clean(
         self,
         max_remap: int = 15,
@@ -287,9 +309,11 @@ class Metadata_handler:
         """merge the reports and filter them."""
 
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
-
-        raw_targets = self.merge_check_column_types(
-            raw_targets, self.taxonomy_to_description, "taxid"
+        raw_targets["accid"] = targets["taxid"].apply(
+            self.get_taxid_representative_accid
+        )
+        raw_targets["description"] = targets["taxid"].apply(
+            self.get_taxid_representative_description
         )
 
         targets.dropna(subset=["taxid"], inplace=True)
@@ -376,7 +400,7 @@ class Metadata_handler:
                         determine if an accession is in a dataframe.
                         """
                         if "taxid" in df.columns:
-                            return taxid in df.taxid.unique()
+                            return str(taxid) in df.taxid.astype(str).unique()
 
                         return False
 

@@ -539,6 +539,11 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             )
             remap_target.save()
 
+    Update_FinalReport(run_class, runmain, sample)
+
+
+def Update_FinalReport(run_class, runmain, sample):
+
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue
@@ -597,22 +602,6 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     print(f"updating refmap_dbs run {run_class.prefix}")
 
-    for ref_map in run_class.remap_manager.mapped_instances:
-
-        Update_ReferenceMap(ref_map, run_class, parameter_set)
-
-
-def Update_ReferenceMap(
-    ref_map: Mapping_Instance,
-    run_class: RunMain_class,
-    parameter_set: ParameterSet,
-):
-    """
-    Updates the reference map data to TABLES.
-    - ReferenceMap_Main,
-    - ReferenceContigs
-    """
-
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(name=run_class.project_name, owner=user)
 
@@ -628,6 +617,22 @@ def Update_ReferenceMap(
         sample=sample,
         parameter_set=parameter_set,
     )
+
+    for ref_map in run_class.remap_manager.mapped_instances:
+
+        Update_ReferenceMap(ref_map, run, sample)
+
+
+def Update_ReferenceMap(
+    ref_map: Mapping_Instance,
+    run: RunMain,
+    sample: PIProject_Sample,
+):
+    """
+    Updates the reference map data to TABLES.
+    - ReferenceMap_Main,
+    - ReferenceContigs
+    """
 
     try:
         map_db = ReferenceMap_Main.objects.get(

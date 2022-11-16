@@ -51,9 +51,7 @@ class Projects(models.Model):
         max_length=200, db_index=True, blank=True, null=True, verbose_name="Results"
     )
 
-    running_processes = models.IntegerField(
-        default=0
-    )  ## has the number of running processes
+    running_processes = models.IntegerField(default=0)
 
     class Meta:
         ordering = ["project__id", "-creation_date"]
@@ -63,9 +61,9 @@ class Projects(models.Model):
 
 
 class SoftwareTree(models.Model):
-    global_index = models.IntegerField(default=0)
+    """"""
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    global_index = models.IntegerField(default=0)
     technology = models.CharField(
         max_length=100,
         name="technology",
@@ -74,7 +72,7 @@ class SoftwareTree(models.Model):
     )  # encoding
 
     class Meta:
-        ordering = ["owner", "global_index"]
+        ordering = ["global_index"]
 
 
 class SoftwareTreeNode(models.Model):
@@ -630,6 +628,8 @@ class RawReference(models.Model):
     STATUS_MAPPED = 0
     STATUS_UNMAPPED = 1
     STATUS_MAPPING = 2
+    STATUS_FAIL = 3
+
     STATUS_CHOICES = (
         (STATUS_MAPPED, "Mapped"),
         (STATUS_UNMAPPED, "Unmapped"),
@@ -642,6 +642,7 @@ class RawReference(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
     accid = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=100, blank=True, null=True)
+    counts = models.IntegerField(blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
 
 

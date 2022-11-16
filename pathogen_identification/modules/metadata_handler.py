@@ -371,18 +371,14 @@ class Metadata_handler:
                     description = description[-1]
                     description = scrape_description(pref, description)
 
-                    def determine_acc_in_file(acc, df: pd.DataFrame):
+                    def determine_taxid_in_file(taxid, df: pd.DataFrame):
                         """
                         determine if an accession is in a dataframe.
                         """
-                        if "acc" in df.columns:
-                            return acc in df.acc.unique()
-                        elif "acc_x" in df.columns and "acc_y" in df.columns:
-                            return (acc in df.acc_x.unique()) or (
-                                acc in df.acc_y.unique()
-                            )
-                        else:
-                            return False
+                        if "taxid" in df.columns:
+                            return taxid in df.taxid.unique()
+
+                        return False
 
                     remap_targets.append(
                         Remap_Target(
@@ -393,8 +389,8 @@ class Metadata_handler:
                             prefix,
                             description,
                             [nsnew.acc_in_file[0]],
-                            determine_acc_in_file(pref, self.rclass),
-                            determine_acc_in_file(pref, self.aclass),
+                            determine_taxid_in_file(taxid, self.rclass),
+                            determine_taxid_in_file(taxid, self.aclass),
                         )
                     )
                     remap_plan.append([taxid, pref, fileset])

@@ -10,7 +10,9 @@ from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 from settings.constants_settings import ConstantsSettings
@@ -2331,7 +2333,7 @@ class DefaultParameters(object):
         parameter = Parameter()
 
         parameter = Parameter()
-        parameter.name = "--cr"
+        parameter.name = "-cr"
         parameter.parameter = "0.3"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
@@ -2347,7 +2349,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--co"
+        parameter.name = "-co"
         parameter.parameter = "0.1"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
@@ -2363,7 +2365,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--cn"
+        parameter.name = "-cn"
         parameter.parameter = "10"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software

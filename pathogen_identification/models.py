@@ -63,6 +63,9 @@ class Projects(models.Model):
 class SoftwareTree(models.Model):
     """"""
 
+    version = models.IntegerField(default=0)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
     global_index = models.IntegerField(default=0)
     technology = models.CharField(
         max_length=100,
@@ -73,6 +76,9 @@ class SoftwareTree(models.Model):
 
     class Meta:
         ordering = ["global_index"]
+
+    def get_current_version(self):
+        return self.version
 
 
 class SoftwareTreeNode(models.Model):

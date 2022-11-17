@@ -746,10 +746,16 @@ class Parameter_DB_Utility:
     ):
 
         try:
-            software_tree = SoftwareTree.objects.get(
-                global_index=global_index, technology=technology
+            software_tree = (
+                SoftwareTree.objects.filter(
+                    global_index=global_index, technology=technology
+                )
+                .order_by("date_created")
+                .last()
             )
-            return True
+
+            if software_tree:
+                return True
 
         except SoftwareTree.DoesNotExist:
             return None
@@ -757,8 +763,12 @@ class Parameter_DB_Utility:
     def get_software_tree_index(self, technology: Technology, global_index: int):
 
         if self.check_default_software_tree_exists(technology, global_index):
-            software_tree = SoftwareTree.objects.get(
-                global_index=global_index, technology=technology
+            software_tree = (
+                SoftwareTree.objects.filter(
+                    global_index=global_index, technology=technology
+                )
+                .order_by("date_created")
+                .last()
             )
 
             return software_tree.pk

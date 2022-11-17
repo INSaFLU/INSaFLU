@@ -1854,7 +1854,7 @@ class DefaultParameters(object):
         """
 
         if not pipeline_step:
-            pipeline_step = ConstantsSettings.PIPELINE_NAME_viral_enrichment
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_read_classification
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_KRAKEN2_name

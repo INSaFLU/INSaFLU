@@ -41,7 +41,7 @@ class RunCMD:
         self.task = task
 
         self.logger = logging.getLogger(f"{prefix}_{task}")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
 
@@ -868,11 +868,17 @@ class Software_detail:
             self.name = method_details.software.values[0]
 
             try:
-                self.args = method_details[
+                args_string = method_details[
                     method_details.parameter.str.contains("ARGS")
                 ].value.values[0]
+
+                self.args, self.db = self.excise_db_from_args(args_string)
+                self.db_name = self.db.split("/")[-1]
+
             except IndexError:
                 self.args = ""
+                self.db = ""
+                self.db_name = ""
 
             try:
                 db_name = method_details[
@@ -886,7 +892,8 @@ class Software_detail:
                     self.db_name = db_name
 
             except IndexError:
-                self.db = ""
+                # self.db = ""
+                print(self.db_name)
 
             try:
                 self.bin = os.path.join(
@@ -910,6 +917,32 @@ class Software_detail:
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
+
+    def excise_db_from_args(self, args: str):
+        """replace db name in args with db path
+
+        :param args: string of args
+        :return: string of args with db path
+        """
+        args_list = args.split(" ")
+        db_idx = None
+        db = ""
+
+        for i in range(len(args_list)):
+            if "--db" in args_list[i]:
+                db_idx = i
+                db = args_list[i + 1]
+                break
+
+        if db_idx is not None:
+            args_list = args_list[:db_idx] + args_list[db_idx + 2 :]
+            args_list = " ".join(args_list)
+
+            return args_list, db
+
+        else:
+            args_list = " ".join(args_list)
+            return args_list, db
 
     def __str__(self):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"

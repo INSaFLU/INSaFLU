@@ -117,6 +117,16 @@ class Utility_Repository:
 
         return find
 
+    def get_list_unique_field(self, table_name, id):
+        """
+        Get a list of unique values in a field
+        """
+
+        find = self.engine.execute(f"SELECT DISTINCT {id} FROM {table_name}")
+
+        find = [i[0] for i in find]
+        return find
+
     def select_explicit_statement(self, table_name, field, id):
         """
         select from table.

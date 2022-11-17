@@ -59,8 +59,12 @@ class DefaultParameters(object):
 
         self.televir_db_manager = Utility_Pipeline_Manager()
 
-        self.televir_db_manager.set_software_list(software_list)
+        # self.televir_db_manager.set_software_list(software_list)
+
         self.televir_db_manager.get_software_db_dict()
+
+        print("#################  DefaultParameters  #################")
+        print(self.televir_db_manager.software_dbs_dict)
 
     def get_software_parameters_version(self, software_name):
         """
@@ -285,6 +289,11 @@ class DefaultParameters(object):
                             dict_out[par_name][1][0],
                         ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
+                    )
+                elif par_name == "--db":
+                    return_parameter += "{}{}".format(
+                        dict_out[par_name][0][0],
+                        os.path.basename(dict_out[par_name][1][0]),
                     )
                 else:
                     for _ in range(len(dict_out[par_name][0])):
@@ -1741,6 +1750,11 @@ class DefaultParameters(object):
 
         software.owner = user
 
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
         vect_parameters = []
 
         parameter = Parameter()
@@ -1775,6 +1789,23 @@ class DefaultParameters(object):
         parameter.range_max = "3"
         parameter.range_min = "1"
         parameter.description = "report up to k distinc assignments per read or pair."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 4
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1879,6 +1910,11 @@ class DefaultParameters(object):
 
         software.owner = user
 
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
         vect_parameters = []
 
         parameter = Parameter()
@@ -1910,6 +1946,23 @@ class DefaultParameters(object):
         parameter.range_max = "1.0"
         parameter.range_min = "0.4"
         parameter.description = "confidence threshold for reporting a taxon"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 4
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1945,6 +1998,11 @@ class DefaultParameters(object):
         software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
+
+        ### software db
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
 
         vect_parameters = []
 
@@ -1996,16 +2054,21 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "-v"
-        parameter.parameter = ""
-        parameter.type_data = Parameter.PARAMETER_null
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 4
-        parameter.description = "Verbose output"
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
 
         return vect_parameters
 
@@ -2040,7 +2103,10 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
-        parameter = Parameter()
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+        vect_parameters = []
 
         parameter = Parameter()
         parameter.name = "--fast"
@@ -2106,6 +2172,23 @@ class DefaultParameters(object):
         parameter.description = "Minimum query coverage"
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 5
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_krakenuniq_default(
@@ -2140,6 +2223,11 @@ class DefaultParameters(object):
         software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
+
+        ### dbs
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
 
         vect_parameters = []
 
@@ -2179,6 +2267,25 @@ class DefaultParameters(object):
         parameter.description = "Use exact k-mer counting (slower, but more accurate)."
         vect_parameters.append(parameter)
 
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 5
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_bwa_default(self, user, type_of_use, technology_name, sample=None):
@@ -2207,7 +2314,7 @@ class DefaultParameters(object):
         software.owner = user
 
         dbs_available = self.televir_db_manager.software_dbs_dict.get(
-            software.name, ["None"]
+            software.name.lower(), ["None"]
         )
         vect_parameters = []
 
@@ -2257,6 +2364,11 @@ class DefaultParameters(object):
             ConstantsSettings.PIPELINE_NAME_contig_classification
         )
 
+        ### dbs available
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+
         software.owner = user
 
         vect_parameters = []
@@ -2295,6 +2407,23 @@ class DefaultParameters(object):
         parameter.description = "E-value threshold for inclusion in the output"
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
         return vect_parameters
 
     def get_fastviromeexplorer_default(
@@ -2330,6 +2459,28 @@ class DefaultParameters(object):
 
         vect_parameters = []
 
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
         parameter = Parameter()
 
         parameter = Parameter()
@@ -2341,7 +2492,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = False
         parameter.is_to_run = True
-        parameter.sequence_out = 1
+        parameter.sequence_out = 2
         parameter.range_available = "[0.2:0.4]"
         parameter.range_max = "0.4"
         parameter.range_min = "0.2"
@@ -2357,7 +2508,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = True
         parameter.is_to_run = True
-        parameter.sequence_out = 2
+        parameter.sequence_out = 3
         parameter.range_available = "[0.1:0.4]"
         parameter.range_max = "0.4"
         parameter.range_min = "0.1"
@@ -2373,7 +2524,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = True
         parameter.is_to_run = True
-        parameter.sequence_out = 3
+        parameter.sequence_out = 4
         parameter.range_available = "[8:14]"
         parameter.range_max = "14"
         parameter.range_min = "8"
@@ -2412,6 +2563,29 @@ class DefaultParameters(object):
         software.owner = user
 
         vect_parameters = []
+
+        dbs_available = self.televir_db_manager.software_dbs_dict.get(
+            software.name.lower(), ["None"]
+        )
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
         parameter = Parameter()
         parameter.name = ""
         parameter.parameter = ""
@@ -2421,7 +2595,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = False
         parameter.is_to_run = False
-        parameter.sequence_out = 1
+        parameter.sequence_out = 2
         parameter.range_available = ""
         parameter.range_max = ""
         parameter.range_min = ""

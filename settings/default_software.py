@@ -252,16 +252,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        # self.test_default_db(
-        #    SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
-        #    self.default_parameters.get_fastviromeexplorer_default(
-        #        user,
-        #        Software.TYPE_OF_USE_televir_global,
-        #        ConstantsSettings.TECHNOLOGY_illumina,
-        #    ),
-        #    user,
-        # )
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             self.default_parameters.get_fastviromeexplorer_default(
@@ -272,15 +262,15 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_DESAMBA_name,
-            self.default_parameters.get_desamba_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
+        # self.test_default_db(
+        #    SoftwareNames.SOFTWARE_DESAMBA_name,
+        #    self.default_parameters.get_desamba_default(
+        #        user,
+        #        Software.TYPE_OF_USE_televir_global,
+        #        ConstantsSettings.TECHNOLOGY_minion,
+        #    ),
+        #    user,
+        # )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_SPAdes_name,

@@ -7,19 +7,14 @@ import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
 from django.db.models import Q
-from pathogen_identification.constants_settings import (
-    ConstantsSettings,
-    Pipeline_Makeup,
-)
+from pathogen_identification.constants_settings import (ConstantsSettings,
+                                                        Pipeline_Makeup)
 from pathogen_identification.install_registry import Deployment_Params
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
-from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.models import (ParameterSet, PIProject_Sample,
+                                            Projects, SoftwareTree,
+                                            SoftwareTreeNode)
+from pathogen_identification.utilities.utilities_televir_dbs import \
+    Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from this import d
@@ -365,11 +360,17 @@ class Utility_Pipeline_Manager:
 
     def get_software_db_dict(self):
 
+        software_list = self.utility_repository.get_list_unique_field(
+            "software", "name"
+        )
+
+        print(software_list)
+
         self.software_dbs_dict = {
             software.lower(): self.get_software_dbs_if_exist(software)
             .path.unique()
             .tolist()
-            for software in self.software_name_list
+            for software in software_list
         }
 
     def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
@@ -423,7 +424,7 @@ class Utility_Pipeline_Manager:
             step: {
                 software.lower(): {
                     f"{software.upper()}_ARGS": self.generate_argument_combinations(g),
-                    f"{software.upper()}_DB": self.software_dbs_dict[software.lower()],
+                    # f"{software.upper()}_DB": self.software_dbs_dict[software.lower()],
                 }
                 for software, g in g.groupby("software_name")
             }
@@ -614,7 +615,7 @@ class Parameter_DB_Utility:
         return software_list
 
     @staticmethod
-    def expand_parameters_table(combined_table):
+    def expand_parameters_table(combined_table, software_db_dict={}):
         def fix_row(row):
             if not row.parameter:
                 return [""]
@@ -644,6 +645,12 @@ class Parameter_DB_Utility:
                         str(round(x, 2))
                         for x in np.arange(range_min, range_max, range_step)
                     ]
+
+                elif row.name == "--db" and software_db_dict:
+                    software_name = row.software_name
+                    print(software_name)
+                    print(software_db_dict[software_name])
+                    new_range = software_db_dict[software_name]
 
                 return new_range
 
@@ -1097,7 +1104,11 @@ class Utils_Manager:
                 makeup=tree_makeup,
             )
 
-        full_table = self.parameter_util.expand_parameters_table(combined_table)
+        self.utility_manager.get_software_db_dict()
+
+        full_table = self.parameter_util.expand_parameters_table(
+            combined_table, software_db_dict=self.utility_manager.software_dbs_dict
+        )
 
         self.utility_manager.input(full_table, technology=technology)
 
@@ -1113,9 +1124,6 @@ class Utils_Manager:
             tree_differences = self.utility_manager.compare_software_trees(
                 existing_pipeline_tree
             )
-
-            print("### differences")
-            print(tree_differences)
 
             if len(tree_differences) > 0:
                 self.parameter_util.update_software_tree(pipeline_tree)

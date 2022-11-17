@@ -158,7 +158,6 @@ class SoftwaresTable(tables.Table):
             default_software = DefaultSoftware()
             return default_software.get_parameters(record.name, user, technology_name)
         elif self.dataset is not None:
-            print(self.dataset)
 
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
@@ -169,12 +168,11 @@ class SoftwaresTable(tables.Table):
             # logger.debug("Dataset parameters:{}".format(parameters))
             # return parameters
             parameters_list = Parameter.objects.filter(dataset__name=self.dataset)
-            print("##")
-            print(parameters_list)
+
             if len(list(parameters_list)) == 1:
                 return list(parameters_list)[0].parameter
             else:
-                return "Hello"
+                return "None"
         elif not self.project is None:
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(

@@ -37,6 +37,7 @@ class Deployment_Params:
             "kraken2": "kraken2/kraken_env",
             "fastviromeexplorer": "FastViromeExplorer/FastViromeExplorer",
             "kallisto": "FastViromeExplorer/fve",
+            "java": "FastViromeExplorer/fve",
             "virsorter": "hostDepletion/vs2",
             "desamba": "classm_lc/deSAMBA",
             "minimap-rem": "hostDepletion/hostdep_env",

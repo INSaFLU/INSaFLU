@@ -159,8 +159,8 @@ class Parameter(models.Model):
     ### It is only has one parameter. Example: "Generate consensus"
     ### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File
 
-    name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
-    parameter = models.CharField(max_length=50, db_index=True, blank=True, null=True)
+    name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+    parameter = models.CharField(max_length=150, db_index=True, blank=True, null=True)
     type_data = models.SmallIntegerField()
     software = models.ForeignKey(
         Software, related_name="parameter", on_delete=models.PROTECT

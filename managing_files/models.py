@@ -7,10 +7,8 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -2132,6 +2130,7 @@ class ProcessControler(models.Model):
     PREFIX_PROJECT = "project_"
     PREFIX_DATASET = "dataset_"
     PREFIX_TELEVIR_PROJECT = "televir_project_"
+    PREFIX_TELEVIR_REFERENCE_MAP = "televir_reference_map_"
     PREFIX_UPLOAD_FILES = "upload_files_"
     PREFIX_LINK_FILES_USER = "link_files_user_"
     PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
@@ -2188,6 +2187,9 @@ class ProcessControler(models.Model):
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
+    
+    def get_name_televir_map(self, reference_pk):
+        return "{}{}".format(ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk)
 
     def __str__(self):
         return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(

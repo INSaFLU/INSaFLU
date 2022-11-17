@@ -4,142 +4,28 @@ import os
 import shutil
 
 import pandas as pd
-from pathogen_identification.constants_settings import (MEDIA_ROOT,
-                                                        ConstantsSettings)
+from django.core.management.base import BaseCommand
+from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params as DP
-from pathogen_identification.install_registry import (Params_Illumina,
-                                                      Params_Nanopore)
+from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
+from pathogen_identification.models import RawReference
 from pathogen_identification.modules.metadata_handler import Metadata_handler
-from pathogen_identification.modules.object_classes import (Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Sample_runClass,
-                                                            Software_detail)
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    Sample_runClass,
+    Software_detail,
+)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
+from pathogen_identification.utilities.update_DBs import (
+    Update_FinalReport,
+    Update_ReferenceMap,
+)
 from pathogen_identification.utilities.utilities_general import simplify_name
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings as CS
-
-
-def get_bindir_from_binaries(binaries, key, value: str = ""):
-
-    if value == "":
-        try:
-            return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
-        except KeyError:
-            return ""
-    else:
-        try:
-            return os.path.join(binaries["ROOT"], binaries[key][value], "bin")
-        except KeyError:
-            return ""
-
-
-class Input_Generator:
-    def __init__(self):
-        self.install_registry = DP
-        args = self.parse_args()
-
-        self.technology = args.technology
-        self.threads = args.threads
-        self.prefix = args.prefix
-        self.project = args.prefix
-        self.clean = False if args.keep else True
-        self.deployment_root_dir = os.path.join(MEDIA_ROOT, self.technology)
-        self.dir_branch = os.path.join(self.deployment_root_dir, self.prefix)
-        self.dir = self.dir_branch
-
-        os.makedirs(self.dir, exist_ok=True)
-        print(self.dir)
-
-        self.r1_path = args.r1
-        self.r2_path = args.r2
-        self.taxid = args.taxid
-        self.accid = args.accid
-
-        if args.technology == "ONT":
-            self.params = Params_Nanopore
-        else:
-            self.params = Params_Illumina
-
-    def parse_args(self):
-        args = argparse.ArgumentParser()
-        args.add_argument("--taxid", type=str, required=False, default="none")
-        args.add_argument("--accid", type=str, required=False, default="none")
-        args.add_argument("--r1", type=str, required=True)
-        args.add_argument("--r2", type=str, required=False, default="")
-        args.add_argument("--threads", type=int, required=False, default=1)
-
-        args.add_argument("--prefix", type=str, required=False, default="test")
-        args.add_argument("--technology", type=str, required=False, default="ONT")
-        args.add_argument("--keep", required=False, default=True, action="store_false")
-
-        return args.parse_args()
-
-    def input_read_project_path(self, filepath):
-        if not os.path.isfile(filepath):
-            return ""
-        rname = os.path.basename(filepath)
-        new_rpath = os.path.join(self.dir, "reads") + "/" + rname
-        shutil.copy(filepath, new_rpath)
-        return new_rpath
-
-    def generate_method_args(self):
-        self.method_args = pd.DataFrame(
-            {
-                "software": "snippy",
-                "module": CS.PIPELINE_NAME_remapping,
-                "parameter": "SNIPPY_ARGS",
-                "value": "--cpus 1 --outdir snippy --ref {reference} --R1 {r1} --R2 {r2}",
-                "description": "Snippy arguments",
-            },
-            index=[0],
-        )
-
-        self.method_args = pd.DataFrame(
-            {
-                "software": "minimap2",
-                "module": CS.PIPELINE_NAME_remapping,
-                "parameter": "MINIMAP2_ARGS",
-                "value": "",
-            },
-            index=[0],
-        )
-
-    def generate_config(self):
-
-        self.config = {
-            "sample_name": simplify_name(
-                os.path.basename(self.r1_path).replace(".fastq.gz", "")
-            ),
-            "source": self.install_registry.SOURCE,
-            "technology": self.technology,
-            "deployment_root_dir": self.deployment_root_dir,
-            "sub_directory": self.dir_branch,
-            "directories": {},
-            "threads": self.threads,
-            "prefix": self.prefix,
-            "project_name": self.project,
-            "metadata": {
-                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
-                for x, g in self.install_registry.METADATA.items()
-            },
-            "bin": self.install_registry.BINARIES,
-            "taxid": self.taxid,
-            "accid": self.accid,
-            "clean": self.clean,
-        }
-
-        for dr, g in ConstantsSettings.DIRS.items():
-            self.config["directories"][dr] = os.path.join(self.dir_branch, g)
-            os.makedirs(self.config["directories"][dr], exist_ok=True)
-
-        print(self.r1_path)
-        self.config["r1"] = self.input_read_project_path(self.r1_path)
-        self.config["r2"] = self.input_read_project_path(self.r2_path)
-        self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
-
-        self.config.update(self.params.CONSTANTS)
 
 
 class RunMain:
@@ -164,7 +50,7 @@ class RunMain:
         self.taxid = config["taxid"]
         self.accid = config["accid"]
         self.threads = config["threads"]
-        self.house_cleaning = True
+        self.house_cleaning = False
         self.clean = config["clean"]
 
         self.full_report = os.path.join(
@@ -309,19 +195,170 @@ class RunMain:
         )
 
 
-if __name__ == "__main__":
+def get_bindir_from_binaries(binaries, key, value: str = ""):
 
-    import argparse
+    if value == "":
+        try:
+            return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
+        except KeyError:
+            return ""
+    else:
+        try:
+            return os.path.join(binaries["ROOT"], binaries[key][value], "bin")
+        except KeyError:
+            return ""
 
-    import pandas as pd
 
-    input_generator = Input_Generator()
+class Input_Generator:
 
-    input_generator.generate_method_args()
-    input_generator.generate_config()
+    method_args: pd.DataFrame
 
-    run_engine = RunMain(input_generator.config, input_generator.method_args)
-    run_engine.generate_targets()
-    run_engine.run()
+    def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
+        self.utils = Utils_Manager()
+        self.reference = reference
+        self.install_registry = DP
 
-    print("done")
+        self.technology = reference.run.project.technology
+        self.threads = threads
+        self.prefix = reference.accid
+        self.project = reference.run.project.name
+        self.clean = False
+        self.deployment_root_dir = os.path.join(output_dir, self.technology)
+        self.dir_branch = os.path.join(self.deployment_root_dir, self.prefix)
+        self.dir = self.dir_branch
+
+        os.makedirs(self.dir, exist_ok=True)
+        print(self.dir)
+
+        self.r1_path = reference.run.sample.sample.path_name_1.path
+        self.r2_path = (
+            reference.run.sample.sample.path_name_2.path
+            if reference.run.sample.sample.exist_file_2()
+            else ""
+        )
+
+        self.taxid = reference.taxid
+        self.accid = reference.accid
+
+        if self.technology == "ONT":
+            self.params = Params_Nanopore
+        else:
+            self.params = Params_Illumina
+
+    def input_read_project_path(self, filepath):
+        if not os.path.isfile(filepath):
+            return ""
+        rname = os.path.basename(filepath)
+        new_rpath = os.path.join(self.dir, "reads") + "/" + rname
+        shutil.copy(filepath, new_rpath)
+        return new_rpath
+
+    def generate_method_args(self):
+
+        parameter_leaf = self.reference.run.parameter_set.leaf
+        run_df = self.utils.get_leaf_parameters(parameter_leaf)
+
+        self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
+
+        if self.method_args.empty:
+            raise ValueError(
+                f"no remapping parameters found for {self.reference.accid} in leaf {parameter_leaf}"
+            )
+
+    def generate_config(self):
+
+        self.config = {
+            "sample_name": simplify_name(
+                os.path.basename(self.r1_path).replace(".fastq.gz", "")
+            ),
+            "source": self.install_registry.SOURCE,
+            "technology": self.technology,
+            "deployment_root_dir": self.deployment_root_dir,
+            "sub_directory": self.dir_branch,
+            "directories": {},
+            "threads": self.threads,
+            "prefix": self.prefix,
+            "project_name": self.project,
+            "metadata": {
+                x: os.path.join(self.install_registry.METADATA["ROOT"], g)
+                for x, g in self.install_registry.METADATA.items()
+            },
+            "bin": self.install_registry.BINARIES,
+            "taxid": self.taxid,
+            "accid": self.accid,
+            "clean": self.clean,
+        }
+
+        for dr, g in ConstantsSettings.DIRS.items():
+            self.config["directories"][dr] = os.path.join(self.dir_branch, g)
+            os.makedirs(self.config["directories"][dr], exist_ok=True)
+
+        print(self.r1_path)
+        self.config["r1"] = self.input_read_project_path(self.r1_path)
+        self.config["r2"] = self.input_read_project_path(self.r2_path)
+        self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
+
+        self.config.update(self.params.CONSTANTS)
+
+    def update_raw_reference_status_mapped(self):
+        self.reference.status = RawReference.STATUS_MAPPED
+        self.reference.save()
+
+    def update_raw_reference_status_fail(self):
+        self.reference.status = RawReference.STATUS_FAIL
+        self.reference.save()
+
+    def update_final_report(self, run_class: RunMain):
+
+        run = self.reference.run
+        sample = run.sample
+
+        Update_FinalReport(run_class, run, sample)
+
+        for ref_map in run_class.remap_manager.mapped_instances:
+
+            Update_ReferenceMap(ref_map, run, sample)
+
+
+class Command(BaseCommand):
+    help = "deploy run"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--ref_id",
+            type=int,
+            help="user deploying the run (pk)",
+        )
+
+        parser.add_argument(
+            "-o",
+            "--outdir",
+            type=str,
+            help="output directory",
+        )
+
+    def handle(self, *args, **options):
+        ###
+
+        raw_reference_id = int(options["ref_id"])
+
+        reference = RawReference.objects.get(pk=raw_reference_id)
+
+        input_generator = Input_Generator(
+            reference, options["outdir"], threads=ConstantsSettings.MAPPING_THREADS
+        )
+
+        try:
+            input_generator.generate_method_args()
+            input_generator.generate_config()
+
+            run_engine = RunMain(input_generator.config, input_generator.method_args)
+            run_engine.generate_targets()
+            run_engine.run()
+
+            input_generator.update_raw_reference_status_mapped()
+            input_generator.update_final_report(run_engine)
+
+        except Exception as e:
+            print(e)
+            input_generator.update_raw_reference_status_fail()

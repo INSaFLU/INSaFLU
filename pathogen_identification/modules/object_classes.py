@@ -20,6 +20,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pathogen_identification.install_registry import Deployment_Params
 
 
 class RunCMD:
@@ -186,8 +187,15 @@ class RunCMD:
 
         start_time = time.perf_counter()
 
+        java_bin = os.path.join(
+            Deployment_Params.BINARIES["ROOT"],
+            Deployment_Params.BINARIES["software"]["java"],
+            "bin",
+            "java",
+        )
+
         proc_prep = subprocess.Popen(
-            f"java -cp {self.bin} {cmd}",
+            f"{java_bin} -cp {self.bin} {cmd}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

@@ -355,15 +355,17 @@ class RawReferenceTable(tables.Table):
 
         elif record.status == RawReference.STATUS_FAIL:
             return "Fail"
+
         elif record.status == RawReference.STATUS_UNMAPPED:
 
             button = (
-                "<a "
+                " <a "
                 + 'href="#" '
-                + 'class="remap_reference" '
-                + ""
-                + '"><i class="fa fa-trash"></i></span> </a>'
+                + 'id="remap_reference" '
+                + f"ref_id={record.pk} "
+                + '"><i class="fa fa-eye"></i></span> </a>'
             )
+            return mark_safe("Unmapped" + button)
 
 
 class SampleQCTable(tables.Table):

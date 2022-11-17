@@ -698,6 +698,8 @@ class ReferenceMap_Main(models.Model):
     bai_file_path = models.CharField(max_length=350, blank=True, null=True)
     fasta_file_path = models.CharField(max_length=350, blank=True, null=True)
     fai_file_path = models.CharField(max_length=350, blank=True, null=True)
+    mapped_subset_r1 = models.CharField(max_length=350, blank=True, null=True)
+    mapped_subset_r2 = models.CharField(max_length=350, blank=True, null=True)
 
     class Meta:
 

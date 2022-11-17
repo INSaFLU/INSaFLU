@@ -648,11 +648,12 @@ def Update_ReferenceMap(
             sample=sample,
             run=run,
             taxid=ref_map.reference.target.taxid,
-            # report=ref_map.report,
             bam_file_path=ref_map.reference.read_map_sorted_bam,
             bai_file_path=ref_map.reference.read_map_sorted_bam_index,
             fasta_file_path=ref_map.reference.reference_file,
             fai_file_path=ref_map.reference.reference_fasta_index,
+            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
         )
         map_db.save()
 

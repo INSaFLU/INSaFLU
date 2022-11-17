@@ -11,16 +11,9 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    Sample_runClass,
-    Software_detail,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
+    Sample_runClass, Software_detail)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
 from settings.constants_settings import ConstantsSettings as CS
@@ -610,7 +603,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
-            self.house_cleaning,
+            True,
             logdir=self.config["directories"]["log_dir"],
         )
 

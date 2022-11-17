@@ -826,6 +826,42 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
+    def set_submit_televir_map(self, user, reference_pk):
+        """
+        submit the job to televir
+        """
+        user_pk = user.pk
+        process_controler = ProcessControler()
+        out_dir = self.utils.get_temp_dir()
+
+        vect_command = [
+            "python3 {} submit_televir_map --ref_id {} -o {}".format(
+                os.path.join(settings.BASE_DIR, "manage.py"),
+                reference_pk,
+                out_dir,
+            )
+        ]
+        self.logger_production.info("Processing: " + ";".join(vect_command))
+        self.logger_debug.info("Processing: " + ";".join(vect_command))
+        queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        (job_name_wait, job_name) = user.profile.get_name_sge_seq(
+            Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
+        )
+        path_file = self.set_script_run_sge(
+            out_dir, queue_name, vect_command, job_name, False, [job_name_wait]
+        )
+        print(path_file)
+        try:
+            sge_id = self.submitte_job(path_file)
+            print("project submitted, sge_id: " + str(sge_id))
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_televir_map(reference_pk), sge_id
+                )
+        except:
+            raise Exception("Fail to submit the job.")
+        return sge_id
+
     ### only for tests
     def submit_dummy_sge(self, job_name="job_name"):
         """

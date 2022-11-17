@@ -34,8 +34,8 @@ def deploy_ProjectPI(request):
         project = Projects.objects.get(id=int(project_id))
 
         utils = Utils_Manager()
-
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
+        print("checking")
 
         if runs_to_deploy:
             taskID = process_SGE.set_submit_televir_job(
@@ -46,4 +46,27 @@ def deploy_ProjectPI(request):
             data["is_deployed"] = True
 
         data = {"is_ok": True}
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def deploy_televir_map(request):
+    """
+    prepare data for deployment of pathogen identification.
+    """
+    print(request.is_ajax())
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        print(request.POST)
+
+        reference_id = int(request.POST["reference_id"])
+        taskID = process_SGE.set_submit_televir_map(user, reference_pk=reference_id)
+
+        data["is_ok"] = True
+
         return JsonResponse(data)

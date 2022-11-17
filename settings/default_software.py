@@ -29,6 +29,16 @@ class DefaultSoftware(object):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.change_values_software = {}  ### the key is the name of the software
 
+    def remove_all_parameters(self, user):
+        """remove all parameters"""
+        user_software = Software.objects.filter(owner=user)
+        user_parameter = Parameter.objects.filter(software__in=user_software)
+        with LockedAtomicTransaction(Parameter):
+            user_parameter.delete()
+
+        with LockedAtomicTransaction(Software):
+            user_software.delete()
+
     def test_all_defaults(self, user):
 
         ### test all defaults
@@ -128,6 +138,10 @@ class DefaultSoftware(object):
         #############
         ############# PATHOGEN IDENTIFICATION SOFTWARE
         #############
+
+        self.test_all_defaults_pathogen_identification(user)
+
+    def test_all_defaults_pathogen_identification(self, user):
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(

@@ -90,13 +90,27 @@
         text-decoration: underline;
     }
     
-    #left img {
-        width: 100%;
-        display: block;
-        width: 100%;
-        colspan: 100%;
+    .column {
+        float: left;
+        padding: 10px;
     }
-    
+
+
+    .left {
+        width: 70%;
+    }
+
+    .right {
+        width: 30%;
+        postion: absolute;
+
+    }
+
+    form {
+        padding: 12px;
+        position: relative;
+    }
+
     .modebar {
         display: none !important;
     }
@@ -132,28 +146,47 @@
         <div id="collapseOne" class="collapse hide" role="tabpanel" aria-labelledby="headingOne">
             <div class="card-block">
                 <div style="padding: 20px">
+                    <div class= "column left">
 
-                {% if run_main.enrichment_performed %}
-                <p> Viral enrichment was performed using <strong>{{ run_main.enrichment }}</strong>. </p>
-                <p> {{ run_detail.input }} input reads. {{ run_detail.processed }} ({{run_detail.processed_percent}} %)
-                    remained. </p>
-                {% if run_detail_processed.processed == 0 %}
-                <p> Run continued using input reads </p>
-                {% endif %}
-                {% elif run_main.host_depletion_performed %}
-                <br>
-                <p> The following table shows the results of the pre-processing. </p>
-                <p> The pre-processing is done in the following order: </p>
-                <br>
-                {% else %}
-                <p> No pre-processing step was performed </p>
-                {% endif %}
-                {% if run_detail.sift_preproc %}
-                <p> SIFT was performed on the pre-processed reads, {{run_detail.sift_removed_pprc}} reads were removed.
-                </p>
-                {% endif %}
-                <p> A total of {{run_detail.processing_final}} ({{run_detail.processing_final_percent}} %) reads
-                    remained. </p>
+                    {% if run_main.enrichment_performed %}
+                    <p> Viral enrichment was performed using <strong>{{ run_main.enrichment }}</strong>. </p>
+                    <p> {{ run_detail.input }} input reads. {{ run_detail.processed }} ({{run_detail.processed_percent}} %)
+                        remained. </p>
+                    {% if run_detail_processed.processed == 0 %}
+                    <p> Run continued using input reads </p>
+                    {% endif %}
+                    {% elif run_main.host_depletion_performed %}
+                    <br>
+                    <p> The following table shows the results of the pre-processing. </p>
+                    <p> The pre-processing is done in the following order: </p>
+                    <br>
+                    {% else %}
+                    <p> No pre-processing step was performed </p>
+                    {% endif %}
+                    {% if run_detail.sift_preproc %}
+                    <p> SIFT was performed on the pre-processed reads, {{run_detail.sift_removed_pprc}} reads were removed.
+                    </p>
+                    {% endif %}
+                    <p> A total of {{run_detail.processing_final}} ({{run_detail.processing_final_percent}} %) reads
+                        remained. </p>
+                    </div>
+                    <div class="column right">
+                        {% if run_main.enrichment_performed %}
+                        <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="processed R1 (.gz)" name="btn1">
+                            <input type="hidden" name="file_path" value="{{run_main.processed_reads_r1}}">
+                        </form>
+                        {% if run_main.processed_reads_r2 %}
+                        <form id="download_processed_reads_r2" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="processed R2 (.gz)" name="btn2">
+                            <input type="hidden" name="file_path" value="{{run_main.processed_reads_r2}}">
+                        </form>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -168,18 +201,29 @@
         </div>
         <div id="collapseAssembly" class="collapse hide" role="tabpanel" aria-labelledby="headingAssembly">
             <div class="card-block">
-                {% if assembly.performed %}
-                <div style="padding: 20px">
-                <p> Assembly was run using the software <strong>{{ assembly.method }}</strong>. </p>
-                <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
-                <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
-                {% if assembly.contig_number > 0 %}
-                </p> Contig sizes rang between
-                    {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
-                </p
-                {% endif %}
+                <div class="column left">
+                    {% if assembly.performed %}
+                    <div style="padding: 20px">
+                    <p> Assembly was run using the software <strong>{{ assembly.method }}</strong>. </p>
+                    <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
+                    <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
+                    {% if assembly.contig_number > 0 %}
+                    </p> Contig sizes rang between
+                        {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
+                    </p
+                    {% endif %}
+                    </div>
+                    {% endif %}
+                </div>  
+                <div class="column right">
+                    {% if assembly.contig_number > 0 %}
+                    <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
+                        {% csrf_token %}
+                        <input type=submit value="assembly (.gz)" name="btn1">
+                        <input type="hidden" name="file_path" value="{{assembly.assembly_contigs}}">
+                    </form>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -196,47 +240,68 @@
             <div class="card-block">
                 {% if assembly.performed %}
                 <div style="padding: 20px">
-                    {% if assembly.contig_number > 0  %}
-                    <p> Assembled contigs were classified using the software
-                        <strong>{{contig_classification.method}}</strong>. </p>
-                    {% if contig_classification.classification_number > 0 %}
-                    <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
-                        identified
-                        with
-                        at least
-                        {{contig_classification.classification_minhit}} hit(s).</p>
-                    {% else %}
-                    <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
-                        identified. </p>
-                    {% endif %}
-                    {% endif %}
-                    <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
-                    {% if read_classification.classification_number > 0 %}
-        
-                    <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
-                        identified
-                        with at
-                        least
-                        {{read_classification.classification_minhit}} hit(s). </p>
-                    {% else %}
-                    <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
-                        identified.
-                    </p>
-                    {% endif %}
-                    {% if run_main.sift_remap %}
+                    <div class="column left">
+                        {% if assembly.contig_number > 0  %}
+                        <p> Assembled contigs were classified using the software
+                            <strong>{{contig_classification.method}}</strong>. </p>
+                        {% if contig_classification.classification_number > 0 %}
+                        <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
+                            identified
+                            with
+                            at least
+                            {{contig_classification.classification_minhit}} hit(s).</p>
+                        {% else %}
+                        <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
+                            identified. </p>
+                        {% endif %}
+                        {% endif %}
+                        <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
+                        {% if read_classification.classification_number > 0 %}
+            
+                        <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
+                            identified
+                            with at
+                            least
+                            {{read_classification.classification_minhit}} hit(s). </p>
+                        {% else %}
+                        <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
+                            identified.
+                        </p>
+                        {% endif %}
+                        {% if run_main.sift_remap %}
 
-                    <p> SIFT was performed on the classified reads and contigs. </p>
-                    {% endif %}
-                    {% if run_detail.merged %}
-                    <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
-                        for remapping against.
-                    </p>
-                    <p style=padding-left:3em> References were collected from the data bases:
-                        <em>{{run_detail.merged_files}}</em>. </p>
-                    {% else %}
-                    <br>
-                    <p> No merging was performed. </p>
-                    {% endif %}
+                        <p> SIFT was performed on the classified reads and contigs. </p>
+                        {% endif %}
+                        {% if run_detail.merged %}
+                        <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
+                            for remapping against.
+                        </p>
+                        <p style=padding-left:3em> References were collected from the data bases:
+                            <em>{{run_detail.merged_files}}</em>. </p>
+                        {% else %}
+                        <br>
+                        <p> No merging was performed. </p>
+                        {% endif %}
+                    </div>
+                    <div class="column right">
+                        {% if assembly.contig_number > 0  %}
+                        <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="contig classification report" name="btn1">
+                            <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
+                        </form>
+                        {% endif %}
+                        <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="read classification report" name="btn2">
+                            <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
+                        </form>
+                        <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="merged classification report" name="btn3">
+                            <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
+                        </form>
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -253,30 +318,46 @@
         <div id="collapseRemap" class="collapse hide" role="tabpanel" aria-labelledby="headingRemap">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
-                    <p> Of the references identified, {{run_detail.merged_number}} corresponding accession ids were found in
-                        our
-                        databases. </p>
-                    <p style=padding-left:4em> from these, {{run_remap.success}} successful alignments were produced.
-                    </p>
-                    <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
-                        of
-                        {{run_remap.coverage_maximum}}X. </p>
-                    <p> The following table shows the results of the remapping onto identified references. </p>
+                    <div class= "column left">
+                        <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
+                        <p> Of the references identified, {{run_detail.merged_number}} corresponding accession ids were found in
+                            our
+                            databases. </p>
+                        <p style=padding-left:4em> from these, {{run_remap.success}} successful alignments were produced.
+                        </p>
+                        <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
+                            of
+                            {{run_remap.coverage_maximum}}X. </p>
+                        <p> The following table shows the results of the remapping onto identified references. </p>
+                
+                    </div>
+                    <div class="column right">
+                        <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="database matches" name="btn1">
+                            <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="accordion" role="tablist" aria-multiselectable="true">
+<div id="accordion2" role="tablist" aria-multiselectable="true">
     <div class="card">
         <div class="card-header" role="tab" id="headingReport">
-            <h5 class="mb-0">
-                <a class="collapsed"  data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                    <strong>Pathogen Identification</strong>
-                </a>
+            <div class="column left" >
+                <h5 class="mb-0" >
+                    <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
+                        <strong>Pathogen Identification</strong>
+                    </a>
                 </h5>
+            </div>
+            <div class="column right">
+                <a href="#" onclick="download_table_as_csv('sample_report');" class="btn btn-primary dark"> 
+                    <span class="hidden-phone"></span>Download as CSV </a>
+            </div>
         </div>
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
@@ -462,7 +543,7 @@
         </div>
         <div id="collapseMapExtra" class="collapse show" role="tabpanel" aria-labelledby="headingMapExtra">
             <div class="table-responsive">
-                <table class="table table-hover table-bordered table-striped" {% if reference_table.attrs %}
+                <table class="table table-hover table-bordered table-striped" id="map_summary" {% if reference_table.attrs %}
                     {{ reference_table.attrs.as_html }}{% endif %}>
                     {% block table.thead %}
                     <thead>
@@ -617,7 +698,39 @@
 
 
 <script type="text/javascript">
+
+
+    $(document).on("click", "a", function (e) {
+        var id= $(this).attr("id");
+        var ref_id= $(this).attr("ref_id");
+        if (id === "remap_reference") {
+            console.log(ref_id);
+            $.ajax({
+                url: "{% url 'deploy_televir_map' %}",
+                type: "POST",
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'reference_id': ref_id
+                },
+                success: function (data) {
+                    console.log(data);
+                    if (data["is_ok"] === true) {
+                        alert("Reference remap deployed");
+                    } else {
+                        alert("Reference remapping failed");
+                    }
+                },
+                error: function (data) {
+                    console.log(data);
+                    alert("Reference remapping failed");
+                }
+            });
+        }
+    });
+
+
     document.getElementById("sample_report").addEventListener("click", function (e) {
+        console.log("sample_report");
         if (e.target.tagName === "A" && e.target.id === "plot_show") {
             e.preventDefault();
             var row = e.target.parentNode.parentNode;
@@ -638,6 +751,40 @@
             item.className += " open";
     }
 
+</script>
+
+
+<script>
+    function download_table_as_csv(table_id, separator = ',') {
+        // Select rows from table_id
+        var rows = document.querySelectorAll('table#' + table_id + ' tr');
+        // Construct csv
+        var csv = [];
+        for (var i = 0; i < rows.length; i++) {
+            var row = [],
+                cols = rows[i].querySelectorAll('td, th');
+            for (var j = 0; j < cols.length; j++) {
+                // Clean innertext to remove multiple spaces and jumpline (break csv)
+                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
+                // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
+                data = data.replace(/"/g, '""');
+                // Push escaped string
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(separator));
+        }
+        var csv_string = csv.join('\n');
+        // Download it
+        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.csv';
+        var link = document.createElement('a');
+        link.style.display = 'none';
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv_string));
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 
 

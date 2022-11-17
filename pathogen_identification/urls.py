@@ -72,4 +72,9 @@ urlpatterns = [
         PIajax_views.deploy_ProjectPI,
         name="deploy_ProjectPI",
     ),
+    url(
+        r"ajax/deploy_televir_map$",
+        PIajax_views.deploy_televir_map,
+        name="deploy_televir_map",
+    ),
 ]

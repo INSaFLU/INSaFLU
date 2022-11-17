@@ -220,16 +220,21 @@ class Utility_Pipeline_Manager:
             technology (str): Technology of the pipeline. Default is "ONT"
         """
         self.technology = technology
-        print(combined_table.head())
+
+        print("Inputting combined table")
 
         combined_table = self.process_combined_table(combined_table)
         pipe_makeup_manager = Pipeline_Makeup()
+
+        print("processing")
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
         self.pipeline_order = pipe_makeup_manager.get_makeup(self.pipeline_makeup)
+
+        print("PIPELINE_ORDER", self.pipeline_order)
 
         self.existing_pipeline_order = [
             x for x in self.pipeline_order if x in pipelines_available
@@ -246,8 +251,6 @@ class Utility_Pipeline_Manager:
         combined_table = combined_table[
             combined_table.technology.str.contains(self.technology)
         ]
-
-        print(combined_table.head())
 
         def round_parameter_float(row):
             """
@@ -267,7 +270,6 @@ class Utility_Pipeline_Manager:
         combined_table["parameter"] = combined_table.apply(
             round_parameter_float, axis=1
         )
-
         return combined_table
 
     def generate_default_software_tree(self):
@@ -922,6 +924,20 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
 
+    def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
+        """ """
+        pipeline_tree = self.generate_software_tree(
+            parameter_leaf.software_tree.technology,
+            parameter_leaf.software_tree.global_index,
+        )
+
+        if parameter_leaf.index not in pipeline_tree.leaves:
+            raise Exception("Node is not a leaf")
+
+        all_paths = pipeline_tree.get_all_graph_paths()
+
+        return all_paths[parameter_leaf.index]
+
     def check_runs_to_deploy(self, user: User, project: Projects):
         """
         Check if there are runs to run
@@ -932,6 +948,8 @@ class Utils_Manager:
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
         local_tree = utils.generate_project_tree(technology, project, user)
+
+        print("Checking runs to deploy")
         tree_makeup = local_tree.makeup
         print(tree_makeup)
 
@@ -1035,6 +1053,48 @@ class Utils_Manager:
 
             return pipeline_tree
 
+    def generate_software_base_tree(self, technology, tree_makeup: int):
+        """
+        Generate a software tree for a technology and a tree makeup
+        """
+
+        pipeline_setup = Pipeline_Makeup()
+        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
+
+        combined_table = self.parameter_util.generate_combined_parameters_table(
+            technology
+        )
+
+        combined_table = combined_table[combined_table.pipeline_step.isin(makeup_steps)]
+
+        if len(combined_table) == 0 or "can_change" not in combined_table.columns:
+            return PipelineTree(
+                technology=technology,
+                nodes=[],
+                edges={},
+                leaves=[],
+                makeup=tree_makeup,
+            )
+
+        full_table = self.parameter_util.expand_parameters_table(combined_table)
+
+        self.utility_manager.input(full_table, technology=technology)
+
+        pipeline_tree = self.utility_manager.generate_default_software_tree()
+
+        if self.parameter_util.check_default_software_tree_exists(
+            technology, global_index=tree_makeup
+        ):
+            pipeline_tree = self.parameter_util.query_software_default_tree(
+                technology, global_index=tree_makeup
+            )
+
+        else:
+
+            self.parameter_util.update_software_tree(pipeline_tree)
+
+        return pipeline_tree
+
     def generate_project_tree(self, technology, project: Projects, owner: User):
         """
         Generate a project tree
@@ -1044,11 +1104,12 @@ class Utils_Manager:
             owner, project
         )
 
-        print(combined_table.head())
+        print("gekgg", combined_table.head())
 
         utility_drone = Utility_Pipeline_Manager()
         utility_drone.input(combined_table, technology=technology)
         print(combined_table)
+        print("##########3")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
         print(pipeline_tree.makeup)
@@ -1065,6 +1126,6 @@ class Utils_Manager:
         for technology in self.utility_technologies:
             for makeup in pipeline_makeup.get_makeup_list():
 
-                technology_trees[technology] = self.generate_software_tree(
+                technology_trees[technology] = self.generate_software_base_tree(
                     technology, makeup
                 )

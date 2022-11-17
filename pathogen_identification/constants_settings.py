@@ -201,6 +201,10 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_contig_classification,
     ]
 
+    ################################### Threads
+
+    MAPPING_THREADS = 4
+
     ################################### Project_file_structure
 
     DIRS = {

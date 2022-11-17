@@ -117,6 +117,17 @@ class PipelineTree:
 
         return path_dict
 
+    def get_all_graph_paths_list(self) -> dict:
+        """
+        Get all possible paths in the pipeline
+        """
+
+        self.generate_graph()
+        all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
+        all_paths = [self.get_path_explicit(path) for path in all_paths]
+
+        return all_paths
+
     def df_from_path(self, path: list) -> pd.DataFrame:
         """
         Generate a dataframe from a path
@@ -272,7 +283,7 @@ class Utility_Pipeline_Manager:
         )
         return combined_table
 
-    def generate_default_software_tree(self):
+    def generate_default_software_tree(self) -> PipelineTree:
         """
         Generate a default software tree
         """
@@ -282,6 +293,24 @@ class Utility_Pipeline_Manager:
         self.generate_software_parameter_dict()
 
         return self.create_pipe_tree()
+
+    def compare_software_trees(self, new_tree: PipelineTree):
+        """
+        Compare two software trees and return the differences
+        """
+        old_tree = self.generate_default_software_tree()
+        old_tree_list = old_tree.get_all_graph_paths_list()
+        new_tree_list = new_tree.get_all_graph_paths_list()
+
+        old_tree_list = [tuple(x[1]) for x in old_tree_list]
+        new_tree_list = [tuple(x[1]) for x in new_tree_list]
+
+        old_tree_set = set(old_tree_list)
+        new_tree_set = set(new_tree_list)
+
+        diff = new_tree_set.symmetric_difference(old_tree_set)
+
+        return diff
 
     def check_software_is_installed(self, software_name: str) -> bool:
         """
@@ -319,12 +348,6 @@ class Utility_Pipeline_Manager:
         Check if a software is installed
         """
         print("Checking software db available")
-        print(
-            software_name,
-            self.utility_repository.check_exists(
-                "software", "name", software_name.lower()
-            ),
-        )
 
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
@@ -658,8 +681,6 @@ class Parameter_DB_Utility:
         """
         Get software tables for a user
         """
-        print(project.technology)
-
         software_available = Software.objects.filter(
             owner=owner,
             type_of_use=Software.TYPE_OF_USE_televir_project,
@@ -681,9 +702,6 @@ class Parameter_DB_Utility:
         self, software_table: pd.DataFrame, parameters_table: pd.DataFrame
     ):
         """"""
-
-        print(software_table.head())
-        print(parameters_table.head())
 
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
@@ -829,8 +847,12 @@ class Parameter_DB_Utility:
         Generate a default software tree for a user
         """
 
-        software_tree = SoftwareTree.objects.get(
-            global_index=global_index, technology=technology
+        software_tree = (
+            SoftwareTree.objects.filter(
+                global_index=global_index, technology=technology
+            )
+            .order_by("date_created")
+            .last()
         )
 
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
@@ -897,16 +919,34 @@ class Parameter_DB_Utility:
         """
         global_index = tree.makeup
 
-        try:
-            software_tree = SoftwareTree.objects.get(
+        software_tree = (
+            SoftwareTree.objects.filter(
                 global_index=global_index, technology=tree.technology
             )
+            .order_by("date_created")
+            .last()
+        )
 
-        except SoftwareTree.DoesNotExist:
+        if software_tree:
+            new_version = software_tree.version + 1
+
             print("Creating new software tree")
             software_tree = SoftwareTree(
                 global_index=global_index,
                 technology=tree.technology,
+                version=new_version,
+            )
+
+            software_tree.save()
+
+            self.update_SoftwareTree_nodes(software_tree, tree)
+
+        else:
+            print("Creating new software tree")
+            software_tree = SoftwareTree(
+                global_index=global_index,
+                technology=tree.technology,
+                version=0,
             )
 
             software_tree.save()
@@ -961,7 +1001,6 @@ class Utils_Manager:
 
         print("Checking runs to deploy")
         tree_makeup = local_tree.makeup
-        print(tree_makeup)
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
@@ -1033,35 +1072,7 @@ class Utils_Manager:
             )
 
         else:
-            pipeline_setup = Pipeline_Makeup()
-            makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-
-            combined_table = self.parameter_util.generate_combined_parameters_table(
-                technology
-            )
-
-            combined_table = combined_table[
-                combined_table.pipeline_step.isin(makeup_steps)
-            ]
-
-            if len(combined_table) == 0 or "can_change" not in combined_table.columns:
-                return PipelineTree(
-                    technology=technology,
-                    nodes=[],
-                    edges={},
-                    leaves=[],
-                    makeup=tree_makeup,
-                )
-
-            full_table = self.parameter_util.expand_parameters_table(combined_table)
-
-            self.utility_manager.input(full_table, technology=technology)
-
-            pipeline_tree = self.utility_manager.generate_default_software_tree()
-
-            self.parameter_util.update_software_tree(pipeline_tree)
-
-            return pipeline_tree
+            raise Exception("No software tree for technology")
 
     def generate_software_base_tree(self, technology, tree_makeup: int):
         """
@@ -1095,10 +1106,19 @@ class Utils_Manager:
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup
         ):
-            pipeline_tree = self.parameter_util.query_software_default_tree(
+            existing_pipeline_tree = self.parameter_util.query_software_default_tree(
                 technology, global_index=tree_makeup
             )
 
+            tree_differences = self.utility_manager.compare_software_trees(
+                existing_pipeline_tree
+            )
+
+            print("### differences")
+            print(tree_differences)
+
+            if len(tree_differences) > 0:
+                self.parameter_util.update_software_tree(pipeline_tree)
         else:
 
             self.parameter_util.update_software_tree(pipeline_tree)
@@ -1114,16 +1134,10 @@ class Utils_Manager:
             owner, project
         )
 
-        print("gekgg", combined_table.head())
-
         utility_drone = Utility_Pipeline_Manager()
         utility_drone.input(combined_table, technology=technology)
-        print(combined_table)
-        print("##########3")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
-        print(pipeline_tree.makeup)
-        print(combined_table.software_name.unique())
 
         return pipeline_tree
 

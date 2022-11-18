@@ -232,6 +232,17 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
+            self.default_parameters.get_krakenuniq_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_BLAST_name,
             self.default_parameters.get_blast_default(
@@ -262,6 +273,8 @@ class DefaultSoftware(object):
             user,
         )
 
+        ########################### hslib19 in centos 7 is too old for this
+        ########################### uncomment in ubuntu
         # self.test_default_db(
         #    SoftwareNames.SOFTWARE_DESAMBA_name,
         #    self.default_parameters.get_desamba_default(
@@ -936,6 +949,7 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
+
             return self.get_krakenuniq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_KAIJU_name:

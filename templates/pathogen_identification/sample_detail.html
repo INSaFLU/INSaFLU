@@ -7,7 +7,7 @@
 {% load trans blocktrans from i18n %}
 {% load django_bootstrap_breadcrumbs %}
 
-{%load html_tags%}
+{%load html_tags %}
 
 {% load static %}
 {%load report_colors %}
@@ -136,6 +136,32 @@
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
+        <div class="card-header" role="tab" id="headinghead">
+            <h5 class="mb-0">
+                <a class="collapsed"  data-toggle="collapse" data-parent="#accordion" href="#collapsehead" aria-expanded="false" aria-controls="headinghead">
+                    <strong>Run</strong>
+                </a>
+                </h5>
+        </div>
+        <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headinghead">
+            <div class="card-block">
+                <div style="padding: 20px">
+                    <div class= "column left">
+                        <p > <strong> Name: {{sample}} </strong> </p>
+                    </div>
+                    <div class= "column right">
+                        <form style="padding:0px" id="download_params" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="parameters (.tsv)" name="btn1"
+                                style="border=1px solid border-color:black padding:2px">
+                            <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
         <div class="card-header" role="tab" id="headingOne">
             <h5 class="mb-0">
                 <a class="collapsed"  data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
@@ -177,7 +203,7 @@
                             <input type=submit value="processed R1 (.gz)" name="btn1">
                             <input type="hidden" name="file_path" value="{{run_main.processed_reads_r1}}">
                         </form>
-                        {% if run_main.processed_reads_r2 %}
+                        {% if run_main.sample.sample.is_valid_2 %}
                         <form id="download_processed_reads_r2" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="processed R2 (.gz)" name="btn2">
@@ -377,7 +403,7 @@
                                 <th>Gaps</th>
                                 <th>class. success</th>
                                 <th>mapping success</th>                
-                
+                                <th>Warning</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -406,6 +432,8 @@
                                     {{value.classification_success}}</td>
                                 <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
                                     {{value.mapping_success}}</td>
+                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
+                                    {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
                             </tr>
                             <tr class="detail">
                                 <td colspan="2" align="center">

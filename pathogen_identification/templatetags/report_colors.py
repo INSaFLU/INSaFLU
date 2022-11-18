@@ -53,22 +53,32 @@ def depth_color(depth_value, max_value):
 
 
 @register.simple_tag
-def flag_false_positive(depth, depthc, coverage):
-    if depthc > 0:
+def flag_false_positive(depth, depthc, coverage, mapped):
+    print("HI")
+    print(mapped)
+    if depthc > 0 or coverage > 0:
         if depthc / depth > 10 and coverage < 5:
             return "Likely False Positive"
-        # elif coverage > 90:
-        #    return "Likely True Positive"
+
+        elif mapped < 3:
+
+            return "Vestigial Mapping"
+
     return ""
 
 
 @register.simple_tag
-def flag_false_positive_color(depth, depthc, coverage):
-    if depthc > 0:
+def flag_false_positive_color(depth, depthc, coverage, mapped):
+    print(mapped)
+
+    if depthc > 0 or coverage > 0:
+
         if depthc / depth > 10 and coverage < 5:
             return "background-color: rgba(255, 0, 0, 0.5);"
-        # elif coverage > 90:
-        #    return "background-color: rgba(50, 255, 50, 0.5);"
+
+        elif mapped < 3:
+            return "background-color: rgba(255, 0, 0, 0.5);"
+
     return ""
 
 

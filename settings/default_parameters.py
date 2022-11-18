@@ -2462,6 +2462,13 @@ class DefaultParameters(object):
         dbs_available = self.televir_db_manager.software_dbs_dict.get(
             software.name.lower(), ["None"]
         )
+
+        prefered = "virosaurus.idx"
+        db_prefered = [x for x in dbs_available if prefered in x]
+        if db_prefered:
+            dbs_available.remove(db_prefered[0])
+            dbs_available.insert(0, db_prefered[0])
+
         vect_parameters = []
 
         parameter = Parameter()

@@ -63,7 +63,7 @@ class coverage_parse:
 
         self.ctgl = ctg_lens
         self.report = pd.DataFrame(
-            [[x, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
+            [[x, 0, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
             columns=[
                 "ID",
                 "Hdepth",
@@ -71,6 +71,7 @@ class coverage_parse:
                 "coverage",
                 "nregions",
                 "Rsize",
+                "windows_covered",
                 "ngaps",
                 "Gdist",
                 "Gsize",
@@ -128,6 +129,17 @@ class coverage_parse:
 
         return nbed
 
+    def calculate_windows(self, ctgsize, minw=3, maxw=10, wsize=2000):
+        """calculate number of windows to use for coverage calculation."""
+        ratio = ctgsize / wsize
+
+        if ratio < minw:
+            return minw
+        elif ratio > maxw:
+            return maxw
+        else:
+            return int(ratio)
+
     def bedstats(self, bedm, nwindows=50):
         """
         calculate average depth, % over self.Xm coverage, and gap number, size and distance.
@@ -142,8 +154,10 @@ class coverage_parse:
         results = [depth, depthR, overX]
         ### region operations
         bedp = bedm[bedm.x >= self.Xm].reset_index(drop=True)
+        windows_covered = "NA"
+
         if bedp.shape[0] == 0:
-            results.extend([0, 0])
+            results.extend([0, 0, 0])
         else:
             savg = sum(bedp.s) / bedp.shape[0]
             if len(bedp) > 1:
@@ -154,9 +168,14 @@ class coverage_parse:
 
                     bp = bedp[bedp.contig == ctg].copy()
                     ctgsize = self.ctgl[ctg]
-                    tdrange = list(np.linspace(0, ctgsize, nwindows, dtype=int))
+                    nwindows = self.calculate_windows(ctgsize)
+
+                    tdrange = list(np.linspace(0, ctgsize, nwindows + 1, dtype=int))
                     td_windows = [
-                        [tdrange[x], tdrange[x + 1] - 1]
+                        [
+                            tdrange[x],
+                            tdrange[x + 1] - 1 if tdrange[x + 1] < ctgsize else ctgsize,
+                        ]
                         for x in range(len(tdrange) - 1)
                     ]
 
@@ -168,15 +187,18 @@ class coverage_parse:
                         if sum(cmp) > 0:
                             present.append(i)
 
+                    windows_covered = f"{len(present)}/{nwindows}"
+
                     ks, pval = kstest(present, "uniform")
                     pvals.append(pval)
 
                 pvals = sum(pvals) / len(pvals)
                 savg = np.median(bedp.s)
-                results.extend([bedp.shape[0], savg])
+                results.extend([bedp.shape[0], savg, windows_covered])
 
             else:
-                results.extend([1, savg])
+                results.extend([1, savg, "NA"])
+
         ### gap operations.
         bedg = bedm[bedm.x < self.Xm].reset_index(drop=True)
 
@@ -244,10 +266,12 @@ class coverage_parse:
             "coverage",
             "nregions",
             "Rsize",
+            "windows_covered",
             "ngaps",
             "Gdist",
             "Gsize",
         ]
+
         report.columns = new_columns
 
         self.report = report
@@ -456,6 +480,25 @@ class Remap_Minimap2(RemapMethod_init):
         else:
             raise ValueError
 
+    def filter_secondary(self):
+        """
+        Filter secondary alignments from bam file."""
+        cmd = [
+            "samtools",
+            "view",
+            "-F0x900",
+            self.outsam,
+            ">",
+            self.outsam + ".filtered",
+        ]
+
+        try:
+            self.cmd.run(cmd)
+            os.remove(self.outsam)
+            shutil.copy(self.outsam + ".filtered", self.outsam)
+        except:
+            pass
+
     def remap_SE(self):
         """
         Remap reads to reference using minimap2 for single end reads."""
@@ -472,6 +515,7 @@ class Remap_Minimap2(RemapMethod_init):
             self.outsam,
         ]
         self.cmd.run(cmd)
+        # self.filter_secondary()
 
     def remap_PE(self):
         """
@@ -490,6 +534,7 @@ class Remap_Minimap2(RemapMethod_init):
             self.outsam,
         ]
         self.cmd.run(cmd)
+        # self.filter_secondary()
 
 
 class Remap_Bowtie2(RemapMethod_init):
@@ -703,6 +748,8 @@ class Remapping:
         self.reference_fasta_index = self.relocate_file(
             self.reference_fasta_index, destination
         )
+
+        print("relating bam files")
         self.read_map_sorted_bam = self.relocate_file(
             self.read_map_sorted_bam, destination
         )
@@ -778,9 +825,6 @@ class Remapping:
         self.remapping_successful = True
         self.generate_mapped_contigs_fasta()
         self.index_mapped_contigs_fasta()
-
-        if self.cleanup:
-            self.cleanup_files()
 
     def get_reference_contig_name(self):
         cmd = [
@@ -1256,8 +1300,6 @@ class Remapping:
         shutil.move(self.read_map_sorted_bam, new_bam)
         self.read_map_sorted_bam = new_bam
 
-        print(self.read_map_sorted_bam)
-
         new_bai = os.path.join(
             static_dir,
             os.path.basename(self.read_map_sorted_bam + ".bai"),
@@ -1670,15 +1712,6 @@ class Mapping_Manager(Tandem_Remap):
 
             if apres:
                 mapped_instance.reference.move_dotplot(static_plots_dir)
-
-    def move_plots_to_static(self, static_dir):
-        for instance in self.mapped_instances:
-            apres = instance.reference.number_of_contigs_mapped > 0
-            rpres = instance.reference.number_of_reads_mapped > 0
-            if rpres:
-                instance.reference.move_coverage_plot(static_dir)
-            if apres:
-                instance.reference.move_dotplot(static_dir)
 
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")

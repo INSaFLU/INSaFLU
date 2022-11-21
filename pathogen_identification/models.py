@@ -740,6 +740,7 @@ class FinalReport(models.Model):
 
     accid = models.CharField(max_length=20, blank=True, null=True)
     coverage = models.FloatField(blank=True, null=True)
+    windows_covered = models.CharField(max_length=20, blank=True, null=True)
     depth = models.FloatField(blank=True, null=True)
     depthR = models.FloatField(blank=True, null=True)
     mapped_reads = models.IntegerField(blank=True, null=True)

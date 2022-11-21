@@ -7,8 +7,10 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -751,25 +753,27 @@ class Sample(models.Model):
             self.file_name_1 if b_first_file else self.file_name_2,
         )
 
-	def get_fastq_available(self, type_path, b_first_file = True):
-		"""
-		gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
-		try first trimmomatic/nanofilt, then return fastq
-		"""
-		file_name = self.get_trimmomatic_file(type_path, b_first_file)
-		if (file_name is not None) and os.path.exists(file_name): return file_name
-		file_name = self.get_nanofilt_file(type_path)
-		if (file_name is not None) and os.path.exists(file_name): return file_name
-		return self.get_fastq(type_path, b_first_file)
-		
-	def is_original_fastq_removed(self):
-		"""
-		Test if original fastq were removed already
-		"""
-		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
-	
-	def is_processed_fastq_deleted(self):
-		return self.is_deleted_processed_fastq
+    def get_fastq_available(self, type_path, b_first_file=True):
+        """
+        gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
+        try first trimmomatic/nanofilt, then return fastq
+        """
+        file_name = self.get_trimmomatic_file(type_path, b_first_file)
+        if (file_name is not None) and os.path.exists(file_name):
+            return file_name
+        file_name = self.get_nanofilt_file(type_path)
+        if (file_name is not None) and os.path.exists(file_name):
+            return file_name
+        return self.get_fastq(type_path, b_first_file)
+
+    def is_original_fastq_removed(self):
+        """
+        Test if original fastq were removed already
+        """
+        return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
+
+    def is_processed_fastq_deleted(self):
+        return self.is_deleted_processed_fastq
 
     def get_fastqc_output(self, type_path, b_first_file):
         """
@@ -1347,8 +1351,8 @@ class Project(models.Model):
     PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv"
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv"  ## remove del and ins and everything bigger than >50
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv"  ## with snps, del and ins and everything bigger than >50
-    ##					MIGUEL
-    ##					"Minor intra-host variants (inc. indels):"
+    ##                    MIGUEL
+    ##                    "Minor intra-host variants (inc. indels):"
     ## freebayes_variants_file_snp_indel
     PERCENTAGE_validated_minor_variants = 51  ## only pass <= 50
     PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
@@ -2185,9 +2189,11 @@ class ProcessControler(models.Model):
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
-    
+
     def get_name_televir_map(self, reference_pk):
-        return "{}{}".format(ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk)
+        return "{}{}".format(
+            ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
+        )
 
     def __str__(self):
         return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(

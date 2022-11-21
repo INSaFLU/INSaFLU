@@ -9,10 +9,16 @@ from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from settings.models import Technology
 
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReferenceContigs,
-                                            RunMain, SampleQC)
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReferenceContigs,
+    RunMain,
+    SampleQC,
+)
 
 
 class ProjectTable(tables.Table):
@@ -461,7 +467,7 @@ class RunMainTable(tables.Table):
             '<a href="'
             + reverse(
                 "sample_detail",
-                args=[record.project.name, record.sample.name, record.name],
+                args=[record.project.pk, record.sample.pk, record.pk],
             )
             + '">'
             + "<i class='fa fa-bar-chart'></i>"

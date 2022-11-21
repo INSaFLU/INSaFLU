@@ -9,6 +9,7 @@ from Bio import SeqIO
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from constants.constants import Constants, FileExtensions, TypeFile, TypePath
 from constants.software_names import SoftwareNames
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
@@ -25,20 +26,30 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
-from utils.session_variables import (clean_check_box_in_session,
-                                     is_all_check_box_in_session)
+from utils.session_variables import (
+    clean_check_box_in_session,
+    is_all_check_box_in_session,
+)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
-from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
-                            AddReferencesDatasetForm, ConsensusForm,
-                            DatastesUploadDescriptionMetadataForm)
-from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
-                             UploadFiles)
-from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
-                             ConsensusTable, DatasetConsensusTable,
-                             DatasetTable, ProjectTable, ReferenceTable)
+from datasets.forms import (
+    AddConsensusDatasetForm,
+    AddProjectsDatasetForm,
+    AddReferencesDatasetForm,
+    ConsensusForm,
+    DatastesUploadDescriptionMetadataForm,
+)
+from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
+from datasets.tables import (
+    AddDatasetFromCvsFileTableMetadata,
+    ConsensusTable,
+    DatasetConsensusTable,
+    DatasetTable,
+    ProjectTable,
+    ReferenceTable,
+)
 
 
 class DatasetsView(LoginRequiredMixin, ListView):
@@ -51,7 +62,7 @@ class DatasetsView(LoginRequiredMixin, ListView):
     model = Dataset
     template_name = "datasets/datasets.html"
     context_object_name = "datasets"
-    ##	group_required = u'company-user' security related with GroupRequiredMixin
+    ##    group_required = u'company-user' security related with GroupRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super(DatasetsView, self).get_context_data(**kwargs)
@@ -233,95 +244,130 @@ class AddDatasetsReferencesView(
         Validate the form
         """
 
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add references to a dataset.".format(self.request.user.username), fail_silently=True)
-				return super(AddDatasetsReferencesView, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			return super(AddDatasetsReferencesView, self).form_invalid(form)
-		
-		if form.is_valid():
-			
-			### get project sample..
-			context = self.get_context_data()
-	
-			### get project
-			try:
-				dataset = Dataset.objects.get(pk=self.kwargs['pk'])
-			except Dataset.DoesNotExist:
-				return super(AddDatasetsReferencesView, self).form_invalid(form)
-			
-			vect_sample_id_add_temp = []
-			for sample in context['table'].data:
-				vect_sample_id_add_temp.append(sample.id)
-							
-			vect_sample_id_add = []
-			if ("submit_checked" in self.request.POST):
-				for key in self.request.session.keys():
-					if (self.request.session[key] and key.startswith(Constants.CHECK_BOX) and\
-						len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
-						### this is necessary because of the search. Can occur some checked box that are out of filter.
-						if (int(key.split('_')[2]) in vect_sample_id_add_temp):
-							vect_sample_id_add.append(int(key.split('_')[2]))
-			elif ("submit_all" in self.request.POST):
-				vect_sample_id_add = vect_sample_id_add_temp
-			
-			### start adding...
-			reference_add = 0
-			for id_reference in vect_sample_id_add:
-				
-				try:
-					dataset_consensus = DatasetConsensus.objects.get(reference__pk=id_reference,
-										dataset=dataset)
-					
-					if dataset_consensus.is_deleted or dataset_consensus.is_error:
-						dataset_consensus.is_deleted = False
-						dataset_consensus.is_error = False
-						dataset_consensus.save()
-						reference_add += 1
-					continue
-				except DatasetConsensus.DoesNotExist:
-					
-					try:
-						reference = Reference.objects.get(pk=id_reference)
-						dataset_consensus = DatasetConsensus()
-						dataset_consensus.name = reference.name
-						dataset_consensus.dataset = dataset
-						dataset_consensus.reference = reference
-						dataset_consensus.save() 
-						reference_add += 1
-					except reference.DoesNotExist:
-						self.logger.error('Fail to get reference_id {} in DataSet {}'.format(id_reference, dataset.name))
-					
-			### necessary to calculate the global results again 
-			if (reference_add > 0):
-				dataset.last_change_date = datetime.datetime.now()
-				dataset.number_of_sequences_from_references += reference_add
-				dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
-				dataset.is_processed = True
-				dataset.save()
-			
-			if (reference_add == 0):
-				messages.warning(self.request, "No references was added to the data set '{}'".format(dataset.name))
-			else:
-				if (reference_add > 1):
-					messages.success(self.request, "'{}' references were added to your data set '{}'.".format(\
-								reference_add, dataset.name), fail_silently=True)
-				else:
-					messages.success(self.request, "One reference was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add references to a dataset.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(AddDatasetsReferencesView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            return super(AddDatasetsReferencesView, self).form_invalid(form)
 
-			## need to run metadata
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
-			except:
-				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)					
-			
-			return HttpResponseRedirect(reverse_lazy('datasets'))
-		else:
-			return super(AddDatasetsReferencesView, self).form_invalid(form)
+        if form.is_valid():
+
+            ### get project sample..
+            context = self.get_context_data()
+
+            ### get project
+            try:
+                dataset = Dataset.objects.get(pk=self.kwargs["pk"])
+            except Dataset.DoesNotExist:
+                return super(AddDatasetsReferencesView, self).form_invalid(form)
+
+            vect_sample_id_add_temp = []
+            for sample in context["table"].data:
+                vect_sample_id_add_temp.append(sample.id)
+
+            vect_sample_id_add = []
+            if "submit_checked" in self.request.POST:
+                for key in self.request.session.keys():
+                    if (
+                        self.request.session[key]
+                        and key.startswith(Constants.CHECK_BOX)
+                        and len(key.split("_")) == 3
+                        and self.utils.is_integer(key.split("_")[2])
+                    ):
+                        ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                        if int(key.split("_")[2]) in vect_sample_id_add_temp:
+                            vect_sample_id_add.append(int(key.split("_")[2]))
+            elif "submit_all" in self.request.POST:
+                vect_sample_id_add = vect_sample_id_add_temp
+
+            ### start adding...
+            reference_add = 0
+            for id_reference in vect_sample_id_add:
+
+                try:
+                    dataset_consensus = DatasetConsensus.objects.get(
+                        reference__pk=id_reference, dataset=dataset
+                    )
+
+                    if dataset_consensus.is_deleted or dataset_consensus.is_error:
+                        dataset_consensus.is_deleted = False
+                        dataset_consensus.is_error = False
+                        dataset_consensus.save()
+                        reference_add += 1
+                    continue
+                except DatasetConsensus.DoesNotExist:
+
+                    try:
+                        reference = Reference.objects.get(pk=id_reference)
+                        dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = reference.name
+                        dataset_consensus.dataset = dataset
+                        dataset_consensus.reference = reference
+                        dataset_consensus.save()
+                        reference_add += 1
+                    except reference.DoesNotExist:
+                        self.logger.error(
+                            "Fail to get reference_id {} in DataSet {}".format(
+                                id_reference, dataset.name
+                            )
+                        )
+
+            ### necessary to calculate the global results again
+            if reference_add > 0:
+                dataset.last_change_date = datetime.datetime.now()
+                dataset.number_of_sequences_from_references += reference_add
+                dataset.totla_alerts = (
+                    1 if dataset.get_number_different_references() > 1 else 0
+                )
+                dataset.is_processed = True
+                dataset.save()
+
+            if reference_add == 0:
+                messages.warning(
+                    self.request,
+                    "No references was added to the data set '{}'".format(dataset.name),
+                )
+            else:
+                if reference_add > 1:
+                    messages.success(
+                        self.request,
+                        "'{}' references were added to your data set '{}'.".format(
+                            reference_add, dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "One reference was added to your data set '{}'.".format(
+                            dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+
+            ## need to run metadata
+            try:
+                process_SGE = ProcessSGE()
+                taskID = (
+                    process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                        dataset, self.request.user
+                    )
+                )
+            except:
+                return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
+            return HttpResponseRedirect(reverse_lazy("datasets"))
+        else:
+            return super(AddDatasetsReferencesView, self).form_invalid(form)
 
     form_valid_message = ""  ## need to have this, even empty
 
@@ -439,94 +485,125 @@ class AddDatasetsConsensusView(
         Validate the form
         """
 
-		### test anonymous account
-		try:
-			profile = Profile.objects.get(user=self.request.user)
-			if (profile.only_view_project):
-				messages.warning(self.request, "'{}' account can not add Consensus to a dataset.".format(self.request.user.username), fail_silently=True)
-				return super(AddDatasetsConsensusView, self).form_invalid(form)
-		except Profile.DoesNotExist:
-			return super(AddDatasetsConsensusView, self).form_invalid(form)
-		
-		if form.is_valid():
-			
-			### get project sample..
-			context = self.get_context_data()
-	
-			### get project
-			try:
-				dataset = Dataset.objects.get(pk=self.kwargs['pk'])
-			except Dataset.DoesNotExist:
-				return super(AddDatasetsConsensusView, self).form_invalid(form)
-			
-			vect_sample_id_add_temp = []
-			for sample in context['table'].data:
-				vect_sample_id_add_temp.append(sample.id)
-							
-			vect_sample_id_add = []
-			if ("submit_checked" in self.request.POST):
-				for key in self.request.session.keys():
-					if (self.request.session[key] and key.startswith(Constants.CHECK_BOX) and\
-						len(key.split('_')) == 3 and self.utils.is_integer(key.split('_')[2])):
-						### this is necessary because of the search. Can occur some checked box that are out of filter.
-						if (int(key.split('_')[2]) in vect_sample_id_add_temp):
-							vect_sample_id_add.append(int(key.split('_')[2]))
-			elif ("submit_all" in self.request.POST):
-				vect_sample_id_add = vect_sample_id_add_temp
-			
-			### start adding...
-			reference_add = 0
-			for id_consensus in vect_sample_id_add:
-				
-				try:
-					dataset_consensus = DatasetConsensus.objects.get(consensus__pk=id_consensus,
-										dataset=dataset)
-					
-					if dataset_consensus.is_deleted or dataset_consensus.is_error:
-						dataset_consensus.is_deleted = False
-						dataset_consensus.is_error = False
-						dataset_consensus.save()
-						reference_add += 1
-					continue
-				except DatasetConsensus.DoesNotExist:
-					
-					try:
-						consensus = Consensus.objects.get(pk=id_consensus)
-						dataset_consensus = DatasetConsensus()
-						dataset_consensus.name = consensus.name
-						dataset_consensus.dataset = dataset
-						dataset_consensus.consensus = consensus
-						dataset_consensus.save() 
-						reference_add += 1
-					except consensus.DoesNotExist:
-						self.logger.error('Fail to get consensus_id {} in DataSet {}'.format(id_consensus, dataset.name))
-					
-			### necessary to calculate the global results again 
-			if (reference_add > 0):
-				dataset.last_change_date = datetime.datetime.now()
-				dataset.number_of_sequences_from_consensus += reference_add
-				dataset.is_processed = True
-				dataset.save()
-			
-			if (reference_add == 0):
-				messages.warning(self.request, "No consensus was added to the data set '{}'".format(dataset.name))
-			else:
-				if (reference_add > 1):
-					messages.success(self.request, "'{}' consensus were added to your data set '{}'.".format(\
-								reference_add, dataset.name), fail_silently=True)
-				else:
-					messages.success(self.request, "One consensus was added to your data set '{}'.".format(dataset.name), fail_silently=True)
+        ### test anonymous account
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.only_view_project:
+                messages.warning(
+                    self.request,
+                    "'{}' account can not add Consensus to a dataset.".format(
+                        self.request.user.username
+                    ),
+                    fail_silently=True,
+                )
+                return super(AddDatasetsConsensusView, self).form_invalid(form)
+        except Profile.DoesNotExist:
+            return super(AddDatasetsConsensusView, self).form_invalid(form)
 
-				## need to run metadata
-				try:
-					process_SGE = ProcessSGE()
-					taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
-				except:
-					return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+        if form.is_valid():
 
-			return HttpResponseRedirect(reverse_lazy('datasets'))
-		else:
-			return super(AddDatasetsConsensusView, self).form_invalid(form)
+            ### get project sample..
+            context = self.get_context_data()
+
+            ### get project
+            try:
+                dataset = Dataset.objects.get(pk=self.kwargs["pk"])
+            except Dataset.DoesNotExist:
+                return super(AddDatasetsConsensusView, self).form_invalid(form)
+
+            vect_sample_id_add_temp = []
+            for sample in context["table"].data:
+                vect_sample_id_add_temp.append(sample.id)
+
+            vect_sample_id_add = []
+            if "submit_checked" in self.request.POST:
+                for key in self.request.session.keys():
+                    if (
+                        self.request.session[key]
+                        and key.startswith(Constants.CHECK_BOX)
+                        and len(key.split("_")) == 3
+                        and self.utils.is_integer(key.split("_")[2])
+                    ):
+                        ### this is necessary because of the search. Can occur some checked box that are out of filter.
+                        if int(key.split("_")[2]) in vect_sample_id_add_temp:
+                            vect_sample_id_add.append(int(key.split("_")[2]))
+            elif "submit_all" in self.request.POST:
+                vect_sample_id_add = vect_sample_id_add_temp
+
+            ### start adding...
+            reference_add = 0
+            for id_consensus in vect_sample_id_add:
+
+                try:
+                    dataset_consensus = DatasetConsensus.objects.get(
+                        consensus__pk=id_consensus, dataset=dataset
+                    )
+
+                    if dataset_consensus.is_deleted or dataset_consensus.is_error:
+                        dataset_consensus.is_deleted = False
+                        dataset_consensus.is_error = False
+                        dataset_consensus.save()
+                        reference_add += 1
+                    continue
+                except DatasetConsensus.DoesNotExist:
+
+                    try:
+                        consensus = Consensus.objects.get(pk=id_consensus)
+                        dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = consensus.name
+                        dataset_consensus.dataset = dataset
+                        dataset_consensus.consensus = consensus
+                        dataset_consensus.save()
+                        reference_add += 1
+                    except consensus.DoesNotExist:
+                        self.logger.error(
+                            "Fail to get consensus_id {} in DataSet {}".format(
+                                id_consensus, dataset.name
+                            )
+                        )
+
+            ### necessary to calculate the global results again
+            if reference_add > 0:
+                dataset.last_change_date = datetime.datetime.now()
+                dataset.number_of_sequences_from_consensus += reference_add
+                dataset.is_processed = True
+                dataset.save()
+
+            if reference_add == 0:
+                messages.warning(
+                    self.request,
+                    "No consensus was added to the data set '{}'".format(dataset.name),
+                )
+            else:
+                if reference_add > 1:
+                    messages.success(
+                        self.request,
+                        "'{}' consensus were added to your data set '{}'.".format(
+                            reference_add, dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "One consensus was added to your data set '{}'.".format(
+                            dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+
+                ## need to run metadata
+                try:
+                    process_SGE = ProcessSGE()
+                    taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                        dataset, self.request.user
+                    )
+                except:
+                    return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
+            return HttpResponseRedirect(reverse_lazy("datasets"))
+        else:
+            return super(AddDatasetsConsensusView, self).form_invalid(form)
 
     form_valid_message = ""  ## need to have this, even empty
 
@@ -549,7 +626,7 @@ class AddDatasetsProjectsView(
         logger = logging.getLogger("fluWebVirus.debug")
     else:
         logger = logging.getLogger("fluWebVirus.production")
-    ##	group_required = u'company-user' security related with GroupRequiredMixin
+    ##    group_required = u'company-user' security related with GroupRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super(AddDatasetsProjectsView, self).get_context_data(**kwargs)
@@ -770,34 +847,52 @@ class AddDatasetsProjectsView(
                     dataset_consensus.save()
                     reference_add += 1
 
-			### necessary to calculate the global results again 
-			if (reference_add > 0 or consensus_add > 0):
-				dataset.last_change_date = datetime.datetime.now()
-				dataset.number_of_sequences_from_projects += consensus_add
-				dataset.number_of_sequences_from_references += reference_add
-				dataset.totla_alerts = 1 if dataset.get_number_different_references() > 1 else 0
-				dataset.is_processed = True
-				dataset.save()
-			
-			if (reference_add == 0 and consensus_add == 0):
-				messages.warning(self.request, "No consensus was added to the data set '{}'".format(dataset.name))
-			else:
-				if ((consensus_add + reference_add) > 1):
-					messages.success(self.request, "'{}' projects with samples were added to your data set '{}'.".format(\
-								reference_add, dataset.name), fail_silently=True)
-				else:
-					messages.success(self.request, "One consensus/reference from a sample was added to your data set '{}'.".format(dataset.name), fail_silently=True)
-					
-				## need to run metadata
-				try:
-					process_SGE = ProcessSGE()
-					taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, self.request.user)
-				except:
-					return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
-					
-			return HttpResponseRedirect(reverse_lazy('datasets'))
-		else:
-			return super(AddDatasetsProjectsView, self).form_invalid(form)
+            ### necessary to calculate the global results again
+            if reference_add > 0 or consensus_add > 0:
+                dataset.last_change_date = datetime.datetime.now()
+                dataset.number_of_sequences_from_projects += consensus_add
+                dataset.number_of_sequences_from_references += reference_add
+                dataset.totla_alerts = (
+                    1 if dataset.get_number_different_references() > 1 else 0
+                )
+                dataset.is_processed = True
+                dataset.save()
+
+            if reference_add == 0 and consensus_add == 0:
+                messages.warning(
+                    self.request,
+                    "No consensus was added to the data set '{}'".format(dataset.name),
+                )
+            else:
+                if (consensus_add + reference_add) > 1:
+                    messages.success(
+                        self.request,
+                        "'{}' projects with samples were added to your data set '{}'.".format(
+                            reference_add, dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+                else:
+                    messages.success(
+                        self.request,
+                        "One consensus/reference from a sample was added to your data set '{}'.".format(
+                            dataset.name
+                        ),
+                        fail_silently=True,
+                    )
+
+                ## need to run metadata
+                try:
+                    process_SGE = ProcessSGE()
+                    taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                        dataset, self.request.user
+                    )
+                except:
+                    return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+
+            return HttpResponseRedirect(reverse_lazy("datasets"))
+        else:
+            return super(AddDatasetsProjectsView, self).form_invalid(form)
 
     form_valid_message = ""  ## need to have this, even empty
 
@@ -1361,10 +1456,10 @@ class AddSingleMetadataDatasetFile(
             upload_files.save()
 
             # try:
-            # 	 process_SGE = ProcessSGE()
-            # 	 taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
+            #      process_SGE = ProcessSGE()
+            #      taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
             # except:
-            # 	 return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
+            #      return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
 
             messages.success(
                 self.request,

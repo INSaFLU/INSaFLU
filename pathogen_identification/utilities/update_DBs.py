@@ -571,6 +571,7 @@ def Update_FinalReport(run_class, runmain, sample):
                 description=row["description"],
                 ref_db=row["refdb"],
                 coverage=row["coverage"],
+                windows_covered=row["windows_covered"],
                 depth=row["Hdepth"],
                 depthR=row["HdepthR"],
                 ngaps=row["ngaps"],

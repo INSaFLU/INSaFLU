@@ -145,6 +145,20 @@ class download_form(forms.Form):
         }
 
 
+class download_ref_form(forms.Form):
+    file = forms.CharField(max_length=300)
+    taxid = forms.CharField(max_length=50)
+    run = forms.IntegerField()
+
+    class Meta:
+
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
 ################################################################
 
 
@@ -743,17 +757,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         project_name = project_main.name
         sample = Sample.objects.get(pk=sample_pk)
         sample_name = sample.name
-        run = RunMain.objects.get(pk=run_pk)
-        run_name = run.name
+        run_main = RunMain.objects.get(pk=run_pk)
+        run_name = run_main.name
 
-        sample_main = PIProject_Sample.objects.get(
-            name=sample_name, project=project_main
-        )
-        #
-        run_main = RunMain.objects.get(
-            project=project_main, sample=sample_main, name=run_name
-        )
-
+        sample_main = run_main.sample
         #
         raw_references = RawReference.objects.filter(run=run_main)
 
@@ -979,7 +986,47 @@ def download_file_igv(requestdst):
             DLDIR = os.path.join(BASE_DIR, STATICFILES_DIRS[0], "igv_files")
             filepath = os.path.join(DLDIR, filepath)
 
+            print(filepath)
+
             if not os.path.exists(filepath):
+                return HttpResponseNotFound(f"file {filepath} not found")
+
+            path = open(filepath, "rb")
+            # Set the mime type
+            mime_type, _ = mimetypes.guess_type(filepath)
+            # Set the return value of the HttpResponse
+            response = HttpResponse(path, content_type=mime_type)
+            # Set the HTTP header for sending to browser
+            response[
+                "Content-Disposition"
+            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            # Return the response value
+            return response
+    else:
+        return HttpResponseNotFound("file not found")
+
+
+def download_file(requestdst):
+    """download fasta file"""
+
+    if requestdst.method == "POST":
+        form = download_form(requestdst.POST)
+        print(requestdst.POST)
+        print(form.is_valid())
+        if form.is_valid():
+            filepath = form.cleaned_data.get("file_path")
+
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            print(BASE_DIR)
+            print(filepath)
+
+            # filepath = BASE_DIR + filepath
+
+            if "//" in filepath:
+                filepath = "/" + filepath.split("//")[1]
+
+            if not os.path.isfile(filepath):
                 return HttpResponseNotFound(f"file {filepath} not found")
 
             path = open(filepath, "rb")
@@ -995,13 +1042,35 @@ def download_file_igv(requestdst):
             return response
 
 
-def download_file(requestdst):
+def download_file_ref(requestdst):
     """download fasta file"""
-    if requestdst.method == "POST":
-        form = download_form(requestdst.POST)
 
+    if requestdst.method == "POST":
+        form = download_ref_form(requestdst.POST)
+        print(requestdst.POST)
+        print(form.is_valid())
         if form.is_valid():
-            filepath = form.cleaned_data.get("file_path")
+            file_request = form.cleaned_data.get("file")
+            run_index = int(form.cleaned_data.get("run"))
+            taxid = form.cleaned_data.get("taxid")
+
+            reference = ReferenceMap_Main.objects.get(taxid=taxid, run__pk=run_index)
+
+            if file_request == "mapped_subset_r1":
+                filepath = reference.mapped_subset_r1
+            elif file_request == "mapped_subset_r2":
+                filepath = reference.mapped_subset_r2
+            elif file_request == "fasta_file_path":
+                filepath = reference.fasta_file_path
+            elif file_request == "fasta_index_file_path":
+                filepath = reference.fai_file_path
+            elif file_request == "bam_file_path":
+                filepath = reference.bam_file_path
+            elif file_request == "bam_index_file_path":
+                filepath = reference.bai_file_path
+
+            else:
+                return HttpResponseNotFound(f"file {file_request} not found")
 
             BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

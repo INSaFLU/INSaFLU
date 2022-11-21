@@ -512,7 +512,30 @@
                                     </div>
                 
                                 </td>
+                                <td colspan="1" align="center">
                 
+                                    <div id="cov_div" style="position:relative height=100%">
+                                        <br>
+                                        <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
+                                            method="POST">
+                                            {% csrf_token %}
+                                            <input type=submit value=".fastq.gz" name="btn3">
+                                            <input type="hidden" name="file" value="mapped_subset_r1">
+                                            <input type="hidden" name="taxid" value="{{value.taxid}}">
+                                            <input type="hidden" name="run" value="{{run_index}}">
+                                            
+                                        </form>
+                                        {% if run_main.sample.sample.is_valid_2 %}
+                                        <br>
+                                        <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                            method="POST">
+                                            {% csrf_token %}
+                                            <input type=submit value=".fastq.gz" name="btn4">
+                                            <input type="hidden" name="file_path" value="{{value.mapped_subset_r2}}">
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
                             </tr>
                             {% endif %}
                             {% if value.refa_dotplot_exists == True %}
@@ -693,15 +716,27 @@
     document.getElementById("my_form").submit();
 </script>
 <script>
+    var my_form = document.forms["download_mapped_r1_{{value.accid}}"];
+    console.log(var)
+    var static_dir = "{% static 'igv_files/' %}";
+    document.getElementById("my_form").submit();
+</script>
+<script>
+    var my_form = document.forms["download_mapped_r2_{{value.accid}}"];
+    var static_dir = "{% static 'igv_files/' %}";
+    my_form.elements["file_path"].value = "{{value.mapped_subset_r2}}";
+    document.getElementById("my_form").submit();
+</script>
+<script>
     var my_form = document.forms["download_reference_{{value.accid}}"];
     var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_reference}}";
+    my_form.elements["file_path"].value = static_dir + "{{value.reference_path}}";
     document.getElementById("my_form").submit();
 </script>
 <script>
     var my_form = document.forms["download_reference_index_{{value.accid}}"];
     var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = static_dir + "{{value.path_reference_index}}";
+    my_form.elements["file_path"].value = static_dir + "{{value.reference_index_path}}";
     document.getElementById("my_form").submit();
 </script>
 <script>

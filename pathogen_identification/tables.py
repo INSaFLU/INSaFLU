@@ -9,16 +9,10 @@ from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
 from settings.models import Technology
 
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReferenceContigs,
-    RunMain,
-    SampleQC,
-)
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReferenceContigs,
+                                            RunMain, SampleQC)
 
 
 class ProjectTable(tables.Table):
@@ -261,7 +255,7 @@ class SampleTable(tables.Table):
 
         record_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.name, record.name])
+            + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + "Run Panel"
             + "</a>"
@@ -281,7 +275,7 @@ class SampleTable(tables.Table):
         sample_name = record.sample.name
         sample_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.name, record.name])
+            + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + record.name
             + "</a>"
@@ -318,7 +312,7 @@ class SampleTable(tables.Table):
         return mark_safe(sample_name)
 
     report = tables.LinkColumn(
-        "sample_main", text="Report", args=[tables.A("project__name"), tables.A("name")]
+        "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
     )
 
 

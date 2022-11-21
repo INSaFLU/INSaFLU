@@ -110,20 +110,39 @@ class Metadata_handler:
         """
         Get metadata from files.
         """
+        try:
+            self.accession_to_taxid = pd.read_csv(
+                self.input_accession_to_taxid_path, sep="\t", header=0
+            )
+        except:
+            self.accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
+            self.logger.info("No accession to taxid file found.")
 
-        self.accession_to_taxid = pd.read_csv(
-            self.input_accession_to_taxid_path, sep="\t", header=0
-        )
-        self.taxonomy_to_description = pd.read_csv(
-            self.input_taxonomy_to_descriptor_path, sep="\t", header=0
-        )
-        self.protein_to_accession = pd.read_csv(
-            self.input_protein_accession_equivalent_path, sep="\t", header=0
-        )
+        try:
+            self.taxonomy_to_description = pd.read_csv(
+                self.input_taxonomy_to_descriptor_path, sep="\t", header=0
+            )
+        except:
+            self.taxonomy_to_description = pd.DataFrame(
+                columns=["taxid", "description"]
+            )
+            self.logger.info("No taxonomy to description file found.")
 
-        self.protein_accession_to_taxid = pd.read_csv(
-            self.input_protein_accession_to_taxid_path, sep="\t", header=0
-        )
+        try:
+            self.protein_to_accession = pd.read_csv(
+                self.input_protein_accession_equivalent_path, sep="\t", header=0
+            )
+        except:
+            self.protein_to_accession = pd.DataFrame(columns=["protid", "acc"])
+            self.logger.info("No protein accession to protid file found.")
+
+        try:
+            self.protein_accession_to_taxid = pd.read_csv(
+                self.input_protein_accession_to_taxid_path, sep="\t", header=0
+            )
+        except:
+            self.protein_accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
+            self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
 

@@ -39,7 +39,6 @@ from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
-    QC_REPORT,
     ContigClassification,
     FinalReport,
     PIProject_Sample,
@@ -52,7 +51,7 @@ from pathogen_identification.models import (
     RunDetail,
     RunMain,
     RunRemapMain,
-    SampleQC,
+    Sample,
 )
 from pathogen_identification.tables import (
     ContigTable,
@@ -675,29 +674,25 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super(Sample_main, self).get_context_data(**kwargs)
 
-        project_name = self.kwargs["project_name"]
-        sample_name = self.kwargs["sample_name"]
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
         user = self.request.user
 
         runs = RunMain.objects.filter(
-            sample__name=sample_name,
-            project__name=project_name,
+            sample__pk=sample_pk,
+            project__pk=project_pk,
             project__owner=user,
         )
-
-        print(runs)
-        for r in runs:
-            print(r.name)
-            print(r.project.name)
-            print(r.sample.name)
+        sample = Sample.objects.get(pk=sample_pk)
+        sample_name = sample.name
+        project = Projects.objects.get(pk=project_pk)
+        project_name = project.name
 
         runs_table = RunMainTable(runs)
 
         RequestConfig(
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
         ).configure(runs_table)
-
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
 
         context = {
             "nav_sample": True,
@@ -709,6 +704,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "project_main": True,
             "project_name": project_name,
             "project_index": project_pk,
+            "sample_index": sample_pk,
         }
 
         return context
@@ -738,13 +734,17 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
 
-        project_name = self.kwargs["project_name"]
-        run_name = self.kwargs["run_name"]
-        sample_name = self.kwargs["sample_name"]
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+        run_pk = int(self.kwargs["pk3"])
         user = self.request.user
 
-        project_main = Projects.objects.get(name=project_name, owner=user)
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
+        project_main = Projects.objects.get(pk=project_pk)
+        project_name = project_main.name
+        sample = Sample.objects.get(pk=sample_pk)
+        sample_name = sample.name
+        run = RunMain.objects.get(pk=run_pk)
+        run_name = run.name
 
         sample_main = PIProject_Sample.objects.get(
             name=sample_name, project=project_main
@@ -795,6 +795,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_remap_main": reference_remap_main,
             "final_report": final_report,
             "project_index": project_pk,
+            "sample_index": sample_pk,
+            "run_index": run_pk,
             "reference_table": raw_reference_table,
         }
 

@@ -41,12 +41,12 @@ urlpatterns = [
         name="all_PIproject_reports",
     ),
     url(
-        r"Projects/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)",
+        r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",
     ),
     url(
-        r"Summary/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)/run_(?P<run_name>[a-zA-Z0-9_]+)",
+        r"Summary/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",
     ),

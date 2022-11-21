@@ -117,6 +117,10 @@ class Metadata_handler:
         except:
             self.accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
             self.logger.info("No accession to taxid file found.")
+            self.logger.info(
+                "This file is required for mapping, check installation. Exiting."
+            )
+            exit()
 
         try:
             self.taxonomy_to_description = pd.read_csv(
@@ -127,6 +131,10 @@ class Metadata_handler:
                 columns=["taxid", "description"]
             )
             self.logger.info("No taxonomy to description file found.")
+            self.logger.info(
+                "This file is required for mapping, check installation. Exiting."
+            )
+            exit()
 
         try:
             self.protein_to_accession = pd.read_csv(

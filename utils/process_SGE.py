@@ -97,101 +97,76 @@ class ProcessSGE(object):
         if not b_found:
             raise Exception("\n".join(vect_out))
 
-    def set_script_run_sge(
-        self,
-        out_dir,
-        queue_name,
-        vect_cmd,
-        job_name,
-        b_remove_out_dir=False,
-        job_name_wait=[],
-    ):
-        """
-        create the script to run SGE
-        """
-        if len(vect_cmd) == 0:
-            return None
 
-        file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
-        with open(file_name_out, "w") as handleSGE:
-            handleSGE.write("#!/bin/bash\n")
-            handleSGE.write(
-                "#$ -V\n"
-            )  # Specifies  that  all  environment  variables active
-            # within the qsub utility be exported to the context of the job.
-            handleSGE.write("#$ -S /bin/bash\n")  # interpreting shell
-            ## hold_jid <comma separated list of job-ids, can also be a job id pattern such as 2722*> :
-            ## will start the current job/job -array only after completion of all jobs in the comma separated list
-            if isinstance(job_name_wait, str):
-                job_name_wait = [job_name_wait]
-            if len(job_name_wait) > 0:
-                handleSGE.write(
-                    "#$ -hold_jid {}\n".format(",".join(job_name_wait))
-                )  # need to wait until all this jobs names finished
-            handleSGE.write(
-                "#$ -j y\n"
-            )  # merge the standard error with standard output
-            handleSGE.write("#$ -N {}\n".format(job_name))  # job name
-            handleSGE.write(
-                "#$ -cwd\n"
-            )  # execute the job for the current work directory
-            handleSGE.write("#$ -q {}\n".format(queue_name))  # queue name
-            handleSGE.write("#$ -o {}\n".format(out_dir))  # out path file
-            for cline in vect_cmd:
-                handleSGE.write("\n" + cline)
-            if b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE:
-                handleSGE.write(
-                    "\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir)
-                )
-        return file_name_out
-
-    def __get_sge_process__(self):
-        """
-        #Job status - one of
-
-        ### test if all jobs submitted to the SGE are finish
-        ## return 0, if is end
-        ## return -1, error
-        ## other value, keeping running
-        ## also returns a vector with jobId already finish
-
-        #    * d(eletion)
-        #    * E(rror)
-        #    * h(old)
-        #    * r(unning)
-        #    * R(estarted)
-        #    * s(uspended),
-        #    * S(uspended)
-        #    * t(ransfering)
-        #    * T(hreshold)
-        #    * w(aiting)
-        """
-        tagsSGERunning = ("r", "t")
-        tagsSGEWaiting = ("hqw", "qw", "w")
-        # test with qstat
-        file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "qstat > %s" % (file_result)
-        os.system(cline)
-
-        ## read the FILE
-        with open(file_result) as handle_result:
-            vectRunning = []
-            vectWait = []
-            for line in handle_result:
-                # pass header and other things
-                if line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0:
-                    continue
-                if len(line.split()) > 0:
-                    ## jobid is running
-                    if line.split()[4] in tagsSGERunning:
-                        vectRunning.append(line.split()[0])
-                    elif line.split()[4] in tagsSGEWaiting:
-                        vectWait.append(line.split()[0])
-
-        ## remove file
-        if os.path.exists(file_result):
-            os.unlink(file_result)
-        return (vectRunning, vectWait)
+	def set_script_run_sge(self, out_dir, queue_name, vect_cmd, job_name, b_remove_out_dir = False, job_name_wait = []):
+		"""
+		create the script to run SGE
+		"""
+		if (len(vect_cmd) == 0): return None
+		
+		file_name_out = os.path.join(out_dir, ProcessSGE.FILE_NAME_SCRIPT_SGE)
+		with open(file_name_out, 'w') as handleSGE:
+			handleSGE.write("#!/bin/bash\n")
+			handleSGE.write("#$ -V\n")	# Specifies  that  all  environment  variables active
+										# within the qsub utility be exported to the context of the job.
+			handleSGE.write("#$ -S /bin/bash\n") 	# interpreting shell
+			## hold_jid <comma separated list of job-ids, can also be a job id pattern such as 2722*> : 
+			## will start the current job/job -array only after completion of all jobs in the comma separated list
+			if isinstance(job_name_wait, str): job_name_wait = [job_name_wait]
+			if len(job_name_wait) > 0: handleSGE.write("#$ -hold_jid {}\n".format(",".join(job_name_wait)))	# need to wait until all this jobs names finished
+			handleSGE.write("#$ -j y\n")	# merge the standard error with standard output
+			handleSGE.write("#$ -N {}\n".format(job_name))	# job name
+			handleSGE.write("#$ -cwd\n")	# execute the job for the current work directory
+			handleSGE.write("#$ -q {}\n".format(queue_name))	# queue name
+			handleSGE.write("#$ -o {}\n".format(out_dir))		# out path file
+			for cline in vect_cmd: handleSGE.write("\n" + cline)
+			if (b_remove_out_dir and not settings.RUN_TEST_IN_COMMAND_LINE):
+				handleSGE.write("\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir))
+		return file_name_out
+	
+	def __get_sge_process__(self):
+		"""
+		#Job status - one of
+	
+		### test if all jobs submitted to the SGE are finish
+		## return 0, if is end
+		## return -1, error
+		## other value, keeping running
+		## also returns a vector with jobId already finish
+		
+		#	* d(eletion)
+		#	* E(rror)
+		#	* h(old)
+		#	* r(unning)
+		#	* R(estarted)
+		#	* s(uspended),
+		#	* S(uspended)
+		#	* t(ransfering)
+		#	* T(hreshold)
+		#	* w(aiting)
+		"""
+		tagsSGERunning = ('r', 't')
+		tagsSGEWaiting = ('hqw', 'qw', 'w')
+		# test with qstat
+		file_result = self.utils.get_temp_file('sge_stat', '.txt')
+		cline = 'export SGE_ROOT={}; qstat > {}'.format(settings.SGE_ROOT, file_result)
+		os.system(cline)
+			
+		## read the FILE
+		with open(file_result) as handle_result:
+			vectRunning =[]
+			vectWait =[]
+			for line in handle_result:
+				# pass header and other things
+				if (line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0): continue
+				if (len(line.split()) > 0):
+					## jobid is running
+					if (line.split()[4] in tagsSGERunning): vectRunning.append(line.split()[0])
+					elif (line.split()[4] in tagsSGEWaiting): vectWait.append(line.split()[0])
+		
+		## remove file
+		if (os.path.exists(file_result)): os.unlink(file_result)
+		return (vectRunning, vectWait)
 
     def get_status_process(self, n_SGE_id):
         (vectRunning, vectWait) = self.__get_sge_process__()
@@ -207,88 +182,72 @@ class ProcessSGE(object):
         """
         return self.get_status_process(n_SGE_id) == self.SGE_JOB_ID_FINISH
 
-    def exists_taks_running(self):
-        """
-        test if there any tasks running...
-        """
-        file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "qstat > %s" % (file_result)
-        os.system(cline)
-        ## read the FILE
-        with open(file_result) as handle_result:
-            for line in handle_result:
-                if line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0:
-                    continue
-                if len(line.strip()) > 0:
-                    if os.path.exists(file_result):
-                        os.unlink(file_result)
-                    return True
-        if os.path.exists(file_result):
-            os.unlink(file_result)
-        return False
-
-    def _get_prefix_in_wait_queue(self, prefix_id):
-        """
-        check if a predefine ID is in the queue
-        if in the waiting queue need to have this:
-        scheduling info:            job dropped because of job dependencies
-
-        """
-        file_result = self.utils.get_temp_file("sge_stat", ".txt")
-        cline = "qstat -j {}* > {}".format(prefix_id, file_result)
-        os.system(cline)
-        ## read the FILE
-        vect_job_ids = []
-        job_candicate = None
-        with open(file_result) as handle_result:
-            for line in handle_result:
-                if line.find("=========") == 0:
-                    job_candicate = None
-                elif line.find("job_number:") == 0:
-                    job_candicate = line.split(":")[1].strip()
-                elif (
-                    line.find("scheduling info:") == 0 and not job_candicate is None
-                ):  ## it is wainting in the queue
-                    vect_job_ids.append(job_candicate)
-        if os.path.exists(file_result):
-            os.unlink(file_result)
-        if len(vect_job_ids) > 0:
-            return ",".join(vect_job_ids)
-        return None
-
-    def wait_until_finished(self, vect_sge_ids):
-        """
-        wait till all end
-        if len(vect_sge_ids) == 0 wait till all are finished, doesn't matter the ID
-        """
-        ## expand vect_sge_idsbecaus some lines can have morethan one ID
-        vect_sge_to_search = [c for b in vect_sge_ids for c in str(b).split(",")]
-        if len(vect_sge_to_search) == 0:
-            while self.exists_taks_running():
-                print("=" * 50 + "\n  waiting for sge\n" + str(datetime.now()))
-                time.sleep(5)  ## wais 5 seconds
-        else:
-            while len(vect_sge_to_search) > 0:
-                print("=" * 50)
-                print(
-                    "   wait for these ids: {}".format(
-                        ";".join([str(_) for _ in vect_sge_to_search])
-                    )
-                )
-                vect_remove = []
-                for sge_id in vect_sge_to_search:
-                    if self.is_finished(sge_id):
-                        vect_remove.append(sge_id)
-
-                ### remove sge
-                for sge_id in vect_remove:
-                    vect_sge_to_search.remove(sge_id)
-
-                print("=" * 50)
-                if len(vect_sge_to_search) > 0:
-                    time.sleep(5)  ## wais 5 seconds
-        ## set the one still running
-        return [int(_) for _ in vect_sge_to_search]
+	def exists_taks_running(self):
+		"""
+		test if there any tasks running...
+		"""
+		file_result = self.utils.get_temp_file('sge_stat', '.txt')
+		cline = 'export SGE_ROOT={}; qstat > {}'.format(settings.SGE_ROOT, file_result)
+		os.system(cline)
+		## read the FILE
+		with open(file_result) as handle_result:
+			for line in handle_result:
+				if (line.find("job-ID") != -1 or len(line) < 3 or line.find("---") == 0): continue
+				if len(line.strip()) > 0: 
+					if (os.path.exists(file_result)): os.unlink(file_result)
+					return True
+		if (os.path.exists(file_result)): os.unlink(file_result)
+		return False
+	
+	def _get_prefix_in_wait_queue(self, prefix_id):
+		"""
+		check if a predefine ID is in the queue
+		if in the waiting queue need to have this:
+		scheduling info:            job dropped because of job dependencies  
+		
+		"""
+		file_result = self.utils.get_temp_file('sge_stat', '.txt')
+		cline = 'export SGE_ROOT={}; qstat -j {}* > {}'.format(settings.SGE_ROOT, prefix_id, file_result)
+		os.system(cline)
+		## read the FILE
+		vect_job_ids = []
+		job_candicate = None
+		with open(file_result) as handle_result:
+			for line in handle_result:
+				if (line.find("=========") == 0): job_candicate = None
+				elif (line.find("job_number:") == 0): job_candicate = line.split(':')[1].strip()
+				elif (line.find("scheduling info:") == 0 and not job_candicate is None):	## it is wainting in the queue
+					vect_job_ids.append(job_candicate)
+		if (os.path.exists(file_result)): os.unlink(file_result)
+		if len(vect_job_ids) > 0: return ",".join(vect_job_ids)
+		return None
+	
+	def wait_until_finished(self, vect_sge_ids):
+		"""
+		wait till all end
+		if len(vect_sge_ids) == 0 wait till all are finished, doesn't matter the ID
+		"""
+		## expand vect_sge_idsbecaus some lines can have morethan one ID
+		vect_sge_to_search = [ c for b in vect_sge_ids for c in str(b).split(',') ]
+		if (len(vect_sge_to_search) == 0):
+			while self.exists_taks_running():
+				print("=" * 50 + "\n  waiting for sge\n" + str(datetime.now()))
+				time.sleep(5)	## wais 5 seconds
+		else:
+			while len(vect_sge_to_search) > 0:
+				print("=" * 50)
+				print("   wait for these ids: {}".format(";".join([str(_) for _ in vect_sge_to_search])))
+				vect_remove = []
+				for sge_id in vect_sge_to_search:
+					if self.is_finished(sge_id): vect_remove.append(sge_id)
+				
+				### remove sge
+				for sge_id in vect_remove: vect_sge_to_search.remove(sge_id)
+				
+				print("=" * 50)
+				if (len(vect_sge_to_search) > 0): time.sleep(5)	## wais 5 seconds
+		## set the one still running
+		return [int(_) for _ in vect_sge_to_search]
 
     #### END MAIN files
     #############

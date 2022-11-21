@@ -37,7 +37,7 @@ function draw_phylo_canvas() {
 	    	key_element_name : element_selected,
 			csrfmiddlewaretoken: '{{ csrf_token }}'
 	    }, // data sent with the get request
-	    
+	    headers : { "cache-control" : 'no-cache, must-revalidate, max-age=0' },
 	    url: $('#phylocanvas').attr("show-phylo-canvas-url"),
 	    success: function (data) {
 	    	

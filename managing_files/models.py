@@ -751,27 +751,25 @@ class Sample(models.Model):
             self.file_name_1 if b_first_file else self.file_name_2,
         )
 
-    def get_fastq_available(self, type_path, b_first_file=True):
-        """
-        gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
-        try first trimmomatic/nanofilt, then return fastq
-        """
-        file_name = self.get_trimmomatic_file(type_path, b_first_file)
-        if os.path.exists(file_name):
-            return file_name
-        file_name = self.get_nanofilt_file(type_path)
-        if os.path.exists(file_name):
-            return file_name
-        return self.get_fastq(type_path, b_first_file)
-
-    def is_original_fastq_removed(self):
-        """
-        Test if original fastq were removed already
-        """
-        return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
-
-    def is_processed_fastq_deleted(self):
-        return self.is_deleted_processed_fastq
+	def get_fastq_available(self, type_path, b_first_file = True):
+		"""
+		gets the fastq available, if not trimmomatic/nanofilt ran, return fastq
+		try first trimmomatic/nanofilt, then return fastq
+		"""
+		file_name = self.get_trimmomatic_file(type_path, b_first_file)
+		if (file_name is not None) and os.path.exists(file_name): return file_name
+		file_name = self.get_nanofilt_file(type_path)
+		if (file_name is not None) and os.path.exists(file_name): return file_name
+		return self.get_fastq(type_path, b_first_file)
+		
+	def is_original_fastq_removed(self):
+		"""
+		Test if original fastq were removed already
+		"""
+		return not os.path.exists(self.get_fastq(TypePath.MEDIA_ROOT, True))
+	
+	def is_processed_fastq_deleted(self):
+		return self.is_deleted_processed_fastq
 
     def get_fastqc_output(self, type_path, b_first_file):
         """

@@ -44,7 +44,9 @@ function phylTree(metaData, data_input, root_name) {
             if (document.getElementById("optionMetadata"+j).selected) {
 
                 for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-
+					if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+						continue;	
+					}
                 	window.PhylocanvasTree.leaves[i].setDisplay({
 
                         leafStyle: {
@@ -258,22 +260,24 @@ function phylTree(metaData, data_input, root_name) {
                 document.getElementById("legendSwitchLabelCollapsible"+i+"-"+j).style.color = "white";
 
                 for (let ij = 0; ij < (window.PhylocanvasTree.leaves).length; ij++) { // Iterates along all the strains.
-
-                if (Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i] === document.getElementById("legendSwitchLabelCollapsible" + i + "-" + j).innerText || (Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i] === "" && document.getElementById("legendSwitchLabelCollapsible" + i + "-" + j).innerText === "No Data")) {
-
-                    color[Object.keys(metaData[window.PhylocanvasTree.leaves[ij].label])[i] + Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i]] = document.getElementById("colorPicker" + i + "-" + j).value;
-
-                }
-
-                if (document.getElementById("selectNodeColor").value === document.getElementById("optionMetadata" + i).innerText) {
-
-                    window.PhylocanvasTree.leaves[ij].setDisplay({
-
-                        leafStyle: {
-                            fillStyle: color[Object.keys(metaData[window.PhylocanvasTree.leaves[ij].label])[i] + Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i]] // 2nd option input color value
-                        }
-                    });
-                }
+					if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[ij].label)){
+						continue;	
+					}
+	                if (Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i] === document.getElementById("legendSwitchLabelCollapsible" + i + "-" + j).innerText || (Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i] === "" && document.getElementById("legendSwitchLabelCollapsible" + i + "-" + j).innerText === "No Data")) {
+	
+	                    color[Object.keys(metaData[window.PhylocanvasTree.leaves[ij].label])[i] + Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i]] = document.getElementById("colorPicker" + i + "-" + j).value;
+	
+	                }
+	
+	                if (document.getElementById("selectNodeColor").value === document.getElementById("optionMetadata" + i).innerText) {
+	
+	                    window.PhylocanvasTree.leaves[ij].setDisplay({
+	
+	                        leafStyle: {
+	                            fillStyle: color[Object.keys(metaData[window.PhylocanvasTree.leaves[ij].label])[i] + Object.values(metaData[window.PhylocanvasTree.leaves[ij].label])[i]] // 2nd option input color value
+	                        }
+	                    });
+	                }
 
                     metaNumber = i;
 
@@ -332,6 +336,9 @@ function phylTree(metaData, data_input, root_name) {
 
                             for (let ii = 0; ii < (window.PhylocanvasTree.leaves).length; ii++) {
 
+								if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[ii].label)){
+									continue;	
+								}
                                 (window.PhylocanvasTree.leaves[ii].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[ii].label])[j]] = (window.PhylocanvasTree.leaves[ii].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[ii].label])[j]] || {};
 
                                 (window.PhylocanvasTree.leaves[ii].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[ii].label])[j]]["colour"] = color[Object.keys(metaData[window.PhylocanvasTree.leaves[ii].label])[j] + Object.values(metaData[window.PhylocanvasTree.leaves[ii].label])[j]];
@@ -550,7 +557,7 @@ function radioDetect (metaData, max) {
         for (let j = 0; j < Object.keys(Object.values(metaData)[0]).length; j++) {
         	
             for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-				if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+				if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
 					continue;	
 				}
             	if (Object.values(metaData[window.PhylocanvasTree.leaves[i].label])[j] === undefined || 
@@ -575,8 +582,7 @@ function radioDetect (metaData, max) {
             if (document.getElementById("metadataSwitch"+j).checked === true) {
 
                 for (let i = 0; i < (window.PhylocanvasTree.leaves).length; i++) {
-
-					if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+					if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
 						continue;	
 					}
 				
@@ -599,7 +605,7 @@ function radioDetect (metaData, max) {
 
                 for (let i = 0; i < window.PhylocanvasTree.leaves.length; i++) {
 
-					if (! Object.values(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
+					if (! Object.keys(metaData).includes(window.PhylocanvasTree.leaves[i].label)){
 						continue;	
 					}
                     delete (window.PhylocanvasTree.leaves[i].data)[Object.keys(metaData[window.PhylocanvasTree.leaves[i].label])[j]];

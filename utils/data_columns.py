@@ -144,6 +144,14 @@ DICT_NEXTSTRAIN_to_INSAFLU = {
 		NEXTSTRAIN_date : ['collection date', 'onset date', 'lab reception date'],
 }
 
+
+##### Important, array with exceptions for nextstrain TSV file 
+NEXTSTRAIN_exception_nextstrain_file = [
+	'Wuhan/Hu-1/2019',
+	'MK783032',
+	'MK783030',
+]
+
 class MetaRow(object):
 	
 	def __init__(self, project_name, seq_name_consensus, row, consensus_length):
@@ -188,6 +196,7 @@ class Metadata(object):
 				
 			for column in vect_header_out:
 				if column == CollectExtraData.HEADER_SAMPLE_OUT_ID: continue 
+				if column == DATASET_LIST_INSAFLU_project_name: continue
 				if column in self.dt_header: vect_out.append(self.dt_rows_id[project_sample_pk].row[self.dt_header[column]])
 				else: vect_out.append("")
 			count += 1 
@@ -395,7 +404,8 @@ class DataColumns(object):
 						self.vect_header_out.pop(self.vect_header_out.index(CollectExtraData.HEADER_SAMPLE_OUT_ID))
 					except ValueError as e:
 						pass
-					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID, DATASET_LIST_INSAFLU_project_name] + self.vect_header_out
+					self.vect_header_out = [CollectExtraData.HEADER_SAMPLE_OUT_ID, DATASET_LIST_INSAFLU_project_name] +\
+						self.vect_header_out
 					dt_header_out = dict(zip(self.vect_header_out, [1] * len(self.vect_header_out)))
 				else:
 					for column in self.dt_project[key_metadata].header:

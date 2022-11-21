@@ -4177,22 +4177,14 @@ class Software(object):
                 + temp_dir
             )
 
-        # Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
-
-        # TODO do a proper integration of tables? This should already be taken care of in DataColumns ... test if it is working properly...
-        cmd = "cat {} {} > {}".format(
-            metadata,
-            os.path.join(temp_dir, "data", "references_metadata.tsv"),
-            os.path.join(temp_dir, "data", "metadata.tsv"),
-        )
-        exit_status = os.system(cmd)
-        if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
-            raise Exception(
-                "Fail to concatenate ncov reference metadata with metadata in temp folder "
-                + temp_dir
-            )
+		# Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
+		self.utils.copy_file(metadata, os.path.join(temp_dir, 'data', "metadata.tsv"))
+		#cmd = "cat {} {} > {}".format(metadata, os.path.join(temp_dir, 'data', 'references_metadata.tsv'), os.path.join(temp_dir, 'data', 'metadata.tsv'))
+		#exit_status = os.system(cmd)
+		#if (exit_status != 0):
+		#	self.logger_production.error('Fail to run: ' + cmd)
+		#	self.logger_debug.error('Fail to run: ' + cmd)
+		#	raise Exception("Fail to concatenate ncov reference metadata with metadata in temp folder " + temp_dir)	
 
         cmd = (
             "cat "

@@ -79,3 +79,11 @@ def success_count(covplot_exists, refa_dotplot_exists):
         counts = "contigs"
 
     return counts
+
+
+@register.simple_tag
+def windows_safe(windows_covered):
+    if windows_covered:
+        return windows_covered
+    else:
+        return "not calculated"

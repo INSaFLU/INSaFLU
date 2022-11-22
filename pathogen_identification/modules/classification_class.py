@@ -9,6 +9,7 @@ from pathogen_identification.modules.object_classes import RunCMD, Software_deta
 
 
 def check_report_empty(file, comment="@"):
+
     with open(file, "r") as f:
         lines = f.readlines()
 
@@ -937,7 +938,7 @@ class run_bwa_mem(Classifier_init):
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        ).rename(columns={0: "acc", 1: "qseqid"})
+        ).rename(columns={0: "acc", 2: "qseqid"})
 
 
 class run_bowtie2_ONT(Classifier_init):

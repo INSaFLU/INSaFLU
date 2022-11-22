@@ -4,19 +4,16 @@ import os
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -38,28 +35,16 @@ from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-)
-from pathogen_identification.tables import (
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            Sample)
+from pathogen_identification.tables import (ContigTable, ProjectTable,
+                                            RawReferenceTable, RunMainTable,
+                                            SampleTable)
 
 
 def clean_check_box_in_session(request):
@@ -1053,8 +1038,19 @@ def download_file_ref(requestdst):
             file_request = form.cleaned_data.get("file")
             run_index = int(form.cleaned_data.get("run"))
             taxid = form.cleaned_data.get("taxid")
+            accid = form.cleaned_data.get("accid")
+            accid_simple = (
+                accid.replace(".", "_")
+                .replace(";", "_")
+                .replace(":", "_")
+                .replace("|", "_")
+            )
 
-            reference = ReferenceMap_Main.objects.get(taxid=taxid, run__pk=run_index)
+            reference = ReferenceMap_Main.objects.get(
+                taxid=taxid,
+                run__pk=run_index,
+                reference= accid_simple 
+            )
 
             if file_request == "mapped_subset_r1":
                 filepath = reference.mapped_subset_r1

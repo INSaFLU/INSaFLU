@@ -149,6 +149,7 @@ class download_ref_form(forms.Form):
     file = forms.CharField(max_length=300)
     taxid = forms.CharField(max_length=50)
     run = forms.IntegerField()
+    accid = forms.CharField(max_length=50)
 
     class Meta:
 
@@ -1054,6 +1055,8 @@ def download_file_ref(requestdst):
             run_index = int(form.cleaned_data.get("run"))
             taxid = form.cleaned_data.get("taxid")
             accid = form.cleaned_data.get("accid")
+
+            print(form.cleaned_data.get("run"))
             accid_simple = (
                 accid.replace(".", "_")
                 .replace(";", "_")

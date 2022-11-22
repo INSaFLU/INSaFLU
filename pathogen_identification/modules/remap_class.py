@@ -731,7 +731,7 @@ class Remapping:
         final_file = os.path.join(subdirectory, os.path.basename(filepath))
 
         if os.path.exists(filepath) and final_file != filepath:
-            print(f"PATH {filepath} exists")
+            # print(f"PATH {filepath} exists")
             if os.path.exists(final_file):
                 os.remove(final_file)
 

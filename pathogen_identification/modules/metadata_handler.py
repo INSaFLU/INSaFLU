@@ -311,23 +311,44 @@ class Metadata_handler:
         """
         Return representative accession for a given taxid.
         """
-        if int(taxid) not in self.accession_to_taxid.taxid.astype(int).unique():
+        if str(taxid) not in self.accession_to_taxid.taxid.astype(str).unique():
             return "-"
 
-        return self.accession_to_taxid[
-            self.accession_to_taxid.taxid.astype(int) == int(taxid)
-        ].acc.iloc[0]
+        accid_set = self.accession_to_taxid[
+            self.accession_to_taxid.taxid.astype(str) == str(taxid)
+        ].reset_index()
+
+        accid_set = accid_set.dropna(subset=["acc"])
+
+        print("########## accid rep")
+        print(taxid)
+        print(accid_set)
+
+        if accid_set.shape[0] == 0:
+            return "-"
+        else:
+            return accid_set.acc.iloc[0]
 
     def get_taxid_representative_description(self, taxid: int) -> str:
         """
         Return representative accession for a given taxid.
         """
-        if int(taxid) not in self.taxonomy_to_description.taxid.astype(int).unique():
+        if str(taxid) not in self.taxonomy_to_description.taxid.astype(str).unique():
             return "-"
 
-        return self.taxonomy_to_description[
-            self.taxonomy_to_description.taxid.astype(int) == int(taxid)
-        ].description.iloc[0]
+        desc_set = self.taxonomy_to_description[
+            self.taxonomy_to_description.taxid.astype(str) == str(taxid)
+        ].reset_index()
+
+        desc_set = desc_set.dropna(subset=["description"])
+        print("####### taxid description")
+        print(taxid)
+        print(desc_set)
+
+        if desc_set.shape[0] == 0:
+            return "-"
+        else:
+            return desc_set.description.iloc[0]
 
     def merge_reports_clean(
         self,
@@ -336,12 +357,16 @@ class Metadata_handler:
         """merge the reports and filter them."""
 
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
-        raw_targets["accid"] = targets["taxid"].apply(
+        raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
-        raw_targets["description"] = targets["taxid"].apply(
+        raw_targets["description"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_description
         )
+        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+
+        print("############ RAW TARGETS ############")
+        print(raw_targets)
 
         targets.dropna(subset=["taxid"], inplace=True)
         targets["taxid"] = targets["taxid"].astype(int)

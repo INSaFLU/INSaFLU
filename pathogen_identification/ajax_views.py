@@ -37,15 +37,20 @@ def deploy_ProjectPI(request):
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
         print("checking")
 
-        if runs_to_deploy:
-            taskID = process_SGE.set_submit_televir_job(
-                user=request.user,
-                project_pk=project.pk,
-            )
+        try:
+            if runs_to_deploy:
+                taskID = process_SGE.set_submit_televir_job(
+                    user=request.user,
+                    project_pk=project.pk,
+                )
 
-            data["is_deployed"] = True
+                data["is_deployed"] = True
 
-        data = {"is_ok": True}
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
         return JsonResponse(data)
 
 

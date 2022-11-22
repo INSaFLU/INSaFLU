@@ -640,6 +640,7 @@ def Update_ReferenceMap(
     try:
         map_db = ReferenceMap_Main.objects.get(
             reference=ref_map.reference.target.acc_simple,
+            taxid=ref_map.reference.target.taxid,
             sample=sample,
             run=run,
         )

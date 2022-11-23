@@ -272,7 +272,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             )
 
     full_descriptor = full_descriptor.fillna(0)
-    full_descriptor["status"] = full_descriptor["taxid"].isin(r1["taxid"])
 
     def get_source(taxid):
 

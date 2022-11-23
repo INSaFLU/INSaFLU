@@ -474,7 +474,6 @@
                                 </td>
                             </tr>
                             {% if value.covplot_exists == True %}
-                
                             <tr class="detail">
                                 <td colspan="1" align="center">
                                     <p>Mapping Coverage</p>
@@ -489,9 +488,9 @@
                                         <form id="igv_display_{{value.accid}}" action="{% url 'igv_browser' %}" method="POST">
                                             {% csrf_token %}
                                             <input type=submit value="IGV" name="btn">
-                                            <input type="hidden" name="project_name" value="{{project}}">
-                                            <input type="hidden" name="sample_name" value="{{sample}}">
-                                            <input type="hidden" name="run_name" value="{{run_name}}">
+                                            <input type="hidden" name="project_pk" value="{{project_index}}">
+                                            <input type="hidden" name="sample_pk" value="{{sample_index}}">
+                                            <input type="hidden" name="run_pk" value="{{run_index}}">
                                             <input type="hidden" name="reference" value="{{value.simple_id}}">
                                             <input type="hidden" name="unique_id" value="{{value.unique_id}}">
                                         </form>
@@ -521,10 +520,10 @@
                                         <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
                                             method="POST">
                                             {% csrf_token %}
-                                            <input type=submit value=".fastq.gz" name="btn3">
+                                            <input type=submit value="mapped reads (.fa)" name="btn3">
                                             <input type="hidden" name="file" value="mapped_subset_r1">
                                             <input type="hidden" name="taxid" value="{{value.taxid}}">
-                                            <input type="hidden" name="run" value="{{run_index}}">
+                                            <input type="hidden" name="run" value="{{value.run.pk}}">
                                             <input type="hidden" name="accid" value="{{value.accid}}">
                                             
                                         </form>
@@ -539,6 +538,27 @@
                                         {% endif %}
                                     </div>
                                 </td>
+                            </tr>
+                            <tr class="detail">
+                                <div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="headingOne">
+                                    <div class="card-block">
+                                        <div class="container-fluid">
+                                            <br>
+                                            <div class="regular_info_box form-inline">
+                                                <div id="bam_file_id" class="col-lg-2"></div>
+                                                <div id="bai_file_id" class="col-lg-3"></div>
+                                                <div id="vcf_file_id" class="col-lg-2"></div> 
+                                                <div id="reference_id" class="col-lg-2"></div>
+                                                <div id="reference_index_id" class="col-lg-2"></div>
+                                            </div>
+                                            <br>
+                                            
+                                            <!-- Show files to download, trees -->
+                                            <div id='loader_igv_id'><img src="{{ spinner_url }}"/></div>
+                                        <div id="show_igv_id" reference_id="{{ project_sample.id }}" show-igv-url="{% url 'show_igv' %}"></div>
+                                    </div>
+                                    </div>
+                                </div>
                             </tr>
                             {% endif %}
                             {% if value.refa_dotplot_exists == True %}
@@ -647,11 +667,11 @@
 
 <script>
     var my_form = document.forms["igv_display_{{value.accid}}"];
-    my_form.elements["sample_name"].value = "{{sample}}";
-    my_form.elements["run_name"].value = "{{run_name}}";
+    my_form.elements["sample_pk"].value = "{{sample_index}}";
+    my_form.elements["run_pk"].value = "{{run_index}}";
     my_form.elements["reference"].value = "{{value.simple_id}}";
     my_form.elements["unique_id"].value = "{{value.unique_id}}";
-    my_form.elements["project_name"].value = "{{project}}";
+    my_form.elements["project_pk"].value = "{{project_index}}";
     document.getElementById("my_form").submit();
 </script>
 

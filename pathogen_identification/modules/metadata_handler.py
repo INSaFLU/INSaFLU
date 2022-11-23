@@ -320,10 +320,6 @@ class Metadata_handler:
 
         accid_set = accid_set.dropna(subset=["acc"])
 
-        print("########## accid rep")
-        print(taxid)
-        print(accid_set)
-
         if accid_set.shape[0] == 0:
             return "-"
         else:
@@ -364,9 +360,6 @@ class Metadata_handler:
             self.get_taxid_representative_description
         )
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
-
-        print("############ RAW TARGETS ############")
-        print(raw_targets)
 
         targets.dropna(subset=["taxid"], inplace=True)
         targets["taxid"] = targets["taxid"].astype(int)

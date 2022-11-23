@@ -31,9 +31,13 @@
                                 <a><span class="hidden-phone"> Deploy Pathogen identification </span></a>
                               </button>
                                
-                            </div>
                         </div>
-                    </th>                  
+                        </div class="btn-group">
+                        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                            <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
+                                </button>                        
+                        </div>
+                    </th>               
                 </tr>
                 <tr>
                     {% for column in table.columns %}

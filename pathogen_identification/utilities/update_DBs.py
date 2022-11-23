@@ -656,6 +656,8 @@ def Update_ReferenceMap(
             fai_file_path=ref_map.reference.reference_fasta_index,
             mapped_subset_r1=ref_map.reference.mapped_subset_r1,
             mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
         )
         map_db.save()
 

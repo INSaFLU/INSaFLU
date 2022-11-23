@@ -36,7 +36,7 @@ urlpatterns = [
         name="remove-sample-PIproject",
     ),
     url(
-        r"Projects/(?P<project>[a-zA-Z0-9_]+)/all_reports$",
+        r"Projects/(?P<pk1>\d+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
     ),
@@ -46,13 +46,18 @@ urlpatterns = [
         name="sample_main",
     ),
     url(
+        r"Project_Samples/(?P<pk1>\d+)/(?P<pk2>\d+)/all_reports$",
+        PIviews.Sample_reports,
+        name="all_PIsample_reports",
+    ),
+    url(
         r"Summary/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",
     ),
     url(
         "igv_display",
-        PIviews.IGV_display,
+        PIajax_views.IGV_display,
         name="igv_browser",
     ),  ## get values for IGV
     url(

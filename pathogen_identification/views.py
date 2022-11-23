@@ -4,19 +4,16 @@ import os
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -38,28 +35,16 @@ from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-)
-from pathogen_identification.tables import (
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            Sample)
+from pathogen_identification.tables import (ContigTable, ProjectTable,
+                                            RawReferenceTable, RunMainTable,
+                                            SampleTable)
 
 
 def clean_check_box_in_session(request):
@@ -126,11 +111,11 @@ def is_all_check_box_in_session(vect_check_to_test, request):
 
 
 class IGVform(forms.Form):
-    sample_name = forms.CharField(max_length=100)
-    run_name = forms.CharField(max_length=100)
+    sample_pk = forms.CharField(max_length=100)
+    run_pk = forms.CharField(max_length=100)
     reference = forms.CharField(max_length=100)
     unique_id = forms.CharField(max_length=100)
-    project_name = forms.CharField(max_length=100)
+    project_pk = forms.CharField(max_length=100)
 
 
 class download_form(forms.Form):
@@ -725,18 +710,48 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-def Project_reports(requesdst, project):
+def Project_reports(requesdst, pk1):
     """
     sample main page
     """
     template_name = "pathogen_identification/allreports_table.html"
 
-    all_reports = FinalReport.objects.filter(run__project__name=project)
+    all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
+        "-coverage"
+    )
+
+    project = Projects.objects.get(pk=int(pk1))
 
     return render(
         requesdst,
         template_name,
-        {"all_reports": all_reports, "project": project},
+        {
+            "final_report": all_reports,
+            "project": project.name,
+            "project_index": project.pk,
+        },
+    )
+
+
+def Sample_reports(requesdst, pk1, pk2):
+    """
+    sample main page
+    """
+    template_name = "pathogen_identification/allreports_table.html"
+
+    all_reports = FinalReport.objects.filter(
+        run__project__pk=int(pk1), sample__pk=int(pk2)
+    ).order_by("-coverage")
+    project = Projects.objects.get(pk=int(pk1))
+
+    return render(
+        requesdst,
+        template_name,
+        {
+            "final_report": all_reports,
+            "project": project.name,
+            "project_index": project.pk,
+        },
     )
 
 
@@ -778,7 +793,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
         #
-        final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
+        final_report = FinalReport.objects.filter(
+            sample=sample_main, run=run_main
+        ).order_by("-coverage")
         #
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
@@ -867,111 +884,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
 
         return context
 
-
-def IGV_display(requestdst):
-    """display python plotly app"""
-    template_name = "pathogen_identification/IGV.html"
-
-    if requestdst.method == "POST":
-        form = IGVform(requestdst.POST)
-        if form.is_valid():
-            print(form.cleaned_data)
-            project_name = form.cleaned_data.get("project_name")
-            sample_name = form.cleaned_data.get("sample_name")
-            run_name = form.cleaned_data.get("run_name")
-            reference = form.cleaned_data.get("reference")
-            unique_id = form.cleaned_data.get("unique_id")
-
-            data = {"is_ok": False}
-            print(project_name)
-            print(reference)
-
-            sample = PIProject_Sample.objects.get(
-                project__name=project_name, name=sample_name
-            )
-            run = RunMain.objects.get(name=run_name, sample=sample)
-            ref_map = ReferenceMap_Main.objects.get(
-                reference=reference, sample=sample, run=run
-            )
-            final_report = FinalReport.objects.get(
-                sample=sample, run=run, unique_id=unique_id
-            )
-
-            def remove_pre_static(path, pattern):
-                # path = path.split(pattern)[1]
-                # path = f"/{pattern}{path}"
-                # path = \path.replace(pattern, "")
-                print(path)
-                return path
-
-            path_name_bam = remove_pre_static(
-                ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_bai = remove_pre_static(
-                ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_reference = remove_pre_static(
-                ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_reference_index = remove_pre_static(
-                ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
-            )
-
-            data["is_ok"] = True
-
-            data["path_reference"] = path_name_reference
-            data["path_reference_index"] = path_name_reference_index
-            data["path_bam"] = path_name_bam
-            data["path_bai"] = path_name_bai
-
-            data["reference_name"] = sample_name
-            data["sample_name"] = final_report.reference_contig_str
-
-            #### other files
-            data["bam_file_id"] = mark_safe(
-                '<strong>Bam file:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    "download_file",
-                    os.path.basename(path_name_bam),
-                    os.path.basename(path_name_bam),
-                )
-            )
-            data["bai_file_id"] = mark_safe(
-                '<strong>Bai file:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_bai,
-                    os.path.basename(path_name_bai),
-                    os.path.basename(path_name_bai),
-                )
-            )
-            data["reference_id"] = mark_safe(
-                '<strong>Reference:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_reference,
-                    os.path.basename(path_name_reference),
-                    os.path.basename(path_name_reference),
-                )
-            )
-            data["reference_index_id"] = mark_safe(
-                '<strong>Ref. index:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_reference_index,
-                    os.path.basename(path_name_reference_index),
-                    os.path.basename(path_name_reference_index),
-                )
-            )
-
-            data["static_dir"] = run.static_dir
-            print(run.static_dir)
-
-            return render(
-                requestdst,
-                template_name,
-                {
-                    "sample_name": final_report.reference_contig_str,
-                    "run_name": run_name,
-                    "reference": reference,
-                    "data": data,
-                },
-            )
-    else:
-        form = IGVform()
 
 
 def download_file_igv(requestdst):
@@ -1071,9 +983,9 @@ def download_file_ref(requestdst):
             )
 
             if file_request == "mapped_subset_r1":
-                filepath = reference.mapped_subset_r1
+                filepath = reference.mapped_subset_r1_fasta
             elif file_request == "mapped_subset_r2":
-                filepath = reference.mapped_subset_r2
+                filepath = reference.mapped_subset_r2_fasta
             elif file_request == "fasta_file_path":
                 filepath = reference.fasta_file_path
             elif file_request == "fasta_index_file_path":
@@ -1087,9 +999,6 @@ def download_file_ref(requestdst):
                 return HttpResponseNotFound(f"file {file_request} not found")
 
             BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-            print(BASE_DIR)
-            print(filepath)
 
             # filepath = BASE_DIR + filepath
 

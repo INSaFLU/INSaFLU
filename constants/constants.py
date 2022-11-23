@@ -333,6 +333,8 @@ class FileExtensions(object):
 	FILE_TBI = '.tbi'	### create with tabix
 	FILE_IDX = '.idx'	### created from igvtools
 	FILE_JSON = '.json'
+	FILE_FASTQ_GZ = '.fastq.gz'
+	FILE_FQ_GZ = '.fq.gz'
 
 	### all GBK
 	VECT_ALL_GBK_EXTENSIONS = [FILE_GBK, FILE_GB] 

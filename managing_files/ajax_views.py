@@ -10,7 +10,8 @@ import logging
 import os
 from datetime import datetime
 
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from django.conf import settings
@@ -32,17 +33,9 @@ from utils.software import Software
 from utils.utils import Utils
 
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    DataSet,
-    MetaKey,
-    ProcessControler,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-    VaccineStatus,
-)
+from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
+                                   ProjectSample, Reference, Sample,
+                                   UploadFiles, VaccineStatus)
 
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")

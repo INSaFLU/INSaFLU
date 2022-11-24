@@ -679,6 +679,8 @@ class Remapping:
             f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa.fai"
         )
 
+        self.vcf = f"{self.rdir}/{self.prefix}.vcf"
+
         self.coverage_plot = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.coverage.png"
         )
@@ -765,7 +767,6 @@ class Remapping:
             self.reference_fasta_index, destination
         )
 
-        print("relating bam files")
         self.read_map_sorted_bam = self.relocate_file(
             self.read_map_sorted_bam, destination
         )
@@ -779,6 +780,7 @@ class Remapping:
         self.mapped_contigs_fasta_index = self.relocate_file(
             self.mapped_contigs_fasta_index, destination
         )
+        self.vcf = self.relocate_file(self.vcf, destination)
 
     def cleanup_files(self):
         for file in [
@@ -905,11 +907,53 @@ class Remapping:
         self.filter_bamfile_read_names()
         self.sort_bam()
         self.index_sorted_bam()
+        self.generate_vcf()
         self.get_genomecoverage()
         self.get_mapped_reads_no_header()
         self.filter_sam_file_mapped()
         self.subset_mapped_reads()
         self.mapped_reads_to_fasta()
+
+    def generate_vcf(self):
+        """
+        Generate vcf file from bam file.
+        """
+
+        if not self.check_remap_status_bam():
+            self.logger.error("Bam file not found.")
+            return
+
+        if self.check_vcf_exists():
+            self.logger.info("Vcf file already exists.")
+            return
+
+        cmd = [
+            "samtools",
+            "mpileup",
+            "-g",
+            "-f",
+            self.reference_file,
+            self.read_map_sorted_bam,
+            ">",
+            self.vcf,
+        ]
+
+        try:
+            self.cmd.run(cmd)
+
+        except:
+            self.logger.error("Vcf generation failed.")
+            return
+
+    def check_vcf_exists(self):
+        """
+        Check if vcf file exists.
+        """
+
+        if os.path.isfile(self.vcf):
+            return True
+        else:
+            return False
 
     def filter_sam_file_mapped(self):
         """

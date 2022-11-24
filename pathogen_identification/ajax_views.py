@@ -1,5 +1,8 @@
+import os
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 from utils.process_SGE import ProcessSGE
@@ -113,7 +116,6 @@ def IGV_display(request):
                     # path = path.split(pattern)[1]
                     # path = f"/{pattern}{path}"
                     # path = \path.replace(pattern, "")
-                    print(path)
                     return path
 
                 path_name_bam = remove_pre_static(
@@ -128,41 +130,50 @@ def IGV_display(request):
                 path_name_reference_index = remove_pre_static(
                     ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
                 )
+                path_name_vcf = remove_pre_static(ref_map.vcf, "/insaflu_web/INSaFLU/")
 
                 data["is_ok"] = True
+                data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))
 
-                data["path_reference"] = path_name_reference
-                data["path_reference_index"] = path_name_reference_index
-                data["path_bam"] = path_name_bam
-                data["path_bai"] = path_name_bai
-
-                data["reference_name"] = sample_name
-                data["sample_name"] = final_report.reference_contig_str
+                data["path_reference"] = mark_safe(
+                    request.build_absolute_uri(path_name_reference)
+                )
+                data["path_reference_index"] = mark_safe(
+                    request.build_absolute_uri(path_name_reference_index)
+                )
+                data["reference_name"] = reference
 
                 #### other files
                 data["bam_file_id"] = mark_safe(
-                    '<strong>Bam file:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                        "download_file",
+                    '<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_bam,
                         os.path.basename(path_name_bam),
                         os.path.basename(path_name_bam),
                     )
                 )
                 data["bai_file_id"] = mark_safe(
-                    '<strong>Bai file:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    '<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(
                         path_name_bai,
                         os.path.basename(path_name_bai),
                         os.path.basename(path_name_bai),
                     )
                 )
+                data["vcf_file_id"] = mark_safe(
+                    '<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_vcf,
+                        os.path.basename(path_name_vcf),
+                        os.path.basename(path_name_vcf),
+                    )
+                )
                 data["reference_id"] = mark_safe(
-                    '<strong>Reference:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    '<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(
                         path_name_reference,
                         os.path.basename(path_name_reference),
                         os.path.basename(path_name_reference),
                     )
                 )
                 data["reference_index_id"] = mark_safe(
-                    '<strong>Ref. index:</strong> <a href="{}" filename="{}">{}</a>'.format(
+                    '<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(
                         path_name_reference_index,
                         os.path.basename(path_name_reference_index),
                         os.path.basename(path_name_reference_index),
@@ -170,7 +181,6 @@ def IGV_display(request):
                 )
 
                 data["static_dir"] = run.static_dir
-                print(run.static_dir)
                 data["sample_name"] = sample_name
 
             except ReferenceMap_Main.DoesNotExist as e:

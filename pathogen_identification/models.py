@@ -708,6 +708,7 @@ class ReferenceMap_Main(models.Model):
     mapped_subset_r2 = models.CharField(max_length=350, blank=True, null=True)
     mapped_subset_r1_fasta = models.CharField(max_length=350, blank=True, null=True)
     mapped_subset_r2_fasta = models.CharField(max_length=350, blank=True, null=True)
+    vcf = models.CharField(max_length=350, blank=True, null=True)
 
     class Meta:
 

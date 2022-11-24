@@ -5,24 +5,14 @@ from typing import Type
 
 from django.contrib.auth.models import User
 from django.core.files import File
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunIndex,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunIndex, RunMain,
+                                            RunRemapMain, SampleQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -658,6 +648,7 @@ def Update_ReferenceMap(
             mapped_subset_r2=ref_map.reference.mapped_subset_r2,
             mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
             mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+            vcf= ref_map.reference.vcf,
         )
         map_db.save()
 

@@ -60,11 +60,6 @@ urlpatterns = [
         PIajax_views.IGV_display,
         name="igv_browser",
     ),  ## get values for IGV
-    url(
-        "show_igv_<slug:sample_name>/<slug:run_name>/<slug:reference>",
-        ajax_views.show_igv,
-        name="show_igv",
-    ),  ## get values for IGV
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(

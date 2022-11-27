@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
+from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from utils.process_SGE import ProcessSGE
 
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
@@ -90,99 +91,114 @@ def deploy_televir_map(request):
 @csrf_protect
 def IGV_display(request):
     """display python plotly app"""
+    print("received request")
+    print(request.is_ajax())
     if request.is_ajax():
         data = {"is_ok": False}
         if request.method == "GET":
+            print("received GET")
+            print(request.GET)
             project_pk = request.GET.get("project_pk")
             sample_pk = request.GET.get("sample_pk")
             run_pk = request.GET.get("run_pk")
-            reference = request.GET.get("reference")
+            reference = request.GET.get("accid")
             unique_id = request.GET.get("unique_id")
 
             sample = PIProject_Sample.objects.get(pk=int(sample_pk))
             sample_name = sample.name
             run = RunMain.objects.get(pk=int(run_pk))
             run_name = run.name
+            print("###########")
 
-            try:
-                ref_map = ReferenceMap_Main.objects.get(
-                    reference=reference, sample=sample, run=run
-                )
-                final_report = FinalReport.objects.get(
-                    sample=sample, run=run, unique_id=unique_id
-                )
+            print(run_name, sample_name, reference)
 
-                def remove_pre_static(path, pattern):
-                    # path = path.split(pattern)[1]
-                    # path = f"/{pattern}{path}"
-                    # path = \path.replace(pattern, "")
-                    return path
+            ref_map = ReferenceMap_Main.objects.get(
+                reference=unique_id, sample=sample, run=run
+            )
 
-                path_name_bam = remove_pre_static(
-                    ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
-                )
-                path_name_bai = remove_pre_static(
-                    ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
-                )
-                path_name_reference = remove_pre_static(
-                    ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
-                )
-                path_name_reference_index = remove_pre_static(
-                    ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
-                )
-                path_name_vcf = remove_pre_static(ref_map.vcf, "/insaflu_web/INSaFLU/")
+            def remove_pre_static(path: str, pattern: str) -> str:
 
-                data["is_ok"] = True
-                data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))
+                # static_dir = os.path.join(
+                #    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                #    STATIC_ROOT,
+                # )
+                # if path.startswith(static_dir):
+                #    path = path[len(static_dir) :]
 
-                data["path_reference"] = mark_safe(
-                    request.build_absolute_uri(path_name_reference)
-                )
-                data["path_reference_index"] = mark_safe(
-                    request.build_absolute_uri(path_name_reference_index)
-                )
-                data["reference_name"] = reference
+                cwd = os.getcwd()
+                if path.startswith(cwd):
+                    path = path[len(cwd) :]
 
-                #### other files
-                data["bam_file_id"] = mark_safe(
-                    '<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                        path_name_bam,
-                        os.path.basename(path_name_bam),
-                        os.path.basename(path_name_bam),
-                    )
-                )
-                data["bai_file_id"] = mark_safe(
-                    '<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                        path_name_bai,
-                        os.path.basename(path_name_bai),
-                        os.path.basename(path_name_bai),
-                    )
-                )
-                data["vcf_file_id"] = mark_safe(
-                    '<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                        path_name_vcf,
-                        os.path.basename(path_name_vcf),
-                        os.path.basename(path_name_vcf),
-                    )
-                )
-                data["reference_id"] = mark_safe(
-                    '<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                        path_name_reference,
-                        os.path.basename(path_name_reference),
-                        os.path.basename(path_name_reference),
-                    )
-                )
-                data["reference_index_id"] = mark_safe(
-                    '<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                        path_name_reference_index,
-                        os.path.basename(path_name_reference_index),
-                        os.path.basename(path_name_reference_index),
-                    )
-                )
+                path = path.replace(STATIC_ROOT, STATIC_URL)
 
-                data["static_dir"] = run.static_dir
-                data["sample_name"] = sample_name
+                return path
 
-            except ReferenceMap_Main.DoesNotExist as e:
-                pass
+            path_name_bam = remove_pre_static(
+                ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_bai = remove_pre_static(
+                ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_reference = remove_pre_static(
+                ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_reference_index = remove_pre_static(
+                ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
+            )
+            path_name_vcf = remove_pre_static(ref_map.vcf, "/insaflu_web/INSaFLU/")
+
+            data["is_ok"] = True
+            data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))
+
+            data["path_reference"] = mark_safe(
+                request.build_absolute_uri(path_name_reference)
+            )
+            data["path_reference_index"] = mark_safe(
+                request.build_absolute_uri(path_name_reference_index)
+            )
+            data["reference_name"] = reference
+
+            #### other files
+            data["bam_file_id"] = mark_safe(
+                '<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                    path_name_bam,
+                    os.path.basename(path_name_bam),
+                    os.path.basename(path_name_bam),
+                )
+            )
+            data["bai_file_id"] = mark_safe(
+                '<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                    path_name_bai,
+                    os.path.basename(path_name_bai),
+                    os.path.basename(path_name_bai),
+                )
+            )
+            data["vcf_file_id"] = mark_safe(
+                '<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                    path_name_vcf,
+                    os.path.basename(path_name_vcf),
+                    os.path.basename(path_name_vcf),
+                )
+            )
+            data["reference_id"] = mark_safe(
+                '<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                    path_name_reference,
+                    os.path.basename(path_name_reference),
+                    os.path.basename(path_name_reference),
+                )
+            )
+            data["reference_index_id"] = mark_safe(
+                '<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                    path_name_reference_index,
+                    os.path.basename(path_name_reference_index),
+                    os.path.basename(path_name_reference_index),
+                )
+            )
+
+            data["static_dir"] = run.static_dir
+            data["sample_name"] = sample_name
+
+            print(path_name_reference_index)
+            print(os.path.isfile(path_name_reference_index))
+        # print(data)
         return JsonResponse(data)

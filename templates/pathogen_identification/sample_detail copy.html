@@ -127,7 +127,6 @@
         top: 0;
         left: 0;
     }
-
     
     
 
@@ -388,7 +387,7 @@
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <table class="table table-hover table-bordered table-striped" id="sample_report" width="100%">
+                    <table class="table table-hover table-bordered table-striped" id="sample_report">
                         <thead>
                             <tr>
                                 <th>Description</th>
@@ -476,13 +475,22 @@
                             </tr>
 
                             {% if value.covplot_exists == True %}
-                            <tr class="igv_tab" id="igv_display_{{value.accid}}">
+                            <tr class="detail">
                                 <td colspan="14" align="center">
-                                    <div class="card-block">
-                                        <div class="container-fluid">
-                                            <div id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
-                                            <div id="show_igv_{{value.accid}}"  show-igv-url="{% url 'show_igv' %}"></div>
+                                    <div class="container">
+                                        <br>
+                                        <div class="regular_info_box form-inline">
+                                            <div id="bam_file_id" class="col-lg-2"></div>
+                                            <div id="bai_file_id" class="col-lg-3"></div>
+                                            <div id="vcf_file_id" class="col-lg-2"></div> 
+                                            <div id="reference_id" class="col-lg-2"></div>
+                                            <div id="reference_index_id" class="col-lg-2"></div>
                                         </div>
+                                        <br>
+                                        
+                                        <!-- Show files to download, trees -->
+                                        <div id='loader_igv_id'><img src="{{ spinner_url }}"/></div>
+                                        <div id="show_igv_id" project_sample_id="{{ project_sample.id }}" show-igv-url="{% url 'show_igv' %}"></div>
                                     </div>
                                 </td>
                             </tr>
@@ -495,12 +503,19 @@
                                 </td>
                                 <td colspan="1" align="center">
                 
-                                    <div style="position:relative height=100%" >
-                                        <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                        run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
+                                    <div id="cov_div_igv" style="position:relative height=100%">
+                
+                                        <form id="igv_display_{{value.accid}}" action="{% url 'igv_browser' %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type=submit value="IGV" name="btn">
+                                            <input type="hidden" name="project_pk" value="{{project_index}}">
+                                            <input type="hidden" name="sample_pk" value="{{sample_index}}">
+                                            <input type="hidden" name="run_pk" value="{{run_index}}">
+                                            <input type="hidden" name="reference" value="{{value.simple_id}}">
+                                            <input type="hidden" name="unique_id" value="{{value.unique_id}}">
+                                        </form>
                                     </div>
-                                    
-                                    <div id="cov_div" >
+                                    <div id="cov_div" style="position:relative height=100%">
                                         <br>
                                         <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
                                             method="POST">
@@ -651,130 +666,15 @@
 {% block js %}
 
 <script type="text/javascript">
-
-    //document.getElementById("igv_browse").addEventListener("click", function (e) {
-    $(document).on('click', '.btn', function (e) {
-        if (e.target.id == "igv_browse") 
-            var accid=$(this).attr('accid');
-            console.log('igv_display_'+accid);
-            var igv_display = document.getElementById('igv_display_' + accid);
-            var igv_display_status= igv_display.style.display;
-            var igv_display_className= igv_display.className;
-            console.log(igv_display_status);
-            console.log(igv_display_className);
-            console.log(accid);
-            console.log(/\bopen\b/.test(igv_display_className)); 
-            console.log(igv_display.className.replace(" open",''));   
-            
-            if (/\bopen\b/.test(igv_display_className)){
-                igv_display.className= igv_display.className.replace(" open",'');
-                var show_igv_div = document.getElementById('show_igv_' + accid);
-                document.getElementById('show_igv_' + accid).innerHTML = ""
-
-            }else{
-                igv_display.className += " open";
-                show_igv($(this));
-            }
+    $('#collapseigv').on('shown.bs.collapse', function () {
+        show_igv();
     });
-
-</script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
-<script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.3/es6-shim.js"></script>
-
-<script type="text/javascript">
-
-    function show_igv(item) {
-        var accid=item.attr('accid');
-        var project_pk= item.attr('project_pk');
-        var sample_pk= item.attr('sample_pk');
-        var run_pk = item.attr('run_pk');
-        var unique_id = item.attr('reference_id');
-        var url = "{% url 'igv_browser' %}";
-        console.log("show_igv");
-        console.log(url);
-
-        $.ajax({
-            /// spin 
-            beforeSend: function() {
-                $('#igv_display_' + accid).show();
-            },
-            complete: function(){
-                $('#igv_display_' + accid).hide();
-            },
-            
-            data : { 
-                'project_pk': project_pk,
-                'sample_pk': sample_pk,
-                'run_pk': run_pk,
-                'unique_id': unique_id,
-                'accid': accid,
-            }, // data sent with the get request
-            
-            url: url,
-
-            success: function (data) {
-                if (data['is_ok']) {
-                    
-                    /// set the files names
-                    $('#bam_file_id').empty()
-                    $('#bam_file_id').append(data['bam_file_id'])
-                    $('#bai_file_id').empty()
-                    $('#bai_file_id').append(data['bai_file_id'])
-                    $('#vcf_file_id').empty()
-                    $('#vcf_file_id').append(data['vcf_file_id'])
-                    $('#reference_id').empty()
-                    $('#reference_id').append(data['reference_id'])
-                    $('#reference_index_id').empty()
-                    $('#reference_index_id').append(data['reference_index_id'])
-                    
-                    /// set options 
-                    options = {
-                            showNavigation: true,
-                            showRuler: true,
-                            showChromosomeWidget: true,
-                            reference: {
-                            id: data['reference_name'],
-                            fastaURL: data['path_reference'],
-                            indexURL: data['path_reference_index'],
-                        },
-                        trackDefaults: {
-                            bam: {
-                                coverageThreshold: 0.2,
-                                coverageQualityWeight: true
-                            }
-                        },
-                            tracks: [
-                            {
-                                type: "bam",
-                                url: data['path_bam'],
-                                height: 500,
-                                autoHeight: false,
-                                viewAsPairs: false,
-                                name: data['sample_name'],
-                                colorBy: "firstOfPairStrand",
-                            },                        
-                        ]
-                    }
-                    console.log("options");
-                    console.log(document.getElementById('show_igv_' + accid));
-                    browser = igv.createBrowser(document.getElementById('show_igv_' + accid), options);
-                }
-                else{
-                    $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                }
-            },
-            
-            // handle a non-successful response
-            error : function(xhr,errmsg,err) {
-                $('#show_igv_' + accid).append('<div class="alert alert-warning alert-dismissable"><strong>Fail</strong> to load bam file.</div>')
-                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
-            }
-        });
-    }
-
-
+    
+    //remove the tree from the screen
+    $('#collapseigv').on('hidden.bs.collapse', function () {
+        $('#show_igv_id').empty();
+        $('#bam_file_id').empty();
+    });
 </script>
 
  
@@ -943,11 +843,10 @@
     }
     
     function toggle_it(item) {
-        if (item.className != "igv_tab")
-            if (/\bopen\b/.test(item.className))
-                item.className = item.className.replace(/\bopen\b/, " ");
-            else
-                item.className += " open";
+        if (/\bopen\b/.test(item.className))
+            item.className = item.className.replace(/\bopen\b/, " ");
+        else
+            item.className += " open";
     }
 
 </script>
@@ -985,6 +884,7 @@
         document.body.removeChild(link);
     }
 </script>
+
 
 <script>	
   $('#id_go_back_button').on('click', function(){

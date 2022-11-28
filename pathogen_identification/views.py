@@ -4,16 +4,19 @@ import os
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -35,16 +38,28 @@ from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample)
-from pathogen_identification.tables import (ContigTable, ProjectTable,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+)
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RunMainTable,
+    SampleTable,
+)
 
 
 def clean_check_box_in_session(request):
@@ -840,26 +855,34 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
         """"""
         # context = super().get_context_data(**kwargs)
 
-        project_name = self.kwargs["project"]
-        run_name = self.kwargs["run"]
-        sample_name = self.kwargs["sample"]
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+        run_pk = int(self.kwargs["pk3"])
         reference = self.kwargs["reference"]
         user = self.request.user
 
-        project_main = Projects.objects.get(name=project_name, owner=user)
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
-
-        sample_main = PIProject_Sample.objects.get(
-            name=sample_name, project=project_main
+        reference = (
+            reference.replace(".", "_")
+            .replace(";", "_")
+            .replace(":", "_")
+            .replace("|", "_")
         )
-        #
 
-        run_main = RunMain.objects.get(
-            project=project_main, sample=sample_main, name=run_name
-        )
+        project_main = Projects.objects.get(pk=project_pk)
+        project_name = project_main.name
+        sample = PIProject_Sample.objects.get(pk=sample_pk)
+        sample_name = sample.name
+        run_main = RunMain.objects.get(pk=run_pk)
+        run_name = run_main.name
+
+        print("##")
+        print(reference)
+        print(sample)
+        print(run_main)
+
         try:
             ref_main = ReferenceMap_Main.objects.get(
-                reference=reference, sample=sample_main, run=run_main
+                reference=reference, sample=sample, run=run_main
             )
             map_db = ReferenceContigs.objects.filter(
                 reference=ref_main,
@@ -880,10 +903,11 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_name": run_name,
             "reference": reference,
+            "sample_index": sample.pk,
+            "run_index": run_main.pk,
         }
 
         return context
-
 
 
 def download_file_igv(requestdst):

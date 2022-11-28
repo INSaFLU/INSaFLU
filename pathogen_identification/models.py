@@ -736,7 +736,7 @@ class FinalReport(models.Model):
 
     taxid = models.CharField(max_length=20, blank=True, null=True)
     simple_id = models.CharField(max_length=20, blank=True, null=True)
-    description = models.CharField(max_length=150, blank=True, null=True)
+    description = models.CharField(max_length=450, blank=True, null=True)
 
     ref_db = models.CharField(max_length=400, blank=True, null=True)
     reference_contig_str = models.CharField(max_length=100, blank=True, null=True)

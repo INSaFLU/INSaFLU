@@ -324,8 +324,8 @@ class SampleTable(tables.Table):
 
 class RawReferenceTable(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
-    accid = tables.Column(verbose_name="Accid")
-    description = tables.Column(verbose_name="Description")
+    accid = tables.Column(verbose_name="Taxid representativde Accid")
+    description = tables.Column(verbose_name="Taxid representative Description")
     counts = tables.Column(verbose_name="Counts")
     status = tables.Column(verbose_name="Status")
 

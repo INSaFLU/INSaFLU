@@ -662,10 +662,10 @@ class Remapping:
         self.genome_coverage = f"{self.rdir}/{self.prefix}.sorted.bedgraph"
         self.mapped_reads = f"{self.rdir}/{self.prefix}_reads_map.tsv"
         self.mapped_subset_r1_fasta = (
-            f"{self.rdir}/{self.prefix}_reads_map_subset_r1.fasta"
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r1.fasta"
         )
         self.mapped_subset_r2_fasta = (
-            f"{self.rdir}/{self.prefix}_reads_map_subset_r2.fasta"
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r2.fasta"
         )
 
         self.assembly_map_paf = f"{self.rdir}/{self.prefix}.paf"

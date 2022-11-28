@@ -698,10 +698,13 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             project__pk=project_pk,
             project__owner=user,
         )
-        sample = Sample.objects.get(pk=sample_pk)
-        sample_name = sample.name
+        sample = PIProject_Sample.objects.get(pk=sample_pk)
+        sample_name = sample.sample.name
         project = Projects.objects.get(pk=project_pk)
         project_name = project.name
+
+        print("######### SAMPLE NAME ")
+        print(sample_name)
 
         runs_table = RunMainTable(runs)
 
@@ -715,7 +718,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
             "table": runs_table,
-            "name": sample_name,
+            "sample_name": sample_name,
             "project_main": True,
             "project_name": project_name,
             "project_index": project_pk,
@@ -786,7 +789,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         project_main = Projects.objects.get(pk=project_pk)
         project_name = project_main.name
-        sample = Sample.objects.get(pk=sample_pk)
+        sample = PIProject_Sample.objects.get(pk=sample_pk)
         sample_name = sample.name
         run_main = RunMain.objects.get(pk=run_pk)
         run_name = run_main.name

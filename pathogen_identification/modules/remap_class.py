@@ -930,7 +930,6 @@ class Remapping:
         cmd = [
             "samtools",
             "mpileup",
-            "-g",
             "-f",
             self.reference_file,
             self.read_map_sorted_bam,

@@ -615,6 +615,9 @@ class Run_Deployment_Methods(RunDetail_main):
             self.static_dir_plots, self.media_dir_igv
         )
 
+        print("remapping done")
+        print("merging and collecting output")
+
         # self.remap_manager.run_mappings()
         # self.remap_manager.move_plots_to_static(self.static_dir_plots)
         # self.remap_manager.move_igv_to_static(self.media_dir_igv)

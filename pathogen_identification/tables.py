@@ -326,6 +326,7 @@ class RawReferenceTable(tables.Table):
     taxid = tables.Column(verbose_name="Taxid")
     accid = tables.Column(verbose_name="Taxid representativde Accid")
     description = tables.Column(verbose_name="Taxid representative Description")
+    classification_source = tables.Column(verbose_name="Classification Source")
     counts = tables.Column(verbose_name="Counts")
     status = tables.Column(verbose_name="Status")
 
@@ -339,6 +340,16 @@ class RawReferenceTable(tables.Table):
             "counts",
             "status",
         )
+
+    def render_classification_source(self, record):
+        if record.classification_source == "1":
+            return "reads"
+
+        if record.classification_source == "2":
+            return "contigs"
+
+        if record.classification_source == "3":
+            return "reads / contigs"
 
     def render_status(self, record):
 

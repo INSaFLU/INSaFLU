@@ -462,8 +462,10 @@ class Metadata_handler:
                             determine_taxid_in_file(taxid, self.aclass),
                         )
                     )
-                    remap_plan.append([taxid, pref, fileset])
+                    remap_plan.append([taxid, pref, fileset, description])
 
-        self.remap_plan = pd.DataFrame(remap_plan, columns=["taxid", "acc", "file"])
+        self.remap_plan = pd.DataFrame(
+            remap_plan, columns=["taxid", "acc", "file", "description"]
+        )
 
         return remap_targets, remap_absent

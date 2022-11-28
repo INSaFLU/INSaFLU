@@ -4,6 +4,7 @@ import shutil
 import traceback
 
 import pandas as pd
+from constants.constants import Constants, FileType, TypePath
 from django.contrib.auth.models import User
 from managing_files.models import ProcessControler
 from utils.process_SGE import ProcessSGE
@@ -208,9 +209,11 @@ class Run_Main_from_Leaf:
         prefix = f"{simplify_name(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
         self.date_submitted = datetime.datetime.now()
 
-        self.file_r1 = input_data.sample.path_name_1.path
-        if input_data.sample.path_name_2:
-            self.file_r2 = input_data.sample.path_name_2.path
+        self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
+        if input_data.sample.exist_file_2():
+            self.file_r2 = input_data.sample.get_fastq_available(
+                TypePath.MEDIA_ROOT, True
+            )
         else:
             self.file_r2 = ""
 

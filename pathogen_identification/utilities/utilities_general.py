@@ -116,7 +116,6 @@ def scrape_description(accid: str, existing_description: str = None) -> str:
         title = existing_description
 
     if title == "":
-
         return str(existing_description)
     else:
         return str(title)

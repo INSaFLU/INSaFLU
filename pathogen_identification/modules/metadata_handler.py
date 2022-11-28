@@ -428,7 +428,7 @@ class Metadata_handler:
                         self.taxonomy_to_description.taxid.astype(int)
                     )
                     description = self.taxonomy_to_description[
-                        self.taxonomy_to_description.taxid == int(taxid)
+                        self.taxonomy_to_description.taxid.astype(int) == int(taxid)
                     ].description.unique()
 
                     if len(description) == 0:
@@ -437,7 +437,7 @@ class Metadata_handler:
                     if len(description) > 1:
                         description = sorted(description, key=len)
 
-                    description = description[-1]
+                    description = description[0]
                     description = scrape_description(pref, description)
 
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):

@@ -673,7 +673,7 @@ class Remapping:
         self.mapped_subset_r2 = f"{self.rdir}/{self.prefix}.R2.kept.fastq.gz"
         self.read_map_sam_rmdup = f"{self.rdir}/{self.prefix}.rmdup.sam"
         self.mapped_contigs_fasta = (
-            f"{self.rdir}/{self.prefix}_{target.acc_simple}_mapped_contigs.fa"
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_mapped_contigs.fasta"
         )
         self.mapped_contigs_fasta_index = (
             f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa.fai"

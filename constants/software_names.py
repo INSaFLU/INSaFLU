@@ -631,6 +631,17 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "1.0.0"
     SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
+    ### MINIMAP2 DEPLETE
+
+    SOFTWARE_MINIMAP2_DEPLETE_ONT_name = "Minimap2_ONT"
+    SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_DEPLETE_ONT = os.path.join(
+        settings.DIR_SOFTWARE,
+        "hostDepletion/hostdep_env/bin/minimap2",
+    )
+    SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "1.0.0"
+    SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
+
     ###################################
     ###################################
     #####
@@ -725,7 +736,6 @@ class SoftwareNames(object):
     polyvalent_software = [
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_SNIPPY_name,
-        SOFTWARE_MINIMAP2_REMAP_ONT_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
     polyvalent_software_pipelines = {

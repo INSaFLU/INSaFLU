@@ -245,6 +245,7 @@ class Utility_Pipeline_Manager:
         self.pipeline_order = pipe_makeup_manager.get_makeup(self.pipeline_makeup)
 
         print("PIPELINE_ORDER", self.pipeline_order)
+        print(combined_table.columns)
 
         self.existing_pipeline_order = [
             x for x in self.pipeline_order if x in pipelines_available
@@ -346,7 +347,7 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        print("Checking software db available")
+        print("Checking software db available: ", software_name)
 
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
@@ -368,14 +369,28 @@ class Utility_Pipeline_Manager:
             "software", "name"
         )
 
-        print(software_list)
-
         self.software_dbs_dict = {
             software.lower(): self.get_software_dbs_if_exist(software)
             .path.unique()
             .tolist()
             for software in software_list
         }
+
+    def get_from_software_db_dict(self, software_name: str, empty=[]):
+
+        possibilities = [software_name, software_name.lower()]
+        if "_" in software_name:
+            element = software_name.split("_")[0]
+
+            possibilities.append(element)
+            possibilities.append(element.lower())
+
+        for possibility in possibilities:
+            if possibility in self.software_dbs_dict.keys():
+
+                return self.software_dbs_dict[possibility]
+
+        return empty
 
     def get_software_dbs_if_exist(self, software_name: str) -> pd.DataFrame:
 
@@ -569,10 +584,14 @@ class Utility_Pipeline_Manager:
             return node
 
         for child in explicit_path[1:]:
+            print("parent", parent)
 
             child_main = match_nodes(
                 child, explicit_edge_dict[parent_main].index.tolist()
             )
+            print("child", child_main)
+
+            print(child_main in nodes_index_dict.keys())
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
@@ -652,9 +671,14 @@ class Parameter_DB_Utility:
 
                 elif row.name == "--db" and software_db_dict:
                     software_name = row.software_name
-                    print(software_name)
-                    print(software_db_dict[software_name])
-                    new_range = software_db_dict[software_name]
+                    possibilities = [software_name, software_name.lower()]
+                    if "_" in software_name:
+                        possibilities.append(software_name.split("_")[0])
+
+                    for p in possibilities:
+                        if p in software_db_dict:
+                            new_range = software_db_dict[p]
+                            break
 
                 return new_range
 
@@ -726,7 +750,7 @@ class Parameter_DB_Utility:
                 "is_to_run_y": "parameter_is_to_run",
             }
         )
-
+        print(combined_table.columns)
         combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
             lambda x: PipelineStep.objects.get(id=int(x)).name
@@ -1014,8 +1038,9 @@ class Utils_Manager:
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        print("Pipeline tree generated")
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
-
+        print("Pipeline tree index generated")
         local_paths = local_tree.get_all_graph_paths_explicit()
         sample = samples[0]
 
@@ -1024,10 +1049,13 @@ class Utils_Manager:
         for sample in samples:
 
             for leaf, path in local_paths.items():
+                print(leaf, path)
 
                 matched_path = utils.utility_manager.match_path_to_tree(
                     path, pipeline_tree
                 )
+
+                print("Matched path to tree")
 
                 matched_path_node = SoftwareTreeNode.objects.get(
                     software_tree__pk=pipeline_tree_index, index=matched_path

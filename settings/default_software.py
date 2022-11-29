@@ -177,16 +177,6 @@ class DefaultSoftware(object):
             self.default_parameters.get_bwa_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
@@ -318,6 +308,16 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             self.default_parameters.get_minimap2_remap_ONT_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+            self.default_parameters.get_minimap2_depletion_ONT_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -652,7 +652,19 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             user,
-            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
+    def get_minimap2_deplete_ont_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
@@ -882,20 +894,9 @@ class DefaultSoftware(object):
             )
             return self.get_centrifuge_parameters(user, technology_name)
 
-        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT:
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
-                self.default_parameters.get_minimap2_remap_ONT_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-                ),
-                user,
-            )
-
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
                 self.default_parameters.get_minimap2_remap_ONT_default(
                     user,
                     Software.TYPE_OF_USE_televir_global,
@@ -905,9 +906,21 @@ class DefaultSoftware(object):
                 user,
             )
 
-            return self.get_minimap2_remap_ont_parameters(
-                user, ConstantsSettings.TECHNOLOGY_minion
+            return self.get_minimap2_remap_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+                self.default_parameters.get_minimap2_depletion_ONT_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+                ),
+                user,
             )
+
+            return self.get_minimap2_deplete_ont_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             self.test_default_db(

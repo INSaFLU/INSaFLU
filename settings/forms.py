@@ -7,16 +7,16 @@ import os
 
 from constants.software_names import SoftwareNames
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
-                                 Submit)
+from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
 from datasets.models import Dataset
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from managing_files.models import Project, ProjectSample
-from pathogen_identification.utilities.utilities_pipeline import \
-    Utility_Pipeline_Manager
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utility_Pipeline_Manager,
+)
 from utils.utils import Utils
 
 from settings.default_parameters import DefaultParameters
@@ -164,7 +164,7 @@ class SoftwareForm(forms.ModelForm):
                 ):
                     list_data = [
                         [data_, os.path.basename(data_)]
-                        for data_ in self.televir_utiltity.software_dbs_dict.get(
+                        for data_ in self.televir_utiltity.get_from_software_db_dict(
                             parameter.software.name.lower(), []
                         )
                     ]

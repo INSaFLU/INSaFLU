@@ -63,9 +63,6 @@ class DefaultParameters(object):
 
         self.televir_db_manager.get_software_db_dict()
 
-        print("#################  DefaultParameters  #################")
-        print(self.televir_db_manager.software_dbs_dict)
-
     def get_software_parameters_version(self, software_name):
         """
         With time it is possible to add or remove parameters available in softwares
@@ -712,7 +709,13 @@ class DefaultParameters(object):
             return self.get_minimap2_remap_ONT_default(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
+                ConstantsSettings.TECHNOLOGY_minion,
+            )
+        elif software.name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
+            return self.get_minimap2_depletion_ONT_default(
+                software.owner,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             )
         else:
             return None
@@ -1838,16 +1841,14 @@ class DefaultParameters(object):
         software.help_text = ""
 
         ###  which part of pipeline is going to run; NEED TO CHECK
-        software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remapping
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
         vect_parameters = []
 
         parameter = Parameter()
-        parameter.name = "-x map-ont"
+        parameter.name = "-ax map-ont"
         parameter.parameter = ""
         parameter.type_data = Parameter.PARAMETER_char
         parameter.software = software
@@ -1869,6 +1870,94 @@ class DefaultParameters(object):
         parameter.can_change = False
         parameter.is_to_run = True
         parameter.sequence_out = 2
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "do not output secondary alignments, default no"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_minimap2_depletion_ONT_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
+        """
+        minimap remap ONT default
+        """
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name
+        software.name_extended = (
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name_extended
+        )
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version = SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = True
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run; NEED TO CHECK
+        software.pipeline_step = self._get_pipeline(pipeline_step)
+
+        software.owner = user
+
+        vect_parameters = []
+
+        dbs_available = self.televir_db_manager.get_from_software_db_dict(
+            software_name=software.name, empty=["None"]
+        )
+
+        parameter = Parameter()
+        parameter.name = "--db"
+        parameter.parameter = dbs_available[0]
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.range_available = ""
+        parameter.range_max = ""
+        parameter.range_min = ""
+        parameter.description = "Database to use"
+
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "-x map-ont"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 2
+        parameter.description = "preset for ONT data"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = "--secondary=no"
+        parameter.parameter = ""
+        parameter.type_data = Parameter.PARAMETER_char
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.is_to_run = True
+        parameter.sequence_out = 3
         parameter.range_available = ""
         parameter.range_max = ""
         parameter.range_min = ""

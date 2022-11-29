@@ -140,8 +140,14 @@ class Utility_Repository:
         Check if a record exists in a table
         """
 
+        check_list = [id]
+        if "_" in id:
+            check_list.append(id.split("_")[0])
+        check_list = [f"'{i}'" for i in check_list]
+        check_list = ",".join(check_list)
+
         find = self.engine.execute(
-            f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+            f"SELECT * FROM {table_name} WHERE {field} IN ({check_list})"
         ).fetchall()
         find = len(find) > 0
 

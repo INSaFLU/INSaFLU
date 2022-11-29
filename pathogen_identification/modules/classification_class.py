@@ -993,11 +993,11 @@ class run_minimap2_ONT(Classifier_init):
     full_report_suffix = ".minimap2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"minimap2 -t {threads} -ax map-ont {self.args} {self.db_path} {self.query_path} > {self.report_path}"
+        cmd = f"minimap2 -t {threads} {self.args} {self.db_path} {self.query_path} > {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"minimap2 -t {threads} -ax map-ont {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path} "
+        cmd = f"minimap2 -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path} "
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:

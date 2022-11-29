@@ -620,7 +620,7 @@ class Remapping:
         :param bin: path to bin directory.
         :param logging_level: logging level to use.
         """
-        self.method = method.name
+        self.method = method.name.split("_")[0]
         self.method_object = method
         self.args = method.args
         self.rdir = rdir

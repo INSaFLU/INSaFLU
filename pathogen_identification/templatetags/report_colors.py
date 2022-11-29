@@ -34,6 +34,25 @@ def round_to_int(value):
     return value
 
 
+@register.filter(name="round_to_percent")
+def round_to_percent(value):
+    if value is None or value == "":
+        value = 0
+
+    value = round(value * 100, 2)
+    return value
+
+
+@register.filter("reconvert_string_to_int")
+def reconvert_string_to_int(value):
+    if value is None or value == "":
+        value = 0
+    if "," in value:
+        value = value.replace(",", "")
+
+    return int(value)
+
+
 @register.filter(name="success_code")
 def map_success_col(success_count):
     ncol = f"background-color: rgba({cell_color}, {50 * success_count}%);"

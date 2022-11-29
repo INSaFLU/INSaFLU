@@ -489,6 +489,11 @@ class RunDetail(models.Model):
     max_mapped = models.IntegerField(blank=True, null=True)
 
     input = models.CharField(max_length=300, blank=True, null=True)
+    enriched_reads = models.IntegerField(blank=True, null=True, default=0)
+    enriched_reads_percent = models.FloatField(blank=True, null=True, default=0)
+    depleted_reads = models.IntegerField(blank=True, null=True, default=0)
+    depleted_reads_percent = models.FloatField(blank=True, null=True, default=0)
+
     processed = models.CharField(max_length=300, blank=True, null=True)
     processed_percent = models.FloatField(blank=True, null=True)
 

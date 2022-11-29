@@ -2392,7 +2392,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = "--evalue"
+        parameter.name = "-evalue"
         parameter.parameter = "1e-5"
         parameter.type_data = Parameter.PARAMETER_char
         parameter.software = software

@@ -105,6 +105,15 @@
 
     }
 
+    .left_small {
+
+        width: 30%;
+    }
+
+    .center {
+        width: 40%;
+    }
+
     form {
         padding: 12px;
         position: relative;
@@ -146,8 +155,27 @@
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headinghead">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <div class= "column left">
-                        <p > <strong> Name: {{sample}} </strong> </p>
+                    <div class= "column left_small">
+                        <div class="col-lg-8"> <strong>Sample name: </strong> {{sample}}</div>
+                        <div class="col-lg-8"> <strong>Run: </strong> {{run_name}}</div>
+                    </div>
+                    <div class="column center">
+                        {% if run_main.enrichment_performed %}
+                        <div class="col-lg-8"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </div>
+                        {% endif %}
+                        {% if run_main.host_depletion_performed %}
+                        <div class="col-lg-8"> <strong>Host depletion:</strong> {{run_main.host_depletion}} </div>
+                        {% endif %}
+                        {% if read_classification.performed %}
+                        <div class="col-lg-8"> <strong>Read lassification:</strong> {{read_classification.method}} </div>
+                        {% endif %}
+                        {% if contig_classification.performed %}       
+                        <div class="col-lg-8"> <strong>Contig classification:</strong> {{contig_classification.metod}}</div>
+                        {% endif %}
+                        {% if assembly.performed %} 
+                        <div class="col-lg-8"> <strong>Assembly:</strong> {{assembly.method}} </div>
+                        {% endif %}
+                        <div class="col-lg-8"> <strong>Remapping:</strong> run_remap </div>                        
                     </div>
                     <div class= "column right">
                         <form style="padding:0px" id="download_params" action="{% url 'download_file' %}" method="POST">
@@ -173,28 +201,23 @@
             <div class="card-block">
                 <div style="padding: 20px">
                     <div class= "column left">
-
+                    <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
+                    {% if run_main.enrichment_performed and run_main.host_depletion_performed %}
                     {% if run_main.enrichment_performed %}
                     <p> Viral enrichment was performed using <strong>{{ run_main.enrichment }}</strong>. </p>
-                    <p> {{ run_detail.input }} input reads. {{ run_detail.processed }} ({{run_detail.processed_percent}} %)
-                        remained. </p>
-                    {% if run_detail_processed.processed == 0 %}
-                    <p> Run continued using input reads </p>
                     {% endif %}
-                    {% elif run_main.host_depletion_performed %}
-                    <br>
-                    <p> The following table shows the results of the pre-processing. </p>
-                    <p> The pre-processing is done in the following order: </p>
-                    <br>
+                    {% if run_main.host_depletion_performed %}
+                    <p> Host depletion was performed using <strong>{{ run_main.host_depletion }}</strong>. </p>
+                    {% endif %}
+                    {% if run_detail_processed.processed == 0 %}
+                    <p> No reads remained, continued using input reads </p>
+                    {% else %}
+                    <p>{{ run_detail.processed }} ({{run_detail.processed_percent}} %)
+                        remained. </p>
+                    {% endif %}
                     {% else %}
                     <p> No pre-processing step was performed </p>
                     {% endif %}
-                    {% if run_detail.sift_preproc %}
-                    <p> SIFT was performed on the pre-processed reads, {{run_detail.sift_removed_pprc}} reads were removed.
-                    </p>
-                    {% endif %}
-                    <p> A total of {{run_detail.processing_final}} ({{run_detail.processing_final_percent}} %) reads
-                        remained. </p>
                     </div>
                     <div class="column right">
                         {% if run_main.enrichment_performed %}

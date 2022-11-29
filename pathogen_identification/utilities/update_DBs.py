@@ -416,6 +416,10 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             max_prop=run_class.run_detail_report.max_prop,  #
             max_mapped=run_class.run_detail_report.max_mapped,  #
             input=run_class.run_detail_report.input,  #
+            enriched_reads=run_class.run_detail_report.enriched_reads,  #
+            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
+            depleted_reads=run_class.run_detail_report.depleted_reads,  #
+            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
             processed=run_class.run_detail_report.processed,  #
             processed_percent=run_class.run_detail_report.processed_percent,  #
             sift_preproc=run_class.run_detail_report.sift_preproc,  #
@@ -648,7 +652,7 @@ def Update_ReferenceMap(
             mapped_subset_r2=ref_map.reference.mapped_subset_r2,
             mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
             mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
-            vcf= ref_map.reference.vcf,
+            vcf=ref_map.reference.vcf,
         )
         map_db.save()
 

@@ -1094,6 +1094,10 @@ class Run_detail_report:
     max_prop: int
     max_mapped: int
     input: str
+    enriched_reads: int
+    enriched_reads_percent: float
+    depleted_reads: int
+    depleted_reads_percent: float
     processed: str
     processed_percent: str
     sift_preproc: bool

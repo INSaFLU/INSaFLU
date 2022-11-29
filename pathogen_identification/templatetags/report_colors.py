@@ -54,8 +54,7 @@ def depth_color(depth_value, max_value):
 
 @register.simple_tag
 def flag_false_positive(depth, depthc, coverage, mapped):
-    print("HI")
-    print(mapped)
+
     if depthc > 0 or coverage > 0:
         if depthc / depth > 10 and coverage < 5:
             return "Likely False Positive"

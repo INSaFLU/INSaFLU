@@ -642,6 +642,17 @@ class SoftwareNames(object):
     SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "1.0.0"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
 
+    ### Bowtie2 DEPLETE
+
+    SOFTWARE_BOWTIE2_DEPLETE_name = "Bowtie2"
+    SOFTWARE_BOWTIE2_DEPLETE_name_extended = "Bowtie2"
+    SOFTWARE_BOWTIE2_DEPLETE = os.path.join(
+        settings.DIR_SOFTWARE,
+        "remap/remap/bin/bowtie2",
+    )
+    SOFTWARE_BOWTIE2_DEPLETE_VERSION = "1.0.0"
+    SOFTWARE_BOWTIE2_DEPLETE_parameters = "-p 4"
+
     ###################################
     ###################################
     #####

@@ -547,6 +547,7 @@ class Read_class:
         """
 
         current_reads = self.get_read_names_fastq(self.current)
+
         read_list_to_keep = list(set(current_reads) - set(read_list))
 
         if len(read_list) > 0:
@@ -594,6 +595,26 @@ class Read_class:
         cmd = "zcat %s | wc -l" % self.current
         rnumber = self.cmd.run_bash_return(cmd).decode("utf-8")
         return int(rnumber) // 4
+
+    def remove_duplicate_reads(self):
+        """
+        Remove duplicate reads from current fastq file.
+        """
+
+        if not self.exists:
+            return
+
+        temp = os.path.join(
+            os.path.dirname(self.current), f"temp_rmdup_{randint(1,1000)}.fq.gz"
+        )
+
+        cmd = "seqkit rmdup -n %s -o %s" % (self.current, temp)
+
+        self.cmd.run(cmd)
+
+        if os.path.isfile(temp) and os.path.getsize(temp):
+            os.remove(self.current)
+            os.rename(temp, self.current)
 
     def current_fastq_read_number(self):
         """
@@ -730,6 +751,10 @@ class Sample_runClass:
             "processed": fake_df,
         }
 
+    def remove_duplicates(self):
+        self.r1.remove_duplicate_reads()
+        self.r2.remove_duplicate_reads()
+
     def clean_unique(self):
         if self.type == "SE":
             self.clean_unique_SE()
@@ -745,8 +770,15 @@ class Sample_runClass:
             "'^@'",
             self.r1.current,
             "|",
-            "awk",
-            "'{print $1}'",
+            "cut",
+            "-f1",
+            "-d",
+            " ",
+            "|",
+            'grep -v "+|/*|/&"',
+            "|",
+            "sed",
+            r"'s/\s.*$//'",
             "|",
             "sed",
             "'s/^@//g'",
@@ -776,7 +808,7 @@ class Sample_runClass:
             f"seqkit common -n -i {self.r1.current} {self.r1.current} | paste - - - - | cut -f1 | sort | uniq | sed 's/^@//g' > {common_reads}"
         ]
 
-        self.cmd.run(cmd_find_common)
+        self.cmd.run_script(cmd_find_common)
 
         if os.path.getsize(common_reads) == 0:
             return

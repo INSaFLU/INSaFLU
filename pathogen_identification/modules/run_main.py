@@ -700,8 +700,9 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
 
         if self.enrichment or self.depletion or self.assembly:
-            self.sample.clean_unique()
+            # self.sample.clean_unique()
             self.sample.trimmomatic_sort()
+            self.sample.remove_duplicates()
 
         if self.assembly:
             self.deploy_ASSEMBLY()
@@ -812,6 +813,13 @@ class RunMain_class(Run_Deployment_Methods):
             )
         )
 
+        enriched_reads = len(self.enrichment_drone.classified_reads_list)
+        depleted_reads = len(self.depletion_drone.classified_reads_list)
+
+        if self.type == "PE":
+            enriched_reads = enriched_reads * 2
+            depleted_reads = depleted_reads * 2
+
         self.run_detail_report = Run_detail_report(
             self.remap_manager.max_depth,
             self.remap_manager.max_depthR,
@@ -819,10 +827,10 @@ class RunMain_class(Run_Deployment_Methods):
             self.remap_manager.max_prop,
             self.remap_manager.max_mapped,
             f"{processed_reads:,}",
-            len(self.enrichment_drone.classified_reads_list),
-            len(self.enrichment_drone.classified_reads_list) / processed_reads,
-            len(self.depletion_drone.classified_reads_list),
-            len(self.depletion_drone.classified_reads_list) / processed_reads,
+            enriched_reads,
+            enriched_reads / processed_reads,
+            depleted_reads,
+            depleted_reads / processed_reads,
             f"{filtered_reads:,}",
             f"{filtered_reads_perc:.2f}",
             False,

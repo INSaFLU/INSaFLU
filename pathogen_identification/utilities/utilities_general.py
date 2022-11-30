@@ -241,7 +241,12 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         if "description" in r2.columns:
             r2 = r2[~r2.description.str.contains(exclude)]
 
-        full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
+        if len(r2) > 0 and len(r1) > 0:
+            full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
+        elif len(r2) > 0:
+            full_descriptor = r2
+        else:
+            full_descriptor = r1
 
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
@@ -272,35 +277,48 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
     full_descriptor = full_descriptor.fillna(0)
 
-    def get_source(taxid):
+    def get_source(row):
 
-        if taxid in r1_raw.taxid.astype(int).tolist():
-
-            if taxid in r2.taxid.astype(int).tolist():
-                return 3
-
+        if row.counts_x > 0 and row.counts_y > 0:
+            return 3
+        elif row.counts_x > 0:
             return 1
+        elif row.counts_y > 0:
+            return 2
 
-        return 2
+    def descriptor_sources(fd):
+        if len(r1_raw) == 0:
+            fd["source"] = 2
+        elif len(r2) == 0:
+            fd["source"] = 1
+        else:
+            fd["source"] = fd.apply(get_source, axis=1)
 
-    def get_counts(taxid):
-        taxid = int(taxid)
+        return fd
 
-        r1p = r1.rename(columns={"counts_x": "counts"})
-        r2p = r2.rename(columns={"counts_x": "counts"})
-        r1p["taxid"] = r1p["taxid"].astype(int)
-        r2p["taxid"] = r2p["taxid"].astype(int)
+    def descriptor_counts(fd):
+        if len(r1_raw) == 0 or len(r2) == 0:
+            return fd
+        else:
+            fd["counts"] = fd.apply(get_counts, axis=1)
 
-        if taxid in r1p.taxid.tolist():
-            if taxid in r2p.taxid.tolist():
-                return f"{r1p[r1p.taxid== taxid].counts.values[0]} / {r2p[r2p.taxid==taxid].counts.values[0]}"
+        return fd
 
-            return f"{r1p[r1p.taxid==taxid].counts.values[0]}"
+    def get_counts(row):
 
-        return f"{r2p[r2p.taxid==taxid].counts.values[0]}"
+        if row.counts_x > 0 and row.counts_y > 0:
+            return f"{int(row.counts_x)} / {int(row.counts_y)}"
+        elif row.counts_x > 0:
+            return str(row.counts_x)
+        elif row.counts_y > 0:
+            return str(row.counts_y)
 
     full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
-    full_descriptor["source"] = full_descriptor["taxid"].apply(get_source)
-    full_descriptor["counts"] = full_descriptor["taxid"].apply(get_counts)
+    full_descriptor = descriptor_sources(full_descriptor)
+    full_descriptor = descriptor_counts(full_descriptor)
+
+    print("############## full descriptor #################")
+    print(r1, r2)
+    print(full_descriptor)
 
     return r1.head(maxt * r2pres), full_descriptor

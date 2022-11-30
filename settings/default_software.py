@@ -325,6 +325,16 @@ class DefaultSoftware(object):
             user,
         )
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+            self.default_parameters.get_bowtie2_deplete_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""
         if (
@@ -660,6 +670,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_bowtie2_deplete_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_minimap2_deplete_ont_parameters(self, user):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
@@ -907,6 +929,18 @@ class DefaultSoftware(object):
             )
 
             return self.get_minimap2_remap_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+                self.default_parameters.get_bowtie2_deplete_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+            return self.get_bowtie2_deplete_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
             self.test_default_db(

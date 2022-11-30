@@ -653,7 +653,7 @@ class RawReference(models.Model):
     taxid = models.CharField(max_length=100, blank=True, null=True)
     accid = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=100, blank=True, null=True)
-    counts = models.IntegerField(blank=True, null=True)
+    counts = models.CharField(max_length=100, blank=True, null=True)
     classification_source = models.CharField(max_length=15, blank=True, null=True)
 
 

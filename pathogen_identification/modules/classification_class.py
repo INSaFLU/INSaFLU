@@ -1,11 +1,13 @@
 import logging
 import os
 import re
+import shutil
 from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -621,9 +623,12 @@ class run_deSamba(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2, 4, 8], comment="@"
         ).rename(columns={0: "qseqid", 2: "acc", 4: "qual", 8: "length"})
+        report = report[report.acc != "*"][["qseqid", "acc"]]
+
+        return report
 
 
 class run_kraken2(Classifier_init):
@@ -889,26 +894,28 @@ class run_minimap2_illumina(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
         ).rename(columns={0: "acc", 1: "qseqid"})
 
+        report = report[report["acc"] != "*"]
+        return report
 
-class run_bwa_mem(Classifier_init):
-    method_name = "bwa_illumina"
+
+class run_bowtie2(Classifier_init):
+    method_name = "bowtie2"
     report_suffix = ".sam"
-    full_report_suffix = ".bwa_illumina"
+    full_report_suffix = ".bowtie2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"bwa mem -t {threads} {self.args} {self.db_path} {self.query_path} > {self.report_path}"
+        cmd = f"bowtie2 -t -x {self.db_path} -U {self.query_path} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bwa mem -t {threads} {self.args} {self.db_path} {self.query_path} {self.r2} > {self.report_path}"
+        cmd = f"bowtie2 -t -x {self.db_path} -1 {self.query_path} -2 {self.r2} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
@@ -932,13 +939,75 @@ class run_bwa_mem(Classifier_init):
         """
         read classifier output, return only query and reference sequence id columns.
         """
-
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
         ).rename(columns={0: "acc", 2: "qseqid"})
+
+
+class run_bwa_mem(Classifier_init):
+    method_name = "bwa_illumina"
+    report_suffix = ".sam"
+    full_report_suffix = ".bwa_illumina"
+
+    def run_SE(self, threads: int = 3):
+        rundir = os.path.dirname(self.report_path)
+        unzip_seq = f"gunzip -c {self.query_path} > {rundir}/seq.fq"
+
+        self.cmd.run(unzip_seq)
+        cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq > {self.report_path}"
+
+        self.cmd.run(cmd)
+
+    def run_PE(self, threads: int = 3):
+        rundir = os.path.dirname(self.report_path)
+        unzip_seq = f"gunzip -c {self.query_path} > {rundir}/seq.fq"
+        unzip_seq2 = f"gunzip -c {self.r2} > {rundir}/seq2.fq"
+
+        self.cmd.run_bash(unzip_seq)
+        self.cmd.run_bash(unzip_seq2)
+
+        cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq {rundir}/seq2.fq > {self.report_path}"
+
+        self.cmd.run(cmd)
+
+    def get_report(self) -> pd.DataFrame:
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        return pd.read_csv(self.report_path, sep="\t", header=None).rename(
+            columns={
+                0: "qseqid",
+                1: "flag",
+                2: "acc",
+                3: "pos",
+                4: "mapq",
+                5: "cigar",
+                6: "rnext",
+                7: "pnext",
+                8: "tlen",
+                9: "seq",
+                10: "qual",
+            }
+        )
+
+    def get_report_simple(self) -> pd.DataFrame:
+        """
+        read classifier output, return only query and reference sequence id columns.
+        """
+
+        if check_report_empty(self.report_path):
+            return pd.DataFrame(columns=["qseqid", "acc"])
+
+        report = pd.read_csv(
+            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+        ).rename(columns={0: "qseqid", 2: "acc"})
+
+        report = report[report["acc"] != "*"]
+        return report
 
 
 class run_bowtie2_ONT(Classifier_init):
@@ -982,9 +1051,12 @@ class run_bowtie2_ONT(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
         ).rename(columns={0: "acc", 1: "qseqid"})
+
+        report = report[report["acc"] != "*"]
+        return report
 
 
 class run_minimap2_ONT(Classifier_init):
@@ -1029,9 +1101,12 @@ class run_minimap2_ONT(Classifier_init):
         if check_report_empty(self.report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
-        return pd.read_csv(
+        report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
         ).rename(columns={0: "qseqid", 2: "acc"})
+
+        report = report[report["acc"] != "*"]
+        return report
 
 
 class run_minimap2_asm(Classifier_init):
@@ -1104,6 +1179,7 @@ class Classifier:
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
         "bowtie": run_bowtie2_ONT,
+        # "bowtie2": run_bowtie2_illumina,
         "bwa": run_bwa_mem,
     }
 

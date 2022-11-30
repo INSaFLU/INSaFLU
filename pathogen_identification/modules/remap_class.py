@@ -885,10 +885,10 @@ class Remapping:
             self.remap_deploy()
 
         if not self.check_mapping_output_exists():
-            self.logger.error(
-                f"Mapping output not found or unsuccesful after deploying on \
-                    target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
-            )
+            # self.logger.error(
+            #    f"Mapping output not found or unsuccesful after deploying on \
+            #        target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
+            # )
             return
 
         self.remap_reads_post_process()

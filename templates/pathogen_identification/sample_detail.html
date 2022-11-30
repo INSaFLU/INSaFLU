@@ -204,10 +204,10 @@
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% if run_main.enrichment_performed and run_main.host_depletion_performed %}
                     {% if run_main.enrichment_performed %}
-                    <p> Viral enrichment ({{ run_main.enrichment }}) removed {{run_detail.enriched_reads}} reads ({{run_detail.enriched_reads_percent|round_to_percent}} %).</p>
+                    <p> Viral enrichment ({{ run_main.enrichment }}) kept <strong>{{run_detail.enriched_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.enriched_reads_percent|round_to_percent}} %).</p>
                     {% endif %}
                     {% if run_main.host_depletion_performed %}
-                    <p> Host depletion ({{ run_main.host_depletion }}) removed {{run_detail.depleted_reads}} reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
+                    <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
                     {% endif %}
                     {% if run_detail_processed.processed == 0 %}
                     <p> No reads remained, continued using input reads </p>
@@ -218,7 +218,10 @@
                     <p> No pre-processing step was performed </p>
                     {% endif %}
                     </div>
-                    <div class="column center" id="piechart"></div>
+                    
+                    <div class="column center"</div>
+                        <div id="piechart"></div>
+                    </div>
                     
                     <div class="column right">
                         {% if run_main.enrichment_performed %}
@@ -260,7 +263,7 @@
                     {% if assembly.contig_number > 0 %}
                     </p> Contig sizes rang between
                         {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
-                    </p
+                    </p>
                     {% endif %}
                     </div>
                     {% endif %}
@@ -719,7 +722,7 @@
       var data = google.visualization.arrayToDataTable([
       ['Input', "Number"],
       ['kept', parseFloat("{{run_detail.processed|reconvert_string_to_int}}")],
-      ['enrichment', parseFloat("{{run_detail.enriched_reads}}")],
+      ['enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")],
       ['depletion', parseFloat("{{run_detail.depleted_reads}}")],
     ]);
     

@@ -298,6 +298,11 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
     def descriptor_counts(fd):
         if len(r1_raw) == 0 or len(r2) == 0:
+            if "counts" not in fd.columns:
+                fd["counts"] = fd["counts_x"]
+            if "counts_y" in fd.columns:
+                fd["counts"] = fd["counts_y"] + fd["counts_x"]
+            fd = fd.drop(["counts_x", "counts_y"], axis=1)
             return fd
         else:
             fd["counts"] = fd.apply(get_counts, axis=1)

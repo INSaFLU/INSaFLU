@@ -820,10 +820,10 @@ class ProcessSGE(object):
         try:
             sge_id = self.submitte_job(path_file)
             print("project submitted, sge_id: " + str(sge_id))
-            # if sge_id != None:
-            #    self.set_process_controlers(
-            #        user, process_controler.get_name_televir_project(project_pk), sge_id
-            #    )
+            if sge_id != None:
+                self.set_process_controlers(
+                    user, process_controler.get_name_televir_project(project_pk), sge_id
+                )
         except:
             raise Exception("Fail to submit the job.")
         return sge_id

@@ -434,7 +434,7 @@ class Read_class:
             bin: path to bin directory.
 
         """
-        self.cmd = RunCMD(bin)
+        self.cmd = RunCMD(bin, prefix="read", task="housekeeping")
 
         self.exists = os.path.isfile(filepath)
 

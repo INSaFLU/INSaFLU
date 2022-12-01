@@ -79,11 +79,21 @@ def difference_str_to_int(a, b):
 def difference_str_to_str(a, b):
     if "," in a:
         a = a.replace(",", "")
-    if "," in b:
-        b = b.replace(",", "")
     diff = int(a) - int(b)
 
     return f"{diff:,}"
+
+
+@register.simple_tag
+def difference_str_to_percent(a, b):
+    if "," in a:
+        a = a.replace(",", "")
+
+    diff = int(a) - int(b)
+
+    perc = 100 * diff / int(a)
+
+    return round(perc, 2)
 
 
 @register.simple_tag

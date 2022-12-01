@@ -204,7 +204,7 @@
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
-                        <p> Viral enrichment ({{ run_main.enrichment }}) kept <strong>{{run_detail.enriched_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.enriched_reads_percent|round_to_percent}} %).</p>
+                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent run_detail.input run_detail.enriched_reads %} %).</p>
                         {% endif %}
                         {% if run_main.host_depletion_performed %}
                         <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>

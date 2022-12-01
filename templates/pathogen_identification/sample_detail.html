@@ -170,12 +170,12 @@
                         <div class="col-lg-8"> <strong>Read lassification:</strong> {{read_classification.method}} </div>
                         {% endif %}
                         {% if contig_classification.performed %}       
-                        <div class="col-lg-8"> <strong>Contig classification:</strong> {{contig_classification.metod}}</div>
+                        <div class="col-lg-8"> <strong>Contig classification:</strong> {{run_main.contig_classification}}</div>
                         {% endif %}
                         {% if assembly.performed %} 
                         <div class="col-lg-8"> <strong>Assembly:</strong> {{assembly.method}} </div>
                         {% endif %}
-                        <div class="col-lg-8"> <strong>Remapping:</strong> run_remap </div>                        
+                        <div class="col-lg-8"> <strong>Remapping:</strong> {{run_main.remap}} </div>                        
                     </div>
                     <div class= "column right">
                         <form style="padding:0px" id="download_params" action="{% url 'download_file' %}" method="POST">
@@ -202,20 +202,20 @@
                 <div style="padding: 20px">
                     <div class= "column left_small">
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
-                    {% if run_main.enrichment_performed and run_main.host_depletion_performed %}
-                    {% if run_main.enrichment_performed %}
-                    <p> Viral enrichment ({{ run_main.enrichment }}) kept <strong>{{run_detail.enriched_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.enriched_reads_percent|round_to_percent}} %).</p>
-                    {% endif %}
-                    {% if run_main.host_depletion_performed %}
-                    <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
-                    {% endif %}
-                    {% if run_detail_processed.processed == 0 %}
-                    <p> No reads remained, continued using input reads </p>
+                    {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
+                        {% if run_main.enrichment_performed %}
+                        <p> Viral enrichment ({{ run_main.enrichment }}) kept <strong>{{run_detail.enriched_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.enriched_reads_percent|round_to_percent}} %).</p>
+                        {% endif %}
+                        {% if run_main.host_depletion_performed %}
+                        <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
+                        {% endif %}
+                        {% if run_detail_processed.processed == 0 %}
+                        <p> No reads remained, continued using input reads </p>
+                        {% else %}
+                        <p>Output reads: <strong>{{ run_detail.processed }} </strong> ({{run_detail.processed_percent}} %) </p>
+                        {% endif %}
                     {% else %}
-                    <p>Output reads: <strong>{{ run_detail.processed }} </strong> ({{run_detail.processed_percent}} %) </p>
-                    {% endif %}
-                    {% else %}
-                    <p> No pre-processing step was performed </p>
+                        <p> No pre-processing step was performed </p>
                     {% endif %}
                     </div>
                     

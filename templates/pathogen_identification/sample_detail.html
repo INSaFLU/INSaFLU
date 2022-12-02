@@ -137,8 +137,9 @@
         left: 0;
     }
 
-    
-    
+    .table td, .table th {
+        vertical-align: middle;
+    }
 
 </style>
 
@@ -298,11 +299,18 @@
                         <p> Assembled contigs were classified using the software
                             <strong>{{contig_classification.method}}</strong>. </p>
                         {% if contig_classification.classification_number > 0 %}
-                        <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
-                            identified
-                            with
-                            at least
-                            {{contig_classification.classification_minhit}} hit(s).</p>
+                            {% if contig_classification.classification_number == 1 %}
+                            <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accession was
+                                identified
+                                with
+                                {{contig_classification.classification_minhit}} hit(s).</p>
+                            {% else %}
+                            <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
+                                identified
+                                with
+                                at least
+                                {{contig_classification.classification_minhit}} hit(s).</p>
+                            {% endif %}
                         {% else %}
                         <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
                             identified. </p>
@@ -310,12 +318,18 @@
                         {% endif %}
                         <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
                         {% if read_classification.classification_number > 0 %}
-            
-                        <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
-                            identified
-                            with at
-                            least
-                            {{read_classification.classification_minhit}} hit(s). </p>
+                            {% if read_classification.classification_number == 1 %}
+                            <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions was
+                                identified
+                                with
+                                {{read_classification.classification_minhit}} hit(s). </p>
+                            {% else %}
+                            <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
+                                identified
+                                with at
+                                least
+                                {{read_classification.classification_minhit}} hit(s). </p>
+                            {% endif %}
                         {% else %}
                         <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
                             identified.

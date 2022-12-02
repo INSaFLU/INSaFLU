@@ -6,8 +6,7 @@ from random import randint
 from typing import Type
 
 import pandas as pd
-from pathogen_identification.modules.object_classes import (RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
 
 def check_report_empty(file, comment="@"):
@@ -1179,7 +1178,6 @@ class Classifier:
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
         "bowtie": run_bowtie2_ONT,
-        # "bowtie2": run_bowtie2_illumina,
         "bwa": run_bwa_mem,
     }
 

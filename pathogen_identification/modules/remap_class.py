@@ -836,8 +836,7 @@ class Remapping:
         self.report = self.calculate_mapping_statistics()
         self.get_mapped_contig_names()
         self.get_mapped_reads_number()
-        self.get_reference_fasta_length()
-        self.reference_fasta_string = self.get_reference_contig_name()
+
         self.plot_coverage()
         self.plot_dotplot_from_paf()
         self.remapping_successful = True
@@ -845,15 +844,33 @@ class Remapping:
         self.index_mapped_contigs_fasta()
 
     def get_reference_contig_name(self):
-        cmd = [
-            "grep",
-            "'>'",
-            self.reference_file,
-            "|",
-            "sed",
-            "'s/>//g'",
-        ]
-        self.reference_fasta_string = self.cmd.run_bash_return(cmd)
+        contig_names = []
+
+        with open(self.reference_file, "r") as f:
+            for line in f:
+                if line.startswith(">"):
+                    contig_names.append(line.strip().replace(">", ""))
+
+        return "; ".join(contig_names)
+
+    def sanitize_reference_fasta_contig_name(self):
+        """
+        Some fasta files have spaces in the contig names. This is not allowed for samtools.
+        """
+        with open(self.reference_file, "r") as f:
+            lines = f.readlines()
+
+        with open(self.reference_file, "w") as f:
+            for line in lines:
+                if line.startswith(">"):
+                    line = line.replace(";", "_").replace(":", "_")
+                f.write(line)
+
+    def retrieve_reference(self):
+        self.extract_reference_sequences()
+        self.get_reference_fasta_length()
+        self.reference_fasta_string = self.get_reference_contig_name()
+        self.sanitize_reference_fasta_contig_name()
 
     def run_remap(self):
         """
@@ -866,9 +883,11 @@ class Remapping:
 
         if self.check_remap_performed():
             self.logger.info("Remapping already performed")
-            self.extract_reference_sequences()
-            self.index_reference()
-            self.summarize()
+
+            if self.reference_file_exists:
+                self.retrieve_reference()
+                self.index_reference()
+                self.summarize()
 
             return self
 
@@ -878,23 +897,28 @@ class Remapping:
 
         os.makedirs(self.rdir, exist_ok=True)
 
-        self.extract_reference_sequences()
+        self.retrieve_reference()
+
+        if not self.reference_file_exists:
+            self.logger.info(f"No reference file found for {self.target.accid}")
+            return self
+
         self.index_reference()
 
         if not self.check_mapping_output_exists():
             self.remap_deploy()
 
-        if not self.check_mapping_output_exists():
+        if self.check_mapping_output_exists():
+            self.remap_reads_post_process()
+            self.assembly_to_reference_map()
+            self.summarize()
+
+        else:
             # self.logger.error(
             #    f"Mapping output not found or unsuccesful after deploying on \
             #        target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
             # )
             return
-
-        self.remap_reads_post_process()
-        self.assembly_to_reference_map()
-
-        self.summarize()
 
     def remap_reads_post_process(self):
         """
@@ -1057,15 +1081,13 @@ class Remapping:
 
         self.reference_file_exists = (
             os.path.isfile(self.reference_file)
-            and os.path.getsize(self.reference_file) > 0
+            and os.path.getsize(self.reference_file) > 100
         )
 
         if not self.reference_file_exists:
             self.logger.error(
                 f"Reference file {self.reference_file} does not exist or is empty"
             )
-
-            sys.exit(1)
 
     def get_reference_fasta_length(self):
         """

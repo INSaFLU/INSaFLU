@@ -13,7 +13,6 @@
 {%load report_colors %}
 
 
-
 {% block css %}
 	{% load static from staticfiles %}
         <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
@@ -30,6 +29,7 @@
 {% breadcrumb run_name "sample_detail" pk1=project_index pk2=sample_index pk3=run_index %}
 {% endblock %}
 
+
 {% block content %}
 
 <style>
@@ -37,10 +37,12 @@
         border-collapse: collapse;
         color: #2E2E2E;
         border: #A4A4A4;
+        
     }
     
     #sample_report thead tr {
         background-color: #008CBA;
+        color: #FFFFFF;
     }
     
     #sample_report tbody tr:hover {
@@ -126,7 +128,7 @@
     .row {
         border: 4px solid;
         border-radius: 8px;
-        padding: 10px;
+        padding: 1px;
         border-color: #b0b0b07d;
     }
     
@@ -139,10 +141,91 @@
 
     .table td, .table th {
         vertical-align: middle;
+        
     }
+      
+      
+    .table-report {
+        border-collapse: collapse;
+        border: none;
+      }
+      
+    .table-report tr th,
+    .table-report tr td {
+        padding: 1px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      
+      .table-report tr td {
+        padding: 0;
+        border: 0;
+      }
+      
+      .table-report tr td span {
+        display: block;
+        padding: 1px;
+        border: 1px solid #ddd;
+      }
+      
+      .header {
+        background: #3498db;
+        color: #fff;
+      }
+      
+      .collapse-report span {
+        cursor: pointer;
+        background: #2cc16a;
+        transition: background .5s;
+      }
+      
+      .active span {
+        background: #fff;
+      }
+      
+      .table tr.collapse-report .table__wrapper {
+        max-height: 0px;
+        overflow: hidden;
+        transition: max-height .8s;
+      }
+      
+      .table tr.active .table__wrapper {
+        max-height: 2000px;
+        transition: max-height .8s;
+      }
+      
+      .table-inner {
+        width: 100%;
+      }
+      
+      .table-inner tr td {
+        padding: 1px;
+        border: 0px;
+      }
+      
+      .table tr.igv_tab.open {
+        max-height: 2001px;
+        transition: max-height 1s;
+      }
+
+      .table tr.igv_tab {
+        max-height: 0px;
+        transition: max-height 1s;
+      }
+
+      .table td {
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+        border-top: 0px;
+      }
+
+      .table tr.head {
+        height: 1rem;
+        border-top: 1px;
+      }
+
 
 </style>
-
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
@@ -411,6 +494,7 @@
     </div>
 </div>
 
+
 <div id="accordion2" role="tablist" aria-multiselectable="true">
     <div class="card">
         <div class="card-header" role="tab" id="headingReport">
@@ -426,208 +510,221 @@
                     <span class="hidden-phone"></span>Download as CSV </a>
             </div>
         </div>
+        
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
-                <div style="padding: 20px; overflow-x:auto;">
-                    <table class="table table-hover table-bordered table-striped" id="sample_report" width="100%">
-                        <thead>
-                            <tr class="header">
-                                <th>Description</th>
-                                <th>Taxid</th>
-                                <th>accID</th>
-                                <th>Cov (%)</th>
-                                <th>Depth</th>
-                                <th>DepthC</th>
-                                <th>Mapped reads</th>
-                                <th>start prop (%)</th>
-                                <th>mapped_prop (%)</th>
-                                <th>Gaps</th>
-                                <th>Windows Covered</th>
-                                <th>class. success</th>
-                                <th>mapping success</th>                
-                                <th>Warning</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for value in final_report %}
-                            <tr class="parent">
-                                <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
-                                <td data-title="Taxid">{{value.taxid}}</td>
-                                <td data-title="accID">
-                                    <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
-                                </td>
-                                <td data-title="Cov" style="{{ value.coverage|color_code }}">
-                                    {{value.coverage|round}}</td>
-                                <td data-title="Depth" style="{% depth_color value.depth run_detail.max_depth %}">
-                                    {{value.depth|round}}</td>
-                                <td data-title="DepthC" style="{% depth_color value.depthR run_detail.max_depthR %}">
-                                    {{value.depthR|round}}</td>
-                                <td data-title="Mapped reads" style="{% depth_color value.mapped_reads run_detail.max_mapped %}">
-                                    {{value.mapped_reads|round}}</td>
-                                <td data-title="start prop" style="{% depth_color value.ref_proportion run_detail.max_prop %}">
-                                    {{value.ref_proportion|round_to_int}}</td>
-                                <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion run_detail.max_prop %}">
-                                    {{value.mapped_proportion|round_to_int}}</td>
-                                <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
-                                    {{value.ngaps}}</td>
-                                <td data-title="Windows Covered">
-                                    {% windows_safe value.windows_covered %}</td>
-                                <td data-title="class. success" style="{% success_count_color value.classification_success %}">
-                                    {{value.classification_success}}</td>
-                                <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
-                                    {{value.mapping_success}}</td>
-                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
-                                    {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
-                            </tr>
-                            <tr class="detail">
-                                <td colspan="5" align="center">
-                                    <p>Database: {{value.ref_db|strip_ext}}</p>
-                                </td>
-                                <td colspan="2" align="center">
-                                    <a href={{value.accid|link_ncbi}}>NCBI</a>
-                                </td>
-                                <td colspan="2" align="center">
-                                    <p>length: {{value.reference_length}}</p>
-                                </td>
-                                <td colspan="3" align="center">
-                                    <p>contig string: {{value.reference_contig_str}}</p>
-                                </td>
-                                <td colspan="1" align="center">
-                                    <div>
-                                        <form id="download_reference_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value=".fa" name="btn1">
-                                            <input type="hidden" name="file_path" value="{{value.reference_path}}">
-                                        </form>
-                                    </div>
-                                </td>
-                
-                                <td colspan="1" align="center">
-                
-                                    <div>
-                                        <form id="download_reference_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value=".fai" name="btn2">
-                                            <input type="hidden" name="file_path" value="{{value.reference_index_path}}">
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
+                <div style="padding: 2px; overflow-x:auto;">    
+                    <table class="table" width="100%">
+                    <thead>
+                        <tr class="header">
+                            <th>Description</th>
+                            <th>Taxid</th>
+                            <th>accID</th>
+                            <th>Cov (%)</th>
+                            <th>Depth</th>
+                            <th>DepthC</th>
+                            <th>Mapped reads</th>
+                            <th>start prop (%)</th>
+                            <th>mapped_prop (%)</th>
+                            <th>Gaps</th>
+                            <th>Windows Covered</th>
+                            <th>class. success</th>
+                            <th>mapping success</th>                
+                            <th>Warning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for value in final_report %}
+                        <tr class="parent">
+                            <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
+                            <td data-title="Taxid">{{value.taxid}}</td>
+                            <td data-title="accID">
+                                <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
+                            </td>
+                            <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                                {{value.coverage|round}}</td>
+                            <td data-title="Depth" style="{% depth_color value.depth run_detail.max_depth %}">
+                                {{value.depth|round}}</td>
+                            <td data-title="DepthC" style="{% depth_color value.depthR run_detail.max_depthR %}">
+                                {{value.depthR|round}}</td>
+                            <td data-title="Mapped reads" style="{% depth_color value.mapped_reads run_detail.max_mapped %}">
+                                {{value.mapped_reads|round}}</td>
+                            <td data-title="start prop" style="{% depth_color value.ref_proportion run_detail.max_prop %}">
+                                {{value.ref_proportion|round_to_int}}</td>
+                            <td data-title="mapped_prop" style="{% depth_color value.mapped_proportion run_detail.max_prop %}">
+                                {{value.mapped_proportion|round_to_int}}</td>
+                            <td data-title="Gaps" style="{% depth_color value.ngaps run_detail.max_gaps %}">
+                                {{value.ngaps}}</td>
+                            <td data-title="Windows Covered">
+                                {% windows_safe value.windows_covered %}</td>
+                            <td data-title="class. success" style="{% success_count_color value.classification_success %}">
+                                {{value.classification_success}}</td>
+                            <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
+                                {{value.mapping_success}}</td>
+                            <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
+                                {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
 
-                            {% if value.covplot_exists == True %}
-                            <tr class="igv_tab" id="igv_display_{{value.accid}}">
-                                <td colspan="14" align="center">
-                                    <div class="card-block">
-                                        <div class="container-fluid">
-                                            <div id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
-                                            <div id="show_igv_{{value.accid}}"  show-igv-url="{% url 'show_igv' %}"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="detail">
-                                <td colspan="1" align="center">
-                                    <p>Mapping Coverage</p>
-                                </td>
-                                <td colspan="11" align="center">
-                                    <img src="{% static run_main.static_dir %}/{{ value.covplot }}"="200"="250" alt="">
-                                </td>
-                                <td colspan="1" align="center">
-                
-                                    <div style="position:relative height=100%" >
-                                        <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                        run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
-                                    </div>
-                                    
-                                    <div id="cov_div" >
-                                        <br>
-                                        <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value=".bam" name="btn1">
-                                            <input type="hidden" name="file_path" value="{{value.bam_path}}">
-                                        </form>
-                                        <br>
-                                        <form id="download_bai_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value=".bai" name="btn2">
-                                            <input type="hidden" name="file_path" value="{{value.bai_path}}">
-                                        </form>
-                                    </div>
-                
-                                </td>
-                                <td colspan="1" align="center">
-                
-                                    <div id="cov_div" style="position:relative height=100%">
-                                        <br>
-                                        <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value="mapped reads (.fa)" name="btn3">
-                                            <input type="hidden" name="file" value="mapped_subset_r1">
-                                            <input type="hidden" name="taxid" value="{{value.taxid}}">
-                                            <input type="hidden" name="run" value="{{value.run.pk}}">
-                                            <input type="hidden" name="accid" value="{{value.accid}}">
+                        </tr>
+                        <tr class="collapse-report">
+                        <td colspan="14">
+                            <div class="table__wrapper">
+                            <table class="table table-inner">
+                                <tbody>
+                                    <tr class="detail">
+                                        <td colspan="5" align="center">
+                                            <p>Database: {{value.ref_db|strip_ext}}</p>
+                                        </td>
+                                        <td colspan="2" align="center">
+                                            <a href={{value.accid|link_ncbi}}>NCBI</a>
+                                        </td>
+                                        <td colspan="2" align="center">
+                                            <p>length: {{value.reference_length}}</p>
+                                        </td>
+                                        <td colspan="3" align="center">
+                                            <p>contig string: {{value.reference_contig_str}}</p>
+                                        </td>
+                                        <td colspan="1" align="center">
+                                            <div>
+                                                <form id="download_reference_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".fa" name="btn1">
+                                                    <input type="hidden" name="file_path" value="{{value.reference_path}}">
+                                                </form>
+                                            </div>
+                                        </td>
+                        
+                                        <td colspan="1" align="center">
+                        
+                                            <div>
+                                                <form id="download_reference_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".fai" name="btn2">
+                                                    <input type="hidden" name="file_path" value="{{value.reference_index_path}}">
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+        
+                                    {% if value.covplot_exists == True %}
+                                    <tr class="igv_tab" id="igv_display_{{value.accid}}">
+                                        <td colspan="14" align="center">
+                                            <div class="card-block">
+                                                <div class="container-fluid">
+                                                    <div id="loader_igv_{{value.accid}}"><img src="{{ spinner_url }}"/></div>
+                                                    <div id="show_igv_{{value.accid}}"  show-igv-url="{% url 'show_igv' %}"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="detail">
+                                        <td colspan="1" align="center">
+                                            <p>Mapping Coverage</p>
+                                        </td>
+                                        <td colspan="11" align="center">
+                                            <img src="{% static run_main.static_dir %}/{{ value.covplot }}"="200"="250" alt="">
+                                        </td>
+                                        <td colspan="1" align="center">
+                        
+                                            <div style="position:relative height=100%" >
+                                                <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
+                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
+                                            </div>
                                             
-                                        </form>
-                                        {% if run_main.sample.sample.is_valid_2 %}
-                                        <br>
-                                        <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                            method="POST">
-                                            {% csrf_token %}
-                                            <input type=submit value=".fastq.gz" name="btn4">
-                                            <input type="hidden" name="file_path" value="{{value.mapped_subset_r2}}">
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-
-                            {% endif %}
-                            {% if value.refa_dotplot_exists == True %}
-                            <tr class="detail">
-                                <td colspan="1" align="center">
-                                    <p>Asembly to reference dotplot</p>
-                                </td>
-                
-                                <td colspan="11" align="center">
-                                    <img src="{% static run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
-                                </td>
-                                <td colspan="1" align="center" style="position:relative">
-                                    <div>
-                                        <a style="position:relative"
-                                            href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=run_index reference=value.simple_id %}>Sample
-                                            remap</a>
-                                    </div>
-                                    <br>
-                                    <form id="remap_paf_{{value.accid}}" action="{% url 'download_file_igv' %}" method="POST">
-                                        {% csrf_token %}
-                                        <input type=submit value=".paf" name="btn1">
-                                        <input type="hidden" name="file_path" value="{{value.reference_assembly_paf}}">
-                                    </form>
-                                    <br>
-                                    <form id="mapped_scaffolds_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                        method="POST">
-                                        {% csrf_token %}
-                                        <input type=submit value=".fa" name="btn2">
-                                        <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_path}}">
-                                    </form>
-                                    <br>
-                                    <form id="mapped_scaffolds_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                        method="POST">
-                                        {% csrf_token %}
-                                        <input type=submit value=".fai" name="btn3">
-                                        <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_index_path}}">
-                                    </form>
-                
-                                </td>
-                            </tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
+                                            <div id="cov_div" >
+                                                <br>
+                                                <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".bam" name="btn1">
+                                                    <input type="hidden" name="file_path" value="{{value.bam_path}}">
+                                                </form>
+                                                <br>
+                                                <form id="download_bai_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".bai" name="btn2">
+                                                    <input type="hidden" name="file_path" value="{{value.bai_path}}">
+                                                </form>
+                                            </div>
+                        
+                                        </td>
+                                        <td colspan="1" align="center">
+                        
+                                            <div id="cov_div" style="position:relative height=100%">
+                                                <br>
+                                                <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value="mapped reads (.fa)" name="btn3">
+                                                    <input type="hidden" name="file" value="mapped_subset_r1">
+                                                    <input type="hidden" name="taxid" value="{{value.taxid}}">
+                                                    <input type="hidden" name="run" value="{{value.run.pk}}">
+                                                    <input type="hidden" name="accid" value="{{value.accid}}">
+                                                    
+                                                </form>
+                                                {% if run_main.sample.sample.is_valid_2 %}
+                                                <br>
+                                                <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                    method="POST">
+                                                    {% csrf_token %}
+                                                    <input type=submit value=".fastq.gz" name="btn4">
+                                                    <input type="hidden" name="file_path" value="{{value.mapped_subset_r2}}">
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+        
+                                    {% endif %}
+                                    {% if value.refa_dotplot_exists == True %}
+                                    <tr class="detail">
+                                        <td colspan="1" align="center">
+                                            <p>Asembly to reference dotplot</p>
+                                        </td>
+                        
+                                        <td colspan="11" align="center">
+                                            <img src="{% static run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
+                                        </td>
+                                        <td colspan="1" align="center" style="position:relative">
+                                            <div>
+                                                <a style="position:relative"
+                                                    href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=run_index reference=value.simple_id %}>Sample
+                                                    remap</a>
+                                            </div>
+                                            <br>
+                                            <form id="remap_paf_{{value.accid}}" action="{% url 'download_file_igv' %}" method="POST">
+                                                {% csrf_token %}
+                                                <input type=submit value=".paf" name="btn1">
+                                                <input type="hidden" name="file_path" value="{{value.reference_assembly_paf}}">
+                                            </form>
+                                            <br>
+                                            <form id="mapped_scaffolds_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                method="POST">
+                                                {% csrf_token %}
+                                                <input type=submit value=".fa" name="btn2">
+                                                <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_path}}">
+                                            </form>
+                                            <br>
+                                            <form id="mapped_scaffolds_index_{{value.accid}}" action="{% url 'download_file_igv' %}"
+                                                method="POST">
+                                                {% csrf_token %}
+                                                <input type=submit value=".fai" name="btn3">
+                                                <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_index_path}}">
+                                            </form>
+                        
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+          
+                                </tbody>
+                            </table>
+                            </div>
+                        </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -693,8 +790,31 @@
 
 <script type="text/javascript">
 
+    $("tr.parent").find("A#plot_show").click(function(e) {
+        console.log("sample_report");
+        console.log(e.target.tagName);
+        console.log(e.target.id);
+
+        if (e.target.tagName === "A" && e.target.id === "plot_show") {
+            e.preventDefault();
+            var parent_tr = e.target.parentNode.parentNode;
+            console.log(parent_tr);
+            var child_tr = nextTr(parent_tr);
+            console.log(child_tr);
+            $(child_tr).toggleClass("active");
+            
+        }   
+
+      });
+      
+</script>
+
+
+<script type="text/javascript">
+
     //document.getElementById("igv_browse").addEventListener("click", function (e) {
     $(document).on('click', '.btn', function (e) {
+        console.log("igv_browse");
         if (e.target.id == "igv_browse") 
             var accid=$(this).attr('accid');
             console.log('igv_display_'+accid);
@@ -719,6 +839,7 @@
     });
 
 </script>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://igv.org/web/release/2.3.3/dist/igv.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.7/es5-shim.min.js"></script>
@@ -842,7 +963,6 @@
 
 
 </script>
-
  
 <script>
     var my_form = document.forms["igv_display_{{value.accid}}"];

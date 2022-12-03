@@ -1,5 +1,6 @@
 import os
 from datetime import date
+from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -114,6 +115,8 @@ class Command(BaseCommand):
                     if run.is_available:
                         run.get_in_line()
                         submission_dict[sample].append(run)
+
+            print(len(submission_dict))
 
             for sample, runs in submission_dict.items():
                 for run in runs:

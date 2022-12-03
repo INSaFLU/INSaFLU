@@ -54,7 +54,7 @@ class Projects(models.Model):
     running_processes = models.IntegerField(default=0)
 
     class Meta:
-        ordering = ["project__id", "-creation_date"]
+        ordering = ["name", "-creation_date"]
 
     def __str__(self):
         return self.name + " " + self.description

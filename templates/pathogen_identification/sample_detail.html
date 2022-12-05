@@ -33,40 +33,20 @@
 {% block content %}
 
 <style>
-    #sample_report {
-        border-collapse: collapse;
-        color: #2E2E2E;
-        border: #A4A4A4;
-        
+
+    #repoart_table tr:nth-child(4n){background-color: #f2f2f2;}
+    
+    .parent {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .parent:hover {
+        background-color: #ddd;
     }
     
-    #sample_report thead tr {
-        background-color: #008CBA;
-        color: #FFFFFF;
-    }
-    
-    #sample_report tbody tr:hover {
-    
-    }
-    
-    #sample_report tbody tr {
-        display: none;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.2s ease-out;
-    }
-    
-    #sample_report tr.parent {
-        display: table-row;
-    }
-    
-    #sample_report tr.open {
-        display: table-row;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.2s ease-out;
-    }
-    
+
     a:link {
         color: #2b2bcf;
         background-color: transparent;
@@ -144,29 +124,7 @@
         
     }
       
-      
-    .table-report {
-        border-collapse: collapse;
-        border: none;
-      }
-      
-    .table-report tr th,
-    .table-report tr td {
-        padding: 1px;
-        border: 1px solid #ddd;
-        text-align: left;
-      }
-      
-      .table-report tr td {
-        padding: 0;
-        border: 0;
-      }
-      
-      .table-report tr td span {
-        display: block;
-        padding: 1px;
-        border: 1px solid #ddd;
-      }
+
       
       .header {
         background: #3498db;
@@ -508,7 +466,7 @@
                 </h5>
             </div>
             <div class="column right">
-                <a href="#" onclick="download_table_as_csv('sample_report');" class="btn btn-primary dark"> 
+                <a href="#" onclick="download_table_as_csv('report_table');" class="btn btn-primary dark"> 
                     <span class="hidden-phone"></span>Download as CSV </a>
             </div>
         </div>
@@ -516,7 +474,7 @@
         <div id="collapseReport" class="collapse show" role="tabpanel" aria-labelledby="headingReport">
             <div class="card-block">
                 <div style="padding: 2px; overflow-x:auto;">    
-                    <table class="table" width="100%">
+                    <table class="table" width="100%" id="report_table">
                     <thead>
                         <tr class="header">
                             <th>Description</th>
@@ -1120,16 +1078,6 @@
         }
     });
 
-
-    document.getElementById("sample_report").addEventListener("click", function (e) {
-        console.log("sample_report");
-        if (e.target.tagName === "A" && e.target.id === "plot_show") {
-            e.preventDefault();
-            var row = e.target.parentNode.parentNode;
-            while ((row = nextTr(row)) && !/\bparent\b/.test(row.className))
-                toggle_it(row);
-        }
-    });
 
     function nextTr(row) {
     while ((row = row.nextSibling) && row.nodeType != 1);

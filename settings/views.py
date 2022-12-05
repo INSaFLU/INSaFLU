@@ -160,7 +160,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         context["all_softwares"] = all_tables
         context["nav_settings"] = True
-        context["settings_pathogenid"] = True  ## True for global softwares
+        ## True for global softwares
+        if televir_project:
+            context["settings_pathid_project"] = True  ## True for project softwares
+            context["project_name"] = televir_project.name
+        else:
+            context["settings_pathogenid"] = True
         context[
             "show_info_main_page"
         ] = ShowInfoMainPage()  ## show main information about the institute

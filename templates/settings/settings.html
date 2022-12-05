@@ -43,7 +43,10 @@
 	{% elif settings_pathogenid %}	<!-- Default settings QC -->
 		{% breadcrumb "Settings Index" "settings-index" %}
 		{% breadcrumb "Settings Pathogen Identification" "pathogenID_pipeline" %}	
-	{% else %}	<!-- Default settings -->
+    {% elif settings_pathid_project %}	<!-- Default settings QC -->
+        {% breadcrumb "Televir Projects" "PIprojects_main" %}
+		{% breadcrumb project_name "pathogenID_pipeline" %}		
+    {% else %}	<!-- Default settings -->
 		{% breadcrumb "Settings Index" "settings-index" %}
 		{% breadcrumb "Settings RefMap" "settings" %}
 	{% endif %}

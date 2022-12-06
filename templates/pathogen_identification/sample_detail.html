@@ -752,53 +752,17 @@
 <script type="text/javascript">
 
     $("tr.parent").find("A#plot_show").click(function(e) {
-        console.log("sample_report");
-        console.log(e.target.tagName);
-        console.log(e.target.id);
 
         if (e.target.tagName === "A" && e.target.id === "plot_show") {
             e.preventDefault();
             var parent_tr = e.target.parentNode.parentNode;
-            console.log(parent_tr);
             var child_tr = nextTr(parent_tr);
-            console.log(child_tr);
             $(child_tr).toggleClass("active");
             
         }   
 
       });
       
-</script>
-
-
-<script type="text/javascript">
-
-    //document.getElementById("igv_browse").addEventListener("click", function (e) {
-    $(document).on('click', '.btn', function (e) {
-        console.log("igv_browse");
-        if (e.target.id == "igv_browse") 
-            var accid=$(this).attr('accid');
-            console.log('igv_display_'+accid);
-            var igv_display = document.getElementById('igv_display_' + accid);
-            var igv_display_status= igv_display.style.display;
-            var igv_display_className= igv_display.className;
-            console.log(igv_display_status);
-            console.log(igv_display_className);
-            console.log(accid);
-            console.log(/\bopen\b/.test(igv_display_className)); 
-            console.log(igv_display.className.replace(" open",''));   
-            
-            if (/\bopen\b/.test(igv_display_className)){
-                igv_display.className= igv_display.className.replace(" open",'');
-                var show_igv_div = document.getElementById('show_igv_' + accid);
-                document.getElementById('show_igv_' + accid).innerHTML = ""
-
-            }else{
-                igv_display.className += " open";
-                show_igv($(this));
-            }
-    });
-
 </script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
@@ -816,9 +780,7 @@
     // Draw the chart and set the chart values
     function drawChart() {
         var raw_data= [['Input', "Number"]];
-        console.log("{{run_main.enrichment_performed}}")
         raw_data.push(["Kept", parseFloat("{{run_detail.processed|reconvert_string_to_int}}")]);
-        console.log("{{run_main.host_depletion_performed}}")
         if ("{{run_main.enrichment_performed}}" == "True" ) {
             raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
         };
@@ -839,6 +801,30 @@
 
 <script type="text/javascript">
 
+    //document.getElementById("igv_browse").addEventListener("click", function (e) {
+    $(document).on('click', '.btn', function (e) {
+        if (e.target.id == "igv_browse") 
+            var accid=$(this).attr('accid');
+            var igv_display = document.getElementById('igv_display_' + accid);
+            var igv_display_status= igv_display.style.display;
+            var igv_display_className= igv_display.className;
+            
+            if (/\bopen\b/.test(igv_display_className)){
+                igv_display.className= igv_display.className.replace(" open",'');
+                var show_igv_div = document.getElementById('show_igv_' + accid);
+                document.getElementById('show_igv_' + accid).innerHTML = ""
+
+            }else{
+                igv_display.className += " open";
+                show_igv($(this));
+            }
+    });
+
+</script>
+
+
+<script type="text/javascript">
+
     function show_igv(item) {
         var accid=item.attr('accid');
         var project_pk= item.attr('project_pk');
@@ -846,8 +832,6 @@
         var run_pk = item.attr('run_pk');
         var unique_id = item.attr('reference_id');
         var url = "{% url 'igv_browser' %}";
-        console.log("show_igv");
-        console.log(url);
 
         $.ajax({
             /// spin 
@@ -911,8 +895,7 @@
                             },                        
                         ]
                     }
-                    console.log("options");
-                    console.log(document.getElementById('show_igv_' + accid));
+
                     browser = igv.createBrowser(document.getElementById('show_igv_' + accid), options);
                 }
                 else{
@@ -1006,7 +989,6 @@
 </script>
 <script>
     var my_form = document.forms["download_mapped_r1_{{value.accid}}"];
-    console.log(var)
     var static_dir = "{% static 'igv_files/' %}";
     document.getElementById("my_form").submit();
 </script>
@@ -1055,7 +1037,6 @@
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
         if (id === "remap_reference") {
-            console.log(ref_id);
             $.ajax({
                 url: "{% url 'deploy_televir_map' %}",
                 type: "POST",
@@ -1064,7 +1045,6 @@
                     'reference_id': ref_id
                 },
                 success: function (data) {
-                    console.log(data);
                     if (data["is_ok"] === true) {
                         alert("Reference remap deployed");
                     } else {
@@ -1072,7 +1052,6 @@
                     }
                 },
                 error: function (data) {
-                    console.log(data);
                     alert("Reference remapping failed");
                 }
             });
@@ -1083,14 +1062,6 @@
     function nextTr(row) {
     while ((row = row.nextSibling) && row.nodeType != 1);
     return row;
-    }
-    
-    function toggle_it(item) {
-        if (item.className != "igv_tab")
-            if (/\bopen\b/.test(item.className))
-                item.className = item.className.replace(/\bopen\b/, " ");
-            else
-                item.className += " open";
     }
 
 </script>

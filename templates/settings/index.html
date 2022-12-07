@@ -32,19 +32,6 @@
     </div>
     <div class="col-md-3">
         <div class="card mb-2">
-            <img class="img-index" src="{% static "img/insa.jpg" %}">
-            <div class="card-body">
-                <h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
-                <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pang classification, etc.' }}</p>
-                <a href="{% url 'settings' %}"
-                   class="btn btn-primary">
-                    Settings
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card mb-2">
             <img class="img-index" src="{% static "img/televir.jpg" %}">
             <div class="card-body">
                 <h5 class="card-title">{{ "Virus Detection"}}</h5>
@@ -58,13 +45,26 @@
     </div>
     <div class="col-md-3">
         <div class="card mb-2">
+            <img class="img-index" src="{% static "img/insa.jpg" %}">
+            <div class="card-body">
+                <h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
+                <p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
+                <a href="{% url 'settings' %}"
+                   class="btn btn-primary">
+                    Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-2">
             <img class="img-index" src="{% static "img/nextrain.jpg" %}">
             <div class="card-body">
-                <h5 class="card-title">{{ "Nextrain" }}</h5>
+                <h5 class="card-title">{{ "Nextstrain" }}</h5>
                 <p class="card-text">{{ "From consensus sequences to phylogeographic and temporal analysis and metadatada navigation" }}</p>
                 <a href="{% url 'under_construction' %}"
                    class="btn btn-primary">
-                    Go to page
+                    Settings
                 </a>
             </div>
         </div>

@@ -116,17 +116,6 @@ class PipelineTree:
 
         return path_dict
 
-    def get_all_graph_paths_list(self) -> dict:
-        """
-        Get all possible paths in the pipeline
-        """
-
-        self.generate_graph()
-        all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
-        all_paths = [self.get_path_explicit(path) for path in all_paths]
-
-        return all_paths
-
     def df_from_path(self, path: list) -> pd.DataFrame:
         """
         Generate a dataframe from a path
@@ -299,11 +288,9 @@ class Utility_Pipeline_Manager:
         Compare two software trees and return the differences
         """
         old_tree = self.generate_default_software_tree()
-        old_tree_list = old_tree.get_all_graph_paths_list()
-        new_tree_list = new_tree.get_all_graph_paths_list()
 
-        old_tree_list = [tuple(x[1]) for x in old_tree_list]
-        new_tree_list = [tuple(x[1]) for x in new_tree_list]
+        old_tree_list = old_tree.nodes
+        new_tree_list = new_tree.nodes
 
         old_tree_set = set(old_tree_list)
         new_tree_set = set(new_tree_list)
@@ -881,6 +868,7 @@ class Parameter_DB_Utility:
         """
         Generate a default software tree for a user
         """
+        print("GLOBAL_INDEX: ", global_index)
 
         software_tree = (
             SoftwareTree.objects.filter(
@@ -1146,6 +1134,16 @@ class Utils_Manager:
 
         pipeline_tree = self.utility_manager.generate_default_software_tree()
 
+        print("GOING ON INDEX: ", tree_makeup, " for ", technology)
+
+        if tree_makeup == 4 and technology == "Illumina/IonTorrent":
+            old_tree = self.utility_manager.generate_default_software_tree()
+            old_tree_list = old_tree.get_all_graph_paths_list()
+            old_tree_list = [tuple(x[1]) for x in old_tree_list]
+            old_tree_set = set(old_tree_list)
+
+            print("OLD TREE SET: ", old_tree.nodes)
+
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup
         ):
@@ -1156,6 +1154,8 @@ class Utils_Manager:
             tree_differences = self.utility_manager.compare_software_trees(
                 existing_pipeline_tree
             )
+
+            print("TREE DIFFERENCES: ", tree_differences)
 
             if len(tree_differences) > 0:
                 self.parameter_util.update_software_tree(pipeline_tree)

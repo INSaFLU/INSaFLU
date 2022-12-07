@@ -43,6 +43,75 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
+    def update_software_params_global_project(self, project):
+        """
+        update software global to project
+        """
+        ### get all global software
+        query_set = Software.objects.filter(
+            owner=self.request.user,
+            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_software=Software.TYPE_SOFTWARE,
+            is_obsolete=False,
+        )
+        project = Televir_Project.objects.get(pk=project.pk)
+        for software in query_set:
+
+            software_parameters = Parameter.objects.filter(
+                software=software,
+            )
+
+            software.pk = None
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+
+            existing_software = Software.objects.filter(
+                name=software.name,
+                type_of_use=Software.TYPE_OF_USE_televir_project,
+                parameter__televir_project=project,
+                pipeline_step=software.pipeline_step,
+            )
+            print("existing_software", existing_software)
+            print(existing_software.count())
+            if existing_software:
+                for s in existing_software:
+                    print(
+                        s.name,
+                        s.name_extended,
+                        s.type_of_use,
+                        s.owner,
+                        s.technology,
+                        s.pipeline_step,
+                    )
+
+            try:
+                Software.objects.get(
+                    name=software.name,
+                    type_of_use=Software.TYPE_OF_USE_televir_project,
+                    parameter__televir_project=project,
+                    pipeline_step=software.pipeline_step,
+                )
+
+            except Software.MultipleObjectsReturned:
+                print("MultipleObjectsReturned")
+                for s in existing_software:
+                    print(
+                        s.name,
+                        s.name_extended,
+                        s.type_of_use,
+                        s.owner,
+                        s.technology,
+                        s.pipeline_step,
+                    )
+                pass
+
+            except Software.DoesNotExist:
+                software.save()
+                for parameter in software_parameters:
+                    parameter.pk = None
+                    parameter.software = software
+                    parameter.televir_project = project
+                    parameter.save()
+
     def duplicate_software_params_global_project(self, project):
         """
         duplicate software global to project
@@ -98,6 +167,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
         if televir_project:
             if not self.check_project_params_exist(televir_project):
                 self.duplicate_software_params_global_project(televir_project)
+            else:
+                self.update_software_params_global_project(televir_project)
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],

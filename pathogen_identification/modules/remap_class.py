@@ -9,17 +9,13 @@ import numpy as np
 import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-)
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail)
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
+    plot_dotplot, read_paf_coordinates)
 from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
@@ -1115,7 +1111,7 @@ class Remapping:
         ]
         self.cmd.run_bash(unzip_cmd)
 
-        cmd = f"minimap2 -t {self.threads} -cx asm10 {self.assembly_path} {self.reference_file} > {self.assembly_map_paf}"
+        cmd = f"minimap2 -t {self.threads} -cx asm10 {self.reference_file} {self.assembly_path} > {self.assembly_map_paf}"
         self.cmd.run(cmd)
 
         os.remove(tempfile)

@@ -117,6 +117,15 @@ class Utility_Repository:
 
         return find
 
+    def get_list_tables(self):
+        """
+        Get a list of tables
+        """
+
+        find = self.engine.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        find = [i[0] for i in find]
+        return find
+
     def get_list_unique_field(self, table_name, id):
         """
         Get a list of unique values in a field

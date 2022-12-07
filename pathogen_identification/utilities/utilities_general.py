@@ -122,7 +122,7 @@ def scrape_description(accid: str, existing_description: str = None) -> str:
 
 
 def read_paf_coordinates(samfile: str) -> pd.DataFrame:
-    """Read the sam file and return a dataframe with the coordinates."""
+    """Read the paf file and return a dataframe with the coordinates."""
 
     try:
         df = pd.read_csv(samfile, sep="\t", header=None).rename(

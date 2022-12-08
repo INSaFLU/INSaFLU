@@ -189,7 +189,7 @@ def process_class(r2, maxt=6):
     """
     r2 = r2.drop_duplicates(subset=["taxid"], keep="first")
     r2 = r2.reset_index(drop=True)
-    r2 = r2.sort_values("counts", ascending=False)
+    # r2 = r2.sort_values("counts", ascending=False)
 
     taxids_tokeep = []
     nr2 = []
@@ -268,9 +268,10 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
                 .drop("_merge", axis=1)
             )
             r2 = process_class(r2, maxt=maxt)
+            r1p = r1[~r1.taxid.isin(shared.taxid)]
 
             r1 = (
-                pd.concat([shared, r2, r1.head(maxt)], axis=0)
+                pd.concat([shared, r2, r1p.head(maxt - r2.shape[0])], axis=0)
                 .drop_duplicates(subset=["taxid"], keep="first")
                 .reset_index(drop=True)
             )
@@ -325,4 +326,4 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     print(r1, r2)
     print(full_descriptor)
 
-    return r1.head(maxt * r2pres), full_descriptor
+    return r1, full_descriptor

@@ -96,7 +96,21 @@
 		<label id="id-total-list" class="pull-right">Total datasets: {{ query_set_count }}</label>
 	{% endif %}
 	
+	<!-- Refresh button -->
 	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+	
+	<!-- Suggestion message -->
+	<p></p>
+	<div class="modal-body alert alert-info">
+		<p> <u>Brief instructions</u>: <b>New Dataset >> Select build (in the Magic Wand <i class="fa fa-magic padding-button-table"></i>) >> Add Sequences 
+		(from Projects, References or External) >> Update “Metadata for Nextstrain” (if needed*) >> Run (click in the “hourglass” icon) >> Explore results.</b>
+		</p> 
+
+		<p>*Please make sure you include a “date” for all samples. If no date is provided, INSaFLU will automatically insert the date of the analysis as the “collection date”, 
+		which might (considerably) bias (or even break) the time-scale trees generated for influenza, SARS-CoV-2 and Monkeypox.</p>
+		<p>If you provide “region, country, division and/or location”, these values will be screened against a vast database of “latitude and longitude” coordinates to 
+		geographically place the sequences in the Nextstrain map.</p>
+	</div>
 
 	<!-- The rebuild Modal -->
 	

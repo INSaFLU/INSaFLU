@@ -1136,14 +1136,6 @@ class Utils_Manager:
 
         print("GOING ON INDEX: ", tree_makeup, " for ", technology)
 
-        if tree_makeup == 4 and technology == "Illumina/IonTorrent":
-            old_tree = self.utility_manager.generate_default_software_tree()
-            old_tree_list = old_tree.get_all_graph_paths_list()
-            old_tree_list = [tuple(x[1]) for x in old_tree_list]
-            old_tree_set = set(old_tree_list)
-
-            print("OLD TREE SET: ", old_tree.nodes)
-
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup
         ):

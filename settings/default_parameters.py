@@ -1865,7 +1865,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 1
         parameter.range_available = ""

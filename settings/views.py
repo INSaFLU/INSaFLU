@@ -70,18 +70,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 parameter__televir_project=project,
                 pipeline_step=software.pipeline_step,
             )
-            print("existing_software", existing_software)
-            print(existing_software.count())
-            if existing_software:
-                for s in existing_software:
-                    print(
-                        s.name,
-                        s.name_extended,
-                        s.type_of_use,
-                        s.owner,
-                        s.technology,
-                        s.pipeline_step,
-                    )
 
             try:
                 Software.objects.get(

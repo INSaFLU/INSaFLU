@@ -911,7 +911,7 @@ class run_bowtie2(Classifier_init):
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bowtie2 -t -x {self.db_path} -1 {self.query_path} -2 {self.r2} {self.args} -S {self.report_path}"
+        cmd = f"bowtie2 -t -x {self.db_path} -1 {self.query_path} -2 {self.r2} --end-to-end {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
@@ -920,9 +920,9 @@ class run_bowtie2(Classifier_init):
 
         return pd.read_csv(self.report_path, sep="\t", header=None).rename(
             columns={
-                0: "acc",
+                0: "qseqid",
                 1: "flag",
-                2: "qseqid",
+                2: "acc",
                 3: "pos",
                 4: "mapq",
                 5: "cigar",
@@ -943,7 +943,7 @@ class run_bowtie2(Classifier_init):
 
         return pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        ).rename(columns={0: "acc", 2: "qseqid"})
+        ).rename(columns={2: "acc", 0: "qseqid"})
 
 
 class run_bwa_mem(Classifier_init):

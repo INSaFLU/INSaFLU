@@ -220,21 +220,14 @@ class Utility_Pipeline_Manager:
         """
         self.technology = technology
 
-        print("Inputting combined table")
-
         combined_table = self.process_combined_table(combined_table)
         pipe_makeup_manager = Pipeline_Makeup()
-
-        print("processing")
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
         self.pipeline_order = pipe_makeup_manager.get_makeup(self.pipeline_makeup)
-
-        print("PIPELINE_ORDER", self.pipeline_order)
-        print(combined_table.columns)
 
         self.existing_pipeline_order = [
             x for x in self.pipeline_order if x in pipelines_available
@@ -571,14 +564,10 @@ class Utility_Pipeline_Manager:
             return node
 
         for child in explicit_path[1:]:
-            print("parent", parent)
 
             child_main = match_nodes(
                 child, explicit_edge_dict[parent_main].index.tolist()
             )
-            print("child", child_main)
-
-            print(child_main in nodes_index_dict.keys())
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
@@ -737,7 +726,6 @@ class Parameter_DB_Utility:
                 "is_to_run_y": "parameter_is_to_run",
             }
         )
-        print(combined_table.columns)
         combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
             lambda x: PipelineStep.objects.get(id=int(x)).name
@@ -868,7 +856,6 @@ class Parameter_DB_Utility:
         """
         Generate a default software tree for a user
         """
-        print("GLOBAL_INDEX: ", global_index)
 
         software_tree = (
             SoftwareTree.objects.filter(
@@ -1134,8 +1121,6 @@ class Utils_Manager:
 
         pipeline_tree = self.utility_manager.generate_default_software_tree()
 
-        print("GOING ON INDEX: ", tree_makeup, " for ", technology)
-
         if self.parameter_util.check_default_software_tree_exists(
             technology, global_index=tree_makeup
         ):
@@ -1146,8 +1131,6 @@ class Utils_Manager:
             tree_differences = self.utility_manager.compare_software_trees(
                 existing_pipeline_tree
             )
-
-            print("TREE DIFFERENCES: ", tree_differences)
 
             if len(tree_differences) > 0:
                 self.parameter_util.update_software_tree(pipeline_tree)

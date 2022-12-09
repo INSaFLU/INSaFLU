@@ -322,8 +322,4 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     full_descriptor = descriptor_sources(full_descriptor)
     full_descriptor = descriptor_counts(full_descriptor)
 
-    print("############## full descriptor #################")
-    print(r1, r2)
-    print(full_descriptor)
-
     return r1, full_descriptor

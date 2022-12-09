@@ -1841,7 +1841,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""
@@ -2455,7 +2455,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""

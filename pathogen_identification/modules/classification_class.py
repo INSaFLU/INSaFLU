@@ -1177,7 +1177,7 @@ class Classifier:
         "krakenuniq": run_krakenuniq,
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
-        "bowtie": run_bowtie2_ONT,
+        "bowtie2": run_bowtie2_ONT,
         "bwa": run_bwa_mem,
     }
 

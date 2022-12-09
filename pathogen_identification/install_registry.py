@@ -49,6 +49,7 @@ class Deployment_Params:
             "blastp": "hostDepletion/hostdep_env",
             "snippy": "/software/snippy",
             "bwa": "remap/remap",
+            "bowtie2": "remap/remap",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},

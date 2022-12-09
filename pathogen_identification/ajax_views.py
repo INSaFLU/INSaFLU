@@ -7,23 +7,9 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    DataSet,
-    MetaKey,
-    ProcessControler,
-    Project,
-    ProjectSample,
-    Reference,
-    Sample,
-    UploadFiles,
-    VaccineStatus,
-)
 from utils.process_SGE import ProcessSGE
 
-from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
-    FinalReport,
     PIProject_Sample,
     Projects,
     ReferenceMap_Main,
@@ -59,12 +45,10 @@ def deploy_ProjectPI(request):
 
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
-        print("checking")
 
         try:
             if runs_to_deploy:
-                metaKeyAndValue = MetaKeyAndValue()
-                manageDatabase = ManageDatabase()
+
                 taskID = process_SGE.set_submit_televir_job(
                     user=request.user,
                     project_pk=project.pk,
@@ -132,13 +116,6 @@ def IGV_display(request):
             )
 
             def remove_pre_static(path: str, pattern: str) -> str:
-
-                # static_dir = os.path.join(
-                #    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                #    STATIC_ROOT,
-                # )
-                # if path.startswith(static_dir):
-                #    path = path[len(static_dir) :]
 
                 cwd = os.getcwd()
                 if path.startswith(cwd):

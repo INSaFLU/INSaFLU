@@ -5,6 +5,7 @@ import shutil
 
 import pandas as pd
 from django.core.management.base import BaseCommand
+from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Deployment_Params as DP
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
@@ -26,6 +27,7 @@ from pathogen_identification.utilities.update_DBs import (
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings as CS
+from utils.process_SGE import ProcessSGE
 
 
 class RunMain:
@@ -339,10 +341,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ###
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
 
         raw_reference_id = int(options["ref_id"])
 
         reference = RawReference.objects.get(pk=raw_reference_id)
+        user = reference.run.project.owner
+
+        ######## register map
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_map(reference.pk),
+            ProcessControler.FLAG_RUNNING,
+        )
+
+        ########
 
         input_generator = Input_Generator(
             reference, options["outdir"], threads=ConstantsSettings.MAPPING_THREADS
@@ -359,6 +373,24 @@ class Command(BaseCommand):
             input_generator.update_raw_reference_status_mapped()
             input_generator.update_final_report(run_engine)
 
+            ######## register map sucess
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_televir_map(reference.pk),
+                ProcessControler.FLAG_FINISHED,
+            )
+
+            ########
+
         except Exception as e:
             print(e)
             input_generator.update_raw_reference_status_fail()
+
+            ######## register map sucess
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_televir_map(reference.pk),
+                ProcessControler.FLAG_ERROR,
+            )
+
+            ########

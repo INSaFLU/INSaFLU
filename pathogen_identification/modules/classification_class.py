@@ -907,11 +907,11 @@ class run_bowtie2(Classifier_init):
     full_report_suffix = ".bowtie2"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"bowtie2 -t -x {self.db_path} -U {self.query_path} {self.args} -S {self.report_path}"
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal --end-to-end  -x {self.db_path} -U {self.query_path} {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bowtie2 -t -x {self.db_path} -1 {self.query_path} -2 {self.r2} --end-to-end {self.args} -S {self.report_path}"
+        cmd = f"bowtie2 -t --sam-nohead --sam-nosq --no-unal -x {self.db_path} -1 {self.query_path} -2 {self.r2} --end-to-end {self.args} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
@@ -1015,11 +1015,11 @@ class run_bowtie2_ONT(Classifier_init):
     full_report_suffix = ".bowtie2_ONT"
 
     def run_SE(self, threads: int = 3):
-        cmd = f"bowtie2 -a -t --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -U {self.query_path} -S {self.report_path}"
+        cmd = f"bowtie2 -a --threads {threads} --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -U {self.query_path} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def run_PE(self, threads: int = 3):
-        cmd = f"bowtie2 -a -t --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -1 {self.query_path} -2 {self.r2} -S {self.report_path}"
+        cmd = f"bowtie2 -a --threads {threads} --sam-nohead --sam-nosq --no-unal {self.args} -x {self.db_path} -1 {self.query_path} -2 {self.r2} -S {self.report_path}"
         self.cmd.run(cmd)
 
     def get_report(self) -> pd.DataFrame:
@@ -1052,7 +1052,7 @@ class run_bowtie2_ONT(Classifier_init):
 
         report = pd.read_csv(
             self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
-        ).rename(columns={0: "acc", 1: "qseqid"})
+        ).rename(columns={1: "acc", 0: "qseqid"})
 
         report = report[report["acc"] != "*"]
         return report
@@ -1177,7 +1177,7 @@ class Classifier:
         "krakenuniq": run_krakenuniq,
         "fastviromeexplorer": run_FastViromeExplorer,
         "clark": run_CLARK,
-        "bowtie2": run_bowtie2_ONT,
+        "bowtie2": run_bowtie2,
         "bwa": run_bwa_mem,
     }
 

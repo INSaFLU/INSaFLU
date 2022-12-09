@@ -378,37 +378,38 @@ class TypeFile(object):
 
 
 class FileExtensions(object):
-	"""
-	file extensions
-	"""
-	FILE_TSV = '.tsv'
-	FILE_TXT = '.txt'
-	FILE_TAB = '.tab'
-	FILE_VCF = '.vcf'
-	FILE_VCF_BGZ = 'vcf.bgz'
-	FILE_VCF_BGZ_TBI = 'vcf.bgz.tbi'
-	FILE_VCF_GZ = 'vcf.gz'
-	FILE_CSV = '.csv'
-	FILE_PNG = '.png'
-	FILE_GBK = '.gbk'
-	FILE_GB = '.gb'
-	FILE_FASTA = '.fasta'
-	FILE_FASTQ = '.fastq'
-	FILE_FNA = '.fna'
-	FILE_FAA = '.faa'
-	FILE_FA = '.fa'
-	FILE_FAI = '.fai'
-	FILE_CONSENSUS_FASTA = '.consensus.fasta'
-	FILE_TREE = '.tree'
-	FILE_NWK = '.nwk'
-	FILE_GZ = '.gz'
-	FILE_BED = '.bed'
-	FILE_GFF3 = '.gff3'
-	FILE_TBI = '.tbi'	### create with tabix
-	FILE_IDX = '.idx'	### created from igvtools
-	FILE_JSON = '.json'
-	FILE_FASTQ_GZ = '.fastq.gz'
-	FILE_FQ_GZ = '.fq.gz'
+    """
+    file extensions
+    """
+
+    FILE_TSV = ".tsv"
+    FILE_TXT = ".txt"
+    FILE_TAB = ".tab"
+    FILE_VCF = ".vcf"
+    FILE_VCF_BGZ = "vcf.bgz"
+    FILE_VCF_BGZ_TBI = "vcf.bgz.tbi"
+    FILE_VCF_GZ = "vcf.gz"
+    FILE_CSV = ".csv"
+    FILE_PNG = ".png"
+    FILE_GBK = ".gbk"
+    FILE_GB = ".gb"
+    FILE_FASTA = ".fasta"
+    FILE_FASTQ = ".fastq"
+    FILE_FNA = ".fna"
+    FILE_FAA = ".faa"
+    FILE_FA = ".fa"
+    FILE_FAI = ".fai"
+    FILE_CONSENSUS_FASTA = ".consensus.fasta"
+    FILE_TREE = ".tree"
+    FILE_NWK = ".nwk"
+    FILE_GZ = ".gz"
+    FILE_BED = ".bed"
+    FILE_GFF3 = ".gff3"
+    FILE_TBI = ".tbi"  ### create with tabix
+    FILE_IDX = ".idx"  ### created from igvtools
+    FILE_JSON = ".json"
+    FILE_FASTQ_GZ = ".fastq.gz"
+    FILE_FQ_GZ = ".fq.gz"
 
     ### all GBK
     VECT_ALL_GBK_EXTENSIONS = [FILE_GBK, FILE_GB]

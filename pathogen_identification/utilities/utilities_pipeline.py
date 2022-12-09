@@ -1,4 +1,5 @@
 import itertools as it
+import logging
 import os
 from collections import defaultdict
 
@@ -201,6 +202,12 @@ class Utility_Pipeline_Manager:
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
         self.binaries = Deployment_Params.BINARIES
+
+        self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
         """
@@ -549,9 +556,14 @@ class Utility_Pipeline_Manager:
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
 
-        nodes_index_dict = self.node_index_dict(pipe_tree)
+        self.logger.info("Matching path to tree")
 
+        self.logger.info("Generating node index dict")
+        nodes_index_dict = self.node_index_dict(pipe_tree)
+        print(nodes_index_dict)
+        self.logger.info("Generating explicit edge dict")
         explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
+
         parent = explicit_path[0]
         parent_main = (0, ("root", None, None))
         child_main = None
@@ -563,18 +575,40 @@ class Utility_Pipeline_Manager:
                     return nd
             return node
 
-        for child in explicit_path[1:]:
+        self.logger.info("Initialize matching nodes")
+        self.logger.info(f"Parent: {parent}")
+        self.logger.info(f"Parent main: {parent_main}")
+        self.logger.info(f"Child main: {child_main}")
+        self.logger.info("Matching nodes iterating through explicit path")
 
-            child_main = match_nodes(
-                child, explicit_edge_dict[parent_main].index.tolist()
-            )
+        for child in explicit_path[1:]:
+            self.logger.info("--------------------")
+            self.logger.info(f"Parent: {parent}")
+            self.logger.info(f"Parent main: {parent_main}")
+            self.logger.info(f"Child: {child}")
+
+            try:
+                child_main = match_nodes(
+                    child, explicit_edge_dict[parent_main].index.tolist()
+                )
+            except KeyError:
+                self.logger.info(f"{parent_main} not in parent tree edge dictionary.")
+                return False
+
+            self.logger.info(f"Child main: {child_main}")
+
+            try:
+                nodes_index_dict[child_main]
+            except KeyError:
+                self.logger.info(f"{child_main} node in tree nodes")
+                return False
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
             if child_main not in explicit_edge_dict[parent_main].index:
-                print(f"Child {child} not in parent {parent}")
-
+                self.logger.info(f"Child {child} not in parent {parent}")
                 return False
+
             parent = child
             parent_main = child_main
 
@@ -983,6 +1017,9 @@ class Utils_Manager:
 
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        self.logger.info("Utils_Manager initialized")
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """
@@ -1009,28 +1046,36 @@ class Utils_Manager:
         samples = PIProject_Sample.objects.filter(project=project)
         local_tree = utils.generate_project_tree(technology, project, user)
 
-        print("Checking runs to deploy")
+        self.logger.info("Checking runs to deploy")
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        print("Pipeline tree generated")
+        self.logger.info("Pipeline tree generated")
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
-        print("Pipeline tree index generated")
+        self.logger.info("Pipeline tree index generated")
         local_paths = local_tree.get_all_graph_paths_explicit()
         sample = samples[0]
 
         runs_to_deploy = 0
-
+        self.logger.info(
+            "now going to start checking if existing paths correspond to branches in trees"
+        )
         for sample in samples:
 
             for leaf, path in local_paths.items():
-                print(leaf, path)
+                self.logger.info(leaf, path)
 
-                matched_path = utils.utility_manager.match_path_to_tree(
-                    path, pipeline_tree
-                )
+                try:
 
-                print("Matched path to tree")
+                    matched_path = utils.utility_manager.match_path_to_tree(
+                        path, pipeline_tree
+                    )
+                except Exception as e:
+                    self.logger.info("Path not matched to tree")
+                    self.logger.info(e)
+                    continue
+
+                self.logger.info("Matched path to tree")
 
                 matched_path_node = SoftwareTreeNode.objects.get(
                     software_tree__pk=pipeline_tree_index, index=matched_path

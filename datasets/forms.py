@@ -101,9 +101,10 @@ class ConsensusForm(forms.ModelForm):
 		## exclude = ('md5',)
 		field_text= [
 			# (field_name, Field title label, Detailed field description, requiered)
-			('name', 'Prefix Name', 'Prefix name to attach to the sequences names in fasta file. '\
-			 'If empty, only the names of the sequences will taken in consideration. It can be a multi-fasta sequence file. '\
-			 'If the name already exist in database the sequence will be rejected.', False),
+			('name', 'Prefix Name', 'Prefix name to attach to the sequences names in fasta file. ' +\
+			'<p><b><i>The prefix can be useful to select specific group of sequences to be added to datasets.</i></b></p><p>If empty, ' +\
+			'only the names of the sequences will taken in consideration.</p><p>It can be a multi-fasta sequence file. If the name ' +\
+			'already exists in database the sequence will be rejected.</p>', False),
 			('display_name', 'Sequence names to upload, can be separated by comma', 'If you want to upload specific sequences from multifasta sequences, '
 			'set the names where separated by comma, if more than one. If empty, upload all.', False),
 			('consensus_fasta', 'Consensus (Fasta/Multi-Fasta)', "Consensus file in fasta format.<br>" +\

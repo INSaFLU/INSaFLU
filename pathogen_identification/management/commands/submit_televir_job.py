@@ -80,9 +80,15 @@ class Command(BaseCommand):
 
                 for leaf, path in local_paths.items():
 
-                    matched_path = utils.utility_manager.match_path_to_tree(
-                        path, pipeline_tree
-                    )
+                    try:
+                        matched_path = utils.utility_manager.match_path_to_tree(
+                            path, pipeline_tree
+                        )
+                    except Exception as e:
+                        print(f"Path {path} not found in pipeline tree.")
+                        print("Exception:")
+                        print(e)
+                        continue
 
                     matched_path_node = SoftwareTreeNode.objects.get(
                         software_tree__pk=pipeline_tree_index, index=matched_path

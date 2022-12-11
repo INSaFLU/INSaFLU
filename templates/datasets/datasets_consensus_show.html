@@ -164,16 +164,16 @@
 										</div>
 										
 										<!-- Meta Data -->
-										<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
-											title="Upload metadata to update '{{dataset.name}}' dataset from a tsv file"
-											class="btn btn-small btn-primary dark"
-                    						data-toggle="tooltip">
-                    						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
-                    					</a>
+											<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
+												title="Upload metadata to update '{{dataset.name}}' dataset from a tsv file"
+												class="btn btn-small btn-primary dark"
+	                    						data-toggle="tooltip">
+	                    						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
+	                    					</a>
 										
 										<!-- Show nextClade link -->
-										<!-- {% if nextclade_link_covid or nextclade_link_a_h3n2 %}
-											<div class="btn-group" style="padding-left:20px" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
+										{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 %}
+											<div class="btn-group" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
 												<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 													Jump to NextClade
 				  								</button>
@@ -181,6 +181,13 @@
 													{% if nextclade_link_covid %} 
 														<a href="{{nextclade_link_covid}}" data-title="Upload your Consensus File in NextClade Annotation SARS-CoV-2" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (SARS-CoV-2)</span></a>
+													{% elif nextclade_link_mpxv_hmpxv_b1 %} 
+														<a href="{{nextclade_link_mpxv_hmpxv_b1}}" data-title="Upload your Consensus File in NextClade MPXV B1" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV B1)</span></a>
+														<a href="{{nextclade_link_mpxv_hmpxv}}" data-title="Upload your Consensus File in NextClade Annotation MPXV" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV)</span></a>
+														<a href="{{nextclade_link_mpxv_all_clades}}" data-title="Upload your Consensus File in NextClade MPXV (All Clades)" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV All clades)</span></a>
 													{% else %}
 														<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" 
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H3N2)</span></a>
@@ -192,23 +199,24 @@
 															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
 													{% endif %}
 												</div>
-											</div>  
-										{% endif %} -->
-
+											</div>
+										{% endif %}
 										
-											<span ><i class="padding-button-table fa fa-info-circle padding-button-table"></i>
-												Download the json files and drag-and drop the files in <a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="auspice.us">auspice.us</a>.
-												You can also upload the nextstrain metadata file in auspice.us to update the displayed metadata.
-											</span>
-
-
-				                        <form method="get" action="" class="form-inline form-search pull-right">
+										<!--  To search  -->
+										<form method="get" action="" class="form-inline form-search pull-right">
 				                        	{% csrf_token %}
 				                            <div class="pull-right form-search">
 				                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name and Type"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
 				                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
 				                            </div>              
 				                        </form>
+
+										<!--  Info about  -->				                        
+										<div class="modal-body alert alert-info" style="margin-top:5px" >
+											<i class="fa fa-info-circle"></i>
+											Download the json files and drag&drop them in <a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="auspice.us">auspice.us</a>.
+											(also upload the Nextstrain_metadata.tsv to enrich the displayed metadata)
+										</div>
 				                    </th>                  
 				                </tr>
 				             

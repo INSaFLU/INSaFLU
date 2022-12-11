@@ -34,6 +34,8 @@ from utils.support_django_template import get_link_for_dropdown_item
 from settings.models import Software as SoftwareSettings
 from settings.constants_settings import ConstantsSettings
 from settings.tables import SoftwaresTable
+from constants.nextclade_links import get_constext_nextclade
+from django.contrib.sites.shortcuts import get_current_site
 
 class DatasetsView(LoginRequiredMixin, ListView):
 
@@ -765,6 +767,7 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 	model = Project
 	template_name = 'datasets/datasets_consensus_show.html'
 	context_object_name = 'dataset_consensus'
+	software = Software()
 	
 	def get_context_data(self, **kwargs):
 		context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
@@ -824,6 +827,17 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 		context['n_consensus_from_projects'] = dataset.number_of_sequences_from_projects
 		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
 		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
+		
+		#### nextclade link
+		#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+		reference = dataset.get_first_reference()
+		if not reference is None:
+			specie_tag = self.software.get_species_tag(reference)
+			if (os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)) and \
+					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+				context = get_constext_nextclade(dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus),
+						context, get_current_site(self.request), specie_tag)
+			
 		return context
 				
 

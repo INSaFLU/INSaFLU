@@ -555,6 +555,7 @@ class Sample(models.Model):
 
 			### Corona/monkeypox
 			sz_return_c = self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENUS, [ConstantsVirus.TYPE_BetaCoV])
+			sz_return_c += self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENOTYPE, [])
 			
 			## get several species
 			sz_subtype = ""

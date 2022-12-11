@@ -241,7 +241,7 @@ class Dataset(models.Model):
         for dataset_consensus in self.dataset_consensus.all():
             if dataset_consensus.is_deleted or dataset_consensus.is_error: continue
             if not dataset_consensus.reference is None: return dataset_consensus.reference
-        return ""
+        return None
 
 class DatasetConsensus(models.Model):
     

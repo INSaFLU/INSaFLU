@@ -319,6 +319,8 @@ class Sample(models.Model):
 	TYPE_OF_FASTQ_minion = 1
 	TYPE_OF_FASTQ_not_defined = -1
 	
+	TYPE_SUBTYPE_LENGTH = 150
+	
 	## to remove in future
 	objects = models.Manager()	## need to check this
 	
@@ -342,7 +344,7 @@ class Sample(models.Model):
 	
 	### Type/Subtype Virus
 	identify_virus = models.ManyToManyField(IdentifyVirus)
-	type_subtype = models.CharField(max_length=150, blank=True, null=True)	## has the type/subtype collected
+	type_subtype = models.CharField(max_length=TYPE_SUBTYPE_LENGTH, blank=True, null=True)	## has the type/subtype collected
 	number_alerts = models.IntegerField(verbose_name='Alerts', default=0, blank=True, null=True)	## has the number of alerts
 	mixed_infections_tag = models.ForeignKey(MixedInfectionsTag, verbose_name='Putative Mixed Infection', related_name='sample', blank=True, null=True, on_delete=models.CASCADE)
 																			### has the tag of Yes/No mixed infection

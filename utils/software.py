@@ -1640,7 +1640,7 @@ class Software(object):
 				
 				### make identify species
 				if (b_make_identify_species):
-					sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
+					sample_to_update.type_subtype = sample_to_update.get_type_sub_type()[:Sample.TYPE_SUBTYPE_LENGTH-1]
 					
 					(tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
 					if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert

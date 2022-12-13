@@ -12,9 +12,16 @@
 {% endblock css %}
 
 {% block breadcrumbs %}
+
+    {% if televir_sample %}
+	{{ block.super }}
+	{% breadcrumb "Televir Projects" "PIprojects_main" %}
+	{% breadcrumb "Add samples to project" "add-sample-project" %}
+    {% else %}
 	{{ block.super }}
 	{% breadcrumb "Projects" "projects" %}
 	{% breadcrumb "Add samples to project" "add-sample-project" %}
+    {% endif %}
 {% endblock %}
 
 {% block content %}

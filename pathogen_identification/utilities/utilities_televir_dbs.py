@@ -169,7 +169,6 @@ class Utility_Repository:
         """
         Add a record to a table
         """
-        # print("adding software")
 
         self.engine.execute(
             f"INSERT INTO software (name, path, database, installed, env_path) VALUES ('{item.name}', '{item.path}', '{item.database}', '{item.installed}', '{item.env_path}')"

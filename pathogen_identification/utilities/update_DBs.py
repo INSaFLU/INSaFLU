@@ -24,8 +24,7 @@ def Update_project(project_directory_path, user: str = "admin"):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
     project_name = os.path.basename(project_directory_path)
-    project_name_simple = project_name.replace(".", "_").replace(":", "_")
-    print("user: ", user)
+
     try:
         user = User.objects.get(username=user)
     except User.DoesNotExist:
@@ -55,9 +54,7 @@ def Update_Sample(sample_class: Sample_runClass):
     """
 
     user = User.objects.get(username=sample_class.user_name)
-    print(user)
-    print(sample_class.project_name)
-    print(sample_class.sample_name)
+
     project = Projects.objects.get(name=sample_class.project_name, owner=user)
 
     try:

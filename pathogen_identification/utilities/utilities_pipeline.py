@@ -206,7 +206,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
@@ -560,7 +560,6 @@ class Utility_Pipeline_Manager:
 
         self.logger.info("Generating node index dict")
         nodes_index_dict = self.node_index_dict(pipe_tree)
-        print(nodes_index_dict)
         self.logger.info("Generating explicit edge dict")
         explicit_edge_dict = self.generate_explicit_edge_dict(pipe_tree)
 
@@ -1018,7 +1017,7 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.info("Utils_Manager initialized")
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
@@ -1063,10 +1062,8 @@ class Utils_Manager:
         for sample in samples:
 
             for leaf, path in local_paths.items():
-                self.logger.info(leaf, path)
 
                 try:
-
                     matched_path = utils.utility_manager.match_path_to_tree(
                         path, pipeline_tree
                     )

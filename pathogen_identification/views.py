@@ -215,7 +215,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
 
 class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
     """
-    Create a new reference
+    Create a new Project
     """
 
     # utils = Utils()
@@ -270,6 +270,8 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
         Validate the form
         """
         ### test anonymous account
+        print("HI")
+        print(form.cleaned_data)
         try:
             profile = Profile.objects.get(user=self.request.user)
             if profile.only_view_project:
@@ -369,9 +371,6 @@ class AddSamples_PIProjectsView(
             type_of_fastq=technology,
         ).exclude(pk__in=samples_out)
 
-        print("#####################")
-        print(technology)
-        print(project.technology)
         tag_search = "search_add_project_sample"
         if self.request.GET.get(tag_search) != None and self.request.GET.get(
             tag_search
@@ -426,6 +425,7 @@ class AddSamples_PIProjectsView(
         ).configure(table)
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
+        context["televir_sample"] = True
         context["table"] = table
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
@@ -660,7 +660,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         query_set = PIProject_Sample.objects.filter(project=project, is_deleted=False)
 
         samples = SampleTable(query_set)
-        print(pd.DataFrame(query_set.values()).columns)
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
@@ -702,9 +701,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         sample_name = sample.sample.name
         project = Projects.objects.get(pk=project_pk)
         project_name = project.name
-
-        print("######### SAMPLE NAME ")
-        print(sample_name)
 
         runs_table = RunMainTable(runs)
 
@@ -878,11 +874,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
         run_main = RunMain.objects.get(pk=run_pk)
         run_name = run_main.name
 
-        print("##")
-        print(reference)
-        print(sample)
-        print(run_main)
-
         try:
             ref_main = ReferenceMap_Main.objects.get(
                 reference=reference, sample=sample, run=run_main
@@ -915,7 +906,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
 
 def download_file_igv(requestdst):
     """download fasta file"""
-    print(requestdst.method)
     if requestdst.method == "POST":
         form = download_form(requestdst.POST)
 
@@ -925,8 +915,6 @@ def download_file_igv(requestdst):
             BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             DLDIR = os.path.join(BASE_DIR, STATICFILES_DIRS[0], "igv_files")
             filepath = os.path.join(DLDIR, filepath)
-
-            print(filepath)
 
             if not os.path.exists(filepath):
                 return HttpResponseNotFound(f"file {filepath} not found")
@@ -951,17 +939,11 @@ def download_file(requestdst):
 
     if requestdst.method == "POST":
         form = download_form(requestdst.POST)
-        print(requestdst.POST)
-        print(form.is_valid())
+
         if form.is_valid():
             filepath = form.cleaned_data.get("file_path")
 
             BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-            print(BASE_DIR)
-            print(filepath)
-
-            # filepath = BASE_DIR + filepath
 
             if "//" in filepath:
                 filepath = "/" + filepath.split("//")[1]
@@ -987,15 +969,13 @@ def download_file_ref(requestdst):
 
     if requestdst.method == "POST":
         form = download_ref_form(requestdst.POST)
-        print(requestdst.POST)
-        print(form.is_valid())
+
         if form.is_valid():
             file_request = form.cleaned_data.get("file")
             run_index = int(form.cleaned_data.get("run"))
             taxid = form.cleaned_data.get("taxid")
             accid = form.cleaned_data.get("accid")
 
-            print(form.cleaned_data.get("run"))
             accid_simple = (
                 accid.replace(".", "_")
                 .replace(";", "_")

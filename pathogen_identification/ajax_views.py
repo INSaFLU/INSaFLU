@@ -2,7 +2,7 @@ import os
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
@@ -70,14 +70,11 @@ def deploy_televir_map(request):
     """
     prepare data for deployment of pathogen identification.
     """
-    print(request.is_ajax())
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
         user = request.user
-
-        print(request.POST)
 
         reference_id = int(request.POST["reference_id"])
         taskID = process_SGE.set_submit_televir_map(user, reference_pk=reference_id)
@@ -87,17 +84,27 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
+def validate_project_name(request):
+    if request.is_ajax():
+        data = {"is_taken": False}
+
+        if request.method == "GET":
+            user_obj = Projects.objects.filter(
+                owner=request.user, name=request.GET.get("projectname")
+            ).exists()
+            if user_obj:
+                return HttpResponse(True)
+            else:
+                return HttpResponse(False)
+
+
 @csrf_protect
 def IGV_display(request):
     """display python plotly app"""
-    print("received request")
-    print(request.is_ajax())
+
     if request.is_ajax():
         data = {"is_ok": False}
         if request.method == "GET":
-            print("received GET")
-            print(request.GET)
-            project_pk = request.GET.get("project_pk")
             sample_pk = request.GET.get("sample_pk")
             run_pk = request.GET.get("run_pk")
             reference = request.GET.get("accid")
@@ -106,10 +113,6 @@ def IGV_display(request):
             sample = PIProject_Sample.objects.get(pk=int(sample_pk))
             sample_name = sample.name
             run = RunMain.objects.get(pk=int(run_pk))
-            run_name = run.name
-            print("###########")
-
-            print(run_name, sample_name, reference)
 
             ref_map = ReferenceMap_Main.objects.get(
                 reference=unique_id, sample=sample, run=run
@@ -190,7 +193,4 @@ def IGV_display(request):
             data["static_dir"] = run.static_dir
             data["sample_name"] = sample_name
 
-            print(path_name_reference_index)
-            print(os.path.isfile(path_name_reference_index))
-        # print(data)
         return JsonResponse(data)

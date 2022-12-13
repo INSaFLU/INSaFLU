@@ -314,7 +314,6 @@ class SampleTable(tables.Table):
                 + sample_name
             )
 
-        print(sample_name)
         return mark_safe(sample_name)
 
     report = tables.LinkColumn(

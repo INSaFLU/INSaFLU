@@ -12,10 +12,11 @@
 {% block content %}
 
 <br>
-<form method="post">{% csrf_token %}
+<form method="post">
+    {% csrf_token %}
 	<div class="form-group">
 		<label for="name">Name</label>
-		<input type="text" class="form-control" id="name" name="name" placeholder="Name" value="{{ project.name }}">
+		<input type="text" class="form-control" id="project_name" name="name" placeholder="Name" value="{{ project.name }}">
 	</div>
 	<div class="form-group">
 		<label for="description">Description</label>
@@ -34,4 +35,32 @@
 	<input type="button" name="cancel" value="Cancel" class="btn btn-secondary" id="button-cancel"
 		onclick="window.location.href='/pathogen_identification/projects'">
 </form>
-{% endblock %}
+{% endblock content %}
+
+{% block js %}
+<script type="text/javascript">
+    $("#project_name").keyup(function(){
+        var projectname=$(this).val();
+        if(projectname!=""){
+          $.ajax({
+            url:'{% url 'check_project_name_exist' %}',
+            type:'GET',
+            data:{projectname:projectname}
+
+          })
+          .done(function(response){
+            console.log(response);
+            if(response=="True"){
+                alert("Username already taken");    }
+          })
+          .fail(function(){
+            console.log("failed");
+          })
+        }
+        else{
+          $(".username_error").remove();
+        }
+    });
+</script>
+
+{% endblock js %}

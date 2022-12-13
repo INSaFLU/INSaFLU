@@ -21,7 +21,7 @@ class Projects(models.Model):
         null=True,
         verbose_name="Project name",
     )
-    description = models.TextField(default="")
+    description = models.TextField(default="", null= True, blank= True)
     technology = models.CharField(
         max_length=200,
         db_index=True,

@@ -21,6 +21,11 @@ urlpatterns = [
         name="PIproject-add",
     ),
     url(
+        r"check_project_name",
+        PIajax_views.validate_project_name,
+        name="check_project_name_exist",
+    ),
+    url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",

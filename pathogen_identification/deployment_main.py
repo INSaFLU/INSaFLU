@@ -50,7 +50,7 @@ class PathogenIdentification_deployment:
         username: str = "admin",
         technology: str = "ONT",
         pk: int = 0,
-        deployment_root_dir: str = "project",
+        deployment_root_dir: str = "/tmp/insaflu/insaflu_something",
         dir_branch: str = "deployment",
     ) -> None:
 
@@ -101,10 +101,8 @@ class PathogenIdentification_deployment:
             self.constants = ConstantsSettings.CONSTANTS_ONT
 
     def configure_params(self):
-        user = User.objects.get(username=self.username)
 
         utils = Utils_Manager()
-        print(self.technology)
 
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
@@ -144,8 +142,6 @@ class PathogenIdentification_deployment:
             self.config["actions"][dr] = g
 
         self.config.update(self.constants)
-
-        print(self.config["directories"])
 
     def prep_test_env(self):
         """
@@ -199,8 +195,6 @@ class Run_Main_from_Leaf:
         pipeline_tree: SoftwareTree,
         odir: str,
     ):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
         self.user = user
         self.sample = input_data
         self.project = project
@@ -332,7 +326,7 @@ class Run_Main_from_Leaf:
 
     def Update_dbs(self):
 
-        Update_QC_report(self.container.run_engine.sample, self.parameter_set)
+        # Update_QC_report(self.container.run_engine.sample, self.parameter_set)
         Update_Sample_Runs(self.container.run_engine, self.parameter_set)
 
     def register_submission(self):

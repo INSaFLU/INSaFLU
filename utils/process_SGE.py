@@ -68,7 +68,6 @@ class ProcessSGE(object):
         cmd = "export SGE_ROOT={}; qsub {} > {}".format(
             settings.SGE_ROOT, file_name, temp_file
         )
-        print(cmd)
         exist_status = os.system(cmd)
         print("cmd: {}".format(cmd))
 
@@ -807,14 +806,18 @@ class ProcessSGE(object):
                 out_dir,
             )
         ]
+
+        print(vect_command)
+
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
+        outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            out_dir, queue_name, vect_command, job_name, False, [job_name_wait]
+            outdir_sge, queue_name, vect_command, job_name, False, [job_name_wait]
         )
         print(path_file)
         try:
@@ -849,8 +852,9 @@ class ProcessSGE(object):
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
+        outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            out_dir, queue_name, vect_command, job_name, False, [job_name_wait]
+            outdir_sge, queue_name, vect_command, job_name, False, [job_name_wait]
         )
         print(path_file)
         try:

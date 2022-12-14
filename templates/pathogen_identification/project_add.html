@@ -38,7 +38,12 @@
 {% endblock content %}
 
 {% block js %}
+
+{% load static from staticfiles %}
+<script type="text/javascript" src="{% static 'js/televir_projects/warning_messages.js' %}"></script>
+
 <script type="text/javascript">
+
     $("#project_name").keyup(function(){
         var projectname=$(this).val();
         if(projectname!=""){
@@ -46,7 +51,7 @@
             url:'{% url 'check_project_name_exist' %}',
             type:'GET',
             data:{projectname:projectname}
-
+    
           })
           .done(function(response){
             console.log(response);

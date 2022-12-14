@@ -270,8 +270,6 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
         Validate the form
         """
         ### test anonymous account
-        print("HI")
-        print(form.cleaned_data)
         try:
             profile = Profile.objects.get(user=self.request.user)
             if profile.only_view_project:

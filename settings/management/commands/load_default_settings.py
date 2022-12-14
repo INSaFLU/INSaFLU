@@ -60,11 +60,8 @@ class Command(BaseCommand):
                 continue
 
             ### need to set the pipeline...
-            print(software.name)
-            print(software.pipeline_step)
             if software.pipeline_step is None:
                 vect_parameters = default_parameters.get_vect_parameters(software)
-                print(software.name)
                 software.can_be_on_off_in_pipeline = vect_parameters[
                     0
                 ].software.can_be_on_off_in_pipeline

@@ -23,7 +23,9 @@ class ConstantsVirus(object):
 	####
 	SEQ_VIRUS_TYPE = "Type"				### A
 	SEQ_VIRUS_GENUS = "Genus"
-	VECT_SEQ_VIRUS_TYPE = [SEQ_VIRUS_TYPE.lower(), SEQ_VIRUS_GENUS.lower()]
+	SEQ_VIRUS_GENOTYPE = "Genotype"
+	VECT_SEQ_VIRUS_TYPE = [SEQ_VIRUS_GENOTYPE.lower(), SEQ_VIRUS_TYPE.lower(),
+				SEQ_VIRUS_GENUS.lower()]
 	
 	### sub type identification
 	##############################33
@@ -56,7 +58,7 @@ class ConstantsVirus(object):
 	### this tags came from the file db/type_identification/db_influenza_typing_v2.fasta
 	VECT_ALL_POSSIBLE_TAGS_lower = VECT_SEQ_VIRUS_TYPE + VECT_SEQ_VIRUS_SUB_TYPE
 	VECT_ALL_POSSIBLE_TAGS = [SEQ_VIRUS_TYPE, SEQ_VIRUS_GENUS, SEQ_VIRUS_SUB_TYPE, SEQ_VIRUS_LINEAGE,
-					SEQ_VIRUS_HUMAN, SEQ_VIRUS_BAT, SEQ_VIRUS_SPECIES]
+					SEQ_VIRUS_HUMAN, SEQ_VIRUS_BAT, SEQ_VIRUS_SPECIES, SEQ_VIRUS_GENOTYPE]
 	
 	TYPE_A = 'A'
 	TYPE_B = 'B'

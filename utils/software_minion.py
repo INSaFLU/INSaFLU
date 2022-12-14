@@ -13,12 +13,8 @@ from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 from managing_files.manage_database import ManageDatabase
-from managing_files.models import (
-    MixedInfectionsTag,
-    ProcessControler,
-    ProjectSample,
-    Sample,
-)
+from managing_files.models import (MixedInfectionsTag, ProcessControler,
+                                   ProjectSample, Sample)
 from pysam import pysam
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -30,15 +26,8 @@ from utils.mixed_infections_management import MixedInfectionsManagement
 from utils.parse_coverage_file import GetCoverage
 from utils.parse_out_files import ParseOutFiles
 from utils.process_SGE import ProcessSGE
-from utils.result import (
-    CountHits,
-    DecodeObjects,
-    KeyValue,
-    MaskingConsensus,
-    Result,
-    ResultAverageAndNumberReads,
-    SoftwareDesc,
-)
+from utils.result import (CountHits, DecodeObjects, KeyValue, MaskingConsensus,
+                          Result, ResultAverageAndNumberReads, SoftwareDesc)
 from utils.software import Software
 from utils.utils import Utils
 
@@ -111,122 +100,73 @@ class SoftwareMinion(object):
                 sample.owner, sample, ConstantsSettings.TECHNOLOGY_minion
             )
 
-            ### queue the quality check and
-            if (
-                b_has_data and b_make_identify_species
-            ):  ## don't run for single file because spades doesn't work for one single file
-                self.software.identify_type_and_sub_type(
-                    sample, sample.get_fastq_available(TypePath.MEDIA_ROOT), None, user
-                )
-
-            ## set the flag that is ready for process
-            sample_to_update = Sample.objects.get(pk=sample.id)
-            sample_to_update.is_sample_in_the_queue = False
-            if b_has_data:
-                sample_to_update.is_ready_for_projects = True
-                print("is_ready_for_projects")
-
-                ### make identify species
-                if b_make_identify_species:
-                    sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
-                    (
-                        tag_mixed_infection,
-                        alert,
-                        message,
-                    ) = sample_to_update.get_mixed_infection()
-                    if sample_to_update.number_alerts == None:
-                        sample_to_update.number_alerts = alert
-                    else:
-                        sample_to_update.number_alerts += alert
-
-                    manage_database = ManageDatabase()
-                    if message != None and len(message) > 0:
-                        manage_database.set_sample_metakey(
-                            sample,
-                            user,
-                            MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,
-                            MetaKeyAndValue.META_VALUE_Success,
-                            message,
-                        )
-
-                    ### save tag mixed_infecion
-                    manage_database.set_sample_metakey(
-                        sample,
-                        user,
-                        MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,
-                        MetaKeyAndValue.META_VALUE_Success,
-                        tag_mixed_infection,
-                    )
-
-                    try:
-                        mixed_infections_tag = MixedInfectionsTag.objects.get(
-                            name=tag_mixed_infection
-                        )
-                    except MixedInfectionsTag.DoesNotExist as e:
-                        mixed_infections_tag = MixedInfectionsTag()
-                        mixed_infections_tag.name = tag_mixed_infection
-                        mixed_infections_tag.save()
-
-                    sample_to_update.mixed_infections_tag = mixed_infections_tag
-                else:
-                    sample_to_update.type_subtype = Constants.EMPTY_VALUE_NA
-                    tag_mixed_infection = Constants.EMPTY_VALUE_NA
-                    try:
-                        mixed_infections_tag = MixedInfectionsTag.objects.get(
-                            name=tag_mixed_infection
-                        )
-                    except MixedInfectionsTag.DoesNotExist as e:
-                        mixed_infections_tag = MixedInfectionsTag()
-                        mixed_infections_tag.name = tag_mixed_infection
-                        mixed_infections_tag.save()
-
-                    sample_to_update.mixed_infections_tag = mixed_infections_tag
-
-                    manage_database = ManageDatabase()
-                    message = "Info: Abricate turned OFF by the user."
-                    manage_database.set_sample_metakey(
-                        sample,
-                        user,
-                        MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,
-                        MetaKeyAndValue.META_VALUE_Success,
-                        message,
-                    )
-            else:
-                manage_database = ManageDatabase()
-                manage_database.set_sample_metakey(
-                    sample_to_update,
-                    user,
-                    MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,
-                    MetaKeyAndValue.META_VALUE_Success,
-                    "Warning: no reads left after filtering.",
-                )
-
-                if sample_to_update.number_alerts == None:
-                    sample_to_update.number_alerts = 1
-                else:
-                    sample_to_update.number_alerts += 1
-                sample_to_update.is_ready_for_projects = False
-                sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-
-            sample_to_update.save()
-            print("sample_ saved")
-
-            ### set the flag of the end of the task
-            meta_sample = manage_database.get_sample_metakey_last(
-                sample,
-                MetaKeyAndValue.META_KEY_Queue_TaskID,
-                MetaKeyAndValue.META_VALUE_Queue,
-            )
-            print("meta_sample")
-            print(meta_sample)
-            if meta_sample != None:
-                manage_database.set_sample_metakey(
-                    sample,
-                    sample.owner,
-                    MetaKeyAndValue.META_KEY_Queue_TaskID,
-                    MetaKeyAndValue.META_VALUE_Success,
-                    meta_sample.description,
-                )
+			### queue the quality check and
+			if (b_has_data and b_make_identify_species):	## don't run for single file because spades doesn't work for one single file
+				self.software.identify_type_and_sub_type(sample, sample.get_fastq_available(TypePath.MEDIA_ROOT),\
+					None, user)
+	
+			## set the flag that is ready for process
+			sample_to_update = Sample.objects.get(pk=sample.id)
+			sample_to_update.is_sample_in_the_queue = False
+			if (b_has_data):
+				sample_to_update.is_ready_for_projects = True
+				
+				### make identify species
+				if (b_make_identify_species):
+					sample_to_update.type_subtype = sample_to_update.get_type_sub_type()[:Sample.TYPE_SUBTYPE_LENGTH-1]
+					(tag_mixed_infection, alert, message) = sample_to_update.get_mixed_infection()
+					if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = alert
+					else: sample_to_update.number_alerts += alert
+						
+					manage_database = ManageDatabase()
+					if (message != None and len(message) > 0):
+						manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+											MetaKeyAndValue.META_VALUE_Success, message)
+		
+					### save tag mixed_infecion
+					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_TAG_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, tag_mixed_infection)
+	
+					try:
+						mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+					except MixedInfectionsTag.DoesNotExist as e:
+						mixed_infections_tag = MixedInfectionsTag()
+						mixed_infections_tag.name = tag_mixed_infection
+						mixed_infections_tag.save()
+					
+					sample_to_update.mixed_infections_tag = mixed_infections_tag
+				else:
+					sample_to_update.type_subtype = Constants.EMPTY_VALUE_NA
+					tag_mixed_infection = Constants.EMPTY_VALUE_NA
+					try:
+						mixed_infections_tag = MixedInfectionsTag.objects.get(name=tag_mixed_infection)
+					except MixedInfectionsTag.DoesNotExist as e:
+						mixed_infections_tag = MixedInfectionsTag()
+						mixed_infections_tag.name = tag_mixed_infection
+						mixed_infections_tag.save()
+					
+					sample_to_update.mixed_infections_tag = mixed_infections_tag
+					
+					manage_database = ManageDatabase()
+					message = "Info: Abricate turned OFF by the user."
+					manage_database.set_sample_metakey(sample, user, MetaKeyAndValue.META_KEY_ALERT_MIXED_INFECTION_TYPE_SUBTYPE,\
+								MetaKeyAndValue.META_VALUE_Success, message)
+			else:
+				manage_database = ManageDatabase()
+				manage_database.set_sample_metakey(sample_to_update, user, MetaKeyAndValue.META_KEY_ALERT_NO_READS_AFTER_FILTERING,\
+										MetaKeyAndValue.META_VALUE_Success, "Warning: no reads left after filtering.")
+				
+				if (sample_to_update.number_alerts == None): sample_to_update.number_alerts = 1
+				else: sample_to_update.number_alerts += 1
+				sample_to_update.is_ready_for_projects = False
+				sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
+			sample_to_update.save()
+			
+					### set the flag of the end of the task		
+			meta_sample = manage_database.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Queue)
+			if (meta_sample != None):
+				manage_database.set_sample_metakey(sample, sample.owner,
+						MetaKeyAndValue.META_KEY_Queue_TaskID, MetaKeyAndValue.META_VALUE_Success, meta_sample.description)
 
         except Exception as e:
             print("Exception in run_clean_minion")

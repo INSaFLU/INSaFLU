@@ -11,6 +11,7 @@ from operator import attrgetter
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
+from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.contrib import messages
@@ -2740,7 +2741,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             )
             and settings.SHOW_NEXTCLADE_LINK
         ):  ## docker versions doesn't show NextClade link
-            context = _get_constext_nextclade(
+            context = get_constext_nextclade(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
                     Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
@@ -3272,7 +3273,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                 and settings.SHOW_NEXTCLADE_LINK
                 and default_software.include_consensus(project_sample)
             ):  ## docker versions doesn't show NextClade link
-                context = _get_constext_nextclade(
+                context = get_constext_nextclade(
                     project_sample.get_consensus_file(TypePath.MEDIA_URL),
                     context,
                     get_current_site(self.request),
@@ -3282,67 +3283,6 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
         except ProjectSample.DoesNotExist:
             context["error_cant_see"] = 1
         return context
-
-
-def _get_constext_nextclade(
-    media_url_path, context, current_site, specie_identification
-):
-    """
-    :param specie_identification"""
-
-    ## sarscov 2
-    if specie_identification == Reference.SPECIES_SARS_COV_2:
-        context["nextclade_link_covid"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_sars_cov_2,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    elif specie_identification == Reference.SPECIES_MPXV:
-        context["nextclade_link_mpxv_hmpxv_b1"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_hMPXV_B1,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_mpxv_hmpxv"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_hMPXV,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_mpxv_all_clades"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_MPXV_All_clades,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    elif specie_identification == Reference.SPECIES_INFLUENZA:
-        context["nextclade_link_a_h3n2"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_A_H3N2,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_a_h1n1"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_A_H1N1,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_b_yamagata"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_B_Yamagata,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_b_victoria"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_B_Victoria,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    return context
 
 
 def is_all_check_box_in_session(vect_check_to_test, request):

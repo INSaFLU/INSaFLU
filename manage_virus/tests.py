@@ -227,7 +227,32 @@ class Test(TestCase):
 		self.assertEquals("97.66", vect_identify_virus[2].identity)
 		self.assertEquals("N2", vect_identify_virus[2].seq_virus.name)
 		self.assertEquals(ConstantsVirus.SEQ_VIRUS_SUB_TYPE, vect_identify_virus[2].seq_virus.kind_type.name)
-
+		
+	def test_upload_file_and_results_4(self):
+		
+		uploadFiles = UploadFiles()
+		parseOutFiles = ParseOutFiles()
+		to_test = True
+		(version, file) = uploadFiles.get_file_to_upload(to_test)
+		uploadFiles.upload_file(version, file)	## upload file
+		self.assertEqual(os.path.join(self.baseDirectory, "db/type_identification/test_db_influenza_typing_v2.fasta"), file)
+		self.assertEquals('2', version)
+		
+		uploadFile = UploadFile.objects.order_by('-version')[0]
+		txt_file = os.path.join(self.baseDirectory, ConstantsTestsCase.DIR_ABRICATE, "abricate_out_3.txt")
+		self.assertTrue(os.path.exists(txt_file))
+		(dict_out_abricate, clean_abricate_file) = parseOutFiles.parse_abricate_file(txt_file, 'test.txt', 10)
+		
+		### create an IdentifyVirus instance
+		vect_identify_virus = uploadFiles.uploadIdentifyVirus(dict_out_abricate, uploadFile.abricate_name)
+			
+		self.assertEqual(1, len(vect_identify_virus))
+		self.assertEquals(0, vect_identify_virus[0].rank)
+		self.assertEquals("100.00", vect_identify_virus[0].coverage)
+		self.assertEquals("100.00", vect_identify_virus[0].identity)
+		self.assertEquals("RSV_A_GA1", vect_identify_virus[0].seq_virus.name)
+		self.assertEquals(ConstantsVirus.SEQ_VIRUS_GENOTYPE, vect_identify_virus[0].seq_virus.kind_type.name)
+		
 	
 	@override_settings(MEDIA_ROOT=getattr(settings, "MEDIA_ROOT_TEST", None))
 	def test_upload_references(self):

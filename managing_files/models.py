@@ -483,6 +483,8 @@ class Sample(models.Model):
     TYPE_OF_FASTQ_minion = 1
     TYPE_OF_FASTQ_not_defined = -1
 
+    TYPE_SUBTYPE_LENGTH = 150
+
     ## to remove in future
     objects = models.Manager()  ## need to check this
 
@@ -846,6 +848,7 @@ class Sample(models.Model):
                 ConstantsVirus.SEQ_VIRUS_GENUS,
                 [ConstantsVirus.TYPE_BetaCoV],
             )
+			sz_return_c += self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENOTYPE, [])
 
             ## get several species
             sz_subtype = ""

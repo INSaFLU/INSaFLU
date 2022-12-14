@@ -7,8 +7,10 @@ from constants.constants import Constants, FileExtensions, FileType, TypePath
 from constants.constants_mixed_infection import ConstantsMixedInfection
 from constants.software_names import SoftwareNames
 from django.conf import settings
+
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
+
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
@@ -848,7 +850,9 @@ class Sample(models.Model):
                 ConstantsVirus.SEQ_VIRUS_GENUS,
                 [ConstantsVirus.TYPE_BetaCoV],
             )
-			sz_return_c += self.__get_type__(vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENOTYPE, [])
+            sz_return_c += self.__get_type__(
+                vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENOTYPE, []
+            )
 
             ## get several species
             sz_subtype = ""

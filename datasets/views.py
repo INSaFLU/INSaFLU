@@ -28,20 +28,30 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Software as SoftwareSettings
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
-from utils.session_variables import (clean_check_box_in_session,
-                                     is_all_check_box_in_session)
+from utils.session_variables import (
+    clean_check_box_in_session,
+    is_all_check_box_in_session,
+)
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
-from datasets.forms import (AddConsensusDatasetForm, AddProjectsDatasetForm,
-                            AddReferencesDatasetForm, ConsensusForm,
-                            DatastesUploadDescriptionMetadataForm)
-from datasets.models import (Consensus, Dataset, DatasetConsensus, MetaKey,
-                             UploadFiles)
-from datasets.tables import (AddDatasetFromCvsFileTableMetadata,
-                             ConsensusTable, DatasetConsensusTable,
-                             DatasetTable, ProjectTable, ReferenceTable)
+from datasets.forms import (
+    AddConsensusDatasetForm,
+    AddProjectsDatasetForm,
+    AddReferencesDatasetForm,
+    ConsensusForm,
+    DatastesUploadDescriptionMetadataForm,
+)
+from datasets.models import Consensus, Dataset, DatasetConsensus, MetaKey, UploadFiles
+from datasets.tables import (
+    AddDatasetFromCvsFileTableMetadata,
+    ConsensusTable,
+    DatasetConsensusTable,
+    DatasetTable,
+    ProjectTable,
+    ReferenceTable,
+)
 
 
 class DatasetsView(LoginRequiredMixin, ListView):
@@ -1059,29 +1069,37 @@ class UploadNewConsensusView(
 
 class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 
-	model = Project
-	template_name = 'datasets/datasets_consensus_show.html'
-	context_object_name = 'dataset_consensus'
-	software = Software()
-	
-	def get_context_data(self, **kwargs):
-		context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
-		dataset = Dataset.objects.get(pk=self.kwargs['pk'])
-		
-		### can't see this project
-		context['nav_dataset'] = True
-		if (dataset.owner.id != self.request.user.id): 
-			context['error_cant_see'] = "1"
-			return context
-		
-		query_set = DatasetConsensus.objects.filter(dataset=dataset, is_deleted=False, is_error=False).order_by('creation_date')
-		tag_search = 'search_add_project_sample'
-		### filter the search
-		if (self.request.GET.get(tag_search) != None and self.request.GET.get(tag_search)): 
-			query_set = query_set.filter(Q(name__icontains=self.request.GET.get(tag_search)) |\
-										Q(type_subtype__icontains=self.request.GET.get(tag_search)))
-		table = DatasetConsensusTable(query_set)
-		RequestConfig(self.request, paginate={'per_page': Constants.PAGINATE_NUMBER}).configure(table)
+    model = Project
+    template_name = "datasets/datasets_consensus_show.html"
+    context_object_name = "dataset_consensus"
+    software = Software()
+
+    def get_context_data(self, **kwargs):
+        context = super(ShowDatasetsConsensusView, self).get_context_data(**kwargs)
+        dataset = Dataset.objects.get(pk=self.kwargs["pk"])
+
+        ### can't see this project
+        context["nav_dataset"] = True
+        if dataset.owner.id != self.request.user.id:
+            context["error_cant_see"] = "1"
+            return context
+
+        query_set = DatasetConsensus.objects.filter(
+            dataset=dataset, is_deleted=False, is_error=False
+        ).order_by("creation_date")
+        tag_search = "search_add_project_sample"
+        ### filter the search
+        if self.request.GET.get(tag_search) != None and self.request.GET.get(
+            tag_search
+        ):
+            query_set = query_set.filter(
+                Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(type_subtype__icontains=self.request.GET.get(tag_search))
+            )
+        table = DatasetConsensusTable(query_set)
+        RequestConfig(
+            self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
+        ).configure(table)
 
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get("search_add_project_sample")
@@ -1169,25 +1187,42 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
                 ),
             )
 
-		context['different_references'] = dataset.get_number_different_references()
-		context['number_of_consensus'] = dataset.number_of_sequences_from_consensus
-		context['number_of_references'] = dataset.number_of_sequences_from_references
-		context['n_consensus_from_projects'] = dataset.number_of_sequences_from_projects
-		context['spinner_url'] = os.path.join("/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF)
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		
-		#### nextclade link
-		#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-		reference = dataset.get_first_reference()
-		if not reference is None:
-			specie_tag = self.software.get_species_tag(reference)
-			if (os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)) and \
-					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
-				context = get_constext_nextclade(dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus),
-						context, get_current_site(self.request), specie_tag)
-			
-		return context
-				
+        context["different_references"] = dataset.get_number_different_references()
+        context["number_of_consensus"] = dataset.number_of_sequences_from_consensus
+        context["number_of_references"] = dataset.number_of_sequences_from_references
+        context["n_consensus_from_projects"] = dataset.number_of_sequences_from_projects
+        context["spinner_url"] = os.path.join(
+            "/" + Constants.DIR_STATIC, Constants.DIR_ICONS, Constants.AJAX_LOADING_GIF
+        )
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+
+        #### nextclade link
+        # is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
+        reference = dataset.get_first_reference()
+        if not reference is None:
+            specie_tag = self.software.get_species_tag(reference)
+            if (
+                os.path.exists(
+                    dataset.get_global_file_by_dataset(
+                        TypePath.MEDIA_ROOT,
+                        Dataset.DATASET_FILE_NAME_RESULT_all_consensus,
+                    )
+                )
+                and settings.SHOW_NEXTCLADE_LINK
+            ):  ## docker versions doesn't show NextClade link
+                context = get_constext_nextclade(
+                    dataset.get_global_file_by_dataset(
+                        TypePath.MEDIA_URL,
+                        Dataset.DATASET_FILE_NAME_RESULT_all_consensus,
+                    ),
+                    context,
+                    get_current_site(self.request),
+                    specie_tag,
+                )
+
+        return context
 
 
 class UpdateMetadataDataset(

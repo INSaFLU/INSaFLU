@@ -158,6 +158,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
             ),
             user,
         )

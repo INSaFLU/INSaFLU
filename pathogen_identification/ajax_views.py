@@ -90,7 +90,9 @@ def validate_project_name(request):
 
         if request.method == "GET":
             user_obj = Projects.objects.filter(
-                owner=request.user, name=request.GET.get("projectname")
+                owner=request.user,
+                name=request.GET.get("projectname"),
+                is_deleted=False,
             ).exists()
             if user_obj:
                 return HttpResponse(True)

@@ -5,14 +5,24 @@ from typing import Type
 
 from django.contrib.auth.models import User
 from django.core.files import File
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain,
-                                            RunRemapMain, SampleQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunIndex,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -32,7 +42,9 @@ def Update_project(project_directory_path, user: str = "admin"):
         sys.exit(1)
 
     try:
-        project = Projects.objects.get(name=project_name, created_by=user)
+        project = Projects.objects.get(
+            name=project_name, created_by=user, is_deleted=False
+        )
 
     except Projects.DoesNotExist:
         print("project_name: ", project_name)
@@ -55,7 +67,9 @@ def Update_Sample(sample_class: Sample_runClass):
 
     user = User.objects.get(username=sample_class.user_name)
 
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     try:
         PIProject_Sample.objects.get(
@@ -82,7 +96,9 @@ def Update_sample(sample_class: Sample_runClass):
     :return: None
     """
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     try:
         sample = PIProject_Sample.objects.get(
@@ -92,7 +108,11 @@ def Update_sample(sample_class: Sample_runClass):
 
     except PIProject_Sample.DoesNotExist:
         #
-        project = Projects.objects.get(name=sample_class.project_name, owner=user)
+        project = Projects.objects.get(
+            name=sample_class.project_name,
+            owner=user,
+            is_deleted=False,
+        )
 
         sample = PIProject_Sample(
             project=project,
@@ -114,7 +134,9 @@ def Update_sample_qc(sample_class: Sample_runClass):
     """
 
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project, name=sample_class.sample_name
@@ -173,7 +195,9 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
     :return: None
     """
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project, name=sample_class.sample_name
@@ -235,7 +259,7 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     user = User.objects.get(username=username)
 
     try:
-        project = Projects.objects.get(name=project_name, owner=user)
+        project = Projects.objects.get(name=project_name, owner=user, is_deleted=False)
     except Projects.DoesNotExist:
         print(f"project {project_name} does not exist")
         return 0
@@ -254,7 +278,7 @@ def RunIndex_Update_Retrieve_Key(project_name, sample_name):
 
     new_name = f"run_{run_index}"
 
-    project = Projects.objects.get(name=project_name)
+    project = Projects.objects.get(name=project_name, is_deleted=False)
     sample = PIProject_Sample.objects.get(
         name=sample_name,
         project__name=project_name,
@@ -278,7 +302,9 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     :return: None
     """
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         name=run_class.sample.sample_name,
@@ -350,7 +376,9 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
 def Sample_update_combinations(run_class: Type[RunMain_class]):
 
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project,
@@ -381,7 +409,9 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     # Sample_update_combinations(run_class)
 
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project,
@@ -597,7 +627,9 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     print(f"updating refmap_dbs run {run_class.prefix}")
 
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         name=run_class.sample.sample_name,

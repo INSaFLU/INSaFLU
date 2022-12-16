@@ -69,17 +69,20 @@ class PathogenIdentification_deployment:
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def input_read_project_path(self, filepath):
+    def input_read_project_path(self, filepath) -> str:
+        """copy input reads to project directory and return new path"""
         if not os.path.isfile(filepath):
             return ""
+
         rname = os.path.basename(filepath)
         new_rpath = os.path.join(self.dir, "reads") + "/" + rname
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
     def configure(self, r1_path: str, r2_path: str = "") -> None:
+        """generate config dictionary for run_main, and copy input reads to project directory."""
         self.get_constants()
-        self.configure_params()
+        branch_exists = self.configure_params()
         self.generate_config_file()
         self.prep_test_env()
 
@@ -92,13 +95,14 @@ class PathogenIdentification_deployment:
         self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
 
     def get_constants(self):
-
+        """set constants for technology"""
         if self.technology in "Illumina/IonTorrent":
             self.constants = ConstantsSettings.CONSTANTS_ILLUMINA
         if self.technology == "ONT":
             self.constants = ConstantsSettings.CONSTANTS_ONT
 
     def configure_params(self):
+        """get pipeline parameters from database"""
 
         utils = Utils_Manager()
 
@@ -106,11 +110,12 @@ class PathogenIdentification_deployment:
 
         leaf_index = self.pipeline_index
 
-        if leaf_index not in all_paths.keys():
-            raise ValueError("Pipeline not found")
-
-        else:
+        try:
             self.run_params_db = all_paths[leaf_index]
+            return True
+        except IndexError:
+            print("Pipeline index not found")
+            return False
 
     def generate_config_file(self):
 
@@ -343,6 +348,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.export_sequences()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
+            self.container.run_engine.export_logdir()
             return True
         except Exception as e:
             print(traceback.format_exc())

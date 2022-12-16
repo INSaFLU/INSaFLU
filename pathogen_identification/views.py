@@ -210,6 +210,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
         context["show_info_main_page"] = ShowInfoMainPage()
+        context["query_set_count"] = query_set.count()
         return context
 
 
@@ -670,6 +671,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
+        context["query_set_count"] = query_set.count()
 
         return context
 
@@ -717,6 +719,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             "project_name": project_name,
             "project_index": project_pk,
             "sample_index": sample_pk,
+            "query_set_count": runs.count(),
         }
 
         return context

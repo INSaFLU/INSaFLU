@@ -138,8 +138,8 @@
                 </h5>
             </div>
             <div class="column right">
-                <a href="#" onclick="download_table_as_csv('sample_report');" class="btn btn-primary dark"> 
-                    <span class="hidden-phone"></span>Download as CSV </a>
+                <a href="#" onclick="download_table_as_csv('all_reports');" class="btn btn-primary dark"> 
+                    <span class="hidden-phone"></span>Download as TSV </a>
             </div>
         </div>
         <div id="collapseReport2" class="collapse show" role="tabpanel" aria-labelledby="headingReport2">
@@ -217,7 +217,7 @@
 
 
 <script>
-    function download_table_as_csv(table_id, separator = ',') {
+    function download_table_as_csv(table_id, separator = '\t') {
         // Select rows from table_id
         var rows = document.querySelectorAll('table#' + table_id + ' tr');
         // Construct csv
@@ -254,7 +254,7 @@
         }
         var csv_string = csv.join('\n');
         // Download it
-        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.csv';
+        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.tsv';
         var link = document.createElement('a');
         //link.style.display = 'none';
         link.setAttribute('target', '_blank');

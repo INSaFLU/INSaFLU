@@ -461,8 +461,8 @@
                 </h5>
             </div>
             <div class="column right">
-                <a href="#" onclick="download_table_as_csv('report_table');" class="btn btn-primary dark"> 
-                    <span class="hidden-phone"></span>Download as CSV </a>
+                <a href="#" id="report_download" class="btn btn-primary dark"> 
+                    <span class="hidden-phone"></span>Download as TSV </a>
             </div>
         </div>
         
@@ -1062,7 +1062,13 @@
 
 
 <script>
-    function download_table_as_csv(table_id, separator = ',') {
+    document.getElementById("report_download").addEventListener("click", function(e){
+        console.log("download");
+        e.preventDefault();
+        download_table_as_csv("report_table")
+    })
+
+    function download_table_as_csv(table_id, separator = '\t') {
         // Select rows from table_id
         var rows = document.querySelectorAll('table#' + table_id + ' tr');
         // Construct csv
@@ -1099,7 +1105,7 @@
         }
         var csv_string = csv.join('\n');
         // Download it
-        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.csv';
+        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.tsv';
         var link = document.createElement('a');
         //link.style.display = 'none';
         link.setAttribute('target', '_blank');

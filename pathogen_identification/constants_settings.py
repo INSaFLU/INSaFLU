@@ -3,10 +3,10 @@ Ceated on 06/05/2022
 @author: joao santos
 """
 
-from logging import RootLogger
+import os
 
 import networkx as nx
-from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT
+from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Software
 
@@ -253,3 +253,26 @@ class ConstantsSettings:
         "sift_query": "phage",
         "assembly_contig_min_length": 500,
     }
+
+
+class TestConstants:
+    Test_Static_Directory = os.path.join(STATICFILES_DIRS[0], "tests")
+    Test_Temp_Directory = "/mnt/sdc/TELEVIR/temp/"
+
+    ont_params_python = os.path.join(Test_Static_Directory, "ont_params.py")
+    ont_params_json = os.path.join(Test_Static_Directory, "ont_params.json")
+
+    ont_fastq_gz_file = "ont_fastq.gz"
+    ont_fastq_gz_file_path = os.path.join(Test_Static_Directory, ont_fastq_gz_file)
+
+    illumina_params_python = os.path.join(Test_Static_Directory, "illumina_params.py")
+    illumina_params_json = os.path.join(Test_Static_Directory, "illumina_params.json")
+
+    illumina_fastq_gz_file_r1 = "illumina_r1.fq.gz"
+    illumina_fastq_gz_file_r1_path = os.path.join(
+        Test_Static_Directory, illumina_fastq_gz_file_r1
+    )
+    illumina_fastq_gz_file_r2 = "illumina_r2.fq.gz"
+    illumina_fastq_gz_file_r2_path = os.path.join(
+        Test_Static_Directory, illumina_fastq_gz_file_r2
+    )

@@ -21,7 +21,7 @@ class Projects(models.Model):
         null=True,
         verbose_name="Project name",
     )
-    description = models.TextField(default="", null= True, blank= True)
+    description = models.TextField(default="", null=True, blank=True)
     technology = models.CharField(
         max_length=200,
         db_index=True,
@@ -147,10 +147,10 @@ class PIProject_Sample(models.Model):
     )
 
     name = models.CharField(
-        max_length=100, db_index=True, blank=True, null=True
+        max_length=200, db_index=True, blank=True, null=True
     )  # Create your models here. # Name of the sample
     name_extended = models.CharField(
-        max_length=100, db_index=True, blank=True, null=True
+        max_length=200, db_index=True, blank=True, null=True
     )  ## extra name to show in the settings HTML table
 
     type = models.CharField(
@@ -165,7 +165,7 @@ class PIProject_Sample(models.Model):
         null=True,
     )  # encoding
 
-    report = models.CharField(max_length=100, blank=True, null=True)  # report file
+    report = models.CharField(max_length=1000, blank=True, null=True)  # report file
 
     creation_date = models.DateTimeField("uploaded date", auto_now_add=True)
     is_finished = models.BooleanField(default=False)
@@ -392,10 +392,10 @@ class RunMain(models.Model):
     params_file_path = models.CharField(max_length=250, blank=True, null=True)
 
     processed_reads_r1 = models.CharField(
-        max_length=200, blank=True, null=True
+        max_length=1000, blank=True, null=True
     )  # processed reads
     processed_reads_r2 = models.CharField(
-        max_length=200, blank=True, null=True
+        max_length=1000, blank=True, null=True
     )  # processed reads
 
     enrichment = models.CharField(
@@ -456,7 +456,7 @@ class RunMain(models.Model):
     finished = models.CharField(max_length=10, blank=True, null=True)  # SE or PE
     runtime = models.CharField(max_length=100, blank=True, null=True)
 
-    report = models.CharField(max_length=200, blank=True, null=True)
+    report = models.CharField(max_length=1000, blank=True, null=True)
 
     static_dir = models.CharField(max_length=250, blank=True, null=True)
 
@@ -504,7 +504,7 @@ class RunDetail(models.Model):
     processing_final_percent = models.FloatField(blank=True, null=True)
     merged = models.BooleanField(blank=True)
     merged_number = models.IntegerField(blank=True, null=True)
-    merged_files = models.CharField(max_length=300, blank=True, null=True)
+    merged_files = models.CharField(max_length=1000, blank=True, null=True)
 
     class Meta:
 
@@ -525,7 +525,7 @@ class RunAssembly(models.Model):
 
     performed = models.BooleanField(default=False)
 
-    assembly_contigs = models.CharField(max_length=200, blank=True, null=True)
+    assembly_contigs = models.CharField(max_length=1000, blank=True, null=True)
 
     method = models.CharField(
         max_length=20, blank=True, null=True
@@ -575,11 +575,11 @@ class ReadClassification(models.Model):
         max_length=250, blank=True, null=True
     )  # read classification args
     db = models.CharField(
-        max_length=250, blank=True, null=True
+        max_length=500, blank=True, null=True
     )  # read classification db if any
 
     read_classification_report = models.CharField(
-        max_length=250, blank=True, null=True
+        max_length=1000, blank=True, null=True
     )  # read classification report
 
     classification_number = models.IntegerField(blank=True, null=True)
@@ -613,11 +613,11 @@ class ContigClassification(models.Model):
         max_length=250, blank=True, null=True
     )  # read classification args
     db = models.CharField(
-        max_length=250, blank=True, null=True
+        max_length=500, blank=True, null=True
     )  # read classification db if any
 
     contig_classification_report = models.CharField(
-        max_length=300, blank=True, null=True
+        max_length=1000, blank=True, null=True
     )  # contig classification report
 
     classification_number = models.IntegerField(blank=True, null=True)
@@ -676,7 +676,7 @@ class RunRemapMain(models.Model):
     coverage_maximum = models.IntegerField(blank=True, null=True)
 
     success = models.IntegerField(blank=True, null=True)
-    remap_plan = models.CharField(max_length=350, blank=True, null=True)
+    remap_plan = models.CharField(max_length=1000, blank=True, null=True)
 
     class Meta:
         ordering = [
@@ -701,19 +701,19 @@ class ReferenceMap_Main(models.Model):
     taxid = models.CharField(max_length=20, blank=True, null=True)
     reference_contig_str = models.CharField(max_length=100, blank=True, null=True)
 
-    report = models.CharField(max_length=200, blank=True, null=True)
+    report = models.CharField(max_length=1000, blank=True, null=True)
 
     plotly_dotplot = models.TextField(blank=True, null=True)
 
-    bam_file_path = models.CharField(max_length=350, blank=True, null=True)
-    bai_file_path = models.CharField(max_length=350, blank=True, null=True)
-    fasta_file_path = models.CharField(max_length=350, blank=True, null=True)
-    fai_file_path = models.CharField(max_length=350, blank=True, null=True)
-    mapped_subset_r1 = models.CharField(max_length=350, blank=True, null=True)
-    mapped_subset_r2 = models.CharField(max_length=350, blank=True, null=True)
-    mapped_subset_r1_fasta = models.CharField(max_length=350, blank=True, null=True)
-    mapped_subset_r2_fasta = models.CharField(max_length=350, blank=True, null=True)
-    vcf = models.CharField(max_length=350, blank=True, null=True)
+    bam_file_path = models.CharField(max_length=1000, blank=True, null=True)
+    bai_file_path = models.CharField(max_length=1000, blank=True, null=True)
+    fasta_file_path = models.CharField(max_length=1000, blank=True, null=True)
+    fai_file_path = models.CharField(max_length=1000, blank=True, null=True)
+    mapped_subset_r1 = models.CharField(max_length=1000, blank=True, null=True)
+    mapped_subset_r2 = models.CharField(max_length=1000, blank=True, null=True)
+    mapped_subset_r1_fasta = models.CharField(max_length=1000, blank=True, null=True)
+    mapped_subset_r2_fasta = models.CharField(max_length=1000, blank=True, null=True)
+    vcf = models.CharField(max_length=1000, blank=True, null=True)
 
     class Meta:
 
@@ -762,14 +762,14 @@ class FinalReport(models.Model):
     refa_dotplot_exists = models.BooleanField(default=False)
     covplot = models.TextField(blank=True, null=True)
     covplot_exists = models.BooleanField(default=False)
-    bam_path = models.CharField(max_length=400, blank=True, null=True)
-    bai_path = models.CharField(max_length=400, blank=True, null=True)
-    reference_path = models.CharField(max_length=400, blank=True, null=True)
-    reference_index_path = models.CharField(max_length=400, blank=True, null=True)
-    reference_assembly_paf = models.CharField(max_length=400, blank=True, null=True)
-    mapped_scaffolds_path = models.CharField(max_length=400, blank=True, null=True)
+    bam_path = models.CharField(max_length=1000, blank=True, null=True)
+    bai_path = models.CharField(max_length=1000, blank=True, null=True)
+    reference_path = models.CharField(max_length=1000, blank=True, null=True)
+    reference_index_path = models.CharField(max_length=1000, blank=True, null=True)
+    reference_assembly_paf = models.CharField(max_length=1000, blank=True, null=True)
+    mapped_scaffolds_path = models.CharField(max_length=1000, blank=True, null=True)
     mapped_scaffolds_index_path = models.CharField(
-        max_length=400, blank=True, null=True
+        max_length=1000, blank=True, null=True
     )
 
 

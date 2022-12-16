@@ -23,7 +23,7 @@
 {% block breadcrumbs %}
 {{block.super}}
 {% breadcrumb "Project Index" "project-index" %}
-{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
 {% breadcrumb project "PIproject_samples"  pk=project_index  %}
 {% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
 {% breadcrumb run_name "sample_detail" pk1=project_index pk2=sample_index pk3=run_index %}

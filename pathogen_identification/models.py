@@ -157,7 +157,7 @@ class PIProject_Sample(models.Model):
         max_length=10, blank=True, null=True
     )  # sample type: SE or PE
     combinations = models.IntegerField(blank=True, default=0)  # number of combinations
-    input = models.TextField(blank=True, null=True)  # input files
+    input = models.TextField(blank=True, null=True)  # 
     technology = models.CharField(
         max_length=100,
         name="technology",

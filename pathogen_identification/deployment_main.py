@@ -6,6 +6,7 @@ import traceback
 import pandas as pd
 from constants.constants import Constants, FileType, TypePath
 from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
 from managing_files.models import ProcessControler
 from utils.process_SGE import ProcessSGE
 
@@ -21,10 +22,7 @@ from pathogen_identification.models import (
     Submitted,
 )
 from pathogen_identification.modules.run_main import RunMain_class
-from pathogen_identification.utilities.update_DBs import (
-    Update_QC_report,
-    Update_Sample_Runs,
-)
+from pathogen_identification.utilities.update_DBs import Update_Sample_Runs
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
@@ -310,6 +308,33 @@ class Run_Main_from_Leaf:
             r2_path=self.file_r2,
         )
 
+    def set_run_process_running(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_RUNNING,
+        )
+
+    def set_run_process_error(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_ERROR,
+        )
+
+    def set_run_process_finished(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_FINISHED,
+        )
+
     def Deploy(self):
 
         try:
@@ -326,98 +351,29 @@ class Run_Main_from_Leaf:
 
     def Update_dbs(self):
 
-        # Update_QC_report(self.container.run_engine.sample, self.parameter_set)
-        Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+        db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+
+        return db_updated
 
     def register_submission(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_RUNNING,
-        )
 
+        self.set_run_process_running()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_subprocess()
 
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-        except Submitted.DoesNotExist:
+    def register_error(self):
 
-            submitted = Submitted(
-                parameter_set=new_run,
-                date_submitted=self.date_submitted,
-            )
-            submitted.save()
-
-    def delete_submission_error(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_ERROR,
-        )
+        self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
 
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-            submitted.delete()
-        except Submitted.DoesNotExist:
-            pass
+    def register_completion(self):
 
-    def delete_submission(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_FINISHED,
-        )
+        self.set_run_process_finished()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
-
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-            submitted.delete()
-        except Submitted.DoesNotExist:
-            pass
-
-    def register_completion(self):
-
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_FINISHED,
-        )
-
-        new_run = ParameterSet.objects.get(pk=self.pk)
-        date_processed = datetime.datetime.now()
-
-        try:
-            processed = Processed.objects.get(
-                parameter_set=new_run,
-            )
-        except Processed.DoesNotExist:
-
-            processed = Processed(
-                parameter_set=new_run,
-                date_processed=date_processed,
-            )
-            processed.save()
 
     def update_project_change_date(self):
         self.project.last_change_date = datetime.datetime.now()
@@ -430,12 +386,15 @@ class Run_Main_from_Leaf:
             self.configure()
             run_success = self.Deploy()
             if run_success:
-                self.Update_dbs()
-                # self.container.close()
-                self.register_completion()
-                self.delete_submission()
-                self.update_project_change_date()
+                update_successful = self.Update_dbs()
+                if update_successful:
+                    self.register_completion()
+                    self.update_project_change_date()
+
+                else:
+                    print("Error in updating database")
+                    self.register_error()
 
             else:
                 print("Error in run")
-                self.delete_submission_error()
+                self.register_error()

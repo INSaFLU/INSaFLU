@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import time
 from random import randint
 from typing import Type
@@ -148,6 +149,11 @@ class RunDetail_main:
         )
         self.static_dir = os.path.join(
             ConstantsSettings.static_directory, self.substructure_dir
+        )
+
+        self.media_dir_logdir = os.path.join(
+            self.media_dir,
+            "logs",
         )
 
         ###
@@ -669,7 +675,6 @@ class RunMain_class(Run_Deployment_Methods):
 
         else:
             self.deploy_QC(fake_run=True)
-            import shutil
 
             shutil.copy(self.sample.r1.current, self.sample.r1.clean)
 
@@ -735,6 +740,13 @@ class RunMain_class(Run_Deployment_Methods):
         self.Update_exec_time()
 
     #### SUMMARY FUNCTIONS ####
+
+    def export_logdir(self):
+
+        shutil.copytree(
+            self.log_dir,
+            self.media_dir_logdir,
+        )
 
     def export_final_reports(self):
 

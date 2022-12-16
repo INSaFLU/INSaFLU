@@ -5,6 +5,7 @@ from typing import Type
 
 from django.contrib.auth.models import User
 from django.core.files import File
+from django.db import IntegrityError, transaction
 from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
@@ -150,13 +151,6 @@ def Update_sample_qc(sample_class: Sample_runClass):
     input_report = open(sample_class.input_fastqc_report, "r")
     processed_report = open(sample_class.processed_fastqc_report, "r")
 
-    print(sample_class.qc_soft)
-    print(sample_class.technology)
-    print(sample_class.reads_before_processing)
-    print(sample_class.reads_after_processing)
-    print(percent_passed)
-    print(sample_class.qcdata)
-
     try:
         sampleqc = SampleQC(
             sample=sample,
@@ -226,6 +220,7 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
         qc_report.save()
 
 
+@transaction.atomic
 def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
@@ -243,9 +238,17 @@ def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     :return: run_data
     """
 
-    Update_RunMain(run_class, parameter_set)
-    Update_Sample_Runs_DB(run_class, parameter_set)
-    Update_RefMap_DB(run_class, parameter_set)
+    try:
+        with transaction.atomic():
+            Update_RunMain(run_class, parameter_set)
+            Update_Sample_Runs_DB(run_class, parameter_set)
+            Update_RefMap_DB(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name} {e}")
+        return False
 
 
 def retrieve_number_of_runs(project_name, sample_name, username):
@@ -319,9 +322,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
         ) * 100
 
     else:
-        print("no input reads??")
-        print(reads_after_processing)
-        print(reads_proc_percent)
         reads_proc_percent = 0
 
     enrichment_method = run_class.enrichment_drone.classifier_method.name

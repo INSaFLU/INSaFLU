@@ -24,6 +24,7 @@
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
+                {% if project_owner %}
                 <tr>
                     <th colspan="9">
                         <div class="btn-group">
@@ -39,6 +40,7 @@
                         </div>
                     </th>               
                 </tr>
+                {% endif %}
                 <tr>
                     {% for column in table.columns %}
                     {% if column.orderable %}

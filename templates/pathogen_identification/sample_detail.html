@@ -22,11 +22,16 @@
 
 {% block breadcrumbs %}
 {{block.super}}
+{% if owner %}
 {% breadcrumb "Project Index" "project-index" %}
 {% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
 {% breadcrumb project "PIproject_samples"  pk=project_index  %}
 {% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
 {% breadcrumb run_name "sample_detail" pk1=project_index pk2=sample_index pk3=run_index %}
+{% else %}
+{% breadcrumb "Project Index" "project-index" %}
+
+{% endif %}
 {% endblock %}
 
 
@@ -179,6 +184,8 @@
 
 
 </style>
+
+{% if owner %}
 
 <div id="accordion1" role="tablist" aria-multiselectable="true">
     <div class="card">
@@ -738,6 +745,7 @@
     </div>
 </div>
 
+{% endif %}
 
 {%endblock content %}
 

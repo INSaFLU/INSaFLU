@@ -1038,9 +1038,10 @@ class Bedgraph:
         """
         Reduce the number of bars.
         """
+        self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
-        if self.bedgraph.shape > (self.max_bars,):
-            self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
+        if self.bedgraph.shape[0] > self.max_bars:
+
             self.bedgraph = self.bedgraph.sample(self.max_bars)
 
     def merge_bedgraph_rows(self):

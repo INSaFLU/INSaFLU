@@ -69,6 +69,13 @@ def get_row_class(row_id):
 
 @register.simple_tag
 def difference_str_to_int(a, b):
+
+    if a is None or b is None:
+        return None
+
+    elif a == "" or b == "":
+        return None
+
     if "," in a:
         a = a.replace(",", "")
 

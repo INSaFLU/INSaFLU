@@ -1425,12 +1425,9 @@ def remove_televir_project_sample(request):
     """
     remove a project sample.
     """
-    print("hello sample")
-    print(request.is_ajax())
     if request.is_ajax():
         data = {"is_ok": False}
         project_sample_id_a = "project_sample_id"
-        print(project_sample_id_a in request.GET)
 
         if project_sample_id_a in request.GET:
 

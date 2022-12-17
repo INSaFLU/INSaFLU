@@ -45,9 +45,10 @@ def round_to_percent(value):
 
 @register.filter("reconvert_string_to_int")
 def reconvert_string_to_int(value):
+
     if value is None or value == "":
         value = 0
-    if "," in value:
+    elif "," in value:
         value = value.replace(",", "")
 
     return int(value)

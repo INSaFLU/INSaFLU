@@ -655,18 +655,42 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super(MainPage, self).get_context_data(**kwargs)
 
-        project = Projects.objects.get(pk=self.kwargs["pk"])
-        query_set = PIProject_Sample.objects.filter(project=project, is_deleted=False)
+        try:
+            project = Projects.objects.get(pk=self.kwargs["pk"])
+        except Projects.DoesNotExist:
+            project = None
+            messages.error(
+                self.request,
+                "Project with ID {} does not exist".format(self.kwargs["pk"]),
+                fail_silently=True,
+            )
+            raise Http404
+
+        if project.owner == self.request.user:
+            query_set = PIProject_Sample.objects.filter(
+                project=project, is_deleted=False
+            )
+            project_name = project.name
+            context["project_owner"] = True
+
+        else:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+            )
+
+            query_set = PIProject_Sample.objects.none()
+            project_name = "project"
+            context["project_owner"] = False
 
         samples = SampleTable(query_set)
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
-        context = {}
         context["table"] = samples
         context["project_index"] = project.pk
-        context["project_name"] = project.name
+        context["project_name"] = project_name
         context["nav_sample"] = True
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
@@ -692,15 +716,35 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
         sample_pk = int(self.kwargs["pk2"])
         user = self.request.user
 
-        runs = RunMain.objects.filter(
-            sample__pk=sample_pk,
-            project__pk=project_pk,
-            project__owner=user,
-        )
-        sample = PIProject_Sample.objects.get(pk=sample_pk)
-        sample_name = sample.sample.name
-        project = Projects.objects.get(pk=project_pk)
-        project_name = project.name
+        try:
+            project = Projects.objects.get(pk=project_pk)
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception:
+            messages.error(
+                self.request,
+                "Project with ID '{}' does not exist".format(project_pk),
+                fail_silently=True,
+            )
+            raise Http404
+
+        if project.owner != self.request.user:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+            runs = RunMain.objects.none()
+            sample_name = "sample"
+            project_name = "project"
+
+        else:
+            runs = RunMain.objects.filter(
+                sample__pk=sample_pk,
+                project__pk=project_pk,
+                project__owner=user,
+            )
+            sample_name = sample.sample.name
+            project_name = project.name
 
         runs_table = RunMainTable(runs)
 
@@ -731,18 +775,37 @@ def Project_reports(requesdst, pk1):
     """
     template_name = "pathogen_identification/allreports_table.html"
 
-    all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
-        "-coverage"
-    )
+    try:
+        project = Projects.objects.get(pk=int(pk1))
+    except Projects.DoesNotExist:
+        messages.error(
+            requesdst.request,
+            "Project does not exist",
+            fail_silently=True,
+        )
+        raise Http404
 
-    project = Projects.objects.get(pk=int(pk1))
+    if project.owner != requesdst.user:
+        messages.error(
+            requesdst,
+            "You do not have permission to access this project.",
+            fail_silently=True,
+        )
+        all_reports = FinalReport.objects.none()
+        project_name = "project"
+
+    else:
+        all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
+            "-coverage"
+        )
+        project_name = project.name
 
     return render(
         requesdst,
         template_name,
         {
             "final_report": all_reports,
-            "project": project.name,
+            "project": project_name,
             "project_index": project.pk,
         },
     )
@@ -754,17 +817,37 @@ def Sample_reports(requesdst, pk1, pk2):
     """
     template_name = "pathogen_identification/allreports_table.html"
 
-    all_reports = FinalReport.objects.filter(
-        run__project__pk=int(pk1), sample__pk=int(pk2)
-    ).order_by("-coverage")
-    project = Projects.objects.get(pk=int(pk1))
+    try:
+        project = Projects.objects.get(pk=int(pk1))
+    except Projects.DoesNotExist:
+        messages.error(
+            requesdst,
+            "Project does not exist.",
+            fail_silently=True,
+        )
+        raise Http404
+
+    if project.owner != requesdst.user:
+        messages.error(
+            requesdst,
+            "You do not have permission to access this project.",
+            fail_silently=True,
+        )
+        all_reports = FinalReport.objects.none()
+        project_name = "project"
+
+    else:
+        all_reports = FinalReport.objects.filter(
+            run__project__pk=int(pk1), sample__pk=int(pk2)
+        ).order_by("-coverage")
+        project_name = project.name
 
     return render(
         requesdst,
         template_name,
         {
             "final_report": all_reports,
-            "project": project.name,
+            "project": project_name,
             "project_index": project.pk,
         },
     )
@@ -782,17 +865,42 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         project_pk = int(self.kwargs["pk1"])
         sample_pk = int(self.kwargs["pk2"])
         run_pk = int(self.kwargs["pk3"])
-        user = self.request.user
 
-        project_main = Projects.objects.get(pk=project_pk)
+        try:
+            project_main = Projects.objects.get(pk=project_pk)
+
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception as e:
+            messages.error(self.request, "Sample does not exist")
+            raise Http404
+
+        try:
+            run_main = RunMain.objects.get(pk=run_pk)
+        except Exception as e:
+            messages.error(self.request, "Run does not exist")
+            raise Http404
+
+        if self.request.user != project_main.owner:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+
+            return {"owner": False}
+
         project_name = project_main.name
-        sample = PIProject_Sample.objects.get(pk=sample_pk)
         sample_name = sample.name
-        run_main = RunMain.objects.get(pk=run_pk)
         run_name = run_main.name
 
         sample_main = run_main.sample
         #
+
         raw_references = RawReference.objects.filter(run=run_main)
 
         raw_reference_table = RawReferenceTable(raw_references)
@@ -838,6 +946,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "sample_index": sample_pk,
             "run_index": run_pk,
             "reference_table": raw_reference_table,
+            "owner": True,
         }
 
         return context
@@ -861,21 +970,26 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
         reference = self.kwargs["reference"]
         user = self.request.user
 
-        reference = (
-            reference.replace(".", "_")
-            .replace(";", "_")
-            .replace(":", "_")
-            .replace("|", "_")
-        )
-
-        project_main = Projects.objects.get(pk=project_pk)
-        project_name = project_main.name
-        sample = PIProject_Sample.objects.get(pk=sample_pk)
-        sample_name = sample.name
-        run_main = RunMain.objects.get(pk=run_pk)
-        run_name = run_main.name
-
         try:
+            project_main = Projects.objects.get(pk=project_pk)
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+            run_main = RunMain.objects.get(pk=run_pk)
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        if project_main.owner == user:
+
+            run_name = run_main.name
+            sample_name = sample.name
+            project_name = project_main.name
+            reference = (
+                reference.replace(".", "_")
+                .replace(";", "_")
+                .replace(":", "_")
+                .replace("|", "_")
+            )
+
             ref_main = ReferenceMap_Main.objects.get(
                 reference=reference, sample=sample, run=run_main
             )
@@ -883,9 +997,19 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
                 reference=ref_main,
                 run=run_main,
             )
-        except ReferenceMap_Main.DoesNotExist:
 
-            return Http404("Sample not found")
+        else:
+            map_db = ReferenceContigs.objects.none()
+            run_name = "run"
+            sample_name = "sample"
+            project_name = "project"
+            reference = "reference"
+
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
 
         context = {
             "nav_sample": True,

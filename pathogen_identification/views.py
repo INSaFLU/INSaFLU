@@ -779,7 +779,7 @@ def Project_reports(requesdst, pk1):
         project = Projects.objects.get(pk=int(pk1))
     except Projects.DoesNotExist:
         messages.error(
-            requesdst.request,
+            requesdst,
             "Project does not exist",
             fail_silently=True,
         )

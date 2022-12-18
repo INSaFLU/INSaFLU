@@ -769,18 +769,8 @@ class DefaultSoftware(object):
                 user,
             )
 
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_SNIPPY_name,
-                self.default_parameters.get_snippy_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    technology_name,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
-                ),
-                user,
-            )
-
             return self.get_snippy_parameters(user)
+
         if software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_FREEBAYES_name,
@@ -1062,6 +1052,16 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_spades_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+                self.default_parameters.get_snippy_pi_default(
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
+                ),
+                user,
+            )
+            return self.get_snippy_pi_parameters(user, technology_name)
 
         return ""
 

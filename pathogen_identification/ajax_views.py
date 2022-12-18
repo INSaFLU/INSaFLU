@@ -39,12 +39,14 @@ def deploy_ProjectPI(request):
 
         process_SGE = ProcessSGE()
         user = request.user
+        print(request.POST)
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
 
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
+        print("checked")
 
         try:
             if runs_to_deploy:

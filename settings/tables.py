@@ -557,6 +557,8 @@ class SoftwaresTable(tables.Table):
             sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
         if not self.sample is None:
             sz_ids += ' sample_id="{}"'.format(self.sample.id)
+        if not self.televir_project is None:
+            sz_ids += ' televir_project_id="{}"'.format(self.televir_project.id)
 
         is_to_run = record.is_to_run
         if len(sz_ids) > 0:
@@ -566,6 +568,7 @@ class SoftwaresTable(tables.Table):
                 dataset=self.dataset,
                 project_sample=self.project_sample,
                 sample=self.sample,
+                televir_project=self.televir_project,
             )
             if len(parameters) > 0:
                 is_to_run = parameters[0].is_to_run

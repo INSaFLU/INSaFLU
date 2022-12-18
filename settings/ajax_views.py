@@ -722,6 +722,7 @@ def turn_on_off_software(request):
         project_sample_id_a = "project_sample_id"
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
+        print(request.GET)
 
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
@@ -766,6 +767,8 @@ def turn_on_off_software(request):
                 software = Software.objects.get(pk=software_id)
                 current_is_to_run = software.is_to_run
                 if not televir_project_id is None:
+                    print("televir_project_id", televir_project_id)
+                    print("current_is_to_run", current_is_to_run)
 
                     televir_project = PIProjects.objects.get(pk=televir_project_id)
                     pipeline_steps_project = (
@@ -775,10 +778,14 @@ def turn_on_off_software(request):
                             televir_project=televir_project,
                         )
                     )
+                    print(len(pipeline_steps_project))
+                    print(pipeline_steps_project)
+                    print(set(pipeline_steps_project))
 
                     makeup = pipeline_makeup.match_makeup_name_from_list(
                         pipeline_steps_project
                     )
+                    print(makeup)
 
                     if makeup is None:
                         if current_is_to_run:
@@ -790,6 +797,9 @@ def turn_on_off_software(request):
 
                 if not type_of_use_id is None:
                     if type_of_use_id == Software.TYPE_OF_USE_televir_global:
+
+                        print("type_of_use_id", type_of_use_id)
+                        print("current_is_to_run", current_is_to_run)
 
                         pipeline_steps_project = (
                             pipeline_makeup.get_pipeline_makeup_result_of_operation(
@@ -979,6 +989,8 @@ def get_software_name_to_turn_on_off(request):
         type_of_use_id_a = "type_of_use_id"
         televir_project_id_a = "televir_project_id"
 
+        print(request.GET)
+
         ## some pre-requisites
         if not request.user.is_active or not request.user.is_authenticated:
             return JsonResponse(data)
@@ -1052,3 +1064,38 @@ def get_software_name_to_turn_on_off(request):
             except Software.DoesNotExist:
                 return JsonResponse(data)
         return JsonResponse(data)
+
+
+@csrf_protect
+def reset_project_settings(request):
+    data = {"is_ok": False, "message": "You are not allow to do this operation."}
+    if request.is_ajax():
+        print(request.GET)
+
+        televir_project_id_a = "project_id"
+        televir_id = int(request.GET[televir_project_id_a])
+
+        try:
+
+            project_parameters = Parameter.objects.filter(
+                televir_project__pk=televir_id
+            )
+            project_software = Software.objects.filter(
+                parameter__televir_project__pk=televir_id
+            )
+
+        except Exception as e:
+            print(e)
+            data["message"] = "Error in the database."
+            return JsonResponse(data)
+
+        for parameter in project_parameters:
+            parameter.delete()
+
+        for software in project_software:
+            software.delete()
+
+        data["is_ok"] = True
+        data["message"] = "Project settings were reset."
+
+    return JsonResponse(data)

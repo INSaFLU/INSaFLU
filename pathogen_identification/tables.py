@@ -7,7 +7,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
-from settings.models import Technology
+from settings.models import Technology, Parameter
 
 from pathogen_identification.models import (
     FinalReport,
@@ -25,6 +25,8 @@ class ProjectTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     description = tables.Column(verbose_name="Description", orderable=False)
+    settings = tables.Column(empty_values=(), orderable=False)
+
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
@@ -51,6 +53,20 @@ class ProjectTable(tables.Table):
         )
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
+
+        sequence = (
+            "name",
+            "results",
+            "settings",
+            "samples",
+            "description",
+            "technology",
+            "running_processes",
+            "queued_processes",
+            "finished_processes",
+            "last_change_date",
+            "creation_date",
+        )
 
     def render_technology(self, record):
         """
@@ -100,6 +116,35 @@ class ProjectTable(tables.Table):
 
         return finished
 
+    def render_settings(self, record):
+        color = ""
+        project_settings_exist = Parameter.objects.filter(
+            televir_project__pk=record.pk
+        ).exists()
+
+        if project_settings_exist:
+            color = 'style="color: purple;"'
+
+        parameters = (
+            "<a href="
+            + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
+            + ' data-toggle="tooltip" title="Manage settings">'
+            + f'<span ><i class="padding-button-table fa fa-magic padding-button-table" {color}></i></span></a>'
+        )
+
+        if project_settings_exist:
+
+            parameters = parameters + (
+                '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-times" style="color: red;" ></i></span> </a>'
+            )
+
+        return mark_safe(parameters)
+
     def render_results(self, record):
         """
         return a reference name
@@ -111,14 +156,7 @@ class ProjectTable(tables.Table):
             + "Samples</a>"
         )
 
-        parameters = (
-            "<a href="
-            + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
-            + ' data-toggle="tooltip" title="Manage settings">'
-            + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-        )
-
-        return mark_safe(parameters + " " + results)
+        return mark_safe(results)
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware

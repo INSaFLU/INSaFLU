@@ -743,6 +743,9 @@ class RunMain_class(Run_Deployment_Methods):
 
     def export_logdir(self):
 
+        if os.path.exists(self.media_dir_logdir):
+            shutil.rmtree(self.media_dir_logdir)
+
         shutil.copytree(
             self.log_dir,
             self.media_dir_logdir,

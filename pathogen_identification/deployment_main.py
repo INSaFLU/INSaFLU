@@ -79,10 +79,13 @@ class PathogenIdentification_deployment:
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-    def configure(self, r1_path: str, r2_path: str = "") -> None:
+    def configure(self, r1_path: str, r2_path: str = "") -> bool:
         """generate config dictionary for run_main, and copy input reads to project directory."""
         self.get_constants()
         branch_exists = self.configure_params()
+        if not branch_exists:
+            return False
+
         self.generate_config_file()
         self.prep_test_env()
 
@@ -93,6 +96,8 @@ class PathogenIdentification_deployment:
         self.config["r1"] = new_r1_path
         self.config["r2"] = new_r2_path
         self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
+
+        return True
 
     def get_constants(self):
         """set constants for technology"""
@@ -109,13 +114,17 @@ class PathogenIdentification_deployment:
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         leaf_index = self.pipeline_index
+        print(all_paths.keys())
+        print(leaf_index)
+        print(len(all_paths))
 
-        try:
-            self.run_params_db = all_paths[leaf_index]
-            return True
-        except IndexError:
+        self.run_params_db = all_paths.get(self.pipeline_index, None)
+
+        if self.run_params_db is None:
             print("Pipeline index not found")
             return False
+
+        return True
 
     def generate_config_file(self):
 
@@ -308,10 +317,11 @@ class Run_Main_from_Leaf:
             return new_run
 
     def configure(self):
-        self.container.configure(
+        configured = self.container.configure(
             self.file_r1,
             r2_path=self.file_r2,
         )
+        return configured
 
     def set_run_process_running(self):
         process_controler = ProcessControler()
@@ -389,8 +399,15 @@ class Run_Main_from_Leaf:
 
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
-            self.configure()
-            run_success = self.Deploy()
+            configured = self.configure()
+
+            if configured:
+                run_success = self.Deploy()
+            else:
+                print("Error in configuration")
+                self.register_error()
+                return
+
             if run_success:
                 update_successful = self.Update_dbs()
                 if update_successful:

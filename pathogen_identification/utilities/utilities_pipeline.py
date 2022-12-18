@@ -54,6 +54,11 @@ class PipelineTree:
         self.edge_dict = [(x[0], x[1]) for x in self.edges]
         self.makeup = makeup
 
+        self.logger = logging.getLogger(__name__)
+        self.logger.info(
+            f"PipelineTree: {self.technology}, {self.nodes}, {self.edges}, {self.leaves}, {self.makeup}"
+        )
+
     def get_parents_dict(self):
         """
         Get a dictionary of parents for each node
@@ -129,7 +134,7 @@ class PipelineTree:
         for ix, node in enumerate(path):
             node_type = node[2]
             if ix == 0 and node_type != "module":
-                print("First node must be a module")
+                self.logger.info("First node must be a module")
                 return pd.DataFrame()
 
             if node_type == "module":
@@ -206,7 +211,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
@@ -334,7 +339,7 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        print("Checking software db available: ", software_name)
+        self.logger.info(f"Checking software db available: {software_name}")
 
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
@@ -389,7 +394,7 @@ class Utility_Pipeline_Manager:
             fields = pd.read_sql(fields, self.utility_repository.engine)
             return fields
         except Exception as e:
-            print(
+            self.logger.error(
                 f"failed to fail to pandas read_sql {self.utility_repository.engine} software table for {software_name}. Error: {e}"
             )
             return pd.DataFrame(
@@ -596,14 +601,16 @@ class Utility_Pipeline_Manager:
 
             self.logger.info(f"Child main: {child_main}")
 
-            try:
-                nodes_index_dict[child_main]
-            except KeyError:
-                self.logger.info(f"{child_main} node in tree nodes")
-                return False
+            print(nodes_index_dict)
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
+            try:
+                nodes_index_dict[child_main]
+            except KeyError:
+                self.logger.info(f"{child_main} node not in tree nodes")
+                return False
+
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")
                 return False
@@ -618,6 +625,14 @@ class Parameter_DB_Utility:
         - create combined table of software and parameters.
         - get and store pipeline trees in tables SoftwareTree and SoftwareTree_node
     """
+
+    def __init__(self):
+
+        self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.setLevel(logging.ERROR)
+        self.logger.addHandler(logging.StreamHandler())
 
     def get_technologies_available(self):
         """
@@ -753,13 +768,15 @@ class Parameter_DB_Utility:
             columns={
                 "id_x": "software_id",
                 "id_y": "parameter_id",
-                "name_x": "software_name",
+                "name_extended": "software_name",
                 "name_y": "parameter_name",
                 "is_to_run_x": "software_is_to_run",
                 "is_to_run_y": "parameter_is_to_run",
             }
         )
+
         combined_table = combined_table[combined_table.type_of_use.isin([5, 6])]
+
         combined_table["pipeline_step"] = combined_table["pipeline_step_id"].apply(
             lambda x: PipelineStep.objects.get(id=int(x)).name
         )
@@ -771,7 +788,7 @@ class Parameter_DB_Utility:
         combined_table = combined_table.reset_index(drop=True)
 
         combined_table = combined_table.loc[
-            :, ~combined_table.T.duplicated(keep="first")
+            :, ~combined_table.T.duplicated(keep="last")
         ]
 
         return combined_table
@@ -790,10 +807,8 @@ class Parameter_DB_Utility:
             owner, project
         )
 
-        print("parameters for this project: ", parameters_table.shape)
-
         if parameters_table.shape[0] == 0:
-            print("No parameters for this project, using global")
+            self.logger.info("No parameters for this project, using global")
             software_table, parameters_table = self.get_software_tables_global(
                 project.technology
             )
@@ -839,7 +854,7 @@ class Parameter_DB_Utility:
     def check_ParameterSet_exists(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
-        print("Checking if ParameterSet exists")
+        self.logger.info("Checking if ParameterSet exists")
         try:
             parameter_set = ParameterSet.objects.get(
                 sample=sample, leaf=leaf, project=project
@@ -973,7 +988,7 @@ class Parameter_DB_Utility:
         if software_tree:
             new_version = software_tree.version + 1
 
-            print("Creating new software tree")
+            self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
                 global_index=global_index,
                 technology=tree.technology,
@@ -985,7 +1000,7 @@ class Parameter_DB_Utility:
             self.update_SoftwareTree_nodes(software_tree, tree)
 
         else:
-            print("Creating new software tree")
+            self.logger.info("Creating new software tree")
             software_tree = SoftwareTree(
                 global_index=global_index,
                 technology=tree.technology,
@@ -1017,6 +1032,8 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
         self.logger.setLevel(logging.ERROR)
         self.logger.info("Utils_Manager initialized")
 
@@ -1087,7 +1104,7 @@ class Utils_Manager:
                     if utils.parameter_util.check_ParameterSet_processed(
                         sample=sample, leaf=leaf, project=project
                     ):
-                        print("parameter set processed")
+                        self.logger.info("parameter set processed")
 
                         continue
 
@@ -1193,6 +1210,8 @@ class Utils_Manager:
 
         utility_drone = Utility_Pipeline_Manager()
         utility_drone.input(combined_table, technology=technology)
+
+        self.logger.info("Generating project tree")
 
         pipeline_tree = utility_drone.generate_default_software_tree()
 

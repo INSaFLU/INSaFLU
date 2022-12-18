@@ -90,6 +90,8 @@ class Command(BaseCommand):
                         print(e)
                         continue
 
+                    print("matched_path: ", matched_path)
+
                     matched_path_node = SoftwareTreeNode.objects.get(
                         software_tree__pk=pipeline_tree_index, index=matched_path
                     )

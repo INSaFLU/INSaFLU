@@ -119,6 +119,7 @@ class Pipeline_Makeup:
         for makeup, mlist in self.MAKEUP.items():
 
             if set(makeup_list) == set(mlist):
+                print(makeup, mlist, set(makeup_list))
                 return makeup
         return None
 
@@ -137,6 +138,7 @@ class Pipeline_Makeup:
             technology=software.technology,
             parameter__televir_project=televir_project,
             is_to_run=True,
+            owner=software.owner,
         ).values_list("pipeline_step__name", flat=True)
         return list(pipeline_steps_project)
 
@@ -153,6 +155,7 @@ class Pipeline_Makeup:
                 technology=software.technology,
                 parameter__televir_project=televir_project,
                 is_to_run=True,
+                owner=software.owner,
             )
             .exclude(pk=software.pk)
             .values_list("pipeline_step__name", flat=True)

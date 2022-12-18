@@ -474,6 +474,9 @@ class DefaultParameters(object):
     ):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
+        print("changing parameter")
+        print(televir_project)
+        print(is_to_run)
 
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 
@@ -492,6 +495,7 @@ class DefaultParameters(object):
                 if software.type_of_use in [
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
+                    Software.TYPE_OF_USE_televir_project,
                 ]:
                     is_to_run = not software.is_to_run
                 elif len(parameters) > 0:
@@ -504,6 +508,7 @@ class DefaultParameters(object):
                 if software.type_of_use in [
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
+                    Software.TYPE_OF_USE_televir_project,
                 ]:
                     return software.is_to_run
                 elif len(parameters) > 0:
@@ -515,6 +520,7 @@ class DefaultParameters(object):
             if software.type_of_use in [
                 Software.TYPE_OF_USE_global,
                 Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_project,
             ]:
                 software.is_to_run = is_to_run
                 software.save()
@@ -2147,7 +2153,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""
@@ -2372,7 +2378,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = False
+        software.is_to_run = True
 
         ###  small description of software
         software.help_text = ""
@@ -2951,7 +2957,10 @@ class DefaultParameters(object):
 
     def get_snippy_pi_default(self, user, type_of_use, technology_name, sample=None):
         """
-        snippy default
+        snippy for televir mapping
+        –mapqual: minimum mapping quality to allow (–mapqual 20)
+        —mincov: minimum coverage of variant site (–mincov 10)
+        –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_SNIPPY_PI_name
@@ -2982,7 +2991,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--mapqual"
-        parameter.parameter = "30"
+        parameter.parameter = "20"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -3012,6 +3021,22 @@ class DefaultParameters(object):
         parameter.description = "minimum coverage, default 10"
         vect_parameters.append(parameter)
 
+        parameter = Parameter()
+        parameter.name = "--minfrac"
+        parameter.parameter = "0.51"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = False
+        parameter.sequence_out = 3
+        parameter.range_available = "[0.5:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.5"
+        parameter.description = (
+            "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
+        )
+        vect_parameters.append(parameter)
         return vect_parameters
 
     ##############################

@@ -43,7 +43,7 @@ class Deployment_Params:
             "minimap-rem": "hostDepletion/hostdep_env",
             "flye": "assembly/Flye",
             "clark": "classification/Clark",
-            "minimap2_ont": "hostDepletion/hostdep_env",
+            "minimap2": "hostDepletion/hostdep_env",
             "minimap2_asm": "hostDepletion/hostdep_env",
             "blastn": "hostDepletion/hostdep_env",
             "blastp": "hostDepletion/hostdep_env",

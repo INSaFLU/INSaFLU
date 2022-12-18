@@ -611,7 +611,7 @@ class SoftwareNames(object):
 
     ### SNIPPY
 
-    SOFTWARE_SNIPPY_PI_name = "Snippy"
+    SOFTWARE_SNIPPY_PI_name = "Snippy_PI"
     SOFTWARE_SNIPPY_PI_name_extended = "Snippy"
     SOFTWARE_SNIPPY_PI = os.path.join(
         settings.DIR_SOFTWARE,

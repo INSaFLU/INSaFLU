@@ -9,13 +9,17 @@ import numpy as np
 import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+)
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
@@ -37,6 +41,10 @@ class coverage_parse:
         self.Xm = Xm
         self.output = output
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
+
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -623,6 +631,10 @@ class Remapping:
         self.cleanup = cleanup
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
+
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -1612,6 +1624,9 @@ class Tandem_Remap:
     ):
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -1755,6 +1770,9 @@ class Mapping_Manager(Tandem_Remap):
         )
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False

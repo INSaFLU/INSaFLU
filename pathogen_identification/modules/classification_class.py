@@ -1170,7 +1170,7 @@ class Classifier:
         "desamba": run_deSamba,
         "kraken2": run_kraken2,
         "minimap2_illumina": run_minimap2_illumina,
-        "minimap2_ont": run_minimap2_ONT,
+        "minimap2": run_minimap2_ONT,
         "minimap2_asm": run_minimap2_asm,
         "diamond": run_diamond,
         "kaiju": run_kaiju,
@@ -1206,6 +1206,9 @@ class Classifier:
         :param logging_level: logging level
         """
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.log_dir = log_dir

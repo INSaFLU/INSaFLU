@@ -14,6 +14,11 @@ urlpatterns = [
         name="pathogenID_pipeline",
     ),
     url(
+        r"pathogenID-pipeline-reset$",
+        ajax_views.reset_project_settings,
+        name="reset_project_parameters",
+    ),
+    url(
         r"software_dataset_update/soft_(?P<pk>\d+)/dataset_(?P<pk_dataset>\d+)$",
         views.UpdateParametersDatasetView.as_view(),
         name="software-dataset-update",

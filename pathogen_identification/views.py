@@ -727,7 +727,16 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             )
             raise Http404
 
-        if project.owner != self.request.user:
+        if project.owner == self.request.user:
+            runs = RunMain.objects.filter(
+                sample__pk=sample_pk,
+                project__pk=project_pk,
+                project__owner=user,
+            )
+            sample_name = sample.sample.name
+            project_name = project.name
+
+        else:
             messages.error(
                 self.request,
                 "You do not have permission to access this project.",
@@ -736,15 +745,6 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             runs = RunMain.objects.none()
             sample_name = "sample"
             project_name = "project"
-
-        else:
-            runs = RunMain.objects.filter(
-                sample__pk=sample_pk,
-                project__pk=project_pk,
-                project__owner=user,
-            )
-            sample_name = sample.sample.name
-            project_name = project.name
 
         runs_table = RunMainTable(runs)
 
@@ -785,7 +785,13 @@ def Project_reports(requesdst, pk1):
         )
         raise Http404
 
-    if project.owner != requesdst.user:
+    if project.owner == requesdst.user:
+        all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
+            "-coverage"
+        )
+        project_name = project.name
+
+    else:
         messages.error(
             requesdst,
             "You do not have permission to access this project.",
@@ -793,12 +799,6 @@ def Project_reports(requesdst, pk1):
         )
         all_reports = FinalReport.objects.none()
         project_name = "project"
-
-    else:
-        all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
-            "-coverage"
-        )
-        project_name = project.name
 
     return render(
         requesdst,
@@ -827,7 +827,14 @@ def Sample_reports(requesdst, pk1, pk2):
         )
         raise Http404
 
-    if project.owner != requesdst.user:
+    if project.owner == requesdst.user:
+        all_reports = FinalReport.objects.filter(
+            run__project__pk=int(pk1), sample__pk=int(pk2)
+        ).order_by("-coverage")
+        project_name = project.name
+
+    else:
+
         messages.error(
             requesdst,
             "You do not have permission to access this project.",
@@ -835,12 +842,6 @@ def Sample_reports(requesdst, pk1, pk2):
         )
         all_reports = FinalReport.objects.none()
         project_name = "project"
-
-    else:
-        all_reports = FinalReport.objects.filter(
-            run__project__pk=int(pk1), sample__pk=int(pk2)
-        ).order_by("-coverage")
-        project_name = project.name
 
     return render(
         requesdst,
@@ -901,7 +902,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         sample_main = run_main.sample
         #
 
-        raw_references = RawReference.objects.filter(run=run_main)
+        raw_references = RawReference.objects.filter(run=run_main).order_by("status")
 
         raw_reference_table = RawReferenceTable(raw_references)
 

@@ -1012,11 +1012,15 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
 													TypeFile.TYPE_FILE_dataset_file_metadata), upload_files.file_name)
-			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
 			software.dos_2_unix(sz_file_to)
-			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+			if path_added is None:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_dataset_file_metadata), ntpath.basename(sz_file_to))
+			else:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_dataset_file_metadata), path_added, ntpath.basename(sz_file_to))
 			upload_files.save()
 			
 			# try:

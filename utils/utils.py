@@ -96,15 +96,18 @@ class Utils(object):
 		get unique file name from a file_name
 		return '<path file_name>/<file_name>'
 		OR if exists
-		return '<path file_name>/<random number>/<file_name>'
+		return '<path file_name>/<random number>/<file_name>' path_added
+		path_added Can be None is the file does not exist
 		"""
 		temp_file_name = ntpath.basename(file_name.replace(" ", "_"))
 		main_path = os.path.dirname(file_name)
 		if (not os.path.exists(main_path)): os.makedirs(main_path, exist_ok=True)
+		path_added = None
 		while 1:
 			if (not os.path.exists(os.path.join(main_path, temp_file_name))): break
-			temp_file_name = os.path.join(str(random.randrange(10000000, 99999999, 10)), ntpath.basename(file_name))
-		return os.path.join(main_path, temp_file_name.replace(" ", "_"))
+			path_added = str(random.randrange(10000000, 99999999, 10))
+			temp_file_name = os.path.join(path_added, ntpath.basename(file_name))
+		return os.path.join(main_path, temp_file_name.replace(" ", "_")), path_added
 
 	def get_temp_file(self, file_name, sz_type):
 		"""
@@ -674,7 +677,7 @@ class Utils(object):
 		str to bool
 		"""
 		return v.lower() in ("yes", "true", "t", "1", "y")
-		
+
 # 	def is_all_tasks_finished(self, vect_tasks_id):
 # 		"""
 # 		return true if all tasks finished

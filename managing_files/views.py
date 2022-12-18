@@ -619,11 +619,15 @@ class SamplesUploadDescriptionFileView(LoginRequiredMixin, FormValidMessageMixin
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
 													TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
-			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
 			software.dos_2_unix(sz_file_to)
-			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+			if path_added is None:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
+			else:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
 			upload_files.save()
 			
 			try:
@@ -707,11 +711,15 @@ class SamplesUploadDescriptionFileViewMetadata(LoginRequiredMixin, FormValidMess
 			## move the files to the right place
 			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(self.request.user.id,\
 													TypeFile.TYPE_FILE_sample_file_metadata), upload_files.file_name)
-			sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+			sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 			utils.move_file(os.path.join(getattr(settings, "MEDIA_ROOT", None), upload_files.path_name.name), sz_file_to)
 			software.dos_2_unix(sz_file_to)
-			upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+			if path_added is None:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
 									TypeFile.TYPE_FILE_sample_file_metadata), ntpath.basename(sz_file_to))
+			else:
+				upload_files.path_name.name = os.path.join(utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file_metadata), path_added, ntpath.basename(sz_file_to))
 			upload_files.save()
 			
 			try:
@@ -876,7 +884,7 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 				## move the files to the right place
 				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(self.request.user.id,\
 														TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
-				sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+				sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 				
 				## because sometimes has 
 				if (str(type(path_name.file)) == "<class '_io.BytesIO'>"):
@@ -893,8 +901,12 @@ class SamplesUploadFastQView(LoginRequiredMixin, FormValidMessageMixin, generic.
 					data = {'is_valid': False, 'name': self.request.FILES['path_name'].name, 'message' : 'Internal server error, fail to copy file.' }
 					return JsonResponse(data)
 				
-				upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+				if path_added is None:
+					upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
 										TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
+				else:
+					upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+										TypeFile.TYPE_FILE_fastq_gz), path_added, ntpath.basename(sz_file_to))
 				try:
 					type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
 				except MetaKey.DoesNotExist:

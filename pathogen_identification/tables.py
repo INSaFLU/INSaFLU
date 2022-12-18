@@ -64,8 +64,6 @@ class ProjectTable(tables.Table):
             "running_processes",
             "queued_processes",
             "finished_processes",
-            "last_change_date",
-            "creation_date",
         )
 
     def render_technology(self, record):
@@ -135,7 +133,7 @@ class ProjectTable(tables.Table):
         if project_settings_exist:
 
             parameters = parameters + (
-                '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Delete"'
+                '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'
@@ -198,27 +196,14 @@ class ProjectTable(tables.Table):
         return a reference name
         """
         add_remove = ""
-        # if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
-        # 	TODO
-        # 	add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-        # 	add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 
-        n_processed = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=False, is_finished=True
+        nsamples = PIProject_Sample.objects.filter(
+            project__id=record.id, is_deleted=False
         ).count()
-        n_error = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=True, is_finished=False
-        ).count()
-        n_processing = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=False, is_finished=False
-        ).count()
-        tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(
-            n_processed, n_processing, n_error
-        )
+
         return mark_safe(
-            tip_info
-            + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
-            + "<a href="
+            "{}".format(nsamples)
+            + " <a href="
             + reverse("add-sample-PIproject", args=[record.pk])
             + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  # 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove

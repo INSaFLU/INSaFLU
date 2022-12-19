@@ -8,7 +8,7 @@
 
    -	**metagenomics virus detection** (from reads to virus detection) 
 
-   -	**routine genomic surveillance** (from reads mutations detection, consensus generation, virus classification, alignments, “genotype-phenotype” screening, phylogenetics, integrative Nextstrain phylogeographical and temporal analysis etc). 
+   -	**routine genomic surveillance** (from reads to mutations detection, consensus generation, virus classification, alignments, “genotype-phenotype” screening, phylogenetics, integrative Nextstrain phylogeographical and temporal analysis etc). 
 
 **INSaFLU-TELEVIR versatility and functionality is expected to supply public health laboratories and researchers with a user-oriented “start-to-end” bioinformatics framework that can potentiate a strengthened and timely detection and monitoring of viral (emerging) threats.**
 

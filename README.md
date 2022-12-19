@@ -4,44 +4,23 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 
-# INSaFLU
-INSaFLU (“INSide the FLU”) is a free bioinformatics web-based suite (https://insaflu.insa.pt/) that deals with primary data (reads) towards the automatic generation of the output data that are the core first-line “genetic requests” for effective and timely viral influenza and SARS-CoV-2 laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees).
+**INSaFLU-TELEVIR platform (https://insaflu.insa.pt) is a free bioinformatics web-based (but also locally installable) suite that deals with primary sequencing data (Illumina, Ion Torrent and Oxford Nanopore Technologies reads) towards:**
 
-INSaFLU is available for free at [https://insaflu.insa.pt](https://insaflu.insa.pt)
+   -	**metagenomics virus detection** (from reads to virus detection) 
 
-Documentation (latest) for each INSaFLU module is provided at [http://insaflu.readthedocs.io/](http://insaflu.readthedocs.io/)
+   -	**routine genomic surveillance** (from reads mutations detection, consensus generation, virus classification, alignments, “genotype-phenotype” screening, phylogenetics, integrative Nextstrain phylogeographical and temporal analysis etc). 
 
-For an easy and rapid local installation using docker see here [https://github.com/INSaFLU/docker](https://github.com/INSaFLU/docker).
+**INSaFLU-TELEVIR versatility and functionality is expected to supply public health laboratories and researchers with a user-oriented “start-to-end” bioinformatics framework that can potentiate a strengthened and timely detection and monitoring of viral (emerging) threats.**
 
-## Synopsis
 
-INSaFLU (“INSide the FLU”) is a free web-based bioinformatics suite that deals with primary NGS data (reads) towards the automatic generation of the output data that are actually the core first-line “genetic requests” for effective and timely influenza laboratory surveillance (e.g., type and sub-type, gene and whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). This platform is influenza-oriented, but can be applicable to amplicon-derived NGS data of other pathogens, such as the novel coronavirus SARS-CoV-2.
 
-## Main features
+<p align="center"><img src="static/insa/main_modules.png" alt="INSaFLU" width="800"></p>
 
-Highlights / Main advantages
-* open to all, free of charge, user-restricted accounts
-* applicable to NGS data collected from any amplicon-based schema
-* allows advanced, multi-step software intensive analyses in a user-friendly manner without previous advanced training in bioinformatics
-* allows integrating data in a cumulative manner, thus fitting the analytical dynamics underlying the continuous epidemiological surveillance during flu epidemics
-* outputs are provided in nomenclature-stable and standardized formats and can be explored in situ or through multiple compatible downstream applications for data analysis and visualization
+- **Online tool:** https://insaflu.insa.pt
+- **Documentation / Tutorial:** https://insaflu.readthedocs.io/en/latest/
+- **Code:** https://github.com/INSaFLU/INSaFLU
+- **Easy local installation:** https://github.com/INSaFLU/docker
 
-Main outputs
-INSaFLU yields:
-* influenza type and subtype/lineage 
-* gene and whole-genome consensus sequences
-* annotation of variants and intra-host minor variants
-* gene, protein and genome alignments
-* gene- and genome-scale phylogenetic trees
-
-Other features:
-INSaFLU also automatically provides:
-* raw NGS data quality analysis and improvement
-* a rapid snapshot of whole-genome backbone of each virus (draft assembled contigs are assigned to each viral segment and to close related reference influenza viruses). 
-* coverage statistics
-* detection of putative mixed infections
-
-NOTE: As of March 2020, INSaFLU also performs rapid classification and contigs assignment of five Human Betacoronavirus - BetaCoV, including the novel coronavirus SARS-CoV-2. The publicly available SARS-CoV-2 reference genome sequence (MN908947) is available for Mapping in the default INSaFLU reference database.
 
 
 ## How to cite
@@ -50,9 +29,8 @@ If you use INSaFLU in your work, please cite Borges V, Pinheiro M et al. Genome 
 
 # Bioinformatics pipeline
 
-## Authors
-Miguel Pinheiro,
-Vitor Borges 
+## Main contributors
+Miguel Pinheiro, João Dourado Santos, Daniel Sobral, Vitor Borges 
 
 # Installation
 

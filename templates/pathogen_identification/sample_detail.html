@@ -302,7 +302,7 @@
             <div class="card-block">
                 <div class="column left">
                     {% if assembly.performed %}
-                    <div style="padding: 20px">
+                    <div style="padding: 20px;">
                     <p> Assembly was run using the software <strong>{{ assembly.method }}</strong>. </p>
                     <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
                     <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
@@ -310,7 +310,11 @@
                     </p> Contig sizes rang between
                         {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
                     </p>
+                    </div>
                     {% endif %}
+                    {% else %}
+                    <div style="padding: 20px;">
+                        <p> Assembly not performed </p>
                     </div>
                     {% endif %}
                 </div>  
@@ -337,10 +341,9 @@
         </div>
         <div id="collapseRefId" class="collapse hide" role="tabpanel" aria-labelledby="headingRefId">
             <div class="card-block">
-                {% if assembly.performed %}
                 <div style="padding: 20px">
                     <div class="column left">
-                        {% if assembly.contig_number > 0  %}
+                        {% if contig_classification.performed  %}
                         <p> Assembled contigs were classified using the software
                             <strong>{{contig_classification.method}}</strong>. </p>
                         {% if contig_classification.classification_number > 0 %}
@@ -361,6 +364,7 @@
                             identified. </p>
                         {% endif %}
                         {% endif %}
+                        {% if read_classification.performed %}
                         <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
                         {% if read_classification.classification_number > 0 %}
                             {% if read_classification.classification_number == 1 %}
@@ -380,9 +384,6 @@
                             identified.
                         </p>
                         {% endif %}
-                        {% if run_main.sift_remap %}
-
-                        <p> SIFT was performed on the classified reads and contigs. </p>
                         {% endif %}
                         {% if run_detail.merged %}
                         <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
@@ -415,7 +416,6 @@
                         </form>
                     </div>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -619,7 +619,7 @@
                                                 <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
                                                     method="POST">
                                                     {% csrf_token %}
-                                                    <input type=submit value="mapped reads (.fa)" name="btn3">
+                                                    <input type=submit value="mapped reads r1 (.fa)" name="btn3">
                                                     <input type="hidden" name="file" value="mapped_subset_r1">
                                                     <input type="hidden" name="taxid" value="{{value.taxid}}">
                                                     <input type="hidden" name="run" value="{{value.run.pk}}">
@@ -628,11 +628,14 @@
                                                 </form>
                                                 {% if run_main.sample.sample.is_valid_2 %}
                                                 <br>
-                                                <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_file_igv' %}"
-                                                    method="POST">
-                                                    {% csrf_token %}
-                                                    <input type=submit value=".fastq.gz" name="btn4">
-                                                    <input type="hidden" name="file_path" value="{{value.mapped_subset_r2}}">
+                                                <form id="download_mapped_r2_{{value.accid}}" action="{% url 'download_refmap_files' %}"
+                                                method="POST">
+                                                {% csrf_token %}
+                                                <input type=submit value="mapped reads r2 (.fa)" name="btn3">
+                                                <input type="hidden" name="file" value="mapped_subset_r2">
+                                                <input type="hidden" name="taxid" value="{{value.taxid}}">
+                                                <input type="hidden" name="run" value="{{value.run.pk}}">
+                                                <input type="hidden" name="accid" value="{{value.accid}}">
                                                 </form>
                                                 {% endif %}
                                             </div>
@@ -997,7 +1000,6 @@
 <script>
     var my_form = document.forms["download_mapped_r2_{{value.accid}}"];
     var static_dir = "{% static 'igv_files/' %}";
-    my_form.elements["file_path"].value = "{{value.mapped_subset_r2}}";
     document.getElementById("my_form").submit();
 </script>
 <script>

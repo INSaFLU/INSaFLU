@@ -47,8 +47,7 @@ def read_html_file(html_path):
 @register.filter
 def strip_ext(string):
 
-    return string
-
+    return os.path.basename(string)
     string = string.split(".")
     if len(string) > 1:
         return string[1]

@@ -178,9 +178,6 @@ class RunMain:
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
-        if self.clean:
-            self.remap_manager.clean_mapping_files()
-
     def run(self):
         self.deploy_REMAPPING()
         self.report = self.remap_manager.report

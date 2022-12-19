@@ -676,16 +676,14 @@ class Remapping:
             f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r2.fasta"
         )
 
-        self.assembly_map_paf = f"{self.rdir}/{self.prefix}.paf"
+        self.assembly_map_paf = f"{self.rdir}/{self.prefix}_{target.acc_simple}.paf"
         self.mapped_subset_r1 = f"{self.rdir}/{self.prefix}.R1.kept.fastq.gz"
         self.mapped_subset_r2 = f"{self.rdir}/{self.prefix}.R2.kept.fastq.gz"
         self.read_map_sam_rmdup = f"{self.rdir}/{self.prefix}.rmdup.sam"
         self.mapped_contigs_fasta = (
             f"{self.rdir}/{self.prefix}_{target.acc_simple}_mapped_contigs.fasta"
         )
-        self.mapped_contigs_fasta_index = (
-            f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa.fai"
-        )
+        self.mapped_contigs_fasta_index = self.mapped_contigs_fasta + ".fai"
 
         self.vcf = f"{self.rdir}/{self.prefix}.vcf"
 
@@ -782,6 +780,7 @@ class Remapping:
             self.read_map_sorted_bam_index, destination
         )
         self.assembly_map_paf = self.relocate_file(self.assembly_map_paf, destination)
+
         self.mapped_contigs_fasta = self.relocate_file(
             self.mapped_contigs_fasta, destination
         )
@@ -1047,7 +1046,7 @@ class Remapping:
             self.assembly_map_paf,
             sep="\t",
             header=None,
-            usecols=[5],
+            usecols=[0],
             names=["contig_name"],
         ).contig_name.unique()
 
@@ -1069,7 +1068,7 @@ class Remapping:
         if not self.assembly_map_paf_exists or self.number_of_contigs_mapped == 0:
             return
 
-        cmd = f"samtools faidx {self.mapped_contigs_fasta} > {self.mapped_contigs_fasta_index}"
+        cmd = f"samtools faidx {self.mapped_contigs_fasta}"
         self.cmd.run(cmd)
 
     def extract_reference_sequences(self):
@@ -1586,10 +1585,10 @@ class Mapping_Instance:
         ntax["reference_assembly_paf"] = self.reference.assembly_map_paf
 
         if self.reference.number_of_contigs_mapped > 0:
-            ntax["mapped_scaffolds_path"] = self.assembly.mapped_contigs_fasta
+            ntax["mapped_scaffolds_path"] = self.reference.mapped_contigs_fasta
             ntax[
                 "mapped_scaffolds_index_path"
-            ] = self.assembly.mapped_contigs_fasta_index
+            ] = self.reference.mapped_contigs_fasta_index
         else:
             ntax["mapped_scaffolds_path"] = ""
             ntax["mapped_scaffolds_index_path"] = ""

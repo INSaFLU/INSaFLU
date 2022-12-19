@@ -87,6 +87,26 @@ class Metadata_handler:
         self.remap_targets = remap_targets
         self.remap_absent_taxid_list = remap_absent
 
+    @staticmethod
+    def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
+
+        if "acc_x" in df.columns:
+            df = df.rename(columns={"acc_x": "acc"})
+
+        if "acc_y" in df.columns:
+            if "acc" in df.columns:
+                df = df.drop(columns=["acc_y"])
+            else:
+                df = df.rename(columns={"acc_y": "acc"})
+
+        if "counts" in df.columns:
+            if "counts_x" in df.columns:
+                df = df.drop(columns=["counts_x"])
+            if "counts_y" in df.columns:
+                df = df.drop(columns=["counts_y"])
+
+        return df
+
     def results_process(self, df: pd.DataFrame, sift: bool = True) -> pd.DataFrame:
         """
         Process results.
@@ -103,6 +123,8 @@ class Metadata_handler:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
             self.sift_report = self.sift_summary(df, sifted_df)
             df = sifted_df
+
+        df = self.prettify_reports(df)
 
         return df
 
@@ -337,9 +359,6 @@ class Metadata_handler:
         ].reset_index()
 
         desc_set = desc_set.dropna(subset=["description"])
-        print("####### taxid description")
-        print(taxid)
-        print(desc_set)
 
         if desc_set.shape[0] == 0:
             return "-"
@@ -363,6 +382,8 @@ class Metadata_handler:
 
         targets.dropna(subset=["taxid"], inplace=True)
         targets["taxid"] = targets["taxid"].astype(int)
+
+        targets = self.prettify_reports(targets)
 
         self.raw_targets = raw_targets
         self.merged_targets = targets

@@ -859,7 +859,9 @@ class RunMain_class(Run_Deployment_Methods):
         )
 
         self.contig_classification_results = Contig_classification_results(
-            True,
+            True
+            if self.contig_classification_drone.classifier_method.name != "None"
+            else False,
             self.contig_classification_drone.classifier_method.name,
             self.contig_classification_drone.classifier_method.args,
             self.contig_classification_drone.classifier_method.db_name,
@@ -869,7 +871,9 @@ class RunMain_class(Run_Deployment_Methods):
         )
 
         self.read_classification_results = Read_classification_results(
-            True,
+            True
+            if self.read_classification_drone.classifier_method.name != "None"
+            else False,
             self.read_classification_drone.classifier_method.name,
             self.read_classification_drone.classifier_method.args,
             self.read_classification_drone.classifier_method.db_name,
@@ -879,7 +883,7 @@ class RunMain_class(Run_Deployment_Methods):
         )
 
         self.assembly_report = Assembly_results(
-            True,
+            self.assembly,
             self.assembly_drone.assembly_method.name,
             self.assembly_drone.assembly_method.args,
             self.assembly_drone.assembly_number,

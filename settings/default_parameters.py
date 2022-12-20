@@ -474,9 +474,6 @@ class DefaultParameters(object):
     ):
         """set software to run ON/OFF
         :output True if the is_to_run is changed"""
-        print("changing parameter")
-        print(televir_project)
-        print(is_to_run)
 
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
 
@@ -493,6 +490,7 @@ class DefaultParameters(object):
             ## if None need to take the value from database
             if is_to_run is None:
                 if software.type_of_use in [
+                    Software.TYPE_OF_USE_qc,
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
                     Software.TYPE_OF_USE_televir_project,
@@ -506,6 +504,7 @@ class DefaultParameters(object):
             ## if the software can not be change return False
             if not software.can_be_on_off_in_pipeline:
                 if software.type_of_use in [
+                    Software.TYPE_OF_USE_qc,
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
                     Software.TYPE_OF_USE_televir_project,
@@ -518,6 +517,7 @@ class DefaultParameters(object):
             ### if it is Global it is software that is mandatory
             ### only can change if TYPE_OF_USE_global, other type_of_use is not be tested
             if software.type_of_use in [
+                Software.TYPE_OF_USE_qc,
                 Software.TYPE_OF_USE_global,
                 Software.TYPE_OF_USE_televir_global,
                 Software.TYPE_OF_USE_televir_project,
@@ -2153,7 +2153,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = False
+        software.is_to_run = True
 
         ###  small description of software
         software.help_text = ""
@@ -2609,7 +2609,7 @@ class DefaultParameters(object):
         software.can_be_on_off_in_pipeline = (
             True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
-        software.is_to_run = True
+        software.is_to_run = False
 
         ###  small description of software
         software.help_text = ""

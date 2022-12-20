@@ -119,7 +119,6 @@ class Pipeline_Makeup:
         for makeup, mlist in self.MAKEUP.items():
 
             if set(makeup_list) == set(mlist):
-                print(makeup, mlist, set(makeup_list))
                 return makeup
         return None
 

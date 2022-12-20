@@ -157,7 +157,7 @@ class PIProject_Sample(models.Model):
         max_length=10, blank=True, null=True
     )  # sample type: SE or PE
     combinations = models.IntegerField(blank=True, default=0)  # number of combinations
-    input = models.TextField(blank=True, null=True)  # 
+    input = models.TextField(blank=True, null=True)  #
     technology = models.CharField(
         max_length=100,
         name="technology",
@@ -306,10 +306,8 @@ class SampleQC(models.Model):
 
     def render_input_fastqc(self):
         html_path = self.input_fastqc_report.path
-        print(html_path)
 
         if os.path.exists(html_path):
-            print("file exists")
             html_string = codecs.open(html_path, "r").read()
             return mark_safe(html_string)
         return None

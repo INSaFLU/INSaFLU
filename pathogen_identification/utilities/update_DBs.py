@@ -578,7 +578,6 @@ def Update_FinalReport(run_class, runmain, sample):
                 unique_id=row["unique_id"],
             )
         except FinalReport.DoesNotExist:
-            print(row["covplot_path"])
 
             report_row = FinalReport(
                 run=runmain,

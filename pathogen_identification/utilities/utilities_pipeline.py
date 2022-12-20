@@ -211,7 +211,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
@@ -601,8 +601,6 @@ class Utility_Pipeline_Manager:
 
             self.logger.info(f"Child main: {child_main}")
 
-            print(nodes_index_dict)
-
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
             try:
@@ -713,7 +711,7 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def get_software_tables_global(self, technology: str):
+    def get_user_active_software_tables(self, technology: str, owner: User):
         """
         Get software tables for a user
         """
@@ -722,13 +720,34 @@ class Parameter_DB_Utility:
             type_of_use=Software.TYPE_OF_USE_televir_global,
             technology__name=technology,
             is_to_run=True,
+            owner=owner,
         )
 
         parameters_available = Parameter.objects.filter(
             software__in=software_available,
             televir_project=None,
-            is_to_run=True,
         )
+
+        software_table = pd.DataFrame(software_available.values())
+
+        parameters_table = pd.DataFrame(parameters_available.values())
+
+        return software_table, parameters_table
+
+    def get_software_tables_global(self, technology: str):
+        """
+        Get software tables for a user
+        """
+
+        software_available = Software.objects.filter(
+            type_of_use=Software.TYPE_OF_USE_televir_global,
+            technology__name=technology,
+        ).distinct()
+
+        parameters_available = Parameter.objects.filter(
+            software__in=software_available,
+            televir_project=None,
+        ).distinct()
 
         software_table = pd.DataFrame(software_available.values())
 
@@ -809,8 +828,8 @@ class Parameter_DB_Utility:
 
         if parameters_table.shape[0] == 0:
             self.logger.info("No parameters for this project, using global")
-            software_table, parameters_table = self.get_software_tables_global(
-                project.technology
+            software_table, parameters_table = self.get_user_active_software_tables(
+                project.technology, owner
             )
 
         merged_table = self.merge_software_tables(software_table, parameters_table)
@@ -1032,9 +1051,10 @@ class Utils_Manager:
         self.utility_technologies = self.parameter_util.get_technologies_available()
         self.utility_manager = Utility_Pipeline_Manager()
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.ERROR)
+
         self.logger.info("Utils_Manager initialized")
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
@@ -1056,18 +1076,16 @@ class Utils_Manager:
         Check if there are runs to run
         """
 
-        utils = Utils_Manager()
-
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = utils.generate_project_tree(technology, project, user)
+        local_tree = self.generate_project_tree(technology, project, user)
 
         self.logger.info("Checking runs to deploy")
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree = self.generate_software_tree(technology, tree_makeup)
         self.logger.info("Pipeline tree generated")
-        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        pipeline_tree_index = self.get_software_tree_index(technology, tree_makeup)
         self.logger.info("Pipeline tree index generated")
         local_paths = local_tree.get_all_graph_paths_explicit()
         sample = samples[0]
@@ -1081,7 +1099,7 @@ class Utils_Manager:
             for leaf, path in local_paths.items():
 
                 try:
-                    matched_path = utils.utility_manager.match_path_to_tree(
+                    matched_path = self.utility_manager.match_path_to_tree(
                         path, pipeline_tree
                     )
                 except Exception as e:
@@ -1095,13 +1113,13 @@ class Utils_Manager:
                     software_tree__pk=pipeline_tree_index, index=matched_path
                 )
 
-                exists = utils.parameter_util.check_ParameterSet_exists(
+                exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
 
                 if exists:
 
-                    if utils.parameter_util.check_ParameterSet_processed(
+                    if self.parameter_util.check_ParameterSet_processed(
                         sample=sample, leaf=leaf, project=project
                     ):
                         self.logger.info("parameter set processed")
@@ -1110,7 +1128,6 @@ class Utils_Manager:
 
                 else:
                     runs_to_deploy += 1
-
         if runs_to_deploy > 0:
             return True
 

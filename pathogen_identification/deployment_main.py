@@ -71,6 +71,7 @@ class PathogenIdentification_deployment:
 
     def input_read_project_path(self, filepath) -> str:
         """copy input reads to project directory and return new path"""
+
         if not os.path.isfile(filepath):
             return ""
 
@@ -83,6 +84,7 @@ class PathogenIdentification_deployment:
         """generate config dictionary for run_main, and copy input reads to project directory."""
         self.get_constants()
         branch_exists = self.configure_params()
+
         if not branch_exists:
             return False
 
@@ -114,9 +116,6 @@ class PathogenIdentification_deployment:
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         leaf_index = self.pipeline_index
-        print(all_paths.keys())
-        print(leaf_index)
-        print(len(all_paths))
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -215,10 +214,10 @@ class Run_Main_from_Leaf:
         prefix = f"{simplify_name(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
         self.date_submitted = datetime.datetime.now()
 
-        self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
+        self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
         if input_data.sample.exist_file_2():
             self.file_r2 = input_data.sample.get_fastq_available(
-                TypePath.MEDIA_ROOT, True
+                TypePath.MEDIA_ROOT, False
             )
         else:
             self.file_r2 = ""

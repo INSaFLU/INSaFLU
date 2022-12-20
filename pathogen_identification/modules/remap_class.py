@@ -746,7 +746,6 @@ class Remapping:
         final_file = os.path.join(subdirectory, os.path.basename(filepath))
 
         if os.path.exists(filepath) and final_file != filepath:
-            # print(f"PATH {filepath} exists")
             if os.path.exists(final_file):
                 os.remove(final_file)
 
@@ -1189,7 +1188,7 @@ class Remapping:
         if not output_sam:
             output_sam = os.path.join(self.rdir, f"temp{randint(1,1999)}.sam")
 
-        read_name_filter_regex = re.compile("^[A-Za-z0-9_-]*$")  # (r"@|=&$\t")
+        read_name_filter_regex = re.compile("^[A-Za-z0-9_.-]*$")  # (r"@|=&$\t")
 
         with open(self.read_map_sam, "r") as f:
             with open(output_sam, "w") as f2:
@@ -1824,14 +1823,13 @@ class Mapping_Manager(Tandem_Remap):
 
             apres = mapped_instance.reference.number_of_contigs_mapped > 0
             rpres = mapped_instance.reference.number_of_reads_mapped > 0
-            print("###########")
-            print("apres", apres)
-            print("rpres", rpres)
+
             if rpres:
                 mapped_instance.reference.move_coverage_plot(static_plots_dir)
                 mapped_instance.export_mapping_files(media_dir)
             else:
-                mapped_instance.reference.cleanup_files()
+                print("No reads mapped, skipping coverage plot")
+                # mapped_instance.reference.cleanup_files()
 
             if apres:
                 mapped_instance.reference.move_dotplot(static_plots_dir)

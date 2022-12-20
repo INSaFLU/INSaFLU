@@ -118,7 +118,7 @@ class RunDetail_main:
         self.threads = config["threads"]
 
         self.logger_level_main = logging.INFO
-        self.logger_level_detail = logging.ERROR
+        self.logger_level_detail = logging.INFO
         self.logger = logging.getLogger("main {}".format(self.prefix))
         self.logger.setLevel(self.logger_level_main)
 
@@ -207,6 +207,10 @@ class RunDetail_main:
             ),
         )
 
+        self.r1.cmd = RunCMD(
+            logdir=self.log_dir, bin=self.r1.cmd.bin, prefix="r1", task="housekeeping"
+        )
+
         self.r2 = Read_class(
             config["r2"],
             config["directories"][CS.PIPELINE_NAME_read_quality_analysis],
@@ -215,6 +219,10 @@ class RunDetail_main:
             bin=get_bindir_from_binaries(
                 config["bin"], CS.PIPELINE_NAME_read_quality_analysis
             ),
+        )
+
+        self.r2.cmd = RunCMD(
+            logdir=self.log_dir, bin=self.r2.cmd.bin, prefix="r2", task="housekeeping"
         )
 
         self.sample = Sample_runClass(
@@ -628,13 +636,6 @@ class Run_Deployment_Methods(RunDetail_main):
             self.static_dir_plots, self.media_dir_igv
         )
 
-        print("remapping done")
-        print("merging and collecting output")
-
-        # self.remap_manager.run_mappings()
-        # self.remap_manager.move_plots_to_static(self.static_dir_plots)
-        # self.remap_manager.move_igv_to_static(self.media_dir_igv)
-        # self.remap_manager.export_mapping_files(self.media_dir_igv)
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
@@ -671,7 +672,8 @@ class RunMain_class(Run_Deployment_Methods):
 
             self.sample.reads_after_processing = self.sample.current_total_read_number()
             self.sample.get_qc_data()
-            print(self.sample.reads_after_processing)
+            self.sample.r1.clean_read_names()
+            self.sample.r2.clean_read_names()
 
         else:
             self.deploy_QC(fake_run=True)
@@ -692,11 +694,24 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.reads_after_processing = self.sample.current_total_read_number()
             self.sample.get_fake_qc_data()
 
+            self.sample.r1.clean_read_names()
+            self.sample.r2.clean_read_names()
+
         if self.enrichment:
             self.deploy_EN()
 
+            self.logger.info(
+                "r1 current reads: "
+                + str(self.sample.r1.get_current_fastq_read_number())
+            )
+
             self.sample.r1.enrich(self.enrichment_drone.classified_reads_list)
             self.sample.r2.enrich(self.enrichment_drone.classified_reads_list)
+
+            self.logger.info(
+                "r1 current reads after enrichment: "
+                + str(self.sample.r1.get_current_fastq_read_number())
+            )
 
         if self.depletion:
             self.deploy_HD()
@@ -705,9 +720,16 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
 
         if self.enrichment or self.depletion or self.assembly:
-            # self.sample.clean_unique()
+            self.logger.info(
+                "r1 current before trim: "
+                + str(self.sample.r1.get_current_fastq_read_number())
+            )
             self.sample.trimmomatic_sort()
             self.sample.remove_duplicates()
+            self.logger.info(
+                "r1 current after trim: "
+                + str(self.sample.r1.get_current_fastq_read_number())
+            )
 
         if self.assembly:
             self.deploy_ASSEMBLY()

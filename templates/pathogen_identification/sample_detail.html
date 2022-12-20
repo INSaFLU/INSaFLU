@@ -248,14 +248,21 @@
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
+                        {% if run_detail.enriched_reads == 0 %}
+                        <p> Viral enrichment ({{ run_main.enrichment }}) did not remove any reads </p>
+                        {% else %}
                         <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent run_detail.input run_detail.enriched_reads %} %).</p>
                         {% endif %}
+                        {% endif %}
                         {% if run_main.host_depletion_performed %}
+                        {% if run_detail.depleted_reads == 0 %}
+                        <p> Host depletion ({{ run_main.host_depletion }}) did not remove any reads </p>
+                        {% else %}
                         <p> Host depletion ({{ run_main.host_depletion }}) removed <strong>{{run_detail.depleted_reads|convert_int_to_str_format}}</strong> reads ({{run_detail.depleted_reads_percent|round_to_percent}} %)</p>
                         {% endif %}
-                        {% if run_detail_processed.processed == 0 %}
-                        <p> No reads remained, continued using input reads </p>
-                        {% else %}
+                        {% endif %}
+                        {% if run_detail.processed != "0" %}
+
                         <p>Output reads: <strong>{{ run_detail.processed }} </strong> ({{run_detail.processed_percent}} %) </p>
                         {% endif %}
                     {% else %}
@@ -263,7 +270,7 @@
                     {% endif %}
                     </div>
                     
-                    {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
+                    {% if run_main.enrichment_performed or run_main.host_depletion_performed and run_detail.processed != "0" %}
                     <div class="column center"</div>
                         <div id="piechart"></div>
                     </div>
@@ -787,10 +794,14 @@
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processed|reconvert_string_to_int}}")]);
         if ("{{run_main.enrichment_performed}}" == "True" ) {
-            raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
+            if ("{{run_detail.enriched_reads}}" != "0" ) {
+                raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
+            };
         };
         if ("{{run_main.host_depletion_performed}}" == "True" ) {
-            raw_data.push(['Host Depletion', parseFloat("{{run_detail.depleted_reads}}")]);
+            if ("{{run_detail.depleted_reads}}" != "0" ) {
+                raw_data.push(['Host Depletion', parseFloat("{{run_detail.depleted_reads}}")]);
+            };
         };
         
         var data = google.visualization.arrayToDataTable(raw_data);

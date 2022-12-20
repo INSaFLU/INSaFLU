@@ -558,7 +558,7 @@ class run_centrifuge(Classifier_init):
         """
         read classifier output, return only query and reference sequence id columns.
         """
-        if check_report_empty(self.report_path):
+        if check_report_empty(self.full_report_path):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(

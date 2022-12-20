@@ -96,7 +96,6 @@ def flag_false_positive(depth, depthc, coverage, mapped):
 
 @register.simple_tag
 def flag_false_positive_color(depth, depthc, coverage, mapped):
-    print(mapped)
 
     if depthc > 0 or coverage > 0:
 

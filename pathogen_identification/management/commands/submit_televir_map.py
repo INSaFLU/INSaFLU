@@ -143,8 +143,6 @@ class RunMain:
         elif self.accid:
             result_df = pd.DataFrame([{"qseqid": self.accid, "taxid": ""}])
 
-        print(result_df)
-
         self.metadata_tool.match_and_select_targets(
             result_df,
             pd.DataFrame(columns=["qseqid", "taxid"]),
@@ -227,7 +225,6 @@ class Input_Generator:
         self.dir = self.dir_branch
 
         os.makedirs(self.dir, exist_ok=True)
-        print(self.dir)
 
         self.r1_path = reference.run.sample.sample.path_name_1.path
         self.r2_path = (
@@ -292,7 +289,6 @@ class Input_Generator:
             self.config["directories"][dr] = os.path.join(self.dir_branch, g)
             os.makedirs(self.config["directories"][dr], exist_ok=True)
 
-        print(self.r1_path)
         self.config["r1"] = self.input_read_project_path(self.r1_path)
         self.config["r2"] = self.input_read_project_path(self.r2_path)
         self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]

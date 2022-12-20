@@ -27,12 +27,14 @@
                 {% if project_owner %}
                 <tr>
                     <th colspan="9">
+                        {% if not demo %}
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
                                 <a><span class="hidden-phone"> Deploy Pathogen identification </span></a>
                               </button>
                                
                         </div>
+                        {% endif %}
                         </div class="btn-group">
                         <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
                             <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>

@@ -39,7 +39,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
     template_name = "settings/settings.html"
 
     def get_queryset(self):
-        print("qc get_queryset")
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
@@ -80,16 +79,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 )
 
             except Software.MultipleObjectsReturned:
-                print("MultipleObjectsReturned")
-                for s in existing_software:
-                    print(
-                        s.name,
-                        s.name_extended,
-                        s.type_of_use,
-                        s.owner,
-                        s.technology,
-                        s.pipeline_step,
-                    )
                 pass
 
             except Software.DoesNotExist:
@@ -104,7 +93,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """
         duplicate software global to project
         """
-        print("duplicate_software_global_project")
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
@@ -121,6 +109,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
             software.pk = None
             software.type_of_use = Software.TYPE_OF_USE_televir_project
+
             software.save()
 
             for parameter in software_parameters:
@@ -241,7 +230,6 @@ class QCSettingsView(LoginRequiredMixin, ListView):
     template_name = "settings/settings.html"
 
     def get_queryset(self):
-        print("qc get_queryset")
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 

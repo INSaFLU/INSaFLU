@@ -90,7 +90,6 @@ class SoftwaresTable(tables.Table):
     def render_select_to_run(self, value, record):
         ## test if its to run and get IDs from others
         is_to_run, sz_ids = self._is_to_run(record)
-
         ### When in sample you can not turn ON|OFF the software
         b_enable_options = self.b_enable_options
         if not self.sample is None:
@@ -141,7 +140,6 @@ class SoftwaresTable(tables.Table):
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
-        print(self.dataset)
 
         record = kwargs.pop("record")
         technology_name = (
@@ -557,8 +555,6 @@ class SoftwaresTable(tables.Table):
             sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
         if not self.sample is None:
             sz_ids += ' sample_id="{}"'.format(self.sample.id)
-        if not self.televir_project is None:
-            sz_ids += ' televir_project_id="{}"'.format(self.televir_project.id)
 
         is_to_run = record.is_to_run
         if len(sz_ids) > 0:
@@ -680,6 +676,7 @@ class INSaFLUParametersTable(tables.Table):
         return record.name if record.name_extended is None else record.name_extended
 
     def render_select_to_run(self, value, record):
+
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project)

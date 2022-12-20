@@ -23,6 +23,40 @@ import pandas as pd
 from pathogen_identification.install_registry import Deployment_Params
 
 
+class Temp_File:
+    """
+    Temporary file.
+    """
+
+    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ""):
+        """
+        Initialize.
+        """
+
+        self.temp_dir = temp_dir
+        self.prefix = prefix
+        self.suffix = suffix
+
+        self.temp_file = os.path.join(
+            self.temp_dir, f"{self.prefix}_{randint(1000000, 9999999)}{self.suffix}"
+        )
+
+    def __enter__(self):
+        """
+        Enter.
+        """
+
+        return self.temp_file
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit.
+        """
+
+        if os.path.exists(self.temp_file):
+            os.remove(self.temp_file)
+
+
 class RunCMD:
     """
     Run command line commands.
@@ -182,8 +216,6 @@ class RunCMD:
 
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
-
-        # print(f"running command: java -cp {self.bin} {cmd}")
 
         start_time = time.perf_counter()
 
@@ -581,8 +613,6 @@ class Read_class:
         self.read_number_depleted = self.get_current_fastq_read_number()
         self.current_status = "depleted"
         self.filepath = os.path.dirname(self.current)
-        print("depleted")
-        print(self.read_number_depleted)
         self.read_number_filtered = self.read_number_depleted
 
     def get_current_fastq_read_number(self):
@@ -595,6 +625,38 @@ class Read_class:
         cmd = "zcat %s | wc -l" % self.current
         rnumber = self.cmd.run_bash_return(cmd).decode("utf-8")
         return int(rnumber) // 4
+
+    def clean_read_names(self):
+        """
+        Clean read names in current fastq file.
+        """
+
+        if not self.exists:
+            return
+
+        temp_fq = os.path.join(
+            os.path.dirname(self.current), f"temp_clean_{randint(1,1000)}.fastq"
+        )
+        temp_fq_gz = temp_fq + ".gz"
+
+        cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
+
+        cmd = [
+            "sed",
+            "-i",
+            "'/^[@+]/ ; s/\/[12]$//g'",
+            temp_fq,
+        ]
+
+        cmd_zip = "bgzip %s" % temp_fq
+
+        self.cmd.run_bash(cmd_unzip)
+        self.cmd.run_bash(cmd)
+        self.cmd.run(cmd_zip)
+
+        if os.path.isfile(temp_fq_gz) and os.path.getsize(temp_fq_gz) > 100:
+            os.remove(self.current)
+            os.rename(temp_fq_gz, self.current)
 
     def remove_duplicate_reads(self):
         """
@@ -840,8 +902,9 @@ class Sample_runClass:
         self.cmd.run(cmd_trimsort)
 
         if tempfq in os.listdir(tempdir):
-            os.remove(self.r1.current)
-            os.rename(tempfq, self.r1.current)
+            if os.path.getsize(tempfq) > 100:
+                os.remove(self.r1.current)
+                os.rename(tempfq, self.r1.current)
 
     def trimmomatic_sort_PE(self):
         if self.type == "SE":
@@ -924,8 +987,7 @@ class Software_detail:
                     self.db_name = db_name
 
             except IndexError:
-                # self.db = ""
-                print(self.db_name)
+                pass
 
             try:
                 self.bin = os.path.join(

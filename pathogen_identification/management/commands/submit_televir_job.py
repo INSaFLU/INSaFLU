@@ -73,7 +73,6 @@ class Command(BaseCommand):
         try:
 
             for sample in samples:
-                print("sample: ", sample)
 
                 if sample.is_deleted:
                     continue
@@ -123,8 +122,6 @@ class Command(BaseCommand):
                     if run.is_available:
                         run.get_in_line()
                         submission_dict[sample].append(run)
-
-            print(len(submission_dict))
 
             for sample, runs in submission_dict.items():
                 for run in runs:

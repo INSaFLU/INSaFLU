@@ -127,7 +127,7 @@ class ProjectTable(tables.Table):
             "<a href="
             + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
             + ' data-toggle="tooltip" title="Manage settings">'
-            + f'<span ><i class="padding-button-table fa fa-magic padding-button-table" {color}></i></span></a>'
+            + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
         )
 
         if project_settings_exist:
@@ -138,7 +138,7 @@ class ProjectTable(tables.Table):
                 + record.name
                 + '" pk="'
                 + str(record.pk)
-                + '"><i class="fa fa-times" style="color: red;" ></i></span> </a>'
+                + '"><i class="fa fa-power-off" style="color: orange;" ></i></span> </a>'
             )
 
         return mark_safe(parameters)

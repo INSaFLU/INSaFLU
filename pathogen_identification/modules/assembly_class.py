@@ -266,8 +266,6 @@ class Assembly_class:
         self.assembly_mean = 0
         self.assembly_number = 0
 
-        print(assembly_method.output_dir)
-
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())

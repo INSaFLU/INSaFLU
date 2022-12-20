@@ -811,15 +811,14 @@ class ProcessSGE(object):
 
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
-        queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            outdir_sge, queue_name, vect_command, job_name, False, [job_name_wait]
+            outdir_sge, queue_name, vect_command, job_name, True, [job_name_wait]
         )
-        print(path_file)
         try:
             sge_id = self.submitte_job(path_file)
             print("project submitted, sge_id: " + str(sge_id))
@@ -848,15 +847,14 @@ class ProcessSGE(object):
         ]
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
-        queue_name = Constants.QUEUE_SGE_NAME_GLOBAL
+        queue_name = user.profile.queue_name_sge
         (job_name_wait, job_name) = user.profile.get_name_sge_seq(
             Profile.SGE_PROCESS_dont_care, Profile.SGE_LINK
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            outdir_sge, queue_name, vect_command, job_name, False, [job_name_wait]
+            outdir_sge, queue_name, vect_command, job_name, True, [job_name_wait]
         )
-        print(path_file)
         try:
             sge_id = self.submitte_job(path_file)
             print("project submitted, sge_id: " + str(sge_id))

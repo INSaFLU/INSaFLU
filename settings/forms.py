@@ -46,7 +46,6 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
-        print(self.televir_utiltity.software_dbs_dict)
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")

@@ -605,7 +605,7 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_ABRICATE_name:
             return self.get_abricate_default(
                 software.owner,
-                Software.TYPE_OF_USE_global,
+                Software.TYPE_OF_USE_qc,
                 ConstantsSettings.TECHNOLOGY_illumina
                 if software.technology is None
                 else software.technology.name,

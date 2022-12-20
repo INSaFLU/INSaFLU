@@ -73,7 +73,7 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             self.default_parameters.get_abricate_default(
-                user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
+                user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_illumina
             ),
             user,
         )
@@ -126,7 +126,7 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             self.default_parameters.get_abricate_default(
-                user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion
+                user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_minion
             ),
             user,
         )
@@ -860,7 +860,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_ABRICATE_name,
                 self.default_parameters.get_abricate_default(
-                    user, Software.TYPE_OF_USE_global, technology_name
+                    user, Software.TYPE_OF_USE_qc, technology_name
                 ),
                 user,
             )

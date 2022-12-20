@@ -4,6 +4,8 @@ Created on Nov 25, 2017
 @author: mmp
 '''
 from utils.utils import Utils
+from datasets.models import Dataset
+from datasets.manage_database import ManageDatabase as ManageDatabaseDatasets
 from managing_files.manage_database import ManageDatabase
 from constants.meta_key_and_values import MetaKeyAndValue
 from utils.result import DecodeObjects, Result
@@ -16,6 +18,7 @@ from constants.constants import Constants
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.default_parameters import DefaultParameters
 from settings.constants_settings import ConstantsSettings
+from django.conf import settings
 import os, logging, time
 
 
@@ -27,7 +30,9 @@ class CreateTree(object):
 	utils = Utils()
 	software_names = SoftwareNames()
 	software = Software()
-	logger_production = logging.getLogger("fluWebVirus.production")
+	
+	if settings.DEBUG: logger = logging.getLogger("fluWebVirus.debug")
+	else: logger = logging.getLogger("fluWebVirus.production")
 	
 	def __init__(self):
 		'''
@@ -41,27 +46,27 @@ class CreateTree(object):
 		"""
 		
 		start= time.time()
-		self.logger_production.info("START TREE and ALIGNEMTS:")
+		self.logger.info("START TREE and ALIGNEMTS:")
 		
 		### create tree and alignments for all genes
 		self.create_tree_and_alignments_sample_by_sample(project, None, owner)
-		self.logger_production.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		self.logger.info("ENDE TRE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
 		start = time.time()
 			
 		proteins = Proteins()
 		geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, owner)
 		### create for single sequences
 		for sequence_name in geneticElement.get_sorted_elements():
-			self.logger_production.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logger.info("MAKE TREE: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			self.create_tree_and_alignments_sample_by_sample(project, sequence_name, owner)
 
 			### create the protein alignments
-			self.logger_production.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
+			self.logger.info("MAKE ALIGNEMTS: sequence_name {}  diff_time:{}".format(sequence_name, time.time() - start))
 			start = time.time()
 			proteins.create_alignement_for_element(project, owner, geneticElement, sequence_name)
 			
-		self.logger_production.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
+		self.logger.info("END TREE and ALIGNEMTS: diff_time:{}".format(time.time() - start))
 		
 	def create_tree_and_alignments_sample_by_sample(self, project, sequence_name, owner):
 		"""
@@ -278,5 +283,87 @@ class CreateTree(object):
 		if (os.path.exists(path_file)): os.unlink(path_file)
 		
 
+	def create_tree_and_alignments_dataset(self, dataset, owner):
+		"""
+		create both trees and the alignments
+		"""
+		
+		start= time.time()
+		self.logger.info("START TREE and ALIGNEMTS:")
+		
+		manageDatabase = ManageDatabaseDatasets()
+		temp_dir = self.utils.get_temp_dir()
+		
+		### get meta_key
+		meta_key = MetaKeyAndValue.META_KEY_Run_Tree_All_Sequences
+		
+		##########################
+		#####
+		##### When we have only one element in the reference it's not necessary run progressive mauve
+		### start processing the data
+		result_all = Result()
+		out_file_convert_mauve = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)
+		
+		### create tree and alignments for all genes
+		### run mafft
+		try:
+			out_file_mafft = self.utils.get_temp_file_from_dir(temp_dir, "mafft", ".fasta")
+			self.software.run_mafft(out_file_convert_mauve, out_file_mafft, SoftwareNames.SOFTWARE_MAFFT_PARAMETERS)
+			result_all.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\
+							self.software_names.get_mafft_parameters()))
+		except Exception as e:
+			result = Result()
+			result.set_error("Mafft (%s) fail to run" % (self.software_names.get_mafft_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_mafft_name(), self.software_names.get_mafft_version(),\
+							self.software_names.get_mafft_parameters()))
+			manageDatabase.set_dataset_metakey(dataset, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			self.utils.remove_dir(temp_dir)
+			return False
+		
+		### run seqret to produce nex
+		try:
+			out_file_nex = self.utils.get_temp_file_from_dir(temp_dir, "seq_ret", ".nex")
+			self.software.run_seqret_nex(out_file_mafft, out_file_nex)
+			result_all.add_software(SoftwareDesc(self.software_names.get_seqret_name(), self.software_names.get_seqret_version(),\
+							self.software_names.get_seqret_nex_parameters()))
+		except Exception:
+			result = Result()
+			result.set_error("{} {} fail to run".format(self.software_names.get_seqret_name(), self.software_names.get_seqret_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_seqret_name(), self.software_names.get_seqret_version(),\
+							self.software_names.get_seqret_nex_parameters()))
+			manageDatabase.set_dataset_metakey(dataset, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			self.utils.remove_dir(temp_dir)
+			return False
 
+		### run fastTree
+		try:
+			## dvtditr
+			out_file_fasttree = self.utils.get_temp_file_from_dir(temp_dir, "fasttree", FileExtensions.FILE_NWK)
+			self.software.run_fasttree(out_file_mafft, out_file_fasttree, self.software_names.get_fasttree_parameters(),
+								dataset.get_first_reference_name())
+			result_all.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
+							self.software_names.get_fasttree_parameters()))
+		except Exception:
+			result = Result()
+			result.set_error("FastTree (%s) fail to run" % (self.software_names.get_fasttree_version()))
+			result.add_software(SoftwareDesc(self.software_names.get_fasttree_name(), self.software_names.get_fasttree_version(),\
+							self.software_names.get_fasttree_parameters()))
+			manageDatabase.set_dataset_metakey(dataset, owner, meta_key, MetaKeyAndValue.META_VALUE_Error, result.to_json())
+			self.utils.remove_dir(temp_dir)
+			return False
+		
+		## set meta info
+		manageDatabase.set_dataset_metakey(dataset, owner, meta_key, MetaKeyAndValue.META_VALUE_Success, result_all.to_json())
+		
+		### copy files for the dataset
+		self.utils.copy_file(out_file_mafft, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_MAFFT))
+		self.utils.copy_file(out_file_nex, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nex))
+		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE))
+		self.utils.copy_file(out_file_fasttree, dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_FASTTREE_tree))
+		self.utils.remove_dir(temp_dir)
+		return True
+
+
+		self.logger.info("ENDE TREE and ALIGNEMTS: sequence_name {}  diff_time:{}".format("AllSequences", time.time() - start))
+		start = time.time()
 		

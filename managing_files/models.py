@@ -20,6 +20,7 @@ from django.utils.translation import ugettext_lazy as _
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
+from settings.constants_settings import ConstantsSettings
 
 
 def reference_directory_path(instance, filename):
@@ -76,6 +77,8 @@ class MetaKey(models.Model):
 
 class Reference(models.Model):
 
+    constants = Constants()
+
     ### species
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
@@ -114,7 +117,11 @@ class Reference(models.Model):
     ## application/x-gameboy-rom because of 'gb' extension file of gbk
     reference_genbank = ContentTypeRestrictedFileField(
         upload_to=reference_directory_path,
-        content_types=["application/octet-stream", "application/x-gameboy-rom"],
+        content_types=[
+            "application/octet-stream",
+            "application/x-gameboy-rom",
+            "text/plain",
+        ],
         max_upload_size=settings.MAX_REF_GENBANK_FILE,
         blank=True,
         null=True,
@@ -213,7 +220,26 @@ class Reference(models.Model):
                 '<a href="{}" download="{}"> {}</a>'.format(
                     self.get_reference_fasta(TypePath.MEDIA_URL),
                     os.path.basename(self.get_reference_fasta(TypePath.MEDIA_ROOT)),
-                    self.name,
+                    self.constants.short_name(
+                        self.reference_fasta_name, Constants.SHORT_NAME_LENGTH
+                    ),
+                )
+            )
+        return _("File not available.")
+
+    def get_reference_gb_web(self):
+        """
+        return web link for reference
+        """
+        out_file = self.get_reference_fasta(TypePath.MEDIA_ROOT)
+        if os.path.exists(out_file):
+            return mark_safe(
+                '<a href="{}" download="{}"> {}</a>'.format(
+                    self.get_reference_gbk(TypePath.MEDIA_URL),
+                    os.path.basename(self.get_reference_gbk(TypePath.MEDIA_ROOT)),
+                    self.constants.short_name(
+                        self.reference_genbank_name, Constants.SHORT_NAME_LENGTH
+                    ),
                 )
             )
         return _("File not available.")
@@ -459,13 +485,15 @@ class Sample(models.Model):
     TYPE_OF_FASTQ_minion = 1
     TYPE_OF_FASTQ_not_defined = -1
 
+    TYPE_SUBTYPE_LENGTH = 150
+
     ## to remove in future
     objects = models.Manager()  ## need to check this
 
     name = models.CharField(
         max_length=200, db_index=True, blank=True, null=True, verbose_name="Sample Name"
     )  ## This Id should match the prefix of the reads files (i.e. prefix_R1_001.fastq.gz /
-    ##	prefix_R2_001.fastq.gz),
+    ##    prefix_R2_001.fastq.gz),
     date_of_onset = models.DateField("date of onset", blank=True, null=True)
     date_of_collection = models.DateField("date of collection", blank=True, null=True)
     date_of_receipt_lab = models.DateField("date of receipt lab", blank=True, null=True)
@@ -564,9 +592,9 @@ class Sample(models.Model):
     ## has files, the user can upload the files after
     has_files = models.BooleanField(default=False)
 
-    ###	has the flag indicating that the sample can be processed by projects
+    ###    has the flag indicating that the sample can be processed by projects
     is_ready_for_projects = models.BooleanField(default=False)
-    ###	has the flag indicating that the sample has end of processing, if False it is ready for process
+    ###    has the flag indicating that the sample has end of processing, if False it is ready for process
     is_sample_in_the_queue = models.BooleanField(default=False)
 
     ### if is deleted in file system
@@ -733,10 +761,10 @@ class Sample(models.Model):
         try first trimmomatic/nanofilt, then return fastq
         """
         file_name = self.get_trimmomatic_file(type_path, b_first_file)
-        if os.path.exists(file_name):
+        if (file_name is not None) and os.path.exists(file_name):
             return file_name
         file_name = self.get_nanofilt_file(type_path)
-        if os.path.exists(file_name):
+        if (file_name is not None) and os.path.exists(file_name):
             return file_name
         return self.get_fastq(type_path, b_first_file)
 
@@ -821,6 +849,9 @@ class Sample(models.Model):
                 vect_identify_virus,
                 ConstantsVirus.SEQ_VIRUS_GENUS,
                 [ConstantsVirus.TYPE_BetaCoV],
+            )
+            sz_return_c += self.__get_type__(
+                vect_identify_virus, ConstantsVirus.SEQ_VIRUS_GENOTYPE, []
             )
 
             ## get several species
@@ -1264,9 +1295,9 @@ class Sample(models.Model):
 
     def get_type_technology(self):
         if self.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
-            return "Illumina"
+            return ConstantsSettings.TECHNOLOGY_illumina
         if self.type_of_fastq == Sample.TYPE_OF_FASTQ_minion:
-            return "ONT"
+            return ConstantsSettings.TECHNOLOGY_minion
         return "Not defined"
 
 
@@ -1325,8 +1356,8 @@ class Project(models.Model):
     PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY = "validated_variants.tsv"
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES = "validated_minor_iSNVs.tsv"  ## remove del and ins and everything bigger than >50
     PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels = "validated_minor_inc_indels.tsv"  ## with snps, del and ins and everything bigger than >50
-    ##					MIGUEL
-    ##					"Minor intra-host variants (inc. indels):"
+    ##                    MIGUEL
+    ##                    "Minor intra-host variants (inc. indels):"
     ## freebayes_variants_file_snp_indel
     PERCENTAGE_validated_minor_variants = 51  ## only pass <= 50
     PROJECT_FILE_NAME_SAMPLE_RESULT_TSV = "Sample_list.tsv"  ### first column ID instead of 'sample name' to be compatible with Phandango e Microreact
@@ -1346,6 +1377,20 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Pangolin_lineage = (
         "PangolinLineage.csv"  ### has the result of pangolin lineage
     )
+
+    PROJECT_FILE_NAME_Aln2pheno_report_COG_UK = (
+        "aln2pheno_final_report_COG_UK.tsv"  ### has results of aln2pheno
+    )
+    PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK = (
+        "aln2pheno_flagged_mutation_report_COG_UK.tsv"  ### has results of aln2pheno
+    )
+    PROJECT_FILE_NAME_Aln2pheno_report_pokay = (
+        "aln2pheno_final_report_pokay.tsv"  ### has results of aln2pheno
+    )
+    PROJECT_FILE_NAME_Aln2pheno_flagged_pokay = (
+        "aln2pheno_flagged_mutation_report_pokay.tsv"  ### has results of aln2pheno
+    )
+    PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped
 
@@ -1499,7 +1544,6 @@ class Project(models.Model):
     ):
         """
         clean a name based on dictionary, dict_to_clean = { ' ' : '_', '(' : '' , ')' : '' }
-
         """
         for key in dict_to_clean:
             name_to_clean = name_to_clean.replace(key, dict_to_clean[key])
@@ -1511,7 +1555,7 @@ class Project(models.Model):
     def get_global_file_by_project(self, type_path, file_name):
         """
         type_path: constants.TypePath -> MEDIA_ROOT, MEDIA_URL
-        file_name:	Project.PROJECT_FILE_NAME_MAFFT, ....
+        file_name: Project.PROJECT_FILE_NAME_MAFFT, ....
         """
         return os.path.join(self.__get_global_path__(type_path, None), file_name)
 
@@ -1532,20 +1576,14 @@ class Project(models.Model):
         if not element is None and len(element) > 0:
             return (
                 Constants.DIR_PROCESSED_FILES_PROJECT
-                + "/user_{0}/project_{1}/{3}/{4}".format(
-                    self.owner.id,
-                    self.project_directory_template,
-                    self.pk,
-                    self.PATH_MAIN_RESULT,
-                    element,
+                + "/user_{0}/project_{1}/{2}/{3}".format(
+                    self.owner.id, self.pk, self.PATH_MAIN_RESULT, element
                 )
             )
         return (
             Constants.DIR_PROCESSED_FILES_PROJECT
             + "/user_{0}/project_{1}/{2}".format(
-                self.owner.id,
-                self.pk,
-                self.PATH_MAIN_RESULT,
+                self.owner.id, self.pk, self.PATH_MAIN_RESULT
             )
         )
 
@@ -2097,7 +2135,9 @@ class ProcessControler(models.Model):
     PREFIX_SAMPLE = "sample_"
     PREFIX_PROJECT_SAMPLE = "project_sample_"
     PREFIX_PROJECT = "project_"
+    PREFIX_DATASET = "dataset_"
     PREFIX_TELEVIR_PROJECT = "televir_project_"
+    PREFIX_TELEVIR_REFERENCE_MAP = "televir_reference_map_"
     PREFIX_UPLOAD_FILES = "upload_files_"
     PREFIX_LINK_FILES_USER = "link_files_user_"
     PREFIX_COLLECT_ALL_SAMPLES_USER = "collect_all_samples_user_"
@@ -2128,7 +2168,6 @@ class ProcessControler(models.Model):
         ordering = ["creation_date"]
 
     ### get names for samples, project and project samples
-
     def get_name_sample(self, sample):
         return "{}{}".format(ProcessControler.PREFIX_SAMPLE, sample.pk)
 
@@ -2137,6 +2176,9 @@ class ProcessControler(models.Model):
 
     def get_name_project(self, project):
         return "{}{}".format(ProcessControler.PREFIX_PROJECT, project.pk)
+
+    def get_name_dataset(self, dataset):
+        return "{}{}".format(ProcessControler.PREFIX_DATASET, dataset.pk)
 
     def get_name_upload_files(self, upload_files):
         return "{}{}".format(ProcessControler.PREFIX_UPLOAD_FILES, upload_files.pk)
@@ -2152,6 +2194,11 @@ class ProcessControler(models.Model):
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
+
+    def get_name_televir_map(self, reference_pk):
+        return "{}{}".format(
+            ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk
+        )
 
     def __str__(self):
         return "PK:{} name:{}  is_finished:{}  is_running:{}  is_error:{}".format(

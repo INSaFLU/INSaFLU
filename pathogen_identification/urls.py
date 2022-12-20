@@ -21,6 +21,11 @@ urlpatterns = [
         name="PIproject-add",
     ),
     url(
+        r"check_project_name",
+        PIajax_views.validate_project_name,
+        name="check_project_name_exist",
+    ),
+    url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",
         PIviews.AddSamples_PIProjectsView.as_view(),
         name="add-sample-PIproject",
@@ -36,34 +41,37 @@ urlpatterns = [
         name="remove-sample-PIproject",
     ),
     url(
-        r"Projects/(?P<project>[a-zA-Z0-9_]+)/all_reports$",
+        r"Projects/(?P<pk1>\d+)/all_reports$",
         PIviews.Project_reports,
         name="all_PIproject_reports",
     ),
     url(
-        r"Projects/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)",
+        r"Projects/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)",
         PIviews.Sample_main.as_view(),
         name="sample_main",
     ),
     url(
-        r"Summary/project_(?P<project_name>[a-zA-Z0-9_]+)/sample_(?P<sample_name>[a-zA-Z0-9_]+)/run_(?P<run_name>[a-zA-Z0-9_]+)",
+        r"Project_Samples/(?P<pk1>\d+)/(?P<pk2>\d+)/all_reports$",
+        PIviews.Sample_reports,
+        name="all_PIsample_reports",
+    ),
+    url(
+        r"Summary/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",
     ),
     url(
         "igv_display",
-        PIviews.IGV_display,
+        PIajax_views.IGV_display,
         name="igv_browser",
-    ),  ## get values for IGV
-    url(
-        "show_igv_<slug:sample_name>/<slug:run_name>/<slug:reference>",
-        ajax_views.show_igv,
-        name="show_igv",
     ),  ## get values for IGV
     url("download_file", PIviews.download_file, name="download_file"),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
-        r"Scaffold/project_(?P<project>[a-zA-Z0-9_]+)/sample_(?P<sample>[a-zA-Z0-9_]+)/run_(?P<run>[a-zA-Z0-9_]+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
+        "download_refmap_files", PIviews.download_file_ref, name="download_refmap_files"
+    ),
+    url(
+        r"Scaffold/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)/scaffold_(?P<reference>[a-zA-Z0-9_]+)",
         PIviews.Scaffold_Remap.as_view(),
         name="scaffold_remap",
     ),
@@ -71,5 +79,10 @@ urlpatterns = [
         r"ajax/deploy_ProjectPI$",
         PIajax_views.deploy_ProjectPI,
         name="deploy_ProjectPI",
+    ),
+    url(
+        r"ajax/deploy_televir_map$",
+        PIajax_views.deploy_televir_map,
+        name="deploy_televir_map",
     ),
 ]

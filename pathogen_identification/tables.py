@@ -7,14 +7,14 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from managing_files.manage_database import ManageDatabase
-from settings.models import Technology
+from settings.models import Technology, Parameter
 
 from pathogen_identification.models import (
     FinalReport,
     ParameterSet,
     PIProject_Sample,
     Projects,
-    ReadClassification,
+    RawReference,
     ReferenceContigs,
     RunMain,
     SampleQC,
@@ -25,6 +25,8 @@ class ProjectTable(tables.Table):
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     description = tables.Column(verbose_name="Description", orderable=False)
+    settings = tables.Column(empty_values=(), orderable=False)
+
     samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
@@ -52,6 +54,18 @@ class ProjectTable(tables.Table):
         attrs = {"class": "table-striped table-bordered"}
         empty_text = "There are no Projects to show..."
 
+        sequence = (
+            "name",
+            "results",
+            "settings",
+            "samples",
+            "description",
+            "technology",
+            "running_processes",
+            "queued_processes",
+            "finished_processes",
+        )
+
     def render_technology(self, record):
         """
         return a reference name
@@ -63,7 +77,9 @@ class ProjectTable(tables.Table):
         return number of running processes in this project"""
 
         running = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_RUNNING:
                 running += 1
@@ -75,7 +91,9 @@ class ProjectTable(tables.Table):
         return number of queued processes in this project"""
 
         queued = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_QUEUED:
                 queued += 1
@@ -87,12 +105,43 @@ class ProjectTable(tables.Table):
         return number of finished processes in this project"""
 
         finished = 0
-        parameter_sets = ParameterSet.objects.filter(project=record)
+        parameter_sets = ParameterSet.objects.filter(
+            project=record, sample__sample__is_deleted=False
+        )
         for parameter_set in parameter_sets:
             if parameter_set.status == ParameterSet.STATUS_FINISHED:
                 finished += 1
 
         return finished
+
+    def render_settings(self, record):
+        color = ""
+        project_settings_exist = Parameter.objects.filter(
+            televir_project__pk=record.pk
+        ).exists()
+
+        if project_settings_exist:
+            color = 'style="color: purple;"'
+
+        parameters = (
+            "<a href="
+            + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
+            + ' data-toggle="tooltip" title="Manage settings">'
+            + f'<span ><i class="padding-button-table fa fa-pencil padding-button-table" {color}></i></span></a>'
+        )
+
+        if project_settings_exist:
+
+            parameters = parameters + (
+                '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-power-off" style="color: orange;" ></i></span> </a>'
+            )
+
+        return mark_safe(parameters)
 
     def render_results(self, record):
         """
@@ -105,14 +154,7 @@ class ProjectTable(tables.Table):
             + "Samples</a>"
         )
 
-        parameters = (
-            "<a href="
-            + reverse("pathogenID_pipeline", kwargs={"level": record.pk})
-            + ' data-toggle="tooltip" title="Manage settings">'
-            + '<span ><i class="padding-button-table fa fa-magic padding-button-table"></i></span></a>'
-        )
-
-        return mark_safe(parameters + " " + results)
+        return mark_safe(results)
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware
@@ -154,27 +196,14 @@ class ProjectTable(tables.Table):
         return a reference name
         """
         add_remove = ""
-        # if (ProjectSample.objects.filter(project__id=record.id, is_deleted=False).count() > 0):
-        # 	TODO
-        # 	add_remove = ' <a href=' + reverse('remove-sample-project', args=[record.pk]) + '><span ><i class="fa fa-trash"></i></span> Remove</a>'
-        # 	add_remove = ' <a href="#"><span ><i class="fa fa-trash"></i></span> Remove</a>'
 
-        n_processed = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=False, is_finished=True
+        nsamples = PIProject_Sample.objects.filter(
+            project__id=record.id, is_deleted=False
         ).count()
-        n_error = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=True, is_finished=False
-        ).count()
-        n_processing = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=False, is_finished=False
-        ).count()
-        tip_info = '<span ><i class="tip fa fa-info-circle" title="Processed: {}\nWaiting: {}\nError: {}"></i></span>'.format(
-            n_processed, n_processing, n_error
-        )
+
         return mark_safe(
-            tip_info
-            + " ({}/{}/{}) ".format(n_processed, n_processing, n_error)
-            + "<a href="
+            "{}".format(nsamples)
+            + " <a href="
             + reverse("add-sample-PIproject", args=[record.pk])
             + ' data-toggle="tooltip" title="Add samples" ><i class="fa fa-plus-square"></i> Add</a>'  # 		return mark_safe(tip_info + " ({}/{}/{}) ".format(n_processed, n_processing, n_error) + '<a href=# id="id_add_sample_message"' +\
             + add_remove
@@ -255,7 +284,7 @@ class SampleTable(tables.Table):
 
         record_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.name, record.name])
+            + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + "Run Panel"
             + "</a>"
@@ -275,7 +304,7 @@ class SampleTable(tables.Table):
         sample_name = record.sample.name
         sample_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.name, record.name])
+            + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
             + record.name
             + "</a>"
@@ -308,12 +337,68 @@ class SampleTable(tables.Table):
                 + sample_name
             )
 
-        print(sample_name)
         return mark_safe(sample_name)
 
     report = tables.LinkColumn(
-        "sample_main", text="Report", args=[tables.A("project__name"), tables.A("name")]
+        "sample_main", text="Report", args=[tables.A("project__pk"), tables.A("pk")]
     )
+
+
+class RawReferenceTable(tables.Table):
+    taxid = tables.Column(verbose_name="Taxid")
+    accid = tables.Column(verbose_name="Taxid representativde Accid")
+    description = tables.Column(verbose_name="Taxid representative Description")
+    classification_source = tables.Column(verbose_name="Classification Source")
+    counts = tables.Column(verbose_name="Counts")
+    status = tables.Column(verbose_name="Status")
+
+    class Meta:
+        model = RawReference
+        attrs = {"class": "paleblue"}
+        fields = (
+            "taxid",
+            "accid",
+            "description",
+            "counts",
+            "status",
+        )
+
+    def render_classification_source(self, record):
+        if record.classification_source == "1":
+            return "reads"
+
+        if record.classification_source == "2":
+            return "contigs"
+
+        if record.classification_source == "3":
+            return "reads / contigs"
+
+    def render_status(self, record):
+
+        if record.status == RawReference.STATUS_MAPPING:
+            return "Running"
+        elif record.status == RawReference.STATUS_MAPPED:
+            taxids_in_report = FinalReport.objects.filter(run=record.run).values_list(
+                "taxid", flat=True
+            )
+            if record.taxid in taxids_in_report:
+                return "Mapped"
+            else:
+                return "Mapped (0 reads)"
+
+        elif record.status == RawReference.STATUS_FAIL:
+            return "Fail"
+
+        elif record.status == RawReference.STATUS_UNMAPPED:
+
+            button = (
+                " <a "
+                + 'href="#" '
+                + 'id="remap_reference" '
+                + f"ref_id={record.pk} "
+                + '"><i class="fa fa-eye"></i></span> </a>'
+            )
+            return mark_safe("Unmapped" + button)
 
 
 class SampleQCTable(tables.Table):
@@ -393,6 +478,18 @@ class RunMainTable(tables.Table):
             "contig_classification",
         )
 
+        sequence = (
+            "name",
+            "report",
+            "enrichment",
+            "host_depletion",
+            "assembly_method",
+            "contig_classification",
+            "read_classification",
+            "success",
+            "runtime",
+        )
+
     def render_success(self, record):
         success = False
         final_reports = FinalReport.objects.filter(run=record).count()
@@ -415,7 +512,7 @@ class RunMainTable(tables.Table):
             '<a href="'
             + reverse(
                 "sample_detail",
-                args=[record.project.name, record.sample.name, record.name],
+                args=[record.project.pk, record.sample.pk, record.pk],
             )
             + '">'
             + "<i class='fa fa-bar-chart'></i>"

@@ -4,7 +4,9 @@ import shutil
 import traceback
 
 import pandas as pd
+from constants.constants import Constants, FileType, TypePath
 from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
 from managing_files.models import ProcessControler
 from utils.process_SGE import ProcessSGE
 
@@ -20,10 +22,7 @@ from pathogen_identification.models import (
     Submitted,
 )
 from pathogen_identification.modules.run_main import RunMain_class
-from pathogen_identification.utilities.update_DBs import (
-    Update_QC_report,
-    Update_Sample_Runs,
-)
+from pathogen_identification.utilities.update_DBs import Update_Sample_Runs
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
@@ -49,7 +48,7 @@ class PathogenIdentification_deployment:
         username: str = "admin",
         technology: str = "ONT",
         pk: int = 0,
-        deployment_root_dir: str = "project",
+        deployment_root_dir: str = "/tmp/insaflu/insaflu_something",
         dir_branch: str = "deployment",
     ) -> None:
 
@@ -70,17 +69,25 @@ class PathogenIdentification_deployment:
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
-    def input_read_project_path(self, filepath):
+    def input_read_project_path(self, filepath) -> str:
+        """copy input reads to project directory and return new path"""
+
         if not os.path.isfile(filepath):
             return ""
+
         rname = os.path.basename(filepath)
         new_rpath = os.path.join(self.dir, "reads") + "/" + rname
         shutil.copy(filepath, new_rpath)
         return new_rpath
 
-    def configure(self, r1_path: str, r2_path: str = "") -> None:
+    def configure(self, r1_path: str, r2_path: str = "") -> bool:
+        """generate config dictionary for run_main, and copy input reads to project directory."""
         self.get_constants()
-        self.configure_params()
+        branch_exists = self.configure_params()
+
+        if not branch_exists:
+            return False
+
         self.generate_config_file()
         self.prep_test_env()
 
@@ -92,28 +99,31 @@ class PathogenIdentification_deployment:
         self.config["r2"] = new_r2_path
         self.config["type"] = ["SE", "PE"][int(os.path.isfile(self.config["r2"]))]
 
-    def get_constants(self):
+        return True
 
+    def get_constants(self):
+        """set constants for technology"""
         if self.technology in "Illumina/IonTorrent":
             self.constants = ConstantsSettings.CONSTANTS_ILLUMINA
         if self.technology == "ONT":
             self.constants = ConstantsSettings.CONSTANTS_ONT
 
     def configure_params(self):
-        user = User.objects.get(username=self.username)
+        """get pipeline parameters from database"""
 
-        utils = Utils_Manager(user)
-        print(self.technology)
+        utils = Utils_Manager()
 
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         leaf_index = self.pipeline_index
 
-        if leaf_index not in all_paths.keys():
-            raise ValueError("Pipeline not found")
+        self.run_params_db = all_paths.get(self.pipeline_index, None)
 
-        else:
-            self.run_params_db = all_paths[leaf_index]
+        if self.run_params_db is None:
+            print("Pipeline index not found")
+            return False
+
+        return True
 
     def generate_config_file(self):
 
@@ -143,8 +153,6 @@ class PathogenIdentification_deployment:
             self.config["actions"][dr] = g
 
         self.config.update(self.constants)
-
-        print(self.config["directories"])
 
     def prep_test_env(self):
         """
@@ -198,8 +206,6 @@ class Run_Main_from_Leaf:
         pipeline_tree: SoftwareTree,
         odir: str,
     ):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
         self.user = user
         self.sample = input_data
         self.project = project
@@ -208,9 +214,11 @@ class Run_Main_from_Leaf:
         prefix = f"{simplify_name(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
         self.date_submitted = datetime.datetime.now()
 
-        self.file_r1 = input_data.sample.path_name_1.path
-        if input_data.sample.path_name_2:
-            self.file_r2 = input_data.sample.path_name_2.path
+        self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)
+        if input_data.sample.exist_file_2():
+            self.file_r2 = input_data.sample.get_fastq_available(
+                TypePath.MEDIA_ROOT, False
+            )
         else:
             self.file_r2 = ""
 
@@ -308,9 +316,37 @@ class Run_Main_from_Leaf:
             return new_run
 
     def configure(self):
-        self.container.configure(
+        configured = self.container.configure(
             self.file_r1,
             r2_path=self.file_r2,
+        )
+        return configured
+
+    def set_run_process_running(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_RUNNING,
+        )
+
+    def set_run_process_error(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_ERROR,
+        )
+
+    def set_run_process_finished(self):
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+        process_SGE.set_process_controler(
+            self.user,
+            process_controler.get_name_televir_project(self.unique_id),
+            ProcessControler.FLAG_FINISHED,
         )
 
     def Deploy(self):
@@ -321,6 +357,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.export_sequences()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
+            self.container.run_engine.export_logdir()
             return True
         except Exception as e:
             print(traceback.format_exc())
@@ -329,98 +366,29 @@ class Run_Main_from_Leaf:
 
     def Update_dbs(self):
 
-        Update_QC_report(self.container.run_engine.sample, self.parameter_set)
-        Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+        db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
+
+        return db_updated
 
     def register_submission(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_RUNNING,
-        )
 
+        self.set_run_process_running()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_subprocess()
 
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-        except Submitted.DoesNotExist:
+    def register_error(self):
 
-            submitted = Submitted(
-                parameter_set=new_run,
-                date_submitted=self.date_submitted,
-            )
-            submitted.save()
-
-    def delete_submission_error(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_ERROR,
-        )
+        self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
 
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-            submitted.delete()
-        except Submitted.DoesNotExist:
-            pass
+    def register_completion(self):
 
-    def delete_submission(self):
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_FINISHED,
-        )
+        self.set_run_process_finished()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
-
-        try:
-            submitted = Submitted.objects.get(
-                parameter_set=new_run,
-            )
-            submitted.delete()
-        except Submitted.DoesNotExist:
-            pass
-
-    def register_completion(self):
-
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
-
-        process_SGE.set_process_controler(
-            self.user,
-            process_controler.get_name_televir_project(self.unique_id),
-            ProcessControler.FLAG_FINISHED,
-        )
-
-        new_run = ParameterSet.objects.get(pk=self.pk)
-        date_processed = datetime.datetime.now()
-
-        try:
-            processed = Processed.objects.get(
-                parameter_set=new_run,
-            )
-        except Processed.DoesNotExist:
-
-            processed = Processed(
-                parameter_set=new_run,
-                date_processed=date_processed,
-            )
-            processed.save()
 
     def update_project_change_date(self):
         self.project.last_change_date = datetime.datetime.now()
@@ -430,15 +398,25 @@ class Run_Main_from_Leaf:
 
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
-            self.configure()
-            run_success = self.Deploy()
+            configured = self.configure()
+
+            if configured:
+                run_success = self.Deploy()
+            else:
+                print("Error in configuration")
+                self.register_error()
+                return
+
             if run_success:
-                self.Update_dbs()
-                # self.container.close()
-                self.register_completion()
-                self.delete_submission()
-                self.update_project_change_date()
+                update_successful = self.Update_dbs()
+                if update_successful:
+                    self.register_completion()
+                    self.update_project_change_date()
+
+                else:
+                    print("Error in updating database")
+                    self.register_error()
 
             else:
                 print("Error in run")
-                self.delete_submission_error()
+                self.register_error()

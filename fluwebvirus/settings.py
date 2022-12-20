@@ -15,7 +15,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.5.2"
+APP_VERSION_NUMBER = "1.6.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -69,6 +69,9 @@ MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config(
     "MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA", default=50000, cast=int
 )
 MAX_REF_FASTA_FILE = config("MAX_REF_FASTA_FILE", default=100000, cast=int)  ## 100k
+MAX_CONSENSUS_FASTA_FILE = config(
+    "MAX_CONSENSUS_FASTA_FILE", default=400000, cast=int
+)  ## 100k
 MAX_REF_GENBANK_FILE = config("MAX_REF_GENBANK_FILE", default=150000, cast=int)  ## 150k
 
 MAX_FASTQ_FILE_UPLOAD = config(
@@ -136,6 +139,7 @@ INSTALLED_APPS = [
     "django_bootstrap_breadcrumbs",
     "managing_files.apps.ManagingFilesConfig",
     "manage_virus.apps.ManageVirusConfig",
+    "datasets.apps.DatasetsConfig",
     "phylogeny.apps.PhylogenyConfig",
     "settings.apps.SettingsConfig",
     "log_login.apps.LogLoginConfig",

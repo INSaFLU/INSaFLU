@@ -1,5 +1,6 @@
 from braces.views import LoginRequiredMixin
 from constants.meta_key_and_values import MetaKeyAndValue
+from datasets.models import Dataset
 from django.contrib import messages
 from django.db import transaction
 from django.urls import reverse_lazy
@@ -33,20 +34,18 @@ class PISettingsView(LoginRequiredMixin, ListView):
     Home page
     """
 
-    # 	model = Software
-    # 	context_object_name = 'software'
+    #     model = Software
+    #     context_object_name = 'software'
     template_name = "settings/settings.html"
 
     def get_queryset(self):
-        print("qc get_queryset")
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
-    def duplicate_software_params_global_project(self, project):
+    def update_software_params_global_project(self, project):
         """
-        duplicate software global to project
+        update software global to project
         """
-        print("duplicate_software_global_project")
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
@@ -63,6 +62,54 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
             software.pk = None
             software.type_of_use = Software.TYPE_OF_USE_televir_project
+
+            existing_software = Software.objects.filter(
+                name=software.name,
+                type_of_use=Software.TYPE_OF_USE_televir_project,
+                parameter__televir_project=project,
+                pipeline_step=software.pipeline_step,
+            )
+
+            try:
+                Software.objects.get(
+                    name=software.name,
+                    type_of_use=Software.TYPE_OF_USE_televir_project,
+                    parameter__televir_project=project,
+                    pipeline_step=software.pipeline_step,
+                )
+
+            except Software.MultipleObjectsReturned:
+                pass
+
+            except Software.DoesNotExist:
+                software.save()
+                for parameter in software_parameters:
+                    parameter.pk = None
+                    parameter.software = software
+                    parameter.televir_project = project
+                    parameter.save()
+
+    def duplicate_software_params_global_project(self, project):
+        """
+        duplicate software global to project
+        """
+        ### get all global software
+        query_set = Software.objects.filter(
+            owner=self.request.user,
+            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_software=Software.TYPE_SOFTWARE,
+            is_obsolete=False,
+        )
+        project = Televir_Project.objects.get(pk=project.pk)
+        for software in query_set:
+
+            software_parameters = Parameter.objects.filter(
+                software=software,
+            )
+
+            software.pk = None
+            software.type_of_use = Software.TYPE_OF_USE_televir_project
+
             software.save()
 
             for parameter in software_parameters:
@@ -97,10 +144,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
         if televir_project:
             if not self.check_project_params_exist(televir_project):
                 self.duplicate_software_params_global_project(televir_project)
+            else:
+                self.update_software_params_global_project(televir_project)
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
@@ -159,7 +208,12 @@ class PISettingsView(LoginRequiredMixin, ListView):
 
         context["all_softwares"] = all_tables
         context["nav_settings"] = True
-        context["settings_pathogenid"] = True  ## True for global softwares
+        ## True for global softwares
+        if televir_project:
+            context["settings_pathid_project"] = True  ## True for project softwares
+            context["project_name"] = televir_project.name
+        else:
+            context["settings_pathogenid"] = True
         context[
             "show_info_main_page"
         ] = ShowInfoMainPage()  ## show main information about the institute
@@ -171,12 +225,11 @@ class QCSettingsView(LoginRequiredMixin, ListView):
     Home page
     """
 
-    # 	model = Software
-    # 	context_object_name = 'software'
+    #     model = Software
+    #     context_object_name = 'software'
     template_name = "settings/settings.html"
 
     def get_queryset(self):
-        print("qc get_queryset")
         """overwrite queryset to not get all software itens available in Software table"""
         return []
 
@@ -191,7 +244,7 @@ class QCSettingsView(LoginRequiredMixin, ListView):
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
@@ -246,8 +299,8 @@ class SettingsView(LoginRequiredMixin, ListView):
     Home page
     """
 
-    # 	model = Software
-    # 	context_object_name = 'software'
+    #     model = Software
+    #     context_object_name = 'software'
     template_name = "settings/settings.html"
 
     def get_queryset(self):
@@ -266,7 +319,7 @@ class SettingsView(LoginRequiredMixin, ListView):
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
@@ -482,6 +535,103 @@ class UpdateParametersProjView(LoginRequiredMixin, UpdateView):
                     fail_silently=True,
                 )
         return super(UpdateParametersProjView, self).form_valid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
+
+
+class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
+    model = Software
+    form_class = SoftwareForm
+    template_name = "settings/software_update.html"
+
+    ## Other solution to get the reference
+    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(UpdateParametersDatasetView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        kw["pk_dataset"] = self.kwargs.get("pk_dataset")
+        return kw
+
+    def get_success_url(self):
+        """
+        get source_pk from update project, need to pass it in context
+        """
+        dataset_pk = self.kwargs.get("pk_dataset")
+        return reverse_lazy("dataset-settings", kwargs={"pk": dataset_pk})
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateParametersDatasetView, self).get_context_data(**kwargs)
+
+        context["error_cant_see"] = self.request.user != context["software"].owner
+        context["pk_dataset"] = self.kwargs.get("pk_dataset")
+        context["nav_dataset"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        """
+        form update
+        """
+        ## save it...
+        with transaction.atomic():
+            software = form.save(commit=False)
+
+            dataset_id = self.kwargs.get("pk_dataset")
+            dataset = None
+            if not dataset_id is None:
+                try:
+                    dataset = Dataset.objects.get(pk=dataset_id)
+                except Dataset.DoesNotExist:
+                    messages.error(
+                        self.request,
+                        "Software '" + software.name + "' parameters was not updated",
+                    )
+                    return super(UpdateParametersDatasetView, self).form_valid(form)
+
+            paramers = Parameter.objects.filter(software=software, dataset=dataset)
+            b_change = False
+            for parameter in paramers:
+                if not parameter.can_change:
+                    continue
+                if parameter.get_unique_id() in form.cleaned_data:
+                    value_from_form = "{}".format(
+                        form.cleaned_data[parameter.get_unique_id()]
+                    )
+                    if value_from_form != parameter.parameter:
+                        b_change = True
+                        parameter.parameter = value_from_form
+                        parameter.save()
+
+            if b_change:
+                messages.success(
+                    self.request,
+                    "{} '".format("Software" if software.is_software() else "INSaFLU")
+                    + software.name
+                    + "' parameters were successfully updated for dataset '"
+                    + dataset.name
+                    + "'.",
+                    fail_silently=True,
+                )
+            else:
+                messages.success(
+                    self.request,
+                    "No parameters to update for {} '".format(
+                        "Software" if software.is_software() else "INSaFLU"
+                    )
+                    + software.name
+                    + "' for dataset '"
+                    + dataset.name
+                    + "'.",
+                    fail_silently=True,
+                )
+        return super(UpdateParametersDatasetView, self).form_valid(form)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this

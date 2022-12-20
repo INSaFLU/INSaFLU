@@ -9,13 +9,13 @@
 
 {% block breadcrumbs %}
 {{block.super}}
-{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
 {% breadcrumb project_name  "" %}
 {% endblock %}
 
 
 {% block content %}
-
 
 <div class="table-container">
     {% block table %}
@@ -24,17 +24,25 @@
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
+                {% if project_owner %}
                 <tr>
                     <th colspan="9">
+                        {% if not demo %}
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
                                 <a><span class="hidden-phone"> Deploy Pathogen identification </span></a>
                               </button>
                                
-                            </div>
                         </div>
-                    </th>                  
+                        {% endif %}
+                        </div class="btn-group">
+                        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                            <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
+                                </button>                        
+                        </div>
+                    </th>               
                 </tr>
+                {% endif %}
                 <tr>
                     {% for column in table.columns %}
                     {% if column.orderable %}
@@ -71,9 +79,19 @@
         </table>
     </div>
     {% endblock table %}
-	<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark">
-		<i class "fa fa-refresh"></i> Refresh</a>
-	</a>
+
+    {% if table.page and show_paginatior %}
+	{% block pagination %}
+	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+	{% bootstrap_pagination table.page url=request.get_full_path %}
+	{% endblock pagination %}
+    </div>
+    {% else %}
+    <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+    {% endif %}
+
+    <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+
 </div>
 </div>
 
@@ -124,6 +142,7 @@
             },
             data_type: 'json',
             success: function(data){
+                console.log(data);
                 if (data["is_ok"] == true && data["is_deployed"] == false) { 
                     alert("No runs to deploy");
                 }

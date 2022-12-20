@@ -87,6 +87,26 @@ class Metadata_handler:
         self.remap_targets = remap_targets
         self.remap_absent_taxid_list = remap_absent
 
+    @staticmethod
+    def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
+
+        if "acc_x" in df.columns:
+            df = df.rename(columns={"acc_x": "acc"})
+
+        if "acc_y" in df.columns:
+            if "acc" in df.columns:
+                df = df.drop(columns=["acc_y"])
+            else:
+                df = df.rename(columns={"acc_y": "acc"})
+
+        if "counts" in df.columns:
+            if "counts_x" in df.columns:
+                df = df.drop(columns=["counts_x"])
+            if "counts_y" in df.columns:
+                df = df.drop(columns=["counts_y"])
+
+        return df
+
     def results_process(self, df: pd.DataFrame, sift: bool = True) -> pd.DataFrame:
         """
         Process results.
@@ -104,26 +124,55 @@ class Metadata_handler:
             self.sift_report = self.sift_summary(df, sifted_df)
             df = sifted_df
 
+        df = self.prettify_reports(df)
+
         return df
 
     def get_metadata(self):
         """
         Get metadata from files.
         """
+        try:
+            self.accession_to_taxid = pd.read_csv(
+                self.input_accession_to_taxid_path, sep="\t", header=0
+            )
+        except:
+            self.accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
+            self.logger.info("No accession to taxid file found.")
+            self.logger.info(
+                "This file is required for mapping, check installation. Exiting."
+            )
+            exit()
 
-        self.accession_to_taxid = pd.read_csv(
-            self.input_accession_to_taxid_path, sep="\t", header=0
-        )
-        self.taxonomy_to_description = pd.read_csv(
-            self.input_taxonomy_to_descriptor_path, sep="\t", header=0
-        )
-        self.protein_to_accession = pd.read_csv(
-            self.input_protein_accession_equivalent_path, sep="\t", header=0
-        )
+        try:
+            self.taxonomy_to_description = pd.read_csv(
+                self.input_taxonomy_to_descriptor_path, sep="\t", header=0
+            )
+        except:
+            self.taxonomy_to_description = pd.DataFrame(
+                columns=["taxid", "description"]
+            )
+            self.logger.info("No taxonomy to description file found.")
+            self.logger.info(
+                "This file is required for mapping, check installation. Exiting."
+            )
+            exit()
 
-        self.protein_accession_to_taxid = pd.read_csv(
-            self.input_protein_accession_to_taxid_path, sep="\t", header=0
-        )
+        try:
+            self.protein_to_accession = pd.read_csv(
+                self.input_protein_accession_equivalent_path, sep="\t", header=0
+            )
+        except:
+            self.protein_to_accession = pd.DataFrame(columns=["protid", "acc"])
+            self.logger.info("No protein accession to protid file found.")
+
+        try:
+            self.protein_accession_to_taxid = pd.read_csv(
+                self.input_protein_accession_to_taxid_path, sep="\t", header=0
+            )
+        except:
+            self.protein_accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
+            self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
 
@@ -276,8 +325,45 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
+
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
+
+    def get_taxid_representative_accid(self, taxid: int) -> str:
+        """
+        Return representative accession for a given taxid.
+        """
+        if str(taxid) not in self.accession_to_taxid.taxid.astype(str).unique():
+            return "-"
+
+        accid_set = self.accession_to_taxid[
+            self.accession_to_taxid.taxid.astype(str) == str(taxid)
+        ].reset_index()
+
+        accid_set = accid_set.dropna(subset=["acc"])
+
+        if accid_set.shape[0] == 0:
+            return "-"
+        else:
+            return accid_set.acc.iloc[0]
+
+    def get_taxid_representative_description(self, taxid: int) -> str:
+        """
+        Return representative accession for a given taxid.
+        """
+        if str(taxid) not in self.taxonomy_to_description.taxid.astype(str).unique():
+            return "-"
+
+        desc_set = self.taxonomy_to_description[
+            self.taxonomy_to_description.taxid.astype(str) == str(taxid)
+        ].reset_index()
+
+        desc_set = desc_set.dropna(subset=["description"])
+
+        if desc_set.shape[0] == 0:
+            return "-"
+        else:
+            return desc_set.description.iloc[0]
 
     def merge_reports_clean(
         self,
@@ -285,10 +371,21 @@ class Metadata_handler:
     ):
         """merge the reports and filter them."""
 
-        targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
+        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
+        raw_targets["accid"] = raw_targets["taxid"].apply(
+            self.get_taxid_representative_accid
+        )
+        raw_targets["description"] = raw_targets["taxid"].apply(
+            self.get_taxid_representative_description
+        )
+        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+
         targets.dropna(subset=["taxid"], inplace=True)
         targets["taxid"] = targets["taxid"].astype(int)
 
+        targets = self.prettify_reports(targets)
+
+        self.raw_targets = raw_targets
         self.merged_targets = targets
 
     def generate_mapping_targets(
@@ -352,7 +449,7 @@ class Metadata_handler:
                         self.taxonomy_to_description.taxid.astype(int)
                     )
                     description = self.taxonomy_to_description[
-                        self.taxonomy_to_description.taxid == int(taxid)
+                        self.taxonomy_to_description.taxid.astype(int) == int(taxid)
                     ].description.unique()
 
                     if len(description) == 0:
@@ -361,21 +458,17 @@ class Metadata_handler:
                     if len(description) > 1:
                         description = sorted(description, key=len)
 
-                    description = description[-1]
+                    description = description[0]
                     description = scrape_description(pref, description)
 
-                    def determine_acc_in_file(acc, df: pd.DataFrame):
+                    def determine_taxid_in_file(taxid, df: pd.DataFrame):
                         """
                         determine if an accession is in a dataframe.
                         """
-                        if "acc" in df.columns:
-                            return acc in df.acc.unique()
-                        elif "acc_x" in df.columns and "acc_y" in df.columns:
-                            return (acc in df.acc_x.unique()) or (
-                                acc in df.acc_y.unique()
-                            )
-                        else:
-                            return False
+                        if "taxid" in df.columns:
+                            return str(taxid) in df.taxid.astype(str).unique()
+
+                        return False
 
                     remap_targets.append(
                         Remap_Target(
@@ -386,12 +479,14 @@ class Metadata_handler:
                             prefix,
                             description,
                             [nsnew.acc_in_file[0]],
-                            determine_acc_in_file(pref, self.rclass),
-                            determine_acc_in_file(pref, self.aclass),
+                            determine_taxid_in_file(taxid, self.rclass),
+                            determine_taxid_in_file(taxid, self.aclass),
                         )
                     )
-                    remap_plan.append([taxid, pref, fileset])
+                    remap_plan.append([taxid, pref, fileset, description])
 
-        self.remap_plan = pd.DataFrame(remap_plan, columns=["taxid", "acc", "file"])
+        self.remap_plan = pd.DataFrame(
+            remap_plan, columns=["taxid", "acc", "file", "description"]
+        )
 
         return remap_targets, remap_absent

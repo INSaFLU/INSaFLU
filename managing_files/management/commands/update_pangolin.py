@@ -25,13 +25,14 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		
 		software_pangolin = SoftwarePangolin()
-		self.stdout.write("Starting update pangolin and learn")
-		self.logger.info("Starting update pangolin and learn")
+		self.stdout.write("Starting update pangolin")
+		self.logger.info("Starting update pangolin")
 
 		try:
 			software_pangolin.run_pangolin_update()
-			self.logger.info("End update pangolin and learn")
+			self.logger.info("End update pangolin")
 			self.stdout.write("Success update pangolin")
-		except:
-			self.logger.info("Fail to update pangolin and learn")
-			self.stdout.write("Fail to update pangolin and learn")
+		except Exception as e:
+			message = "Fail to update pangolin: " + str(e)
+			self.logger.info(message)
+			self.stdout.write(message)

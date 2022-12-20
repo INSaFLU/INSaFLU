@@ -231,6 +231,9 @@ class UploadFiles(object):
 			except IOError as e:
 				print(e.args[0])
 				continue
+			except ValueError as e:    ## (e.errno, e.strerror)
+				print(e.args[0])
+				continue
 			
 			name = self.utils.clean_extension(os.path.basename(file))
 			try:

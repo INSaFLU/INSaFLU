@@ -31,17 +31,19 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
+from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Technology
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
-    QC_REPORT,
     ContigClassification,
     FinalReport,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -49,13 +51,13 @@ from pathogen_identification.models import (
     RunDetail,
     RunMain,
     RunRemapMain,
-    SampleQC,
+    Sample,
 )
 from pathogen_identification.tables import (
     ContigTable,
     ProjectTable,
+    RawReferenceTable,
     RunMainTable,
-    SampleQCTable,
     SampleTable,
 )
 
@@ -124,15 +126,30 @@ def is_all_check_box_in_session(vect_check_to_test, request):
 
 
 class IGVform(forms.Form):
-    sample_name = forms.CharField(max_length=100)
-    run_name = forms.CharField(max_length=100)
+    sample_pk = forms.CharField(max_length=100)
+    run_pk = forms.CharField(max_length=100)
     reference = forms.CharField(max_length=100)
     unique_id = forms.CharField(max_length=100)
-    project_name = forms.CharField(max_length=100)
+    project_pk = forms.CharField(max_length=100)
 
 
 class download_form(forms.Form):
     file_path = forms.CharField(max_length=300)
+
+    class Meta:
+
+        widgets = {
+            "myfield": forms.TextInput(
+                attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
+            ),
+        }
+
+
+class download_ref_form(forms.Form):
+    file = forms.CharField(max_length=300)
+    taxid = forms.CharField(max_length=50)
+    run = forms.IntegerField()
+    accid = forms.CharField(max_length=50)
 
     class Meta:
 
@@ -193,12 +210,13 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
         context["show_info_main_page"] = ShowInfoMainPage()
+        context["query_set_count"] = query_set.count()
         return context
 
 
 class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
     """
-    Create a new reference
+    Create a new Project
     """
 
     # utils = Utils()
@@ -319,10 +337,18 @@ class AddSamples_PIProjectsView(
     logger_production = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
+
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
         project = Projects.objects.get(pk=self.kwargs["pk"])
+        technology = None
+
+        if project.technology == CS.TECHNOLOGY_minion:
+            technology = Sample.TYPE_OF_FASTQ_minion
+        elif project.technology == CS.TECHNOLOGY_illumina:
+            technology = Sample.TYPE_OF_FASTQ_illumina
+
         context["nav_project"] = True
         if project.owner.id != self.request.user.id:
             context["error_cant_see"] = "1"
@@ -341,6 +367,7 @@ class AddSamples_PIProjectsView(
             is_deleted=False,
             is_deleted_processed_fastq=False,
             is_ready_for_projects=True,
+            type_of_fastq=technology,
         ).exclude(pk__in=samples_out)
 
         tag_search = "search_add_project_sample"
@@ -397,6 +424,7 @@ class AddSamples_PIProjectsView(
         ).configure(table)
         if self.request.GET.get(tag_search) != None:
             context[tag_search] = self.request.GET.get(tag_search)
+        context["televir_sample"] = True
         context["table"] = table
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["query_set_count"] = query_set.count()
@@ -608,7 +636,7 @@ class AddSamples_PIProjectsView(
                         "One sample was added to your project.",
                         fail_silently=True,
                     )
-            return HttpResponseRedirect(reverse_lazy("projects"))
+            return HttpResponseRedirect(reverse_lazy("PIprojects_main"))
         else:
             return super(AddSamples_PIProjectsView, self).form_invalid(form)
 
@@ -627,23 +655,49 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super(MainPage, self).get_context_data(**kwargs)
 
-        project = Projects.objects.get(pk=self.kwargs["pk"])
-        query_set = PIProject_Sample.objects.filter(project=project, is_deleted=False)
+        try:
+            project = Projects.objects.get(pk=self.kwargs["pk"])
+        except Projects.DoesNotExist:
+            project = None
+            messages.error(
+                self.request,
+                "Project with ID {} does not exist".format(self.kwargs["pk"]),
+                fail_silently=True,
+            )
+            raise Http404
+
+        if project.owner == self.request.user:
+            query_set = PIProject_Sample.objects.filter(
+                project=project, is_deleted=False
+            )
+            project_name = project.name
+            context["project_owner"] = True
+
+        else:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+            )
+
+            query_set = PIProject_Sample.objects.none()
+            project_name = "project"
+            context["project_owner"] = False
 
         samples = SampleTable(query_set)
-        print(pd.DataFrame(query_set.values()).columns)
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
-        context = {}
         context["table"] = samples
         context["project_index"] = project.pk
-        context["project_name"] = project.name
+        context["project_name"] = project_name
         context["nav_sample"] = True
         context["total_items"] = query_set.count()
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
+        context["query_set_count"] = query_set.count()
+        print(self.request.user.username)
+        context["demo"] = True if self.request.user.username == "demo" else False
 
         return context
 
@@ -660,21 +714,39 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super(Sample_main, self).get_context_data(**kwargs)
 
-        project_name = self.kwargs["project_name"]
-        sample_name = self.kwargs["sample_name"]
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
         user = self.request.user
 
-        runs = RunMain.objects.filter(
-            sample__name=sample_name,
-            project__name=project_name,
-            project__owner=user,
-        )
+        try:
+            project = Projects.objects.get(pk=project_pk)
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception:
+            messages.error(
+                self.request,
+                "Project with ID '{}' does not exist".format(project_pk),
+                fail_silently=True,
+            )
+            raise Http404
 
-        print(runs)
-        for r in runs:
-            print(r.name)
-            print(r.project.name)
-            print(r.sample.name)
+        if project.owner == self.request.user:
+            runs = RunMain.objects.filter(
+                sample__pk=sample_pk,
+                project__pk=project_pk,
+                project__owner=user,
+            )
+            sample_name = sample.sample.name
+            project_name = project.name
+
+        else:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+            runs = RunMain.objects.none()
+            sample_name = "sample"
+            project_name = "project"
 
         runs_table = RunMainTable(runs)
 
@@ -682,35 +754,105 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
             self.request, paginate={"per_page": ConstantsSettings.PAGINATE_NUMBER}
         ).configure(runs_table)
 
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
-
         context = {
             "nav_sample": True,
             "total_items": runs.count(),
             "show_paginatior": runs.count() > ConstantsSettings.PAGINATE_NUMBER,
             "show_info_main_page": ShowInfoMainPage(),
             "table": runs_table,
-            "name": sample_name,
+            "sample_name": sample_name,
             "project_main": True,
             "project_name": project_name,
             "project_index": project_pk,
+            "sample_index": sample_pk,
+            "query_set_count": runs.count(),
         }
 
         return context
 
 
-def Project_reports(requesdst, project):
+def Project_reports(requesdst, pk1):
     """
     sample main page
     """
     template_name = "pathogen_identification/allreports_table.html"
 
-    all_reports = FinalReport.objects.filter(run__project__name=project)
+    try:
+        project = Projects.objects.get(pk=int(pk1))
+    except Projects.DoesNotExist:
+        messages.error(
+            requesdst,
+            "Project does not exist",
+            fail_silently=True,
+        )
+        raise Http404
+
+    if project.owner == requesdst.user:
+        all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
+            "-coverage"
+        )
+        project_name = project.name
+
+    else:
+        messages.error(
+            requesdst,
+            "You do not have permission to access this project.",
+            fail_silently=True,
+        )
+        all_reports = FinalReport.objects.none()
+        project_name = "project"
 
     return render(
         requesdst,
         template_name,
-        {"all_reports": all_reports, "project": project},
+        {
+            "final_report": all_reports,
+            "project": project_name,
+            "project_index": project.pk,
+        },
+    )
+
+
+def Sample_reports(requesdst, pk1, pk2):
+    """
+    sample main page
+    """
+    template_name = "pathogen_identification/allreports_table.html"
+
+    try:
+        project = Projects.objects.get(pk=int(pk1))
+    except Projects.DoesNotExist:
+        messages.error(
+            requesdst,
+            "Project does not exist.",
+            fail_silently=True,
+        )
+        raise Http404
+
+    if project.owner == requesdst.user:
+        all_reports = FinalReport.objects.filter(
+            run__project__pk=int(pk1), sample__pk=int(pk2)
+        ).order_by("-coverage")
+        project_name = project.name
+
+    else:
+
+        messages.error(
+            requesdst,
+            "You do not have permission to access this project.",
+            fail_silently=True,
+        )
+        all_reports = FinalReport.objects.none()
+        project_name = "project"
+
+    return render(
+        requesdst,
+        template_name,
+        {
+            "final_report": all_reports,
+            "project": project_name,
+            "project_index": project.pk,
+        },
     )
 
 
@@ -723,42 +865,64 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
 
-        project_name = self.kwargs["project_name"]
-        run_name = self.kwargs["run_name"]
-        sample_name = self.kwargs["sample_name"]
-        user = self.request.user
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+        run_pk = int(self.kwargs["pk3"])
 
-        project_main = Projects.objects.get(name=project_name, owner=user)
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
+        try:
+            project_main = Projects.objects.get(pk=project_pk)
 
-        sample_main = PIProject_Sample.objects.get(
-            name=sample_name, project=project_main
-        )
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception as e:
+            messages.error(self.request, "Sample does not exist")
+            raise Http404
+
+        try:
+            run_main = RunMain.objects.get(pk=run_pk)
+        except Exception as e:
+            messages.error(self.request, "Run does not exist")
+            raise Http404
+
+        if self.request.user != project_main.owner:
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
+
+            return {"owner": False}
+
+        project_name = project_main.name
+        sample_name = sample.name
+        run_name = run_main.name
+
+        sample_main = run_main.sample
         #
 
-        run_main = RunMain.objects.get(
-            project=project_main, sample=sample_main, name=run_name
-        )
+        raw_references = RawReference.objects.filter(run=run_main).order_by("status")
+
+        raw_reference_table = RawReferenceTable(raw_references)
+
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
         run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
         #
-        print(run_assembly)
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
         #
         read_classification = ReadClassification.objects.get(
             sample=sample_main, run=run_main
         )
         #
-        final_report = FinalReport.objects.filter(sample=sample_main, run=run_main)
+        final_report = FinalReport.objects.filter(
+            sample=sample_main, run=run_main
+        ).order_by("-coverage")
         #
-        print("#####")
-        for value in final_report:
-            print(value.refa_dotplot)
-            print(value.covplot)
-            print(value.covplot_exists)
-
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )
@@ -782,6 +946,10 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_remap_main": reference_remap_main,
             "final_report": final_report,
             "project_index": project_pk,
+            "sample_index": sample_pk,
+            "run_index": run_pk,
+            "reference_table": raw_reference_table,
+            "owner": True,
         }
 
         return context
@@ -799,34 +967,52 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
         """"""
         # context = super().get_context_data(**kwargs)
 
-        project_name = self.kwargs["project"]
-        run_name = self.kwargs["run"]
-        sample_name = self.kwargs["sample"]
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+        run_pk = int(self.kwargs["pk3"])
         reference = self.kwargs["reference"]
         user = self.request.user
 
-        project_main = Projects.objects.get(name=project_name, owner=user)
-        project_pk = Projects.objects.get(name=project_name, owner=user).pk
-
-        sample_main = PIProject_Sample.objects.get(
-            name=sample_name, project=project_main
-        )
-        #
-
-        run_main = RunMain.objects.get(
-            project=project_main, sample=sample_main, name=run_name
-        )
         try:
+            project_main = Projects.objects.get(pk=project_pk)
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+            run_main = RunMain.objects.get(pk=run_pk)
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        if project_main.owner == user:
+
+            run_name = run_main.name
+            sample_name = sample.name
+            project_name = project_main.name
+            reference = (
+                reference.replace(".", "_")
+                .replace(";", "_")
+                .replace(":", "_")
+                .replace("|", "_")
+            )
+
             ref_main = ReferenceMap_Main.objects.get(
-                reference=reference, sample=sample_main, run=run_main
+                reference=reference, sample=sample, run=run_main
             )
             map_db = ReferenceContigs.objects.filter(
                 reference=ref_main,
                 run=run_main,
             )
-        except ReferenceMap_Main.DoesNotExist:
 
-            return Http404("Sample not found")
+        else:
+            map_db = ReferenceContigs.objects.none()
+            run_name = "run"
+            sample_name = "sample"
+            project_name = "project"
+            reference = "reference"
+
+            messages.error(
+                self.request,
+                "You do not have permission to access this project.",
+                fail_silently=True,
+            )
 
         context = {
             "nav_sample": True,
@@ -839,120 +1025,15 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_name": run_name,
             "reference": reference,
+            "sample_index": sample.pk,
+            "run_index": run_main.pk,
         }
 
         return context
 
 
-def IGV_display(requestdst):
-    """display python plotly app"""
-    template_name = "pathogen_identification/IGV.html"
-
-    if requestdst.method == "POST":
-        form = IGVform(requestdst.POST)
-        if form.is_valid():
-            print(form.cleaned_data)
-            project_name = form.cleaned_data.get("project_name")
-            sample_name = form.cleaned_data.get("sample_name")
-            run_name = form.cleaned_data.get("run_name")
-            reference = form.cleaned_data.get("reference")
-            unique_id = form.cleaned_data.get("unique_id")
-
-            data = {"is_ok": False}
-            print(project_name)
-            print(reference)
-
-            sample = PIProject_Sample.objects.get(
-                project__name=project_name, name=sample_name
-            )
-            run = RunMain.objects.get(name=run_name, sample=sample)
-            ref_map = ReferenceMap_Main.objects.get(
-                reference=reference, sample=sample, run=run
-            )
-            final_report = FinalReport.objects.get(
-                sample=sample, run=run, unique_id=unique_id
-            )
-
-            def remove_pre_static(path, pattern):
-                # path = path.split(pattern)[1]
-                # path = f"/{pattern}{path}"
-                # path = \path.replace(pattern, "")
-                print(path)
-                return path
-
-            path_name_bam = remove_pre_static(
-                ref_map.bam_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_bai = remove_pre_static(
-                ref_map.bai_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_reference = remove_pre_static(
-                ref_map.fasta_file_path, "/insaflu_web/INSaFLU/"
-            )
-            path_name_reference_index = remove_pre_static(
-                ref_map.fai_file_path, "/insaflu_web/INSaFLU/"
-            )
-
-            data["is_ok"] = True
-
-            data["path_reference"] = path_name_reference
-            data["path_reference_index"] = path_name_reference_index
-            data["path_bam"] = path_name_bam
-            data["path_bai"] = path_name_bai
-
-            data["reference_name"] = sample_name
-            data["sample_name"] = final_report.reference_contig_str
-
-            #### other files
-            data["bam_file_id"] = mark_safe(
-                '<strong>Bam file:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    "download_file",
-                    os.path.basename(path_name_bam),
-                    os.path.basename(path_name_bam),
-                )
-            )
-            data["bai_file_id"] = mark_safe(
-                '<strong>Bai file:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_bai,
-                    os.path.basename(path_name_bai),
-                    os.path.basename(path_name_bai),
-                )
-            )
-            data["reference_id"] = mark_safe(
-                '<strong>Reference:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_reference,
-                    os.path.basename(path_name_reference),
-                    os.path.basename(path_name_reference),
-                )
-            )
-            data["reference_index_id"] = mark_safe(
-                '<strong>Ref. index:</strong> <a href="{}" filename="{}">{}</a>'.format(
-                    path_name_reference_index,
-                    os.path.basename(path_name_reference_index),
-                    os.path.basename(path_name_reference_index),
-                )
-            )
-
-            data["static_dir"] = run.static_dir
-            print(run.static_dir)
-
-            return render(
-                requestdst,
-                template_name,
-                {
-                    "sample_name": final_report.reference_contig_str,
-                    "run_name": run_name,
-                    "reference": reference,
-                    "data": data,
-                },
-            )
-    else:
-        form = IGVform()
-
-
 def download_file_igv(requestdst):
     """download fasta file"""
-    print(requestdst.method)
     if requestdst.method == "POST":
         form = download_form(requestdst.POST)
 
@@ -977,10 +1058,13 @@ def download_file_igv(requestdst):
             ] = "attachment; filename=%s" % os.path.basename(filepath)
             # Return the response value
             return response
+    else:
+        return HttpResponseNotFound("file not found")
 
 
 def download_file(requestdst):
     """download fasta file"""
+
     if requestdst.method == "POST":
         form = download_form(requestdst.POST)
 
@@ -989,8 +1073,67 @@ def download_file(requestdst):
 
             BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-            print(BASE_DIR)
-            print(filepath)
+            if "//" in filepath:
+                filepath = "/" + filepath.split("//")[1]
+
+            if not os.path.isfile(filepath):
+                return HttpResponseNotFound(f"file {filepath} not found")
+
+            path = open(filepath, "rb")
+            # Set the mime type
+            mime_type, _ = mimetypes.guess_type(filepath)
+            # Set the return value of the HttpResponse
+            response = HttpResponse(path, content_type=mime_type)
+            # Set the HTTP header for sending to browser
+            response[
+                "Content-Disposition"
+            ] = "attachment; filename=%s" % os.path.basename(filepath)
+            # Return the response value
+            return response
+
+
+def download_file_ref(requestdst):
+    """download fasta file"""
+
+    if requestdst.method == "POST":
+        form = download_ref_form(requestdst.POST)
+
+        if form.is_valid():
+            file_request = form.cleaned_data.get("file")
+            run_index = int(form.cleaned_data.get("run"))
+            taxid = form.cleaned_data.get("taxid")
+            accid = form.cleaned_data.get("accid")
+
+            accid_simple = (
+                accid.replace(".", "_")
+                .replace(";", "_")
+                .replace(":", "_")
+                .replace("|", "_")
+            )
+
+            reference = ReferenceMap_Main.objects.get(
+                taxid=taxid,
+                run__pk=run_index,
+                reference=accid_simple,
+            )
+
+            if file_request == "mapped_subset_r1":
+                filepath = reference.mapped_subset_r1_fasta
+            elif file_request == "mapped_subset_r2":
+                filepath = reference.mapped_subset_r2_fasta
+            elif file_request == "fasta_file_path":
+                filepath = reference.fasta_file_path
+            elif file_request == "fasta_index_file_path":
+                filepath = reference.fai_file_path
+            elif file_request == "bam_file_path":
+                filepath = reference.bam_file_path
+            elif file_request == "bam_index_file_path":
+                filepath = reference.bai_file_path
+
+            else:
+                return HttpResponseNotFound(f"file {file_request} not found")
+
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
             # filepath = BASE_DIR + filepath
 

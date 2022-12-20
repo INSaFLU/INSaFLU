@@ -110,6 +110,7 @@ urlpatterns = [
         ajax_views.show_variants_as_a_table,
         name="show-variants-as-a-table",
     ),
+    url(r"^ajax/show_aln2pheno$", ajax_views.show_aln2pheno, name="show-aln2pheno"),
     url(
         r"^ajax/show_coverage_as_a_table$",
         ajax_views.show_coverage_as_a_table,
@@ -170,7 +171,7 @@ urlpatterns = [
         r"^ajax/remove_televir_project$",
         ajax_views.remove_televir_project,
         name="remove_televir_project",
-    ),  ## remove a project
+    ),  ## remove a televir project
     url(
         r"^ajax/remove_project_sample$",
         ajax_views.remove_project_sample,

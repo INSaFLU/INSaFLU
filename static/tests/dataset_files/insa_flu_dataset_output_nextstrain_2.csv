@@ -1,0 +1,8 @@
+strain,date,genbank_accession,region,host,1,2,3
+Wuhan/Hu-1/2019,2019-12-26,MN908947,Asia,?,?,?,?
+Wuhan/WH01/2019,2019-12-26,LR757998,Asia,?,?,?,?
+xpto,2019-12-26,?,Europe,?,a,b,?
+xpto3,2019-12-21,?,Europe,?,a3,b3,?
+xpto2,2018-12-21,?,Europe,?,?,a1,b1
+xptow2,2015-12-21,?,Europe,?,?,a1,b1
+xptow3,DATE_TO_REPLACE,?,Europe,?,?,a1,b1

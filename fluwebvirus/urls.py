@@ -77,6 +77,7 @@ urlpatterns += [
     url(r"^phylogeny/", include("phylogeny.urls")),
     url(r"^settings/", include("settings.urls")),
     #    url(r"^settings_pf/", include("settings_pf.urls")),
+    url(r"^datasets/", include("datasets.urls")),
 ]
 
 if settings.DEBUG is True:

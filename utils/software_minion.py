@@ -93,27 +93,23 @@ class SoftwareMinion(object):
         for keys_to_remove in MetaKeyAndValue.VECT_TO_REMOVE_RUN_SAMPLE:
             manage_database.remove_sample_start_metakey(sample, keys_to_remove)
 
-        ### remove some other # TODO deal with this
-        if sample.identify_virus.all().count() > 0:
-            sample.identify_virus.all().delete()
+        ### remove some other
+        sample.identify_virus.all().delete()
         if not sample.mixed_infections_tag is None:
             sample.mixed_infections_tag = None
         sample.number_alerts = 0
         sample.save()
 
         try:
-            print("Start run_clean_minion")
+
             ### run stat and rabbit for Images
             b_has_data, b_it_ran = self.run_nanofilt_and_stat(sample, user)
-
-            print("Result run_clean_minion: " + str(b_has_data))
 
             ### test Abricate ON/OFF
             default_software_project = DefaultProjectSoftware()
             b_make_identify_species = default_software_project.is_to_run_abricate(
                 sample.owner, sample, ConstantsSettings.TECHNOLOGY_minion
             )
-            print("b_make_identify_species: " + str(b_make_identify_species))
 
             ### queue the quality check and
             if (
@@ -128,11 +124,14 @@ class SoftwareMinion(object):
             sample_to_update.is_sample_in_the_queue = False
             if b_has_data:
                 sample_to_update.is_ready_for_projects = True
-                print("is_ready_for_projects")
 
                 ### make identify species
                 if b_make_identify_species:
-                    sample_to_update.type_subtype = sample_to_update.get_type_sub_type()
+                    sample_to_update.type_subtype = (
+                        sample_to_update.get_type_sub_type()[
+                            : Sample.TYPE_SUBTYPE_LENGTH - 1
+                        ]
+                    )
                     (
                         tag_mixed_infection,
                         alert,
@@ -211,9 +210,7 @@ class SoftwareMinion(object):
                     sample_to_update.number_alerts += 1
                 sample_to_update.is_ready_for_projects = False
                 sample_to_update.type_subtype = Constants.EMPTY_VALUE_TYPE_SUBTYPE
-
             sample_to_update.save()
-            print("sample_ saved")
 
             ### set the flag of the end of the task
             meta_sample = manage_database.get_sample_metakey_last(
@@ -221,8 +218,6 @@ class SoftwareMinion(object):
                 MetaKeyAndValue.META_KEY_Queue_TaskID,
                 MetaKeyAndValue.META_VALUE_Queue,
             )
-            print("meta_sample")
-            print(meta_sample)
             if meta_sample != None:
                 manage_database.set_sample_metakey(
                     sample,
@@ -572,11 +567,11 @@ class SoftwareMinion(object):
                 STDEV read length:                  17.2
                 Total bases:               103,672,824.0
                 Number, percentage and megabases of reads above quality cutoffs
-                >Q5:	211388 (100.0%) 103.7Mb
-                >Q7:	211388 (100.0%) 103.7Mb
-                >Q10:	191968 (90.8%) 93.9Mb
-                >Q12:	136331 (64.5%) 66.5Mb
-                >Q15:	16830 (8.0%) 8.2Mb
+                >Q5:    211388 (100.0%) 103.7Mb
+                >Q7:    211388 (100.0%) 103.7Mb
+                >Q10:    191968 (90.8%) 93.9Mb
+                >Q12:    136331 (64.5%) 66.5Mb
+                >Q15:    16830 (8.0%) 8.2Mb
         """
 
         if number_sequences == 0:
@@ -686,8 +681,8 @@ class SoftwareMinion(object):
         return temp_file_name
 
     """
-	Global processing, Medaka, Coverage, and MixedInfections
-	"""
+    Global processing, Medaka, Coverage, and MixedInfections
+    """
 
     def process_second_stage_medaka(self, project_sample, user):
         """
@@ -1386,7 +1381,7 @@ class SoftwareMinion(object):
 
         ### create depth
         depth_file = os.path.join(temp_dir, sample_name + ".depth.gz")
-        ##		cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
+        ##        cmd =  "{} depth -aa -q 10 {} | {} -c > {}".format(   ### with quality
         cmd = "{} depth {} {} | {} -c > {}".format(
             self.software_names.get_samtools(),
             parameters_depth,
@@ -1409,7 +1404,7 @@ class SoftwareMinion(object):
         ### vcf
         vcf_before_file = os.path.join(temp_dir, sample_name + "_before_annotation.vcf")
         cmd = "{} {} variant --verbose {} {} {};".format(
-            # 		cmd =  "{} {} snp --verbose {} {} {}".format(
+            #         cmd =  "{} {} snp --verbose {} {} {}".format(
             self.software_names.get_medaka_env(),
             self.software_names.get_medaka(),
             reference_fasta_medaka,

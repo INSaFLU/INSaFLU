@@ -5,6 +5,7 @@ from typing import Type
 
 from django.contrib.auth.models import User
 from django.core.files import File
+from django.db import IntegrityError, transaction
 from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
@@ -12,6 +13,7 @@ from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RawReference,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -33,8 +35,7 @@ def Update_project(project_directory_path, user: str = "admin"):
     """Updates the project"""
     project_directory_path = os.path.dirname(project_directory_path)
     project_name = os.path.basename(project_directory_path)
-    project_name_simple = project_name.replace(".", "_").replace(":", "_")
-    print("user: ", user)
+
     try:
         user = User.objects.get(username=user)
     except User.DoesNotExist:
@@ -42,7 +43,9 @@ def Update_project(project_directory_path, user: str = "admin"):
         sys.exit(1)
 
     try:
-        project = Projects.objects.get(name=project_name, created_by=user)
+        project = Projects.objects.get(
+            name=project_name, created_by=user, is_deleted=False
+        )
 
     except Projects.DoesNotExist:
         print("project_name: ", project_name)
@@ -64,10 +67,10 @@ def Update_Sample(sample_class: Sample_runClass):
     """
 
     user = User.objects.get(username=sample_class.user_name)
-    print(user)
-    print(sample_class.project_name)
-    print(sample_class.sample_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     try:
         PIProject_Sample.objects.get(
@@ -94,7 +97,9 @@ def Update_sample(sample_class: Sample_runClass):
     :return: None
     """
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     try:
         sample = PIProject_Sample.objects.get(
@@ -104,7 +109,11 @@ def Update_sample(sample_class: Sample_runClass):
 
     except PIProject_Sample.DoesNotExist:
         #
-        project = Projects.objects.get(name=sample_class.project_name, owner=user)
+        project = Projects.objects.get(
+            name=sample_class.project_name,
+            owner=user,
+            is_deleted=False,
+        )
 
         sample = PIProject_Sample(
             project=project,
@@ -126,7 +135,9 @@ def Update_sample_qc(sample_class: Sample_runClass):
     """
 
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project, name=sample_class.sample_name
@@ -139,13 +150,6 @@ def Update_sample_qc(sample_class: Sample_runClass):
 
     input_report = open(sample_class.input_fastqc_report, "r")
     processed_report = open(sample_class.processed_fastqc_report, "r")
-
-    print(sample_class.qc_soft)
-    print(sample_class.technology)
-    print(sample_class.reads_before_processing)
-    print(sample_class.reads_after_processing)
-    print(percent_passed)
-    print(sample_class.qcdata)
 
     try:
         sampleqc = SampleQC(
@@ -185,7 +189,9 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
     :return: None
     """
     user = User.objects.get(username=sample_class.user_name)
-    project = Projects.objects.get(name=sample_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=sample_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project, name=sample_class.sample_name
@@ -214,6 +220,7 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
         qc_report.save()
 
 
+@transaction.atomic
 def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     """get run data
     Update ALL run TABLES:
@@ -231,9 +238,17 @@ def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     :return: run_data
     """
 
-    Update_RunMain(run_class, parameter_set)
-    Update_Sample_Runs_DB(run_class, parameter_set)
-    Update_RefMap_DB(run_class, parameter_set)
+    try:
+        with transaction.atomic():
+            Update_RunMain(run_class, parameter_set)
+            Update_Sample_Runs_DB(run_class, parameter_set)
+            Update_RefMap_DB(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name} {e}")
+        return False
 
 
 def retrieve_number_of_runs(project_name, sample_name, username):
@@ -247,7 +262,7 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     user = User.objects.get(username=username)
 
     try:
-        project = Projects.objects.get(name=project_name, owner=user)
+        project = Projects.objects.get(name=project_name, owner=user, is_deleted=False)
     except Projects.DoesNotExist:
         print(f"project {project_name} does not exist")
         return 0
@@ -266,7 +281,7 @@ def RunIndex_Update_Retrieve_Key(project_name, sample_name):
 
     new_name = f"run_{run_index}"
 
-    project = Projects.objects.get(name=project_name)
+    project = Projects.objects.get(name=project_name, is_deleted=False)
     sample = PIProject_Sample.objects.get(
         name=sample_name,
         project__name=project_name,
@@ -290,7 +305,9 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     :return: None
     """
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         name=run_class.sample.sample_name,
@@ -298,9 +315,14 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     )
 
     reads_after_processing = run_class.sample.reads_after_processing
-    reads_proc_percent = (
-        reads_after_processing / run_class.sample.reads_before_processing
-    ) * 100
+
+    if run_class.sample.reads_before_processing > 0:
+        reads_proc_percent = (
+            reads_after_processing / run_class.sample.reads_before_processing
+        ) * 100
+
+    else:
+        reads_proc_percent = 0
 
     enrichment_method = run_class.enrichment_drone.classifier_method.name
     enrichment = run_class.enrichment_drone.deployed
@@ -354,7 +376,9 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
 def Sample_update_combinations(run_class: Type[RunMain_class]):
 
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project,
@@ -385,7 +409,9 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     # Sample_update_combinations(run_class)
 
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         project=project,
@@ -417,6 +443,10 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
             max_prop=run_class.run_detail_report.max_prop,  #
             max_mapped=run_class.run_detail_report.max_mapped,  #
             input=run_class.run_detail_report.input,  #
+            enriched_reads=run_class.run_detail_report.enriched_reads,  #
+            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
+            depleted_reads=run_class.run_detail_report.depleted_reads,  #
+            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
             processed=run_class.run_detail_report.processed,  #
             processed_percent=run_class.run_detail_report.processed_percent,  #
             sift_preproc=run_class.run_detail_report.sift_preproc,  #
@@ -507,6 +537,36 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         )
         remap_main.save()
 
+    for ref, row in run_class.raw_targets.iterrows():
+
+        if row.status:
+            status = RawReference.STATUS_MAPPED
+        else:
+            status = RawReference.STATUS_UNMAPPED
+        try:
+            remap_target = RawReference.objects.get(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+            )
+        except RawReference.DoesNotExist:
+            remap_target = RawReference(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+                status=status,
+                description=row.description,
+                counts=row.counts,
+                classification_source=row.source,
+            )
+
+            remap_target.save()
+
+    Update_FinalReport(run_class, runmain, sample)
+
+
+def Update_FinalReport(run_class, runmain, sample):
+
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue
@@ -518,7 +578,7 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
                 unique_id=row["unique_id"],
             )
         except FinalReport.DoesNotExist:
-            print(row["covplot_path"])
+
             report_row = FinalReport(
                 run=runmain,
                 sample=sample,
@@ -531,6 +591,7 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
                 description=row["description"],
                 ref_db=row["refdb"],
                 coverage=row["coverage"],
+                windows_covered=row["windows_covered"],
                 depth=row["Hdepth"],
                 depthR=row["HdepthR"],
                 ngaps=row["ngaps"],
@@ -564,24 +625,10 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     print(f"updating refmap_dbs run {run_class.prefix}")
 
-    for ref_map in run_class.remap_manager.mapped_instances:
-
-        Update_ReferenceMap(ref_map, run_class, parameter_set)
-
-
-def Update_ReferenceMap(
-    ref_map: Mapping_Instance,
-    run_class: RunMain_class,
-    parameter_set: ParameterSet,
-):
-    """
-    Updates the reference map data to TABLES.
-    - ReferenceMap_Main,
-    - ReferenceContigs
-    """
-
     user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(name=run_class.project_name, owner=user)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
 
     sample = PIProject_Sample.objects.get(
         name=run_class.sample.sample_name,
@@ -596,9 +643,26 @@ def Update_ReferenceMap(
         parameter_set=parameter_set,
     )
 
+    for ref_map in run_class.remap_manager.mapped_instances:
+
+        Update_ReferenceMap(ref_map, run, sample)
+
+
+def Update_ReferenceMap(
+    ref_map: Mapping_Instance,
+    run: RunMain,
+    sample: PIProject_Sample,
+):
+    """
+    Updates the reference map data to TABLES.
+    - ReferenceMap_Main,
+    - ReferenceContigs
+    """
+
     try:
         map_db = ReferenceMap_Main.objects.get(
             reference=ref_map.reference.target.acc_simple,
+            taxid=ref_map.reference.target.taxid,
             sample=sample,
             run=run,
         )
@@ -608,11 +672,15 @@ def Update_ReferenceMap(
             sample=sample,
             run=run,
             taxid=ref_map.reference.target.taxid,
-            # report=ref_map.report,
             bam_file_path=ref_map.reference.read_map_sorted_bam,
             bai_file_path=ref_map.reference.read_map_sorted_bam_index,
             fasta_file_path=ref_map.reference.reference_file,
             fai_file_path=ref_map.reference.reference_fasta_index,
+            mapped_subset_r1=ref_map.reference.mapped_subset_r1,
+            mapped_subset_r2=ref_map.reference.mapped_subset_r2,
+            mapped_subset_r1_fasta=ref_map.reference.mapped_subset_r1_fasta,
+            mapped_subset_r2_fasta=ref_map.reference.mapped_subset_r2_fasta,
+            vcf=ref_map.reference.vcf,
         )
         map_db.save()
 

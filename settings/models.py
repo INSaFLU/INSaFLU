@@ -1,3 +1,4 @@
+from datasets.models import Dataset
 from django.contrib.auth.models import User
 from django.db import models
 from managing_files.models import Project, ProjectSample, Sample
@@ -58,6 +59,7 @@ class Software(models.Model):
     TYPE_OF_USE_qc = 4  ### Used for  quality control
     TYPE_OF_USE_televir_global = 5  ### used for pathogen_identification.
     TYPE_OF_USE_televir_project = 6  ### Used for  pathogen_identification_projects.
+    TYPE_OF_USE_dataset = 7  ### Used in a particular dataset
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)
@@ -157,8 +159,8 @@ class Parameter(models.Model):
     ### It is only has one parameter. Example: "Generate consensus"
     ### "Generate consensus" -> it is used for set ON/OFF consensus in the AllConsensus File
 
-    name = models.CharField(max_length=50, db_index=True, blank=True, null=True)
-    parameter = models.CharField(max_length=50, db_index=True, blank=True, null=True)
+    name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+    parameter = models.CharField(max_length=150, db_index=True, blank=True, null=True)
     type_data = models.SmallIntegerField()
     software = models.ForeignKey(
         Software, related_name="parameter", on_delete=models.PROTECT
@@ -190,6 +192,14 @@ class Parameter(models.Model):
     ### this allow software to use in sample
     sample = models.ForeignKey(
         Sample,
+        related_name="parameter",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    ### this allow to have software parameters in datasets
+    dataset = models.ForeignKey(
+        Dataset,
         related_name="parameter",
         on_delete=models.PROTECT,
         blank=True,

@@ -3,6 +3,8 @@ Created on 03/05/2020
 
 @author: mmp
 """
+import logging
+
 from constants.software_names import SoftwareNames
 from managing_files.models import Project, ProjectSample, Sample
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -25,7 +27,7 @@ class DefaultProjectSoftware(object):
         self.default_parameters = DefaultParameters()
         self.change_values_software = {}  ### the key is the name of the software
 
-    def test_all_defaults(self, user, project, project_sample, sample):
+    def test_all_defaults(self, user, project, project_sample, sample, dataset=None):
         """
         test all defaults for all software available
         """
@@ -119,7 +121,7 @@ class DefaultProjectSoftware(object):
 
             ############# PATHOGEN IDENTIFICATION SOFTWARE
             #############
-            #self.test_default_db(
+            # self.test_default_db(
             #    SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             #    user,
             #    Software.TYPE_OF_USE_televir_project,
@@ -127,8 +129,18 @@ class DefaultProjectSoftware(object):
             #    None,
             #    None,
             #    ConstantsSettings.TECHNOLOGY_illumina,
-            #)
-
+            # )
+        elif not dataset is None:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+                user,
+                Software.TYPE_OF_USE_dataset,
+                project=None,
+                project_sample=None,
+                sample=None,
+                technology_name=ConstantsSettings.TECHNOLOGY_generic,
+                dataset=dataset,
+            )
 
             ## only for project sample and by technology
         elif not project_sample is None:
@@ -280,7 +292,7 @@ class DefaultProjectSoftware(object):
         project_sample,
         sample,
         technology_name,
-		pipeline_name=None,
+        dataset=None,
     ):
         """
         test if exist, if not persist in database
@@ -294,11 +306,16 @@ class DefaultProjectSoftware(object):
                 parameter__project=project,
                 parameter__project_sample=project_sample,
                 parameter__sample=sample,
+                parameter__dataset=dataset,
                 version_parameters=self.default_parameters.get_software_parameters_version(
                     software_name
                 ),
                 technology__name=technology_name,
             ).distinct("name")
+
+            # logger = logging.getLogger("fluWebVirus.debug")
+            # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
+
             ### if not exist need to save
             if len(list_software) == 0:
                 vect_parameters = self._get_default_parameters(
@@ -309,6 +326,7 @@ class DefaultProjectSoftware(object):
                     project_sample,
                     sample,
                     technology_name,
+                    dataset,
                 )
                 if len(vect_parameters) > 0:  ### persist
                     self.default_parameters.persist_parameters(
@@ -324,6 +342,7 @@ class DefaultProjectSoftware(object):
         project_sample,
         sample,
         technology_name,
+        dataset=None,
     ):
         if software_name == SoftwareNames.SOFTWARE_SNIPPY_name:
             vect_parameters = self.default_parameters.get_snippy_default(
@@ -509,11 +528,16 @@ class DefaultProjectSoftware(object):
                     user, software_name, None, vect_parameters, technology_name
                 )  ### base values
             return vect_parameters
+        elif software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+            vect_parameters = self.default_parameters.get_nextstrain_default(
+                user=user, dataset=dataset
+            )
+            return vect_parameters
         return []
 
     #####################################################
     #####
-    #####		snippy
+    #####        snippy
     #####
 
     def get_snippy_parameters(self, user, type_of_use, project, project_sample):
@@ -681,13 +705,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END snippy
+    #####        END snippy
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		BEGIN -- Freebayes
+    #####        BEGIN -- Freebayes
     #####
 
     def get_freebayes_parameters(self, user, type_of_use, project, project_sample):
@@ -737,13 +761,13 @@ class DefaultProjectSoftware(object):
         )
 
     #####
-    #####		END -- Freebayes
+    #####        END -- Freebayes
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		nanofilt
+    #####        nanofilt
     #####
 
     def get_nanofilt_parameters(self, user, type_of_use, sample):
@@ -927,13 +951,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END nanofilt
+    #####        END nanofilt
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Trimmomatic
+    #####        Trimmomatic
     #####
 
     def get_trimmomatic_parameters(self, user, type_of_use, sample):
@@ -1123,13 +1147,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END trimmomatic
+    #####        END trimmomatic
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Abricate
+    #####        Abricate
     #####
 
     def get_abricate_parameters(self, user, type_of_use, sample, technology_name):
@@ -1320,13 +1344,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END abricate
+    #####        END abricate
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Medaka
+    #####        Medaka
     #####
 
     def get_medaka_parameters(self, user, type_of_use, project, project_sample):
@@ -1497,13 +1521,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END medaka
+    #####        END medaka
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Samtools ONT
+    #####        Samtools ONT
     #####
 
     def get_samtools_parameters_ONT(self, user, type_of_use, project, project_sample):
@@ -1676,13 +1700,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END samtools ONT
+    #####        END samtools ONT
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Mask consensus
+    #####        Mask consensus
     #####
 
     def get_mask_consensus_parameters(
@@ -1868,13 +1892,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END Mask consensus
+    #####        END Mask consensus
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Generate consensus
+    #####        Generate consensus
     #####
 
     def include_consensus(self, project_sample):
@@ -1897,13 +1921,13 @@ class DefaultProjectSoftware(object):
         return True
 
     #####
-    #####		END Generate consensus
+    #####        END Generate consensus
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		Coverage limit ONT
+    #####        Coverage limit ONT
     #####
 
     def get_limit_coverage_ONT_parameters(
@@ -2083,13 +2107,13 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END Coverage limit ONT
+    #####        END Coverage limit ONT
     #####
     #####################################################
 
     #####################################################
     #####
-    #####		FREQ VCF ONT
+    #####        FREQ VCF ONT
     #####
 
     def get_freq_vcf_ONT_parameters(self, user, type_of_use, project, project_sample):
@@ -2261,7 +2285,7 @@ class DefaultProjectSoftware(object):
         return None
 
     #####
-    #####		END -- FREQ VCF ONT
+    #####        END -- FREQ VCF ONT
     #####
     #####################################################
 
@@ -2311,7 +2335,7 @@ class DefaultProjectSoftware(object):
         return self.change_values_software.get(key_value, False)
 
     def can_change_values_for_this_software(
-        self, software, project, project_sample, sample
+        self, software, project, project_sample, sample, dataset=None
     ):
         """Return True if some of can_change is True"""
         parameters = Parameter.objects.filter(
@@ -2319,6 +2343,7 @@ class DefaultProjectSoftware(object):
             project=project,
             project_sample=project_sample,
             sample=sample,
+            dataset=dataset,
         )
         for parameter in parameters:
             if parameter.can_change:
@@ -2334,6 +2359,7 @@ class DefaultProjectSoftware(object):
         project_sample,
         sample,
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        dataset=None,
     ):
         """ """
         self.test_default_db(
@@ -2344,6 +2370,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             sample,
             technology_name,
+            dataset,
         )
         return self.default_parameters.get_parameters(
             software_name,
@@ -2353,6 +2380,7 @@ class DefaultProjectSoftware(object):
             project_sample,
             sample,
             technology_name,
+            dataset,
         )
 
     def get_all_software(self):

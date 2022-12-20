@@ -34,6 +34,34 @@ def round_to_int(value):
     return value
 
 
+@register.filter(name="round_to_percent")
+def round_to_percent(value):
+    if value is None or value == "":
+        value = 0
+
+    value = round(value * 100, 2)
+    return value
+
+
+@register.filter("reconvert_string_to_int")
+def reconvert_string_to_int(value):
+
+    if value is None or value == "":
+        value = 0
+    elif "," in value:
+        value = value.replace(",", "")
+
+    return int(value)
+
+
+@register.filter("convert_int_to_str_format")
+def convert_int_to_str_format(value):
+    if value is None or value == "":
+        value = 0
+
+    return f"{int(value):,}"
+
+
 @register.filter(name="success_code")
 def map_success_col(success_count):
     ncol = f"background-color: rgba({cell_color}, {50 * success_count}%);"
@@ -50,6 +78,34 @@ def depth_color(depth_value, max_value):
 
     ncol = f"background-color: rgba({cell_color}, {int(ncol)}%);"
     return ncol
+
+
+@register.simple_tag
+def flag_false_positive(depth, depthc, coverage, mapped):
+
+    if depthc > 0 or coverage > 0:
+        if depthc / depth > 10 and coverage < 5:
+            return "Likely False Positive"
+
+        elif mapped < 3:
+
+            return "Vestigial Mapping"
+
+    return ""
+
+
+@register.simple_tag
+def flag_false_positive_color(depth, depthc, coverage, mapped):
+
+    if depthc > 0 or coverage > 0:
+
+        if depthc / depth > 10 and coverage < 5:
+            return "background-color: rgba(255, 0, 0, 0.5);"
+
+        elif mapped < 3:
+            return "background-color: rgba(255, 0, 0, 0.5);"
+
+    return ""
 
 
 @register.simple_tag

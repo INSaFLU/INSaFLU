@@ -41,6 +41,10 @@ class coverage_parse:
         self.Xm = Xm
         self.output = output
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
+
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -63,7 +67,7 @@ class coverage_parse:
 
         self.ctgl = ctg_lens
         self.report = pd.DataFrame(
-            [[x, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
+            [[x, 0, 0, 0, 0, 0, 0, 0, 0, 0] for x in ctg_lens.keys()],
             columns=[
                 "ID",
                 "Hdepth",
@@ -71,6 +75,7 @@ class coverage_parse:
                 "coverage",
                 "nregions",
                 "Rsize",
+                "windows_covered",
                 "ngaps",
                 "Gdist",
                 "Gsize",
@@ -128,6 +133,17 @@ class coverage_parse:
 
         return nbed
 
+    def calculate_windows(self, ctgsize, minw=3, maxw=10, wsize=2000):
+        """calculate number of windows to use for coverage calculation."""
+        ratio = ctgsize / wsize
+
+        if ratio < minw:
+            return minw
+        elif ratio > maxw:
+            return maxw
+        else:
+            return int(ratio)
+
     def bedstats(self, bedm, nwindows=50):
         """
         calculate average depth, % over self.Xm coverage, and gap number, size and distance.
@@ -142,8 +158,10 @@ class coverage_parse:
         results = [depth, depthR, overX]
         ### region operations
         bedp = bedm[bedm.x >= self.Xm].reset_index(drop=True)
+        windows_covered = "NA"
+
         if bedp.shape[0] == 0:
-            results.extend([0, 0])
+            results.extend([0, 0, 0])
         else:
             savg = sum(bedp.s) / bedp.shape[0]
             if len(bedp) > 1:
@@ -154,9 +172,14 @@ class coverage_parse:
 
                     bp = bedp[bedp.contig == ctg].copy()
                     ctgsize = self.ctgl[ctg]
-                    tdrange = list(np.linspace(0, ctgsize, nwindows, dtype=int))
+                    nwindows = self.calculate_windows(ctgsize)
+
+                    tdrange = list(np.linspace(0, ctgsize, nwindows + 1, dtype=int))
                     td_windows = [
-                        [tdrange[x], tdrange[x + 1] - 1]
+                        [
+                            tdrange[x],
+                            tdrange[x + 1] - 1 if tdrange[x + 1] < ctgsize else ctgsize,
+                        ]
                         for x in range(len(tdrange) - 1)
                     ]
 
@@ -168,15 +191,18 @@ class coverage_parse:
                         if sum(cmp) > 0:
                             present.append(i)
 
+                    windows_covered = f"{len(present)}/{nwindows}"
+
                     ks, pval = kstest(present, "uniform")
                     pvals.append(pval)
 
                 pvals = sum(pvals) / len(pvals)
                 savg = np.median(bedp.s)
-                results.extend([bedp.shape[0], savg])
+                results.extend([bedp.shape[0], savg, windows_covered])
 
             else:
-                results.extend([1, savg])
+                results.extend([1, savg, "NA"])
+
         ### gap operations.
         bedg = bedm[bedm.x < self.Xm].reset_index(drop=True)
 
@@ -244,10 +270,12 @@ class coverage_parse:
             "coverage",
             "nregions",
             "Rsize",
+            "windows_covered",
             "ngaps",
             "Gdist",
             "Gsize",
         ]
+
         report.columns = new_columns
 
         self.report = report
@@ -392,8 +420,10 @@ class Remap_Bwa(RemapMethod_init):
 
     def remap_SE(self):
         """
+
         Remap reads to reference using bwa for single end reads."""
-        cmd = [
+        temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
+        cmd_01 = [
             "bwa",
             "mem",
             self.args,
@@ -401,19 +431,24 @@ class Remap_Bwa(RemapMethod_init):
             self.threads,
             self.reference,
             self.r1,
-            "|",
+            ">",
+            temp_sam,
+        ]
+        cmd_samtools = [
             "samtools",
             "view",
             "-b",
             "-o",
             self.outbam,
-            "-",
+            temp_sam,
         ]
-        self.cmd.run(cmd)
+        self.cmd.run_script(cmd_01)
+        self.cmd.run_script(cmd_samtools)
 
     def remap_PE(self):
         """
         Remap reads to reference using bwa for paired end reads."""
+        temp_sam = os.path.join(self.outdir, self.prefix + ".sam")
         cmd = [
             "bwa",
             "mem",
@@ -423,15 +458,19 @@ class Remap_Bwa(RemapMethod_init):
             self.reference,
             self.r1,
             self.r2,
-            "|",
+            ">",
+            temp_sam,
+        ]
+        cmd_samtools = [
             "samtools",
             "view",
             "-b",
             "-o",
             self.outbam,
-            "-",
+            temp_sam,
         ]
-        self.cmd.run(cmd)
+        self.cmd.run_script(cmd)
+        self.cmd.run_script(cmd_samtools)
 
 
 class Remap_Minimap2(RemapMethod_init):
@@ -444,6 +483,25 @@ class Remap_Minimap2(RemapMethod_init):
             self.remap_PE()
         else:
             raise ValueError
+
+    def filter_secondary(self):
+        """
+        Filter secondary alignments from bam file."""
+        cmd = [
+            "samtools",
+            "view",
+            "-F0x900",
+            self.outsam,
+            ">",
+            self.outsam + ".filtered",
+        ]
+
+        try:
+            self.cmd.run(cmd)
+            os.remove(self.outsam)
+            shutil.copy(self.outsam + ".filtered", self.outsam)
+        except:
+            pass
 
     def remap_SE(self):
         """
@@ -461,6 +519,7 @@ class Remap_Minimap2(RemapMethod_init):
             self.outsam,
         ]
         self.cmd.run(cmd)
+        # self.filter_secondary()
 
     def remap_PE(self):
         """
@@ -479,6 +538,7 @@ class Remap_Minimap2(RemapMethod_init):
             self.outsam,
         ]
         self.cmd.run(cmd)
+        # self.filter_secondary()
 
 
 class Remap_Bowtie2(RemapMethod_init):
@@ -564,13 +624,17 @@ class Remapping:
         :param bin: path to bin directory.
         :param logging_level: logging level to use.
         """
-        self.method = method.name
+        self.method = method.name.split("_")[0]
         self.method_object = method
         self.args = method.args
         self.rdir = rdir
-        self.cleanup = False
+        self.cleanup = cleanup
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
+
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -605,16 +669,23 @@ class Remapping:
 
         self.genome_coverage = f"{self.rdir}/{self.prefix}.sorted.bedgraph"
         self.mapped_reads = f"{self.rdir}/{self.prefix}_reads_map.tsv"
-        self.assembly_map_paf = f"{self.rdir}/{self.prefix}.paf"
+        self.mapped_subset_r1_fasta = (
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r1.fasta"
+        )
+        self.mapped_subset_r2_fasta = (
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_reads_map_subset_r2.fasta"
+        )
+
+        self.assembly_map_paf = f"{self.rdir}/{self.prefix}_{target.acc_simple}.paf"
         self.mapped_subset_r1 = f"{self.rdir}/{self.prefix}.R1.kept.fastq.gz"
         self.mapped_subset_r2 = f"{self.rdir}/{self.prefix}.R2.kept.fastq.gz"
         self.read_map_sam_rmdup = f"{self.rdir}/{self.prefix}.rmdup.sam"
         self.mapped_contigs_fasta = (
-            f"{self.rdir}/{self.prefix}_{target.acc_simple}_mapepd_contigs.fa"
+            f"{self.rdir}/{self.prefix}_{target.acc_simple}_mapped_contigs.fasta"
         )
-        self.mapped_contigs_fasta_index = (
-            f"{self.rdir}/{self.prefix}_{target.acc_simple}_ref.fa.fai"
-        )
+        self.mapped_contigs_fasta_index = self.mapped_contigs_fasta + ".fai"
+
+        self.vcf = f"{self.rdir}/{self.prefix}.vcf"
 
         self.coverage_plot = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.coverage.png"
@@ -668,28 +739,39 @@ class Remapping:
 
     @staticmethod
     def relocate_file(filepath, destination):
+        """move file in filepath to destination"""
         subdirectory = os.path.join(destination, "remapping")
 
         os.makedirs(subdirectory, exist_ok=True)
         final_file = os.path.join(subdirectory, os.path.basename(filepath))
 
         if os.path.exists(filepath) and final_file != filepath:
-            print(f"PATH {filepath} exists")
             if os.path.exists(final_file):
                 os.remove(final_file)
 
             shutil.move(filepath, final_file)
             return final_file
 
-        # else:
-        #    print(f"PATH {filepath} does not exist")
-
     def relocate_mapping_files(self, destination):
+        """move all files generated by remapping to destination
+        possibly for future use:
+        self.mapped_subset_r1 = self.relocate_file(self.mapped_subset_r1, destination)
+        self.mapped_subset_r2 = self.relocate_file(self.mapped_subset_r2, destination)
+        """
+
+        self.mapped_subset_r1_fasta = self.relocate_file(
+            self.mapped_subset_r1_fasta, destination
+        )
+
+        self.mapped_subset_r2_fasta = self.relocate_file(
+            self.mapped_subset_r2_fasta, destination
+        )
 
         self.reference_file = self.relocate_file(self.reference_file, destination)
         self.reference_fasta_index = self.relocate_file(
             self.reference_fasta_index, destination
         )
+
         self.read_map_sorted_bam = self.relocate_file(
             self.read_map_sorted_bam, destination
         )
@@ -697,12 +779,14 @@ class Remapping:
             self.read_map_sorted_bam_index, destination
         )
         self.assembly_map_paf = self.relocate_file(self.assembly_map_paf, destination)
+
         self.mapped_contigs_fasta = self.relocate_file(
             self.mapped_contigs_fasta, destination
         )
         self.mapped_contigs_fasta_index = self.relocate_file(
             self.mapped_contigs_fasta_index, destination
         )
+        self.vcf = self.relocate_file(self.vcf, destination)
 
     def cleanup_files(self):
         for file in [
@@ -758,27 +842,41 @@ class Remapping:
         self.report = self.calculate_mapping_statistics()
         self.get_mapped_contig_names()
         self.get_mapped_reads_number()
-        self.get_reference_fasta_length()
-        self.reference_fasta_string = self.get_reference_contig_name()
+
         self.plot_coverage()
         self.plot_dotplot_from_paf()
         self.remapping_successful = True
         self.generate_mapped_contigs_fasta()
         self.index_mapped_contigs_fasta()
 
-        if self.cleanup:
-            self.cleanup_files()
-
     def get_reference_contig_name(self):
-        cmd = [
-            "grep",
-            "'>'",
-            self.reference_file,
-            "|",
-            "sed",
-            "'s/>//g'",
-        ]
-        self.reference_fasta_string = self.cmd.run_bash_return(cmd)
+        contig_names = []
+
+        with open(self.reference_file, "r") as f:
+            for line in f:
+                if line.startswith(">"):
+                    contig_names.append(line.strip().replace(">", ""))
+
+        return "; ".join(contig_names)
+
+    def sanitize_reference_fasta_contig_name(self):
+        """
+        Some fasta files have spaces in the contig names. This is not allowed for samtools.
+        """
+        with open(self.reference_file, "r") as f:
+            lines = f.readlines()
+
+        with open(self.reference_file, "w") as f:
+            for line in lines:
+                if line.startswith(">"):
+                    line = line.replace(";", "_").replace(":", "_")
+                f.write(line)
+
+    def retrieve_reference(self):
+        self.extract_reference_sequences()
+        self.get_reference_fasta_length()
+        self.reference_fasta_string = self.get_reference_contig_name()
+        self.sanitize_reference_fasta_contig_name()
 
     def run_remap(self):
         """
@@ -791,9 +889,11 @@ class Remapping:
 
         if self.check_remap_performed():
             self.logger.info("Remapping already performed")
-            self.extract_reference_sequences()
-            self.index_reference()
-            self.summarize()
+
+            if self.reference_file_exists:
+                self.retrieve_reference()
+                self.index_reference()
+                self.summarize()
 
             return self
 
@@ -803,23 +903,28 @@ class Remapping:
 
         os.makedirs(self.rdir, exist_ok=True)
 
-        self.extract_reference_sequences()
+        self.retrieve_reference()
+
+        if not self.reference_file_exists:
+            self.logger.info(f"No reference file found for {self.target.accid}")
+            return self
+
         self.index_reference()
 
         if not self.check_mapping_output_exists():
             self.remap_deploy()
 
-        if not self.check_mapping_output_exists():
-            self.logger.error(
-                f"Mapping output not found or unsuccesful after deploying on \
-                    target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
-            )
+        if self.check_mapping_output_exists():
+            self.remap_reads_post_process()
+            self.assembly_to_reference_map()
+            self.summarize()
+
+        else:
+            # self.logger.error(
+            #    f"Mapping output not found or unsuccesful after deploying on \
+            #        target(s): {self.target.accid_in_file}, file: {self.r1}, reference: {self.target.file}"
+            # )
             return
-
-        self.remap_reads_post_process()
-        self.assembly_to_reference_map()
-
-        self.summarize()
 
     def remap_reads_post_process(self):
         """
@@ -832,9 +937,62 @@ class Remapping:
         self.filter_bamfile_read_names()
         self.sort_bam()
         self.index_sorted_bam()
+        self.generate_vcf()
         self.get_genomecoverage()
         self.get_mapped_reads_no_header()
+        self.filter_sam_file_mapped()
         self.subset_mapped_reads()
+        self.mapped_reads_to_fasta()
+
+    def generate_vcf(self):
+        """
+        Generate vcf file from bam file.
+        """
+
+        if not self.check_remap_status_bam():
+            self.logger.error("Bam file not found.")
+            return
+
+        if self.check_vcf_exists():
+            self.logger.info("Vcf file already exists.")
+            return
+
+        cmd = [
+            "samtools",
+            "mpileup",
+            "-f",
+            self.reference_file,
+            self.read_map_sorted_bam,
+            ">",
+            self.vcf,
+        ]
+
+        try:
+            self.cmd.run(cmd)
+
+        except:
+            self.logger.error("Vcf generation failed.")
+            return
+
+    def check_vcf_exists(self):
+        """
+        Check if vcf file exists.
+        """
+
+        if os.path.isfile(self.vcf):
+            return True
+        else:
+            return False
+
+    def filter_sam_file_mapped(self):
+        """
+        Filter sam file for mapped reads.
+        """
+        cmd = "samtools view -F 4 %s > %s" % (
+            self.read_map_sorted_bam,
+            self.read_map_sam_rmdup,
+        )
+        self.cmd.run_script_software(cmd)
 
     def check_mapping_output_exists(self):
         if (
@@ -887,7 +1045,7 @@ class Remapping:
             self.assembly_map_paf,
             sep="\t",
             header=None,
-            usecols=[5],
+            usecols=[0],
             names=["contig_name"],
         ).contig_name.unique()
 
@@ -909,7 +1067,7 @@ class Remapping:
         if not self.assembly_map_paf_exists or self.number_of_contigs_mapped == 0:
             return
 
-        cmd = f"samtools faidx {self.mapped_contigs_fasta} > {self.mapped_contigs_fasta_index}"
+        cmd = f"samtools faidx {self.mapped_contigs_fasta}"
         self.cmd.run(cmd)
 
     def extract_reference_sequences(self):
@@ -929,15 +1087,13 @@ class Remapping:
 
         self.reference_file_exists = (
             os.path.isfile(self.reference_file)
-            and os.path.getsize(self.reference_file) > 0
+            and os.path.getsize(self.reference_file) > 100
         )
 
         if not self.reference_file_exists:
             self.logger.error(
                 f"Reference file {self.reference_file} does not exist or is empty"
             )
-
-            sys.exit(1)
 
     def get_reference_fasta_length(self):
         """
@@ -965,7 +1121,7 @@ class Remapping:
         ]
         self.cmd.run_bash(unzip_cmd)
 
-        cmd = f"minimap2 -t {self.threads} -cx asm10 {self.assembly_path} {self.reference_file} > {self.assembly_map_paf}"
+        cmd = f"minimap2 -t {self.threads} -cx asm10 {self.reference_file} {self.assembly_path} > {self.assembly_map_paf}"
         self.cmd.run(cmd)
 
         os.remove(tempfile)
@@ -1032,7 +1188,7 @@ class Remapping:
         if not output_sam:
             output_sam = os.path.join(self.rdir, f"temp{randint(1,1999)}.sam")
 
-        read_name_filter_regex = re.compile("^[A-Za-z0-9_-]*$")  # (r"@|=&$\t")
+        read_name_filter_regex = re.compile("^[A-Za-z0-9_.-]*$")  # (r"@|=&$\t")
 
         with open(self.read_map_sam, "r") as f:
             with open(output_sam, "w") as f2:
@@ -1135,7 +1291,7 @@ class Remapping:
         self.cmd.run(cmd)
 
         cmd2 = f"samtools view -h {temp_file} | grep -v '^@' | cut -f1 | sort | uniq > {self.mapped_reads}"
-        self.cmd.run(cmd2)
+        self.cmd.run_script_software(cmd2)
         os.remove(temp_file)
 
     def get_mapped_reads_number(self):
@@ -1151,13 +1307,13 @@ class Remapping:
         Subset mapped reads to R1, use seqtk."""
 
         cmd = f"seqtk subseq {self.r1} {tempfile} | gzip > {self.mapped_subset_r1}"
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def subset_mapped_reads_r2(self, tempfile=""):
         """
         Subset mapped reads to R2, use seqtk."""
         cmd = f"seqtk subseq {self.r2} {tempfile} | gzip > {self.mapped_subset_r2}"
-        self.cmd.run(cmd)
+        self.cmd.run_script_software(cmd)
 
     def subset_mapped_reads(self):
         """
@@ -1174,6 +1330,23 @@ class Remapping:
 
         os.remove(tempfile)
 
+    def mapped_reads_to_fasta(self):
+        """convert fastq subsets to fasta"""
+        if self.type == "SE":
+            cmd = (
+                f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
+            )
+            self.cmd.run_script_software(cmd)
+        elif self.type == "PE":
+            cmd = (
+                f"seqtk seq -a {self.mapped_subset_r1} > {self.mapped_subset_r1_fasta}"
+            )
+            self.cmd.run_script_software(cmd)
+            cmd2 = (
+                f"seqtk seq -a {self.mapped_subset_r2} > {self.mapped_subset_r2_fasta}"
+            )
+            self.cmd.run_script_software(cmd2)
+
     def calculate_mapping_statistics(self):
         """
         Calculate mapping statistics from bedtools bedgraph file.
@@ -1187,14 +1360,11 @@ class Remapping:
 
     def plot_coverage(self):
         if os.path.getsize(self.genome_coverage):
-            print("Plotting coverage")
-            print("bedgraph")
+
             bedgraph = Bedgraph(self.genome_coverage)
-            print(bedgraph)
             bedgraph.plot_coverage(self.coverage_plot, tlen=self.reference_fasta_length)
 
         self.coverage_plot_exists = os.path.exists(self.coverage_plot)
-        print("Coverage plot exists: {}".format(self.coverage_plot_exists))
 
     def plot_dotplot_from_paf(self):
         if os.path.getsize(self.assembly_map_paf):
@@ -1238,15 +1408,13 @@ class Remapping:
     def move_igv_files(self, static_dir):
         """
         Move igv files to static directory."""
-        print("MOVING FILES")
+
         new_bam = os.path.join(
             static_dir,
             os.path.basename(self.read_map_sorted_bam),
         )
         shutil.move(self.read_map_sorted_bam, new_bam)
         self.read_map_sorted_bam = new_bam
-
-        print(self.read_map_sorted_bam)
 
         new_bai = os.path.join(
             static_dir,
@@ -1416,10 +1584,10 @@ class Mapping_Instance:
         ntax["reference_assembly_paf"] = self.reference.assembly_map_paf
 
         if self.reference.number_of_contigs_mapped > 0:
-            ntax["mapped_scaffolds_path"] = self.assembly.mapped_contigs_fasta
+            ntax["mapped_scaffolds_path"] = self.reference.mapped_contigs_fasta
             ntax[
                 "mapped_scaffolds_index_path"
-            ] = self.assembly.mapped_contigs_fasta_index
+            ] = self.reference.mapped_contigs_fasta_index
         else:
             ntax["mapped_scaffolds_path"] = ""
             ntax["mapped_scaffolds_index_path"] = ""
@@ -1454,6 +1622,9 @@ class Tandem_Remap:
     ):
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -1527,7 +1698,7 @@ class Tandem_Remap:
 
         assembly_target = Remap_Target(
             "none",
-            "assembly",
+            f"{reference_remap.target.name}_assembly",
             "none",
             self.assembly_file,
             self.prefix,
@@ -1597,6 +1768,9 @@ class Mapping_Manager(Tandem_Remap):
         )
 
         self.logger = logging.getLogger(__name__)
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
@@ -1605,7 +1779,7 @@ class Mapping_Manager(Tandem_Remap):
 
         self.mapped_instances = []
         self.remap_targets = remap_targets
-        self.reads_before_processing = r1.read_number_raw + r2.read_number_raw
+        self.reads_before_processing = r1.read_number_clean + r2.read_number_clean
         self.reads_after_processing = (
             r1.get_current_fastq_read_number() + r2.get_current_fastq_read_number()
         )
@@ -1641,14 +1815,24 @@ class Mapping_Manager(Tandem_Remap):
 
             self.mapped_instances.append(mapped_instance)
 
-    def move_plots_to_static(self, static_dir):
-        for instance in self.mapped_instances:
-            apres = instance.reference.number_of_contigs_mapped > 0
-            rpres = instance.reference.number_of_reads_mapped > 0
+    def run_mappings_move_clean(self, static_plots_dir, media_dir):
+        for target in self.remap_targets:
+            mapped_instance = self.reciprocal_map(target)
+
+            self.mapped_instances.append(mapped_instance)
+
+            apres = mapped_instance.reference.number_of_contigs_mapped > 0
+            rpres = mapped_instance.reference.number_of_reads_mapped > 0
+
             if rpres:
-                instance.reference.move_coverage_plot(static_dir)
+                mapped_instance.reference.move_coverage_plot(static_plots_dir)
+                mapped_instance.export_mapping_files(media_dir)
+            else:
+                print("No reads mapped, skipping coverage plot")
+                # mapped_instance.reference.cleanup_files()
+
             if apres:
-                instance.reference.move_dotplot(static_dir)
+                mapped_instance.reference.move_dotplot(static_plots_dir)
 
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")
@@ -1674,11 +1858,14 @@ class Mapping_Manager(Tandem_Remap):
         if len(full_report) > 0:
 
             self.report = pd.concat(full_report, axis=0)
+
+        if self.cleanup:
             self.clean_final_report()
 
     def clean_final_report(self):
 
         self.report.ngaps = self.report.ngaps.fillna(0)
+        self.report = self.report[self.report.coverage > 0]
         self.report = self.report.sort_values(["coverage", "Hdepth"], ascending=False)
 
     def collect_final_report_summary_statistics(self):

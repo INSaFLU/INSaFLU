@@ -3,6 +3,7 @@ Created on 03/05/2020
 
 @author: mmp
 """
+import logging
 import os
 
 import django_tables2 as tables
@@ -53,9 +54,11 @@ class SoftwaresTable(tables.Table):
         sample=None,
         televir_project=None,
         b_enable_options=True,
+        dataset=None,
     ):
         tables.Table.__init__(self, query_set)
         self.project = project
+        self.dataset = dataset
         self.project_sample = project_sample
         self.sample = sample
         self.b_enable_options = b_enable_options
@@ -87,7 +90,6 @@ class SoftwaresTable(tables.Table):
     def render_select_to_run(self, value, record):
         ## test if its to run and get IDs from others
         is_to_run, sz_ids = self._is_to_run(record)
-
         ### When in sample you can not turn ON|OFF the software
         b_enable_options = self.b_enable_options
         if not self.sample is None:
@@ -145,9 +147,30 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
-        if self.project is None and self.project_sample is None and self.sample is None:
+        if (
+            self.project is None
+            and self.project_sample is None
+            and self.sample is None
+            and self.dataset is None
+        ):
             default_software = DefaultSoftware()
             return default_software.get_parameters(record.name, user, technology_name)
+        elif self.dataset is not None:
+
+            # default_software_projects = DefaultProjectSoftware()
+            # logger.debug("Dataset parameters for {}".format(self.dataset))
+            # TODO need to make this work...
+            # parameters = default_software_projects.get_parameters(software_name=record.name, user=user,
+            #    type_of_use=None, project=None, project_sample=None, sample=None,
+            #    technology_name=ConstantsSettings.TECHNOLOGY_generic, dataset=self.dataset)
+            # logger.debug("Dataset parameters:{}".format(parameters))
+            # return parameters
+            parameters_list = Parameter.objects.filter(dataset__name=self.dataset)
+
+            if len(list(parameters_list)) == 1:
+                return list(parameters_list)[0].parameter
+            else:
+                return "None"
         elif not self.project is None:
             default_software_projects = DefaultProjectSoftware()
             parameters = default_software_projects.get_parameters(
@@ -288,6 +311,57 @@ class SoftwaresTable(tables.Table):
                 )
                 + '" proj_name="'
                 + str(self.project.name)
+                + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
+                + "{}".format("" if b_enable_options else "disable_fa_icon")
+                + '"></i></span></a>'
+            )
+        elif not self.dataset is None:  ## for datasets
+            ### turn on/off buttons
+            if b_enable_options:  ## If b_enable_options is False it's false to All
+                default_software_projects = DefaultProjectSoftware()
+                b_enable_options = (
+                    default_software_projects.can_change_values_for_this_software(
+                        record,
+                        project=None,
+                        project_sample=None,
+                        sample=None,
+                        dataset=self.dataset,
+                    )
+                )
+
+            str_links = (
+                "<a href="
+                + reverse("software-dataset-update", args=[record.pk, self.dataset.pk])
+                + ' data-toggle="tooltip" title="Edit parameters" '
+                + "{}".format(
+                    "" if b_enable_options else "onclick='return false;' disable"
+                )
+                + '><span><i class="fa fa-2x fa-pencil padding-button-table '
+                + "{}".format("" if b_enable_options else "disable_fa_icon")
+                + '"></i></span></a>'
+            )
+
+            str_links += (
+                '<a href="{}"'.format(
+                    "#id_set_default_modal" if b_enable_options else ""
+                )
+                + ' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(
+                    tooltip_reset
+                )
+                + "{}".format(
+                    "" if b_enable_options else 'onclick="return false;" disable'
+                )
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '" pk_dataset="'
+                + str(self.dataset.pk)
+                + '" type_software="{}'.format(
+                    "software" if record.is_software() else "INSaFLU"
+                )
+                + '" dataset_name="'
+                + str(self.dataset.name)
                 + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
                 + "{}".format("" if b_enable_options else "disable_fa_icon")
                 + '"></i></span></a>'
@@ -462,6 +536,7 @@ class SoftwaresTable(tables.Table):
         for parameter in Parameter.objects.filter(
             software=record,
             project=self.project,
+            dataset=self.dataset,
             project_sample=self.project_sample,
             sample=self.sample,
         ):
@@ -474,8 +549,8 @@ class SoftwaresTable(tables.Table):
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project.id)
-        # if not self.televir_project is None:
-        #    sz_ids += 'televir_project_id="{}"'.format(self.televir_project.id)
+        if not self.dataset is None:
+            sz_ids += ' dataset_id="{}"'.format(self.dataset.id)
         if not self.project_sample is None:
             sz_ids += ' project_sample_id="{}"'.format(self.project_sample.id)
         if not self.sample is None:
@@ -486,8 +561,10 @@ class SoftwaresTable(tables.Table):
             parameters = Parameter.objects.filter(
                 software=record,
                 project=self.project,
+                dataset=self.dataset,
                 project_sample=self.project_sample,
                 sample=self.sample,
+                televir_project=self.televir_project,
             )
             if len(parameters) > 0:
                 is_to_run = parameters[0].is_to_run
@@ -599,6 +676,7 @@ class INSaFLUParametersTable(tables.Table):
         return record.name if record.name_extended is None else record.name_extended
 
     def render_select_to_run(self, value, record):
+
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project)

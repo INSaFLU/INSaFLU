@@ -6,14 +6,14 @@ import subprocess
 import sys
 from typing import Type
 
-from pathogen_identification.modules.object_classes import RunCMD
+from pathogen_identification.modules.object_classes import Read_class, RunCMD
 
 
 class Preprocess:
     def __init__(
         self,
-        r1,
-        r2,
+        r1: Read_class,
+        r2: Read_class,
         preprocess_dir,
         preprocess_type,
         preprocess_method,
@@ -264,9 +264,11 @@ class Preprocess:
             "stdin",
             "--outdir",
             self.preprocess_dir,
+            "-t",
+            str(self.threads),
         ]
 
-        self.cmd.run_bash(fastq_cmd)
+        self.cmd.run_script(fastq_cmd)
 
     def fastqc_SE(self):
         """
@@ -280,9 +282,11 @@ class Preprocess:
             "stdin",
             "--outdir",
             self.preprocess_dir,
+            "-t",
+            str(self.threads),
         ]
 
-        self.cmd.run_bash(fastq_cmd)
+        self.cmd.run_script(fastq_cmd)
 
     def fastqc_processed(self, suffix="processed_data"):
         """
@@ -324,9 +328,11 @@ class Preprocess:
             "stdin",
             "--outdir",
             self.preprocess_dir,
+            "-t",
+            str(self.threads),
         ]
 
-        self.cmd.run_bash(fastq_cmd)
+        self.cmd.run_script(fastq_cmd)
 
     def fastqc_processed_SE(self):
         """
@@ -340,9 +346,11 @@ class Preprocess:
             "stdin",
             "--outdir",
             self.preprocess_dir,
+            "-t",
+            str(self.threads),
         ]
 
-        self.cmd.run_bash(fastq_cmd)
+        self.cmd.run_script(fastq_cmd)
 
     def run_trimmomatic(self):
         """
@@ -574,7 +582,7 @@ class Preprocess:
             common_reads,
         ]
 
-        self.cmd.run(cmd_find_common)
+        self.cmd.run_script(cmd_find_common)
         if os.path.getsize(common_reads) == 0:
             self.logger.info("No common reads found")
             return
@@ -665,15 +673,15 @@ class Preprocess:
 
         mv_trimmomatic_output_r2_cmd = ["mv", temp2, self.r2]
 
-        self.cmd.run(find_common_seqtk_cmd)
+        self.cmd.run_script(find_common_seqtk_cmd)
         if os.path.getsize(common_reads) > 0:
-            self.cmd.run(subseq_r2_cmd)
-            self.cmd.run(subseq_r1_cmd)
+            self.cmd.run_script(subseq_r2_cmd)
+            self.cmd.run_script(subseq_r1_cmd)
             os.system(" ".join(mv_r1))
             os.system(" ".join(mv_r2))
-            self.cmd.run(trimmomatic_cmd)
-            self.cmd.run(" ".join(mv_trimmomatic_output_r1_cmd))
-            self.cmd.run(" ".join(mv_trimmomatic_output_r2_cmd))
+            self.cmd.run_script(trimmomatic_cmd)
+            self.cmd.run_script(" ".join(mv_trimmomatic_output_r1_cmd))
+            self.cmd.run_script(" ".join(mv_trimmomatic_output_r2_cmd))
 
         else:
             raise ValueError("No common reads found")

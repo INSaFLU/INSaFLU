@@ -1,0 +1,325 @@
+{% extends '_layouts/base.html' %}
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<link rel="stylesheet" href="{% static 'css/flu-web-site.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/insaphylogeo.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/project_sample_show.css' %}" type="text/css" />
+{% endblock css %}
+
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_remove"></div>
+	</div>
+{% endblock %}
+
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Datasets" "datasets" %}
+	{% breadcrumb "Show consensus in Dataset" "show-dataset-consensus" dataset.pk %}
+{% endblock %}
+
+{% block content %}
+
+	{% if error_cant_see %}
+		<hr>
+		<p><strong>Project sample not available</strong></p>
+	{% else %}
+	
+		<div id="accordion" role="tablist" aria-multiselectable="true">
+			<!-- Card overall project-->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingOne">
+					<h5 class="mb-0">
+						<!-- <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne"> -->
+							<strong>Dataset</strong> '{{ dataset.name }}'
+	        			<!-- </a> -->
+	      			</h5>
+	    		</div>
+	<!--
+	    		<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="headingOne">
+	      			<div class="card-block">
+	      				<div style="padding: 20px">
+							<div class="row">
+								<div class="col-lg-4"><strong>Data set Name:</strong> {{ dataset.name }}</div>
+							  	<div class="col-lg-4"><strong>Number of references:</strong> {{ different_references }}</div>
+							  	<div class="col-lg-4"><strong>#Consensus:</strong> {{ number_of_consensus }}</div>
+							</div>
+							<hr>
+							<div class="row">
+							  	<div class="col-lg-4"><strong>#References:</strong> {{ number_of_references }}</div>
+							  	<div class="col-lg-4"><strong>#Consensus from projects:</strong> {{ n_consensus_from_projects }}</div>
+							</div>
+							<hr>
+							<hr>
+						</div>
+	      			</div>
+	    		</div>
+		-->
+
+	  		</div>
+	
+	  
+			<!-- Card Phylogenetic trees by PhyloCanvas -->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingTwo">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+							<strong>Phylogenetic trees</strong> and metadata visualization
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo">
+	      			<div class="card-block">
+	      				<div class="container-fluid">
+	      					<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div id="tree_nwk_id" class="col-lg-5"></div>
+						  		<div id="tree_tree_id" class="col-lg-5"></div>
+	      					</div>
+	      					
+	      					<!-- Show files to download, trees -->
+	      					<div id='loader_phylocanvas'><img src="{{ spinner_url }}"/></div>
+	        				<div id="phylocanvas" dataset_id="{{ dataset.pk }}" show-phylo-canvas-url="{% url 'show-phylo-canvas-datasets' %}"></div>
+	        			</div>
+	      			</div>
+	    		</div>
+	  		</div>
+	  		
+	  		
+	  		<!-- Card Nucleotide alignments by MSAViewer -->
+			<div class="card">
+				<div class="card-header" role="tab" id="headingThree">
+					<h5 class="mb-0">
+						<a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+							<strong>Nucleotide alignments</strong> by MSAViewer
+	        			</a>
+	      			</h5>
+	    		</div>
+	
+	    		<div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
+	      			<div class="card-block">
+	      				<div class="container-fluid">
+	      					<br>
+	      					<div class="regular_info_box form-inline">
+						  		<div id="alignment_fasta_id" class="col-lg-5"></div>
+						  		<div id="alignment_nex_id" class="col-lg-5"></div>
+	      					</div>
+	      					<br>
+	      					<!-- Show files to download -->
+	      					<div id='loader_msa_viewer_nucleote_id'><img src="{{ spinner_url }}"/></div>
+	        				<div id="msa_viewer_nucleote_id" dataset_id="{{ dataset.pk }}" show-msa-nucleotide-url="{% url 'show-msa-nucleotide-datasets' %}"></div>
+	        			</div>
+	      			</div>
+	    		</div>
+	  		</div>
+		</div>
+	
+		<hr>
+		{% if table.page and show_paginatior %}
+		  <div class="table-container">
+		{% endif %}
+		       	{% block table %}
+				    <div class="table-responsive">
+				        <table id="table_to_show_samples_from_project_id" class="table table-hover table-bordered table-striped" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
+				            {% block table.thead %}
+				            <thead>                 
+				      			<tr>
+				                    <th colspan="9">
+					                    <div class="btn-group">
+
+										<!-- Info -->
+
+											<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			    								Download
+			  								</button>
+			  								<div class="dropdown-menu">
+			  									{% if dataset_file_result_csv %} {{ dataset_file_result_csv }} {% endif %}
+			    								{% if dataset_file_result_tsv %} {{ dataset_file_result_tsv }} {% endif %}
+			    								<!--  all consensus -->
+			    								{% if all_consensus %}
+			    									<div class="dropdown-divider"></div>
+			    									{{ all_consensus }}
+			    								{% endif %}
+			    								
+												{% if nextstrain_auspice_zip or nextstrain_error or dataset_file_nextstrain_tsv %}	
+			    									<div class="dropdown-divider"></div>
+			    									{{ nextstrain_error }}
+												{{ dataset_file_nextstrain_tsv }}
+												{{ nextstrain_auspice_zip }}
+			    								{% endif %}
+			    								{% if download_all_files %}
+			    									<div class="dropdown-divider"></div>
+			    									{{ download_all_files }}
+			    								{% endif %}
+											</div>
+										</div>
+										
+										<!-- Meta Data -->
+											<a href="{% url 'dataset-update-metadata' dataset.pk %}" id="id_dataset_update_metadata"
+												title="Upload metadata to update '{{dataset.name}}' dataset from a tsv file"
+												class="btn btn-small btn-primary dark"
+	                    						data-toggle="tooltip">
+	                    						<span class="hidden-phone"><i class="fa fa-plus-square"></i> Metadata for NextStrain</span>
+	                    					</a>
+										
+										<!-- Show nextClade link -->
+										{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 %}
+											<div class="btn-group" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
+												<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+													Jump to NextClade
+				  								</button>
+				  								<div class="dropdown-menu">
+													{% if nextclade_link_covid %} 
+														<a href="{{nextclade_link_covid}}" data-title="Upload your Consensus File in NextClade Annotation SARS-CoV-2" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (SARS-CoV-2)</span></a>
+													{% elif nextclade_link_mpxv_hmpxv_b1 %} 
+														<a href="{{nextclade_link_mpxv_hmpxv_b1}}" data-title="Upload your Consensus File in NextClade MPXV B1" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV B1)</span></a>
+														<a href="{{nextclade_link_mpxv_hmpxv}}" data-title="Upload your Consensus File in NextClade Annotation MPXV" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV)</span></a>
+														<a href="{{nextclade_link_mpxv_all_clades}}" data-title="Upload your Consensus File in NextClade MPXV (All Clades)" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV All clades)</span></a>
+													{% else %}
+														<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H3N2)</span></a>
+														<a href="{{nextclade_link_a_h1n1}}" data-title="Upload your Consensus File in NextClade Annotation A-H1N1" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H1N1)</span></a>
+														<a href="{{nextclade_link_b_yamagata}}" data-title="Upload your Consensus File in NextClade Annotation B-Yamagata" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
+														<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
+															class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
+													{% endif %}
+												</div>
+											</div>
+										{% endif %}
+										
+										<!--  To search  -->
+										<form method="get" action="" class="form-inline form-search pull-right">
+				                        	{% csrf_token %}
+				                            <div class="pull-right form-search">
+				                            	<input id="search_form_id" name="search_add_project_sample" type="text" class="form-control col-sm-9" placeholder="Name and Type"{% if search_add_project_sample %} value="{{ search_add_project_sample }}"{% endif %}>
+				                              	<button type="submit" name="search_in_table" class="btn btn-small btn-dark"><i class="fa fa-search"></i> Search</button> 
+				                            </div>              
+				                        </form>
+
+										<!--  Info about  -->				                        
+										<div class="modal-body alert alert-info" style="margin-top:5px" >
+											<i class="fa fa-info-circle"></i>
+											Download the json files and drag&drop them in <a href="https://auspice.us/" target="_blank" data-toggle="tooltip" title="auspice.us">auspice.us</a>.
+											(also upload the Nextstrain_metadata.tsv to enrich the displayed metadata)
+										</div>
+				                    </th>                  
+				                </tr>
+				             
+				              <tr>
+				                {% for column in table.columns %}
+				                   {% if column.orderable %}
+				                    	<th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+				                    {% else %}
+				                    	<th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+				                    {% endif %}
+				                {% endfor %}
+				              </tr>
+				            </thead>
+				            {% endblock table.thead %}
+				            {% block table.tbody %}
+				            <tbody id="id_tbody">
+				                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+				                  {% block table.tbody.row %}
+				                  <tr id="row_{{ row.record.id }}" class="{% cycle 'odd' 'even' %}">
+				                      {% for column, cell in row.items %}
+				                          <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+				                      {% endfor %}
+				                  </tr>
+				                  {% endblock table.tbody.row %}
+				                {% empty %}
+				                  {% if table.empty_text %}
+				                  {% block table.tbody.empty_text %}
+				                  	<tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+				                  {% endblock table.tbody.empty_text %}
+				                  {% endif %}
+				                {% endfor %}
+				            </tbody>
+				            {% endblock table.tbody %}
+				            {% block table.tfoot %}
+				            	<tfoot></tfoot>
+				            {% endblock table.tfoot %}
+				        </table>
+				    </div>
+				{% endblock table %}
+				
+				{% if table.page and show_paginatior %}
+				    {% block pagination %}
+				    	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+				        {% bootstrap_pagination table.page url=request.get_full_path %}
+				    {% endblock pagination %}
+				  </div>
+				{% else %}
+					<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+				{% endif %}
+		
+				<a id="id_go_back_button" href="{% url 'datasets' %}" class="btn btn-small btn-primary dark"><i class="fa fa-arrow-left"></i> Go back</a>
+				<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+				<!-- The Modal -->
+				<!-- The remove Modal -->
+				<div class="modal fade" id="id_remove_modal">
+					<div class="modal-dialog">
+						<div class="modal-content">
+		  					<!-- Modal Header -->
+		  					<div class="modal-header alert alert-warning">
+		    					<h4 class="modal-title-remove">Remove a Consensus in a Data set</h4>
+		    					<button type="button" class="close" data-dismiss="modal">&times;</button>
+		  					</div>
+		  
+		  					<!-- Modal body -->
+		  					<div class="modal-body mx-auto mw-100">
+		  						<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_consensus_in_dataset' %}">
+		  							<label id="id-label-remove" class="col-form-label">Folder Name</label>
+		   						</div>
+		  					</div>
+		  					<!-- Modal footer -->
+		  					<div class="modal-footer" id="id-modal-footer-remove">
+		    					<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+		    					<button type="button" class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		  					</div>
+						</div>
+			 		</div>
+				</div>
+	{% endif %}
+ {% endblock content%}
+
+ {% block js %}
+ 
+ 	 {% load static from staticfiles %}
+ 	 		<!-- Custom scripts for all pages-->
+	    	
+	    	<!-- <script type="text/javascript" src="https://cdn.rawgit.com/phylocanvas/phylocanvas-quickstart/v2.8.1/phylocanvas-quickstart.js"></script> -->
+	    	<script type="text/javascript" src="{% static 'vendor/phylocanvas/v2.8.1/phylocanvas-quickstart.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/sample-project/gff-parser.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'js/dataset/show-dataset-consensus.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'vendor/msa/msa.min.1.0.js' %}"></script>
+	    	
+	    	<!--  JS to insaphylo -->
+	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/aux.js' %}"></script>
+	    	<script type="text/javascript" src="{% static 'vendor/insaphylo/tree.js' %}" defer></script>
+	    	<!--  END JS to insaphylo -->
+			
+			<script type="text/javascript" src="{% static 'vendor/raphael/raphael.min.js' %}"></script>
+	<script>	
+		$('#id_go_back_button').on('click', function(){
+			wait_screen();
+		});
+	</script>	
+ {% endblock %}
+
+
+

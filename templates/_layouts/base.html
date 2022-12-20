@@ -30,56 +30,55 @@
 </head>
 
 <body class="fixed-nav sticky-footer sidenav-toggled" id="page-top">
-	<!-- Navigation-->
-	<nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
-		<!-- Show or not the log image in the main page -->
-		{% if show_info_main_page and show_info_main_page.show_images_main_page%}
-		<div class="insa-image-left">
-			<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}"
-					style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
-		{% endif %}
+  <!-- Navigation-->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-insa-fixed-top fixed-top" id="mainNav">
+    <!-- Show or not the log image in the main page -->
+  	{% if show_info_main_page and show_info_main_page.show_images_main_page%}
+	  	<div class="insa-image-left">
+	  		<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:230px; padding-right:10px" id='main_insa_logo_id'></a></div>
+	{% endif %}
+	
+  	<div class="insa-image-left">
+  		<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}" class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
+    
+    <!-- button of table, minimized -->
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <i class="fa fa-bars" style="color:rgb(100, 100, 100)" aria-hidden="true"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav navbar-sidenav" id="mainAccordion">
+        <li class="nav-item {% if nav_dashboard %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Dashboard">
+          <a class="nav-link" href="{% url 'dashboard' %}">
+            <i class="fa fa-fw fa-dashboard"></i>
+            <span class="nav-link-text">Home</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="References Management">
+          <a class="nav-link " href="{% url 'references' %}">
+            <i class="fa fa-fw fa-bug "></i>
+            <span class="nav-link-text ">References</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Samples Management">
+          <a class="nav-link" href="{% url 'samples' %}">
+            <i class="fa fa-fw fa-wrench"></i>
+            <span class="nav-link-text">Samples</span>
+          </a>
+        </li>
+        <li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Projects (Join samples in a same Reference)">
+          <a class="nav-link" href="{% url 'project-index' %}">
+            <i class="fa fa-fw fa-table "></i>
+            <span class="nav-link-text active">Projects</span>
+          </a>
+        </li>
+        <!--
+        <li class="nav-item {% if nav_dataset %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Datasets (Join several consensus)">
+          <a class="nav-link" href="{% url 'datasets' %}">
+            <i class="fa fa-fw fa-share-alt "></i>
+            <span class="nav-link-text active">Datasets</span>
+          </a>
+        </li>
 
-		<div class="insa-image-left">
-			<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}"
-					class="remove_box_sizing" style="width:80px;" id='main_insaflu_logo_id'></a></div>
-
-		<!-- button of table, minimized -->
-		<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
-			data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
-			aria-label="Toggle navigation">
-			<i class="fa fa-bars" style="color:rgb(100, 100, 100)" aria-hidden="true"></i>
-		</button>
-		<div class="collapse navbar-collapse" id="navbarResponsive">
-			<ul class="navbar-nav navbar-sidenav" id="mainAccordion">
-				<li class="nav-item {% if nav_dashboard %} active {% endif %}" data-toggle="tooltip"
-					data-placement="right" title="Dashboard">
-					<a class="nav-link" href="{% url 'dashboard' %}">
-						<i class="fa fa-fw fa-dashboard"></i>
-						<span class="nav-link-text">Home</span>
-					</a>
-				</li>
-				<li class="nav-item {% if nav_reference %} active {% endif %}" data-toggle="tooltip"
-					data-placement="right" title="References">
-					<a class="nav-link " href="{% url 'references' %}">
-						<i class="fa fa-fw fa-bug "></i>
-						<span class="nav-link-text ">References</span>
-					</a>
-				</li>
-				<li class="nav-item {% if nav_sample %} active {% endif %}" data-toggle="tooltip" data-placement="right"
-					title="Samples">
-					<a class="nav-link" href="{% url 'samples' %}">
-						<i class="fa fa-fw fa-wrench"></i>
-						<span class="nav-link-text">Samples</span>
-					</a>
-				</li>
-				<li class="nav-item {% if nav_project %} active {% endif %}" data-toggle="tooltip"
-					data-placement="right" title="Projects">
-					<a class="nav-link" href="{% url 'project-index' %}">
-						<i class="fa fa-fw fa-table "></i>
-						<span class="nav-link-text active">Projects</span>
-					</a>
-				</li>
-				<!-- 
         <li class="nav-item {% if nav_phylogeny %} active {% endif %}" data-toggle="tooltip" data-placement="right" title="Phylogeny">
           <a class="nav-link" href="{% url 'phylogeny' %}">
             <i class="fa fa-fw fa-magic"></i>

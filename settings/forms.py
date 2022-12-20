@@ -8,6 +8,7 @@ import os
 from constants.software_names import SoftwareNames
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from datasets.models import Dataset
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
@@ -45,7 +46,6 @@ class SoftwareForm(forms.ModelForm):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.televir_utiltity.get_software_list()
         self.televir_utiltity.get_software_db_dict()
-        print(self.televir_utiltity.software_dbs_dict)
         ###
         if not pk_project is None:
             kwargs.pop("pk_project")
@@ -63,6 +63,12 @@ class SoftwareForm(forms.ModelForm):
             kwargs.pop("pk_sample")
             sample = Sample.objects.get(pk=pk_sample)
 
+        dataset = None
+        pk_dataset = kwargs.get("pk_dataset")
+        if not pk_dataset is None:
+            kwargs.pop("pk_dataset")
+            dataset = Dataset.objects.get(pk=pk_dataset)
+
         ## end
         super(SoftwareForm, self).__init__(*args, **kwargs)
 
@@ -72,6 +78,7 @@ class SoftwareForm(forms.ModelForm):
             project=project,
             project_sample=project_sample,
             sample=sample,
+            dataset=dataset,
         )
         dt_fields = {}
         vect_divs = []
@@ -120,7 +127,11 @@ class SoftwareForm(forms.ModelForm):
             ### this is use for Medaka and Trimmomatic
             elif parameter.is_char_list():
 
-                if (
+                if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+                    list_data = [
+                        data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC
+                    ]
+                elif (
                     parameter.software.name
                     == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
@@ -152,12 +163,13 @@ class SoftwareForm(forms.ModelForm):
                 ):
                     list_data = [
                         [data_, os.path.basename(data_)]
-                        for data_ in self.televir_utiltity.software_dbs_dict.get(
+                        for data_ in self.televir_utiltity.get_from_software_db_dict(
                             parameter.software.name.lower(), []
                         )
                     ]
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]
+
                 dt_fields[parameter.get_unique_id()] = forms.ChoiceField(
                     choices=list_data
                 )
@@ -182,6 +194,7 @@ class SoftwareForm(forms.ModelForm):
             else:
                 dt_fields[parameter.get_unique_id()].initial = parameter.parameter
             vect_divs.append(Div(parameter.get_unique_id(), css_class="col-sm-4"))
+
         ### set all fields
         self.fields.update(dt_fields)
 
@@ -216,6 +229,12 @@ class SoftwareForm(forms.ModelForm):
                 self.instance.name,
                 project.name,
             )
+        if not dataset is None:
+            form_message = "Update {} parameters for -{}- dataset:'{}'".format(
+                "software" if self.instance.is_software() else "INSaFLU",
+                self.instance.name,
+                dataset.name,
+            )
         if not project_sample is None:
             form_message = (
                 "Update {} parameters for -{}- project:'{}' for sample:'{}'.".format(
@@ -242,7 +261,7 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample)
+                            self._get_reverse(project, project_sample, sample, dataset)
                         ),
                     ),
                 ),
@@ -262,7 +281,7 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample)
+                            self._get_reverse(project, project_sample, sample, dataset)
                         ),
                     ),
                 ),
@@ -283,7 +302,7 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample)
+                            self._get_reverse(project, project_sample, sample, dataset)
                         ),
                     ),
                 ),
@@ -305,16 +324,18 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample)
+                            self._get_reverse(project, project_sample, sample.dataset)
                         ),
                     ),
                 ),
             )
 
-    def _get_reverse(self, project, project_sample, sample):
+    def _get_reverse(self, project, project_sample, sample, dataset):
         """ """
         if not project is None:
             return reverse("project-settings", args=[project.pk])
+        if not dataset is None:
+            return reverse("dataset-settings", args=[dataset.pk])
         if not project_sample is None:
             return reverse("sample-project-settings", args=[project_sample.pk])
         if not sample is None:

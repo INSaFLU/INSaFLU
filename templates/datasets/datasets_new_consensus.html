@@ -1,0 +1,55 @@
+{% extends '_layouts/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block css %}
+	{% load static from staticfiles %}
+		<!-- pre-define in-house css for main page-->
+		<link rel="stylesheet" href="{% static 'css/main-page.css' %}" type="text/css" />
+		<link rel="stylesheet" href="{% static 'css/error_add_html.css' %}" type="text/css" />
+{% endblock css %}
+
+<!-- Breadcrumbs-->
+{% block breadcrumbs %}
+	{{ block.super }}
+	{% breadcrumb "Datasets" "datasets" %}
+	{% breadcrumb "Add Consensus to dataset" "add-consensus-dataset" pk %}
+	{% breadcrumb "Upload new Consensus" "upload-new-consensus" %}
+{% endblock %}
+
+<!-- Main content-->
+{% block content %}
+	{% crispy form %}
+{% endblock %}
+
+
+{% block js %}
+
+	<script>
+ 		$("#id_consensus_fasta").click( function(){
+ 			$('#error_1_id_consensus_fasta').empty();
+ 			$.unblockUI();
+ 		});
+ 		
+ 		/* wait button */
+ 		$(document).ready(function() { 
+		    $('#submit-id-save').click(function() { 
+		        $.blockUI({ css: { 
+		            border: 'none', 
+		            padding: '15px', 
+		            backgroundColor: '#000', 
+		            '-webkit-border-radius': '10px', 
+		            '-moz-border-radius': '10px', 
+		            opacity: .5, 
+		            color: '#fff' 
+		        } }); 
+		    }); 
+		});
+	</script>
+	
+	{% load static from staticfiles %}
+		<!-- Custom scripts for all pages-->
+		<script type="text/javascript" src="{% static 'js/dataset/new_consensus_add.js' %}"></script>
+
+{% endblock js %}

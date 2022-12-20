@@ -779,7 +779,6 @@ def turn_on_off_software(request):
                     makeup = pipeline_makeup.match_makeup_name_from_list(
                         pipeline_steps_project
                     )
-
                     if makeup is None:
                         if current_is_to_run:
                             data[
@@ -787,11 +786,6 @@ def turn_on_off_software(request):
                             ] = f"You cannot perform this operation. Project '{televir_project}' would not meet minimum pipeline step requirements."
 
                             return JsonResponse(data)
-
-                print("$$$$$$$$")
-                print(type_of_use_id)
-                print(software.name)
-                print(software.pipeline_step)
 
                 if not type_of_use_id is None:
                     if type_of_use_id == Software.TYPE_OF_USE_televir_global:
@@ -802,18 +796,9 @@ def turn_on_off_software(request):
                             )
                         )
 
-                        print(current_is_to_run)
-
-                        print("#############")
-                        print(set(pipeline_steps_project))
-
                         makeup = pipeline_makeup.match_makeup_name_from_list(
                             pipeline_steps_project
                         )
-                        print(makeup)
-
-                        if makeup:
-                            print(pipeline_makeup.get_makeup(makeup))
 
                         if makeup is None:
                             if current_is_to_run:
@@ -824,9 +809,9 @@ def turn_on_off_software(request):
 
                                 return JsonResponse(data)
 
-                if not project_id is None:  ##	project
+                if not project_id is None:  ##    project
                     project = Project.objects.get(pk=project_id)
-                elif not project_sample_id is None:  ##	project sample
+                elif not project_sample_id is None:  ##    project sample
                     project_sample = ProjectSample.objects.get(pk=project_sample_id)
 
                     ## sample is not ready for run again, To prevent to many ON|OFF
@@ -1066,3 +1051,37 @@ def get_software_name_to_turn_on_off(request):
             except Software.DoesNotExist:
                 return JsonResponse(data)
         return JsonResponse(data)
+
+
+@csrf_protect
+def reset_project_settings(request):
+    data = {"is_ok": False, "message": "You are not allow to do this operation."}
+    if request.is_ajax():
+
+        televir_project_id_a = "project_id"
+        televir_id = int(request.GET[televir_project_id_a])
+
+        try:
+
+            project_parameters = Parameter.objects.filter(
+                televir_project__pk=televir_id
+            )
+            project_software = Software.objects.filter(
+                parameter__televir_project__pk=televir_id
+            )
+
+        except Exception as e:
+            print(e)
+            data["message"] = "Error in the database."
+            return JsonResponse(data)
+
+        for parameter in project_parameters:
+            parameter.delete()
+
+        for software in project_software:
+            software.delete()
+
+        data["is_ok"] = True
+        data["message"] = "Project settings were reset."
+
+    return JsonResponse(data)

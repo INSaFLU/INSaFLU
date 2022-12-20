@@ -116,14 +116,13 @@ def scrape_description(accid: str, existing_description: str = None) -> str:
         title = existing_description
 
     if title == "":
-
         return str(existing_description)
     else:
         return str(title)
 
 
 def read_paf_coordinates(samfile: str) -> pd.DataFrame:
-    """Read the sam file and return a dataframe with the coordinates."""
+    """Read the paf file and return a dataframe with the coordinates."""
 
     try:
         df = pd.read_csv(samfile, sep="\t", header=None).rename(
@@ -190,7 +189,7 @@ def process_class(r2, maxt=6):
     """
     r2 = r2.drop_duplicates(subset=["taxid"], keep="first")
     r2 = r2.reset_index(drop=True)
-    r2 = r2.sort_values("counts", ascending=False)
+    # r2 = r2.sort_values("counts", ascending=False)
 
     taxids_tokeep = []
     nr2 = []
@@ -231,13 +230,23 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         )
 
     r1 = r1[["taxid", "counts"]]
+    r1_raw = r1.copy()
 
     r2pres = 1
+
+    full_descriptor = r1
 
     if len(r2):
         r2pres = 2
         if "description" in r2.columns:
             r2 = r2[~r2.description.str.contains(exclude)]
+
+        if len(r2) > 0 and len(r1) > 0:
+            full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
+        elif len(r2) > 0:
+            full_descriptor = r2
+        else:
+            full_descriptor = r1
 
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
@@ -245,22 +254,72 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         shared = pd.merge(r1, r2, on=["taxid"], how="inner").sort_values(
             "counts_x", ascending=False
         )
+
         maxt = maxt - shared.shape[0]
 
         if maxt < 0:
             r1 = shared
+
         else:
+
             r2 = (
                 pd.merge(r2, shared, indicator=True, how="outer")
                 .query('_merge=="left_only"')
                 .drop("_merge", axis=1)
             )
             r2 = process_class(r2, maxt=maxt)
+            r1p = r1[~r1.taxid.isin(shared.taxid)]
 
             r1 = (
-                pd.concat([shared, r2, r1.head(maxt)], axis=0)
+                pd.concat([shared, r2, r1p.head(maxt - r2.shape[0])], axis=0)
                 .drop_duplicates(subset=["taxid"], keep="first")
                 .reset_index(drop=True)
             )
 
-    return r1.head(maxt * r2pres)
+    full_descriptor = full_descriptor.fillna(0)
+
+    def get_source(row):
+
+        if row.counts_x > 0 and row.counts_y > 0:
+            return 3
+        elif row.counts_x > 0:
+            return 1
+        elif row.counts_y > 0:
+            return 2
+
+    def descriptor_sources(fd):
+        if len(r1_raw) == 0:
+            fd["source"] = 2
+        elif len(r2) == 0:
+            fd["source"] = 1
+        else:
+            fd["source"] = fd.apply(get_source, axis=1)
+
+        return fd
+
+    def descriptor_counts(fd):
+        if len(r1_raw) == 0 or len(r2) == 0:
+            if "counts" not in fd.columns:
+                fd["counts"] = fd["counts_x"]
+            if "counts_y" in fd.columns:
+                fd["counts"] = fd["counts_y"] + fd["counts_x"]
+            return fd
+        else:
+            fd["counts"] = fd.apply(get_counts, axis=1)
+
+        return fd
+
+    def get_counts(row):
+
+        if row.counts_x > 0 and row.counts_y > 0:
+            return f"{int(row.counts_x)} / {int(row.counts_y)}"
+        elif row.counts_x > 0:
+            return str(row.counts_x)
+        elif row.counts_y > 0:
+            return str(row.counts_y)
+
+    full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
+    full_descriptor = descriptor_sources(full_descriptor)
+    full_descriptor = descriptor_counts(full_descriptor)
+
+    return r1, full_descriptor

@@ -9,15 +9,14 @@
 
 {% block breadcrumbs %}
 {{block.super}}
-
-{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
 {% breadcrumb project_name "PIproject_samples"  pk=project_index  %}
-{% breadcrumb name "" %}
+{% breadcrumb sample_name "" %}
 {% endblock %}
 
 
 {% block content %}
-
 
 <div class="table-container">
     {% block table %}
@@ -26,6 +25,16 @@
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
+                <tr>
+                    <th colspan="9">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                                <a href="{% url "all_PIsample_reports" pk1=project_index pk2=sample_index%}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
+                                    </button>   
+                               
+                        </div>
+                    </th>               
+                </tr>
                 <tr>
                     {% for column in table.columns %}
                     {% if column.orderable %}
@@ -62,8 +71,15 @@
         </table>
     </div>
     {% endblock table %}
-</div>
-<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+	{% if table.page and show_paginatior %}
+	{% block pagination %}
+	<label id="id-total-list" class="pull-right">Total runs: {{ query_set_count }}</label>
+	{% bootstrap_pagination table.page url=request.get_full_path %}
+	{% endblock pagination %}
+    {% else %}
+    <label id="id-total-list" class="pull-right">Total runs: {{ query_set_count }}</label>
+    {% endif %}
 
+<a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
 
 {% endblock content %}

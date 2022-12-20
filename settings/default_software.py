@@ -8,7 +8,6 @@ from curses.ascii import SO
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
-    Utils_Manager,
 )
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
@@ -30,9 +29,15 @@ class DefaultSoftware(object):
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.change_values_software = {}  ### the key is the name of the software
 
-    def generate_default_PI_software_trees(self, user):
-        utils = Utils_Manager(owner=user)
-        utils.generate_default_trees()
+    def remove_all_parameters(self, user):
+        """remove all parameters"""
+        user_software = Software.objects.filter(owner=user)
+        user_parameter = Parameter.objects.filter(software__in=user_software)
+        with LockedAtomicTransaction(Parameter):
+            user_parameter.delete()
+
+        with LockedAtomicTransaction(Software):
+            user_software.delete()
 
     def test_all_defaults(self, user):
 
@@ -68,13 +73,13 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             self.default_parameters.get_abricate_default(
-                user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina
+                user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_illumina
             ),
             user,
         )
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
-        # 				self.default_parameters.get_clean_human_reads_default(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+        #                 self.default_parameters.get_clean_human_reads_default(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_illumina), user)
 
         ## ONT software
         self.test_default_db(
@@ -106,9 +111,9 @@ class DefaultSoftware(object):
             user,
         )
 
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
-        # 				self.default_parameters.get_samtools_depth_default_ONT(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_SAMTOOLS_name_depth_ONT,
+        #                 self.default_parameters.get_samtools_depth_default_ONT(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_NanoFilt_name,
@@ -121,18 +126,22 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             self.default_parameters.get_abricate_default(
-                user, Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion
+                user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_minion
             ),
             user,
         )
 
-        # 		self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
-        # 				self.default_parameters.get_clean_human_reads_default(user,
-        # 				Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
+        #         self.test_default_db(SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,
+        #                 self.default_parameters.get_clean_human_reads_default(user,
+        #                 Software.TYPE_OF_USE_global, ConstantsSettings.TECHNOLOGY_minion), user)
 
         #############
         ############# PATHOGEN IDENTIFICATION SOFTWARE
         #############
+
+        self.test_all_defaults_pathogen_identification(user)
+
+    def test_all_defaults_pathogen_identification(self, user):
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
@@ -149,6 +158,7 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
             ),
             user,
         )
@@ -156,16 +166,6 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BWA_name,
-            self.default_parameters.get_bwa_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -189,17 +189,6 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_KAIJU_name,
-            self.default_parameters.get_kaiju_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
             user,
         )
@@ -234,6 +223,17 @@ class DefaultSoftware(object):
             ),
             user,
         )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_KRAKENUNIQ_name,
+            self.default_parameters.get_krakenuniq_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_BLAST_name,
             self.default_parameters.get_blast_default(
@@ -254,16 +254,6 @@ class DefaultSoftware(object):
             user,
         )
 
-        # self.test_default_db(
-        #    SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
-        #    self.default_parameters.get_fastviromeexplorer_default(
-        #        user,
-        #        Software.TYPE_OF_USE_televir_global,
-        #        ConstantsSettings.TECHNOLOGY_illumina,
-        #    ),
-        #    user,
-        # )
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_FASTVIROMEEXPLORER_name,
             self.default_parameters.get_fastviromeexplorer_default(
@@ -274,15 +264,17 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_DESAMBA_name,
-            self.default_parameters.get_desamba_default(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
+        ########################### hslib19 in centos 7 is too old for this
+        ########################### uncomment in ubuntu
+        # self.test_default_db(
+        #    SoftwareNames.SOFTWARE_DESAMBA_name,
+        #    self.default_parameters.get_desamba_default(
+        #        user,
+        #        Software.TYPE_OF_USE_televir_global,
+        #        ConstantsSettings.TECHNOLOGY_minion,
+        #    ),
+        #    user,
+        # )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_SPAdes_name,
@@ -324,7 +316,25 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.generate_default_PI_software_trees(user)
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+            self.default_parameters.get_minimap2_depletion_ONT_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+            self.default_parameters.get_bowtie2_deplete_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
 
     def assess_db_dependency_met(self, vect_parameters, software_name):
         """for pipeline steps where sequence dbs are required, check that they exist."""
@@ -653,11 +663,47 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
             user,
-            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_televir_global,
             None,
             None,
             None,
             ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
+    def get_bowtie2_deplete_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_minimap2_deplete_ont_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+            user,
+            Software.TYPE_OF_USE_televir_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_minion,
+        )
+        return "" if result is None else result
+
+    def get_nextstrain_parameters(self, user):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+            user,
+            Software.TYPE_OF_USE_global,
+            None,
+            None,
+            None,
+            ConstantsSettings.TECHNOLOGY_generic,
         )
         return "" if result is None else result
 
@@ -723,18 +769,8 @@ class DefaultSoftware(object):
                 user,
             )
 
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_SNIPPY_name,
-                self.default_parameters.get_snippy_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    technology_name,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
-                ),
-                user,
-            )
-
             return self.get_snippy_parameters(user)
+
         if software_name == SoftwareNames.SOFTWARE_FREEBAYES_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_FREEBAYES_name,
@@ -780,7 +816,9 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_Medaka_name_consensus,
                 self.default_parameters.get_medaka_model_default(
-                    user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_minion
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
                 ),
                 user,
             )
@@ -822,11 +860,18 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_ABRICATE_name,
                 self.default_parameters.get_abricate_default(
-                    user, Software.TYPE_OF_USE_global, technology_name
+                    user, Software.TYPE_OF_USE_qc, technology_name
                 ),
                 user,
             )
             return self.get_abricate_parameters(user, technology_name)
+        if software_name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_NEXTSTRAIN_name,
+                self.default_parameters.get_nextstrain_default(user),
+                user,
+            )
+            return self.get_nextstrain_parameters(user)
 
         ##########################################
         ############### TELEVIR SOFTWARE #########
@@ -864,20 +909,9 @@ class DefaultSoftware(object):
             )
             return self.get_centrifuge_parameters(user, technology_name)
 
-        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT:
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
-                self.default_parameters.get_minimap2_remap_ONT_default(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_minion,
-                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
-                ),
-                user,
-            )
-
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT,
+                SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name,
                 self.default_parameters.get_minimap2_remap_ONT_default(
                     user,
                     Software.TYPE_OF_USE_televir_global,
@@ -887,9 +921,33 @@ class DefaultSoftware(object):
                 user,
             )
 
-            return self.get_minimap2_remap_ont_parameters(
-                user, ConstantsSettings.TECHNOLOGY_minion
+            return self.get_minimap2_remap_ont_parameters(user)
+
+        if software_name == SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_BOWTIE2_DEPLETE_name,
+                self.default_parameters.get_bowtie2_deplete_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
             )
+            return self.get_bowtie2_deplete_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_MINIMAP2_DEPLETE_ONT_name,
+                self.default_parameters.get_minimap2_depletion_ONT_default(
+                    user,
+                    Software.TYPE_OF_USE_televir_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
+                    pipeline_step=ConstantsSettings.PIPELINE_NAME_host_depletion,
+                ),
+                user,
+            )
+
+            return self.get_minimap2_deplete_ont_parameters(user)
 
         if software_name == SoftwareNames.SOFTWARE_KRAKEN2_name:
             self.test_default_db(
@@ -931,6 +989,7 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
+
             return self.get_krakenuniq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_KAIJU_name:
@@ -995,6 +1054,18 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_spades_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_SNIPPY_PI_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_SNIPPY_PI_name,
+                self.default_parameters.get_snippy_pi_default(
+                    user, Software.TYPE_OF_USE_televir_global, technology_name
+                ),
+                user,
+            )
+            return self.get_snippy_pi_parameters(user, technology_name)
+
+        return ""
 
     def get_all_software(self):
         """

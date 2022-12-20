@@ -20,6 +20,41 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pathogen_identification.install_registry import Deployment_Params
+
+
+class Temp_File:
+    """
+    Temporary file.
+    """
+
+    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ""):
+        """
+        Initialize.
+        """
+
+        self.temp_dir = temp_dir
+        self.prefix = prefix
+        self.suffix = suffix
+
+        self.temp_file = os.path.join(
+            self.temp_dir, f"{self.prefix}_{randint(1000000, 9999999)}{self.suffix}"
+        )
+
+    def __enter__(self):
+        """
+        Enter.
+        """
+
+        return self.temp_file
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit.
+        """
+
+        if os.path.exists(self.temp_file):
+            os.remove(self.temp_file)
 
 
 class RunCMD:
@@ -37,15 +72,29 @@ class RunCMD:
 
         self.bin = bin
         self.logs = []
+        self.task = task
 
         self.logger = logging.getLogger(f"{prefix}_{task}")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
 
         self.logfile = os.path.join(logdir, f"{prefix}_{task}.log")
         self.logdir = logdir
         self.prefix = prefix
+
+    def temp_script_log(self):
+        """
+        Create temporary script.
+        """
+
+        seed = str(randint(1000000, 9999999))
+
+        bash_script = f"temp_{self.task}_{seed}.sh"
+        bash_log = f"temp_{self.task}_{seed}.log"
+        bash_flag = f"temp_{self.task}_{seed}.flag"
+
+        return bash_script, bash_log, bash_flag
 
     def flag_error(self, subprocess_errorlog, cmd: str = ""):
         """
@@ -168,12 +217,17 @@ class RunCMD:
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
 
-        # print(f"running command: java -cp {self.bin} {cmd}")
-
         start_time = time.perf_counter()
 
+        java_bin = os.path.join(
+            Deployment_Params.BINARIES["ROOT"],
+            Deployment_Params.BINARIES["software"]["java"],
+            "bin",
+            "java",
+        )
+
         proc_prep = subprocess.Popen(
-            f"java -cp {self.bin} {cmd}",
+            f"{java_bin} -cp {self.bin} {cmd}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -212,6 +266,160 @@ class RunCMD:
             raise Exception(err.decode("utf-8"))
 
         self.output_disposal(cmd, err, out, exec_time, "")
+
+    def run_script_software(self, cmd):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        start_time = time.perf_counter()
+
+        bash_script, bash_log, bash_flag = self.temp_script_log()
+        bash_script = os.path.join(self.logdir, bash_script)
+        bash_log = os.path.join(self.logdir, bash_log)
+        bash_flag = os.path.join(self.logdir, bash_flag)
+
+        with open(bash_script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            f.write(f"{self.bin}{cmd}")
+            f.write("\n")
+            f.write("touch " + bash_flag)
+
+        proc_prep = subprocess.Popen(
+            "bash " + bash_script + " &> " + bash_log,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        out, err = proc_prep.communicate()
+
+        found_flag = False
+
+        while not found_flag:
+            time.sleep(1)
+            found_flag = os.path.exists(bash_flag)
+
+        err = open(bash_log).read()
+
+        exec_time = time.perf_counter() - start_time
+
+        if self.flag_error(err):
+            self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        os.remove(bash_script)
+        os.remove(bash_log)
+        os.remove(bash_flag)
+
+        self.output_disposal(cmd, err, out, exec_time, "")
+
+    def run_script(self, cmd):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        start_time = time.perf_counter()
+
+        bash_script, bash_log, bash_flag = self.temp_script_log()
+        bash_script = os.path.join(self.logdir, bash_script)
+        bash_log = os.path.join(self.logdir, bash_log)
+        bash_flag = os.path.join(self.logdir, bash_flag)
+
+        with open(bash_script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            f.write(cmd)
+            f.write("\n")
+            f.write("touch " + bash_flag)
+
+        proc_prep = subprocess.Popen(
+            "bash " + bash_script + " &> " + bash_log,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        out, err = proc_prep.communicate()
+
+        found_flag = False
+
+        while not found_flag:
+            time.sleep(1)
+            found_flag = os.path.exists(bash_flag)
+
+        err = open(bash_log).read()
+        out = open(bash_log).read()
+
+        exec_time = time.perf_counter() - start_time
+
+        if self.flag_error(err):
+            self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        os.remove(bash_script)
+        os.remove(bash_log)
+        os.remove(bash_flag)
+
+        self.output_disposal(cmd, err, out, exec_time, "")
+
+    def run_script_return(self, cmd):
+        """
+        Run bash script.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        start_time = time.perf_counter()
+
+        bash_script, bash_log, bash_flag = self.temp_script_log()
+        bash_script = os.path.join(self.logdir, bash_script)
+        bash_log = os.path.join(self.logdir, bash_log)
+        bash_flag = os.path.join(self.logdir, bash_flag)
+
+        with open(bash_script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            f.write(cmd)
+            f.write("\n")
+            f.write("touch " + bash_flag)
+
+        proc_prep = subprocess.Popen(
+            "bash " + bash_script + " &> " + bash_log,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        out, err = proc_prep.communicate()
+
+        found_flag = False
+
+        while not found_flag:
+            time.sleep(1)
+            found_flag = os.path.exists(bash_flag)
+
+        err = open(bash_log).read()
+        out = open(bash_log).read()
+
+        exec_time = time.perf_counter() - start_time
+
+        if self.flag_error(err):
+            self.logger.error(f"errror in command: {self.bin}{cmd}")
+
+        os.remove(bash_script)
+        os.remove(bash_log)
+        os.remove(bash_flag)
+
+        self.output_disposal(cmd, err, out, exec_time, "")
+
+        return out.strip()
 
     def run_bash_return(self, cmd):
         """
@@ -258,7 +466,7 @@ class Read_class:
             bin: path to bin directory.
 
         """
-        self.cmd = RunCMD(bin)
+        self.cmd = RunCMD(bin, prefix="read", task="housekeeping")
 
         self.exists = os.path.isfile(filepath)
 
@@ -371,6 +579,7 @@ class Read_class:
         """
 
         current_reads = self.get_read_names_fastq(self.current)
+
         read_list_to_keep = list(set(current_reads) - set(read_list))
 
         if len(read_list) > 0:
@@ -404,8 +613,6 @@ class Read_class:
         self.read_number_depleted = self.get_current_fastq_read_number()
         self.current_status = "depleted"
         self.filepath = os.path.dirname(self.current)
-        print("depleted")
-        print(self.read_number_depleted)
         self.read_number_filtered = self.read_number_depleted
 
     def get_current_fastq_read_number(self):
@@ -418,6 +625,58 @@ class Read_class:
         cmd = "zcat %s | wc -l" % self.current
         rnumber = self.cmd.run_bash_return(cmd).decode("utf-8")
         return int(rnumber) // 4
+
+    def clean_read_names(self):
+        """
+        Clean read names in current fastq file.
+        """
+
+        if not self.exists:
+            return
+
+        temp_fq = os.path.join(
+            os.path.dirname(self.current), f"temp_clean_{randint(1,1000)}.fastq"
+        )
+        temp_fq_gz = temp_fq + ".gz"
+
+        cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
+
+        cmd = [
+            "sed",
+            "-i",
+            "'/^[@+]/ ; s/\/[12]$//g'",
+            temp_fq,
+        ]
+
+        cmd_zip = "bgzip %s" % temp_fq
+
+        self.cmd.run_bash(cmd_unzip)
+        self.cmd.run_bash(cmd)
+        self.cmd.run(cmd_zip)
+
+        if os.path.isfile(temp_fq_gz) and os.path.getsize(temp_fq_gz) > 100:
+            os.remove(self.current)
+            os.rename(temp_fq_gz, self.current)
+
+    def remove_duplicate_reads(self):
+        """
+        Remove duplicate reads from current fastq file.
+        """
+
+        if not self.exists:
+            return
+
+        temp = os.path.join(
+            os.path.dirname(self.current), f"temp_rmdup_{randint(1,1000)}.fq.gz"
+        )
+
+        cmd = "seqkit rmdup -n %s -o %s" % (self.current, temp)
+
+        self.cmd.run(cmd)
+
+        if os.path.isfile(temp) and os.path.getsize(temp):
+            os.remove(self.current)
+            os.rename(temp, self.current)
 
     def current_fastq_read_number(self):
         """
@@ -554,6 +813,10 @@ class Sample_runClass:
             "processed": fake_df,
         }
 
+    def remove_duplicates(self):
+        self.r1.remove_duplicate_reads()
+        self.r2.remove_duplicate_reads()
+
     def clean_unique(self):
         if self.type == "SE":
             self.clean_unique_SE()
@@ -569,8 +832,15 @@ class Sample_runClass:
             "'^@'",
             self.r1.current,
             "|",
-            "awk",
-            "'{print $1}'",
+            "cut",
+            "-f1",
+            "-d",
+            " ",
+            "|",
+            'grep -v "+|/*|/&"',
+            "|",
+            "sed",
+            r"'s/\s.*$//'",
             "|",
             "sed",
             "'s/^@//g'",
@@ -600,7 +870,7 @@ class Sample_runClass:
             f"seqkit common -n -i {self.r1.current} {self.r1.current} | paste - - - - | cut -f1 | sort | uniq | sed 's/^@//g' > {common_reads}"
         ]
 
-        self.cmd.run(cmd_find_common)
+        self.cmd.run_script(cmd_find_common)
 
         if os.path.getsize(common_reads) == 0:
             return
@@ -632,8 +902,9 @@ class Sample_runClass:
         self.cmd.run(cmd_trimsort)
 
         if tempfq in os.listdir(tempdir):
-            os.remove(self.r1.current)
-            os.rename(tempfq, self.r1.current)
+            if os.path.getsize(tempfq) > 100:
+                os.remove(self.r1.current)
+                os.rename(tempfq, self.r1.current)
 
     def trimmomatic_sort_PE(self):
         if self.type == "SE":
@@ -692,11 +963,17 @@ class Software_detail:
             self.name = method_details.software.values[0]
 
             try:
-                self.args = method_details[
+                args_string = method_details[
                     method_details.parameter.str.contains("ARGS")
                 ].value.values[0]
+
+                self.args, self.db = self.excise_db_from_args(args_string)
+                self.db_name = self.db.split("/")[-1]
+
             except IndexError:
                 self.args = ""
+                self.db = ""
+                self.db_name = ""
 
             try:
                 db_name = method_details[
@@ -710,7 +987,7 @@ class Software_detail:
                     self.db_name = db_name
 
             except IndexError:
-                self.db = ""
+                pass
 
             try:
                 self.bin = os.path.join(
@@ -734,6 +1011,32 @@ class Software_detail:
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
+
+    def excise_db_from_args(self, args: str):
+        """replace db name in args with db path
+
+        :param args: string of args
+        :return: string of args with db path
+        """
+        args_list = args.split(" ")
+        db_idx = None
+        db = ""
+
+        for i in range(len(args_list)):
+            if "--db" in args_list[i]:
+                db_idx = i
+                db = args_list[i + 1]
+                break
+
+        if db_idx is not None:
+            args_list = args_list[:db_idx] + args_list[db_idx + 2 :]
+            args_list = " ".join(args_list)
+
+            return args_list, db
+
+        else:
+            args_list = " ".join(args_list)
+            return args_list, db
 
     def __str__(self):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
@@ -797,9 +1100,10 @@ class Bedgraph:
         """
         Reduce the number of bars.
         """
+        self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
-        if self.bedgraph.shape > (self.max_bars,):
-            self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
+        if self.bedgraph.shape[0] > self.max_bars:
+
             self.bedgraph = self.bedgraph.sample(self.max_bars)
 
     def merge_bedgraph_rows(self):
@@ -885,6 +1189,10 @@ class Run_detail_report:
     max_prop: int
     max_mapped: int
     input: str
+    enriched_reads: int
+    enriched_reads_percent: float
+    depleted_reads: int
+    depleted_reads_percent: float
     processed: str
     processed_percent: str
     sift_preproc: bool

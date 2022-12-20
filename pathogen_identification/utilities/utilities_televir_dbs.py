@@ -117,6 +117,25 @@ class Utility_Repository:
 
         return find
 
+    def get_list_tables(self):
+        """
+        Get a list of tables
+        """
+
+        find = self.engine.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        find = [i[0] for i in find]
+        return find
+
+    def get_list_unique_field(self, table_name, id):
+        """
+        Get a list of unique values in a field
+        """
+
+        find = self.engine.execute(f"SELECT DISTINCT {id} FROM {table_name}")
+
+        find = [i[0] for i in find]
+        return find
+
     def select_explicit_statement(self, table_name, field, id):
         """
         select from table.
@@ -130,8 +149,14 @@ class Utility_Repository:
         Check if a record exists in a table
         """
 
+        check_list = [id]
+        if "_" in id:
+            check_list.append(id.split("_")[0])
+        check_list = [f"'{i}'" for i in check_list]
+        check_list = ",".join(check_list)
+
         find = self.engine.execute(
-            f"SELECT * FROM {table_name} WHERE {field}='{id}'"
+            f"SELECT * FROM {table_name} WHERE {field} IN ({check_list})"
         ).fetchall()
         find = len(find) > 0
 
@@ -144,7 +169,6 @@ class Utility_Repository:
         """
         Add a record to a table
         """
-        # print("adding software")
 
         self.engine.execute(
             f"INSERT INTO software (name, path, database, installed, env_path) VALUES ('{item.name}', '{item.path}', '{item.database}', '{item.installed}', '{item.env_path}')"

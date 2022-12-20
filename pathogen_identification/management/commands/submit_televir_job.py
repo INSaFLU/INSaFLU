@@ -1,8 +1,10 @@
 import os
 from datetime import date
+from typing import List
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
 from pathogen_identification.models import (
@@ -13,6 +15,7 @@ from pathogen_identification.models import (
     SoftwareTreeNode,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from utils.process_SGE import ProcessSGE
 
 
 class Command(BaseCommand):
@@ -41,82 +44,101 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ###
         #
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
+
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
 
-        utils = Utils_Manager(owner=user)
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_project(project_pk=project.pk),
+            ProcessControler.FLAG_RUNNING,
+        )
+
+        utils = Utils_Manager()
 
         technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = utils.generate_project_tree(technology, project)
-        tree_makeup = local_tree.makeup
+        local_tree = utils.generate_project_tree(technology, project, user)
+        local_paths = local_tree.get_all_graph_paths_explicit()
 
-        print(samples)
+        tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
-        print("user pk: ", user.pk)
-        print("project pk: ", project.pk)
-        print("sample pk: ", samples[0].pk)
-        print("pipeline_tree_index: ", pipeline_tree_index)
-
-        local_paths = local_tree.get_all_graph_paths_explicit()
-        print("local paths: ", local_paths.keys())
-        sample = samples[0]
-
         submission_dict = {sample: [] for sample in samples}
 
-        for sample in samples:
-            print("sample: ", sample)
+        try:
 
-            for leaf, path in local_paths.items():
-                print("leaf: ", leaf)
-                print("path: ", path)
+            for sample in samples:
 
-                matched_path = utils.utility_manager.match_path_to_tree(
-                    path, pipeline_tree
-                )
+                if sample.is_deleted:
+                    continue
 
-                matched_path_node = SoftwareTreeNode.objects.get(
-                    software_tree__pk=pipeline_tree_index, index=matched_path
-                )
+                for leaf, path in local_paths.items():
 
-                print("matched path: ", leaf, matched_path)
-                exists = utils.parameter_util.check_ParameterSet_exists(
-                    sample=sample, leaf=matched_path_node, project=project
-                )
-                print(exists)
-                if exists:
-                    print("parameter set exists")
-
-                    if utils.parameter_util.check_ParameterSet_processed(
-                        sample=sample, leaf=leaf, project=project
-                    ):
-                        print("parameter set processed")
-
+                    try:
+                        matched_path = utils.utility_manager.match_path_to_tree(
+                            path, pipeline_tree
+                        )
+                    except Exception as e:
+                        print(f"Path {path} not found in pipeline tree.")
+                        print("Exception:")
+                        print(e)
                         continue
 
-                # path_db = pipeline_tree.df_from_path(path)
-                print("path_db: ", path)
+                    print("matched_path: ", matched_path)
 
-                pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
+                    matched_path_node = SoftwareTreeNode.objects.get(
+                        software_tree__pk=pipeline_tree_index, index=matched_path
+                    )
 
-                run = Run_Main_from_Leaf(
-                    user=user,
-                    input_data=sample,
-                    project=project,
-                    pipeline_leaf=matched_path_node,
-                    pipeline_tree=pipeline_tree_query,
-                    odir=options["outdir"],
-                )
+                    exists = utils.parameter_util.check_ParameterSet_exists(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+                    if exists:
 
-                if run.is_available:
-                    run.get_in_line()
-                    submission_dict[sample].append(run)
+                        if utils.parameter_util.check_ParameterSet_processed(
+                            sample=sample, leaf=leaf, project=project
+                        ):
 
-        for sample, runs in submission_dict.items():
-            for run in runs:
-                # if run.get_status() == ParameterSet.STATUS_ERROR:
+                            continue
 
-                run.Submit()
+                    pipeline_tree_query = SoftwareTree.objects.get(
+                        pk=pipeline_tree_index
+                    )
+
+                    run = Run_Main_from_Leaf(
+                        user=user,
+                        input_data=sample,
+                        project=project,
+                        pipeline_leaf=matched_path_node,
+                        pipeline_tree=pipeline_tree_query,
+                        odir=options["outdir"],
+                    )
+
+                    if run.is_available:
+                        run.get_in_line()
+                        submission_dict[sample].append(run)
+
+            for sample, runs in submission_dict.items():
+                for run in runs:
+
+                    run.Submit()
+
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_televir_project(project_pk=project.pk),
+                ProcessControler.FLAG_FINISHED,
+            )
+
+        except Exception as e:
+            print(e)
+            process_SGE.set_process_controler(
+                user,
+                process_controler.get_name_televir_project(project_pk=project.pk),
+                ProcessControler.FLAG_ERROR,
+            )
+            raise e

@@ -18,16 +18,12 @@
 
 {% block breadcrumbs %}
 {{block.super}}
-
-{% breadcrumb "Televir Projects" "PIprojects_main"  %}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
 {% breadcrumb project "PIproject_samples"  pk=project_index  %}
-{% breadcrumb sample "sample_main" project_name=project sample_name=sample  %}
-{% breadcrumb run_name "sample_detail" project_name=project sample_name=sample run_name=run_name %}
-{% breadcrumb reference "none" %}
-
+{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
+{% breadcrumb run_name "sample_detail" pk1=project_index pk2=sample_index pk3=run_index %}
 {% endblock %}
-
-
 
 
 {% block content %}

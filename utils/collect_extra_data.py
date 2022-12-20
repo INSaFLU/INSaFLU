@@ -3,7 +3,7 @@ Created on Nov 27, 2017
 
 @author: mmp
 '''
-import os, csv, time, json, logging
+import os, csv, time, json, logging, pandas
 import plotly.graph_objs as go
 from utils.utils import Utils
 from managing_files.manage_database import ManageDatabase
@@ -30,9 +30,10 @@ class CollectExtraData(object):
 	classdocs
 	'''
 
-	HEADER_SAMPLE_OUT_CSV = "id,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
-	HEADER_SAMPLE_OUT_CSV_statistics = "id,fastq1,fastq2,sample date created"
-	HEADER_SAMPLE_OUT_CSV_simple = "id,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	HEADER_SAMPLE_OUT_ID = "id"
+	HEADER_SAMPLE_OUT_CSV = HEADER_SAMPLE_OUT_ID + ",fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
+	HEADER_SAMPLE_OUT_CSV_statistics = HEADER_SAMPLE_OUT_ID + ",fastq1,fastq2,sample date created"
+	HEADER_SAMPLE_OUT_CSV_simple = HEADER_SAMPLE_OUT_ID + ",data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification,putative mixed-infection"
 	## this is used for global sample list. It has all samples per user
 	HEADER_SAMPLE_OUT_CSV_for_sample = "sample,fastq1,fastq2,data set,vaccine status,week,onset date,collection date,lab reception date,latitude,longitude,classification"
 
@@ -43,6 +44,7 @@ class CollectExtraData(object):
 	
 	utils = Utils()
 	software = Software()
+	software_pangolin = SoftwarePangolin()
 	logger_debug = logging.getLogger("fluWebVirus.debug")
 	logger_production = logging.getLogger("fluWebVirus.production")
 	
@@ -109,7 +111,6 @@ class CollectExtraData(object):
 		Only for update metadata
 		"""
 		### get the taskID and seal it
-		software_pangolin = SoftwarePangolin()
 		process_controler = ProcessControler()
 		process_SGE = ProcessSGE()
 		try:
@@ -122,7 +123,7 @@ class CollectExtraData(object):
 			if (os.path.exists(file_pangolin_output) or self.software.get_species_tag(
 					project.reference) == Reference.SPECIES_SARS_COV_2):
 				## process pangolin
-				software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
+				self.software_pangolin.run_pangolin(file_consensus, file_pangolin_output)
 				try:
 					software = SoftwareModel.objects.get(name=SoftwareNames.SOFTWARE_Pangolin_name)
 					
@@ -155,6 +156,107 @@ class CollectExtraData(object):
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 
 
+	def __collect_aln2pheno(self, project, user, b_mark_sge_success = True):
+		"""
+		Runs aln2pheno
+		"""
+		### get the taskID and seal it
+		process_controler = ProcessControler()
+		process_SGE = ProcessSGE()
+		try:
+
+			## test SARS cov
+			if (self.software.get_species_tag(project.reference) == Reference.SPECIES_SARS_COV_2):
+
+				geneticElement = self.utils.get_elements_and_cds_from_db(project.reference, user)
+				
+				### create for single sequences
+				GENE_NAME = 'S'
+				for sequence_name in geneticElement.get_sorted_elements():
+					file_alignments = project.get_global_file_by_element_and_cds(TypePath.MEDIA_ROOT, sequence_name, 
+						GENE_NAME, Project.PROJECT_FILE_NAME_MAFFT)
+					if(os.path.exists(file_alignments)): break
+					
+				if(os.path.exists(file_alignments)):
+
+					file_aln2pheno_zip = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip)
+
+					file_aln2pheno_report_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+					file_aln2pheno_flagged_COG_UK = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK)
+
+					# For SARS-CoV-2 add the lineage to the columns: TODO Add this functionality to DataColumns or some other class, or some function(s) in utils...
+					# start by reading the lineage (which needs to exist beforehand)
+					pangolin_file = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage)
+					if(not os.path.exists(file_alignments)): 
+						self.logger_debug.info("Collect aln2pheno: error getting pangolin lineage: file does not exist {}".format(file_alignments))
+						process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+						return
+					
+					pangolin_data = pandas.read_csv(pangolin_file, delimiter=Constants.SEPARATOR_COMMA)
+					pangolin_data = pangolin_data[['taxon','lineage']]
+					# replace  suffix added to the identifier for pangolin (TODO: why is this suffix there in the first place??)
+					pangolin_data['taxon'] = pangolin_data['taxon'].str.replace('__'+sequence_name,'')
+					pangolin_data.rename(columns = {'taxon':'Sequence'}, inplace = True)
+
+					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
+
+					# add output as parameters of individual files, or output a zip with the folder...
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME), 
+								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
+								flagged=file_aln2pheno_flagged_COG_UK, db="DB_SARS_CoV_2_Spike_COG_UK_Antigenic_2022_10_20.tsv")
+
+					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
+					report_data = report_data.merge(pangolin_data, on=["Sequence"])
+
+					# Reorder lineage column to second
+					cols = report_data.columns.tolist()
+					report_data = report_data[[cols[0]] + [cols[len(cols)-1]] + cols[1:(len(cols)-1)]]
+					
+					report_data.to_csv(file_aln2pheno_report_COG_UK, sep=Constants.SEPARATOR_TAB, index=False)
+
+					# we could reuse the same file, but might as well destroy the previous and create a new clean one
+					self.utils.remove_temp_file(tmp_aln2pheno)
+					
+					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
+
+					file_aln2pheno_report_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)
+					file_aln2pheno_flagged_pokay = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay)
+
+					# add output as parameters of individual files, or output a zip with the folder...
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
+								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
+								flagged=file_aln2pheno_flagged_pokay, db="DB_SARS_CoV_2_Spike_Pokay_2022_07_28.tsv")
+
+					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
+					report_data = report_data.merge(pangolin_data, on=["Sequence"])
+					
+					report_data.to_csv(file_aln2pheno_report_pokay, sep=Constants.SEPARATOR_TAB, index=False)
+
+					self.utils.remove_temp_file(tmp_aln2pheno)
+					
+					temp_dir = self.utils.get_temp_dir()
+					self.utils.copy_file(file_aln2pheno_report_COG_UK, temp_dir)
+					self.utils.copy_file(file_aln2pheno_flagged_COG_UK, temp_dir)
+					self.utils.copy_file(file_aln2pheno_report_pokay, temp_dir)
+					self.utils.copy_file(file_aln2pheno_flagged_pokay, temp_dir)
+					# README file to be always added
+					self.utils.copy_file(SoftwareNames.SOFTWARE_ALN2PHENO_README, temp_dir)
+					zip_out = self.software.zip_files_in_path(temp_dir)
+					self.utils.move_file(zip_out, file_aln2pheno_zip)
+					temp_dir = self.utils.remove_dir(temp_dir)
+
+		except Exception as e:
+			## finished with error
+			self.logger_debug.info("Aln2pheno Gave an error {}".format(e))
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
+			return
+
+		if (b_mark_sge_success):
+			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
+
+
+
+
 	def __collect_update_extra_metadata_for_project(self, project, user):
 		"""
 		Only for update metadata
@@ -169,13 +271,15 @@ class CollectExtraData(object):
 		try:
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV, project, user)
+			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_CSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
-			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
+
+			## (re)calculate the phenotype table, as it uses metadata
+			self.__collect_aln2pheno(project, user, False)
 			
 			### zip several files to download 
 			self.zip_several_files(project)
@@ -227,53 +331,63 @@ class CollectExtraData(object):
 			count = 0
 			start = time.time()
 			self.logger_production.info("COLLECT_EXTRA_FILES: Start")
-			
+			self.logger_debug.info("COLLECT_EXTRA_FILES: Start")
+
+
 			## calculate the max sample label size of the samples that belong to this project
 			## used in MSA viewer 
 			b_calculate_again = True
 			manage_database.get_max_length_label(project, user, b_calculate_again)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: max sample label size Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: max sample label size Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			## masks all consensus first, must be before of merge AllConsensus (Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_mask_all_consensus, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: masks all consensus Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: masks all consensus Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			## collect all consensus files for a project_sample
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: collect all consensus Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: collect all consensus Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			## calculate the lineage, if necessary
 			## This need to be after the PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus
 			self.__collect_update_pangolin_lineage(project, user, False)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: calculate the lineage Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: calculate the lineage Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			### calculate global file
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_COVERAGE, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: calculate coverage Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: calculate coverage Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			## collect tab variations snippy
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_SNIPPY, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: snippy variants Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: snippy variants Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			## collect tab variations freebayes, <50%
 			## remove del or ins
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: freebayes variants Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: freebayes variants Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			## with snp, del and ins
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES_with_snps_indels, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: freebayes variants 2 Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: freebayes variants 2 Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			## collect sample table with plus type and subtype, mixed infection, equal to upload table
@@ -282,28 +396,41 @@ class CollectExtraData(object):
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV_simple, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_TSV, project, user)
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_SETTINGS_TSV, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: sample table Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: sample table Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
+
 			## IMPORTANT -> this need to be after of Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV
 			self.calculate_global_files(Project.PROJECT_FILE_NAME_SAMPLE_RESULT_json, project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: sample json Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: sample json Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 		
 			## calculate global variations for a project
 			self.calculate_count_variations(project)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: count variations Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: count variations Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			### create trees
 			createTree = CreateTree()
 			createTree.create_tree_and_alignments(project, user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: trees and alignments Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: trees and alignments Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
+			## calculate the phenotype table, if possible...
+			## This needs to be after the CreateTree to generate protein alignments
+			self.__collect_aln2pheno(project, user, False)
+			self.logger_production.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: aln2pheno Step {}  diff_time:{}".format(count, time.time() - start))
+			count += 1
+			start = time.time()
+
 			meta_project = manage_database.get_project_metakey_last(project, metaKeyAndValue.get_meta_key(\
 						MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id), MetaKeyAndValue.META_VALUE_Queue)
 			if (meta_project != None):
@@ -313,27 +440,32 @@ class CollectExtraData(object):
 				
 			### collect all project data for the user, and set for the user
 			self.collect_project_list(user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: project list Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: project list Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			### Refresh sample list, something can would change
 			self.collect_sample_list(user)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: sample list Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: sample list Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
 			
 			### zip several files to download 
 			self.zip_several_files(project)
-			self.logger_production.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_production.info("COLLECT_EXTRA_FILES: zip files Step {}  diff_time:{}".format(count, time.time() - start))
+			self.logger_debug.info("COLLECT_EXTRA_FILES: zip files Step {}  diff_time:{}".format(count, time.time() - start))
 			count += 1
 			start = time.time()
-		except:
+		except Exception as e:
 			## finished with error
 			process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_ERROR)
 			return
 		
 		### finished
+		self.logger_production.info("COLLECT_EXTRA_FILES: End")
+		self.logger_debug.info("COLLECT_EXTRA_FILES: End")		
 		process_SGE.set_process_controler(user, process_controler.get_name_project(project), ProcessControler.FLAG_FINISHED)
 	
 
@@ -711,6 +843,9 @@ class CollectExtraData(object):
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES))
+
+		## TODO Collect alignments for all genes for all elements?
+		
 		## sample file result
 		if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_SAMPLE_RESULT_CSV),
@@ -735,6 +870,23 @@ class CollectExtraData(object):
 		if (project.number_passed_sequences > 0 and os.path.exists(file_pangolin_result)):
 			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Pangolin_lineage),
 						os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Pangolin_lineage))
+
+		### aln2pheno data
+		#file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK)
+		file_aln2pheno_result = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip)
+		## aln2pheno files			
+		if (project.number_passed_sequences > 0 and os.path.exists(file_aln2pheno_result)):
+			self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip),
+					os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_zip))
+
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK))
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_COG_UK))																		
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+		#	self.utils.link_file(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay),
+		#				os.path.join(temp_dir, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_pokay))													
 			
 		## all files zipped
 		zip_out = self.software.zip_files_in_path(temp_dir)

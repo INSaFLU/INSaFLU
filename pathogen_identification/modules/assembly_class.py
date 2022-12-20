@@ -266,8 +266,6 @@ class Assembly_class:
         self.assembly_mean = 0
         self.assembly_number = 0
 
-        print(assembly_method.output_dir)
-
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
@@ -394,7 +392,7 @@ class Assembly_class:
         if number_of_sequences > 0:
             return True
         else:
-            print("Number of sequences in {}: {}".format(file, number_of_sequences))
+            print("Number of sequences in assebly: {}".format(number_of_sequences))
             return False
 
     def assembly_file_check_fasta_gz(self):

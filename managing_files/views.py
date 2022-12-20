@@ -11,6 +11,7 @@ from operator import attrgetter
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
+from constants.nextclade_links import get_constext_nextclade
 from constants.software_names import SoftwareNames
 from django.conf import settings
 from django.contrib import messages
@@ -35,6 +36,10 @@ from settings.tables import SoftwaresTable
 from utils.collect_extra_data import CollectExtraData
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects
+from utils.session_variables import (
+    clean_check_box_in_session,
+    is_all_check_box_in_session,
+)
 from utils.software import Software
 from utils.software_pangolin import SoftwarePangolin
 from utils.support_django_template import get_link_for_dropdown_item
@@ -432,8 +437,10 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
     success_url = reverse_lazy("samples")
     template_name = "samples/sample_add.html"
 
-    logger_debug = logging.getLogger("fluWebVirus.debug")
-    logger_production = logging.getLogger("fluWebVirus.production")
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
     def get_form_kwargs(self):
         """
@@ -558,15 +565,12 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
                 )
             sample.save()
 
-        # create a task to perform the analysis of fastq and trimmomatic
+        ### create a task to perform the analysis of fastq and trimmomatic
         try:
             process_SGE = ProcessSGE()
             (job_name_wait, job_name) = self.request.user.profile.get_name_sge_seq(
                 Profile.SGE_PROCESS_clean_sample, Profile.SGE_SAMPLE
             )
-
-            taskID = 3  ### remove
-            ######################################### REMOVE IF LOCAL (WITHOUT SGE)
             if sample.is_type_fastq_gz_sequencing():  ### default is Illumina
                 taskID = process_SGE.set_run_trimmomatic_species(
                     sample, self.request.user, job_name
@@ -575,13 +579,11 @@ class SamplesAddView(LoginRequiredMixin, FormValidMessageMixin, generic.FormView
                 taskID = process_SGE.set_run_clean_minion(
                     sample, self.request.user, job_name
                 )
-            ########################################
         except Exception as e:
-            self.logger_production.error("Fail to run: ProcessSGE - " + str(e))
-            self.logger_debug.error("Fail to run: ProcessSGE - " + str(e))
+            self.logger.error("Fail to run: ProcessSGE - " + str(e))
             return super(SamplesAddView, self).form_invalid(form)
 
-        ## refresh sample list for this user  ### REMOVE ALSO THIS LINE IF LOCAL (WITHOUT SGE)
+        ## refresh sample list for this user
         if not job_name is None:
             process_SGE.set_create_sample_list_by_user(self.request.user, [job_name])
         ###
@@ -891,6 +893,7 @@ class SamplesUploadDescriptionFileView(
             pass
 
         utils = Utils()
+        software = Software()
         path_name = form.cleaned_data["path_name"]
 
         ## create a genbank file
@@ -934,6 +937,7 @@ class SamplesUploadDescriptionFileView(
                 ),
                 sz_file_to,
             )
+            software.dos_2_unix(sz_file_to)
             upload_files.path_name.name = os.path.join(
                 utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_sample_file
@@ -1018,6 +1022,7 @@ class SamplesUploadDescriptionFileViewMetadata(
             pass
 
         utils = Utils()
+        software = Software()
         path_name = form.cleaned_data["path_name"]
 
         ## create a genbank file
@@ -1063,6 +1068,7 @@ class SamplesUploadDescriptionFileViewMetadata(
                 ),
                 sz_file_to,
             )
+            software.dos_2_unix(sz_file_to)
             upload_files.path_name.name = os.path.join(
                 utils.get_path_upload_file(
                     self.request.user.id, TypeFile.TYPE_FILE_sample_file_metadata
@@ -1215,12 +1221,15 @@ class SamplesUploadFastQView(
     Create a new reference
     """
 
-    logger_debug = logging.getLogger("fluWebVirus.debug")
-    logger_production = logging.getLogger("fluWebVirus.production")
     form_class = SamplesUploadMultipleFastqForm
     success_url = reverse_lazy("sample-add-fastq")
     template_name = "samples/samples_upload_fastq_files.html"
     utils = Utils()
+
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
     def get_form_kwargs(self):
         """
@@ -1308,12 +1317,7 @@ class SamplesUploadFastQView(
                     self.utils.move_file(temp_file, sz_file_to)
                 else:
                     self.utils.copy_file(path_name.file.name, sz_file_to)
-                self.logger_debug.info(
-                    "Starting for file: " + str(upload_files.file_name)
-                )
-                self.logger_production.info(
-                    "Starting file: " + str(upload_files.file_name)
-                )
+                self.logger.info("Starting for file: " + str(upload_files.file_name))
 
                 ## test if file exist
                 if not os.path.exists(sz_file_to) and os.path.getsize(sz_file_to) > 10:
@@ -1358,8 +1362,7 @@ class SamplesUploadFastQView(
                     "message": str(form.errors["path_name"][0]),
                 }
         except:
-            self.logger_debug.error(sys.exc_info())
-            self.logger_production.error(sys.exc_info())
+            self.logger.error(sys.exc_info())
             data = {
                 "is_valid": False,
                 "name": self.request.FILES["path_name"].name,
@@ -1611,6 +1614,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
 
             ### software
             if sample.is_type_fastq_gz_sequencing():  ### for illumina
+
                 meta_sample = manageDatabase.get_sample_metakey_last(
                     sample,
                     MetaKeyAndValue.META_KEY_Fastq_Trimmomatic_Software,
@@ -1666,6 +1670,7 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                     context["abricate_software"] = result.get_software(
                         SoftwareNames.SOFTWARE_ABRICATE_name
                     )
+
             else:  ### Software Minion
                 meta_sample = manageDatabase.get_sample_metakey_last(
                     sample,
@@ -1698,15 +1703,35 @@ class SamplesDetailView(LoginRequiredMixin, DetailView):
                     )
 
                 ### abricate type/subtype
+                # meta_sample = manageDatabase.get_sample_metakey_last(sample, MetaKeyAndValue.META_KEY_Identify_Sample, MetaKeyAndValue.META_VALUE_Success)
+                # if (not meta_sample is None):
+                #    lst_data = meta_sample.description.split(',')
+                #    if len(lst_data) > 0: context['abricate_software'] = lst_data[1].strip()
+                ### species identification, only in Illumina
                 meta_sample = manageDatabase.get_sample_metakey_last(
                     sample,
-                    MetaKeyAndValue.META_KEY_Identify_Sample,
+                    MetaKeyAndValue.META_KEY_Identify_Sample_Software,
                     MetaKeyAndValue.META_VALUE_Success,
                 )
-                if not meta_sample is None:
-                    lst_data = meta_sample.description.split(",")
-                    if len(lst_data) > 0:
-                        context["abricate_software"] = lst_data[1].strip()
+                if meta_sample is None:
+                    meta_sample = manageDatabase.get_sample_metakey_last(
+                        sample,
+                        MetaKeyAndValue.META_KEY_Identify_Sample,
+                        MetaKeyAndValue.META_VALUE_Success,
+                    )
+                    if meta_sample != None:
+                        lst_data = meta_sample.description.split(",")
+                        context["spades_software"] = lst_data[1].strip()
+                        context["abricate_software"] = lst_data[2].strip()
+                else:
+                    decodeResult = DecodeObjects()
+                    result = decodeResult.decode_result(meta_sample.description)
+                    context["spades_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_FLYE_name
+                    )
+                    context["abricate_software"] = result.get_software(
+                        SoftwareNames.SOFTWARE_ABRICATE_name
+                    )
 
             ##### extra data sample, columns added by the user
             ## [[header1, value1], [header2, value2], [header3, value3], ...]
@@ -1816,7 +1841,7 @@ class ProjectsView(LoginRequiredMixin, ListView):
     model = Project
     template_name = "project/projects.html"
     context_object_name = "projects"
-    ##	group_required = u'company-user' security related with GroupRequiredMixin
+    ##    group_required = u'company-user' security related with GroupRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super(ProjectsView, self).get_context_data(**kwargs)
@@ -2130,8 +2155,10 @@ class AddSamplesProjectsView(
     success_url = reverse_lazy("projects")
     template_name = "project_sample/project_sample_add.html"
 
-    logger_debug = logging.getLogger("fluWebVirus.debug")
-    logger_production = logging.getLogger("fluWebVirus.production")
+    if settings.DEBUG:
+        logger = logging.getLogger("fluWebVirus.debug")
+    else:
+        logger = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
         context = super(AddSamplesProjectsView, self).get_context_data(**kwargs)
@@ -2200,7 +2227,7 @@ class AddSamplesProjectsView(
                         self.request.session[key] = True
         ## END need to clean all the others if are reject in filter
 
-        ### check if it show already the settings message
+        ### check if it was shown the settings message
         key_session_name_project_settings = "project_settings_{}".format(project.name)
         if not key_session_name_project_settings in self.request.session:
             self.request.session[key_session_name_project_settings] = True
@@ -2306,12 +2333,7 @@ class AddSamplesProjectsView(
                     sample = Sample.objects.get(pk=id_sample)
                 except Sample.DoesNotExist:
                     ## log
-                    self.logger_production.error(
-                        "Fail to get sample_id {} in ProjectSample".format(
-                            key.split("_")[2]
-                        )
-                    )
-                    self.logger_debug.error(
+                    self.logger.error(
                         "Fail to get sample_id {} in ProjectSample".format(
                             key.split("_")[2]
                         )
@@ -2420,7 +2442,7 @@ class AddSamplesProjectsView(
         else:
             return super(AddSamplesProjectsView, self).form_invalid(form)
 
-        form_valid_message = ""  ## need to have this, even empty
+    form_valid_message = ""  ## need to have this, even empty
 
 
 class ShowSampleProjectsView(LoginRequiredMixin, ListView):
@@ -2538,6 +2560,33 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
                     Project.PROJECT_FILE_NAME_TAB_VARIATIONS_FREEBAYES,
                 )
             )
+
+        ## aln2pheno result
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK
+            )
+        ):
+            context["aln2pheno_report_cog"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL,
+                    Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                )
+            )
+        # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
+        #    context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
+        #        project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+        if os.path.exists(
+            project.get_global_file_by_project(
+                TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip
+            )
+        ):
+            context["aln2pheno_zip"] = get_link_for_dropdown_item(
+                project.get_global_file_by_project(
+                    TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_zip
+                )
+            )
+
         ## all files zipped
         if os.path.exists(
             project.get_global_file_by_project(
@@ -2692,7 +2741,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
             )
             and settings.SHOW_NEXTCLADE_LINK
         ):  ## docker versions doesn't show NextClade link
-            context = _get_constext_nextclade(
+            context = get_constext_nextclade(
                 project.get_global_file_by_project(
                     TypePath.MEDIA_URL,
                     Project.PROJECT_FILE_NAME_SAMPLE_RESULT_all_consensus,
@@ -2728,12 +2777,12 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
         ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
         default_software.test_all_defaults(
-            self.request.user, project, None, None
+            self.request.user, project, None, None, None
         )  ## the user can have defaults yet
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
 
@@ -2770,13 +2819,14 @@ class ProjectsSettingsView(LoginRequiredMixin, ListView):
                             pipeline_step,
                             SoftwaresTable(
                                 query_set,
-                                project,
-                                None,
-                                None,
-                                count_project_sample == 0,
+                                project=project,
+                                project_sample=None,
+                                sample=None,
+                                b_enable_options=count_project_sample == 0,
                             ),
                         ]
                     )
+
             ## if there is software for the pipeline step
             if len(vect_pipeline_step) > 0:
                 all_tables.append(
@@ -2825,7 +2875,7 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
 
@@ -2856,7 +2906,12 @@ class SampleProjectsSettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step,
-                            SoftwaresTable(query_set, None, project_sample, None),
+                            SoftwaresTable(
+                                query_set,
+                                project=None,
+                                project_sample=project_sample,
+                                sample=None,
+                            ),
                         ]
                     )
             ## if there is software for the pipeline step
@@ -2901,12 +2956,16 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
         ### test all defaults first, if exist in database
         default_software = DefaultProjectSoftware()
         default_software.test_all_defaults(
-            self.request.user, None, None, sample
+            user=self.request.user,
+            project=None,
+            project_sample=None,
+            sample=sample,
+            dataset=None,
         )  ## the user can have defaults yet
 
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
-        ##	[unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
+        ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
 
@@ -2933,9 +2992,15 @@ class SampleSettingsView(LoginRequiredMixin, ListView):
                                 technology.replace(" ", "").replace("/", ""),
                             ),
                             pipeline_step,
-                            SoftwaresTable(query_set, None, None, sample),
+                            SoftwaresTable(
+                                query_set,
+                                project=None,
+                                project_sample=None,
+                                sample=sample,
+                            ),
                         ]
                     )
+
             ## if there is software for the pipeline step
             if len(vect_pipeline_step) > 0:
                 all_tables.append(
@@ -3208,7 +3273,7 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
                 and settings.SHOW_NEXTCLADE_LINK
                 and default_software.include_consensus(project_sample)
             ):  ## docker versions doesn't show NextClade link
-                context = _get_constext_nextclade(
+                context = get_constext_nextclade(
                     project_sample.get_consensus_file(TypePath.MEDIA_URL),
                     context,
                     get_current_site(self.request),
@@ -3218,67 +3283,6 @@ class ShowSampleProjectsDetailsView(LoginRequiredMixin, ListView):
         except ProjectSample.DoesNotExist:
             context["error_cant_see"] = 1
         return context
-
-
-def _get_constext_nextclade(
-    media_url_path, context, current_site, specie_identification
-):
-    """
-    :param specie_identification"""
-
-    ## sarscov 2
-    if specie_identification == Reference.SPECIES_SARS_COV_2:
-        context["nextclade_link_covid"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_sars_cov_2,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    elif specie_identification == Reference.SPECIES_MPXV:
-        context["nextclade_link_mpxv_hmpxv_b1"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_hMPXV_B1,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_mpxv_hmpxv"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_hMPXV,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_mpxv_all_clades"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_MPXV_All_clades,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    elif specie_identification == Reference.SPECIES_INFLUENZA:
-        context["nextclade_link_a_h3n2"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_A_H3N2,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_a_h1n1"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_A_H1N1,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_b_yamagata"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_B_Yamagata,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-        context["nextclade_link_b_victoria"] = "{}{}://{}{}".format(
-            Constants.NEXTCLADE_LINK_B_Victoria,
-            settings.WEB_SITE_HTTP_NAME,
-            current_site,
-            media_url_path,
-        )
-    return context
 
 
 def is_all_check_box_in_session(vect_check_to_test, request):

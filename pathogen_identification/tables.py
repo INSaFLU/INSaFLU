@@ -478,6 +478,18 @@ class RunMainTable(tables.Table):
             "contig_classification",
         )
 
+        sequence = (
+            "name",
+            "report",
+            "enrichment",
+            "host_depletion",
+            "assembly_method",
+            "contig_classification",
+            "read_classification",
+            "success",
+            "runtime",
+        )
+
     def render_success(self, record):
         success = False
         final_reports = FinalReport.objects.filter(run=record).count()

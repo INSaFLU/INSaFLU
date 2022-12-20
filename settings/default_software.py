@@ -816,7 +816,9 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_Medaka_name_consensus,
                 self.default_parameters.get_medaka_model_default(
-                    user, Software.TYPE_OF_USE_qc, ConstantsSettings.TECHNOLOGY_minion
+                    user,
+                    Software.TYPE_OF_USE_global,
+                    ConstantsSettings.TECHNOLOGY_minion,
                 ),
                 user,
             )

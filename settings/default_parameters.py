@@ -1367,7 +1367,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "-q"
-        parameter.parameter = "10"
+        parameter.parameter = "8"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1400,7 +1400,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--headcrop"
-        parameter.parameter = "70"
+        parameter.parameter = "30"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1418,7 +1418,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--tailcrop"
-        parameter.parameter = "70"
+        parameter.parameter = "30"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample
@@ -1436,7 +1436,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
         parameter.name = "--maxlength"
-        parameter.parameter = "0"
+        parameter.parameter = "50000"
         parameter.type_data = Parameter.PARAMETER_int
         parameter.software = software
         parameter.sample = sample

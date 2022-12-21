@@ -113,10 +113,14 @@ class TestMultiProcess(TransactionTestCase):
 		## move the files to the right place
 		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
 												TypeFile.TYPE_FILE_sample_file), upload_files.file_name)
-		sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(csv_file, sz_file_to)
-		upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+		if path_added is None:
+			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
+		else:
+			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
 		upload_files.save()
 			
 		process_SGE = ProcessSGE()
@@ -250,10 +254,14 @@ class TestMultiProcess(TransactionTestCase):
 		
 		sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), self.utils.get_path_upload_file(user.id,\
 												TypeFile.TYPE_FILE_fastq_gz), upload_files.file_name)
-		sz_file_to = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+		sz_file_to, path_added = self.utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 		self.utils.copy_file(fastq_file, sz_file_to)
-		upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+		if path_added is None:
+			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_fastq_gz), ntpath.basename(sz_file_to))
+		else:
+			upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(user.id,\
+									TypeFile.TYPE_FILE_fastq_gz), path_added, ntpath.basename(sz_file_to))
 		
 		upload_files.save()
 		

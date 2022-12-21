@@ -10,19 +10,8 @@ from managing_files.models import MetaKey, UploadFiles
 from constants.constants import Constants, TypeFile
 from utils.parse_in_files import ParseInFiles
 from utils.utils import Utils
-import os
-import argparse
+import os, ntpath
 import logging
-
-
-# Pass this to utils?
-def str2bool(v):
-	if v.lower() in ('yes', 'true', 't', 'y', '1'):
-		return True
-	elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-		return False
-	else:
-		raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 class Command(BaseCommand):
@@ -138,16 +127,23 @@ class Command(BaseCommand):
 			sample_file_upload_files.description = ""
 
 			# move the files to the right place
-			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_sample_file), metadata_file)
+			sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(user.id,
+									TypeFile.TYPE_FILE_sample_file), metadata_file)
 
 			# get unique file name, as the user can upload files with same name...
-			sz_file_to = utils.get_unique_file(sz_file_to)
+			sz_file_to, path_added = utils.get_unique_file(sz_file_to)
 
 			# Add this back in the end... to "consume" the file
 			# utils.move_file(metadata_full_path, sz_file_to)
 			utils.copy_file(metadata_full_path, sz_file_to)
-			sample_file_upload_files.path_name.name = sz_file_to
-
+			
+			if path_added is None:
+				sample_file_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
+			else:
+				sample_file_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
+					
 			self.stdout.write("{} file was processed".format(sample_file_upload_files.path_name.name))
 
 			# Do not forget to add 
@@ -165,8 +161,9 @@ class Command(BaseCommand):
 				fastq_upload_files.file_name = utils.clean_name(os.path.basename(fastq_to_upload))
 
 				# move the files to the right place
-				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_fastq_gz), fastq_upload_files.file_name)
-				sz_file_to = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
+				sz_file_to = os.path.join(getattr(settings, "MEDIA_ROOT", None), utils.get_path_upload_file(user.id, TypeFile.TYPE_FILE_fastq_gz),
+										fastq_upload_files.file_name)
+				sz_file_to, path_added = utils.get_unique_file(sz_file_to)		## get unique file name, user can upload files with same name...
 				#	utils.move_file(temp_file, sz_file_to)
 				utils.copy_file(fastq_to_upload, sz_file_to)
 
@@ -176,8 +173,13 @@ class Command(BaseCommand):
 					# If we do a return here then we need an atomic transaction or a way to prevent inconsistencies...
 					return False
 				
-				fastq_upload_files.path_name.name = sz_file_to
-
+				if path_added is None:
+					fastq_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+										TypeFile.TYPE_FILE_fastq_gz), fastq_upload_files.file_name)
+				else:
+					fastq_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+										TypeFile.TYPE_FILE_fastq_gz), path_added, fastq_upload_files.file_name)
+					
 				try:
 					type_file = MetaKey.objects.get(name=TypeFile.TYPE_FILE_fastq_gz)
 				except MetaKey.DoesNotExist:

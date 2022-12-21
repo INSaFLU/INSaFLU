@@ -15,7 +15,7 @@ import os
 from decouple import config
 
 ## define APP version
-APP_VERSION_NUMBER = "1.6.0"
+APP_VERSION_NUMBER = "2.0.0"
 
 ### running tests in command line
 RUN_TEST_IN_COMMAND_LINE = False
@@ -67,6 +67,10 @@ THREADS_TO_RUN_SLOW = config("THREADS_TO_RUN_SLOW", default=3, cast=int)
 ## MAX LENGTH_SEQUENCE_FROM_FASTA - REFERENCE
 MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config(
     "MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA", default=50000, cast=int
+)
+## MAX LENGTH_SEQUENCE_FROM_FASTA - CONSENSUS
+MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA = config(
+    "MAX_LENGTH_SEQUENCE_TOTAL_FROM_CONSENSUS_FASTA", default=50000, cast=int
 )
 MAX_REF_FASTA_FILE = config("MAX_REF_FASTA_FILE", default=100000, cast=int)  ## 100k
 MAX_CONSENSUS_FASTA_FILE = config(

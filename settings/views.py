@@ -63,13 +63,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
             software.pk = None
             software.type_of_use = Software.TYPE_OF_USE_televir_project
 
-            existing_software = Software.objects.filter(
-                name=software.name,
-                type_of_use=Software.TYPE_OF_USE_televir_project,
-                parameter__televir_project=project,
-                pipeline_step=software.pipeline_step,
-            )
-
             try:
                 Software.objects.get(
                     name=software.name,
@@ -147,13 +140,18 @@ class PISettingsView(LoginRequiredMixin, ListView):
             else:
                 self.update_software_params_global_project(televir_project)
 
+            technologies = [televir_project.technology]
+
+        else:
+            technologies = ConstantsSettings.vect_technology
+
         all_tables = []  ## order by Technology, PipelineStep, table
         ## [ [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...],
         ##    [unique_id, Technology, [ [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], [unique_id, PipelineStep, table], ...], etc
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
-        for technology in ConstantsSettings.vect_technology:  ## run over all technology
+        for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
@@ -385,10 +383,23 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
         kw["request"] = self.request  # the trick!
         return kw
 
+    def get_success_url(self):
+        """
+        get source_pk from update project, need to pass it in context
+        """
+        context = super(UpdateParametersView, self).get_context_data(**self.kwargs)
+        type_of_use = context["software"].type_of_use
+
+        if type_of_use == Software.TYPE_OF_USE_televir_global:
+            return reverse_lazy("pathogenID_pipeline", args=(0,))
+
+        return reverse_lazy("settings-index")
+
     def get_context_data(self, **kwargs):
         context = super(UpdateParametersView, self).get_context_data(**kwargs)
 
         context["error_cant_see"] = self.request.user != context["software"].owner
+        context["type_of_use"] = context["software"].type_of_use
         context["nav_settings"] = True
         context["nav_modal"] = True  ## short the size of modal window
         context[
@@ -438,6 +449,107 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
                     fail_silently=True,
                 )
         return super(UpdateParametersView, self).form_valid(form)
+
+    ## static method, not need for now.
+    form_valid_message = ""  ## need to have this
+
+
+class UpdateParametersTelevirProjView(LoginRequiredMixin, UpdateView):
+    model = Software
+    form_class = SoftwareForm
+    template_name = "settings/software_update.html"
+
+    ## Other solution to get the reference
+    ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
+    def get_form_kwargs(self):
+        """
+        Set the request to pass in the form
+        """
+        kw = super(UpdateParametersTelevirProjView, self).get_form_kwargs()
+        kw["request"] = self.request  # the trick!
+        kw["pk_televir_project"] = self.kwargs.get("pk_televir_project")
+        return kw
+
+    def get_success_url(self):
+        """
+        get source_pk from update project, need to pass it in context
+        """
+        project_pk = self.kwargs.get("pk_televir_project")
+        return reverse_lazy("pathogenID_pipeline", kwargs={"level": project_pk})
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateParametersTelevirProjView, self).get_context_data(
+            **kwargs
+        )
+
+        context["error_cant_see"] = self.request.user != context["software"].owner
+        context["pk_televir_project"] = self.kwargs.get("pk_televir_project")
+        context["nav_project"] = True
+        context["nav_modal"] = True  ## short the size of modal window
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        """
+        form update
+        """
+        ## save it...
+        with transaction.atomic():
+            software = form.save(commit=False)
+
+            project_id = self.kwargs.get("pk_televir_project")
+            project = None
+            if not project_id is None:
+                try:
+                    project = Televir_Project.objects.get(pk=project_id)
+                except Televir_Project.DoesNotExist:
+                    messages.error(
+                        self.request,
+                        "Software '" + software.name + "' parameters was not updated",
+                    )
+                    return super(UpdateParametersTelevirProjView, self).form_valid(form)
+
+            paramers = Parameter.objects.filter(
+                software=software, televir_project=project
+            )
+            b_change = False
+            for parameter in paramers:
+                if not parameter.can_change:
+                    continue
+                if parameter.get_unique_id() in form.cleaned_data:
+                    value_from_form = "{}".format(
+                        form.cleaned_data[parameter.get_unique_id()]
+                    )
+                    if value_from_form != parameter.parameter:
+                        b_change = True
+                        parameter.parameter = value_from_form
+                        parameter.save()
+
+            if b_change:
+                messages.success(
+                    self.request,
+                    "{} '".format("Software" if software.is_software() else "INSaFLU")
+                    + software.name
+                    + "' parameters were successfully updated for televir project '"
+                    + project.name
+                    + "'.",
+                    fail_silently=True,
+                )
+            else:
+                messages.success(
+                    self.request,
+                    "No parameters to update for {} '".format(
+                        "Software" if software.is_software() else "INSaFLU"
+                    )
+                    + software.name
+                    + "' for televir project '"
+                    + project.name
+                    + "'.",
+                    fail_silently=True,
+                )
+        return super(UpdateParametersTelevirProjView, self).form_valid(form)
 
     ## static method, not need for now.
     form_valid_message = ""  ## need to have this

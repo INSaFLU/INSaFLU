@@ -17,6 +17,7 @@ from managing_files.models import Project, ProjectSample
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
 )
+from pathogen_identification.models import Projects as TelevirProject
 from utils.utils import Utils
 
 from settings.default_parameters import DefaultParameters
@@ -40,7 +41,9 @@ class SoftwareForm(forms.ModelForm):
         self.request = kwargs.pop("request")
         ## try to get project or project sample, for settings update
         pk_project = kwargs.get("pk_project")
+        pk_televir_project = kwargs.get("pk_televir_project")
         project = None
+        televir_project = None
 
         ###
         self.televir_utiltity = Utility_Pipeline_Manager()
@@ -50,6 +53,10 @@ class SoftwareForm(forms.ModelForm):
         if not pk_project is None:
             kwargs.pop("pk_project")
             project = Project.objects.get(pk=pk_project)
+
+        if not pk_televir_project is None:
+            kwargs.pop("pk_televir_project")
+            televir_project = TelevirProject.objects.get(pk=pk_televir_project)
 
         project_sample = None
         pk_project_sample = kwargs.get("pk_project_sample")
@@ -79,6 +86,7 @@ class SoftwareForm(forms.ModelForm):
             project_sample=project_sample,
             sample=sample,
             dataset=dataset,
+            televir_project=televir_project,
         )
         dt_fields = {}
         vect_divs = []
@@ -261,7 +269,14 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample, dataset)
+                            self._get_reverse(
+                                project,
+                                project_sample,
+                                sample,
+                                dataset,
+                                self.instance,
+                                televir_project,
+                            )
                         ),
                     ),
                 ),
@@ -281,7 +296,14 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample, dataset)
+                            self._get_reverse(
+                                project,
+                                project_sample,
+                                sample,
+                                dataset,
+                                self.instance,
+                                televir_project,
+                            )
                         ),
                     ),
                 ),
@@ -302,7 +324,14 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample, dataset)
+                            self._get_reverse(
+                                project,
+                                project_sample,
+                                sample,
+                                dataset,
+                                self.instance,
+                                televir_project,
+                            )
                         ),
                     ),
                 ),
@@ -324,14 +353,27 @@ class SoftwareForm(forms.ModelForm):
                         "Cancel",
                         css_class="btn-secondary",
                         onclick='window.location.href="{}"'.format(
-                            self._get_reverse(project, project_sample, sample.dataset)
+                            self._get_reverse(
+                                project,
+                                project_sample,
+                                sample,
+                                sample.dataset,
+                                self.instance,
+                                televir_project,
+                            )
                         ),
                     ),
                 ),
             )
 
-    def _get_reverse(self, project, project_sample, sample, dataset):
+    def _get_reverse(
+        self, project, project_sample, sample, dataset, instance, televir_project
+    ):
         """ """
+        if instance.type_of_use == 5:
+            return reverse("pathogenID_pipeline", args=[0])
+        if not televir_project is None:
+            return reverse("pathogenID_pipeline", args=[televir_project.pk])
         if not project is None:
             return reverse("project-settings", args=[project.pk])
         if not dataset is None:

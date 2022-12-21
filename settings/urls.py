@@ -23,6 +23,11 @@ urlpatterns = [
         views.UpdateParametersDatasetView.as_view(),
         name="software-dataset-update",
     ),
+    url(
+        r"software_televir_project_update/soft_(?P<pk>\d+)/televir_project_(?P<pk_televir_project>\d+)$",
+        views.UpdateParametersTelevirProjView.as_view(),
+        name="software-televir-project-update",
+    ),
     url(r"^$", views.index.as_view(), name="settings-index"),
     url(r"set_quality", views.QCSettingsView.as_view(), name="settings_qc"),
     url(r"403/$", views.Maintenance.as_view(), name="under_construction"),

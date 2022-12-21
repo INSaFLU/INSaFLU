@@ -243,7 +243,60 @@ class SoftwaresTable(tables.Table):
 
         ## start define links
         b_enable_options = self.b_enable_options
-        if not self.project is None:  ## for projects
+        if not self.televir_project is None:  ## for televir projects
+            if b_enable_options:  ## If b_enable_options is False it's false to All
+                default_software_projects = DefaultProjectSoftware()
+                b_enable_options = (
+                    default_software_projects.can_change_values_for_this_software(
+                        record,
+                        project=None,
+                        project_sample=None,
+                        sample=None,
+                        dataset=self.dataset,
+                    )
+                )
+
+            str_links = (
+                "<a href="
+                + reverse(
+                    "software-televir-project-update",
+                    args=[record.pk, self.televir_project.pk],
+                )
+                + ' data-toggle="tooltip" title="Edit parameters" '
+                + "{}".format(
+                    "" if b_enable_options else "onclick='return false;' disable"
+                )
+                + '><span><i class="fa fa-2x fa-pencil padding-button-table '
+                + "{}".format("" if b_enable_options else "disable_fa_icon")
+                + '"></i></span></a>'
+            )
+
+            str_links += (
+                '<a href="{}"'.format(
+                    "#id_set_default_modal" if b_enable_options else ""
+                )
+                + ' id="id_default_parameter" data-toggle="modal" data-toggle="tooltip" title="{}"'.format(
+                    tooltip_reset
+                )
+                + "{}".format(
+                    "" if b_enable_options else 'onclick="return false;" disable'
+                )
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '" pk_televir_project="'
+                + str(self.televir_project.pk)
+                + '" type_software="{}'.format(
+                    "software" if record.is_software() else "INSaFLU"
+                )
+                + '" dataset_name="'
+                + str(self.televir_project.name)
+                + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
+                + "{}".format("" if b_enable_options else "disable_fa_icon")
+                + '"></i></span></a>'
+            )
+        elif not self.project is None:  ## for projects
             ### turn on/off buttons
             if (
                 record.name == SoftwareNames.SOFTWARE_MASK_CONSENSUS_BY_SITE_name

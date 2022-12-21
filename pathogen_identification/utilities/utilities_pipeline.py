@@ -662,12 +662,12 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def expand_parameters_table(combined_table, software_db_dict={}):
-        #print(software_db_dict)
-        #print("#####")
+        # print(software_db_dict)
+        # print("#####")
 
         def fix_row(row):
-            if row.name == "--db":
-                #print(row.name, row.parameter)
+            # if row.name == "--db":
+            # print(row.name, row.parameter)
             if not row.parameter:
                 return [""]
             if not row.can_change or not row.range_available:

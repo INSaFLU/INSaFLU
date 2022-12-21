@@ -392,6 +392,7 @@ class Utility_Pipeline_Manager:
 
         try:
             fields = pd.read_sql(fields, self.utility_repository.engine)
+            fields = fields.drop_duplicates(subset=["database"])
             return fields
         except Exception as e:
             self.logger.error(

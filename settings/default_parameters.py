@@ -153,11 +153,11 @@ class DefaultParameters(object):
         sample,
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
+        televir_project=None,
     ):
         """
         get software_name parameters, if it saved in database...
         """
-
         # logger = logging.getLogger("fluWebVirus.debug")
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
@@ -173,6 +173,7 @@ class DefaultParameters(object):
                         software_name
                     ),
                     pipeline_step__name=prefered_pipeline,
+                    
                 )
             except Software.DoesNotExist:
                 if type_of_use in [
@@ -234,6 +235,7 @@ class DefaultParameters(object):
             project_sample=project_sample,
             sample=sample,
             dataset=dataset,
+            televir_project=televir_project,
         )
 
         # logger.debug("Get parameters: {}".format(parameters))

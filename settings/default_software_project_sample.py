@@ -293,6 +293,7 @@ class DefaultProjectSoftware(object):
         sample,
         technology_name,
         dataset=None,
+        televir_project=None,
     ):
         """
         test if exist, if not persist in database
@@ -307,6 +308,7 @@ class DefaultProjectSoftware(object):
                 parameter__project_sample=project_sample,
                 parameter__sample=sample,
                 parameter__dataset=dataset,
+                parameter__televir_project=televir_project,
                 version_parameters=self.default_parameters.get_software_parameters_version(
                     software_name
                 ),
@@ -2360,6 +2362,7 @@ class DefaultProjectSoftware(object):
         sample,
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
+        televir_project=None,
     ):
         """ """
         self.test_default_db(
@@ -2381,6 +2384,7 @@ class DefaultProjectSoftware(object):
             sample,
             technology_name,
             dataset,
+            televir_project=televir_project,
         )
 
     def get_all_software(self):

@@ -147,6 +147,7 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
+        print(record.name)
         if (
             self.project is None
             and self.project_sample is None

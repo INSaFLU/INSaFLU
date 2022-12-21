@@ -504,7 +504,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_ABRICATE_name,
             user,
-            Software.TYPE_OF_USE_global,
+            Software.TYPE_OF_USE_qc,
             None,
             None,
             None,
@@ -801,6 +801,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_clean_human_reads_parameters(user, technology_name)
+
         if software_name == SoftwareNames.SOFTWARE_NanoFilt_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_NanoFilt_name,
@@ -857,6 +858,7 @@ class DefaultSoftware(object):
             )
             return self.get_vcf_freq_ONT_parameters(user)
         if software_name == SoftwareNames.SOFTWARE_ABRICATE_name:
+            print("get_abricate_parameters")
             self.test_default_db(
                 SoftwareNames.SOFTWARE_ABRICATE_name,
                 self.default_parameters.get_abricate_default(

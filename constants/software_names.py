@@ -503,7 +503,7 @@ class SoftwareNames(object):
     SOFTWARE_CENTRIFUGE_name = "Centrifuge"
     SOFTWARE_CENTRIFUGE_name_extended = "Centrifuge"
 
-    SOFTWARE_CENTRIFUGE_VERSION = "1.0.0"
+    SOFTWARE_CENTRIFUGE_VERSION = "1.0.4_beta"
     SOFTWARE_CENTRIFUGE_parameters = "-p 4 --time -k 3 --out-fmt sam"
     SOFTWARE_CENTRIFUGE_PARAMETERS_TWO_SEQUENCES = "-p 4 --time -k 3 --out-fmt sam"
 
@@ -527,7 +527,7 @@ class SoftwareNames(object):
     )
     SOFTWARE_KRAKEN2_name = "Kraken2"
     SOFTWARE_KRAKEN2_name_extended = "Kraken2"
-    SOFTWARE_KRAKEN2_VERSION = "2.0.5"
+    SOFTWARE_KRAKEN2_VERSION = "2.1.2"
     SOFTWARE_KRAKEN2_parameters = "--threads 4 --gzip-compressed  --confidence .5"
     SOFTWARE_KRAKEN2_PARAMETERS_TWO_SEQUENCES = (
         "--threads 4 --gzip-compressed  --confidence .5"
@@ -539,7 +539,7 @@ class SoftwareNames(object):
     )
     SOFTWARE_KRAKENUNIQ_name = "Krakenuniq"
     SOFTWARE_KRAKENUNIQ_name_extended = "Krakenuniq"
-    SOFTWARE_KRAKENUNIQ_VERSION = "1.0.0"
+    SOFTWARE_KRAKENUNIQ_VERSION = "0.7.3"
     SOFTWARE_KRAKENUNIQ_parameters = (
         "--threads 4 --gzip-compressed --fastq-input --hll-precision 12"
     )
@@ -555,7 +555,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "FastViromeExplorer/FastViromeExplorer/bin/FastViromeExplorer",
     )
-    SOFTWARE_FASTVIROMEEXPLORER_VERSION = "1.0.0"
+    SOFTWARE_FASTVIROMEEXPLORER_VERSION = "1.3"
     SOFTWARE_FASTVIROMEEXPLORER_parameters = ""
 
     ### DIAMOND
@@ -565,7 +565,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/diamond",
     )
-    SOFTWARE_DIAMOND_VERSION = "0.9.24"
+    SOFTWARE_DIAMOND_VERSION = "2.0.15"
     SOFTWARE_DIAMOND_parameters = (
         "-p 5 --top 5 -e 0.01 --id 65 --query-cover 50 --sensitive"
     )
@@ -576,7 +576,7 @@ class SoftwareNames(object):
     SOFTWARE_BLAST = os.path.join(
         settings.DIR_SOFTWARE, "hostDepletion/hostdep_env/bin/blast"
     )
-    SOFTWARE_BLAST_VERSION = "2.9.0"
+    SOFTWARE_BLAST_VERSION = "2.12.0"
     SOFTWARE_BLAST_parameters = "-num_threads 5 -outfmt 6"
 
     ### KAIJU
@@ -586,7 +586,7 @@ class SoftwareNames(object):
     )
     SOFTWARE_KAIJU_name = "Kaiju"
     SOFTWARE_KAIJU_name_extended = "Kaiju"
-    SOFTWARE_KAIJU_VERSION = "2.0.1"
+    SOFTWARE_KAIJU_VERSION = "1.8.2"
     SOFTWARE_KAIJU_parameters = (
         "-t 4 -z -f kaiju_db/nodes.dmp -i kaiju_db/kaiju_db.fmi -o -v -x -u -v"
     )
@@ -606,7 +606,7 @@ class SoftwareNames(object):
     SOFTWARE_RAVEN_name = "Raven"
     SOFTWARE_RAVEN_name_extended = "Raven"
     SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
-    SOFTWARE_RAVEN_VERSION = "1.0.0"
+    SOFTWARE_RAVEN_VERSION = "1.8.1"
     SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
     ### SNIPPY
@@ -617,7 +617,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/snippy",
     )
-    SOFTWARE_SNIPPY_PI_VERSION = "1.0.0"
+    SOFTWARE_SNIPPY_PI_VERSION = "3.2_dev"
     SOFTWARE_SNIPPY_PI_parameters = "--cpus 4 mapqual=40 --mincov 10 --minfrac 0.1"
 
     ### MINIMAP2 REMAP
@@ -628,7 +628,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",
     )
-    SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "1.0.0"
+    SOFTWARE_MINIMAP2_REMAP_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_REMAP_ONT_parameters = "-a -x map-ont -t 4"
 
     ### MINIMAP2 DEPLETE
@@ -639,7 +639,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "hostDepletion/hostdep_env/bin/minimap2",
     )
-    SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "1.0.0"
+    SOFTWARE_MINIMAP2_DEPLETE_ONT_VERSION = "2.24"
     SOFTWARE_MINIMAP2_DEPLETE_ONT_parameters = "-a -x map-ont -t 4"
 
     ### Bowtie2 DEPLETE
@@ -650,7 +650,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE,
         "remap/remap/bin/bowtie2",
     )
-    SOFTWARE_BOWTIE2_DEPLETE_VERSION = "1.0.0"
+    SOFTWARE_BOWTIE2_DEPLETE_VERSION = "2.4.5"
     SOFTWARE_BOWTIE2_DEPLETE_parameters = "-p 4"
 
     ###################################

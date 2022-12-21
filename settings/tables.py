@@ -215,7 +215,7 @@ class SoftwaresTable(tables.Table):
                 technology_name,
             )
         elif not self.televir_project is None:
-
+            print(self.televir_project)
             default_software_projects = DefaultProjectSoftware()
             return default_software_projects.get_parameters(
                 record.name,

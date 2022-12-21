@@ -210,6 +210,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         if televir_project:
             context["settings_pathid_project"] = True  ## True for project softwares
             context["project_name"] = televir_project.name
+            context["project_id"] = televir_project.pk
         else:
             context["settings_pathogenid"] = True
         context[

@@ -290,7 +290,7 @@ class SoftwaresTable(tables.Table):
                 + '" type_software="{}'.format(
                     "software" if record.is_software() else "INSaFLU"
                 )
-                + '" dataset_name="'
+                + '" televir_project="'
                 + str(self.televir_project.name)
                 + '"><span ><i class="fa fa-2x fa-power-off padding-button-table '
                 + "{}".format("" if b_enable_options else "disable_fa_icon")

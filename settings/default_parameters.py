@@ -173,7 +173,7 @@ class DefaultParameters(object):
                         software_name
                     ),
                     pipeline_step__name=prefered_pipeline,
-                    # parameter__televir_project=televir_project,
+                    
                 )
             except Software.DoesNotExist:
                 if type_of_use in [

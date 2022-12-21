@@ -155,3 +155,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# televir projects media and static
+media/televir_projects
+static/televir_projects

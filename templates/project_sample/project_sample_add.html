@@ -12,9 +12,18 @@
 {% endblock css %}
 
 {% block breadcrumbs %}
+
+    {% if televir_sample %}
 	{{ block.super }}
+    {% breadcrumb "Project Index" "project-index" %}
+	{% breadcrumb "TELEVIR Projects" "PIprojects_main" %}
+	{% breadcrumb "Add samples to project" "add-sample-project" %}
+    {% else %}
+	{{ block.super }}
+    {% breadcrumb "Project Index" "project-index" %}
 	{% breadcrumb "Projects" "projects" %}
 	{% breadcrumb "Add samples to project" "add-sample-project" %}
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -106,7 +115,7 @@
 			<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
 		{% endif %}
 	
-		<a id="id_go_back_button" href="{% url 'projects' %}" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
+		<a id="id_go_back_button" onClick="javascript:history.go(-1);" class="btn btn-small btn-primary dark"><span class="hidden-phone"><i class="fa fa-arrow-left"></i> Go back</span></a>
 		
 		{% if show_message_change_settings %}
 			<div class="modal fade" id="modal_show_settings_allert">

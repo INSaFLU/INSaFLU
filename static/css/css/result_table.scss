@@ -1,0 +1,180 @@
+$screen-sm-min: 768px;
+$shadow: 0 2px 3px rgba(0, 0, 0, .2);
+$gray-border: darken(#f8f8f8, 10%);
+$gray-light: rgba(0, 0, 0, .35);
+$faded-yellow: lighten(#f1c40f, 40%);
+
+// thx, @HugoGiraudel
+@mixin scrollbars($size, $foreground-color, $background-color: mix($foreground-color, white, 50%)) {
+  ::-webkit-scrollbar {
+      width:  $size;
+      height: $size;
+  }
+
+  ::-webkit-scrollbar-thumb {
+      background: $foreground-color;
+  }
+
+  ::-webkit-scrollbar-track {
+      background: $background-color;
+  }
+
+  // For Internet Explorer
+  body {
+    scrollbar-face-color: $foreground-color;
+    scrollbar-track-color: $background-color;
+  }
+}
+
+@include scrollbars(.15em, slategray);
+
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: #f8f8f8;
+}
+
+button.btn {
+  box-shadow: $shadow;
+  border: 0;
+  border-radius: 0px;
+  i {
+    margin-right: 3px;
+  }
+}
+
+body.large-screen {
+  .table-wrapper {
+    max-width: 800px;
+  }
+  .card-list-table {
+    background: white;
+    tbody tr {
+      background: transparent;
+      box-shadow: none;
+      margin: 0;
+      &:nth-of-type(even) {
+        background: $gray-border;
+      }
+    }
+    thead {
+      display: table-header-group;
+      th:last-child {
+        box-shadow: none;
+      }
+      th {
+        border-bottom: 1px solid $gray-border;
+        padding: 12px 24px;
+      }
+    }
+    tbody {
+      tr {
+        display: table-row;
+        padding-bottom: 0;
+
+      td {
+        border-bottom: 1px solid $gray-border;
+        cursor: pointer;
+        display: table-cell;
+        padding: 20px 24px;
+        transition: background .2s ease-out;
+        vertical-align: middle;
+        &:after {
+          display: none;
+        }
+        &:before {
+          content: '';
+        }
+      }
+      tr:hover td {
+        background: $faded-yellow;
+      }
+    }
+  }
+}
+
+.buttons {
+  margin: 10px 0 50px;
+}
+
+.container table {
+  max-width: 300px;
+  width: 80%;
+  margin: 0 auto 0;
+  max-height: 500px;
+  overflow-y: scroll;
+  position: relative;
+  transition: all .2s ease-out;
+  @media(min-width: $screen-sm-min) {
+    background: white;
+    box-shadow: $shadow;
+  }
+}
+
+.container table {
+  table-layout: fixed;
+  background: transparent;
+  margin-bottom: 0;
+  width: 100%;
+  thead {
+    display: none;
+  }
+  tbody tr {
+    box-shadow: $shadow;
+    background: #fff;
+    border-bottom: 1px solid $gray-border;
+    cursor: pointer;
+    display: block;
+    padding: 15px 10px;
+    margin: 0 0 10px 0;
+  }
+  tbody td {
+    border: 0;
+    display: block;
+    padding: 10px 10px 20px 40%;
+    position: relative;
+    &:first-of-type::after {
+      visibility: hidden;
+    }
+    &:after {
+      content: '';
+      width: calc(100% - 30px);
+      display: block;
+      margin: 0 auto;
+      height: 1px;
+      background: $gray-border;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -6px
+    }
+    &:before {
+      color: $gray-light;
+      text-transform: uppercase;
+      font-size: .85em;
+      content: attr(data-title);
+      display: table-cell;
+      font-weight: 500;
+      height: 100%;
+      left: 15px;
+      margin: auto;
+      position: absolute;
+      vertical-align: middle;
+      white-space: nowrap;
+      width: 40%;
+    }
+  }
+  thead th {
+    text-transform: uppercase;
+    font-size: .85em;
+    color: $gray-light;
+    letter-spacing: .5pt;
+  }
+}

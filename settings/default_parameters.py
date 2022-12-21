@@ -143,6 +143,74 @@ class DefaultParameters(object):
     # select * from settings_parameter where software_id = 49  order by id
     # select * from settings_parameter where software_id = 228  order by id
 
+    def get_software_global_with_step(
+        self,
+        user,
+        software_name,
+        technology_name,
+        type_of_use,
+        pipeline_step,
+        televir_project=None,
+    ):
+        """
+        Get software global using pipeline step."""
+
+        software_list = Software.objects.filter(
+            name=software_name,
+            owner=user,
+            type_of_use=type_of_use,
+            technology__name=technology_name,
+            version_parameters=self.get_software_parameters_version(software_name),
+            pipeline_step__name=pipeline_step,
+            parameter__televir_project=televir_project,
+        )
+
+        if len(software_list) == 0:
+            software_list = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                version_parameters=self.get_software_parameters_version(software_name),
+                pipeline_step__name=pipeline_step,
+                parameter__televir_project=televir_project,
+            )
+
+        if len(software_list) == 0:
+            return None
+
+        return software_list[0]
+
+    def get_software_global(
+        self, user, software_name, technology_name, type_of_use, televir_project=None
+    ):
+        """
+        Get software global
+        """
+        software_list = Software.objects.filter(
+            name=software_name,
+            owner=user,
+            type_of_use=type_of_use,
+            technology__name=technology_name,
+            version_parameters=self.get_software_parameters_version(software_name),
+            parameter__televir_project=televir_project,
+        )
+        print("ver")
+        print(self.get_software_parameters_version(software_name))
+
+        if len(software_list) == 0:
+            software_list = Software.objects.filter(
+                name=software_name,
+                owner=user,
+                type_of_use=type_of_use,
+                version_parameters=self.get_software_parameters_version(software_name),
+                parameter__televir_project=televir_project,
+            )
+
+        if len(software_list) == 0:
+            return None
+
+        return software_list[0]
+
     def get_parameters(
         self,
         software_name,
@@ -163,68 +231,33 @@ class DefaultParameters(object):
 
         if self.check_software_is_polyvalent(software_name):
             prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
-            try:
-                software = Software.objects.get(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=type_of_use,
-                    technology__name=technology_name,
-                    version_parameters=self.get_software_parameters_version(
-                        software_name
-                    ),
-                    pipeline_step__name=prefered_pipeline,
-                    
-                )
-            except Software.DoesNotExist:
-                if type_of_use in [
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_televir_global,
-                ]:
-                    try:
-                        software = Software.objects.get(
-                            name=software_name,
-                            owner=user,
-                            type_of_use=type_of_use,
-                            version_parameters=self.get_software_parameters_version(
-                                software_name
-                            ),
-                            pipeline_step__name=prefered_pipeline,
-                        )
-                    except Software.DoesNotExist:
-                        return None
-                else:
-                    return None
+
+            software = self.get_software_global_with_step(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                prefered_pipeline,
+                televir_project=televir_project,
+            )
+
         else:
-            try:
-                software = Software.objects.get(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=type_of_use,
-                    technology__name=technology_name,
-                    version_parameters=self.get_software_parameters_version(
-                        software_name
-                    ),
-                )
-            except Software.DoesNotExist:
-                if type_of_use in [
-                    Software.TYPE_OF_USE_global,
-                    Software.TYPE_OF_USE_qc,
-                    Software.TYPE_OF_USE_televir_global,
-                ]:
-                    try:
-                        software = Software.objects.get(
-                            name=software_name,
-                            owner=user,
-                            type_of_use=type_of_use,
-                            version_parameters=self.get_software_parameters_version(
-                                software_name
-                            ),
-                        )
-                    except Software.DoesNotExist:
-                        return None
-                else:
-                    return None
+            print("HII")
+            software = self.get_software_global(
+                user,
+                software_name,
+                technology_name,
+                type_of_use,
+                televir_project=televir_project,
+            )
+        print(self.get_software_parameters_version(software_name))
+        print("software: {}".format(software))
+        print("type of use:: {}".format(type_of_use))
+        print("technology name: {}".format(technology_name))
+        print(user)
+
+        if software is None:
+            return software
 
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 

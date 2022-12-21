@@ -194,8 +194,6 @@ class DefaultParameters(object):
             version_parameters=self.get_software_parameters_version(software_name),
             parameter__televir_project=televir_project,
         )
-        print("ver")
-        print(self.get_software_parameters_version(software_name))
 
         if len(software_list) == 0:
             software_list = Software.objects.filter(

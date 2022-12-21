@@ -1105,10 +1105,11 @@
 <script type="text/javascript">
 
     $(document).on("click", "a", function (e) {
-        e.preventDefault();
+        
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
         if (id === "remap_reference") {
+            e.preventDefault();
             $.ajax({
                 url: "{% url 'deploy_televir_map' %}",
                 type: "POST",

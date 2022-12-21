@@ -662,11 +662,17 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def expand_parameters_table(combined_table, software_db_dict={}):
+        #print(software_db_dict)
+        #print("#####")
+
         def fix_row(row):
+            if row.name == "--db":
+                #print(row.name, row.parameter)
             if not row.parameter:
                 return [""]
             if not row.can_change or not row.range_available:
                 return [row.parameter]
+
             else:
 
                 row_type = row.type_data
@@ -692,11 +698,14 @@ class Parameter_DB_Utility:
                         for x in np.arange(range_min, range_max, range_step)
                     ]
 
-                elif row.name == "--db" and software_db_dict:
+                if row.name == "--db" and software_db_dict:
                     software_name = row.software_name
+                    # print(software_name)
                     possibilities = [software_name, software_name.lower()]
                     if "_" in software_name:
                         possibilities.append(software_name.split("_")[0])
+
+                    # print(possibilities)
 
                     for p in possibilities:
                         if p in software_db_dict:

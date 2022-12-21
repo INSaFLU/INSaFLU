@@ -889,6 +889,7 @@ class Remapping:
 
         if self.check_remap_performed():
             self.logger.info("Remapping already performed")
+            self.reference_file_exists = True
 
             if self.reference_file_exists:
                 self.retrieve_reference()
@@ -1082,8 +1083,6 @@ class Remapping:
                 f"samtools faidx {self.target.file} '{accid}' >> {self.reference_file}"
             )
             self.cmd.run(cmd)
-
-        import sys
 
         self.reference_file_exists = (
             os.path.isfile(self.reference_file)

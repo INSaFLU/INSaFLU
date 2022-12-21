@@ -104,6 +104,7 @@ class ProcessSGE(object):
         job_name,
         b_remove_out_dir=False,
         job_name_wait=[],
+        alternative_temp_dir=None,
     ):
         """
         create the script to run SGE
@@ -142,6 +143,13 @@ class ProcessSGE(object):
                 handleSGE.write(
                     "\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(out_dir)
                 )
+                if alternative_temp_dir is not None:
+                    handleSGE.write(
+                        "\nif [ $? -eq 0 ]\nthen\n  rm -r {}\nfi\n".format(
+                            alternative_temp_dir
+                        )
+                    )
+
         return file_name_out
 
     def __get_sge_process__(self):
@@ -817,7 +825,13 @@ class ProcessSGE(object):
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            outdir_sge, queue_name, vect_command, job_name, True, [job_name_wait]
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)
@@ -853,7 +867,13 @@ class ProcessSGE(object):
         )
         outdir_sge = self.utils.get_temp_dir()
         path_file = self.set_script_run_sge(
-            outdir_sge, queue_name, vect_command, job_name, True, [job_name_wait]
+            outdir_sge,
+            queue_name,
+            vect_command,
+            job_name,
+            True,
+            [job_name_wait],
+            alternative_temp_dir=out_dir,
         )
         try:
             sge_id = self.submitte_job(path_file)

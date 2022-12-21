@@ -71,7 +71,7 @@ class Metadata_handler:
             report_2,
         )
         self.merge_reports_clean(
-            max_remap=max_remap,
+            taxid_limit=taxid_limit,
         )
 
         #######
@@ -80,7 +80,7 @@ class Metadata_handler:
         remap_targets, remap_absent = self.generate_mapping_targets(
             self.merged_targets,
             prefix=self.prefix,
-            taxid_limit=taxid_limit,
+            max_remap=max_remap,
             fasta_main_dir=self.config["source"]["REF_FASTA"],
         )
 
@@ -367,11 +367,13 @@ class Metadata_handler:
 
     def merge_reports_clean(
         self,
-        max_remap: int = 15,
+        taxid_limit: int = 15,
     ):
         """merge the reports and filter them."""
 
-        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=max_remap)
+        print("TAXID LIMIT: ", taxid_limit)
+
+        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
@@ -380,11 +382,6 @@ class Metadata_handler:
         )
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 
-        targets.dropna(subset=["taxid"], inplace=True)
-        targets["taxid"] = targets["taxid"].astype(int)
-
-        targets = self.prettify_reports(targets)
-
         self.raw_targets = raw_targets
         self.merged_targets = targets
 
@@ -392,7 +389,7 @@ class Metadata_handler:
         self,
         targets,
         prefix: str,
-        taxid_limit: int = 9,
+        max_remap: int = 9,
         fasta_main_dir: str = "",
     ):
         """
@@ -430,7 +427,7 @@ class Metadata_handler:
 
                 nsu = nset[nset.file == fileset]
 
-                if nsu.shape[0] > taxid_limit:
+                if nsu.shape[0] > max_remap:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()

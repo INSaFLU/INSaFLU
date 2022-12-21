@@ -834,6 +834,7 @@ def Sample_reports(requesdst, pk1, pk2):
             run__project__pk=int(pk1), sample__pk=int(pk2)
         ).order_by("-coverage")
         project_name = project.name
+        sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 
     else:
 
@@ -844,6 +845,7 @@ def Sample_reports(requesdst, pk1, pk2):
         )
         all_reports = FinalReport.objects.none()
         project_name = "project"
+        sample_name = "sample"
 
     return render(
         requesdst,
@@ -851,6 +853,8 @@ def Sample_reports(requesdst, pk1, pk2):
         {
             "final_report": all_reports,
             "project": project_name,
+            "sample": sample_name,
+            "sample_index": pk2,
             "project_index": project.pk,
         },
     )

@@ -222,31 +222,40 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     """
     merge tables of taxids to columns.
     """
+    ###
     if "description" in r1.columns:
         r1 = (
             r1[~r1.description.str.contains(exclude)]
             .drop_duplicates(subset=["taxid"], keep="first")
             .sort_values("counts", ascending=False)
         )
+    if "description" in r2.columns:
+        r2 = (
+            r2[~r2.description.str.contains(exclude)]
+            .drop_duplicates(subset=["taxid"], keep="first")
+            .sort_values("counts", ascending=False)
+        )
+
+    ###
 
     r1 = r1[["taxid", "counts"]]
     r1_raw = r1.copy()
+    r2_raw = r2.copy()
 
-    r2pres = 1
+    ###
+    if len(r2) > 0 and len(r1) > 0:
+        full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
+    elif len(r2) > 0:
+        full_descriptor = r2
+    else:
+        full_descriptor = r1
 
-    full_descriptor = r1
+    full_descriptor = full_descriptor.fillna(0)
 
-    if len(r2):
+    ###
+
+    if len(r2) and len(r1):
         r2pres = 2
-        if "description" in r2.columns:
-            r2 = r2[~r2.description.str.contains(exclude)]
-
-        if len(r2) > 0 and len(r1) > 0:
-            full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
-        elif len(r2) > 0:
-            full_descriptor = r2
-        else:
-            full_descriptor = r1
 
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
@@ -276,7 +285,11 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
                 .reset_index(drop=True)
             )
 
-    full_descriptor = full_descriptor.fillna(0)
+    elif len(r2) == 0:
+        r1 = r1.head(maxt)
+
+    elif len(r1) == 0:
+        r1 = r2.head(maxt)
 
     def get_source(row):
 
@@ -290,7 +303,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     def descriptor_sources(fd):
         if len(r1_raw) == 0:
             fd["source"] = 2
-        elif len(r2) == 0:
+        elif len(r2_raw) == 0:
             fd["source"] = 1
         else:
             fd["source"] = fd.apply(get_source, axis=1)
@@ -298,7 +311,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         return fd
 
     def descriptor_counts(fd):
-        if len(r1_raw) == 0 or len(r2) == 0:
+        if len(r1_raw) == 0 or len(r2_raw) == 0:
             if "counts" not in fd.columns:
                 fd["counts"] = fd["counts_x"]
             if "counts_y" in fd.columns:
@@ -322,4 +335,11 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     full_descriptor = descriptor_sources(full_descriptor)
     full_descriptor = descriptor_counts(full_descriptor)
 
-    return r1, full_descriptor
+    r1["taxid"] = r1.taxid.astype(int)
+    merged_final = full_descriptor[full_descriptor.taxid.isin(r1.taxid.to_list())]
+    merged_final["source"] = merged_final.source.apply(
+        lambda x: ["none", "reads", "contigs", "reads/contigs"][x]
+    )
+    merged_final = merged_final[["taxid", "counts", "source"]]
+
+    return merged_final, full_descriptor

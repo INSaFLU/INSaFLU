@@ -15,11 +15,9 @@ from pathogen_identification.install_registry import Deployment_Params
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
-    Processed,
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
-    Submitted,
 )
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import Update_Sample_Runs
@@ -32,7 +30,7 @@ class PathogenIdentification_deployment:
     project: str
     prefix: str
     rdir: str
-    threads: int = 3
+    threads: int
     run_engine: RunMain_class
     params = dict
     run_params_db = pd.DataFrame()
@@ -50,6 +48,7 @@ class PathogenIdentification_deployment:
         pk: int = 0,
         deployment_root_dir: str = "/tmp/insaflu/insaflu_something",
         dir_branch: str = "deployment",
+        threads: int = 3,
     ) -> None:
 
         self.pipeline_index = pipeline_index
@@ -68,6 +67,8 @@ class PathogenIdentification_deployment:
         self.install_registry = Deployment_Params
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
+
+        self.threads = threads
 
     def input_read_project_path(self, filepath) -> str:
         """copy input reads to project directory and return new path"""
@@ -114,8 +115,6 @@ class PathogenIdentification_deployment:
         utils = Utils_Manager()
 
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
-
-        leaf_index = self.pipeline_index
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
@@ -205,6 +204,7 @@ class Run_Main_from_Leaf:
         pipeline_leaf: SoftwareTreeNode,
         pipeline_tree: SoftwareTree,
         odir: str,
+        threads: int = 3,
     ):
         self.user = user
         self.sample = input_data
@@ -254,6 +254,7 @@ class Run_Main_from_Leaf:
             technology=self.technology,
             dir_branch=self.deployment_directory_structure,
             pk=self.pk,
+            threads=threads,
         )
 
         self.is_available = self.check_availability()

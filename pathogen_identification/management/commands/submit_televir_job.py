@@ -117,6 +117,7 @@ class Command(BaseCommand):
                         pipeline_leaf=matched_path_node,
                         pipeline_tree=pipeline_tree_query,
                         odir=options["outdir"],
+                        threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     )
 
                     if run.is_available:

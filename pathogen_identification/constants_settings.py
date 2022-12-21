@@ -205,6 +205,7 @@ class ConstantsSettings:
 
     ################################### Threads
 
+    DEPLOYMENT_THREADS = 3
     MAPPING_THREADS = 4
 
     ################################### Project_file_structure
@@ -242,16 +243,16 @@ class ConstantsSettings:
 
     CONSTANTS_ILLUMINA = {
         "minimum_coverage_threshold": 2,
-        "max_output_number": 15,
-        "taxid_limit": 12,
+        "max_output_number": 12,
+        "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 300,
     }
 
     CONSTANTS_ONT = {
         "minimum_coverage_threshold": 1,
-        "max_output_number": 15,
-        "taxid_limit": 12,
+        "max_output_number": 12,
+        "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 500,
     }

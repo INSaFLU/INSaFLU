@@ -258,7 +258,7 @@
                         <div class="col-lg-8"> <strong>Host depletion:</strong> {{run_main.host_depletion}} </div>
                         {% endif %}
                         {% if read_classification.performed %}
-                        <div class="col-lg-8"> <strong>Read lassification:</strong> {{read_classification.method}} </div>
+                        <div class="col-lg-8"> <strong>Read classification:</strong> {{read_classification.method}} </div>
                         {% endif %}
                         {% if contig_classification.performed %}       
                         <div class="col-lg-8"> <strong>Contig classification:</strong> {{run_main.contig_classification}}</div>
@@ -438,35 +438,36 @@
                         </p>
                         {% endif %}
                         {% endif %}
-                        {% if run_detail.merged %}
+                        {% if contig_classification.classification_number > 0 and read_classification.classification_number > 0 %}
                         <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
                             for remapping against.
                         </p>
                         <p style=padding-left:3em> References were collected from the data bases:
                             <em>{{run_detail.merged_files}}</em>. </p>
-                        {% else %}
-                        <br>
-                        <p> No merging was performed. </p>
                         {% endif %}
                     </div>
                     <div class="column right">
-                        {% if assembly.contig_number > 0  %}
+                        {% if contig_classification.classification_number > 0 %}
                         <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="contig classification report" name="btn1">
                             <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
                         </form>
                         {% endif %}
+                        {% if read_classification.classification_number > 0 %}
                         <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="read classification report" name="btn2">
                             <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
                         </form>
+                        {% endif %}
+                        {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
                         <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="merged classification report" name="btn3">
                             <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -699,7 +700,7 @@
                                     {% if value.refa_dotplot_exists == True %}
                                     <tr class="detail">
                                         <td colspan="1" align="center">
-                                            <p>Asembly to reference dotplot</p>
+                                            <p>Assembly to reference dotplot</p>
                                         </td>
                         
                                         <td colspan="11" align="center">
@@ -1104,6 +1105,7 @@
 <script type="text/javascript">
 
     $(document).on("click", "a", function (e) {
+        e.preventDefault();
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
         if (id === "remap_reference") {

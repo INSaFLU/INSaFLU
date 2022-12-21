@@ -27,7 +27,7 @@ class ProjectTable(tables.Table):
     description = tables.Column(verbose_name="Description", orderable=False)
     settings = tables.Column(empty_values=(), orderable=False)
 
-    samples = tables.Column("#Samples (P/W/E)", orderable=False, empty_values=())
+    samples = tables.Column("#Samples", orderable=False, empty_values=())
     last_change_date = tables.Column("Last Change date", empty_values=())
     creation_date = tables.Column("Creation date", empty_values=())
     results = tables.Column("Project Samples", orderable=False, empty_values=())
@@ -360,6 +360,15 @@ class RawReferenceTable(tables.Table):
             "accid",
             "description",
             "counts",
+            "status",
+        )
+
+        sequence = (
+            "taxid",
+            "accid",
+            "description",
+            "counts",
+            "classification_source",
             "status",
         )
 

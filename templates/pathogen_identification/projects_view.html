@@ -1,0 +1,31 @@
+{% extends '_layouts/base.html' %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    ul li {
+        font-size: 16px;
+        font-family: "Monospace";
+
+    }
+</style>
+
+<div class="container">
+    <div>
+        <div>
+            <h1>Project</h1>
+            Proxy of INSaFLU projects.
+            <ul>
+                {% for project in projects %}
+                <li><a href={% url 'project_samples' project_name=project.name %}>
+                        {{ project.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

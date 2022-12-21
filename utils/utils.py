@@ -3,33 +3,45 @@ Created on Oct 31, 2017
 
 @author: mmp
 '''
-import os, random, gzip, hashlib, logging, ntpath, stat, re, glob
-from constants.constants import Constants, FileExtensions, TypePath, TypeFile
-from constants.meta_key_and_values import MetaKeyAndValue
-from managing_files.manage_database import ManageDatabase
-from managing_files.models import ProjectSample
-## from Bio.Alphabet import IUPAC	version 1.78 doesn't have Bio.Alphabet 
-from utils.result import GeneticElement, Gene, FeatureLocationSimple
+import glob
+import gzip
+import hashlib
+import logging
+import ntpath
+import os
+import random
+import re
+import stat
+
 from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.Seq import MutableSeq
-from Bio.SeqRecord import SeqRecord
-from Bio.SeqFeature import CompoundLocation
 from Bio.Data.IUPACData import protein_letters_3to1
+from Bio.Seq import MutableSeq, Seq
+from Bio.SeqFeature import CompoundLocation
+from Bio.SeqRecord import SeqRecord
+from constants.constants import Constants, FileExtensions, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from datasets.models import DatasetConsensus
+from managing_files.manage_database import ManageDatabase
+from managing_files.models import ProjectSample
+
+## from Bio.Alphabet import IUPAC    version 1.78 doesn't have Bio.Alphabet 
+from utils.result import FeatureLocationSimple, Gene, GeneticElement
+
 ## Add 'Ter' to dictonary
 ## http://www.hgmd.cf.ac.uk/docs/cd_amino.html
 protein_letters_3to1['Ter'] = 'X'
-from django.utils.translation import ugettext_lazy as _
-from django.core.mail import send_mail
-from utils.result import CountHits, DecodeObjects
 from datetime import datetime
-from pysam import pysam
-from django.conf import settings
 from statistics import mean
+
+from django.conf import settings
+from django.core.mail import send_mail
 from django.db import transaction
-from utils.result import MaskingConsensus
+from django.utils.translation import ugettext_lazy as _
+from pysam import pysam
+
+from utils.result import CountHits, DecodeObjects, MaskingConsensus
+
 
 class Utils(object):
 	'''
@@ -1462,21 +1474,21 @@ class Utils(object):
                         r941_prom_snp_g360, r941_prom_variant_g303,
                         r941_prom_variant_g322, r941_prom_variant_g360}
                         (default: r941_min_high_g360)
-		--threads THREADS     Number of threads used by inference. (default: 1)
-		
-		Medaka models are named to indicate: 
-		i) the pore type, 
-		ii) the sequencing device (min -> MinION, prom -> PromethION), 
-		iii) the basecaller variant (only high and variant available in INSAFlu),
-		iv) the Guppy basecaller version.
-		Complete format:
-		{pore}_{device}_{caller variant}_{caller version}
+        --threads THREADS     Number of threads used by inference. (default: 1)
+        
+        Medaka models are named to indicate: 
+        i) the pore type, 
+        ii) the sequencing device (min -> MinION, prom -> PromethION), 
+        iii) the basecaller variant (only high and variant available in INSAFlu),
+        iv) the Guppy basecaller version.
+        Complete format:
+        {pore}_{device}_{caller variant}_{caller version}
 
 		:out return all models available
 		"""
 		software_names = SoftwareNames()
 		temp_file = self.get_temp_file("medaka_models", ".txt")
-		
+ 		
 		cmd = "{} {} tools list_models > {}".format(
 				software_names.get_medaka_env(),
 				software_names.get_medaka(),
@@ -1506,13 +1518,13 @@ class Utils(object):
 		for tag_to_test in vect_names_to_exclude:
 			if (model_name.find(tag_to_test) != -1): return True
 		return False
-	
+    
 	def is_differente_fasta_size(self, file_name, percentage_diff):
 		"""
 		:out True if difference between first two sequences is more than percentage_diff
 		"""
 		vect_length = []
-		
+        
 		### read 200 lines
 		with open(file_name) as handle_in:
 			for record in SeqIO.parse(handle_in, "fasta"):
@@ -1525,7 +1537,7 @@ class Utils(object):
 						if ((100 - ((vect_length[0] / vect_length[1] * 100))) > percentage_diff): return True
 						return False
 		return False  
-	
+    
 	def get_last_name_from_fasta(self, file_name):
 		""" return last name in the fasta file """
 		last_name = ""
@@ -1535,7 +1547,7 @@ class Utils(object):
 					sz_temp = line.strip()
 					if (len(sz_temp) > 0 and sz_temp[0] == '>'): last_name = sz_temp.split()[0].replace('>', '')
 		return last_name
-	
+    
 	def get_number_sequences_fastq(self, file_name):
 		""" return average and number of sequences
 		:output (number seqs, average, std)
@@ -1550,8 +1562,8 @@ class Utils(object):
 			self.logger_debug.error('Fail to run: ' + cmd)
 			self.remove_temp_file(temp_file)
 			raise Exception("Fail to run get_number of sequences in fastq file")
-		
-		###
+        
+        ###
 		vect_out = self.read_text_file(temp_file)
 		if (len(vect_out) == 0):
 			self.logger_production.error('can not read any data: ' + temp_file)
@@ -1579,7 +1591,7 @@ class Utils(object):
 		software_names = SoftwareNames()
 		temp_file = self.get_temp_file("get_number_fastq", ".txt")
 		cmd = "{} {} {}:{}-{} > {}".format(software_names.get_tabix(), file_coverage,
-						chr_name, position_start, position_end, temp_file)
+								chr_name, position_start, position_end, temp_file)
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)
@@ -1592,28 +1604,28 @@ class Utils(object):
 		self.remove_file(temp_file)
 		if len(vect_lines) == 1 and len(vect_lines[0].split()) == 3 and self.is_integer(vect_lines[0].split()[2]):
 			return int(vect_lines[0].split()[2])
-		
+        
 		return -1
-	
+    
 	def mask_sequence(self, sequence, mask_sites, mask_from_beginning, mask_from_end, mask_range):
 		"""Mask characters at the given sites in a single sequence record, modifying the
 		record in place.
 		Parameters
 		----------
 		sequence : Bio.SeqIO.SeqRecord
-		    A sequence to be masked
+			A sequence to be masked
 		mask_sites: list[int]
-		    A list of site indexes to exclude from the FASTA.
+			A list of site indexes to exclude from the FASTA.
 		mask_from_beginning: int
-		    Number of sites to mask from the beginning of each sequence (default 0)
+			Number of sites to mask from the beginning of each sequence (default 0)
 		mask_from_end: int
-		    Number of sites to mask from the end of each sequence (default 0)
+			Number of sites to mask from the end of each sequence (default 0)
 		mask_invalid: bool
-		    Mask invalid nucleotides (default False)
+			Mask invalid nucleotides (default False)
 		Returns
 		-------
 		Bio.SeqIO.SeqRecord
-		    Masked sequence in its original record object
+			Masked sequence in its original record object
 		"""
 		# Convert to a mutable sequence to enable masking with Ns.
 		sequence_length = len(sequence.seq)
@@ -1625,7 +1637,7 @@ class Utils(object):
 		
 		seq = str(sequence.seq)[beginning:-end or None]
 		masked_sequence = MutableSeq("N" * beginning + seq + "N" * end)
-		
+        
 		# Replace all excluded sites with Ns.
 		if not mask_sites is None and  len(mask_sites.split(',')[0]) > 0:
 			for site in [int(_) - 1 for _ in mask_sites.split(',')]:
@@ -1637,13 +1649,13 @@ class Utils(object):
 				if (len(data_) > 0):
 					for site in range(int(data_.split('-')[0]) - 1, int(data_.split('-')[1])):
 						if site < sequence_length: masked_sequence[site] = "N"
-			
+		    
 		sequence.seq = masked_sequence
 		return sequence
 	
 	def mask_sequence_by_sites(self, consensus_from, consensus_to, genetic_elemets):
 		vect_record_out = []
-		## always work with the backup	
+		## always work with the backup    
 		with open(consensus_from, "rU") as handle_fasta:
 			for record in SeqIO.parse(handle_fasta, "fasta"):
 				masking_consensus = genetic_elemets.dt_elements_mask.get(record.id, MaskingConsensus())
@@ -1662,16 +1674,13 @@ class Utils(object):
 				self.move_file(temp_file, consensus_to)
 			else: os.unlink(temp_file)
 
-	
+
 class ShowInfoMainPage(object):
 	"""
 	only a help class
-	"""	
+	"""    
 	def __init__(self):
 		self.show_images_main_page = settings.SHOW_IMAGES_MAIN_PAGE
 		if (len(settings.INSTITUTION_NAME) > 0):
 			self.instutution_name = settings.INSTITUTION_NAME
 			self.instutution_web_site = settings.INSTITUTION_WEB_SITE
-
-		
-		

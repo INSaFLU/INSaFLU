@@ -1,0 +1,281 @@
+{% extends '_layouts/base.html' %}
+
+
+{% load bootstrap4 %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{%load html_tags %}
+
+{% load static %}
+{%load report_colors %}
+
+{% block css %}
+	{% load static from staticfiles %}
+        <link rel="stylesheet" href="{% static 'css/result_table.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/result_detail.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/result_detail_buttons.css' %}" />
+{% endblock css %}
+
+{% block breadcrumbs %}
+{{block.super}}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
+{% breadcrumb project "PIproject_samples"  pk=project_index  %}
+{% if sample %}
+{% breadcrumb sample "sample_main" pk1=project_index pk2=sample_index  %}
+{% breadcrumb "Sample Results All" "" %}
+{% else %}
+{% breadcrumb "Project Results All" "" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+    #sample_report {
+        border-collapse: collapse;
+        color: #2E2E2E;
+        border: #A4A4A4;
+    }
+    
+    #sample_report thead tr {
+        background-color: #008CBA;
+    }
+    
+    #sample_report tbody tr:hover {
+    
+    }
+    
+    #sample_report tbody tr {
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+    }
+    
+    #sample_report tr.parent {
+        display: table-row;
+    }
+    
+    #sample_report tr.open {
+        display: table-row;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+    }
+    
+    a:link {
+        color: #2b2bcf;
+        background-color: transparent;
+        text-decoration: none;
+    }
+    
+    a:visited {
+        color: blueviolet;
+        background-color: transparent;
+        text-decoration: none;
+    }
+    
+    a:hover {
+        color: blue;
+        background-color: transparent;
+        text-decoration: underline;
+    }
+    
+    a:active {
+        color: cornflowerblue;
+        background-color: transparent;
+        text-decoration: underline;
+    }
+    
+    .column {
+        float: left;
+        padding: 10px;
+    }
+
+
+    .left {
+        width: 70%;
+    }
+
+    .right {
+        width: 30%;
+        postion: absolute;
+
+    }
+
+    form {
+        padding: 12px;
+        position: relative;
+    }
+
+    .modebar {
+        display: none !important;
+    }
+    
+    .row {
+        border: 4px solid;
+        border-radius: 8px;
+        padding: 10px;
+        border-color: #b0b0b07d;
+    }
+    
+    #cov_div {
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+    }
+</style>
+
+
+<div id="accordion2" role="tablist" aria-multiselectable="true">
+    <div class="card">
+        <div class="card-header" role="tab" id="headingReport">
+            <div class="column left" >
+                <h5 class="mb-0" >
+                    <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
+                        <strong>Pathogen Identification</strong>
+                    </a>
+                </h5>
+            </div>
+            <div class="column right">
+                <a href="#" onclick="download_table_as_csv('all_reports');" class="btn btn-primary dark"> 
+                    <span class="hidden-phone"></span>Download as TSV </a>
+            </div>
+        </div>
+        <div id="collapseReport2" class="collapse show" role="tabpanel" aria-labelledby="headingReport2">
+            <div class="card-block">
+                <div style="padding: 20px; overflow-x:auto;">
+                    <table class="table table-hover table-bordered table-striped" id="all_reports" cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr class="header">
+                                <th>Sample</th>
+                                <th>Run</th>
+                                <th>Description</th>
+                                <th>Taxid</th>
+                                <th>accID</th>
+                                <th>Cov (%)</th>
+                                <th>Depth</th>
+                                <th>DepthC</th>
+                                <th>Mapped reads</th>
+                                <th>start prop (%)</th>
+                                <th>mapped_prop (%)</th>
+                                <th> Gaps </th>
+                                <th>Windows Covered</th>
+                                <th>class. success</th>
+                                <th>mapping success</th>                
+                                <th>Warning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for value in final_report %}
+                            {% if value.coverage > 0 or value.refa_dotplot_exists %}
+                            <tr class="parent">
+                                <td data-title="Sample">{{value.sample.name}}</td>
+                                <td data-title="Run">
+                                    <a
+                                        href={% url 'sample_detail' pk1=value.run.project.pk pk2=value.sample.pk pk3=value.run.pk %}>{{value.run.name}}</a>
+                                </td>
+
+                                <td data-title="Description">{{value.description}}</td>
+                                <td data-title="Taxid">{{value.taxid}}</td>
+                                <td data-title="accID">
+                                    <a href={{value.accid|link_ncbi}}>{{value.accid}}</a>
+                                </td>
+                                <td data-title="Cov" style="{{ value.coverage|color_code }}">
+                                    {{value.coverage|round}}</td>
+                                <td data-title="Depth">
+                                    {{value.depth|round}}</td>
+                                <td data-title="DepthC">
+                                    {{value.depthR|round}}</td>
+                                <td data-title="Mapped reads">
+                                    {{value.mapped_reads|round}}</td>
+                                <td data-title="start prop">
+                                    {{value.ref_proportion|round_to_int}}</td>
+                                <td data-title="mapped_prop">
+                                    {{value.mapped_proportion|round_to_int}}</td>
+                                <td data-title="Gaps">
+                                    {{value.ngaps}}</td>
+                                <td data-title="Windows Covered">
+                                    {% windows_safe value.windows_covered %}</td>
+                                <td data-title="class. success" style="{% success_count_color value.classification_success %}">
+                                    {{value.classification_success}}</td>
+                                <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
+                                    {{value.mapping_success}}</td>
+                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
+                                    {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
+
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+<script>
+    function download_table_as_csv(table_id, separator = '\t') {
+        // Select rows from table_id
+        var rows = document.querySelectorAll('table#' + table_id + ' tr');
+        // Construct csv
+        var csv = [];
+        for (var i = 0; i < rows.length; i++) {
+            var row = [],
+                cols = rows[i].querySelectorAll('td, th');
+                        
+            if ( rows[i].className == "header" ) {
+            
+                for (var j = 0; j < cols.length; j++) {
+                    // Clean innertext to remove multiple spaces and jumpline (break csv)
+                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
+                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
+                    data = data.replace(/"/g, '""');
+                    // Push escaped string
+                    row.push(data);
+                }
+                csv.push(row.join(separator));
+            }
+
+            if ( rows[i].className == "parent" ) {
+            
+                for (var j = 0; j < cols.length; j++) {
+                    // Clean innertext to remove multiple spaces and jumpline (break csv)
+                    var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
+                    // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
+                    data = data.replace(/"/g, '""');
+                    // Push escaped string
+                    row.push(data);
+                }
+                csv.push(row.join(separator));
+            }
+        }
+        var csv_string = csv.join('\n');
+        // Download it
+        var filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.tsv';
+        var link = document.createElement('a');
+        //link.style.display = 'none';
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv_string));
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+<script>	
+  $('#id_go_back_button').on('click', function(){
+      wait_screen();
+  });
+</script>	
+{% endblock %}
+
+
+

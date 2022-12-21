@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+
 from decouple import config
 
 ## define APP version
@@ -29,174 +30,190 @@ RUNNING_TEST = True
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS", cast=lambda v: [s.strip() for s in v.split(",")]
+)
 
 ## google recaptcha
-GOOGLE_RECAPTCHA_SECRET_KEY = config('GOOGLE_RECAPTCHA_SECRET_KEY', default="")
-SITE_KEY = config('SITE_KEY')
+GOOGLE_RECAPTCHA_SECRET_KEY = config("GOOGLE_RECAPTCHA_SECRET_KEY", default="")
+SITE_KEY = config("SITE_KEY")
 
 ### crispy template
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 BREADCRUMBS_TEMPLATE = "django_bootstrap_breadcrumbs/bootstrap4.html"
 
 CSRF_COOKIE_AGE = None
-CSRF_COOKIE_DOMAIN = '.min-saude.pt'
+CSRF_COOKIE_DOMAIN = ".min-saude.pt"
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True
 
-################### If you 
+################### If you
 ### ADMIN  disable/disable django
-ADMIN_ENABLED = config('ADMIN_ENABLED', default=True, cast=bool)
+ADMIN_ENABLED = config("ADMIN_ENABLED", default=True, cast=bool)
 
 ### threads to use in several software
-THREADS_TO_RUN_FASTQC= config('THREADS_TO_RUN_FASTQC', default=3, cast=int)		## don't increase this because of the heap memory
-THREADS_TO_RUN_FAST= config('THREADS_TO_RUN_FAST', default=3, cast=int)
-THREADS_TO_RUN_SLOW = config('THREADS_TO_RUN_SLOW', default=3, cast=int)
+THREADS_TO_RUN_FASTQC = config(
+    "THREADS_TO_RUN_FASTQC", default=3, cast=int
+)  ## don't increase this because of the heap memory
+THREADS_TO_RUN_FAST = config("THREADS_TO_RUN_FAST", default=3, cast=int)
+THREADS_TO_RUN_SLOW = config("THREADS_TO_RUN_SLOW", default=3, cast=int)
 
 ## MAX LENGTH_SEQUENCE_FROM_FASTA - REFERENCE
 ## to show login anonymous
-SHOW_LOGIN_ANONYMOUS = config('SHOW_LOGIN_ANONYMOUS', default=False, cast=bool)
-MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config('MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA', default=50000, cast=int)
-MAX_REF_FASTA_FILE = config('MAX_REF_FASTA_FILE', default=100000, cast=int)			## 100k
-MAX_REF_GENBANK_FILE = config('MAX_REF_GENBANK_FILE', default=150000, cast=int)		## 150k
-MAX_CONSENSUS_FASTA_FILE = config('MAX_CONSENSUS_FASTA_FILE', default=400000, cast=int)			## 100k
-MAX_FASTQ_FILE_UPLOAD = config('MAX_FASTQ_FILE_UPLOAD', default=50971520, cast=int)		### 50M
+SHOW_LOGIN_ANONYMOUS = config("SHOW_LOGIN_ANONYMOUS", default=False, cast=bool)
+MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA = config(
+    "MAX_LENGTH_SEQUENCE_TOTAL_FROM_FASTA", default=50000, cast=int
+)
+MAX_REF_FASTA_FILE = config("MAX_REF_FASTA_FILE", default=100000, cast=int)  ## 100k
+MAX_REF_GENBANK_FILE = config("MAX_REF_GENBANK_FILE", default=150000, cast=int)  ## 150k
+MAX_CONSENSUS_FASTA_FILE = config(
+    "MAX_CONSENSUS_FASTA_FILE", default=400000, cast=int
+)  ## 100k
+MAX_FASTQ_FILE_UPLOAD = config(
+    "MAX_FASTQ_FILE_UPLOAD", default=50971520, cast=int
+)  ### 50M
 
 ## make the down size of the fastq files to 50MB
 ## if the DOWN_SIZE_FASTQ_FILES is false the maximum fastq input files is 250MB by default,
 ##   you can change the value in .env file
-DOWN_SIZE_FASTQ_FILES = config('DOWN_SIZE_FASTQ_FILES', default=True, cast=bool)
+DOWN_SIZE_FASTQ_FILES = config("DOWN_SIZE_FASTQ_FILES", default=True, cast=bool)
 ## If DOWN_SIZE_FASTQ_FILES is True it's possible to upload till this value but it makes the down size to MAX_FASTQ_FILE_UPLOAD
-MAX_FASTQ_FILE_WITH_DOWNSIZE = config('MAX_FASTQ_FILE_WITH_DOWNSIZE', default=250971520, cast=int)		### 250M
+MAX_FASTQ_FILE_WITH_DOWNSIZE = config(
+    "MAX_FASTQ_FILE_WITH_DOWNSIZE", default=250971520, cast=int
+)  ### 250M
 
-### if NanoFilt runs on MEDAKA ENV, because of old < python3.5  
-RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV = config('RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV', default=False, cast=bool)		### 250M
+### if NanoFilt runs on MEDAKA ENV, because of old < python3.5
+RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV = config(
+    "RUN_NANOFILT_AND_NANOSTAT_IN_MEDAKA_ENV", default=False, cast=bool
+)  ### 250M
 
-#https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
-#https://gist.github.com/bradmontgomery/6487319
-#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-if (config('SECURE_SSL_REDIRECT', default=False, cast=bool)):
-	SECURE_SSL_REDIRECT = True
-	SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
+# https://gist.github.com/bradmontgomery/6487319
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+if config("SECURE_SSL_REDIRECT", default=False, cast=bool):
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 ## add google analytics
-ADD_GOOGLE_ANALYTICS = config('ADD_GOOGLE_ANALYTICS', default=False, cast=bool)
-SHOW_NEXTCLADE_LINK = config('SHOW_NEXTCLADE_LINK', default=False, cast=bool)
+ADD_GOOGLE_ANALYTICS = config("ADD_GOOGLE_ANALYTICS", default=False, cast=bool)
+SHOW_NEXTCLADE_LINK = config("SHOW_NEXTCLADE_LINK", default=False, cast=bool)
 
 ## run process in SGE, otherwise run in qcluster
-RUN_SGE  = config('RUN_SGE', default=False, cast=bool)
-SGE_ROOT = config('SGE_ROOT')
+RUN_SGE = config("RUN_SGE", default=False, cast=bool)
+SGE_ROOT = config("SGE_ROOT")
 
 # Application definition
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.gis',
-    'crispy_forms',
-    'crispy_forms_foundation',
-    'django_tables2',
-    'bootstrap4',
-    'django_user_agents',
-    'django_bootstrap_breadcrumbs',
-    'managing_files.apps.ManagingFilesConfig',
-    'manage_virus.apps.ManageVirusConfig',
-    'datasets.apps.DatasetsConfig',
-    'phylogeny.apps.PhylogenyConfig',
-    'settings.apps.SettingsConfig',
-    'log_login.apps.LogLoginConfig',
-    'extend_user.apps.ExtendUserConfig',
-    'crequest',
-    'embed_video',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.gis",
+    "crispy_forms",
+    "crispy_forms_foundation",
+    "django_tables2",
+    "bootstrap4",
+    "django_user_agents",
+    "django_bootstrap_breadcrumbs",
+    "managing_files.apps.ManagingFilesConfig",
+    "manage_virus.apps.ManageVirusConfig",
+    "datasets.apps.DatasetsConfig",
+    "pathogen_identification.apps.PathogenIdentificationConfig",
+    "phylogeny.apps.PhylogenyConfig",
+    "settings.apps.SettingsConfig",
+    "log_login.apps.LogLoginConfig",
+    "extend_user.apps.ExtendUserConfig",
+    "crequest",
+    "embed_video",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_user_agents.middleware.UserAgentMiddleware',
-    'crequest.middleware.CrequestMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_user_agents.middleware.UserAgentMiddleware",
+    "crequest.middleware.CrequestMiddleware",
 ]
 
 FILE_UPLOAD_HANDLERS = [
-#   'django.core.files.uploadhandler.MemoryFileUploadHandler',
-    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+    #   'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 ]
 
-ROOT_URLCONF = 'fluwebvirus.urls'
+ROOT_URLCONF = "fluwebvirus.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates'),
-            ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            os.path.join(BASE_DIR, "templates"),
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
 CACHES = {
-    'default': {
-		'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'djangoq-localmem',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "djangoq-localmem",
     }
 }
 
 ### default emails accounts
-DEFAULT_USER_EMAIL = config('DEFAULT_USER_EMAIL', "insaflu@insa.min-saude.pt")
-USER_ANONYMOUS_EMAIL = config('USER_ANONYMOUS_EMAIL', "insaflu@insa.min-saude.pt")
+DEFAULT_USER_EMAIL = config("DEFAULT_USER_EMAIL", "insaflu@insa.min-saude.pt")
+USER_ANONYMOUS_EMAIL = config("USER_ANONYMOUS_EMAIL", "insaflu@insa.min-saude.pt")
 
 # http://www.techspacekh.com/configuring-postfix-to-relay-mail-to-local-exchange-mail-server-in-rhel-centos-7/
 # http://www.postfix.org/SASL_README.html#saslauthd
 ## see more dropbox/insa
-EMAIL_BACKEND = config('EMAIL_BACKEND')
-EMAIL_HOST = '127.0.0.1' ###config('EMAIL_HOST')
-DEFAULT_FROM_EMAIL = config('EMAIL_NAME')
-EMAIL_PORT = config('EMAIL_PORT', cast=int)
-EMAIL_HOST_USER = ''   		### config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = '' 	### config('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
-EMAIL_DESTINATION_TO_SEND_A_TEST = config('EMAIL_DESTINATION_TO_SEND_A_TEST')
+EMAIL_BACKEND = config("EMAIL_BACKEND")
+EMAIL_HOST = "127.0.0.1"  ###config('EMAIL_HOST')
+DEFAULT_FROM_EMAIL = config("EMAIL_NAME")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_HOST_USER = ""  ### config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = ""  ### config('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
+EMAIL_DESTINATION_TO_SEND_A_TEST = config("EMAIL_DESTINATION_TO_SEND_A_TEST")
 
-WSGI_APPLICATION = 'fluwebvirus.wsgi.application'
+WSGI_APPLICATION = "fluwebvirus.wsgi.application"
 
 # Name of cache backend to cache user agents. If it not specified default
 # cache alias will be used. Set to `None` to disable caching.
-USER_AGENTS_CACHE = 'default'
+USER_AGENTS_CACHE = "default"
 
-## to reuse DB 
+## to reuse DB
 # os.environ['REUSE_DB'] = "1"
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-##        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fluwebvirus_test',
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': '5432',
-        'TEST': {
-            'NAME': 'fluwebvirus_test',
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        ##        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        "NAME": "fluwebvirus_test",
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": "5432",
+        "TEST": {
+            "NAME": "fluwebvirus_test",
         },
     },
 }
@@ -206,41 +223,43 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
-#DATE_INPUT_FORMATS = ('%d-%m-%Y','%Y-%m-%d')
+# DATE_INPUT_FORMATS = ('%d-%m-%Y','%Y-%m-%d')
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'Europe/Lisbon'
+TIME_ZONE = "Europe/Lisbon"
 
-DATE_FORMAT_FOR_TABLE = '%d-%m-%Y'
-DATETIME_FORMAT_FOR_TABLE = '%d-%m-%Y %H:%M'
-DATE_FORMAT_FOR_SHOW = '%Y-%m-%d'
-DATETIME_FORMAT_FOR_SHOW = '%Y-%m-%d %H:%M'
-DATETIME_FORMAT = '%d-%m-%Y %H:%M'
-DATETIME_INPUT_FORMATS = ['%d-%m-%Y', '%d/%m/%Y']	## it's necessary to look which kind of date is returned from forms to correct the format
+DATE_FORMAT_FOR_TABLE = "%d-%m-%Y"
+DATETIME_FORMAT_FOR_TABLE = "%d-%m-%Y %H:%M"
+DATE_FORMAT_FOR_SHOW = "%Y-%m-%d"
+DATETIME_FORMAT_FOR_SHOW = "%Y-%m-%d %H:%M"
+DATETIME_FORMAT = "%d-%m-%Y %H:%M"
+DATETIME_INPUT_FORMATS = [
+    "%d-%m-%Y",
+    "%d/%m/%Y",
+]  ## it's necessary to look which kind of date is returned from forms to correct the format
 
 ## set the format in forms.DateField
 ## This will only work if USE_L10N is False. You may also need to set DATE_FORMAT used when printing a date in the templates
 USE_L10N = False
 
-USE_TZ = False	## enable time zone
+USE_TZ = False  ## enable time zone
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -251,22 +270,22 @@ USE_TZ = False	## enable time zone
 # https://stackoverflow.com/questions/5871730/need-a-minimal-django-file-upload-example
 
 # STATICFILES_DIRS is the list of folder where Django will search for additional static files, in addition to each static folder of each app installed.
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 # STATIC_ROOT is the folder where every static files will be stored after a manage.py collectstatic
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_all')	## is the absolute path to the directory where collectstatic will collect static files for deployment.
-STATIC_URL = '/static/' 		## is the URL to use when referring to static files located in STATIC_ROOT.
+STATIC_ROOT = os.path.join(
+    BASE_DIR, "static_all"
+)  ## is the absolute path to the directory where collectstatic will collect static files for deployment.
+STATIC_URL = "/static/"  ## is the URL to use when referring to static files located in STATIC_ROOT.
 
-MEDIA_ROOT_TEST = os.path.join('/tmp/tests_insa_flu')
-MEDIA_ROOT = os.path.join(BASE_DIR, '/tmp/tests_insa_flu')
-MEDIA_URL = '/media/'
+MEDIA_ROOT_TEST = os.path.join("/tmp/tests_insa_flu")
+MEDIA_ROOT = os.path.join(BASE_DIR, "/tmp/tests_insa_flu")
+MEDIA_URL = "/media/"
 
 ### software directory
-DIR_SOFTWARE = config('DIR_SOFTWARE', default="/usr/local/software/insaflu")
+DIR_SOFTWARE = config("DIR_SOFTWARE", default="/usr/local/software/insaflu")
 
 ### Run pangolin model
-RUN_PANGOLIN_MODEL=config('RUN_PANGOLIN_MODEL', default="pangolearn")
+RUN_PANGOLIN_MODEL = config("RUN_PANGOLIN_MODEL", default="pangolearn")
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -274,66 +293,62 @@ RUN_PANGOLIN_MODEL=config('RUN_PANGOLIN_MODEL', default="pangolearn")
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
         },
-		'verbose': {
-        	'format': '%(levelname)s %(asctime)s %(module)s: %(message)s'
-    	}
+        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s: %(message)s"},
     },
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse'
-        },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
         },
     },
-    'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler'
+    "handlers": {
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
         },
-		'file_debug': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/insaFlu/debug.log',
-            'formatter': 'verbose',
+        "file_debug": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/insaFlu/debug.log",
+            "formatter": "verbose",
         },
-		'file_warning': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/insaFlu/warning.log',
-            'formatter': 'verbose',
+        "file_warning": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/insaFlu/warning.log",
+            "formatter": "verbose",
         },
-		'console':{
-            'level':'DEBUG',
-            'class':'logging.StreamHandler',
-            'formatter': 'verbose'
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'filters': ['require_debug_false'],
-            'level': 'ERROR',
-            'propagate': True,
+    "loggers": {
+        "django.request": {
+            "handlers": ["mail_admins"],
+            "filters": ["require_debug_false"],
+            "level": "ERROR",
+            "propagate": True,
         },
-		'fluWebVirus.debug': {
-            'handlers': ['file_debug'],
-            'filters': ['require_debug_true'],
-            'level': 'DEBUG',
-            'propagate': True,
+        "fluWebVirus.debug": {
+            "handlers": ["file_debug"],
+            "filters": ["require_debug_true"],
+            "level": "DEBUG",
+            "propagate": True,
         },
-		'fluWebVirus.production': {
-            'handlers': ['file_warning'],
-            'filters': ['require_debug_false'],
-            'level': 'WARNING',		## third level of log
-            'propagate': True,
+        "fluWebVirus.production": {
+            "handlers": ["file_warning"],
+            "filters": ["require_debug_false"],
+            "level": "WARNING",  ## third level of log
+            "propagate": True,
         },
-    }
+    },
 }

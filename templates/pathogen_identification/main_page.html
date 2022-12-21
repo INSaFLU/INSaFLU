@@ -1,0 +1,181 @@
+{% extends '_layouts/base.html' %}
+{% load querystring from django_tables2 %}
+{% load title from django_tables2 %}
+{% load trans blocktrans from i18n %}
+{% load django_bootstrap_breadcrumbs %}
+{% load bootstrap4 %}
+{% load static %}
+
+
+{% block breadcrumbs %}
+{{block.super}}
+{% breadcrumb "Project Index" "project-index" %}
+{% breadcrumb "TELEVIR Projects" "PIprojects_main"  %}
+{% breadcrumb project_name  "" %}
+{% endblock %}
+
+
+{% block content %}
+
+<div class="table-container">
+    {% block table %}
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered table-striped" {% if table.attrs %}
+            {{ table.attrs.as_html }}{% endif %}>
+            {% block table.thead %}
+            <thead>
+                {% if project_owner %}
+                <tr>
+                    <th colspan="9">
+                        {% if not demo %}
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
+                                <a><span class="hidden-phone"> Deploy Pathogen identification </span></a>
+                              </button>
+                               
+                        </div>
+                        {% endif %}
+                        </div class="btn-group">
+                        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                            <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
+                                </button>                        
+                        </div>
+                    </th>               
+                </tr>
+                {% endif %}
+                <tr>
+                    {% for column in table.columns %}
+                    {% if column.orderable %}
+                        <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header|title }}</a></th>
+                    {% else %}
+                        <th {{ column.attrs.th.as_html }}>{{ column.header|title }}</th>
+                    {% endif %}                    
+                    {% endfor %}
+                </tr>
+            </thead>
+            {% endblock table.thead %}
+            {% block table.tbody %}
+            <tbody>
+                {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
+                  {% block table.tbody.row %}
+                  <tr id="row_{{ row.record.id }}" class="{% cycle "odd" "even" %}">
+                    {% for column, cell in row.items %}
+                      <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endblock table.tbody.row %}
+                {% empty %}
+                  {% if table.empty_text %}
+                  {% block table.tbody.empty_text %}
+                      <tr><td colspan="{{ table.columns|length }}">{{ table.empty_text }}</td></tr>
+                  {% endblock table.tbody.empty_text %}
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+            {% endblock table.tbody %}
+            {% block table.tfoot %}
+                <tfoot></tfoot>
+            {% endblock table.tfoot %}
+        </table>
+    </div>
+    {% endblock table %}
+
+    {% if table.page and show_paginatior %}
+	{% block pagination %}
+	<label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+	{% bootstrap_pagination table.page url=request.get_full_path %}
+	{% endblock pagination %}
+    </div>
+    {% else %}
+    <label id="id-total-list" class="pull-right">Total samples: {{ query_set_count }}</label>
+    {% endif %}
+
+    <a href="javascript:history.go(0)" class="btn btn-small btn-primary dark"><i class="fa fa-refresh"></i> Refresh</a>
+
+</div>
+</div>
+
+
+<!-- The remove Modal -->
+<div class="modal fade" id="id_remove_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-remove">Remove a sample</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-remove-sample" remove-single-value-url="{% url 'remove_televir_project_sample' %}">
+					<label id="id-label-remove" class="col-form-label">Folder Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+				<button id="id-remove-button" type="button" class="btn btn-primary" data-dismiss="modal">Remove</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+{% endblock content %}
+
+{% block js %}
+{% load static from staticfiles %}
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $("#deploypi_btn").click(function(){
+        $.ajax({
+            url: $('#deploypi_btn').attr("deploy-url"),
+            type: "POST",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'id': $(this).attr('id'),
+                'user_id': '{{ request.user.id }}',
+                'project_id': '{{ project_index }}',
+            },
+            data_type: 'json',
+            success: function(data){
+                console.log(data);
+                if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                    alert("No runs to deploy");
+                }
+                else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                    alert("Runs deployed");
+                }
+            }
+
+        });
+    })
+</script>
+
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
+<script>
+	$(document).ready(function () {
+		$('#id-cancel-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+	});
+
+	/// set wait screen
+	$(document).on("click", "a", function (e) {
+		var id_ = $(this).attr('id');
+		var href = $(this).attr('href');
+		var onclick = $(this).attr('onclick');
+		if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+			!href.startsWith('/media') && !href.startsWith('http')) {
+			wait_screen();
+		}
+	});
+</script>
+
+{% endblock js %}

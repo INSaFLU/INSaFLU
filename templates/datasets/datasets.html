@@ -11,6 +11,7 @@
 
 {% block breadcrumbs %}
 	{{ block.super }}
+    {% breadcrumb "Project Index" "project-index" %}
 	{% breadcrumb "Datasets" "datasets" %}
 {% endblock %}
 

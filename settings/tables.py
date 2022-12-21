@@ -152,6 +152,7 @@ class SoftwaresTable(tables.Table):
             and self.project_sample is None
             and self.sample is None
             and self.dataset is None
+            and self.televir_project is None
         ):
             default_software = DefaultSoftware()
             return default_software.get_parameters(record.name, user, technology_name)
@@ -211,6 +212,19 @@ class SoftwaresTable(tables.Table):
                 None,
                 self.sample,
                 technology_name,
+            )
+        elif not self.televir_project is None:
+
+            default_software_projects = DefaultProjectSoftware()
+            return default_software_projects.get_parameters(
+                record.name,
+                user,
+                Software.TYPE_OF_USE_televir_project,
+                None,
+                None,
+                None,
+                technology_name,
+                televir_project=self.televir_project,
             )
         return ""
 

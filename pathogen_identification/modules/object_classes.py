@@ -48,13 +48,95 @@ class Temp_File:
 
         return self.temp_file
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self):
         """
         Exit.
         """
 
         if os.path.exists(self.temp_file):
             os.remove(self.temp_file)
+
+
+class Operation_Temp_Files:
+    """
+    Operation on temporary files.
+    """
+
+    def __init__(self, temp_dir: str, prefix: str = "temp"):
+        """
+        Initialize.
+        """
+
+        self.temp_dir = temp_dir
+        self.prefix = prefix
+        seed = randint(1000000, 9999999)
+
+        self.script = os.path.join(self.temp_dir, f"{self.prefix}_{seed}.sh")
+
+        self.log = os.path.join(self.temp_dir, f"{self.prefix}_{seed}.log")
+
+        self.flag = os.path.join(self.temp_dir, f"{self.prefix}_{seed}.flag")
+
+    def __enter__(self):
+        """
+        Enter.
+        """
+
+        return self
+
+    def __exit__(self):
+        """
+        Exit.
+        """
+
+        if os.path.exists(self.script):
+            os.remove(self.script)
+
+        if os.path.exists(self.log):
+            os.remove(self.log)
+
+        if os.path.exists(self.flag):
+            os.remove(self.flag)
+
+    def write_bash_script(self, cmd: str, bin: str = ""):
+        """
+        Write bash script.
+        """
+
+        with open(self.script, "w") as f:
+            f.write("#!/bin/bash")
+            f.write("\n")
+            f.write(f"{bin}{cmd}")
+            f.write("\n")
+            f.write("touch " + self.flag)
+
+    def run_bash_script(self):
+        """
+        Run bash script.
+        """
+
+        start_time = time.perf_counter()
+
+        proc_prep = subprocess.Popen(
+            "bash " + self.script + " &> " + self.log,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        out, err = proc_prep.communicate()
+
+        found_flag = False
+
+        while not found_flag:
+            time.sleep(1)
+            found_flag = os.path.exists(self.flag)
+
+        err = open(self.log).read()
+
+        exec_time = time.perf_counter() - start_time
+
+        return out, err, exec_time
 
 
 class RunCMD:
@@ -275,45 +357,16 @@ class RunCMD:
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
 
-        start_time = time.perf_counter()
+        operation_files = Operation_Temp_Files(self.logdir)
 
-        bash_script, bash_log, bash_flag = self.temp_script_log()
-        bash_script = os.path.join(self.logdir, bash_script)
-        bash_log = os.path.join(self.logdir, bash_log)
-        bash_flag = os.path.join(self.logdir, bash_flag)
+        with operation_files as op_files:
 
-        with open(bash_script, "w") as f:
-            f.write("#!/bin/bash")
-            f.write("\n")
-            f.write(f"{self.bin}{cmd}")
-            f.write("\n")
-            f.write("touch " + bash_flag)
+            op_files.write_bash_script(cmd, self.bin)
 
-        proc_prep = subprocess.Popen(
-            "bash " + bash_script + " &> " + bash_log,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
+            out, err, exec_time = op_files.run_bash_script()
 
-        out, err = proc_prep.communicate()
-
-        found_flag = False
-
-        while not found_flag:
-            time.sleep(1)
-            found_flag = os.path.exists(bash_flag)
-
-        err = open(bash_log).read()
-
-        exec_time = time.perf_counter() - start_time
-
-        if self.flag_error(err):
-            self.logger.error(f"errror in command: {self.bin}{cmd}")
-
-        os.remove(bash_script)
-        os.remove(bash_log)
-        os.remove(bash_flag)
+            if self.flag_error(err):
+                self.logger.error(f"errror in command: {self.bin}{cmd}")
 
         self.output_disposal(cmd, err, out, exec_time, "")
 

@@ -1,6 +1,7 @@
 from settings.models import Technology
 
 from pathogen_identification.models import Projects
+from django.utils.html import format_html
 
 
 class ReferenceProjectForm(forms.ModelForm):
@@ -13,6 +14,8 @@ class ReferenceProjectForm(forms.ModelForm):
     class Meta:
         model = Projects
         exclude = ()
+
+        fields = ("technology", "name", "description")
 
     def __init__(self, *args, **kwargs):
         super(ReferenceProjectForm, self).__init__(*args, **kwargs)
@@ -27,8 +30,13 @@ class ReferenceProjectForm(forms.ModelForm):
 
     def clean(self):
         """
-        Clean all together because it's necessary to compare the genbank and fasta files
+        clean names provide warning if spaces are used
         """
+
         cleaned_data = super(ReferenceProjectForm, self).clean()
+        from django.core.exceptions import ValidationError
+
+        if self.name == "":
+            raise ValidationError("Empty error message")
 
         return cleaned_data

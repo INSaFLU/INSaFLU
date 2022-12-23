@@ -229,9 +229,9 @@ class Run_Main_from_Leaf:
 
         self.deployment_directory_structure = os.path.join(
             ConstantsSettings.televir_subdirectory,
-            self.user.username,
-            self.project_name,
-            simplify_name(os.path.basename(input_data.name)),
+            f"{self.user.pk}",
+            f"{project.pk}",
+            f"{input_data.sample.pk}",
             prefix,
         )
 

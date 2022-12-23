@@ -23,7 +23,7 @@ urlpatterns = [
     url(
         r"check_project_name",
         PIajax_views.validate_project_name,
-        name="check_project_name_exist",
+        name="check_project_name",
     ),
     url(
         r"Project_samples/(?P<pk>\d+)/add_sample_project$",

@@ -273,8 +273,10 @@ class Run_Main_from_Leaf:
 
     def get_in_line(self):
 
-        self.parameter_set.status = ParameterSet.STATUS_QUEUED
-        self.parameter_set.save()
+        if self.is_available:
+
+            self.parameter_set.status = ParameterSet.STATUS_QUEUED
+            self.parameter_set.save()
 
     def check_submission(self):
         if self.parameter_set.status in [

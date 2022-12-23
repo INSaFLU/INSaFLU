@@ -170,19 +170,6 @@ class RunCMD:
         self.logdir = logdir
         self.prefix = prefix
 
-    def temp_script_log(self):
-        """
-        Create temporary script.
-        """
-
-        seed = str(randint(1000000, 9999999))
-
-        bash_script = f"temp_{self.task}_{seed}.sh"
-        bash_log = f"temp_{self.task}_{seed}.log"
-        bash_flag = f"temp_{self.task}_{seed}.flag"
-
-        return bash_script, bash_log, bash_flag
-
     def flag_error(self, subprocess_errorlog, cmd: str = ""):
         """
         Check if error in subprocess.
@@ -343,6 +330,22 @@ class RunCMD:
         out, err, exec_time = self.system_deploy(cmd_string)
         self.dispose_output_carefully(cmd, out, err, exec_time)
 
+    def run_bash_return(self, cmd):
+        """
+        Run bash command and return stdout.
+        """
+
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+
+        self.logger.info(f"running command: {cmd}")
+
+        cmd_string = self.bash_cmd_string(cmd)
+        out, err, exec_time = self.system_deploy(cmd_string)
+        self.dispose_output_carefully(cmd, out, err, exec_time)
+
+        return out
+
     def run_script_software(self, cmd):
         """
         Run bash script.
@@ -413,35 +416,6 @@ class RunCMD:
         self.output_disposal(cmd, err, out, exec_time, "")
 
         return out.strip()
-
-    def run_bash_return(self, cmd):
-        """
-        Run bash command and return stdout.
-        """
-
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-
-        start_time = time.perf_counter()
-
-        proc_prep = subprocess.Popen(
-            f"{cmd}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        out, err = proc_prep.communicate()
-
-        if self.flag_error(err):
-            self.logger.error(f"errror in command: {cmd}")
-            raise Exception(err.decode("utf-8"))
-
-        exec_time = time.perf_counter() - start_time
-
-        if self.flag_error(err):
-            self.logger.error(f"errror in command: {self.bin}{cmd}")
-            raise Exception(err.decode("utf-8"))
-
-        self.output_disposal(cmd, err, "", exec_time, "")
-
-        return out
 
 
 class Read_class:

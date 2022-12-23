@@ -18,6 +18,17 @@ from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from utils.process_SGE import ProcessSGE
 
 
+class Sample_Staging:
+    """
+    Class to stage samples for a project
+    """
+
+    def __init__(self, sample: PIProject_Sample):
+
+        self.sample = sample
+        self.is_deleted = self.sample.is_deleted
+
+
 class Command(BaseCommand):
     help = "deploy run"
 
@@ -43,12 +54,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ###
-        #
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
+        #### SETUP
 
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
+        technology = project.technology
+
+        ### PROCESS CONTROLER
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
 
         process_SGE.set_process_controler(
             user,
@@ -56,9 +70,8 @@ class Command(BaseCommand):
             ProcessControler.FLAG_RUNNING,
         )
 
+        ### UTILITIES
         utils = Utils_Manager()
-
-        technology = project.technology
         samples = PIProject_Sample.objects.filter(project=project)
         local_tree = utils.generate_project_tree(technology, project, user)
         local_paths = local_tree.get_all_graph_paths_explicit()
@@ -67,48 +80,37 @@ class Command(BaseCommand):
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
-        submission_dict = {sample: [] for sample in samples}
+        ### MANAGEMENT
+        submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
+        local_paths = {
+            leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
+            for leaf, path in local_paths.items()
+        }
+        available_paths = {
+            leaf: path for leaf, path in local_paths.items() if path is not None
+        }
+
+        available_path_nodes = {
+            leaf: SoftwareTreeNode.objects.get(
+                software_tree__pk=pipeline_tree_index, index=path
+            )
+            for leaf, path in available_paths.items()
+        }
+
+        ### SUBMISSION
 
         try:
 
             for sample in samples:
 
-                if sample.is_deleted:
-                    continue
+                for leaf, matched_path_node in available_path_nodes.items():
 
-                for leaf, path in local_paths.items():
-
-                    try:
-                        matched_path = utils.utility_manager.match_path_to_tree(
-                            path, pipeline_tree
-                        )
-                    except Exception as e:
-                        print(f"Path {path} not found in pipeline tree.")
-                        print("Exception:")
-                        print(e)
-                        continue
-
-                    print("matched_path: ", matched_path)
-
-                    matched_path_node = SoftwareTreeNode.objects.get(
-                        software_tree__pk=pipeline_tree_index, index=matched_path
-                    )
-
-                    exists = utils.parameter_util.check_ParameterSet_exists(
+                    if not utils.parameter_util.check_ParameterSet_available(
                         sample=sample, leaf=matched_path_node, project=project
-                    )
-                    if exists:
-
-                        if utils.parameter_util.check_ParameterSet_processed(
-                            sample=sample, leaf=leaf, project=project
-                        ):
-
-                            continue
-
-                    pipeline_tree_query = SoftwareTree.objects.get(
-                        pk=pipeline_tree_index
-                    )
+                    ):
+                        continue
 
                     run = Run_Main_from_Leaf(
                         user=user,
@@ -120,9 +122,9 @@ class Command(BaseCommand):
                         threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     )
 
-                    if run.is_available:
-                        run.get_in_line()
-                        submission_dict[sample].append(run)
+                if run.is_available:
+                    run.get_in_line()
+                    submission_dict[sample].append(run)
 
             for sample, runs in submission_dict.items():
                 for run in runs:

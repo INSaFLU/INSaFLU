@@ -101,6 +101,8 @@ class Command(BaseCommand):
 
         ### SUBMISSION
 
+        print(available_path_nodes)
+
         try:
 
             for sample in samples:
@@ -122,9 +124,9 @@ class Command(BaseCommand):
                         threads=ConstantsSettings.DEPLOYMENT_THREADS,
                     )
 
-                if run.is_available:
-                    run.get_in_line()
-                    submission_dict[sample].append(run)
+                    if run.is_available:
+                        run.get_in_line()
+                        submission_dict[sample].append(run)
 
             for sample, runs in submission_dict.items():
                 for run in runs:

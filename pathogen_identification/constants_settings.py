@@ -205,7 +205,7 @@ class ConstantsSettings:
 
     ################################### Threads
 
-    DEPLOYMENT_THREADS = 3
+    DEPLOYMENT_THREADS = 5
     MAPPING_THREADS = 4
 
     ################################### Project_file_structure

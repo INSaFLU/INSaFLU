@@ -20,7 +20,15 @@ from pathogen_identification.models import (
     SoftwareTreeNode,
 )
 from pathogen_identification.modules.run_main import RunMain_class
-from pathogen_identification.utilities.update_DBs import Update_Sample_Runs
+from pathogen_identification.utilities.update_DBs import (
+    Update_Sample_Runs,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+)
+
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
@@ -356,7 +364,7 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_main_prep()
-            self.container.run_engine.Run()
+            self.container.run_engine.Run_Full_Pipeline()
             self.container.run_engine.export_sequences()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
@@ -366,6 +374,60 @@ class Run_Main_from_Leaf:
             print(traceback.format_exc())
             print(e)
             return False
+
+    def Deploy_Parts(self):
+
+        try:
+            self.container.run_main_prep()
+            self.container.run_engine.Run_QC()
+            db_updated = Update_RunMain_Initial(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_PreProcess()
+            db_updated = Update_Assembly(self.container.run_engine, self.parameter_set)
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Classification()
+            db_updated = Update_Classification(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Remapping()
+            self.container.run_engine.export_sequences()
+            self.container.run_engine.Summarize()
+            self.container.run_engine.generate_output_data_classes()
+            self.container.run_engine.export_logdir()
+
+            db_updated = Update_Remap(self.container.run_engine, self.parameter_set)
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        return True
 
     def Update_dbs(self):
 

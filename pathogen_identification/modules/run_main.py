@@ -646,7 +646,16 @@ class RunMain_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
-    def Run(self):
+    def Run_Full_Pipeline(self):
+
+        self.Run_QC()
+        self.Run_PreProcess()
+        self.Sanitize_reads()
+        self.Run_Assembly()
+        self.Run_Classification()
+        self.Run_Remapping()
+
+    def Run_QC(self):
 
         self.logger.info("Starting Pipeline")
 
@@ -697,6 +706,10 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
 
+        self.Update_exec_time()
+
+    def Run_PreProcess(self):
+
         if self.enrichment:
             self.deploy_EN()
 
@@ -719,6 +732,9 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
 
+        self.Update_exec_time()
+
+    def Sanitize_reads(self):
         if self.enrichment or self.depletion or self.assembly:
             self.logger.info(
                 "r1 current before trim: "
@@ -731,10 +747,16 @@ class RunMain_class(Run_Deployment_Methods):
                 + str(self.sample.r1.get_current_fastq_read_number())
             )
 
+    def Run_Assembly(self):
+
         if self.assembly:
             self.deploy_ASSEMBLY()
         else:
             self.deploy_ASSEMBLY(fake_run=True)
+
+        self.Update_exec_time()
+
+    def Run_Classification(self):
 
         if self.classification:
             self.deploy_READ_CLASSIFICATION()
@@ -754,6 +776,9 @@ class RunMain_class(Run_Deployment_Methods):
 
             self.export_intermediate_reports()
 
+        self.Update_exec_time()
+
+    def Run_Remapping(self):
         if self.remapping:
             self.deploy_REMAPPING()
             self.report = self.remap_manager.report

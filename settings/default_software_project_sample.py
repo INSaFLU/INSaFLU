@@ -2419,6 +2419,12 @@ class DefaultProjectSoftware(object):
         type_of_use = Software.TYPE_OF_USE_global
         if project is None:
             type_of_use = Software.TYPE_OF_USE_global
+            if(software_name==self.software_names.get_abricate_name()):
+                type_of_use = Software.TYPE_OF_USE_qc
+            if(software_name==self.software_names.get_trimmomatic_name()):
+                type_of_use = Software.TYPE_OF_USE_qc 
+            if(software_name==self.software_names.get_NanoFilt_name()):
+                type_of_use = Software.TYPE_OF_USE_qc   
         elif type(project) is Project:
             type_of_use = Software.TYPE_OF_USE_project
         elif type(project) is ProjectSample:

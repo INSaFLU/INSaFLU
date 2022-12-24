@@ -420,10 +420,27 @@ class DefaultParameters(object):
                 except Software.DoesNotExist:
                     return True
             else:
-                return True
+                if type_of_use == Software.TYPE_OF_USE_qc:
+                    try:
+                        software = Software.objects.get(
+                            name=software_name,
+                            owner=user,
+                            type_of_use=type_of_use,
+                            version_parameters=self.get_software_parameters_version(
+                                software_name
+                            ),
+                        )
+                    except Software.DoesNotExist:
+                        return True
+                else:
+                    return True
 
         ### if it is Global it is software that is mandatory
         if type_of_use == Software.TYPE_OF_USE_global:
+            return software.is_to_run
+
+        ### if it is Global it is software that is mandatory
+        if type_of_use == Software.TYPE_OF_USE_qc:
             return software.is_to_run
 
         ## get parameters for a specific sample, project or project_sample

@@ -17,52 +17,93 @@
 		<div class="row">
 			<div class="col-sm-8">
 				<div class="insa-header">
-			        	<h1 class="insa-title" style="margin:10px">From “reads” to WGS-based first-line influenza and SARS-CoV-2 laboratory surveillance</h1>
-			        	<p class="insa-description bg-insa-fixed-top" style="">INSaFLU (“INSide the FLU”) is a bioinformatics free web-based suite that deals
-								  with primary data (reads) towards the automatic generation of the output data that are actually the core first-line 
-								  “genetic requests” for effective and timely viral influenza and SARS-CoV-2 laboratory surveillance (e.g., type and sub-type, gene and 
-								  whole-genome consensus sequences, variants annotation, alignments and phylogenetic trees). Data integration is continuously 
-								  scalable, fitting the need for a real-time epidemiological surveillance during the flu and COVID-19 epidemics.</p>
-						<p class="insa-title"><a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">Read More</a></p>
-						<div class="collapse bg-insa-fixed-top" id="collapseExample">
-  							<p class="insa-description-read-more-first">The INSaFLU bioinformatics pipeline currently consists of 6 core steps (see Figure). For more details about INSaFLU, please read 
-  							<a href="https://doi.org/10.1186/s13073-018-0555-0" target="_blank">Borges V, Pinheiro M et al. Genome Medicine (2018) 10:46</a>.
-  							A detailed tutorial of INSaFLU usage, as well as documentation about the current software settings and versions,
-  							is provided <a href="http://insaflu.readthedocs.io/en/latest/" target="_blank">here</a>.</p>
-  							
-  							<img src="{% static 'insa/CORE_STEPS.png' %}" style="width:450px; margin-left:auto; margin-right:auto; display: block;" id='insa_logo_id'>
-  							<p class="insa-description-read-more-header"><strong>Read quality analysis and improvement</strong></p>
-  							<p class="insa-description-read-more">This first step automatically analyzes and improves the quality of the uploaded raw sequencing data (reads). It generates improved NGS 
-  							data and graphical quality control reports.</p>
-  							
-  							<p class="insa-description-read-more-header"><strong>Type and sub-type identification</strong></p>
-							<p class="insa-description-read-more">INSaFLU automatically detects the influenza type and sub-type/lineage of each sample upon data submission. This typing data guides 
-							the subsequent downstream module and constitutes an optimal complement to the traditional real-time RT-PCR assays, as INSaFLU is able to discriminate all currently defined
-							18 hemagglutinin subtypes, 11 neuraminidase sub-types and influenza B lineages.</p>
-							<p class="insa-description-read-more-header"><strong>Variant detection and consensus generation</strong></p>
-							<p class="insa-description-read-more">This module provides the first-line "genetic data" for seasonal influenza laboratory surveillance, i.e. the list of variants
-							(SNPs and indels) and their effect at protein level and also consensus sequences (at both the locus and whole-genome levels). The latter constitutes the whole basis
-							for the downstream phylogenetic inferences driving the continuous tracking of influenza temporal/geographical spread.</p>
-							<p class="insa-description-read-more-header"><strong>Coverage analysis</strong></p>
-							<p class="insa-description-read-more">INSaFLU automatically provides a deep analysis of the vertical and horizontal coverage per sample (for each amplicon),
-							by generating several coverage statistics and also graphical plots of the fluctuation of the depth of coverage throughout each amplicon region. This step enables
-							the inspection of the technical success and the potential unveiling of relevant genetic events, such as reassortment or homologous recombination.</p>
-							<p class="insa-description-read-more-header"><strong>Alignment/phylogeny</strong></p>
-							<p class="insa-description-read-more">INSaFLU dynamically builds ready-to-explore nucleotide/amino acid sequence alignments and phylogenetic trees at both locus and
-							whole-genome scale. These outputs are automatically re-build and updated as more samples are added to user-restricted INSaFLU projects, making continuous data integration
-							completely flexible and scalable.<!--  <strong>This module can also be run independently</strong> over a set of user-selected sequences so that phylogenetic diversity of circulating viruses
-							can be better evaluated and integrated according with users’ specific needs. --> Alignments and trees can be explored in situ or through multiple compatible downstream
-							applications for fine-tune data analysis.</p>
-							<p class="insa-description-read-more-header"><strong>Intra-host minor variant detection (and uncovering of putative mixed infections)</strong></p>
-							<p class="insa-description-read-more-last">Influenza evolution has historically been inferred from consensus sequences representing the dominant virus lineage within
-							each infected host at a particular instant, which has limited our knowledge on intra-patient virus population diversity and transmission dynamics. In this context,
-							INSaFLU additionally provides the user the possibility to get insight on the influenza intra-patient sub-population dynamics by the scrutiny and annotation of minor
-							intra-host single nucleotide variants (iSNVs). INSaFLU also automatically flags samples as “putative mixed infections” if more than one type, HA / NA subtype or
-							lineage is detected or if the population admixture enrolls influenza viruses presenting clearly distinct genetic backgrounds (e.g., mixed infection with distinct
-							same-subtype viruses).</p> 
-						</div>
+					<h1 class="insa-title" style="margin:10px">From “reads” to viral metagenomics detection and routine genomic surveillance</h1>
+					<div class="insa-description bg-insa-fixed-top" style="">INSaFLU (“INSide the FLU”) is a free bioinformatics web-based (also locally installable) suite that deals
+							with primary sequencing data (Illumina, Ion Torrent and Oxford Nanopore Technologies reads) towards:
+						<ul>
+							<li><strong>metagenomics virus detection </strong> (from reads to virus detection).</li>
+							<li><strong>routine genomic surveillance </strong> (from reads to mutation detection, consensus generation, virus classification, alignments, “genotype-phenotype”, screening, phylogenetics, integrative Nextstrain phylogeographical and temporal analysis etc).</li>
+						</ul>
+
+						INSaFLU-TELEVIR versatility and functionality is expected to supply public health laboratories and researchers with a user-oriented “start-to-end” bioinformatics framework that can potentiate a strengthened and timely detection and monitoring of viral (emerging) threats.
+					</div>	
 			    </div>
 			    
+				<style>
+
+					.img-index {
+						width: 100%;
+						object-fit: cover;
+						border: 1px solid #ddd;
+					}
+				
+					.col-md {
+						max-width: 300px;
+					}
+				
+				</style>
+
+				<div class="row">
+					<div class="col-md">
+						<div class="card mb-2">
+							<img class="img-index" src="{% static "img/Logo_TELEVIR_INSaFlu.png" %}">
+							<div class="card-body">
+								<h5 class="card-title">{{ 'Virus Detection' }}</h5>
+								<p class="card-text">{{ 'From Reads to viral detection' }} </p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md">
+						<div class="card mb-2">
+							<img class="img-index" src="{% static "img/Logo_insaflu.png" %}">
+							<div class="card-body">
+								<h5 class="card-title">{{ 'Reference-based genome assembly' }}</h5>
+								<p class="card-text">{{ 'From reads to consensus sequence, mutations list, alignments, Pango lineage classification, etc.' }}</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md">
+						<div class="card mb-2">
+							<img class="img-index" src="{% static "img/Logo_NEXTSTRAIN_INSaFlu.png" %}">
+							<div class="card-body">
+								<h5 class="card-title">{{ 'Nextstrain' }}</h5>
+									<p class="card-text">{{ 'From consensus sequences to phylogeographic and temporal analysis and metadatada navigation' }}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md">
+						<div class="card mb-2">
+							<div class="card-footer">
+								<a href="{% url 'PIprojects_main' %}" class="btn btn-primary">
+									Projects
+								</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-md">
+						<div class="card mb-2">
+							<div class="card-footer">
+								<a href="{% url 'projects' %}" class="btn btn-primary">
+									Projects
+								</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-md">
+						<div class="card mb-2">
+							<div class="card-footer">
+								<a href="{% url 'datasets' %}" class="btn btn-primary">
+									Datasets
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<p> </p>
+
 			    {% if not is_authenticated %}
 			    	<a href="{% url 'login' %}"><p class="login-demo-account">Walkthrough INSaFLU by logging into the "demo" account</p></a>
 			    {% endif %}
@@ -151,7 +192,7 @@
 						<img src="{% static 'insa/SNS_logo.svg' %}" style="width:210px; padding-right:10px" id='sns_logo_id'>
 					</div>
 					<div class="imagesMain">
-						<a href="http://www.insa.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:250px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
+						<a href="https://www.insa.min-saude.pt/" target="_blank"><img src="{% static 'insa/insa_logo.png' %}" style="width:250px; height:75px; padding-right:12px; padding-top:35px" id='insa_logo_id'></a>
 						<a href="https://onehealthejp.eu/jrp-tele-vir/" target="_blank"><img src="{% static 'insa/televir_logo.png' %}" style="width:150px; padding-right:10px" id='televir_logo_id'></a>
 					</div>
 				{% endif %}
@@ -159,16 +200,18 @@
 			
 			<div class="col-sm-3 offset-sm-1 insa-sidebar">
 				<a href="{% url 'dashboard' %}"><img src="{% static 'insa/logo_insaflu_new.png' %}" style="width:250px; padding-right:25px; padding-top:15px; padding-bottom:15px" id='main_logo_id'></a>
-				<div class="sidebar-module">
-					<ol class="list-unstyled" style="font-size: 1.3rem;">
-						<li><a href="http://insaflu.readthedocs.io/en/latest/guide_pre_ngs.html#suggested-pre-ngs-wet-lab-protocol" target="_blank">Find here a pre-NGS wet-lab protocol</a></li>
-						<li><a href="http://insaflu.readthedocs.io/en/latest/guide_pre_ngs.html#how-to-design-a-ngs-run" target="_blank">Find here how to design a NGS run</a></li>
-					</ol>
-          		</div>
           		
 				<div class="sidebar-module">
 					<h4 class="insa-h4">News</h4>
 					<div class="insa-post">
+						<h2 class="insa-post-title-news" style="padding-bottom:5px;">INSaFLU now also includes a pathogen detection module.</h2>
+		            	<p class="insa-post-meta">December 21, 2022 by João Santos</p>
+		            	<p class="text-align-justify">This upgrade is available both in INSaFLU free online and locally installable 
+		            	(<a href="https://github.com/INSaFLU/docker" target="_blank" class="card-link">https://github.com/INSaFLU/docker</a>)
+		            	versions. Please check all details in INSaFLU documentation 
+		            	(<a href="https://insaflu.readthedocs.io/en/latest/" target="_blank" class="card-link">https://insaflu.readthedocs.io/en/latest/</a>)</p>
+		            	<hr>
+
 						<h2 class="insa-post-title-news" style="padding-bottom:5px;">INSaFLU now also enables <a href="https://nextstrain.org/" target="_blank" class="card-link">Nextstrain</a> phylogenetic and geotemporal analysis.</h2>
 		            	<p class="insa-post-meta">October 27, 2022 by Daniel Sobral</p>
 		            	<p class="text-align-justify">This upgrade is available both in INSaFLU free online and locally installable 
@@ -217,8 +260,8 @@
 				
 				<div class="sidebar-module sidebar-module-inset">
 					<h6>INSaFLU version {{version}}</h6>
-					<p class="insa-authors">Pipeline developed by Vítor Borges, Miguel Pinheiro and Daniel Sobral.</p>
-					<p class="insa-authors">Website by Miguel Pinheiro and Daniel Sobral.</p>
+					<p class="insa-authors">Pipeline developed by Vítor Borges, Miguel Pinheiro, Daniel Sobral and João Santos.</p>
+					<p class="insa-authors">Website by Miguel Pinheiro, Daniel Sobral and João Santos.</p>
 				</div>
 				
 				<div class="disclaimer_main_page">

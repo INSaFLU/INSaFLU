@@ -390,6 +390,295 @@ def Sample_update_combinations(run_class: Type[RunMain_class]):
     sample.save()
 
 
+def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run parents for run_class. Update run_class.run_data."""
+    user = User.objects.get(username=run_class.username)
+    project = Projects.objects.get(
+        name=run_class.project_name, owner=user, is_deleted=False
+    )
+
+    sample = PIProject_Sample.objects.get(
+        project=project,
+        name=run_class.sample.sample_name,
+    )
+
+    try:
+        runmain = RunMain.objects.get(
+            project=project,
+            suprun=run_class.suprun,
+            sample=sample,
+            name=run_class.prefix,
+            parameter_set=parameter_set,
+        )
+
+    except RunMain.DoesNotExist:
+        return None, None, None
+
+    return sample, runmain, project
+
+
+def Update_RunMain_noCheck(run_class: RunMain_class, parameter_set: ParameterSet):
+    """update run data for run_class. Update run_class.run_data.
+
+    :param run_class:
+    :return: None
+    """
+    sample, runmain, project = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    reads_after_processing = run_class.sample.reads_after_processing
+
+    if run_class.sample.reads_before_processing > 0:
+        reads_proc_percent = (
+            reads_after_processing / run_class.sample.reads_before_processing
+        ) * 100
+
+    else:
+        reads_proc_percent = 0
+
+    enrichment_method = run_class.enrichment_drone.classifier_method.name
+    enrichment = run_class.enrichment_drone.deployed
+
+    host_depletion_method = run_class.depletion_drone.classifier_method.name
+    host_depletion = run_class.depletion_drone.deployed
+
+    runmain = RunMain(
+        parameter_set=parameter_set,
+        suprun=run_class.suprun,
+        project=project,
+        sample=sample,
+        name=run_class.prefix,
+        params_file_path=run_class.params_file_path,
+        processed_reads_r1=run_class.sample.r1.current,
+        processed_reads_r2=run_class.sample.r2.current,
+        assembly_performed=run_class.assembly_drone.assembly_exists,
+        assembly_method=run_class.assembly_drone.assembly_method.name,
+        reads_after_processing=f"{reads_after_processing:,}",
+        reads_proc_percent=round(reads_proc_percent, 2),
+        host_depletion=host_depletion_method,
+        host_depletion_performed=host_depletion,
+        host_depletion_args=run_class.depletion_drone.classifier_method.args,
+        host_depletion_db=run_class.depletion_drone.classifier_method.db_name,
+        enrichment_performed=enrichment,
+        enrichment=enrichment_method,
+        enrichment_args=run_class.enrichment_drone.classifier_method.args,
+        enrichment_db=run_class.enrichment_drone.classifier_method.db_name,
+        assembly_max=f"{run_class.assembly_drone.contig_summary['contig_length'].max():,}",
+        remap=run_class.remapping_method.name,
+        remap_args=run_class.remapping_method.args,
+        read_classification=run_class.read_classification_drone.classifier_method.name,
+        contig_classification=run_class.contig_classification_drone.classifier_method.name,
+        runtime=f"{run_class.exec_time / 60:.2f} m",
+        report="report",
+        # static_dir=run_class.static_dir,
+    )
+
+    runmain.save()
+
+
+def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
+    """
+    Update ALL run TABLES for one run_class.:
+    - RunMain,
+    - RunDetail,
+    - RunAssembly,
+    - ReadClassification,
+    - ContigClassification,
+    - RunRemapMain,
+    - ReferenceMap_Main
+    - ReferenceContigs
+    - FinalReport,
+
+    :param run_class:
+    :return: run_data
+    """
+    # Sample_update_combinations(run_class)
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    try:
+        run_detail = RunDetail.objects.get(run=runmain, sample=sample)
+    except RunDetail.DoesNotExist:
+
+        run_detail = RunDetail(
+            run=runmain,
+            sample=sample,
+            max_depth=run_class.run_detail_report.max_depth,  #
+            max_depthR=run_class.run_detail_report.max_depthR,  #
+            max_gaps=run_class.run_detail_report.max_gaps,  #
+            max_prop=run_class.run_detail_report.max_prop,  #
+            max_mapped=run_class.run_detail_report.max_mapped,  #
+            input=run_class.run_detail_report.input,  #
+            enriched_reads=run_class.run_detail_report.enriched_reads,  #
+            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
+            depleted_reads=run_class.run_detail_report.depleted_reads,  #
+            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
+            processed=run_class.run_detail_report.processed,  #
+            processed_percent=run_class.run_detail_report.processed_percent,  #
+            sift_preproc=run_class.run_detail_report.sift_preproc,  #
+            sift_remap=run_class.run_detail_report.sift_remap,  #
+            sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
+            processing_final=run_class.run_detail_report.processing_final,  #
+            processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
+            merged=run_class.run_detail_report.merged,  #
+            merged_number=run_class.run_detail_report.merged_number,  #
+            merged_files=run_class.run_detail_report.merged_files,  #
+        )
+
+        run_detail.save()
+
+
+def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+    """
+    Update ALL run TABLES for one run_class.:
+    - RunMain,
+    - RunDetail,
+    - RunAssembly,
+    - ReadClassification,
+    - ContigClassification,
+    - RunRemapMain,
+    - ReferenceMap_Main
+    - ReferenceContigs
+    - FinalReport,
+
+    :param run_class:
+    :return: run_data
+    """
+    # Sample_update_combinations(run_class)
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    try:
+        run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
+    except RunAssembly.DoesNotExist:
+
+        run_assembly = RunAssembly(
+            run=runmain,
+            sample=sample,
+            performed=run_class.assembly_report.performed,
+            method=run_class.assembly_report.assembly_soft,
+            args=run_class.assembly_report.assembly_args,  #
+            contig_number=run_class.assembly_report.assembly_number,
+            contig_max=run_class.assembly_report.assembly_max,
+            contig_min=run_class.assembly_report.assembly_min,
+            contig_mean=run_class.assembly_report.assembly_mean,
+            contig_trim=run_class.assembly_report.assembly_trim,
+            assembly_contigs=run_class.assembly_drone.assembly_file_fasta_gz,
+        )
+        run_assembly.save()
+
+
+def Update_Run_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+    """
+    Update ALL run TABLES for one run_class.:
+    - RunMain,
+    - RunDetail,
+    - RunAssembly,
+    - ReadClassification,
+    - ContigClassification,
+    - RunRemapMain,
+    - ReferenceMap_Main
+    - ReferenceContigs
+    - FinalReport,
+
+    :param run_class:
+    :return: run_data
+    """
+    # Sample_update_combinations(run_class)
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    try:
+        read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
+    except ReadClassification.DoesNotExist:
+
+        read_classification = ReadClassification(
+            run=runmain,
+            sample=sample,
+            read_classification_report=run_class.read_classification_summary,
+            performed=run_class.read_classification_results.performed,
+            method=run_class.read_classification_results.method,
+            args=run_class.read_classification_results.args,
+            db=run_class.read_classification_results.db,
+            classification_number=run_class.read_classification_results.classification_number,
+            classification_minhit=run_class.read_classification_results.classification_minhit,
+            success=run_class.read_classification_results.success,
+        )
+        read_classification.save()
+
+    try:
+        contig_classification = ContigClassification.objects.get(
+            run=runmain, sample=sample
+        )
+
+    except ContigClassification.DoesNotExist:
+
+        contig_classification = ContigClassification(
+            run=runmain,
+            sample=sample,
+            contig_classification_report=run_class.assembly_classification_summary,
+            performed=run_class.contig_classification_results.performed,
+            method=run_class.contig_classification_results.method,
+            args=run_class.contig_classification_results.args,
+            db=run_class.contig_classification_results.db,
+            classification_number=run_class.contig_classification_results.classification_number,
+            classification_minhit=run_class.contig_classification_results.classification_minhit,
+            # success=run_class.contig_classification_results.success,
+        )
+        contig_classification.save()
+
+    try:
+        remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
+
+    except RunRemapMain.DoesNotExist:
+        remap_main = RunRemapMain(
+            run=runmain,
+            sample=sample,
+            merged_log=run_class.merged_classification_summary,
+            remap_plan=run_class.remap_plan_path,
+            performed=run_class.remap_main.performed,
+            method=run_class.remap_main.method,
+            found_total=run_class.remap_main.found_total,
+            coverage_maximum=run_class.remap_main.coverage_max,
+            coverage_minimum=run_class.remap_main.coverage_min,
+            success=run_class.remap_main.success,
+        )
+        remap_main.save()
+
+    for ref, row in run_class.raw_targets.iterrows():
+
+        if row.status:
+            status = RawReference.STATUS_MAPPED
+        else:
+            status = RawReference.STATUS_UNMAPPED
+        try:
+            remap_target = RawReference.objects.get(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+            )
+        except RawReference.DoesNotExist:
+            remap_target = RawReference(
+                run=runmain,
+                taxid=row.taxid,
+                accid=row.accid,
+                status=status,
+                description=row.description,
+                counts=row.counts,
+                classification_source=row.source,
+            )
+
+            remap_target.save()
+
+
 def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     Update ALL run TABLES for one run_class.:

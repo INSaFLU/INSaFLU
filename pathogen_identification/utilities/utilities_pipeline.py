@@ -666,8 +666,7 @@ class Parameter_DB_Utility:
         # print("#####")
 
         def fix_row(row):
-            # if row.name == "--db":
-            # print(row.name, row.parameter)
+
             if not row.parameter:
                 return [""]
             if not row.can_change or not row.range_available:
@@ -698,7 +697,7 @@ class Parameter_DB_Utility:
                         for x in np.arange(range_min, range_max, range_step)
                     ]
 
-                if row.name == "--db" and software_db_dict:
+                if row.parameter_name == "--db" and software_db_dict:
                     software_name = row.software_name
                     # print(software_name)
                     possibilities = [software_name, software_name.lower()]
@@ -713,6 +712,8 @@ class Parameter_DB_Utility:
                             break
 
                 return new_range
+
+        print(combined_table.shape)
 
         combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
         combined_table = combined_table.reset_index(drop=True)

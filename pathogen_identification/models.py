@@ -5,10 +5,20 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
 from managing_files.models import Sample
+from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
+from django import forms
 
 # Create your models here.
 
 # Create your models here.
+
+no_space_validator = RegexValidator(
+    r" ",
+    _("No spaces allowed"),
+    code="invalid_username",
+    inverse_match=True,
+)
 
 
 class Projects(models.Model):
@@ -17,9 +27,10 @@ class Projects(models.Model):
     name = models.CharField(
         max_length=200,
         db_index=True,
-        blank=True,
-        null=True,
+        blank=False,
         verbose_name="Project name",
+        default="nameless_project",
+        validators=[no_space_validator],
     )
     description = models.TextField(default="", null=True, blank=True)
     technology = models.CharField(

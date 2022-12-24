@@ -48,15 +48,18 @@
         var projectname=$(this).val();
         if(projectname!=""){
           $.ajax({
-            url:'{% url 'check_project_name_exist' %}',
+            url:'{% url 'check_project_name' %}',
             type:'GET',
             data:{projectname:projectname}
     
           })
           .done(function(response){
             console.log(response);
-            if(response=="True"){
+            if(response=="exists"){
                 alert("Username already taken");    }
+            else if(response=="has_spaces"){
+                alert("Username cannot contain spaces");
+            }
           })
           .fail(function(){
             console.log("failed");

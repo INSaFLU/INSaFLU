@@ -241,6 +241,7 @@ def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
     try:
         with transaction.atomic():
             Update_RunMain(run_class, parameter_set)
+            Update_Run_Detail(run_class, parameter_set)
             Update_Sample_Runs_DB(run_class, parameter_set)
             Update_RefMap_DB(run_class, parameter_set)
 
@@ -248,6 +249,119 @@ def Update_Sample_Runs(run_class: RunMain_class, parameter_set: ParameterSet):
 
     except IntegrityError as e:
         print(f"failed to update sample {run_class.sample_name} {e}")
+        return False
+
+
+@transaction.atomic
+def Update_RunMain_Initial(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run data
+    Update ALL run TABLES:
+    - RunMain,
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run data
+    Update ALL run TABLES:
+    - RunMain,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set)
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - RunAssembly,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_Run_Assembly(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - ReadClassification,
+    - ContigClassification,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_Run_Classification(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
+        return False
+
+
+@transaction.atomic
+def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
+    """get run data
+    Update TABLES:
+    - RunMain,
+    - RunRemapMain,
+
+    :param sample_class:
+    :return: run_data
+    """
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+    try:
+        with transaction.atomic():
+            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_FinalReport(run_class, runmain, sample)
+            Update_RefMap_DB(run_class, parameter_set)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
+
+        return True
+
+    except IntegrityError as e:
+        print(f"failed to update sample {run_class.sample_name}")
         return False
 
 
@@ -531,6 +645,56 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
         )
 
         run_detail.save()
+
+
+def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: ParameterSet):
+    """
+    Update ALL run TABLES for one run_class.:
+    - RunMain,
+    - RunDetail,
+    - RunAssembly,
+    - ReadClassification,
+    - ContigClassification,
+    - RunRemapMain,
+    - ReferenceMap_Main
+    - ReferenceContigs
+    - FinalReport,
+
+    :param run_class:
+    :return: run_data
+    """
+    # Sample_update_combinations(run_class)
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+    run_detail = RunDetail(
+        run=runmain,
+        sample=sample,
+        max_depth=run_class.run_detail_report.max_depth,  #
+        max_depthR=run_class.run_detail_report.max_depthR,  #
+        max_gaps=run_class.run_detail_report.max_gaps,  #
+        max_prop=run_class.run_detail_report.max_prop,  #
+        max_mapped=run_class.run_detail_report.max_mapped,  #
+        input=run_class.run_detail_report.input,  #
+        enriched_reads=run_class.run_detail_report.enriched_reads,  #
+        enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
+        depleted_reads=run_class.run_detail_report.depleted_reads,  #
+        depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
+        processed=run_class.run_detail_report.processed,  #
+        processed_percent=run_class.run_detail_report.processed_percent,  #
+        sift_preproc=run_class.run_detail_report.sift_preproc,  #
+        sift_remap=run_class.run_detail_report.sift_remap,  #
+        sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
+        processing_final=run_class.run_detail_report.processing_final,  #
+        processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
+        merged=run_class.run_detail_report.merged,  #
+        merged_number=run_class.run_detail_report.merged_number,  #
+        merged_files=run_class.run_detail_report.merged_files,  #
+    )
+
+    run_detail.save()
 
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):

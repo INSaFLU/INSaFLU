@@ -517,20 +517,26 @@ class RunMainTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        record_name = (
-            '<a href="'
-            + reverse(
-                "sample_detail",
-                args=[record.project.pk, record.sample.pk, record.pk],
+        finished_processing = FinalReport.objects.filter(run=record).count() > 0
+        if finished_processing:
+
+            record_name = (
+                '<a href="'
+                + reverse(
+                    "sample_detail",
+                    args=[record.project.pk, record.sample.pk, record.pk],
+                )
+                + '">'
+                + "<i class='fa fa-bar-chart'></i>"
+                + "</a>"
             )
-            + '">'
-            + "<i class='fa fa-bar-chart'></i>"
-            + "</a>"
-        )
-        if user.username == Constants.USER_ANONYMOUS:
+            if user.username == Constants.USER_ANONYMOUS:
+                return mark_safe("report")
+            if user.username == record.project.owner.username:
+                return mark_safe(record_name)
+
+        else:
             return mark_safe("report")
-        if user.username == record.project.owner.username:
-            return mark_safe(record_name)
 
     # report = tables.LinkColumn(
     #    "sample_detail",

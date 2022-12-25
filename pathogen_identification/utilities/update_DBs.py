@@ -285,6 +285,7 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
     try:
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set)
+            Update_Run_Detail_noCheck(run_class, parameter_set)
         return True
 
     except IntegrityError as e:
@@ -480,7 +481,7 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             read_classification=run_class.read_classification_drone.classifier_method.name,
             contig_classification=run_class.contig_classification_drone.classifier_method.name,
             runtime=f"{run_class.exec_time / 60:.2f} m",
-            report="report",
+            report="initial",
             # static_dir=run_class.static_dir,
         )
 
@@ -558,36 +559,40 @@ def Update_RunMain_noCheck(run_class: RunMain_class, parameter_set: ParameterSet
     host_depletion_method = run_class.depletion_drone.classifier_method.name
     host_depletion = run_class.depletion_drone.deployed
 
-    runmain = RunMain(
-        parameter_set=parameter_set,
-        suprun=run_class.suprun,
-        project=project,
-        sample=sample,
-        name=run_class.prefix,
-        params_file_path=run_class.params_file_path,
-        processed_reads_r1=run_class.sample.r1.current,
-        processed_reads_r2=run_class.sample.r2.current,
-        assembly_performed=run_class.assembly_drone.assembly_exists,
-        assembly_method=run_class.assembly_drone.assembly_method.name,
-        reads_after_processing=f"{reads_after_processing:,}",
-        reads_proc_percent=round(reads_proc_percent, 2),
-        host_depletion=host_depletion_method,
-        host_depletion_performed=host_depletion,
-        host_depletion_args=run_class.depletion_drone.classifier_method.args,
-        host_depletion_db=run_class.depletion_drone.classifier_method.db_name,
-        enrichment_performed=enrichment,
-        enrichment=enrichment_method,
-        enrichment_args=run_class.enrichment_drone.classifier_method.args,
-        enrichment_db=run_class.enrichment_drone.classifier_method.db_name,
-        assembly_max=f"{run_class.assembly_drone.contig_summary['contig_length'].max():,}",
-        remap=run_class.remapping_method.name,
-        remap_args=run_class.remapping_method.args,
-        read_classification=run_class.read_classification_drone.classifier_method.name,
-        contig_classification=run_class.contig_classification_drone.classifier_method.name,
-        runtime=f"{run_class.exec_time / 60:.2f} m",
-        report="report",
-        # static_dir=run_class.static_dir,
+    runmain.parameter_set = parameter_set
+    runmain.suprun = run_class.suprun
+    runmain.project = project
+    runmain.sample = sample
+    runmain.name = run_class.prefix
+    runmain.params_file_path = run_class.params_file_path
+    runmain.processed_reads_r1 = run_class.sample.r1.current
+    runmain.processed_reads_r2 = run_class.sample.r2.current
+    runmain.assembly_performed = run_class.assembly_drone.assembly_exists
+    runmain.assembly_method = run_class.assembly_drone.assembly_method.name
+    runmain.reads_after_processing = f"{reads_after_processing:,}"
+    runmain.reads_proc_percent = round(reads_proc_percent, 2)
+    runmain.host_depletion = host_depletion_method
+    runmain.host_depletion_performed = host_depletion
+    runmain.host_depletion_args = run_class.depletion_drone.classifier_method.args
+    runmain.host_depletion_db = run_class.depletion_drone.classifier_method.db_name
+    runmain.enrichment_performed = enrichment
+    runmain.enrichment = enrichment_method
+    runmain.enrichment_args = run_class.enrichment_drone.classifier_method.args
+    runmain.enrichment_db = run_class.enrichment_drone.classifier_method.db_name
+    runmain.assembly_max = (
+        f"{run_class.assembly_drone.contig_summary['contig_length'].max():,}"
     )
+    runmain.remap = run_class.remapping_method.name
+    runmain.remap_args = run_class.remapping_method.args
+    runmain.read_classification = (
+        run_class.read_classification_drone.classifier_method.name
+    )
+    runmain.contig_classification = (
+        run_class.contig_classification_drone.classifier_method.name
+    )
+    runmain.runtime = f"{run_class.exec_time / 60:.2f} m"
+    runmain.report = "secondary"
+    # static_dir=run_class.static_dir,
 
     runmain.save()
 
@@ -616,9 +621,8 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
         return
 
     try:
-        run_detail = RunDetail.objects.get(run=runmain, sample=sample)
+        run_detail = RunDetail.objects.get(run=runmain)
     except RunDetail.DoesNotExist:
-
         run_detail = RunDetail(
             run=runmain,
             sample=sample,
@@ -669,32 +673,70 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
 
     if sample is None or runmain is None:
         return
-    run_detail = RunDetail(
-        run=runmain,
-        sample=sample,
-        max_depth=run_class.run_detail_report.max_depth,  #
-        max_depthR=run_class.run_detail_report.max_depthR,  #
-        max_gaps=run_class.run_detail_report.max_gaps,  #
-        max_prop=run_class.run_detail_report.max_prop,  #
-        max_mapped=run_class.run_detail_report.max_mapped,  #
-        input=run_class.run_detail_report.input,  #
-        enriched_reads=run_class.run_detail_report.enriched_reads,  #
-        enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
-        depleted_reads=run_class.run_detail_report.depleted_reads,  #
-        depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
-        processed=run_class.run_detail_report.processed,  #
-        processed_percent=run_class.run_detail_report.processed_percent,  #
-        sift_preproc=run_class.run_detail_report.sift_preproc,  #
-        sift_remap=run_class.run_detail_report.sift_remap,  #
-        sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
-        processing_final=run_class.run_detail_report.processing_final,  #
-        processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
-        merged=run_class.run_detail_report.merged,  #
-        merged_number=run_class.run_detail_report.merged_number,  #
-        merged_files=run_class.run_detail_report.merged_files,  #
-    )
 
-    run_detail.save()
+    run_detail_exists = RunDetail.objects.filter(run=runmain, sample=sample).exists()
+
+    if run_detail_exists:
+        run_detail = RunDetail.objects.get(run=runmain, sample=sample)
+
+        run_detail.run = runmain
+        run_detail.sample = sample
+        run_detail.max_depth = run_class.run_detail_report.max_depth  #
+        run_detail.max_depthR = run_class.run_detail_report.max_depthR  #
+        run_detail.max_gaps = run_class.run_detail_report.max_gaps  #
+        run_detail.max_prop = run_class.run_detail_report.max_prop  #
+        run_detail.max_mapped = run_class.run_detail_report.max_mapped  #
+        run_detail.input = run_class.run_detail_report.input  #
+        run_detail.enriched_reads = run_class.run_detail_report.enriched_reads  #
+        run_detail.enriched_reads_percent = (
+            run_class.run_detail_report.enriched_reads_percent
+        )  #
+        run_detail.depleted_reads = run_class.run_detail_report.depleted_reads  #
+        run_detail.depleted_reads_percent = (
+            run_class.run_detail_report.depleted_reads_percent
+        )  #
+        run_detail.processed = run_class.run_detail_report.processed  #
+        run_detail.processed_percent = run_class.run_detail_report.processed_percent  #
+        run_detail.sift_preproc = run_class.run_detail_report.sift_preproc  #
+        run_detail.sift_remap = run_class.run_detail_report.sift_remap  #
+        run_detail.sift_removed_pprc = run_class.run_detail_report.sift_removed_pprc
+        run_detail.processing_final = run_class.run_detail_report.processing_final  #
+        run_detail.processing_final_percent = (
+            run_class.run_detail_report.processing_final_percent
+        )  #
+        run_detail.merged = run_class.run_detail_report.merged  #
+        run_detail.merged_number = run_class.run_detail_report.merged_number  #
+        run_detail.merged_files = run_class.run_detail_report.merged_files  #
+
+        run_detail.save()
+
+    else:
+        run_detail = RunDetail(
+            run=runmain,
+            sample=sample,
+            max_depth=run_class.run_detail_report.max_depth,  #
+            max_depthR=run_class.run_detail_report.max_depthR,  #
+            max_gaps=run_class.run_detail_report.max_gaps,  #
+            max_prop=run_class.run_detail_report.max_prop,  #
+            max_mapped=run_class.run_detail_report.max_mapped,  #
+            input=run_class.run_detail_report.input,  #
+            enriched_reads=run_class.run_detail_report.enriched_reads,  #
+            enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent,  #
+            depleted_reads=run_class.run_detail_report.depleted_reads,  #
+            depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent,  #
+            processed=run_class.run_detail_report.processed,  #
+            processed_percent=run_class.run_detail_report.processed_percent,  #
+            sift_preproc=run_class.run_detail_report.sift_preproc,  #
+            sift_remap=run_class.run_detail_report.sift_remap,  #
+            sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc,
+            processing_final=run_class.run_detail_report.processing_final,  #
+            processing_final_percent=run_class.run_detail_report.processing_final_percent,  #
+            merged=run_class.run_detail_report.merged,  #
+            merged_number=run_class.run_detail_report.merged_number,  #
+            merged_files=run_class.run_detail_report.merged_files,  #
+        )
+
+        run_detail.save()
 
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):

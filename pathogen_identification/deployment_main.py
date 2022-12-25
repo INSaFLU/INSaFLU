@@ -379,6 +379,7 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_main_prep()
+            self.container.run_engine.Prep_deploy()
             self.container.run_engine.Run_QC()
             db_updated = Update_RunMain_Initial(
                 self.container.run_engine, self.parameter_set
@@ -392,6 +393,18 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_engine.Run_PreProcess()
+            db_updated = Update_RunMain_Secondary(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Assembly()
             db_updated = Update_Assembly(self.container.run_engine, self.parameter_set)
             if not db_updated:
                 return False
@@ -422,6 +435,7 @@ class Run_Main_from_Leaf:
             db_updated = Update_Remap(self.container.run_engine, self.parameter_set)
             if not db_updated:
                 return False
+
         except Exception as e:
             print(traceback.format_exc())
             print(e)
@@ -466,21 +480,17 @@ class Run_Main_from_Leaf:
             configured = self.configure()
 
             if configured:
-                run_success = self.Deploy()
+                run_success = self.Deploy_Parts()
             else:
                 print("Error in configuration")
                 self.register_error()
                 return
 
             if run_success:
-                update_successful = self.Update_dbs()
-                if update_successful:
-                    self.register_completion()
-                    self.update_project_change_date()
-
-                else:
-                    print("Error in updating database")
-                    self.register_error()
+                # update_successful = self.Update_dbs()
+                # if update_successful:
+                self.register_completion()
+                self.update_project_change_date()
 
             else:
                 print("Error in run")

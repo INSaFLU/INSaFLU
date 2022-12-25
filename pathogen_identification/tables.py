@@ -17,7 +17,9 @@ from pathogen_identification.models import (
     RawReference,
     ReferenceContigs,
     RunMain,
+    RunAssembly,
     SampleQC,
+    ContigClassification,
 )
 
 
@@ -517,9 +519,21 @@ class RunMainTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
+        finished_preprocessing = record.report != "initial"
+        finished_assembly = RunAssembly.objects.filter(run=record).count() > 0
+        finished_classification = (
+            ContigClassification.objects.filter(run=record).count() > 0
+        )
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
-        if finished_processing:
 
+        print(
+            finished_preprocessing,
+            finished_assembly,
+            finished_classification,
+            finished_processing,
+        )
+
+        if finished_processing:
             record_name = (
                 '<a href="'
                 + reverse(
@@ -536,10 +550,59 @@ class RunMainTable(tables.Table):
                 return mark_safe(record_name)
 
         else:
-            return mark_safe("report")
+            runlog = " <a " + 'href="#" >'
+            if finished_preprocessing:
 
-    # report = tables.LinkColumn(
-    #    "sample_detail",
-    #    text="<i class='fa fa-bar-chart'></i>",
-    #    args=[tables.A("project.name"), tables.A("sample.name"), tables.A("name")],
-    # )
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Preprocessing finished"></i>'
+            else:
+
+                runlog += '<i class="fa fa-cog"'
+                runlog += 'title="Preprocessing running."></i>'
+
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_assembly:
+
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Assembly finished"></i>'
+            else:
+
+                runlog += '<i class="fa fa-cog"'
+                if finished_preprocessing:
+                    runlog += 'title="Assembly running."></i>'
+                else:
+                    runlog += 'title="Assembly." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            ###
+
+            runlog += " <a " + 'href="#" >'
+
+            if finished_classification:
+
+                runlog += '<i class="fa fa-check"'
+                runlog += 'title="Classification finished"></i>'
+            else:
+
+                runlog += '<i class="fa fa-cog"'
+                if finished_assembly:
+                    runlog += 'title="Classification running."></i>'
+                else:
+                    runlog += 'title="Classification." style="color: gray;"></i>'
+            runlog += "</a>"
+
+            runlog += " <a " + 'href="#" >'
+
+            runlog += '<i class="fa fa-cog"'
+            if finished_classification:
+                runlog += 'title="Mapping to references."></i>'
+            else:
+                runlog += 'title="Validation mapping" style="color: gray;"></i>'
+            runlog += "</a>"
+
+            return mark_safe(runlog)

@@ -158,7 +158,7 @@
     }
     
     .row {
-        border: 4px solid;
+        border: none;
         border-radius: 8px;
         padding: 1px;
         border-color: #b0b0b07d;
@@ -246,11 +246,12 @@
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headinghead">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <div class= "column left_small">
+                    <div class="row">
+                    <div class= "col-sm">
                         <div class="col-lg-8"> <strong>Sample name: </strong> {{sample}}</div>
                         <div class="col-lg-8"> <strong>Run: </strong> {{run_name}}</div>
                     </div>
-                    <div class="column center">
+                    <div class="col-sm">
                         {% if run_main.enrichment_performed %}
                         <div class="col-lg-8"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </div>
                         {% endif %}
@@ -268,7 +269,7 @@
                         {% endif %}
                         <div class="col-lg-8"> <strong>Remapping:</strong> {{run_main.remap}} </div>                        
                     </div>
-                    <div class= "column right">
+                    <div class= "col-sm">
                         <form style="padding:0px" id="download_params" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="parameters (.tsv)" name="btn1"
@@ -276,7 +277,7 @@
                             <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
                         </form>
                     </div>
-
+                </div>
                 </div>
             </div>
         </div>
@@ -291,7 +292,8 @@
         <div id="collapseOne" class="collapse hide" role="tabpanel" aria-labelledby="headingOne">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <div class= "column left_small">
+                    <div class="row">
+                    <div class= "col-sm">
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
@@ -317,12 +319,12 @@
                     </div>
                     
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed and run_detail.processed != "0" %}
-                    <div class="column center"</div>
+                    <div class="col-sm"</div>
                         <div id="piechart"></div>
                     </div>
                     {% endif %}
                     
-                    <div class="column right">
+                    <div class="column-sm">
                         {% if run_main.enrichment_performed %}
                         <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
@@ -338,7 +340,7 @@
                         {% endif %}
                         {% endif %}
                     </div>
-
+                    </div>
                 </div>
             </div>
         </div>
@@ -353,32 +355,31 @@
         </div>
         <div id="collapseAssembly" class="collapse hide" role="tabpanel" aria-labelledby="headingAssembly">
             <div class="card-block">
-                <div class="column left">
-                    {% if assembly.performed %}
-                    <div style="padding: 20px;">
-                    <p> Assembly was run using the software <strong>{{ assembly.method }}</strong>. </p>
-                    <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
-                    <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
-                    {% if assembly.contig_number > 0 %}
-                    </p> Contig sizes rang between
-                        {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
-                    </p>
+                <div style="padding: 20px;">
+                    <div class="row">
+                    <div class="col-sm">
+                        {% if assembly.performed %}
+                        <p> Assembly was run using the software <strong>{{ assembly.method }}</strong>. </p>
+                        <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
+                        <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
+                        {% if assembly.contig_number > 0 %}
+                        </p> Contig sizes rang between
+                            {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
+                        </p>
+                        {% endif %}
+                        {% else %}
+                            <p> Assembly not performed </p>
+                        {% endif %}
+                    </div>  
+                    <div class="col-sm">
+                        {% if assembly.contig_number > 0 %}
+                        <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
+                            {% csrf_token %}
+                            <input type=submit value="assembly (.gz)" name="btn1">
+                            <input type="hidden" name="file_path" value="{{assembly.assembly_contigs}}">
+                        </form>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                    {% else %}
-                    <div style="padding: 20px;">
-                        <p> Assembly not performed </p>
-                    </div>
-                    {% endif %}
-                </div>  
-                <div class="column right">
-                    {% if assembly.contig_number > 0 %}
-                    <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
-                        {% csrf_token %}
-                        <input type=submit value="assembly (.gz)" name="btn1">
-                        <input type="hidden" name="file_path" value="{{assembly.assembly_contigs}}">
-                    </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -395,79 +396,81 @@
         <div id="collapseRefId" class="collapse hide" role="tabpanel" aria-labelledby="headingRefId">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <div class="column left">
-                        {% if contig_classification.performed  %}
-                        <p> Assembled contigs were classified using the software
-                            <strong>{{contig_classification.method}}</strong>. </p>
-                        {% if contig_classification.classification_number > 0 %}
-                            {% if contig_classification.classification_number == 1 %}
-                            <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accession was
-                                identified
-                                with
-                                {{contig_classification.classification_minhit}} hit(s).</p>
+                    <div class="row">
+                        <div class="col-sm">
+                            {% if contig_classification.performed  %}
+                            <p> Assembled contigs were classified using the software
+                                <strong>{{contig_classification.method}}</strong>. </p>
+                            {% if contig_classification.classification_number > 0 %}
+                                {% if contig_classification.classification_number == 1 %}
+                                <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accession was
+                                    identified
+                                    with
+                                    {{contig_classification.classification_minhit}} hit(s).</p>
+                                {% else %}
+                                <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
+                                    identified
+                                    with
+                                    at least
+                                    {{contig_classification.classification_minhit}} hit(s).</p>
+                                {% endif %}
                             {% else %}
                             <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
-                                identified
-                                with
-                                at least
-                                {{contig_classification.classification_minhit}} hit(s).</p>
+                                identified. </p>
                             {% endif %}
-                        {% else %}
-                        <p style=padding-left:3em> &bull; {{contig_classification.classification_number}} accessions were
-                            identified. </p>
-                        {% endif %}
-                        {% endif %}
-                        {% if read_classification.performed %}
-                        <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
-                        {% if read_classification.classification_number > 0 %}
-                            {% if read_classification.classification_number == 1 %}
-                            <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions was
-                                identified
-                                with
-                                {{read_classification.classification_minhit}} hit(s). </p>
+                            {% endif %}
+                            {% if read_classification.performed %}
+                            <p> Reads were classified using the software <strong>{{read_classification.method}}</strong> </p>
+                            {% if read_classification.classification_number > 0 %}
+                                {% if read_classification.classification_number == 1 %}
+                                <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions was
+                                    identified
+                                    with
+                                    {{read_classification.classification_minhit}} hit(s). </p>
+                                {% else %}
+                                <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
+                                    identified
+                                    with at
+                                    least
+                                    {{read_classification.classification_minhit}} hit(s). </p>
+                                {% endif %}
                             {% else %}
                             <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
-                                identified
-                                with at
-                                least
-                                {{read_classification.classification_minhit}} hit(s). </p>
+                                identified.
+                            </p>
                             {% endif %}
-                        {% else %}
-                        <p style=padding-left:3em> &bull; {{read_classification.classification_number}} accessions were
-                            identified.
-                        </p>
-                        {% endif %}
-                        {% endif %}
-                        {% if contig_classification.classification_number > 0 and read_classification.classification_number > 0 %}
-                        <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
-                            for remapping against.
-                        </p>
-                        <p style=padding-left:3em> References were collected from the data bases:
-                            <em>{{run_detail.merged_files}}</em>. </p>
-                        {% endif %}
-                    </div>
-                    <div class="column right">
-                        {% if contig_classification.classification_number > 0 %}
-                        <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
-                            {% csrf_token %}
-                            <input type=submit value="contig classification report" name="btn1">
-                            <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
-                        </form>
-                        {% endif %}
-                        {% if read_classification.classification_number > 0 %}
-                        <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
-                            {% csrf_token %}
-                            <input type=submit value="read classification report" name="btn2">
-                            <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
-                        </form>
-                        {% endif %}
-                        {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
-                        <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
-                            {% csrf_token %}
-                            <input type=submit value="merged classification report" name="btn3">
-                            <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
-                        </form>
-                        {% endif %}
+                            {% endif %}
+                            {% if contig_classification.classification_number > 0 and read_classification.classification_number > 0 %}
+                            <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases and were selected
+                                for remapping against.
+                            </p>
+                            <p style=padding-left:3em> References were collected from the data bases:
+                                <em>{{run_detail.merged_files}}</em>. </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm">
+                            {% if contig_classification.classification_number > 0 %}
+                            <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
+                                {% csrf_token %}
+                                <input type=submit value="contig classification report" name="btn1">
+                                <input type="hidden" name="file_path" value="{{contig_classification.contig_classification_report}}">
+                            </form>
+                            {% endif %}
+                            {% if read_classification.classification_number > 0 %}
+                            <form id="download_read_class_report" action="{% url 'download_file' %}" method="POST">
+                                {% csrf_token %}
+                                <input type=submit value="read classification report" name="btn2">
+                                <input type="hidden" name="file_path" value="{{read_classification.read_classification_report}}">
+                            </form>
+                            {% endif %}
+                            {% if read_classification.classification_number > 0 and contig_classification.classification_number > 0 %}
+                            <form id="merged_report_download" action="{% url 'download_file' %}" method="POST">
+                                {% csrf_token %}
+                                <input type=submit value="merged classification report" name="btn3">
+                                <input type="hidden" name="file_path" value="{{run_remap.merged_log}}">
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -484,25 +487,27 @@
         <div id="collapseRemap" class="collapse hide" role="tabpanel" aria-labelledby="headingRemap">
             <div class="card-block">
                 <div style="padding: 20px">
-                    <div class= "column left">
-                        <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
-                        <p> Of the references identified, {{run_detail.merged_number}} corresponding accession ids were found in
-                            our
-                            databases. </p>
-                        <p style=padding-left:4em> from these, {{run_remap.success}} successful alignments were produced.
-                        </p>
-                        <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
-                            of
-                            {{run_remap.coverage_maximum}}X. </p>
-                        <p> The following table shows the results of the remapping onto identified references. </p>
-                
-                    </div>
-                    <div class="column right">
-                        <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">
-                            {% csrf_token %}
-                            <input type=submit value="database matches" name="btn1">
-                            <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
-                        </form>
+                    <div class="row">
+                        <div class= "col-sm">
+                            <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
+                            <p> Of the references identified, {{run_detail.merged_number}} corresponding accession ids were found in
+                                our
+                                databases. </p>
+                            <p style=padding-left:4em> from these, {{run_remap.success}} successful alignments were produced.
+                            </p>
+                            <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
+                                of
+                                {{run_remap.coverage_maximum}}X. </p>
+                            <p> The following table shows the results of the remapping onto identified references. </p>
+                    
+                        </div>
+                        <div class="col-sm">
+                            <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">
+                                {% csrf_token %}
+                                <input type=submit value="database matches" name="btn1">
+                                <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

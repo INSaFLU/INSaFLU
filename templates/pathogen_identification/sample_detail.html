@@ -363,7 +363,7 @@
                         <p> Assembled contigs were filtered for a minimum size of {{assembly.contig_trim}} bp. </p>
                         <p> After filtering, {{assembly.contig_number}} contigs remained. </p>
                         {% if assembly.contig_number > 0 %}
-                        </p> Contig sizes rang between
+                        </p> Contig sizes range between
                             {{assembly.contig_min}} bp and {{assembly.contig_max}} bp (mean {{assembly.contig_mean}}) 
                         </p>
                         {% endif %}
@@ -490,16 +490,15 @@
                     <div class="row">
                         <div class= "col-sm">
                             <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
-                            <p> Of the references identified, {{run_detail.merged_number}} corresponding accession ids were found in
+                            <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
                                 databases. </p>
-                            <p style=padding-left:4em> from these, {{run_remap.success}} successful alignments were produced.
+                            <p style=padding-left:4em> from these, {{number_validated}} successful alignments were produced.
                             </p>
+                            <p> The following table shows the results of the remapping onto identified references. </p>
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
                                 of
-                                {{run_remap.coverage_maximum}}X. </p>
-                            <p> The following table shows the results of the remapping onto identified references. </p>
-                    
+                                {{run_remap.coverage_maximum}}X. </p>                    
                         </div>
                         <div class="col-sm">
                             <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">

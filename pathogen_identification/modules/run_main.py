@@ -875,7 +875,6 @@ class RunMain_class(Run_Deployment_Methods):
             self.export_final_reports()
 
         self.Update_exec_time()
-        self.generate_output_data_classes()
 
     #### SUMMARY FUNCTIONS ####
 

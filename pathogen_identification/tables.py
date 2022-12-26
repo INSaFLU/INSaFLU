@@ -526,13 +526,6 @@ class RunMainTable(tables.Table):
         )
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
 
-        print(
-            finished_preprocessing,
-            finished_assembly,
-            finished_classification,
-            finished_processing,
-        )
-
         if finished_processing:
             record_name = (
                 '<a href="'

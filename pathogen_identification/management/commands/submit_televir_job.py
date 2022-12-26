@@ -84,12 +84,12 @@ class Command(BaseCommand):
 
         ### MANAGEMENT
         submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
-        local_paths = {
+        matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
         available_paths = {
-            leaf: path for leaf, path in local_paths.items() if path is not None
+            leaf: path for leaf, path in matched_paths.items() if path is not None
         }
 
         available_path_nodes = {
@@ -100,8 +100,6 @@ class Command(BaseCommand):
         }
 
         ### SUBMISSION
-
-        print(available_path_nodes)
 
         try:
 

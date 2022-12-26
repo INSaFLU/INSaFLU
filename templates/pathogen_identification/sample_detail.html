@@ -325,7 +325,7 @@
                     {% endif %}
                     
                     <div class="column-sm">
-                        {% if run_main.enrichment_performed %}
+                        {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
                             {% csrf_token %}
                             <input type=submit value="processed R1 (.gz)" name="btn1">

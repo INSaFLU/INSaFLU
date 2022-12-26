@@ -247,37 +247,37 @@
             <div class="card-block">
                 <div style="padding: 20px">
                     <div class="row">
-                    <div class= "col-sm">
-                        <div class="col-lg-8"> <strong>Sample name: </strong> {{sample}}</div>
-                        <div class="col-lg-8"> <strong>Run: </strong> {{run_name}}</div>
+                        <div class= "col-sm">
+                            <p style="margin: 0;"> <strong>Sample name: </strong> {{sample}}</p>
+                            <p style="margin: 0;"> <strong>Run: </strong> {{run_name}}</p>
+                        </div>
+                        <div class="col-sm">
+                            {% if run_main.enrichment_performed %}
+                            <p style="margin: 0;"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </p>
+                            {% endif %}
+                            {% if run_main.host_depletion_performed %}
+                            <p style="margin: 0;"> <strong>Host depletion:</strong> {{run_main.host_depletion}} </p>
+                            {% endif %}
+                            {% if read_classification.performed %}
+                            <p style="margin: 0;"> <strong>Read classification:</strong> {{read_classification.method}} </p>
+                            {% endif %}
+                            {% if contig_classification.performed %}       
+                            <p style="margin: 0;"> <strong>Contig classification:</strong> {{run_main.contig_classification}}</p>
+                            {% endif %}
+                            {% if assembly.performed %} 
+                            <p style="margin: 0;"> <strong>Assembly:</strong> {{assembly.method}} </p>
+                            {% endif %}
+                            <p style="margin: 0;"> <strong>Remapping:</strong> {{run_main.remap}} </p>                        
+                        </div>
+                        <div class= "col-sm">
+                            <form  id="download_params" action="{% url 'download_file' %}" method="POST">
+                                {% csrf_token %}
+                                <input type=submit value="parameters (.tsv)" name="btn1"
+                                    style="border=1px solid border-color:black padding:2px">
+                                <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
+                            </form>
+                        </div>
                     </div>
-                    <div class="col-sm">
-                        {% if run_main.enrichment_performed %}
-                        <div class="col-lg-8"> <strong>Viral enrichment:</strong> {{run_main.enrichment}} </div>
-                        {% endif %}
-                        {% if run_main.host_depletion_performed %}
-                        <div class="col-lg-8"> <strong>Host depletion:</strong> {{run_main.host_depletion}} </div>
-                        {% endif %}
-                        {% if read_classification.performed %}
-                        <div class="col-lg-8"> <strong>Read classification:</strong> {{read_classification.method}} </div>
-                        {% endif %}
-                        {% if contig_classification.performed %}       
-                        <div class="col-lg-8"> <strong>Contig classification:</strong> {{run_main.contig_classification}}</div>
-                        {% endif %}
-                        {% if assembly.performed %} 
-                        <div class="col-lg-8"> <strong>Assembly:</strong> {{assembly.method}} </div>
-                        {% endif %}
-                        <div class="col-lg-8"> <strong>Remapping:</strong> {{run_main.remap}} </div>                        
-                    </div>
-                    <div class= "col-sm">
-                        <form style="padding:0px" id="download_params" action="{% url 'download_file' %}" method="POST">
-                            {% csrf_token %}
-                            <input type=submit value="parameters (.tsv)" name="btn1"
-                                style="border=1px solid border-color:black padding:2px">
-                            <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
-                        </form>
-                    </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -319,7 +319,7 @@
                     </div>
                     
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed and run_detail.processed != "0" %}
-                    <div class="col-sm"</div>
+                    <div class="col-sm">
                         <div id="piechart"></div>
                     </div>
                     {% endif %}
@@ -519,16 +519,20 @@
 <div id="accordion2" role="tablist" aria-multiselectable="true">
     <div class="card">
         <div class="card-header" role="tab" id="headingReport">
-            <div class="column left" >
-                <h5 class="mb-0" >
-                    <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
-                        <strong>Pathogen Identification</strong>
-                    </a>
-                </h5>
-            </div>
-            <div class="column right">
-                <a href="#" id="report_download" class="btn btn-primary dark"> 
-                    <span class="hidden-phone"></span>Download as TSV </a>
+            <div class="row">
+                <div class="col-sm" >
+                    <h5 class="mb-0" >
+                        <a class="collapsed"   data-toggle="collapse" data-parent="#accordion" href="#collapseReport" aria-expanded="false" aria-controls="collapseReport">
+                            <strong>Pathogen Identification</strong>
+                        </a>
+                    </h5>
+                </div>
+                <div class="col-sm">
+                    <div class="float-right">
+                    <a href="#" id="report_download" class="btn btn-primary dark"> 
+                        <span class="hidden-phone"></span>Download as TSV </a>
+                    </div>
+                </div>
             </div>
         </div>
         

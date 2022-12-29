@@ -1787,7 +1787,6 @@ class Mapping_Manager(Tandem_Remap):
         self.max_mapped = 0
         self.max_depth = 0
         self.max_depthR = 0
-        self.mapped_instances = []
         self.report = pd.DataFrame(
             columns=[
                 "suffix",

@@ -196,6 +196,13 @@ class RunDetail_main:
         ######### INPUT
         self.sample_name = config["sample_name"]
         self.type = config["type"]
+        self.run_detail_report = pd.DataFrame()
+        self.aclass_summary = pd.DataFrame([[0]], columns=["counts"])
+        self.rclass_summary = pd.DataFrame([[0]], columns=["counts"])
+        self.merged_targets = pd.DataFrame(columns=["taxid"])
+        self.raw_targets = pd.DataFrame(columns=["taxid"])
+        self.remap_plan = pd.DataFrame()
+        self.report = pd.DataFrame()
 
         self.r1 = Read_class(
             config["r1"],
@@ -324,13 +331,6 @@ class RunDetail_main:
             Software_detail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
         )
-
-        ### output content
-
-        self.report = pd.DataFrame()
-        self.rclass_summary = pd.DataFrame()
-        self.aclass_summary = pd.DataFrame()
-        self.merged_targets = pd.DataFrame()
 
         ### output files
         self.params_file_path = os.path.join(
@@ -497,7 +497,8 @@ class Run_Deployment_Methods(RunDetail_main):
         super().__init__(config_json, method_args, username)
         self.mapped_instances = []
 
-    def deploy_QC(self, fake_run: bool = False):
+    def Prep_deploy(self, fake_run: bool = False):
+
         self.preprocess_drone = Preprocess(
             self.sample.r1.current,
             self.sample.r2.current,
@@ -511,6 +512,94 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
+
+        self.depletion_drone = Classifier(
+            self.depletion_method,
+            self.sample.r1.current,
+            type=self.type,
+            r2=self.sample.r2.current,
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+        )
+
+        self.enrichment_drone = Classifier(
+            self.enrichment_method,
+            self.sample.r1.current,
+            type=self.type,
+            r2=self.sample.r2.current,
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+        )
+
+        self.assembly_drone = Assembly_class(
+            self.sample.r1.current,
+            self.assembly_method,
+            self.type,
+            min_scaffold_length=self.min_scaffold_length,
+            r2=self.sample.r2.current,
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+        )
+
+        self.contig_classification_drone = Classifier(
+            self.contig_classification_method,
+            self.assembly_drone.assembly_file_fasta_gz,
+            r2="",
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+        )
+
+        self.read_classification_drone = Classifier(
+            self.read_classification_method,
+            self.sample.r1.current,
+            type=self.type,
+            r2=self.sample.r2.current,
+            prefix=self.prefix,
+            threads=self.threads,
+            bin=get_bindir_from_binaries(
+                self.config["bin"], CS.PIPELINE_NAME_remapping
+            ),
+            logging_level=self.logger_level_detail,  #
+            log_dir=self.log_dir,
+        )
+
+        self.remap_manager = Mapping_Manager(
+            [],
+            self.sample.r1,
+            self.sample.r2,
+            self.remapping_method,
+            self.assembly_drone.assembly_file_fasta_gz,
+            self.type,
+            self.prefix,
+            self.threads,
+            self.minimum_coverage,
+            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
+            self.logger_level_detail,
+            True,
+            logdir=self.config["directories"]["log_dir"],
+        )
+
+    def deploy_QC(self, fake_run: bool = False):
 
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
         self.logger.info(f"r2 reads: {self.sample.r2.get_current_fastq_read_number()}")
@@ -551,7 +640,6 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
-
         self.enrichment_drone.run()
 
     def deploy_ASSEMBLY(self, fake_run: bool = False):
@@ -569,14 +657,12 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,
             log_dir=self.log_dir,
         )
-
         if fake_run:
             self.assembly_drone.fake_run()
         else:
             self.assembly_drone.run()
 
     def deploy_CONTIG_CLASSIFICATION(self):
-
         self.contig_classification_drone = Classifier(
             self.contig_classification_method,
             self.assembly_drone.assembly_file_fasta_gz,
@@ -593,7 +679,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.contig_classification_drone.run()
 
     def deploy_READ_CLASSIFICATION(self):
-
         self.read_classification_drone = Classifier(
             self.read_classification_method,
             self.sample.r1.current,
@@ -607,7 +692,6 @@ class Run_Deployment_Methods(RunDetail_main):
             logging_level=self.logger_level_detail,  #
             log_dir=self.log_dir,
         )
-
         self.read_classification_drone.run()
 
     def deploy_REMAPPING(self):
@@ -646,7 +730,17 @@ class RunMain_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
-    def Run(self):
+    def Run_Full_Pipeline(self):
+
+        self.Prep_deploy()
+        self.Run_QC()
+        self.Run_PreProcess()
+        self.Sanitize_reads()
+        self.Run_Assembly()
+        self.Run_Classification()
+        self.Run_Remapping()
+
+    def Run_QC(self):
 
         self.logger.info("Starting Pipeline")
 
@@ -697,6 +791,10 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
 
+        self.Update_exec_time()
+
+    def Run_PreProcess(self):
+
         if self.enrichment:
             self.deploy_EN()
 
@@ -719,6 +817,10 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
 
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Sanitize_reads(self):
         if self.enrichment or self.depletion or self.assembly:
             self.logger.info(
                 "r1 current before trim: "
@@ -731,10 +833,19 @@ class RunMain_class(Run_Deployment_Methods):
                 + str(self.sample.r1.get_current_fastq_read_number())
             )
 
+            self.generate_output_data_classes()
+
+    def Run_Assembly(self):
+
         if self.assembly:
             self.deploy_ASSEMBLY()
         else:
             self.deploy_ASSEMBLY(fake_run=True)
+
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Run_Classification(self):
 
         if self.classification:
             self.deploy_READ_CLASSIFICATION()
@@ -754,6 +865,10 @@ class RunMain_class(Run_Deployment_Methods):
 
             self.export_intermediate_reports()
 
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Run_Remapping(self):
         if self.remapping:
             self.deploy_REMAPPING()
             self.report = self.remap_manager.report
@@ -832,7 +947,7 @@ class RunMain_class(Run_Deployment_Methods):
         final_processing_percent = (final_processing_reads / processed_reads) * 100
 
         ### transfer to assembly class / drone.
-
+        print(self.aclass_summary)
         minhit_assembly = self.aclass_summary["counts"].min()
         if not minhit_assembly or not self.aclass_summary.shape[0]:
             minhit_assembly = 0

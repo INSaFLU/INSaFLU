@@ -559,6 +559,20 @@ class Utility_Pipeline_Manager:
         """ """
         return {(i, x): i for i, x in enumerate(pipe_tree.nodes)}
 
+    def match_path_to_tree_safe(self, explicit_path: list, pipe_tree: PipelineTree):
+        """"""
+        try:
+            matched_path = self.match_path_to_tree(explicit_path, pipe_tree)
+        except Exception as e:
+            print(f"Path {explicit_path} not found in pipeline tree.")
+            print("Exception:")
+            print(e)
+            return False
+
+        print("matched_path: ", matched_path)
+
+        return matched_path
+
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
 
@@ -598,7 +612,7 @@ class Utility_Pipeline_Manager:
                 )
             except KeyError:
                 self.logger.info(f"{parent_main} not in parent tree edge dictionary.")
-                return False
+                return None
 
             self.logger.info(f"Child main: {child_main}")
 
@@ -608,11 +622,11 @@ class Utility_Pipeline_Manager:
                 nodes_index_dict[child_main]
             except KeyError:
                 self.logger.info(f"{child_main} node not in tree nodes")
-                return False
+                return None
 
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")
-                return False
+                return None
 
             parent = child
             parent_main = child_main
@@ -886,6 +900,25 @@ class Parameter_DB_Utility:
 
         except ParameterSet.DoesNotExist:
             return False
+
+    def check_ParameterSet_available(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return True
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        if parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            return False
+
+        return True
 
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects

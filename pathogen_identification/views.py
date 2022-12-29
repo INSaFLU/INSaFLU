@@ -949,6 +949,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_remap": run_remap,
             "reference_remap_main": reference_remap_main,
             "final_report": final_report,
+            "number_validated": len(final_report),
             "project_index": project_pk,
             "sample_index": sample_pk,
             "run_index": run_pk,

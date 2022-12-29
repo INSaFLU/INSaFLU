@@ -18,23 +18,29 @@
 
 {% block content %}
 
+<style>
+    .table th, .table td {
+        text-align: center;
+    }
+    .btn-group {
+        margin-bottom: 15px;
+    }
+</style>
+
 <div class="table-container">
+    <div class="btn-group">
+        <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+            <a href="{% url "all_PIsample_reports" pk1=project_index pk2=sample_index%}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
+                </button>   
+           
+    </div>
+
     {% block table %}
     <div class="table-responsive">
         <table class="table table-hover table-bordered table-striped" {% if table.attrs %}
             {{ table.attrs.as_html }}{% endif %}>
             {% block table.thead %}
             <thead>
-                <tr>
-                    <th colspan="9">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
-                                <a href="{% url "all_PIsample_reports" pk1=project_index pk2=sample_index%}"><span class="hidden-phone" style="color:white"><i>View all reports</i></span></a>
-                                    </button>   
-                               
-                        </div>
-                    </th>               
-                </tr>
                 <tr>
                     {% for column in table.columns %}
                     {% if column.orderable %}

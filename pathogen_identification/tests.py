@@ -118,17 +118,23 @@ class Televir_Software_Test(TestCase):
             set(pipeline_excluding_raven),
         )
 
-    def test_generate_trees(self):
+    def test_generate_default_trees(self):
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
         utils_manager.generate_default_trees()
-
         all_trees = SoftwareTree.objects.all()
+
         self.assertEqual(all_trees.count(), len(self.pipeline_makeup.MAKEUP) * 2)
 
+        ont_pipeline_tree = utils_manager.generate_software_tree(
+            CS.TECHNOLOGY_minion, 0
+        )
 
-class Televir_Software_Test(TestCase):
+        self.assertEqual(ont_pipeline_tree.__class__.__name__, "PipelineTree")
+
+
+class Televir_Project_Test(TestCase):
     software = SoftwareUtils()
     utils = Utils()
     constants = Constants()
@@ -206,22 +212,17 @@ class Televir_Software_Test(TestCase):
             ont_project_sample.sample = sample_ont
             ont_project_sample.save()
 
-        ######## ILLUMINA #######
-        project_illumina_name = "project_illumina"
-        try:
-            project_illumina = Projects.objects.get(name=project_illumina_name)
-        except Projects.DoesNotExist:
-            project_illumina = Projects()
-            project_illumina.name = project_illumina_name
-            project_illumina.owner = user
-            project_illumina.technology = CS.TECHNOLOGY_illumina
-
-            project_illumina.save()
-
-        self.project_illumina = project_illumina
-
         ######
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
         utils_manager.generate_default_trees()
+
+    def test_project_trees(self):
+        utils_manager = Utils_Manager()
+
+        local_tree = utils_manager.generate_project_tree(
+            self.project_ont.technology, self.project_ont, self.test_user
+        )
+
+        self.assertEqual(local_tree.__class__.__name__, "PipelineTree")

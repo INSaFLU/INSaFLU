@@ -662,8 +662,6 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def expand_parameters_table(combined_table, software_db_dict={}):
-        # print(software_db_dict)
-        # print("#####")
 
         def fix_row(row):
 
@@ -699,12 +697,9 @@ class Parameter_DB_Utility:
 
                 if row.parameter_name == "--db" and software_db_dict:
                     software_name = row.software_name
-                    # print(software_name)
                     possibilities = [software_name, software_name.lower()]
                     if "_" in software_name:
                         possibilities.append(software_name.split("_")[0])
-
-                    # print(possibilities)
 
                     for p in possibilities:
                         if p in software_db_dict:
@@ -712,8 +707,6 @@ class Parameter_DB_Utility:
                             break
 
                 return new_range
-
-        print(combined_table.shape)
 
         combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
         combined_table = combined_table.reset_index(drop=True)

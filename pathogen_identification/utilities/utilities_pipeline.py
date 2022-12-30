@@ -569,8 +569,6 @@ class Utility_Pipeline_Manager:
             print(e)
             return False
 
-        print("matched_path: ", matched_path)
-
         return matched_path
 
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
@@ -676,7 +674,6 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def expand_parameters_table(combined_table, software_db_dict={}):
-
         def fix_row(row):
 
             if not row.parameter:
@@ -873,7 +870,7 @@ class Parameter_DB_Utility:
         except SoftwareTree.DoesNotExist:
             return None
 
-    def get_software_tree_index(self, technology: Technology, global_index: int):
+    def get_software_tree_index(self, technology: str, global_index: int):
 
         if self.check_default_software_tree_exists(technology, global_index):
             software_tree = (
@@ -1180,7 +1177,7 @@ class Utils_Manager:
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
 
-    def get_software_tree_index(self, technology: Technology, tree_makeup: int):
+    def get_software_tree_index(self, technology: str, tree_makeup: int):
         """
         Get the software tree index from model
         """

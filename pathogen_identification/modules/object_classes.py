@@ -28,7 +28,7 @@ class Temp_File:
     Temporary file.
     """
 
-    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ""):
+    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ".txt"):
         """
         Initialize.
         """
@@ -37,24 +37,31 @@ class Temp_File:
         self.prefix = prefix
         self.suffix = suffix
 
-        self.temp_file = os.path.join(
+        self.path = os.path.join(
             self.temp_dir, f"{self.prefix}_{randint(1000000, 9999999)}{self.suffix}"
         )
+        self.file = os.path.basename(self.path)
 
     def __enter__(self):
         """
         Enter.
         """
 
-        return self.temp_file
+        open(self.path, "w").close()
+        return self.path
 
-    def __exit__(self):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_value: BaseException,
+        traceback,
+    ):
         """
         Exit.
         """
 
-        if os.path.exists(self.temp_file):
-            os.remove(self.temp_file)
+        if os.path.exists(self.path):
+            os.remove(self.path)
 
 
 class Operation_Temp_Files:
@@ -314,6 +321,7 @@ class RunCMD:
 
         cmd_string = self.java_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
+        print(cmd_string)
         self.dispose_output_carefully(cmd, out, err, exec_time)
 
     def run_bash(self, cmd):

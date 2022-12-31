@@ -17,6 +17,16 @@ from constants.software_names import SoftwareNames
 from constants.constants import Constants
 from typing import Tuple, Dict
 from pathogen_identification.deployment_main import Run_Main_from_Leaf
+from pathogen_identification.modules.object_classes import (
+    Operation_Temp_Files,
+    Temp_File,
+    RunCMD,
+    Read_class,
+    Sample_runClass,
+    Software_detail,
+    Bedgraph,
+)
+from pathogen_identification.install_registry import Deployment_Params
 
 # Create your tests here.
 
@@ -25,6 +35,20 @@ class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
+
+def get_bindir_from_binaries(binaries, key, value: str = ""):
+
+    if value == "":
+        try:
+            return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
+        except KeyError:
+            return ""
+    else:
+        try:
+            return os.path.join(binaries["ROOT"], binaries[key][value], "bin")
+        except KeyError:
+            return ""
 
 
 def update_software_params_global_project(project, user):
@@ -294,6 +318,191 @@ class Televir_Software_Test(TestCase):
         self.assertEqual(ont_pipeline_tree.__class__.__name__, "PipelineTree")
 
 
+def televir_test_project(user: User, project_ont_name: str = "project_televir"):
+    ######### ONT ##########
+
+    try:
+        project_ont = Projects.objects.get(name=project_ont_name)
+    except Projects.DoesNotExist:
+        project_ont = Projects()
+        project_ont.name = project_ont_name
+        project_ont.owner = user
+        project_ont.technology = CS.TECHNOLOGY_minion
+
+        project_ont.save()
+
+    return project_ont
+
+
+def televir_test_sample(project_ont, sample_ont: Sample):
+
+    try:
+        ont_project_sample = PIProject_Sample.objects.get(
+            project__id=project_ont.pk, sample__id=sample_ont.pk
+        )
+    except PIProject_Sample.DoesNotExist:
+        ont_project_sample = PIProject_Sample()
+        ont_project_sample.project = project_ont
+        ont_project_sample.sample = sample_ont
+        ont_project_sample.name = sample_ont.name
+        ont_project_sample.save()
+
+    return ont_project_sample
+
+
+def test_user():
+    try:
+        user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
+    except User.DoesNotExist:
+        user = User()
+        user.username = ConstantsTestsCase.TEST_USER_NAME
+        user.is_active = False
+        user.password = ConstantsTestsCase.TEST_USER_NAME
+        user.save()
+
+    return user
+
+
+def test_fastq_file(
+    baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
+):
+
+    utils = Utils()
+
+    file_name = os.path.join(
+        baseDirectory,
+        ConstantsTestsCase.DIR_FASTQ,
+        ConstantsTestsCase.FASTQ_MINION_1,
+    )
+
+    temp_dir = utils.get_temp_dir()
+    utils.copy_file(file_name, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+
+    try:
+        sample_ont = Sample.objects.get(name=sample_name)
+    except Sample.DoesNotExist:
+        sample_ont = Sample()
+        sample_ont.name = sample_name
+        sample_ont.is_valid_1 = True
+        sample_ont.file_name_1 = ConstantsTestsCase.FASTQ1_1
+        sample_ont.path_name_1.name = os.path.join(
+            temp_dir, ConstantsTestsCase.FASTQ1_1
+        )
+        sample_ont.is_valid_2 = False
+        sample_ont.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
+        sample_ont.owner = user
+        sample_ont.save()
+
+    return sample_ont
+
+
+class Televir_Objects_TestCase(TestCase):
+    install_registry = Deployment_Params
+
+    def setUp(self):
+        self.baseDirectory = os.path.join(
+            getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
+        )
+
+        self.test_user = test_user()
+
+    def test_temporary_operations(self):
+        tempop = Operation_Temp_Files(self.baseDirectory)
+
+        with tempop as tpf:
+            open(tpf.script, "w").close()
+            open(tpf.log, "w").close()
+            open(tpf.flag, "w").close()
+
+        self.assertFalse(os.path.exists(tpf.script))
+        self.assertFalse(os.path.exists(tpf.log))
+        self.assertFalse(os.path.exists(tpf.flag))
+
+    def test_temp_file(self):
+        tf = Temp_File(self.baseDirectory)
+
+        with tf as tpf:
+            self.assertTrue(os.path.exists(tpf))
+
+        self.assertFalse(os.path.exists(tpf))
+
+    def test_runCMD(self):
+        bindir = get_bindir_from_binaries(
+            self.install_registry.BINARIES, CS.PIPELINE_NAME_read_quality_analysis
+        )
+        runcmd = RunCMD(
+            self.baseDirectory,
+            logdir=self.baseDirectory,
+            prefix="test_runCMD",
+        )
+
+        cmd = "hello"
+        self.assertEqual(runcmd.bash_cmd_string(cmd), cmd)
+        self.assertEqual(
+            runcmd.bash_software_cmd_string(cmd), f"{self.baseDirectory}/{cmd}"
+        )
+        self.assertEqual(
+            runcmd.python_cmd_string(cmd), f"python {self.baseDirectory}/{cmd}"
+        )
+        java_bin = os.path.join(
+            self.install_registry.BINARIES["ROOT"],
+            self.install_registry.BINARIES["software"]["java"],
+            "bin",
+            "java",
+        )
+        self.assertEqual(
+            runcmd.java_cmd_string(cmd), f"{java_bin} -cp .{self.baseDirectory}/ {cmd}"
+        )
+        tempf = Temp_File(self.baseDirectory)
+        tempPython = Temp_File(self.baseDirectory, suffix=".py")
+        with tempf as tmp:
+            with tempPython as tpf:
+                with open(tpf, "w") as f:
+                    f.write("print('hello world')")
+
+                cmd = f"{os.path.basename(tpf)} > {tmp}"
+                python_cmd = runcmd.python_cmd_string(cmd)
+
+                runcmd.run_python(cmd)
+                self.assertTrue(os.path.exists(tmp))
+                with open(tmp, "r") as f:
+                    self.assertEqual(f.read().strip(), "hello world")
+
+        tempJava = Temp_File(self.baseDirectory, suffix=".java")
+        with tempf as tmp:
+            with tempJava as tpf:
+                with open(tpf, "w") as f:
+                    f.write(
+                        'public class Hello { public static void main(String[] args) { System.out.println("Hello World"); } }'
+                    )
+
+                cmd = f"{os.path.basename(tpf)} > {tmp}"
+                print(runcmd.java_cmd_string(cmd))
+                print(os.path.exists(tpf))
+                with open(tpf, "r") as f:
+                    print(f.read())
+                runcmd.run_java(cmd)
+                self.assertTrue(os.path.exists(tmp))
+                with open(tmp, "r") as f:
+                    self.assertEqual(f.read(), "Hello World")
+
+        tempBash = Temp_File(self.baseDirectory, suffix=".sh")
+        with tempf as tmp:
+            with tempBash as tpf:
+                with open(tpf, "w") as f:
+                    f.write("echo hello world")
+
+                cmd = f"{tpf} > {tmp}"
+                runcmd.run_bash(cmd)
+                self.assertTrue(os.path.exists(tmp))
+                with open(tmp, "r") as f:
+                    self.assertEqual(f.read(), "hello world")
+
+        cmd = "echo hello world"
+        cmd_return = runcmd.run_bash_return(cmd)
+        self.assertEqual(cmd_return, "hello world")
+
+
 class Televir_Project_Test(TestCase):
     software = SoftwareUtils()
     utils = Utils()
@@ -307,80 +516,20 @@ class Televir_Project_Test(TestCase):
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
-        file_name = os.path.join(
-            self.baseDirectory,
-            ConstantsTestsCase.DIR_FASTQ,
-            ConstantsTestsCase.FASTQ_MINION_1,
-        )
-        self.assertTrue(file_name)
 
-        try:
-            user = User.objects.get(username=ConstantsTestsCase.TEST_USER_NAME)
-        except User.DoesNotExist:
-            user = User()
-            user.username = ConstantsTestsCase.TEST_USER_NAME
-            user.is_active = False
-            user.password = ConstantsTestsCase.TEST_USER_NAME
-            user.save()
+        self.test_user = test_user()
+        self.sample_ont = test_fastq_file(self.baseDirectory, self.test_user)
+        self.assertTrue(self.sample_ont.path_name_1.name)
 
-        self.test_user = user
-
-        temp_dir = self.utils.get_temp_dir()
-        self.utils.copy_file(
-            file_name, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1)
-        )
-
-        sample_name = "televir_sample_minion_1"
-        try:
-            sample_ont = Sample.objects.get(name=sample_name)
-        except Sample.DoesNotExist:
-            sample_ont = Sample()
-            sample_ont.name = sample_name
-            sample_ont.is_valid_1 = True
-            sample_ont.file_name_1 = ConstantsTestsCase.FASTQ1_1
-            sample_ont.path_name_1.name = os.path.join(
-                temp_dir, ConstantsTestsCase.FASTQ1_1
-            )
-            sample_ont.is_valid_2 = False
-            sample_ont.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
-            sample_ont.owner = user
-            sample_ont.save()
-
-        self.sample = sample_ont
-
-        ######### ONT ##########
-        project_ont_name = "project_televir"
-        try:
-            project_ont = Projects.objects.get(name=project_ont_name)
-        except Projects.DoesNotExist:
-            project_ont = Projects()
-            project_ont.name = project_ont_name
-            project_ont.owner = user
-            project_ont.technology = CS.TECHNOLOGY_minion
-
-            project_ont.save()
-
-        self.project_ont = project_ont
-
-        try:
-            ont_project_sample = PIProject_Sample.objects.get(
-                project__id=project_ont.pk, sample__id=sample_ont.pk
-            )
-        except PIProject_Sample.DoesNotExist:
-            ont_project_sample = PIProject_Sample()
-            ont_project_sample.project = project_ont
-            ont_project_sample.sample = sample_ont
-            ont_project_sample.name = sample_ont.name
-            ont_project_sample.save()
-
-        self.sample_ont = ont_project_sample
+        self.project_ont = televir_test_project(self.test_user)
+        self.ont_project_sample = televir_test_sample(self.project_ont, self.sample_ont)
 
         ######
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
         utils_manager.generate_default_trees()
-        duplicate_software_params_global_project(user, project_ont)
+        duplicate_software_params_global_project(self.test_user, self.project_ont)
 
     def test_project_trees_exist_ont(self):
         utils_manager = Utils_Manager()
@@ -417,7 +566,6 @@ class Televir_Project_Test(TestCase):
             pipeline_tree_index = utils_manager.get_software_tree_index(
                 self.project_ont.technology, tree_makeup
             )
-            pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
             matched_paths = {
                 leaf: utils_manager.utility_manager.match_path_to_tree_safe(
@@ -427,13 +575,6 @@ class Televir_Project_Test(TestCase):
             }
             available_paths = {
                 leaf: path for leaf, path in matched_paths.items() if path is not None
-            }
-
-            available_path_nodes = {
-                leaf: SoftwareTreeNode.objects.get(
-                    software_tree__pk=pipeline_tree_index, index=path
-                )
-                for leaf, path in available_paths.items()
             }
 
             self.assertEqual(len(local_paths), len(available_paths))
@@ -470,7 +611,7 @@ class Televir_Project_Test(TestCase):
 
                 run = Run_Main_from_Leaf(
                     user=self.test_user,
-                    input_data=self.sample_ont,
+                    input_data=self.ont_project_sample,
                     project=self.project_ont,
                     pipeline_leaf=matched_path_node,
                     pipeline_tree=pipeline_tree,

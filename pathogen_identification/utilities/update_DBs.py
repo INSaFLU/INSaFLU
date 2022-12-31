@@ -354,7 +354,7 @@ def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
     try:
         with transaction.atomic():
-            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
             Update_FinalReport(run_class, runmain, sample)
             Update_RefMap_DB(run_class, parameter_set)
             Update_Run_Detail_noCheck(run_class, parameter_set)
@@ -532,7 +532,9 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
     return sample, runmain, project
 
 
-def Update_RunMain_noCheck(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_RunMain_noCheck(
+    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+):
     """update run data for run_class. Update run_class.run_data.
 
     :param run_class:
@@ -591,7 +593,7 @@ def Update_RunMain_noCheck(run_class: RunMain_class, parameter_set: ParameterSet
         run_class.contig_classification_drone.classifier_method.name
     )
     runmain.runtime = f"{run_class.exec_time / 60:.2f} m"
-    runmain.report = "secondary"
+    runmain.report = tag
     # static_dir=run_class.static_dir,
 
     runmain.save()

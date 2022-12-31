@@ -519,7 +519,7 @@ class RunMainTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
-        finished_preprocessing = record.report == "secondary"
+        finished_preprocessing = record.report != "initial"
         finished_assembly = RunAssembly.objects.filter(run=record).count() > 0
         finished_classification = (
             ContigClassification.objects.filter(run=record).count() > 0

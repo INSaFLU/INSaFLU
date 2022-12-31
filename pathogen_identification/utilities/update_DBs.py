@@ -354,10 +354,10 @@ def Update_Remap(run_class: RunMain_class, parameter_set: ParameterSet):
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
     try:
         with transaction.atomic():
-            Update_RunMain_noCheck(run_class, parameter_set, tag="finished")
+            Update_RunMain_noCheck(run_class, parameter_set)
             Update_FinalReport(run_class, runmain, sample)
             Update_RefMap_DB(run_class, parameter_set)
-            Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Run_Detail_noCheck(run_class, parameter_set, tag="finished")
 
         return True
 

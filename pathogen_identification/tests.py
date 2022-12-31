@@ -426,7 +426,7 @@ class Televir_Objects_TestCase(TestCase):
 
         self.assertFalse(os.path.exists(tpf))
 
-    def test_runCMD(self):
+    def test_runCMD_strings(self):
         bindir = get_bindir_from_binaries(
             self.install_registry.BINARIES, CS.PIPELINE_NAME_read_quality_analysis
         )
@@ -451,7 +451,15 @@ class Televir_Objects_TestCase(TestCase):
             "java",
         )
         self.assertEqual(
-            runcmd.java_cmd_string(cmd), f"{java_bin} -cp .{self.baseDirectory}/ {cmd}"
+            runcmd.java_cmd_string(cmd), f"{java_bin} -cp {self.baseDirectory}/ {cmd}"
+        )
+
+    def test_runCMD_deployment(self):
+
+        runcmd = RunCMD(
+            self.baseDirectory,
+            logdir=self.baseDirectory,
+            prefix="test_runCMD",
         )
         tempf = Temp_File(self.baseDirectory)
         tempPython = Temp_File(self.baseDirectory, suffix=".py")
@@ -461,7 +469,6 @@ class Televir_Objects_TestCase(TestCase):
                     f.write("print('hello world')")
 
                 cmd = f"{os.path.basename(tpf)} > {tmp}"
-                python_cmd = runcmd.python_cmd_string(cmd)
 
                 runcmd.run_python(cmd)
                 self.assertTrue(os.path.exists(tmp))
@@ -469,38 +476,34 @@ class Televir_Objects_TestCase(TestCase):
                     self.assertEqual(f.read().strip(), "hello world")
 
         tempJava = Temp_File(self.baseDirectory, suffix=".java")
+
         with tempf as tmp:
             with tempJava as tpf:
                 with open(tpf, "w") as f:
+                    ###
                     f.write(
                         'public class Hello { public static void main(String[] args) { System.out.println("Hello World"); } }'
                     )
+                ## compile
+                cmd = f"javac {os.path.basename(tpf)}"
+                cmd = f"{tpf} > {tmp}"
 
-                cmd = f"{os.path.basename(tpf)} > {tmp}"
-                print(runcmd.java_cmd_string(cmd))
-                print(os.path.exists(tpf))
-                with open(tpf, "r") as f:
-                    print(f.read())
                 runcmd.run_java(cmd)
                 self.assertTrue(os.path.exists(tmp))
                 with open(tmp, "r") as f:
-                    self.assertEqual(f.read(), "Hello World")
+                    self.assertEqual(f.read().strip(), "Hello World")
 
-        tempBash = Temp_File(self.baseDirectory, suffix=".sh")
         with tempf as tmp:
-            with tempBash as tpf:
-                with open(tpf, "w") as f:
-                    f.write("echo hello world")
 
-                cmd = f"{tpf} > {tmp}"
-                runcmd.run_bash(cmd)
-                self.assertTrue(os.path.exists(tmp))
-                with open(tmp, "r") as f:
-                    self.assertEqual(f.read(), "hello world")
+            cmd = f"echo hello world > {tmp}"
+            runcmd.run_bash(cmd)
+            self.assertTrue(os.path.exists(tmp))
+            with open(tmp, "r") as f:
+                self.assertEqual(f.read().strip(), "hello world")
 
         cmd = "echo hello world"
         cmd_return = runcmd.run_bash_return(cmd)
-        self.assertEqual(cmd_return, "hello world")
+        self.assertEqual(cmd_return.strip(), "hello world")
 
 
 class Televir_Project_Test(TestCase):

@@ -321,7 +321,6 @@ class RunCMD:
 
         cmd_string = self.java_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
-        print(cmd_string)
         self.dispose_output_carefully(cmd, out, err, exec_time)
 
     def run_bash(self, cmd):
@@ -352,7 +351,7 @@ class RunCMD:
         out, err, exec_time = self.system_deploy(cmd_string)
         self.dispose_output_carefully(cmd, out, err, exec_time)
 
-        return out
+        return out.decode("utf-8")
 
     def run_script_software(self, cmd):
         """
@@ -598,7 +597,7 @@ class Read_class:
             return 0
 
         cmd = "zcat %s | wc -l" % self.current
-        rnumber = self.cmd.run_bash_return(cmd).decode("utf-8")
+        rnumber = self.cmd.run_bash_return(cmd)
         return int(rnumber) // 4
 
     def clean_read_names(self):

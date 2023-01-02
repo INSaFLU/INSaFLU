@@ -23,6 +23,7 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 tree = lambda: defaultdict(tree)
 
@@ -201,7 +202,7 @@ class Utility_Pipeline_Manager:
     def __init__(self):
 
         self.utility_repository = Utility_Repository(
-            db_path=ConstantsSettings.docker_app_directory,
+            db_path=Televir_Directories.docker_app_directory,
             install_type="docker",
         )
 
@@ -311,7 +312,7 @@ class Utility_Pipeline_Manager:
         software_lower = software_name.lower()
         if software_lower in self.binaries["software"].keys():
             bin_path = os.path.join(
-                ConstantsSettings.docker_install_directory,
+                Televir_Directories.docker_install_directory,
                 self.binaries["software"][software_lower],
                 "bin",
                 software_lower,
@@ -325,7 +326,7 @@ class Utility_Pipeline_Manager:
             ]:
                 if os.path.exists(
                     os.path.join(
-                        ConstantsSettings.docker_install_directory,
+                        Televir_Directories.docker_install_directory,
                         self.binaries[pipeline]["default"],
                         "bin",
                         software_lower,
@@ -1088,7 +1089,7 @@ class Utils_Manager:
         self.parameter_util = Parameter_DB_Utility()
 
         self.utility_repository = Utility_Repository(
-            db_path=ConstantsSettings.docker_app_directory,
+            db_path=Televir_Directories.docker_app_directory,
             install_type="docker",
         )
 

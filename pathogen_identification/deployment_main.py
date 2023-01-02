@@ -11,7 +11,7 @@ from managing_files.models import ProcessControler
 from utils.process_SGE import ProcessSGE
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.install_registry import Deployment_Params
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
@@ -72,7 +72,7 @@ class PathogenIdentification_deployment:
         self.prefix = prefix
         self.pk = pk
         self.technology = technology
-        self.install_registry = Deployment_Params
+        self.install_registry = Televir_Metadata
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 

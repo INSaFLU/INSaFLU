@@ -12,7 +12,7 @@ from pathogen_identification.constants_settings import (
     ConstantsSettings,
     Pipeline_Makeup,
 )
-from pathogen_identification.install_registry import Deployment_Params
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
@@ -207,7 +207,7 @@ class Utility_Pipeline_Manager:
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
-        self.binaries = Deployment_Params.BINARIES
+        self.binaries = Televir_Metadata.BINARIES
 
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():

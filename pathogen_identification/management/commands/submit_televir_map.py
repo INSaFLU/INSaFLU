@@ -7,7 +7,7 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
-from pathogen_identification.install_registry import Deployment_Params as DP
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
 from pathogen_identification.models import RawReference
 from pathogen_identification.modules.metadata_handler import Metadata_handler
@@ -213,7 +213,7 @@ class Input_Generator:
     def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
         self.utils = Utils_Manager()
         self.reference = reference
-        self.install_registry = DP
+        self.install_registry = Televir_Metadata
 
         self.technology = reference.run.project.technology
         self.threads = threads

@@ -1787,7 +1787,6 @@ class Mapping_Manager(Tandem_Remap):
         self.max_mapped = 0
         self.max_depth = 0
         self.max_depthR = 0
-        self.mapped_instances = []
         self.report = pd.DataFrame(
             columns=[
                 "suffix",
@@ -1828,10 +1827,14 @@ class Mapping_Manager(Tandem_Remap):
                 mapped_instance.export_mapping_files(media_dir)
             else:
                 print("No reads mapped, skipping coverage plot")
-                # mapped_instance.reference.cleanup_files()
+                mapped_instance.reference.cleanup_files()
 
             if apres:
                 mapped_instance.reference.move_dotplot(static_plots_dir)
+            else:
+                print("No contigs mapped, skipping dotplot")
+                if mapped_instance.assembly:
+                    mapped_instance.assembly.cleanup_files()
 
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")

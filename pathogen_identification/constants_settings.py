@@ -185,13 +185,11 @@ class ConstantsSettings:
     Constants for pathogen identification
     """
 
-    project_directory = "/tmp/televir/projects/"
     media_directory = MEDIA_ROOT
     static_directory = STATIC_ROOT
     televir_subdirectory = "televir_projects"
     PAGINATE_NUMBER = 10
-    docker_app_directory = "/televir/mngs_benchmark/"
-    docker_install_directory = "/televir/mngs_benchmark/mngs_environments/"
+
     USER_TREE_INDEX = 0
 
     ###################################
@@ -205,7 +203,7 @@ class ConstantsSettings:
 
     ################################### Threads
 
-    DEPLOYMENT_THREADS = 3
+    DEPLOYMENT_THREADS = 5
     MAPPING_THREADS = 4
 
     ################################### Project_file_structure
@@ -256,26 +254,3 @@ class ConstantsSettings:
         "sift_query": "phage",
         "assembly_contig_min_length": 500,
     }
-
-
-class TestConstants:
-    Test_Static_Directory = os.path.join(STATICFILES_DIRS[0], "tests")
-    Test_Temp_Directory = "/mnt/sdc/TELEVIR/temp/"
-
-    ont_params_python = os.path.join(Test_Static_Directory, "ont_params.py")
-    ont_params_json = os.path.join(Test_Static_Directory, "ont_params.json")
-
-    ont_fastq_gz_file = "ont_fastq.gz"
-    ont_fastq_gz_file_path = os.path.join(Test_Static_Directory, ont_fastq_gz_file)
-
-    illumina_params_python = os.path.join(Test_Static_Directory, "illumina_params.py")
-    illumina_params_json = os.path.join(Test_Static_Directory, "illumina_params.json")
-
-    illumina_fastq_gz_file_r1 = "illumina_r1.fq.gz"
-    illumina_fastq_gz_file_r1_path = os.path.join(
-        Test_Static_Directory, illumina_fastq_gz_file_r1
-    )
-    illumina_fastq_gz_file_r2 = "illumina_r2.fq.gz"
-    illumina_fastq_gz_file_r2_path = os.path.join(
-        Test_Static_Directory, illumina_fastq_gz_file_r2
-    )

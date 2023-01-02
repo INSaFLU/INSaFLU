@@ -11,7 +11,7 @@ from managing_files.models import ProcessControler
 from utils.process_SGE import ProcessSGE
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.install_registry import Deployment_Params
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
@@ -20,7 +20,15 @@ from pathogen_identification.models import (
     SoftwareTreeNode,
 )
 from pathogen_identification.modules.run_main import RunMain_class
-from pathogen_identification.utilities.update_DBs import Update_Sample_Runs
+from pathogen_identification.utilities.update_DBs import (
+    Update_Sample_Runs,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+)
+
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
@@ -64,7 +72,7 @@ class PathogenIdentification_deployment:
         self.prefix = prefix
         self.pk = pk
         self.technology = technology
-        self.install_registry = Deployment_Params
+        self.install_registry = Televir_Metadata
         self.parameter_set = ParameterSet.objects.get(pk=pk)
         self.tree_makup = self.parameter_set.leaf.software_tree.global_index
 
@@ -273,8 +281,10 @@ class Run_Main_from_Leaf:
 
     def get_in_line(self):
 
-        self.parameter_set.status = ParameterSet.STATUS_QUEUED
-        self.parameter_set.save()
+        if self.is_available:
+
+            self.parameter_set.status = ParameterSet.STATUS_QUEUED
+            self.parameter_set.save()
 
     def check_submission(self):
         if self.parameter_set.status in [
@@ -354,7 +364,7 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_main_prep()
-            self.container.run_engine.Run()
+            self.container.run_engine.Run_Full_Pipeline()
             self.container.run_engine.export_sequences()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
@@ -364,6 +374,74 @@ class Run_Main_from_Leaf:
             print(traceback.format_exc())
             print(e)
             return False
+
+    def Deploy_Parts(self):
+
+        try:
+            self.container.run_main_prep()
+            self.container.run_engine.Prep_deploy()
+            self.container.run_engine.Run_QC()
+            db_updated = Update_RunMain_Initial(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_PreProcess()
+            db_updated = Update_RunMain_Secondary(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Assembly()
+            db_updated = Update_Assembly(self.container.run_engine, self.parameter_set)
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Classification()
+            db_updated = Update_Classification(
+                self.container.run_engine, self.parameter_set
+            )
+            if not db_updated:
+                return False
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        try:
+            self.container.run_engine.Run_Remapping()
+            self.container.run_engine.export_sequences()
+            self.container.run_engine.Summarize()
+            self.container.run_engine.generate_output_data_classes()
+            self.container.run_engine.export_logdir()
+
+            db_updated = Update_Remap(self.container.run_engine, self.parameter_set)
+            if not db_updated:
+                return False
+
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+            return False
+
+        return True
 
     def Update_dbs(self):
 
@@ -402,21 +480,17 @@ class Run_Main_from_Leaf:
             configured = self.configure()
 
             if configured:
-                run_success = self.Deploy()
+                run_success = self.Deploy_Parts()
             else:
                 print("Error in configuration")
                 self.register_error()
                 return
 
             if run_success:
-                update_successful = self.Update_dbs()
-                if update_successful:
-                    self.register_completion()
-                    self.update_project_change_date()
-
-                else:
-                    print("Error in updating database")
-                    self.register_error()
+                # update_successful = self.Update_dbs()
+                # if update_successful:
+                self.register_completion()
+                self.update_project_change_date()
 
             else:
                 print("Error in run")

@@ -12,7 +12,7 @@ from pathogen_identification.constants_settings import (
     ConstantsSettings,
     Pipeline_Makeup,
 )
-from pathogen_identification.install_registry import Deployment_Params
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
@@ -23,6 +23,7 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
+from constants.constants import Televir_Directory_Constants as Televir_Directories
 
 tree = lambda: defaultdict(tree)
 
@@ -201,12 +202,12 @@ class Utility_Pipeline_Manager:
     def __init__(self):
 
         self.utility_repository = Utility_Repository(
-            db_path=ConstantsSettings.docker_app_directory,
+            db_path=Televir_Directories.docker_app_directory,
             install_type="docker",
         )
 
         self.steps_db_dependant = ConstantsSettings.PIPELINE_STEPS_DB_DEPENDENT
-        self.binaries = Deployment_Params.BINARIES
+        self.binaries = Televir_Metadata.BINARIES
 
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
@@ -311,7 +312,7 @@ class Utility_Pipeline_Manager:
         software_lower = software_name.lower()
         if software_lower in self.binaries["software"].keys():
             bin_path = os.path.join(
-                ConstantsSettings.docker_install_directory,
+                Televir_Directories.docker_install_directory,
                 self.binaries["software"][software_lower],
                 "bin",
                 software_lower,
@@ -325,7 +326,7 @@ class Utility_Pipeline_Manager:
             ]:
                 if os.path.exists(
                     os.path.join(
-                        ConstantsSettings.docker_install_directory,
+                        Televir_Directories.docker_install_directory,
                         self.binaries[pipeline]["default"],
                         "bin",
                         software_lower,
@@ -559,6 +560,20 @@ class Utility_Pipeline_Manager:
         """ """
         return {(i, x): i for i, x in enumerate(pipe_tree.nodes)}
 
+    def match_path_to_tree_safe(self, explicit_path: list, pipe_tree: PipelineTree):
+        """"""
+        try:
+            matched_path = self.match_path_to_tree(explicit_path, pipe_tree)
+        except Exception as e:
+            print(f"Path {explicit_path} not found in pipeline tree.")
+            print("Exception:")
+            print(e)
+            return False
+
+        print("matched_path: ", matched_path)
+
+        return matched_path
+
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
         """"""
 
@@ -598,7 +613,7 @@ class Utility_Pipeline_Manager:
                 )
             except KeyError:
                 self.logger.info(f"{parent_main} not in parent tree edge dictionary.")
-                return False
+                return None
 
             self.logger.info(f"Child main: {child_main}")
 
@@ -608,11 +623,11 @@ class Utility_Pipeline_Manager:
                 nodes_index_dict[child_main]
             except KeyError:
                 self.logger.info(f"{child_main} node not in tree nodes")
-                return False
+                return None
 
             if child_main not in explicit_edge_dict[parent_main].index:
                 self.logger.info(f"Child {child} not in parent {parent}")
-                return False
+                return None
 
             parent = child
             parent_main = child_main
@@ -894,6 +909,25 @@ class Parameter_DB_Utility:
         except ParameterSet.DoesNotExist:
             return False
 
+    def check_ParameterSet_available(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return True
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        if parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            return False
+
+        return True
+
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
@@ -1055,7 +1089,7 @@ class Utils_Manager:
         self.parameter_util = Parameter_DB_Utility()
 
         self.utility_repository = Utility_Repository(
-            db_path=ConstantsSettings.docker_app_directory,
+            db_path=Televir_Directories.docker_app_directory,
             install_type="docker",
         )
 

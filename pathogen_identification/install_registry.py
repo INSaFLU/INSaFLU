@@ -70,23 +70,6 @@ class Deployment_Params:
         "OUTD": "output/",
     }
 
-    ################################## MODULES
-
-    ACTIONS = {
-        "CLEAN": False,
-        "QCONTROL": False,
-        "ENRICH": True,
-        "DEPLETE": False,
-        "ASSEMBLE": False,
-        "CLASSIFY_READS": True,
-        "CLASSIFY_CONTIGS": True,
-        "CLASSIFY": True,
-        "REMAP": True,
-        "PHAGE_DEPL": True,
-        "VIRSORT": False,
-        "SIFT": True,
-    }
-
 
 class Params_Illumina:
     """

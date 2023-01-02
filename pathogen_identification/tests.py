@@ -427,9 +427,7 @@ class Televir_Objects_TestCase(TestCase):
         self.assertFalse(os.path.exists(tpf))
 
     def test_runCMD_strings(self):
-        bindir = get_bindir_from_binaries(
-            self.install_registry.BINARIES, CS.PIPELINE_NAME_read_quality_analysis
-        )
+
         runcmd = RunCMD(
             self.baseDirectory,
             logdir=self.baseDirectory,
@@ -484,10 +482,7 @@ class Televir_Objects_TestCase(TestCase):
                     f.write(
                         'public class Hello { public static void main(String[] args) { System.out.println("Hello World"); } }'
                     )
-                ## compile
-                cmd = f"javac {os.path.basename(tpf)}"
                 cmd = f"{tpf} > {tmp}"
-
                 runcmd.run_java(cmd)
                 self.assertTrue(os.path.exists(tmp))
                 with open(tmp, "r") as f:

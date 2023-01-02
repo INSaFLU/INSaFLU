@@ -446,7 +446,7 @@ class Read_class:
 
         self.filepath = filepath
         self.current = filepath
-        self.prefix = self.determine_read_name(filepath)
+        self.prefix = self.determine_file_name(filepath)
         self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
@@ -477,7 +477,7 @@ class Read_class:
 
         return read_names
 
-    def determine_read_name(self, filepath):
+    def determine_file_name(self, filepath):
 
         if not self.exists:
             return "none"
@@ -498,15 +498,14 @@ class Read_class:
         if not self.exists:
             return
 
-        temp_reads_keep = os.path.join(
-            os.path.dirname(output), f"keep_temp_{randint(1,1999)}.lst"
-        )
-        with open(temp_reads_keep, "w") as f:
-            f.write("\n".join(read_list))
+        temp_file = Temp_File(os.path.dirname(output), suffix=".lst")
 
-        self.read_filter(input, output, temp_reads_keep)
+        with temp_file as tpf:
 
-        # os.remove(temp_reads_keep)
+            with open(tpf, "w") as f:
+                f.write("\n".join(read_list))
+
+            self.read_filter(input, output, tpf)
 
     def read_filter_inplace(self, input: str, read_list: str):
 
@@ -514,11 +513,12 @@ class Read_class:
             return
 
         output_dir = os.path.dirname(input)
+
         tempreads = os.path.join(output_dir, f"temp_{randint(1,1999)}.fq.gz")
 
         self.read_filter(input, tempreads, read_list)
 
-        if os.path.isfile(tempreads) and os.path.getsize(tempreads):
+        if os.path.isfile(tempreads) and os.path.getsize(tempreads) > 100:
             os.remove(input)
             os.rename(tempreads, input)
 

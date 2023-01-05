@@ -20,7 +20,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pathogen_identification.install_registry import Deployment_Params
+from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 
 
 class Temp_File:
@@ -255,8 +255,8 @@ class RunCMD:
 
     def java_cmd_string(self, cmd: str):
         java_bin = os.path.join(
-            Deployment_Params.BINARIES["ROOT"],
-            Deployment_Params.BINARIES["software"]["java"],
+            Televir_Metadata.BINARIES["ROOT"],
+            Televir_Metadata.BINARIES["software"]["java"],
             "bin",
             "java",
         )

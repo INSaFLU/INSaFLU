@@ -18,6 +18,7 @@ from pathogen_identification.models import (
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
+    RunMain,
 )
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
@@ -460,7 +461,10 @@ class Run_Main_from_Leaf:
         self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
+        run = RunMain.objects.get(parameter_set=new_run)
+
         new_run.register_error()
+        run.delete()
 
     def register_completion(self):
 

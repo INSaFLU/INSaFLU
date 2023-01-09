@@ -859,6 +859,7 @@ class Sample_runClass:
         cmd_trimsort = [
             "trimmomatic",
             "SE",
+            "-phred33",
             "-threads",
             f"{self.threads}",
             self.r1.current,

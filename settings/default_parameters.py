@@ -240,7 +240,6 @@ class DefaultParameters(object):
             )
 
         else:
-            print("HII")
             software = self.get_software_global(
                 user,
                 software_name,
@@ -248,11 +247,6 @@ class DefaultParameters(object):
                 type_of_use,
                 televir_project=televir_project,
             )
-        print(self.get_software_parameters_version(software_name))
-        print("software: {}".format(software))
-        print("type of use:: {}".format(type_of_use))
-        print("technology name: {}".format(technology_name))
-        print(user)
 
         if software is None:
             return software

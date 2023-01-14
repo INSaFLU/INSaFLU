@@ -238,6 +238,12 @@ class Constants(object):
     NEXTCLADE_LINK_MPXV_All_clades = (
         "https://clades.nextstrain.org/?dataset-name=MPXV&input-fasta="
     )
+    NEXTCLADE_LINK_RSV_A = (
+        "https://clades.nextstrain.org/?dataset-name=rsv_a&input-fasta="
+    )    
+    NEXTCLADE_LINK_RSV_B = (
+        "https://clades.nextstrain.org/?dataset-name=rsv_b&input-fasta="
+    )   
     AUSPICE_LINK = "https://auspice.us/"
 
     ## NUMBER OF SETs to paginate

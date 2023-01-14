@@ -83,6 +83,7 @@ class Reference(models.Model):
     SPECIES_SARS_COV_2 = "SARS_COV_2"
     SPECIES_MPXV = "MPXV"
     SPECIES_INFLUENZA = "INFLUENZA"
+    SPECIES_RSV = "RSV"
     SPECIES_NOT_SET = "NOT_SET"
     SPECIES_INFLUENZA_segment_four = "4"  ## Name of segment 4
 

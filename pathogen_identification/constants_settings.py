@@ -206,6 +206,9 @@ class ConstantsSettings:
     DEPLOYMENT_THREADS = 5
     MAPPING_THREADS = 4
 
+    ################################### MAX time
+
+    TIMEOUT = 60 * 60 * 5  # 5 hours
     ################################### Project_file_structure
 
     DIRS = {

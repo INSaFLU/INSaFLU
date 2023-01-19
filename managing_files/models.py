@@ -786,11 +786,15 @@ class Sample(models.Model):
         if not b_first_file and not self.exist_file_2():
             return None
         return os.path.join(
-            self.__get_path__(type_path, b_first_file),
-            self.file_name_1.replace(".fastq.gz", "_fastqc.html")
-            if b_first_file
-            else self.file_name_2.replace(".fastq.gz", "_fastqc.html"),
+            self.__get_path__(type_path, b_first_file), 
+            self.file_name_1.replace(FileExtensions.FILE_FASTQ_GZ, 
+                "_fastqc.html").replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html") \
+			if b_first_file 
+            else 
+                self.file_name_2.replace(FileExtensions.FILE_FASTQ_GZ, 
+                "_fastqc.html").replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
         )
+        
 
     def get_rabbitQC_output(self, type_path):
         """
@@ -799,9 +803,10 @@ class Sample(models.Model):
         """
         b_first_file = True
         return os.path.join(
-            self.__get_path__(type_path, b_first_file),
-            self.file_name_1.replace(".fastq.gz", "_rabbitQC.html"),
-        )
+            self.__get_path__(type_path, b_first_file), 
+                self.file_name_1.replace(FileExtensions.FILE_FASTQ_GZ, 
+                    "_rabbitQC.html").replace(FileExtensions.FILE_FQ_GZ, 
+                                        "_rabbitQC.html"))
 
     def __get_path__(self, type_path, b_first_file):
         """

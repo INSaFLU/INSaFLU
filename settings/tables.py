@@ -147,7 +147,6 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
-        print(record.name)
         if (
             self.project is None
             and self.project_sample is None
@@ -215,7 +214,6 @@ class SoftwaresTable(tables.Table):
                 technology_name,
             )
         elif not self.televir_project is None:
-            print(self.televir_project)
             default_software_projects = DefaultProjectSoftware()
             return default_software_projects.get_parameters(
                 record.name,

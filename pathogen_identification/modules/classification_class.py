@@ -11,6 +11,9 @@ from pathogen_identification.modules.object_classes import RunCMD, Software_deta
 
 def check_report_empty(file, comment="@"):
 
+    if not os.path.exists(file):
+        return True
+
     with open(file, "r") as f:
         lines = f.readlines()
 

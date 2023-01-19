@@ -824,12 +824,12 @@ class Remapping:
         Get number of reads in current fastq files."""
 
         cmd = "zcat %s | wc -l" % self.r1
-        rnumber = self.cmd.run_bash_return(cmd).decode("utf-8")
+        rnumber = self.cmd.run_bash_return(cmd)
         rnumber = int(rnumber) // 4
 
         if self.type == "PE":
             cmd = "zcat %s | wc -l" % self.r2
-            rnumber += int(self.cmd.run_bash_return(cmd).decode("utf-8")) // 4
+            rnumber += int(self.cmd.run_bash_return(cmd)) // 4
 
         return rnumber
 

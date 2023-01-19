@@ -253,11 +253,9 @@ class RunCMD:
 
         except subprocess.CalledProcessError as e:
             out = ""
-
             err = e.output
 
         #
-
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time

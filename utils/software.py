@@ -943,7 +943,7 @@ class Software(object):
             return Reference.SPECIES_NOT_SET
 
         ### test number of right segments
-        number_right_beta_cov, number_right_mpxv, number_right_influenza = (0, 0, 0)
+        number_right_beta_cov, number_right_mpxv, number_right_influenza, number_right_rsv = (0, 0, 0, 0)
         for identify_virus in vect_data:
             if (
                 identify_virus.seq_virus.name == "BetaCoV"
@@ -984,7 +984,9 @@ class Software(object):
                 and identify_virus.seq_virus.kind_type.name.lower() == "species"
             ):
                 number_right_mpxv += 1
-
+            elif identify_virus.seq_virus.name.startswith("RSV"):
+                number_right_rsv += 1
+        
         ## if right at least two
         if number_right_beta_cov > 0:
             reference.specie_tag = Reference.SPECIES_SARS_COV_2
@@ -998,6 +1000,10 @@ class Software(object):
             reference.specie_tag = Reference.SPECIES_INFLUENZA
             reference.save()
             return Reference.SPECIES_INFLUENZA
+        elif number_right_rsv > 0:
+            reference.specie_tag = Reference.SPECIES_RSV
+            reference.save()
+            return Reference.SPECIES_RSV
 
         ## Not ser
         return Reference.SPECIES_NOT_SET

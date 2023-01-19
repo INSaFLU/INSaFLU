@@ -859,6 +859,7 @@ class Sample_runClass:
         cmd_trimsort = [
             "trimmomatic",
             "SE",
+            "-phred33",
             "-threads",
             f"{self.threads}",
             self.r1.current,
@@ -866,10 +867,15 @@ class Sample_runClass:
             "MINLEN:20",
         ]
 
-        self.cmd.run(cmd_trimsort)
+        self.cmd.run_script_software(cmd_trimsort)
 
         if tempfq in os.listdir(tempdir):
             if os.path.getsize(tempfq) > 100:
+                bgzip_cmd = [
+                    "bgzip",
+                    tempfq,
+                ]
+                self.cmd.run_script_software(bgzip_cmd)
                 os.remove(self.r1.current)
                 os.rename(tempfq, self.r1.current)
 

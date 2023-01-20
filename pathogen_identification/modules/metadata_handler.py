@@ -114,6 +114,10 @@ class Metadata_handler:
         summarize merged dataframe to get counts per taxid.
         if sift is true, filter results to only include self.sift_query.
         """
+        print("######## Processing results ########")
+        print(df.shape)
+        df = self.clean_report(df)
+        print(df.shape)
 
         df = self.merge_report_to_metadata(df)
 
@@ -175,6 +179,19 @@ class Metadata_handler:
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
+
+    @staticmethod
+    def clean_report(df: pd.DataFrame):
+        """
+        Clean report.
+        """
+        if df.shape[0] > 0:
+            for target_col in ["acc", "protid", "prot_acc", "taxid"]:
+                if target_col in df.columns:
+                    df = df.dropna(subset=[target_col])
+                    df = df.drop_duplicates(subset=[target_col])
+                    df = df.reset_index(drop=True)
+        return df
 
     def merge_report_to_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
         """

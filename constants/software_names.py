@@ -8,7 +8,6 @@ import os
 
 from django.conf import settings
 from settings.constants_settings import ConstantsSettings
-
 from constants.constants import Constants
 
 
@@ -440,6 +439,9 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
+    SOFTWARE_NEXTSTRAIN_RSV = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_rsv.sh"
+    )
 
     ### Several types of builds for NEXTSTRAIN
     SOFTWARE_NEXTSTRAIN_BUILDS_BASE = os.path.join(
@@ -461,6 +463,14 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
     ]
 
+    SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
+    SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b = "rsv_b"
+
+    SOFTWARE_NEXTSTRAIN_BUILDS_rsv = [
+        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
+        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
+    ]   
+
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
         SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
@@ -469,6 +479,8 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
+        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
+        SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,        
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
@@ -478,7 +490,10 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV_A"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV_B"]
     ]
+
 
     # default build
     SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic

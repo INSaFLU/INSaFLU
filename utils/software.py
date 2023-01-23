@@ -3944,13 +3944,13 @@ class Software(object):
                 self.utils.remove_dir(out_dir)
         return seq_ref, seq_other
 
-    # TODO remove after everything is settled with the specific builds...
-    # Actually make it a generic function that calls specific subsections related to builds
+    # TODO make it a generic function that calls specific subsections related to builds
     def run_nextstrain(
         self,
         alignments,
+
         metadata,
-        build=SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter,
+        build,
         cores=1,
     ):
         """
@@ -3987,6 +3987,7 @@ class Software(object):
                 + "/* "
                 + temp_dir
             )
+
 
         # Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
         self.utils.copy_file(
@@ -4478,6 +4479,126 @@ class Software(object):
         self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
+
+    def run_nextstrain_rsv(
+        self, alignments, metadata, type="a", cores=1
+    ):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  type: type of RSV (one of: a, b)
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "rsv"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        self.utils.copy_file(
+            alignments,
+            os.path.join(temp_dir, "data", type, "sequences.fasta"),
+        )
+        self.utils.copy_file(
+            metadata, 
+            os.path.join(temp_dir, "data", type, "metadata.tsv")
+        )
+
+        # Now run Nextstrain
+        #cmd = "{} -j {} {}/auspice/rsv_{}_genome.json {}/auspice/rsv_{}_G.json {}/auspice/rsv_{}_F.json --configfile {}/config/configfile.yaml".format(
+        cmd = "cd {} && {} -j {} auspice/rsv_{}_genome.json --configfile config/configfile.yaml".format(            
+            temp_dir,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_RSV, 
+            str(cores), 
+            type,
+            #type,
+            #type,
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(
+                temp_dir, "auspice", "rsv_" + type + "_genome.json"
+            ),
+            tree_file,
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/aligned_h3n2_ha_12y.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(
+                temp_dir, "results", type, "genome", "sequences_aligned.fasta"
+            ),
+            alignment_file,
+        )
+
+        #self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
 
     def run_nextstrain_mpx(self, alignments, metadata, cores=1):
         """

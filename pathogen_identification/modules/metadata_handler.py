@@ -114,10 +114,8 @@ class Metadata_handler:
         summarize merged dataframe to get counts per taxid.
         if sift is true, filter results to only include self.sift_query.
         """
-        print("######## Processing results ########")
-        print(df.shape)
+
         df = self.clean_report(df)
-        print(df.shape)
 
         df = self.merge_report_to_metadata(df)
 

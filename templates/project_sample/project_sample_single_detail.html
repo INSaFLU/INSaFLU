@@ -125,7 +125,7 @@
 						<div class="row">
 							<div class="col-lg-4"><strong>Consensus:</strong> {{ consensus_file }}
 								<!-- Show nextClade link -->
-								{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 %}
+								{% if nextclade_link_covid or nextclade_link_a_h3n2 or nextclade_link_mpxv_hmpxv_b1 or nextclade_link_rsv_a %}
 									<div class="btn-group" style="padding-left:20px" data-toggle="tooltip" data-original-title="Jump to NextClade Annotation">
 										<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 											<svg width="30" height="30" viewBox="0 0 76.68 76.955">
@@ -144,7 +144,7 @@
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV)</span></a>
 												<a href="{{nextclade_link_mpxv_all_clades}}" data-title="Upload your Consensus File in NextClade MPXV (All Clades)" 
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (MPXV All clades)</span></a>
-											{% else %}
+											{% elif nextclade_link_a_h3n2 %} 													
 												<a href="{{nextclade_link_a_h3n2}}" data-title="Upload your Consensus File in NextClade Annotation A-H3N2" 
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (A-H3N2)</span></a>
 												<a href="{{nextclade_link_a_h1n1}}" data-title="Upload your Consensus File in NextClade Annotation A-H1N1" 
@@ -152,7 +152,12 @@
 												<a href="{{nextclade_link_b_yamagata}}" data-title="Upload your Consensus File in NextClade Annotation B-Yamagata" 
 													class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Yamagata)</span></a>
 												<a href="{{nextclade_link_b_victoria}}" data-title="Upload your Consensus File in NextClade Annotation B-Vitoria" 
-													class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (B-Vitoria)</span></a>											
+											{% else %}
+												<a href="{{nextclade_link_rsv_a}}" data-title="Upload your Consensus File in NextClade Annotation RSV-A" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (RSV-A)</span></a>
+												<a href="{{nextclade_link_rsv_b}}" data-title="Upload your Consensus File in NextClade Annotation RSV-B" 
+													class="dropdown-item" target="_blank"><span class="hidden-phone"> (RSV-B)</span></a>
 											{% endif %}
 										</div>
 									</div>

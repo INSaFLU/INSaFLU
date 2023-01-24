@@ -1,0 +1,1 @@
+copy /b *.fastq.gz concat.fastq.gz

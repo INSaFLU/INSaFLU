@@ -248,7 +248,7 @@ class DatasetConsensus(models.Model):
     ## Name from sample, reference or consensus, to improve the search by name 
     name = models.CharField(max_length=200, db_index=True, blank=True, null=True, verbose_name='Name')
     ## from sample only
-    type_subtype = models.CharField(max_length=50, blank=True, null=True)    ## has the type/subtype collected
+    type_subtype = models.CharField(max_length=200, blank=True, null=True)    ## has the type/subtype collected
     
     dataset = models.ForeignKey(Dataset, related_name='dataset_consensus', blank=True, null=True, on_delete=models.CASCADE)
     ## only can have one of this three

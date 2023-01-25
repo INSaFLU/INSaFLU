@@ -27,6 +27,7 @@ from pathogen_identification.utilities.update_DBs import (
     Update_Assembly,
     Update_Classification,
     Update_Remap,
+    get_run_parents,
 )
 
 from pathogen_identification.utilities.utilities_general import simplify_name
@@ -88,6 +89,46 @@ class PathogenIdentification_deployment:
         new_rpath = os.path.join(self.dir, "reads") + "/" + rname
         shutil.copy(filepath, new_rpath)
         return new_rpath
+
+    def delete_run_media(self):
+        """delete project media directory"""
+
+        if os.path.isdir(self.run_engine.media_dir):
+            shutil.rmtree(self.run_engine.media_dir, ignore_errors=True)
+
+    def delete_run_static(self):
+        """delete project static directory"""
+
+        if os.path.isdir(self.run_engine.static_dir):
+            shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
+
+    def retrieve_runmain(self):
+        """retrieve runmain object from database"""
+
+        self.run_engine = RunMain_class(
+            self.project,
+            self.prefix,
+            self.dir,
+            self.threads,
+            self.run_params_db,
+            self.parameter_set,
+            self.username,
+        )
+
+    def delete_run_record(self):
+        """delete project record in database"""
+
+        _, runmain, _ = get_run_parents(self.run_engine, self.parameter_set)
+
+        if runmain is not None:
+            runmain.delete()
+
+    def delete_run(self):
+        """delete project record in database"""
+
+        self.delete_run_media()
+        self.delete_run_static()
+        self.delete_run_record()
 
     def configure(self, r1_path: str, r2_path: str = "") -> bool:
         """generate config dictionary for run_main, and copy input reads to project directory."""
@@ -461,6 +502,8 @@ class Run_Main_from_Leaf:
 
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_error()
+
+        self.container.delete_run()
 
     def register_completion(self):
 

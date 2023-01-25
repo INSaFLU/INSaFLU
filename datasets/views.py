@@ -26,6 +26,7 @@ from extend_user.models import Profile
 from managing_files.models import Project, ProjectSample, Reference
 from settings.constants_settings import ConstantsSettings
 from settings.models import Software as SoftwareSettings
+from settings.models import Parameter
 from settings.tables import SoftwaresTable
 from utils.process_SGE import ProcessSGE
 from utils.session_variables import (
@@ -1135,14 +1136,38 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 		
 		#### nextclade link
 		#is_sars_cov_2 = software_pangolin.is_ref_sars_cov_2(project_sample.project.reference.get_reference_fasta(TypePath.MEDIA_ROOT))
-		reference = dataset.get_first_reference()
-		if not reference is None:
-			specie_tag = self.software.get_species_tag(reference)
+		# TODO define this elsewhere...
+		SPECIES_TAG = {
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic: "",
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov: Reference.SPECIES_SARS_COV_2,
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: Reference.SPECIES_INFLUENZA,
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
+			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a: Reference.SPECIES_RSV,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b: Reference.SPECIES_RSV
+		}
+
+		build = 'NA'
+		specie_tag = ''
+		parameters = Parameter.objects.filter(dataset__pk=self.kwargs['pk'])
+		if(len(parameters) > 0):
+			build = parameters[0].parameter
+			specie_tag = SPECIES_TAG[build]
+
+		# If the build is generic try to look at the reference...
+		if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
+			reference = dataset.get_first_reference()
+			if not reference is None:
+				specie_tag = self.software.get_species_tag(reference)
+        
+		if(specie_tag != ''):
 			if (os.path.exists(dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_RESULT_all_consensus)) and \
-					settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
+				settings.SHOW_NEXTCLADE_LINK):		## docker versions doesn't show NextClade link
 				context = get_constext_nextclade(dataset.get_global_file_by_dataset(TypePath.MEDIA_URL, Dataset.DATASET_FILE_NAME_RESULT_all_consensus),
-						context, get_current_site(self.request), specie_tag)
-			
+				    context, get_current_site(self.request), specie_tag)
+
 		return context
 				
 

@@ -45,6 +45,7 @@ class CollectExtraDatasetData(object):
     def collect_extra_data_for_dataset(self, dataset, user):
         """
         """
+
         ### make it running 
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
@@ -52,7 +53,8 @@ class CollectExtraDatasetData(object):
         
         dataset.is_processed = False
         dataset.save()
-        
+
+
         ### set user globally
         self.user = user
 
@@ -409,7 +411,11 @@ class CollectExtraDatasetData(object):
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='vic') 
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y):
-            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')                                     
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')       
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='a')
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='b')            
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
             reference = dataset.get_first_reference()

@@ -4590,7 +4590,7 @@ class Software(object):
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
         self.utils.move_file(
             os.path.join(
-                temp_dir, "results", type, "genome", "sequences_aligned.fasta"
+                temp_dir, "results", type, "genome", "sequences.aligned.fasta"
             ),
             alignment_file,
         )

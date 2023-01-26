@@ -525,9 +525,8 @@ class RunMainTable(tables.Table):
             ContigClassification.objects.filter(run=record).count() > 0
         )
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
-        finished_remapping = record.report == "finished"
 
-        if finished_remapping:
+        if finished_processing:
             record_name = (
                 '<a href="'
                 + reverse(

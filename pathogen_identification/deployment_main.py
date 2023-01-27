@@ -45,6 +45,7 @@ class PathogenIdentification_deployment:
     run_params_db = pd.DataFrame()
     pk: int = 0
     username: str
+    prepped: bool = False
 
     def __init__(
         self,
@@ -93,14 +94,16 @@ class PathogenIdentification_deployment:
     def delete_run_media(self):
         """delete project media directory"""
 
-        if os.path.isdir(self.run_engine.media_dir):
-            shutil.rmtree(self.run_engine.media_dir, ignore_errors=True)
+        if self.prepped:
+            if os.path.isdir(self.run_engine.media_dir):
+                shutil.rmtree(self.run_engine.media_dir, ignore_errors=True)
 
     def delete_run_static(self):
         """delete project static directory"""
 
-        if os.path.isdir(self.run_engine.static_dir):
-            shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
+        if self.prepped:
+            if os.path.isdir(self.run_engine.static_dir):
+                shutil.rmtree(self.run_engine.static_dir, ignore_errors=True)
 
     def retrieve_runmain(self):
         """retrieve runmain object from database"""
@@ -118,10 +121,12 @@ class PathogenIdentification_deployment:
     def delete_run_record(self):
         """delete project record in database"""
 
-        _, runmain, _ = get_run_parents(self.run_engine, self.parameter_set)
+        if self.prepped:
 
-        if runmain is not None:
-            runmain.delete()
+            _, runmain, _ = get_run_parents(self.run_engine, self.parameter_set)
+
+            if runmain is not None:
+                runmain.delete()
 
     def delete_run(self):
         """delete project record in database"""
@@ -166,7 +171,8 @@ class PathogenIdentification_deployment:
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
-
+        print(self.pipeline_index)
+        print(all_paths.keys())
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False
@@ -226,6 +232,8 @@ class PathogenIdentification_deployment:
             shutil.rmtree(self.dir)
 
     def run_main_prep(self):
+        """prepare run_main object from config dictionary"""
+        self.prepped = True
 
         self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
 

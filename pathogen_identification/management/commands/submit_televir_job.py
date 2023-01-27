@@ -101,14 +101,19 @@ class Command(BaseCommand):
 
         ### SUBMISSION
 
+        print(available_path_nodes)
+
         try:
 
             for sample in samples:
 
                 for leaf, matched_path_node in available_path_nodes.items():
 
-                    if not utils.parameter_util.check_ParameterSet_available(
-                        sample=sample, leaf=matched_path_node, project=project
+                    if (
+                        utils.parameter_util.check_ParameterSet_available(
+                            sample=sample, leaf=matched_path_node, project=project
+                        )
+                        is False
                     ):
                         continue
 

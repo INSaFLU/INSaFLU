@@ -579,7 +579,7 @@ class Utility_Pipeline_Manager:
             print(f"Path {explicit_path} not found in pipeline tree.")
             print("Exception:")
             print(e)
-            return False
+            return None
 
         print("matched_path: ", matched_path)
 
@@ -1184,6 +1184,10 @@ class Utils_Manager:
                         self.logger.info("parameter set processed")
 
                         continue
+
+                    else:
+                        self.logger.info("parameter set not processed")
+                        runs_to_deploy += 1
 
                 else:
                     runs_to_deploy += 1

@@ -771,7 +771,7 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def get_software_tables_global(self, technology: str):
+    def get_software_tables_global(self, technology: str, user: User):
         """
         Get software tables for a user
         """
@@ -779,6 +779,7 @@ class Parameter_DB_Utility:
         software_available = Software.objects.filter(
             type_of_use=Software.TYPE_OF_USE_televir_global,
             technology__name=technology,
+            owner=user,
         ).distinct()
 
         parameters_available = Parameter.objects.filter(
@@ -849,9 +850,11 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self, technology: str):
+    def generate_combined_parameters_table(self, technology: str, user: User):
         """"""
-        software_table, parameters_table = self.get_software_tables_global(technology)
+        software_table, parameters_table = self.get_software_tables_global(
+            technology, user
+        )
 
         return self.merge_software_tables(software_table, parameters_table)
 
@@ -1220,7 +1223,7 @@ class Utils_Manager:
         else:
             raise Exception("No software tree for technology")
 
-    def generate_software_base_tree(self, technology, tree_makeup: int):
+    def generate_software_base_tree(self, technology, tree_makeup: int, user: User):
         """
         Generate a software tree for a technology and a tree makeup
         """
@@ -1229,7 +1232,7 @@ class Utils_Manager:
         makeup_steps = pipeline_setup.get_makeup(tree_makeup)
 
         combined_table = self.parameter_util.generate_combined_parameters_table(
-            technology
+            technology, user
         )
 
         combined_table = combined_table[combined_table.pipeline_step.isin(makeup_steps)]
@@ -1290,7 +1293,7 @@ class Utils_Manager:
 
         return pipeline_tree
 
-    def generate_default_trees(self):
+    def generate_default_trees(self, user: User):
         """
         Generate default trees for all technologies and makeups
         """
@@ -1300,5 +1303,5 @@ class Utils_Manager:
             for makeup in pipeline_makeup.get_makeup_list():
 
                 technology_trees[technology] = self.generate_software_base_tree(
-                    technology, makeup
+                    technology, makeup, user
                 )

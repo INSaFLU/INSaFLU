@@ -231,7 +231,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
@@ -604,6 +604,7 @@ class Utility_Pipeline_Manager:
             for nd in node_list:
                 if node[1] == nd[1]:
                     return nd
+
             return node
 
         self.logger.info("Initialize matching nodes")
@@ -611,6 +612,7 @@ class Utility_Pipeline_Manager:
         self.logger.info(f"Parent main: {parent_main}")
         self.logger.info(f"Child main: {child_main}")
         self.logger.info("Matching nodes iterating through explicit path")
+        self.logger.info(f"leaves {pipe_tree.leaves}")
 
         for child in explicit_path[1:]:
             self.logger.info("--------------------")
@@ -622,6 +624,7 @@ class Utility_Pipeline_Manager:
                 child_main = match_nodes(
                     child, explicit_edge_dict[parent_main].index.tolist()
                 )
+
             except KeyError:
                 self.logger.info(f"{parent_main} not in parent tree edge dictionary.")
                 return None
@@ -630,6 +633,7 @@ class Utility_Pipeline_Manager:
 
             if nodes_index_dict[child_main] in pipe_tree.leaves:
                 return nodes_index_dict[child_main]
+
             try:
                 nodes_index_dict[child_main]
             except KeyError:
@@ -730,16 +734,12 @@ class Parameter_DB_Utility:
                     if "_" in software_name:
                         possibilities.append(software_name.split("_")[0])
 
-                    # print(possibilities)
-
                     for p in possibilities:
                         if p in software_db_dict:
                             new_range = software_db_dict[p]
                             break
 
                 return new_range
-
-        print(combined_table.shape)
 
         combined_table["parameter"] = combined_table.apply(fix_row, axis=1)
         combined_table = combined_table.reset_index(drop=True)
@@ -1267,11 +1267,12 @@ class Utils_Manager:
                 technology, global_index=tree_makeup
             )
 
-            tree_differences = self.utility_manager.compare_software_trees(
+            tree_are_equal = self.utility_manager.compare_software_trees(
                 existing_pipeline_tree
             )
-            print(tree_differences)
-            if not tree_differences:
+
+            if not tree_are_equal:
+                print("creating new tree, ", tree_makeup)
                 self.parameter_util.update_software_tree(pipeline_tree)
         else:
 

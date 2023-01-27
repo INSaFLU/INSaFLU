@@ -340,11 +340,16 @@ class run_blast(Classifier_init):
         temp_read = os.path.join(self.out_path, self.prefix + ".temp_read.fasta")
 
         self.unzip_query(temp_read)
+        db_dir = os.path.dirname(self.db_path)
+        db_name = os.path.basename(self.db_path)
+        cwd = os.getcwd()
+
+        os.chdir(db_dir)
 
         cmd = [
             "blastn",
             "-db",
-            self.db_path,
+            db_name,
             "-query",
             temp_read,
             "-outfmt",
@@ -357,6 +362,8 @@ class run_blast(Classifier_init):
         ]
 
         self.cmd.run(cmd)
+
+        os.chdir(cwd)
 
     def get_report(self) -> pd.DataFrame:
         """

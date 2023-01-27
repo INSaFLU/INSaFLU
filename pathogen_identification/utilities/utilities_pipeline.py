@@ -37,6 +37,18 @@ def make_tree(lst):
     return d
 
 
+def differences_tuple_list(lista, listb):
+    """
+    Return the differences between two lists
+    """
+    list_a = [tuple([str(x) for x in y]) for y in lista]
+    list_a = set(list_a)
+
+    list_b = [tuple([str(x) for x in y]) for y in listb]
+    list_b = set(list_b)
+    return list(list_a.symmetric_difference(list_b))
+
+
 class PipelineTree:
 
     technology: str
@@ -56,6 +68,16 @@ class PipelineTree:
         self.makeup = makeup
 
         self.logger = logging.getLogger(__name__)
+
+    def __eq__(self, other):
+
+        diff_nodes = differences_tuple_list(self.nodes, other.nodes)
+        diff_edges = differences_tuple_list(self.edges, other.edges)
+
+        if len(diff_nodes) == 0 and len(diff_edges) == 0:
+            return True
+        else:
+            return False
 
     def get_parents_dict(self):
         """
@@ -292,15 +314,7 @@ class Utility_Pipeline_Manager:
         """
         old_tree = self.generate_default_software_tree()
 
-        old_tree_list = old_tree.nodes
-        new_tree_list = new_tree.nodes
-
-        old_tree_set = set(old_tree_list)
-        new_tree_set = set(new_tree_list)
-
-        diff = new_tree_set.symmetric_difference(old_tree_set)
-
-        return diff
+        return new_tree == old_tree
 
     def check_software_is_installed(self, software_name: str) -> bool:
         """
@@ -757,7 +771,7 @@ class Parameter_DB_Utility:
 
         return software_table, parameters_table
 
-    def get_software_tables_global(self, technology: str):
+    def get_software_tables_global(self, technology: str, user: User):
         """
         Get software tables for a user
         """
@@ -765,6 +779,7 @@ class Parameter_DB_Utility:
         software_available = Software.objects.filter(
             type_of_use=Software.TYPE_OF_USE_televir_global,
             technology__name=technology,
+            owner=user,
         ).distinct()
 
         parameters_available = Parameter.objects.filter(
@@ -835,9 +850,11 @@ class Parameter_DB_Utility:
 
         return combined_table
 
-    def generate_combined_parameters_table(self, technology: str):
+    def generate_combined_parameters_table(self, technology: str, user: User):
         """"""
-        software_table, parameters_table = self.get_software_tables_global(technology)
+        software_table, parameters_table = self.get_software_tables_global(
+            technology, user
+        )
 
         return self.merge_software_tables(software_table, parameters_table)
 
@@ -1206,7 +1223,7 @@ class Utils_Manager:
         else:
             raise Exception("No software tree for technology")
 
-    def generate_software_base_tree(self, technology, tree_makeup: int):
+    def generate_software_base_tree(self, technology, tree_makeup: int, user: User):
         """
         Generate a software tree for a technology and a tree makeup
         """
@@ -1215,7 +1232,7 @@ class Utils_Manager:
         makeup_steps = pipeline_setup.get_makeup(tree_makeup)
 
         combined_table = self.parameter_util.generate_combined_parameters_table(
-            technology
+            technology, user
         )
 
         combined_table = combined_table[combined_table.pipeline_step.isin(makeup_steps)]
@@ -1249,8 +1266,8 @@ class Utils_Manager:
             tree_differences = self.utility_manager.compare_software_trees(
                 existing_pipeline_tree
             )
-
-            if len(tree_differences) > 0:
+            print(tree_differences)
+            if not tree_differences:
                 self.parameter_util.update_software_tree(pipeline_tree)
         else:
 
@@ -1276,7 +1293,7 @@ class Utils_Manager:
 
         return pipeline_tree
 
-    def generate_default_trees(self):
+    def generate_default_trees(self, user: User):
         """
         Generate default trees for all technologies and makeups
         """
@@ -1286,5 +1303,5 @@ class Utils_Manager:
             for makeup in pipeline_makeup.get_makeup_list():
 
                 technology_trees[technology] = self.generate_software_base_tree(
-                    technology, makeup
+                    technology, makeup, user
                 )

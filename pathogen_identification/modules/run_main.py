@@ -794,14 +794,11 @@ class RunMain_class(Run_Deployment_Methods):
         self.Update_exec_time()
 
     def Run_PreProcess(self):
-
+        self.logger.info(
+            "r1 current reads: " + str(self.sample.r1.get_current_fastq_read_number())
+        )
         if self.enrichment:
             self.deploy_EN()
-
-            self.logger.info(
-                "r1 current reads: "
-                + str(self.sample.r1.get_current_fastq_read_number())
-            )
 
             self.sample.r1.enrich(self.enrichment_drone.classified_reads_list)
             self.sample.r2.enrich(self.enrichment_drone.classified_reads_list)
@@ -814,8 +811,15 @@ class RunMain_class(Run_Deployment_Methods):
         if self.depletion:
             self.deploy_HD()
 
+            print("depleted reads:", len(self.depletion_drone.classified_reads_list))
+
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)
+
+            self.logger.info(
+                "r1 current reads after depletion: "
+                + str(self.sample.r1.get_current_fastq_read_number())
+            )
 
         self.Update_exec_time()
         self.generate_output_data_classes()

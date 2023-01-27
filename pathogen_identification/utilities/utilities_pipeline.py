@@ -56,9 +56,6 @@ class PipelineTree:
         self.makeup = makeup
 
         self.logger = logging.getLogger(__name__)
-        self.logger.info(
-            f"PipelineTree: {self.technology}, {self.nodes}, {self.edges}, {self.leaves}, {self.makeup}"
-        )
 
     def get_parents_dict(self):
         """

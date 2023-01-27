@@ -1366,9 +1366,14 @@ class Classifier:
         set classification_report attribute query and reference sequence id columns from classifier output.
         set classified_reads_list attribute to list of classified reads from classifier report.
         """
-        if self.check_classifier_output() and self.check_classifier_output_size():
-            self.classification_report = self.get_report_simple()
+
+        self.classification_report = self.get_report_simple()
 
         self.classified_reads_list = list(
             set(self.classification_report.qseqid.to_list())
         )
+
+        print("###### classification report ######")
+        print(self.prefix)
+        print(self.classification_report)
+        print(len(self.classified_reads_list))

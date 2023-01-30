@@ -9,10 +9,9 @@ from django.core.management import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction
 from managing_files.models import Sample
-from pathogen_identification.models import Projects, PIProject_Sample
+from pathogen_identification.models import Projects, PIProject_Sample, Utils_Manager
 from settings.constants_settings import ConstantsSettings
-
-
+from utils.process_SGE import ProcessSGE
 
 class Command(BaseCommand):
 	'''
@@ -79,8 +78,19 @@ class Command(BaseCommand):
 					project_sample.technology = sample.type_of_fastq
 					project_sample.report = "report"
 					project_sample.save()
+					self.stdout.write("Project created with id {}.".format(project.id))   
 
-					self.stdout.write("Project created successfully with id {}.".format(project.id))   
+				process_SGE = ProcessSGE()
+
+				utils = Utils_Manager()
+				runs_to_deploy = utils.check_runs_to_deploy(user, project)
+
+				if runs_to_deploy:
+					taskID = process_SGE.set_submit_televir_job(
+                    	user=user,
+                    	project_pk=project.pk,
+                	)
+					self.stdout.write("Project submitted as task {}.".format(project.id, taskID))   
 
 		except User.DoesNotExist as e:
 			self.stdout.write("Error: User '{}' does not exist.".format(account))                

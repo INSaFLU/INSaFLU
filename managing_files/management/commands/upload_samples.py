@@ -138,10 +138,10 @@ class Command(BaseCommand):
 			utils.copy_file(metadata_full_path, sz_file_to)
 			
 			if path_added is None:
-				sample_file_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+				sample_file_upload_files.path_name.name = os.path.join(utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_sample_file), ntpath.basename(sz_file_to))
 			else:
-				sample_file_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+				sample_file_upload_files.path_name.name = os.path.join(utils.get_path_upload_file(user.id,\
 									TypeFile.TYPE_FILE_sample_file), path_added, ntpath.basename(sz_file_to))
 					
 			self.stdout.write("{} file was processed".format(sample_file_upload_files.path_name.name))
@@ -174,10 +174,10 @@ class Command(BaseCommand):
 					return False
 				
 				if path_added is None:
-					fastq_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+					fastq_upload_files.path_name.name = os.path.join(utils.get_path_upload_file(user.id,\
 										TypeFile.TYPE_FILE_fastq_gz), fastq_upload_files.file_name)
 				else:
-					fastq_upload_files.path_name.name = os.path.join(self.utils.get_path_upload_file(self.request.user.id,\
+					fastq_upload_files.path_name.name = os.path.join(utils.get_path_upload_file(user.id,\
 										TypeFile.TYPE_FILE_fastq_gz), path_added, fastq_upload_files.file_name)
 					
 				try:

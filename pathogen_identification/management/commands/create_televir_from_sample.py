@@ -63,6 +63,7 @@ class Command(BaseCommand):
 
 				with transaction.atomic():
 					project = Projects()
+					project.name = sample_name
 					project.owner = user
 					project.owner_id = user.id
 					project.technology = technology
@@ -79,7 +80,7 @@ class Command(BaseCommand):
 					project_sample.report = "report"
 					project_sample.save()
 
-					self.stdout.write("Project Create Successfully with id {}.".format(project.id))   
+					self.stdout.write("Project created successfully with id {}.".format(project.id))   
 
 		except User.DoesNotExist as e:
 			self.stdout.write("Error: User '{}' does not exist.".format(account))                

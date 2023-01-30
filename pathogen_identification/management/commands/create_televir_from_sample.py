@@ -9,7 +9,8 @@ from django.core.management import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction
 from managing_files.models import Sample
-from pathogen_identification.models import Projects, PIProject_Sample, Utils_Manager
+from pathogen_identification.models import Projects, PIProject_Sample
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
 

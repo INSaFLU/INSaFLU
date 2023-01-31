@@ -51,17 +51,17 @@ class Command(BaseCommand):
 			sample = Sample.objects.get(name=sample_name, owner=user)
 
 			project_count = Projects.objects.filter(
-				name=project_name,
+				name__iexact=project_name,
                 is_deleted=False,
                 owner__username=user.username,
             ).count()
 			
 			if(project_count > 0):
 
-				self.stdout.write("Project '{}' already exists, reusing...".format(sample_name))
+				self.stdout.write("Project '{}' already exists, reusing...".format(project_name))
 
 				project = Projects.objects.filter(
-				    name=project_name,
+				    name__iexact=project_name,
                     is_deleted=False,
                     owner__username=user.username,
                 )[0]
@@ -83,7 +83,6 @@ class Command(BaseCommand):
 					project_sample.technology = sample.type_of_fastq
 					project_sample.report = "report"
 					project_sample.save()
-					self.stdout.write("Project '{}' already exists, reusing...".format(project_name))
 
 				utils = Utils_Manager()
 				runs_to_deploy = utils.check_runs_to_deploy(user, project)
@@ -101,7 +100,7 @@ class Command(BaseCommand):
 
 				with transaction.atomic():
 					project = Projects()
-					project.name = sample_name
+					project.name = project_name
 					project.owner = user
 					project.owner_id = user.id
 					# TODO Check where these constants are, or define them somewhere...

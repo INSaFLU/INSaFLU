@@ -46,11 +46,12 @@ class Command(BaseCommand):
 
 		try:
 			
+			process_SGE = ProcessSGE()
 			user = User.objects.get(username=account)
 			sample = Sample.objects.get(name=sample_name, owner=user)
 
 			project_count = Projects.objects.filter(
-				name__iexact=project_name,
+				name=project_name,
                 is_deleted=False,
                 owner__username=user.username,
             ).count()
@@ -60,7 +61,7 @@ class Command(BaseCommand):
 				self.stdout.write("Project '{}' already exists, reusing...".format(sample_name))
 
 				project = Projects.objects.filter(
-				    name__iexact=project_name,
+				    name=project_name,
                     is_deleted=False,
                     owner__username=user.username,
                 )[0]
@@ -121,8 +122,6 @@ class Command(BaseCommand):
 					project_sample.report = "report"
 					project_sample.save()
 					self.stdout.write("Project created with id {}.".format(project.id))   
-
-				process_SGE = ProcessSGE()
 
 				utils = Utils_Manager()
 				runs_to_deploy = utils.check_runs_to_deploy(user, project)

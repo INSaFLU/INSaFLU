@@ -42,13 +42,11 @@ class Command(BaseCommand):
 		project_name = options['project_name']
 		sample_name = options['sample_name']
 		account = options['user_login']
-		
-		sample = Sample.objects.get(name=sample_name, owner=user)~
-
 
 		try:
 			
 			user = User.objects.get(username=account)
+			sample = Sample.objects.get(name=sample_name, owner=user)
 
 			project_count = Projects.objects.filter(
 				name__iexact=sample_name,

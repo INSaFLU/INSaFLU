@@ -50,7 +50,7 @@ class Command(BaseCommand):
 			sample = Sample.objects.get(name=sample_name, owner=user)
 
 			project_count = Projects.objects.filter(
-				name__iexact=sample_name,
+				name__iexact=project_name,
                 is_deleted=False,
                 owner__username=user.username,
             ).count()

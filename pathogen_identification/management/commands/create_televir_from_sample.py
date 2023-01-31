@@ -74,9 +74,9 @@ class Command(BaseCommand):
 					if sample.is_valid_2:
 						project_sample_input += ";" + sample.file_name_2                    
 					project_sample.input = project_sample_input
-					sample_technology = Constants.FORMAT_FASTQ_ont
+					sample_technology = "ONT"
 					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
-						sample_technology = Constants.FORMAT_FASTQ_illumina					
+						sample_technology = "Illumina/IonTorrent"			
 					if(project.technology != sample_technology):
 						self.stdout.write("Project has different technology {} from sample technology {}...".format(project.technology, sample_technology))
 					project_sample.technology = sample.type_of_fastq
@@ -103,9 +103,10 @@ class Command(BaseCommand):
 					project.name = sample_name
 					project.owner = user
 					project.owner_id = user.id
-					technology = Constants.FORMAT_FASTQ_ont
+					# TODO Check where these constants are, or define them somewhere...
+					technology = "ONT"
 					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
-						technology = Constants.FORMAT_FASTQ_illumina
+						technology = "Illumina/IonTorrent"
 					project.technology = technology
 					project.save()
 					project_sample_input = sample.file_name_1

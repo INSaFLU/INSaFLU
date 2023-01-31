@@ -13,6 +13,7 @@ from pathogen_identification.models import Projects, PIProject_Sample
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
+from constants.constants import Constants
 
 class Command(BaseCommand):
 	'''
@@ -73,8 +74,11 @@ class Command(BaseCommand):
 					if sample.is_valid_2:
 						project_sample_input += ";" + sample.file_name_2                    
 					project_sample.input = project_sample_input
-					if(project.technology != sample.type_of_fastq):
-						self.stdout.write("Project has different technology {} from sample technology {}...".format(project.technology, sample.type_of_fastq))
+					sample_technology = Constants.FORMAT_FASTQ_ont
+					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
+						sample_technology = Constants.FORMAT_FASTQ_illumina					
+					if(project.technology != sample_technology):
+						self.stdout.write("Project has different technology {} from sample technology {}...".format(project.technology, sample_technology))
 					project_sample.technology = sample.type_of_fastq
 					project_sample.report = "report"
 					project_sample.save()
@@ -99,7 +103,10 @@ class Command(BaseCommand):
 					project.name = sample_name
 					project.owner = user
 					project.owner_id = user.id
-					project.technology = sample.type_of_fastq
+					technology = Constants.FORMAT_FASTQ_ont
+					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
+						technology = Constants.FORMAT_FASTQ_illumina
+					project.technology = technology
 					project.save()
 					project_sample_input = sample.file_name_1
 					if sample.is_valid_2:

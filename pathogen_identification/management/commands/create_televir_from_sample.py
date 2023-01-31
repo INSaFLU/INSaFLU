@@ -28,22 +28,23 @@ class Command(BaseCommand):
 		super(Command, self).__init__(*args, **kwargs)
 
 	def add_arguments(self, parser):
-		parser.add_argument('--name', nargs='?', type=str,
+		parser.add_argument('--project_name', nargs='?', type=str,
+							required=True, help='Project Name')
+		parser.add_argument('--sample_name', nargs='?', type=str,
 							required=True, help='Sample Name')
 		parser.add_argument('--user_login', nargs='?', type=str, required=True,
-							help='User login of the sample owner')
-		parser.add_argument('--technology', nargs='?', type=str, required=False,
-							help='Technology: Illumina or ONT (ONT by default)')							
+							help='User login of the project and sample owner')		
+					
 
 	# A command must define handle()
 	def handle(self, *args, **options):
 
-		sample_name = options['name']
+		project_name = options['project_name']
+		sample_name = options['sample_name']
 		account = options['user_login']
-		technology = ConstantsSettings.TECHNOLOGY_minion
-		if(options['technology']):
-			# Todo check if technology is one of the ones in ConstantsSettings
-			technology = options['technology']
+		
+		sample = Sample.objects.get(name=sample_name, owner=user)~
+
 
 		try:
 			
@@ -56,7 +57,41 @@ class Command(BaseCommand):
             ).count()
 			
 			if(project_count > 0):
-				self.stdout.write("Error: Project '{}' already exists.".format(sample_name))
+
+				self.stdout.write("Project '{}' already exists, reusing...".format(sample_name))
+
+				project = Projects.objects.filter(
+				    name__iexact=project_name,
+                    is_deleted=False,
+                    owner__username=user.username,
+                )[0]
+
+				with transaction.atomic():
+					project_sample = PIProject_Sample()
+					project_sample.project = project
+					project_sample.sample = sample
+					project_sample.name = sample.name
+					project_sample_input = sample.file_name_1
+					if sample.is_valid_2:
+						project_sample_input += ";" + sample.file_name_2                    
+					project_sample.input = project_sample_input
+					if(project.technology != sample.type_of_fastq):
+						self.stdout.write("Project has different technology {} from sample technology {}...".format(project.technology, sample.type_of_fastq))
+					project_sample.technology = sample.type_of_fastq
+					project_sample.report = "report"
+					project_sample.save()
+					self.stdout.write("Project '{}' already exists, reusing...".format(project_name))
+
+				utils = Utils_Manager()
+				runs_to_deploy = utils.check_runs_to_deploy(user, project)
+
+				if runs_to_deploy:
+					taskID = process_SGE.set_submit_televir_job(
+                    	user=user,
+                    	project_pk=project.pk,
+					)
+					self.stdout.write("Project submitted as task {}.".format(project.id, taskID))   
+
 			else:
 
 				sample = Sample.objects.get(name=sample_name, owner=user)
@@ -66,7 +101,7 @@ class Command(BaseCommand):
 					project.name = sample_name
 					project.owner = user
 					project.owner_id = user.id
-					project.technology = technology
+					project.technology = sample.type_of_fastq
 					project.save()
 					project_sample_input = sample.file_name_1
 					if sample.is_valid_2:

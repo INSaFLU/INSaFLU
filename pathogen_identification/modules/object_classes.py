@@ -236,33 +236,17 @@ class RunCMD:
 
         start_time = time.perf_counter()
 
-        # proc_prep = subprocess.Popen(
-        #    cmd,
-        #    shell=True,
-        #    stdout=subprocess.PIPE,
-        #    stderr=subprocess.PIPE,
-        # )
-        # out, err = proc_prep.communicate()
+        proc_prep = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = proc_prep.communicate()
 
-        try:
-            out = subprocess.check_output(
-                cmd,
-                shell=True,
-                stderr=subprocess.PIPE,
-                timeout=ConstantsSettings.TIMEOUT,
-            )
-            out = out.decode("utf-8")
-            err = ""
+        if isinstance(out, bytes):
+            out = out.decode("utf-8", errors="ignore")
 
-        except subprocess.TimeoutExpired as e:
-            out = ""
-            err = "Timeout"
-
-        except subprocess.CalledProcessError as e:
-            out = ""
-            err = e.output
-
-        #
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time
@@ -589,7 +573,7 @@ class Read_class:
         current_reads = self.get_read_names_fastq(self.current)
 
         read_list_to_keep = list(set(current_reads) - set(read_list))
-
+        print("reads to keep: %s" % len(read_list_to_keep))
         if len(read_list) > 0:
             self.read_filter_move(self.current, read_list_to_keep, self.depleted)
             self.is_depleted()
@@ -634,7 +618,58 @@ class Read_class:
         rnumber = self.cmd.run_bash_return(cmd)
         return int(rnumber) // 4
 
+    def clean_fastq_headers_python(self, fastq, temp_fq):
+        """
+        Clean fastq header using python.
+        """
+
+        if not self.exists:
+            return
+
+        counter = 0  # counter to keep track of headers
+        with open(temp_fq, "w") as f:
+            for line in open(fastq):
+                line = line.strip()
+                if line.startswith("@") and counter == 0:
+                    if line[-2:] == "/1" or line[-2:] == "/2":
+                        line = line[:-2]
+
+                f.write(line + "\n")
+
+                counter += 1
+                if counter == 4:
+                    counter = 0
+
     def clean_read_names(self):
+        """
+        Clean read names in current fastq file.
+        """
+
+        if not self.exists:
+            return
+
+        temp_fq = os.path.join(
+            os.path.dirname(self.current), f"temp_clean_{randint(1,1000)}.fastq"
+        )
+        final_temp = os.path.join(
+            os.path.dirname(self.current), f"temp_second_{randint(1,1000)}.fastq"
+        )
+
+        temp_fq_gz = final_temp + ".gz"
+
+        cmd_unzip = "gunzip -c %s > %s" % (self.current, temp_fq)
+        cmd_zip = "bgzip %s" % final_temp
+
+        self.cmd.run_bash(cmd_unzip)
+        self.clean_fastq_headers_python(temp_fq, final_temp)
+        self.cmd.run(cmd_zip)
+        os.remove(temp_fq)
+
+        if os.path.isfile(temp_fq_gz) and os.path.getsize(temp_fq_gz) > 100:
+            os.remove(self.current)
+            os.rename(temp_fq_gz, self.current)
+
+    def clean_read_names_old(self):
         """
         Clean read names in current fastq file.
         """

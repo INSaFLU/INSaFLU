@@ -79,10 +79,13 @@ class Command(BaseCommand):
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        global_paths = pipeline_tree.get_all_graph_paths_explicit()
+
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
+
         submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
@@ -100,15 +103,17 @@ class Command(BaseCommand):
         }
 
         ### SUBMISSION
-
         try:
 
             for sample in samples:
 
                 for leaf, matched_path_node in available_path_nodes.items():
 
-                    if not utils.parameter_util.check_ParameterSet_available(
-                        sample=sample, leaf=matched_path_node, project=project
+                    if (
+                        utils.parameter_util.check_ParameterSet_available(
+                            sample=sample, leaf=matched_path_node, project=project
+                        )
+                        is False
                     ):
                         continue
 

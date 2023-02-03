@@ -238,9 +238,7 @@ class PathogenIdentification_deployment:
 
         utils = Utils_Manager()
 
-        print(self.run_engine.media_dir_logdir)
-
-        utils.utility_repository.dump_tables(self.run_engine.media_dir_logdir)
+        utils.utility_repository.dump_tables(self.run_engine.log_dir)
 
 
 class Run_Main_from_Leaf:

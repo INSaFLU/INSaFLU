@@ -171,8 +171,7 @@ class PathogenIdentification_deployment:
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
-        print(self.pipeline_index)
-        print(all_paths.keys())
+
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False
@@ -236,6 +235,12 @@ class PathogenIdentification_deployment:
         self.prepped = True
 
         self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
+
+        utils = Utils_Manager()
+
+        print(self.run_engine.media_dir_logdir)
+
+        utils.utility_repository.dump_tables(self.run_engine.media_dir_logdir)
 
 
 class Run_Main_from_Leaf:

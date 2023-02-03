@@ -237,6 +237,9 @@ class RunCMD:
         )
         out, err = proc_prep.communicate()
 
+        if isinstance(out, bytes):
+            out = out.decode("utf-8", errors="ignore")
+
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time

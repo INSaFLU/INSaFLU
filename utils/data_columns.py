@@ -46,6 +46,8 @@ NEXTSTRAIN_sex = "sex"		  ## host sex; if not available needs to be “?”
 NEXTSTRAIN_age = "age"		  ## host age; if not available needs to be “?” 
 NEXTSTRAIN_host = "host"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
 NEXTSTRAIN_clade = "clade"		## host; if not available needs to be “?”  - from ncov apparently it is not mandatory??
+NEXTSTRAIN_genome_coverage = "genome_coverage"
+
 
 DATASET_LIST_INSAFLU_project_name = "project_name"	## project name or empty, if not from project
 
@@ -73,6 +75,16 @@ VECT_NEXTSTRAIN_mandatory_mpx = [
 		NEXTSTRAIN_clade,
 	]	
 
+VECT_NEXTSTRAIN_mandatory_rsv = [
+		NEXTSTRAIN_accession,
+		NEXTSTRAIN_genbank_accession,
+		NEXTSTRAIN_strain,
+		NEXTSTRAIN_date,
+		NEXTSTRAIN_region,
+		NEXTSTRAIN_host, 
+		NEXTSTRAIN_genome_coverage
+	]	
+
 VECT_NEXTSTRAIN_mandatory_generic = [
 		NEXTSTRAIN_strain,
 		NEXTSTRAIN_date,
@@ -88,7 +100,9 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : VECT_NEXTSTRAIN_mandatory_generic,
-	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : VECT_NEXTSTRAIN_mandatory_generic
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : VECT_NEXTSTRAIN_mandatory_rsv,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : VECT_NEXTSTRAIN_mandatory_rsv
 }
 
 
@@ -110,6 +124,14 @@ DICT_NEXTSTRAIN_default_mpx = {
 		NEXTSTRAIN_clade : "hMPXV-1",
 	}
 
+DICT_NEXTSTRAIN_default_rsv = {
+		NEXTSTRAIN_region : "Europe",
+		NEXTSTRAIN_genbank_accession : "?",
+		NEXTSTRAIN_host : "Homo sapiens",
+		# Need to get this from INSaFLU!
+		NEXTSTRAIN_genome_coverage : "0.9"
+	}
+
 DICT_NEXTSTRAIN_default_generic = {
 		NEXTSTRAIN_genbank_accession : "?",		 
 		NEXTSTRAIN_region : "Europe",
@@ -124,6 +146,8 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : DICT_NEXTSTRAIN_default_generic,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : DICT_NEXTSTRAIN_default_rsv,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : DICT_NEXTSTRAIN_default_rsv,
 }
 
 ### if None pass

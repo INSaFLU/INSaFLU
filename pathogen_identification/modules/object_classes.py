@@ -12,6 +12,7 @@ import matplotlib
 import pandas as pd
 from numpy import ERR_CALL
 from pathogen_identification.utilities.utilities_general import fastqc_parse
+from pathogen_identification.constants_settings import ConstantsSettings
 
 matplotlib.use("Agg")
 import gzip
@@ -139,10 +140,24 @@ class Operation_Temp_Files:
         out, err = proc_prep.communicate()
 
         found_flag = False
+        time_delay = 0
+
+        print(f"timeout: {ConstantsSettings.TIMEOUT} seconds")
 
         while not found_flag:
+
             time.sleep(1)
             found_flag = os.path.exists(self.flag)
+            time_delay += 1
+
+            if time_delay > ConstantsSettings.TIMEOUT:
+
+                proc_prep.kill()
+                err = "Timeout"
+                out = "Timeout"
+                exec_time = time.perf_counter() - start_time
+
+                return out, err, exec_time
 
         err = open(self.log).read()
 
@@ -221,14 +236,33 @@ class RunCMD:
 
         start_time = time.perf_counter()
 
-        proc_prep = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        out, err = proc_prep.communicate()
+        # proc_prep = subprocess.Popen(
+        #    cmd,
+        #    shell=True,
+        #    stdout=subprocess.PIPE,
+        #    stderr=subprocess.PIPE,
+        # )
+        # out, err = proc_prep.communicate()
 
+        try:
+            out = subprocess.check_output(
+                cmd,
+                shell=True,
+                stderr=subprocess.PIPE,
+                timeout=ConstantsSettings.TIMEOUT,
+            )
+            out = out.decode("utf-8")
+            err = ""
+
+        except subprocess.TimeoutExpired as e:
+            out = ""
+            err = "Timeout"
+
+        except subprocess.CalledProcessError as e:
+            out = ""
+            err = e.output
+
+        #
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time
@@ -866,6 +900,7 @@ class Sample_runClass:
         cmd_trimsort = [
             "trimmomatic",
             "SE",
+            "-phred33",
             "-threads",
             f"{self.threads}",
             self.r1.current,
@@ -873,10 +908,15 @@ class Sample_runClass:
             "MINLEN:20",
         ]
 
-        self.cmd.run(cmd_trimsort)
+        self.cmd.run_script_software(cmd_trimsort)
 
         if tempfq in os.listdir(tempdir):
             if os.path.getsize(tempfq) > 100:
+                bgzip_cmd = [
+                    "bgzip",
+                    tempfq,
+                ]
+                self.cmd.run_script_software(bgzip_cmd)
                 os.remove(self.r1.current)
                 os.rename(tempfq, self.r1.current)
 

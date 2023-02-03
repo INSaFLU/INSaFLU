@@ -513,7 +513,7 @@ class RunMainTable(tables.Table):
         else:
             return mark_safe('<i class="fa fa-times"></i>')
 
-    def render_report(self, record):
+    def render_report(self, record: RunMain):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
@@ -527,7 +527,11 @@ class RunMainTable(tables.Table):
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
 
-        if finished_remapping:
+        if (
+            finished_processing
+            or finished_remapping
+            or record.parameter_set.status == ParameterSet.STATUS_FINISHED
+        ):
             record_name = (
                 '<a href="'
                 + reverse(

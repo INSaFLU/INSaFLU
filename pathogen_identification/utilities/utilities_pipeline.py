@@ -56,7 +56,10 @@ class PipelineTree:
         self.makeup = makeup
 
         self.logger = logging.getLogger(__name__)
+<<<<<<< HEAD
         self.logger.info(f"PipelineTree: {self.technology}, makeup: {self.makeup}")
+=======
+>>>>>>> master
 
     def get_parents_dict(self):
         """

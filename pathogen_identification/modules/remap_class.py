@@ -1138,6 +1138,7 @@ class Remapping:
 
         if self.method in available_methods:
             self.logger.info(f"Remapping with {self.method}")
+            self.logger.info(f"reference {self.reference_file}")
             self.remap_engine = available_methods[self.method](
                 self.method_object,
                 self.r1,

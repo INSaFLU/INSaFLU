@@ -9,6 +9,10 @@ import os
 from django.conf import settings
 from settings.models import Software, Parameter, Sample
 from settings.constants_settings import ConstantsSettings as CS
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_CS,
+    Pipeline_Makeup,
+)
 from pathogen_identification.models import SoftwareTree, ParameterSet, SoftwareTreeNode
 from constants.constantsTestsCase import ConstantsTestsCase
 from utils.software import Software as SoftwareUtils
@@ -27,6 +31,9 @@ from pathogen_identification.modules.object_classes import (
     Bedgraph,
 )
 from pathogen_identification.install_registry import Deployment_Params
+from random import sample
+from django.test import tag
+from fluwebvirus.settings import STATIC_ROOT
 
 # Create your tests here.
 
@@ -242,7 +249,8 @@ class Televir_Software_Test(TestCase):
         self.assertEqual(blastn.count(), 2)
 
         centrifuge = Software.objects.filter(name="Centrifuge", owner=self.test_user)
-        self.assertEqual(centrifuge.count(), 3)
+
+        self.assertEqual(centrifuge.count(), 4)
 
         kraken2 = Software.objects.filter(name="Kraken2", owner=self.test_user)
         self.assertEqual(kraken2.count(), 1)
@@ -306,7 +314,7 @@ class Televir_Software_Test(TestCase):
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
-        utils_manager.generate_default_trees()
+        utils_manager.generate_default_trees(self.test_user)
         all_trees = SoftwareTree.objects.all()
 
         self.assertEqual(all_trees.count(), len(self.pipeline_makeup.MAKEUP) * 2)
@@ -370,13 +378,13 @@ def test_fastq_file(
     utils = Utils()
 
     file_name = os.path.join(
-        baseDirectory,
+        STATIC_ROOT,
+        "tests",
         ConstantsTestsCase.DIR_FASTQ,
         ConstantsTestsCase.FASTQ_MINION_1,
     )
 
-    temp_dir = utils.get_temp_dir()
-    utils.copy_file(file_name, os.path.join(temp_dir, ConstantsTestsCase.FASTQ1_1))
+    utils.copy_file(file_name, os.path.join(baseDirectory, ConstantsTestsCase.FASTQ1_1))
 
     try:
         sample_ont = Sample.objects.get(name=sample_name)
@@ -386,7 +394,7 @@ def test_fastq_file(
         sample_ont.is_valid_1 = True
         sample_ont.file_name_1 = ConstantsTestsCase.FASTQ1_1
         sample_ont.path_name_1.name = os.path.join(
-            temp_dir, ConstantsTestsCase.FASTQ1_1
+            baseDirectory, ConstantsTestsCase.FASTQ1_1
         )
         sample_ont.is_valid_2 = False
         sample_ont.type_of_fastq = Sample.TYPE_OF_FASTQ_minion
@@ -403,8 +411,15 @@ class Televir_Objects_TestCase(TestCase):
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
+        self.temp_directory = os.path.join(self.baseDirectory, "temp_objects_tests")
+        os.makedirs(self.temp_directory, exist_ok=True)
 
         self.test_user = test_user()
+        self.sample_ont = test_fastq_file(self.temp_directory, self.test_user)
+
+    def tearDown(self) -> None:
+        # os.system("rm -rf " + self.temp_directory)
+        pass
 
     def test_temporary_operations(self):
         tempop = Operation_Temp_Files(self.baseDirectory)
@@ -500,6 +515,80 @@ class Televir_Objects_TestCase(TestCase):
         cmd_return = runcmd.run_bash_return(cmd)
         self.assertEqual(cmd_return.strip(), "hello world")
 
+    def test_read_class(self):
+
+        r1_path = self.sample_ont.path_name_1.name
+
+        clean_dir = os.path.join(self.temp_directory, "clean")
+        enriched_dir = os.path.join(self.temp_directory, "enriched")
+        depleted_dir = os.path.join(self.temp_directory, "depleted")
+        os.makedirs(clean_dir, exist_ok=True)
+        os.makedirs(enriched_dir, exist_ok=True)
+        os.makedirs(depleted_dir, exist_ok=True)
+
+        preproc_library = os.path.join(
+            self.install_registry.BINARIES["ROOT"],
+            self.install_registry.BINARIES[CS.PIPELINE_NAME_read_quality_analysis][
+                "default"
+            ],
+            "bin",
+        )
+
+        r1 = Read_class(
+            r1_path,
+            clean_dir,
+            enriched_dir,
+            depleted_dir,
+            bin=preproc_library,
+        )
+        r2 = Read_class(
+            os.path.join(self.temp_directory, "None"),
+            clean_dir,
+            enriched_dir,
+            depleted_dir,
+            bin=preproc_library,
+        )
+
+        self.assertEqual(r1.exists, True)
+        self.assertEqual(r2.exists, False)
+        self.assertEqual(r1.current_status, "raw")
+        read_names = r1.get_read_names_fastq()
+        self.assertEqual(len(read_names), r1.read_number_raw)
+
+        read_names_subset = sample(read_names, 100)
+        temp_read_file = Temp_File(self.temp_directory, suffix=".fq.gz")
+
+        print(self.temp_directory)
+        with temp_read_file as tpf:
+            print(tpf)
+            r1.read_filter_move(read_names_subset, tpf)
+
+            temp_read = Read_class(
+                tpf,
+                clean_dir,
+                enriched_dir,
+                depleted_dir,
+                bin=preproc_library,
+            )
+
+            self.assertEqual(temp_read.read_number_raw, len(read_names_subset))
+            subsample = sample(read_names_subset, 10)
+            temp_reads_file = Temp_File(self.temp_directory, suffix=".lst")
+            with temp_reads_file as spf:
+                with open(spf, "w") as f:
+                    f.write("\n".join(subsample))
+                temp_read.read_filter_inplace(spf)
+
+            self.assertEqual(temp_read.get_current_fastq_read_number(), len(subsample))
+
+            #
+        r1.enrich(read_names_subset)  ## keep only the reads in the list
+        self.assertEqual(r1.read_number_enriched, len(read_names_subset))
+        self.assertEqual(r1.current_status, "enriched")
+        r1.deplete(read_names_subset)  ## remove the reads in the list
+        self.assertEqual(r1.current_status, "depleted")
+        self.assertEqual(r1.read_number_depleted, 0)
+
 
 class Televir_Project_Test(TestCase):
     software = SoftwareUtils()
@@ -526,7 +615,7 @@ class Televir_Project_Test(TestCase):
         default_software = DefaultSoftware()
         default_software.test_all_defaults_pathogen_identification(self.test_user)
         utils_manager = Utils_Manager()
-        utils_manager.generate_default_trees()
+        utils_manager.generate_default_trees(self.test_user)
         duplicate_software_params_global_project(self.test_user, self.project_ont)
 
     def test_project_trees_exist_ont(self):
@@ -544,6 +633,7 @@ class Televir_Project_Test(TestCase):
 
         reset_project_makeup(self.project_ont)
 
+    @tag("slow")
     def test_all_project_paths_matched_ont(self):
         utils_manager = Utils_Manager()
 
@@ -584,8 +674,10 @@ class Televir_Project_Test(TestCase):
 
                 self.assertTrue(node)
 
+    @tag("slow")
     def test_run_submit(self):
         utils_manager = Utils_Manager()
+        pipeline_makeup_manager = Pipeline_Makeup()
 
         for tree, makeup in self.pipeline_makeup.MAKEUP.items():
             reset_project_makeup(self.project_ont)
@@ -616,7 +708,75 @@ class Televir_Project_Test(TestCase):
                     odir=self.baseDirectory,
                     threads=3,
                 )
-
                 run.get_in_line()
 
-                self.assertEqual(run.parameter_set.status, ParameterSet.STATUS_QUEUED)
+                self.assertEqual(run.get_status(), ParameterSet.STATUS_QUEUED)
+                self.assertEqual(run.check_finished(), False)
+                self.assertEqual(run.check_availability(), True)
+                self.assertEqual(run.is_available, True)
+                self.assertEqual(run.container.prepped, False)
+                self.assertEqual(run.check_processed(), False)
+                self.assertEqual(run.check_submission(), False)
+                self.assertEqual(
+                    run.container.dir
+                    == os.path.join(
+                        self.baseDirectory, run.deployment_directory_structure
+                    ),
+                    True,
+                )
+
+                self.assertEqual(
+                    makeup, pipeline_makeup_manager.get_makeup(run.container.tree_makup)
+                )
+
+                ##### Test submission
+                run.register_submission()
+
+                self.assertEqual(run.check_submission(), True)
+                configured = run.configure()
+
+                self.assertEqual(configured, True)
+                self.assertEqual(
+                    run.container.config["sample_name"], run.container.sample
+                )
+                self.assertEqual(
+                    os.path.join(
+                        os.path.join(run.container.dir, "reads"),
+                        os.path.basename(run.file_r1),
+                    ),
+                    run.container.config["r1"],
+                )
+                self.assertEqual(run.container.config["type"], "SE")
+                self.assertEqual(os.path.exists(run.container.dir), True)
+                self.assertEqual(
+                    os.path.exists(
+                        os.path.join(PI_CS.media_directory, run.container.dir_branch)
+                    ),
+                    True,
+                )
+                self.assertEqual(
+                    os.path.exists(
+                        os.path.join(PI_CS.static_directory, run.container.dir_branch)
+                    ),
+                    True,
+                )
+
+                for sbdir in run.container.config["directories"].values():
+                    self.assertEqual(os.path.exists(sbdir), True)
+
+                ##### test prepping
+                run.container.run_main_prep()
+                self.assertEqual(run.container.prepped, True)
+                self.assertEqual(
+                    os.path.exists(run.container.run_engine.media_dir_classification),
+                    True,
+                )
+                self.assertEqual(
+                    os.path.exists(run.container.run_engine.media_dir_igv), True
+                )
+
+                ##### test closing
+                run.container.close()
+                self.assertFalse(
+                    os.path.exists(run.container.dir),
+                )

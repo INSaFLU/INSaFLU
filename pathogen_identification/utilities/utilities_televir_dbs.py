@@ -134,9 +134,6 @@ class Utility_Repository:
         self.create_software_table()
         self.create_database_table()
 
-        self.print_table_schema("software")
-        self.print_table_schema("database")
-
         self.metadata.create_all(self.engine)
 
     def dump_software(self, directory: str):

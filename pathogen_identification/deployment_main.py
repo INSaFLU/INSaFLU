@@ -173,6 +173,8 @@ class PathogenIdentification_deployment:
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
 
+        print(self.run_params_db)
+
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False
@@ -505,8 +507,10 @@ class Run_Main_from_Leaf:
     def register_submission(self):
 
         self.set_run_process_running()
+        self.parameter_set.register_subprocess()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_subprocess()
+        print("registered_submission")
 
     def register_error(self):
 

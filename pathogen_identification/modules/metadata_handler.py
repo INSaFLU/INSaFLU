@@ -336,7 +336,6 @@ class Metadata_handler:
 
         new_table = new_table.sort_values("counts", ascending=False)
 
-        new_table.taxid = new_table.taxid.astype(int)
         return new_table
 
     def process_reports(

@@ -227,7 +227,10 @@ class Metadata_handler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
-        return self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
+        df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
+        df.taxid = df.taxid.astype(int)
+
+        return df
 
     @staticmethod
     def merge_check_column_types(

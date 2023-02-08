@@ -231,7 +231,7 @@ class Utility_Pipeline_Manager:
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
 
     def input(self, combined_table: pd.DataFrame, technology="ONT"):
@@ -581,8 +581,6 @@ class Utility_Pipeline_Manager:
             print(e)
             return None
 
-        print("matched_path: ", matched_path)
-
         return matched_path
 
     def match_path_to_tree(self, explicit_path: list, pipe_tree: PipelineTree):
@@ -692,9 +690,6 @@ class Parameter_DB_Utility:
 
     @staticmethod
     def expand_parameters_table(combined_table, software_db_dict={}):
-        # print(software_db_dict)
-        # print("#####")
-
         def fix_row(row):
 
             if not row.parameter:
@@ -729,7 +724,6 @@ class Parameter_DB_Utility:
 
                 if row.parameter_name == "--db" and software_db_dict:
                     software_name = row.software_name
-                    # print(software_name)
                     possibilities = [software_name, software_name.lower()]
                     if "_" in software_name:
                         possibilities.append(software_name.split("_")[0])
@@ -895,7 +889,7 @@ class Parameter_DB_Utility:
         except SoftwareTree.DoesNotExist:
             return None
 
-    def get_software_tree_index(self, technology: Technology, global_index: int):
+    def get_software_tree_index(self, technology: str, global_index: int):
 
         if self.check_default_software_tree_exists(technology, global_index):
             software_tree = (
@@ -1206,7 +1200,7 @@ class Utils_Manager:
         all_paths = pipeline_tree.get_all_graph_paths()
         return all_paths
 
-    def get_software_tree_index(self, technology: Technology, tree_makeup: int):
+    def get_software_tree_index(self, technology: str, tree_makeup: int):
         """
         Get the software tree index from model
         """

@@ -18,6 +18,7 @@ from pathogen_identification.models import (
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
+    RunMain,
 )
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
@@ -171,8 +172,9 @@ class PathogenIdentification_deployment:
         all_paths = utils.get_all_technology_pipelines(self.technology, self.tree_makup)
 
         self.run_params_db = all_paths.get(self.pipeline_index, None)
-        print(self.pipeline_index)
-        print(all_paths.keys())
+
+        print(self.run_params_db)
+
         if self.run_params_db is None:
             print("Pipeline index not found")
             return False
@@ -236,6 +238,10 @@ class PathogenIdentification_deployment:
         self.prepped = True
 
         self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
+
+        utils = Utils_Manager()
+
+        utils.utility_repository.dump_tables(self.run_engine.log_dir)
 
 
 class Run_Main_from_Leaf:
@@ -501,15 +507,20 @@ class Run_Main_from_Leaf:
     def register_submission(self):
 
         self.set_run_process_running()
+        self.parameter_set.register_subprocess()
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_subprocess()
+        print("registered_submission")
 
     def register_error(self):
 
         self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
+        run = RunMain.objects.get(parameter_set=new_run)
+
         new_run.register_error()
+        run.delete()
 
         self.container.delete_run()
 

@@ -29,7 +29,7 @@ class Temp_File:
     Temporary file.
     """
 
-    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ""):
+    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ".txt"):
         """
         Initialize.
         """
@@ -38,24 +38,31 @@ class Temp_File:
         self.prefix = prefix
         self.suffix = suffix
 
-        self.temp_file = os.path.join(
+        self.path = os.path.join(
             self.temp_dir, f"{self.prefix}_{randint(1000000, 9999999)}{self.suffix}"
         )
+        self.file = os.path.basename(self.path)
 
     def __enter__(self):
         """
         Enter.
         """
 
-        return self.temp_file
+        open(self.path, "w").close()
+        return self.path
 
-    def __exit__(self):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_value: BaseException,
+        traceback,
+    ):
         """
         Exit.
         """
 
-        if os.path.exists(self.temp_file):
-            os.remove(self.temp_file)
+        if os.path.exists(self.path):
+            os.remove(self.path)
 
 
 class Operation_Temp_Files:
@@ -238,11 +245,8 @@ class RunCMD:
         out, err = proc_prep.communicate()
 
         if isinstance(out, bytes):
-            out = out.decode("utf-8")
+            out = out.decode("utf-8", errors="ignore")
 
-        if isinstance(err, bytes):
-            err = err.decode("utf-8")
-        #
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time
@@ -304,6 +308,7 @@ class RunCMD:
             cmd = " ".join(cmd)
 
         self.logger.info(f"running: {self.bin}{cmd}")
+        print(f"running: {self.bin}{cmd}")
 
         cmd_string = self.bash_software_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
@@ -460,7 +465,7 @@ class Read_class:
 
         self.filepath = filepath
         self.current = filepath
-        self.prefix = self.determine_read_name(filepath)
+        self.prefix = self.determine_file_name(filepath)
         self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
@@ -476,22 +481,29 @@ class Read_class:
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
 
-    def get_read_names_fastq(self, filepath):
+    def get_read_names_fastq(self):
         """
         Get read names from fastq file.
         """
+        filepath = self.current
 
         read_names = []
+        counter = 0
 
         if self.exists:
             with gzip.open(filepath, "rt") as f:
                 for line in f:
-                    if line.startswith("@"):
+                    if counter == 0:
                         read_names.append(line.split()[0][1:])
+
+                    counter += 1
+
+                    if counter == 4:
+                        counter = 0
 
         return read_names
 
-    def determine_read_name(self, filepath):
+    def determine_file_name(self, filepath):
 
         if not self.exists:
             return "none"
@@ -507,36 +519,36 @@ class Read_class:
 
         return filename
 
-    def read_filter_move(self, input: str, read_list: list, output: str = ""):
+    def read_filter_move(self, read_list: list, output: str = ""):
 
         if not self.exists:
             return
 
-        temp_reads_keep = os.path.join(
-            os.path.dirname(output), f"keep_temp_{randint(1,1999)}.lst"
-        )
-        with open(temp_reads_keep, "w") as f:
-            f.write("\n".join(read_list))
+        temp_file = Temp_File(os.path.dirname(output), suffix=".lst")
 
-        self.read_filter(input, output, temp_reads_keep)
+        with temp_file as tpf:
 
-        # os.remove(temp_reads_keep)
+            with open(tpf, "w") as f:
+                f.write("\n".join(read_list))
 
-    def read_filter_inplace(self, input: str, read_list: str):
+            self.read_filter(output, tpf)
+
+    def read_filter_inplace(self, read_list: str):
 
         if not self.exists:
             return
 
-        output_dir = os.path.dirname(input)
+        output_dir = os.path.dirname(self.current)
+
         tempreads = os.path.join(output_dir, f"temp_{randint(1,1999)}.fq.gz")
 
-        self.read_filter(input, tempreads, read_list)
+        self.read_filter(tempreads, read_list)
 
-        if os.path.isfile(tempreads) and os.path.getsize(tempreads):
-            os.remove(input)
-            os.rename(tempreads, input)
+        if os.path.isfile(tempreads) and os.path.getsize(tempreads) > 100:
+            os.remove(self.current)
+            os.rename(tempreads, self.current)
 
-    def read_filter(self, input: str, output: str, read_list: str):
+    def read_filter(self, output: str, read_list: str):
         """
         filter read file using exisiting lsit of reads.
         Args:
@@ -548,7 +560,7 @@ class Read_class:
         if not self.exists:
             return
 
-        cmd = "seqtk subseq %s %s | gzip > %s" % (input, read_list, output)
+        cmd = "seqtk subseq %s %s | gzip > %s" % (self.current, read_list, output)
 
         self.cmd.run(cmd)
 
@@ -558,7 +570,7 @@ class Read_class:
         """
 
         if len(read_list) > 0:
-            self.read_filter_move(self.current, read_list, self.enriched)
+            self.read_filter_move(read_list, self.enriched)
             self.is_enriched()
 
     def deplete(self, read_list):
@@ -566,12 +578,12 @@ class Read_class:
         filter reads and aset current status to depleted.
         """
 
-        current_reads = self.get_read_names_fastq(self.current)
+        current_reads = self.get_read_names_fastq()
 
         read_list_to_keep = list(set(current_reads) - set(read_list))
         print("reads to keep: %s" % len(read_list_to_keep))
         if len(read_list) > 0:
-            self.read_filter_move(self.current, read_list_to_keep, self.depleted)
+            self.read_filter_move(read_list_to_keep, self.depleted)
             self.is_depleted()
 
     def is_clean(self):
@@ -898,7 +910,7 @@ class Sample_runClass:
             )
             return
 
-        self.r1.read_filter_inplace(self.r1.current, unique_reads)
+        self.r1.read_filter_inplace(unique_reads)
 
     def clean_unique_PE(self):
 
@@ -914,8 +926,8 @@ class Sample_runClass:
         if os.path.getsize(common_reads) == 0:
             return
 
-        self.r1.read_filter_inplace(self.r1.current, common_reads)
-        self.r2.read_filter_inplace(self.r2.current, common_reads)
+        self.r1.read_filter_inplace(common_reads)
+        self.r2.read_filter_inplace(common_reads)
 
     def trimmomatic_sort(self):
         if self.type == "SE":

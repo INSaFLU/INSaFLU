@@ -151,6 +151,7 @@ INSTALLED_APPS = [
     "pathogen_identification.apps.PathogenIdentificationConfig",
     "crequest",
     "embed_video",
+    "django_nose",
 ]
 
 MIDDLEWARE = [
@@ -397,3 +398,13 @@ LOGGING = {
         },
     },
 }
+
+
+# Use nose to run all tests
+TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
+
+# Tell nose to measure coverage on the 'foo' and 'bar' apps
+NOSE_ARGS = [
+    "--with-coverage",
+    "--cover-package=foo,bar",
+]

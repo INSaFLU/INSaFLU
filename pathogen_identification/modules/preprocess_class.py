@@ -587,8 +587,8 @@ class Preprocess:
             self.logger.info("No common reads found")
             return
 
-        self.r1.read_filter_inplace(self.r1.current, common_reads)
-        self.r2.read_filter_inplace(self.r2.current, common_reads)
+        self.r1.read_filter_inplace(common_reads)
+        self.r2.read_filter_inplace(common_reads)
 
     def clean_unpaired(self):
         """

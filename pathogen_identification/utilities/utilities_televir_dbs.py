@@ -2,7 +2,7 @@
 
 import os
 from abc import abstractmethod
-
+import datetime
 from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
 
 
@@ -13,6 +13,7 @@ class software_item:
         self.database = database
         self.installed = installed
         self.env_path = env_path
+        self.date = datetime.datetime.now().strftime("%Y-%m-%d")
 
     def __repr__(self) -> str:
         return f"({self.name}, {self.path}, {self.database}, {self.installed}, {self.env_path})"
@@ -24,6 +25,7 @@ class database_item:
         self.path = path
         self.installed = installed
         self.software = software
+        self.date = datetime.datetime.now().strftime("%Y-%m-%d")
 
     def __repr__(self) -> str:
         return f"({self.name}, {self.path}, {self.installed})"
@@ -35,6 +37,8 @@ class Utility_Repository:
     database_item = database_item
     software_item = software_item
     dbtype_local: str = "sqlite"
+
+    tables: list = ["software", "database"]
 
     def __init__(self, db_path="", install_type="local") -> None:
         self.db_path = db_path
@@ -82,6 +86,11 @@ class Utility_Repository:
             Column("database", String),
             Column("installed", Boolean),
             Column("env_path", String),
+            Column("date", String),
+        )
+
+        self.engine.execute(
+            "CREATE TABLE IF NOT EXISTS software (name TEXT, path TEXT, database TEXT, installed BOOLEAN, env_path TEXT, date TEXT)"
         )
 
     def create_database_table(self):
@@ -92,13 +101,78 @@ class Utility_Repository:
             Column("path", String),
             Column("installed", Boolean),
             Column("software", String),
+            Column("date", String),
         )
 
+        self.engine.execute(
+            "CREATE TABLE IF NOT EXISTS database (name TEXT, path TEXT, installed BOOLEAN, software TEXT, date TEXT)"
+        )
+
+    def delete_tables(self):
+        self.delete_table("software")
+        self.delete_table("database")
+
+    def delete_table(self, table_name):
+        print("Deleting table: " + table_name)
+        self.engine.execute(f"DROP TABLE {table_name}")
+
+    def clear_tables(self):
+        self.clear_table("software")
+        self.clear_table("database")
+
+    def clear_table(self, table_name):
+        self.engine.execute(f"DELETE FROM {table_name}")
+
+    def print_table_schema(self, table_name):
+        print(self.engine.execute(f"PRAGMA table_info({table_name})").fetchall())
+
     def create_tables(self):
+        """
+        Create the tables
+        """
+
         self.create_software_table()
         self.create_database_table()
 
         self.metadata.create_all(self.engine)
+
+    def dump_software(self, directory: str):
+        """
+        Dump the software table to a tsv file
+        """
+
+        self.dump_table_tsv("software", directory)
+
+    def dump_database(self, directory: str):
+        """
+        Dump the database table to a tsv file
+        """
+
+        self.dump_table_tsv("database", directory)
+
+    def dump_tables(self, directory: str):
+        """
+        Dump the database & software tables to a tsv file
+        """
+
+        self.dump_table_tsv("software", directory)
+        self.dump_table_tsv("database", directory)
+
+    def dump_table_tsv(self, table_name: str, directory: str):
+        """
+        Dump a table to a tsv file
+        """
+
+        if table_name not in self.tables:
+            print(f"Table {table_name} not found. Available tables: {self.tables}")
+            return
+
+        if not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+
+        with open(os.path.join(directory, f"{table_name}.tsv"), "w") as f:
+            for row in self.engine.execute(f"SELECT * FROM {table_name}"):
+                f.write("\t".join([str(x) for x in row]) + "\n")
 
     def get_by_name(self, table_name, id):
         """
@@ -165,21 +239,22 @@ class Utility_Repository:
         else:
             return False
 
-    def add_software(self, item):
+    @abstractmethod
+    def add_software(self, item: software_item):
         """
         Add a record to a table
         """
 
         self.engine.execute(
-            f"INSERT INTO software (name, path, database, installed, env_path) VALUES ('{item.name}', '{item.path}', '{item.database}', '{item.installed}', '{item.env_path}')"
+            f"INSERT INTO software (name, path, database, installed, env_path, date) VALUES ('{item.name}', '{item.path}', '{item.database}', '{item.installed}', '{item.env_path}', '{item.date}')"
         )
 
     @abstractmethod
-    def add_database(self, item):
+    def add_database(self, item: database_item):
         """
         Add a record to a table
         """
 
         self.engine.execute(
-            f"INSERT INTO database (name, path, installed) VALUES ('{item.name}', '{item.path}', '{item.installed}')"
+            f"INSERT INTO database (name, path, installed, date) VALUES ('{item.name}', '{item.path}', '{item.installed}', '{item.date}')"
         )

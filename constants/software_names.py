@@ -492,7 +492,6 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV_A"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV_B"]
-    ]
 
 
     # default build

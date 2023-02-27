@@ -286,6 +286,7 @@ class Run_Main_from_Leaf:
             self.file_r2 = ""
 
         self.technology = input_data.sample.get_type_technology()
+        # self.technology = project.technology
         self.project_name = project.name
         self.date_created = project.creation_date
         self.date_modified = project.last_change_date

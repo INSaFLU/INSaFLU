@@ -187,9 +187,12 @@ class SoftwareNames(object):
     SOFTWARE_Pangolin_Env = ". {};".format(
         os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate")
     )
-    SOFTWARE_Pangolin = "pangolin"
+    # SOFTWARE_Pangolin = "pangolin"
+    SOFTWARE_Pangolin = "{}".format(
+        os.path.join(settings.DIR_SOFTWARE, "pangolin/pangolin.sh")
+    )    
     # SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
-    SOFTWARE_Pangolin_VERSION = "v4.0.6"  ## Version Name: pangolin
+    SOFTWARE_Pangolin_VERSION = "v4.2"  ## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
     SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"  ## Pangolin
     SOFTWARE_Pangolin_name_search_name = (
@@ -503,8 +506,8 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV_A"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV_B"]
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV (A)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV (B)"]
     ]
 
     # default build

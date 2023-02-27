@@ -46,13 +46,14 @@ class CollectExtraDatasetData(object):
         """
         """
 
+
+        dataset.is_processed = False
+        dataset.save()
+
         ### make it running 
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(user, process_controler.get_name_dataset(dataset), ProcessControler.FLAG_RUNNING)
-        
-        dataset.is_processed = False
-        dataset.save()
 
 
         ### set user globally
@@ -160,7 +161,7 @@ class CollectExtraDatasetData(object):
             ## collect sample table with plus type and subtype, mixed infection, equal to upload table
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_CSV, dataset)
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_TSV, dataset)      
-            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)       
+            self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_TSV, dataset)    
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV, dataset)
             ## Important, this need to be after DATASET_FILE_NAME_RESULT_NEXTSTRAIN_CSV
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_json, dataset)

@@ -432,15 +432,24 @@ class SoftwareNames(object):
     )
 
     ### Nextstrain
+    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/"
+    )
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh"
     )
+    SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
+    )    
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
     SOFTWARE_NEXTSTRAIN_RSV = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_rsv.sh"
+    )
+    SOFTWARE_NEXTSTRAIN_LABEL = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/flu-amd/LABEL"
     )
 
     ### Several types of builds for NEXTSTRAIN
@@ -455,6 +464,8 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y = "flu_h1n1pdm_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
+
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1 = "avianflu_h5n1"
 
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
@@ -478,6 +489,7 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,        
@@ -489,10 +501,11 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1, "Avian Influenza (H5N1 HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV_A"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV_B"]
-
+    ]
 
     # default build
     SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic

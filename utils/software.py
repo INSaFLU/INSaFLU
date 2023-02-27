@@ -4480,6 +4480,142 @@ class Software(object):
 
         return [tree_file, alignment_file, auspice_zip]
 
+
+    def run_nextstrain_avianflu(
+        self, alignments, metadata, strain="h5n1", cores=1
+    ):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  strain: flu strain (one of: h5n1, h5nx, h9n2, h7n9)
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "avian-flu"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        self.utils.copy_file(
+            alignments,
+            os.path.join(temp_dir, "data", "sequences_" + strain + "_ha.fasta"),
+        )
+        self.utils.copy_file(
+            metadata, os.path.join(temp_dir, "data", "metadata_" + strain + "_ha.tsv")
+        )
+
+        # Need to estimate clades of these new samples
+        if(strain == "h5n1"):
+            # remove some tmp data that may still be present...
+            cmd = "rm -R -f {}_RES/test_data/h5n1-new".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL)
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                # do not raise exception, hopefully the error is not fatal
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)         
+
+            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={}".format(
+                 temp_dir,  SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+                raise CmdException(
+                    message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+                )
+
+
+        # Now run Nextstrain
+        cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_ha.json".format(
+            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), strain
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            )
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(
+                temp_dir, "auspice", "flu_avian_" + strain + "_ha.json"
+            ),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/aligned_h3n2_ha_12y.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(
+                temp_dir, "results", "aligned_{}_ha.fasta".format(strain)
+            ),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
     def run_nextstrain_rsv(
         self, alignments, metadata, type="a", cores=1
     ):

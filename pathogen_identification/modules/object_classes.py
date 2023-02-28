@@ -580,8 +580,15 @@ class Read_class:
 
         current_reads = self.get_read_names_fastq()
 
+        print("current reads: %s" % len(current_reads))
+        print(current_reads[:10])
+        print(read_list[:10])
+
         read_list_to_keep = list(set(current_reads) - set(read_list))
+        print(read_list_to_keep[:10])
+
         print("reads to keep: %s" % len(read_list_to_keep))
+
         if len(read_list) > 0:
             self.read_filter_move(read_list_to_keep, self.depleted)
             self.is_depleted()
@@ -1110,7 +1117,7 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=7000, nbins=300):
+    def __init__(self, bedgraph_file, max_bars=700, nbins=300):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
@@ -1147,9 +1154,7 @@ class Bedgraph:
         Get the bar coordinates.
         """
         self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
-
-        self.bedgraph["x"] = self.bedgraph.start + self.bedgraph.end / 2
-        self.bedgraph["y"] = self.bedgraph.coverage
+        self.bedgraph["coord"] = (self.bedgraph.start + self.bedgraph.end) / 2
 
         return self.bedgraph
 
@@ -1177,14 +1182,15 @@ class Bedgraph:
         Bar to histogram.
         """
 
-        self.bedgraph["coord"] = (self.bedgraph.start + self.bedgraph.end) / 2
+        self.get_bar_coordinates()
+
         self.coverage = [
             [self.bedgraph.iloc[x]["coord"]] * self.bedgraph.iloc[x]["coverage"]
             for x in range(self.bedgraph.shape[0])
         ]
         self.coverage = list(it.chain.from_iterable(self.coverage))
 
-    def plot_coverage(self, output_file, borders=50, tlen=0):
+    def plot_coverage_hist(self, output_file, borders=50, tlen=0):
         """
         Plot the coverage of the remapping.
 
@@ -1220,6 +1226,49 @@ class Bedgraph:
         ax.cla()
         fig.clf()
         plt.close("all")
+
+    def plot_coverage_bar(self, output_file, borders=50, tlen=0):
+        """
+        Plot the coverage of the remapping.
+
+        :param coverage_file: The coverage file. bedgraph produced with samtools.
+        :param output_file: The output file.
+        """
+
+        fig, ax = plt.subplots(figsize=(11, 3))
+
+        if len(self.coverage) <= 1:
+            return
+
+        start_time = time.perf_counter()
+
+        ax.bar(
+            self.bedgraph.coord,
+            self.bedgraph.coverage,
+            width=self.bedgraph.width,
+            color="skyblue",
+            edgecolor="none",
+        )
+
+        ax.set_xlabel("Reference")
+        ax.set_ylabel("Coverage")
+
+        ##
+        xmax = self.bedgraph.end.max()
+        if tlen:
+            xmax = tlen
+        ax.set_xlim(0 - borders, xmax + borders)
+        ##
+
+        fig.savefig(output_file, bbox_inches="tight")
+        ax.cla()
+        fig.clf()
+        plt.close("all")
+
+    def plot_coverage(self, output_file, borders=50, tlen=0):
+
+        self.plot_coverage_bar(output_file, borders, tlen)
+        # self.plot_coverage_hist(output_file, borders, tlen)
 
 
 @dataclass

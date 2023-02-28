@@ -41,6 +41,19 @@ class RunMain:
     max_remap: int
     taxid_limit: int
 
+    ## directories.
+    root: str
+
+    input_reads_dir: str
+    filtered_reads_dir: str
+    depleted_reads_dir: str
+
+    log_dir: str
+
+    dir_classification: str = f"classification_reports"
+    dir_plots: str = f"plots"
+    igv_dir: str = f"igv"
+
     def __init__(self, config: dict, method_args: pd.DataFrame):
 
         self.sample_name = config["sample_name"]
@@ -136,6 +149,63 @@ class RunMain:
             self.prefix,
         )
 
+        ######## DIRECTORIES ########
+
+        self.deployment_root_dir = config["deployment_root_dir"]
+        self.substructure_dir = config["sub_directory"]
+        self.deployment_dir = os.path.join(
+            self.deployment_root_dir, self.substructure_dir
+        )
+
+        self.media_dir = os.path.join(
+            ConstantsSettings.media_directory, self.substructure_dir
+        )
+        self.static_dir = os.path.join(
+            ConstantsSettings.static_directory, self.substructure_dir
+        )
+
+        self.media_dir_logdir = os.path.join(
+            self.media_dir,
+            "logs",
+        )
+
+        ###
+
+        self.media_dir_classification = os.path.join(
+            self.media_dir,
+            self.dir_classification,
+        )
+
+        self.static_dir_plots = os.path.join(
+            self.substructure_dir,
+            self.dir_plots,
+        )
+
+        self.media_dir_igv = os.path.join(
+            self.static_dir,
+            self.igv_dir,
+        )
+
+        os.makedirs(
+            self.media_dir_classification,
+            exist_ok=True,
+        )
+
+        os.makedirs(
+            os.path.join(ConstantsSettings.static_directory, self.static_dir_plots),
+            exist_ok=True,
+        )
+
+        os.makedirs(
+            self.media_dir_igv,
+            exist_ok=True,
+        )
+
+        self.filtered_reads_dir = config["directories"][
+            CS.PIPELINE_NAME_read_quality_analysis
+        ]
+        self.log_dir = config["directories"]["log_dir"]
+
     def generate_targets(self):
         result_df = pd.DataFrame(columns=["qseqid", "taxid"])
         if self.taxid:
@@ -172,7 +242,18 @@ class RunMain:
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
-        self.remap_manager.run_mappings()
+        # self.remap_manager.run_mappings()
+        # self.remap_manager.merge_mapping_reports()
+        # self.remap_manager.collect_final_report_summary_statistics()
+
+        print("moving to : ", self.static_dir_plots)
+        print("moving to : ", self.media_dir_igv)
+
+        self.remap_manager.run_mappings_move_clean(
+            self.static_dir_plots, self.media_dir_igv
+        )
+        self.remap_manager.export_reference_fastas_if_failed(self.media_dir_igv)
+
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
@@ -215,14 +296,24 @@ class Input_Generator:
         self.reference = reference
         self.install_registry = Televir_Metadata
 
+        self.dir_branch = os.path.join(
+            ConstantsSettings.televir_subdirectory,
+            f"{reference.run.project.owner.pk}",
+            f"{reference.run.project.pk}",
+            f"{reference.run.sample.pk}",
+            "remapping",
+            f"{reference.pk}",
+        )
+
         self.technology = reference.run.project.technology
         self.threads = threads
         self.prefix = reference.accid
         self.project = reference.run.project.name
         self.clean = False
-        self.deployment_root_dir = os.path.join(output_dir, self.technology)
-        self.dir_branch = os.path.join(self.deployment_root_dir, self.prefix)
-        self.dir = self.dir_branch
+        self.deployment_root_dir = os.path.join(
+            output_dir, "remapping", f"ref_{reference.pk}"
+        )
+        self.dir = os.path.join(self.deployment_root_dir, self.dir_branch)
 
         os.makedirs(self.dir, exist_ok=True)
 
@@ -245,6 +336,7 @@ class Input_Generator:
         if not os.path.isfile(filepath):
             return ""
         rname = os.path.basename(filepath)
+
         new_rpath = os.path.join(self.dir, "reads") + "/" + rname
         shutil.copy(filepath, new_rpath)
         return new_rpath
@@ -286,7 +378,7 @@ class Input_Generator:
         }
 
         for dr, g in ConstantsSettings.DIRS.items():
-            self.config["directories"][dr] = os.path.join(self.dir_branch, g)
+            self.config["directories"][dr] = os.path.join(self.dir, g)
             os.makedirs(self.config["directories"][dr], exist_ok=True)
 
         self.config["r1"] = self.input_read_project_path(self.r1_path)

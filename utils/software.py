@@ -4521,16 +4521,35 @@ class Software(object):
             )
 
         # add sequences.fasta and metadata.tsv to data folder
-        self.utils.copy_file(
-            alignments,
-            os.path.join(temp_dir, "data", "sequences_" + strain + "_ha.fasta"),
-        )
-        self.utils.copy_file(
-            metadata, os.path.join(temp_dir, "data", "metadata_" + strain + "_ha.tsv")
-        )
+        genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
+        for gene in genes:
+            self.utils.copy_file(
+                alignments,
+                os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
+            )
+            self.utils.copy_file(
+                metadata, os.path.join(temp_dir, "data", "metadata_{}_{}.tsv".format(strain, gene))
+            )
+
 
         # Need to estimate clades of these new samples
         if(strain == "h5n1"):
+
+            # Now run Nextstrain for ha to get alignments
+            cmd = "cd {}; {} --cores {} auspice/flu_avian_h5n1_ha.json".format(
+                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores)
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)         
+
+            # Add this to see if it improves LABEL...
+            self.utils.copy_file(
+                os.path.join(temp_dir, "results", "aligned_h5n1_ha.fasta"),
+                os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta")
+            )
+
             # remove some tmp data that may still be present...
             cmd = "rm -R -f {}_RES/test_data/h5n1-new".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL)
             exit_status = os.system(cmd)
@@ -4546,22 +4565,27 @@ class Software(object):
             if exit_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
-                raise CmdException(
-                    message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
-                )
 
-
-        # Now run Nextstrain
-        cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_ha.json".format(
-            temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), strain
-        )
-        exit_status = os.system(cmd)
-        if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
-            raise CmdException(
-                message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+            # Reput the original file...
+            self.utils.copy_file(
+                alignments,
+                os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta"),
             )
+
+
+        for gene in genes:
+            # Now run Nextstrain (eventually cycle through the genes)
+            cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_{}.json".format(
+                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), strain, gene
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+                #raise CmdException(
+                #    message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
+                #)
+        
 
         tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
         # Convert json to tree

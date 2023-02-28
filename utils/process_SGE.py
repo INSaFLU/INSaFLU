@@ -815,8 +815,6 @@ class ProcessSGE(object):
             )
         ]
 
-        print(vect_command)
-
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge
@@ -829,7 +827,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            False,
+            True,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -859,6 +857,7 @@ class ProcessSGE(object):
                 out_dir,
             )
         ]
+
         self.logger_production.info("Processing: " + ";".join(vect_command))
         self.logger_debug.info("Processing: " + ";".join(vect_command))
         queue_name = user.profile.queue_name_sge

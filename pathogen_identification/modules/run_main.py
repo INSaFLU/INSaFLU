@@ -811,7 +811,9 @@ class RunMain_class(Run_Deployment_Methods):
         if self.depletion:
             self.deploy_HD()
 
-            print("depleted reads:", len(self.depletion_drone.classified_reads_list))
+            self.logger.info(
+                f"depleted reads: {len(self.depletion_drone.classified_reads_list)}"
+            )
 
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)

@@ -818,7 +818,8 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    self.software_names.get_abricate_parameters_mincov_30()
+                    #self.software_names.get_abricate_parameters_mincov_30()
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_20
                     + " for segments/references assignment",
                 )
             )
@@ -834,7 +835,8 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    self.software_names.get_abricate_parameters_mincov_30()
+                    #self.software_names.get_abricate_parameters_mincov_30()
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_20
                     + " for segments/references assignment",
                 )
             )
@@ -5004,7 +5006,7 @@ class Contigs2Sequences(object):
         software.run_abricate(
             database_name,
             file_name,
-            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_20,
             out_file,
         )
 

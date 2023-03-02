@@ -1267,8 +1267,8 @@ class Bedgraph:
 
     def plot_coverage(self, output_file, borders=50, tlen=0):
 
-        self.plot_coverage_bar(output_file, borders, tlen)
-        # self.plot_coverage_hist(output_file, borders, tlen)
+        # self.plot_coverage_bar(output_file, borders, tlen)
+        self.plot_coverage_hist(output_file, borders, tlen)
 
 
 @dataclass

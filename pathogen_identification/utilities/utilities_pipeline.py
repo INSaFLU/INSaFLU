@@ -259,6 +259,11 @@ class Utility_Pipeline_Manager:
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
+
+        if self.pipeline_makeup is None:
+            self.logger.info("No pipeline makeup found")
+            return False
+
         self.pipeline_order = pipe_makeup_manager.get_makeup(self.pipeline_makeup)
 
         self.existing_pipeline_order = [
@@ -268,6 +273,8 @@ class Utility_Pipeline_Manager:
         self.software_name_list = combined_table.software_name.unique().tolist()
 
         self.combined_table = combined_table
+
+        return True
 
     def process_combined_table(self, combined_table):
         """
@@ -850,6 +857,18 @@ class Parameter_DB_Utility:
             technology, user
         )
 
+        if parameters_table.shape[0] == 0 or software_table.shape[0] == 0:
+            return pd.DataFrame(
+                columns=[
+                    "software_id",
+                    "parameter_id",
+                    "technology",
+                    "can_change",
+                    "pipeline_step",
+                    "software_name",
+                ]
+            )
+
         return self.merge_software_tables(software_table, parameters_table)
 
     def generate_combined_parameters_table_project(
@@ -1221,6 +1240,42 @@ class Utils_Manager:
         else:
             raise Exception("No software tree for technology")
 
+    def check_pipeline_possible(self, combined_table: pd.DataFrame, tree_makeup: int):
+        """
+        Check if a pipeline is possible
+        """
+
+        pipeline_setup = Pipeline_Makeup()
+        makeup_steps = pipeline_setup.get_makeup(tree_makeup)
+
+        pipelines_available = combined_table.pipeline_step.unique().tolist()
+        pipelines_available = [x for x in pipelines_available if x in makeup_steps]
+        self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
+            pipelines_available
+        )
+
+        if not self.pipeline_makeup:
+            return False
+
+        return True
+
+    def check_any_pipeline_possible(self, technology: str, user: User):
+        """
+        Check if a pipeline is possible
+        """
+        pipeline_setup = Pipeline_Makeup()
+
+        combined_table = self.parameter_util.generate_combined_parameters_table(
+            technology, user
+        )
+
+        for makeup in pipeline_setup.get_makeup_list():
+
+            if self.check_pipeline_possible(combined_table, makeup):
+                return True
+
+        return False
+
     def generate_software_base_tree(self, technology, tree_makeup: int, user: User):
         """
         Generate a software tree for a technology and a tree makeup
@@ -1250,7 +1305,16 @@ class Utils_Manager:
             combined_table, software_db_dict=self.utility_manager.software_dbs_dict
         )
 
-        self.utility_manager.input(full_table, technology=technology)
+        input_success = self.utility_manager.input(full_table, technology=technology)
+
+        if not input_success:
+            return PipelineTree(
+                technology=technology,
+                nodes=[],
+                edges={},
+                leaves=[],
+                makeup=tree_makeup,
+            )
 
         pipeline_tree = self.utility_manager.generate_default_software_tree()
 
@@ -1284,7 +1348,16 @@ class Utils_Manager:
         )
 
         utility_drone = Utility_Pipeline_Manager()
-        utility_drone.input(combined_table, technology=technology)
+        input_success = utility_drone.input(combined_table, technology=technology)
+
+        if not input_success:
+            return PipelineTree(
+                technology=technology,
+                nodes=[],
+                edges={},
+                leaves=[],
+                makeup=0,
+            )
 
         self.logger.info("Generating project tree")
 
@@ -1298,7 +1371,10 @@ class Utils_Manager:
         """
         technology_trees = {}
         pipeline_makeup = Pipeline_Makeup()
+
         for technology in self.utility_technologies:
+            if not self.check_any_pipeline_possible(technology, user):
+                continue
             for makeup in pipeline_makeup.get_makeup_list():
 
                 technology_trees[technology] = self.generate_software_base_tree(

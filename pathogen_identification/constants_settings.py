@@ -99,7 +99,7 @@ class Pipeline_Makeup:
         self.MAKEUP = self.get_denpendencies_paths_dict()
 
     def get_makeup(self, makeup: int):
-        return self.MAKEUP[makeup]
+        return self.MAKEUP.get(makeup, None)
 
     def get_makeup_name(self, makeup: int):
         return self.MAKEUP[makeup][0]

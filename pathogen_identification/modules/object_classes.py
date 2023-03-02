@@ -1117,12 +1117,10 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=700, nbins=300):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=700):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
-        self.reduce_number_bars()
-        self.bar_to_histogram()
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:
         coverage = pd.read_csv(coverage_file, sep="\t", header=None).rename(
@@ -1158,74 +1156,63 @@ class Bedgraph:
 
         return self.bedgraph
 
+    def standardize_bedgraph_mean(self):
+        """ """
+        chromosome = self.bedgraph.read_id.unique()[0]
+        new_bed_range = [0, max(self.bedgraph.end)]
+        new_bed_bins = np.linspace(new_bed_range[0], new_bed_range[1], self.nbins)
+        new_bed_coordinates = [
+            [chromosome, int(x), int(y)]
+            for x, y in zip(new_bed_bins[:-1], new_bed_bins[1:])
+        ]
+        new_bed_coordinates = pd.DataFrame(
+            new_bed_coordinates, columns=["read_id", "start", "end"]
+        )
+
+        def new_coordinates(x):
+            """ """
+            average_bedgraph = self.bedgraph[
+                (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
+            ].coverage.mean()
+            return average_bedgraph
+
+        new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
+            new_coordinates, axis=1
+        )
+        new_bed_coordinates.fillna(0, inplace=True)
+        new_bed_coordinates["coverage"] = new_bed_coordinates.coverage.astype(int)
+        new_bed_coordinates["coord"] = (
+            new_bed_coordinates.start + new_bed_coordinates.end
+        ) / 2
+        new_bed_coordinates["width"] = (
+            new_bed_coordinates.end - new_bed_coordinates.start
+        )
+
+        return new_bed_coordinates
+
     def reduce_number_bars(self):
         """
         Reduce the number of bars.
         """
-        self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
+        new_bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
-        if self.bedgraph.shape[0] > self.max_bars:
+        if new_bedgraph.shape[0] > self.max_bars:
 
-            self.bedgraph = self.bedgraph.sample(self.max_bars)
+            new_bedgraph = new_bedgraph.sample(self.max_bars)
 
-    def merge_bedgraph_rows(self):
+        new_bedgraph = self.merge_bedgraph_rows(new_bedgraph)
+
+    @staticmethod
+    def merge_bedgraph_rows(bedgraph):
         """
         Merge the rows of the bedgraph.
         """
 
-        for ix in range(1, self.bedgraph.shape[0]):
-            if self.bedgraph.iloc[ix - 1].end < (self.bedgraph.iloc[ix].start - 1):
-                self.bedgraph.iloc[ix].end = self.bedgraph.iloc[ix].start - 1
+        for ix in range(1, bedgraph.shape[0]):
+            if bedgraph.iloc[ix - 1].end < (bedgraph.iloc[ix].start - 1):
+                bedgraph.iloc[ix].end = bedgraph.iloc[ix].start - 1
 
-    def bar_to_histogram(self):
-        """
-        Bar to histogram.
-        """
-
-        self.get_bar_coordinates()
-
-        self.coverage = [
-            [self.bedgraph.iloc[x]["coord"]] * self.bedgraph.iloc[x]["coverage"]
-            for x in range(self.bedgraph.shape[0])
-        ]
-        self.coverage = list(it.chain.from_iterable(self.coverage))
-
-    def plot_coverage_hist(self, output_file, borders=50, tlen=0):
-        """
-        Plot the coverage of the remapping.
-
-        :param coverage_file: The coverage file. bedgraph produced with samtools.
-        :param output_file: The output file.
-        """
-
-        fig, ax = plt.subplots(figsize=(11, 3))
-
-        if len(self.coverage) <= 1:
-            return
-
-        start_time = time.perf_counter()
-
-        ax.hist(
-            self.coverage,
-            bins=self.nbins,
-            color="skyblue",
-            edgecolor="none",
-        )
-
-        ax.set_xlabel("Reference")
-        ax.set_ylabel("Coverage")
-
-        ##
-        xmax = self.bedgraph.end.max()
-        if tlen:
-            xmax = tlen
-        ax.set_xlim(0 - borders, xmax + borders)
-        ##
-
-        fig.savefig(output_file, bbox_inches="tight")
-        ax.cla()
-        fig.clf()
-        plt.close("all")
+        return bedgraph
 
     def plot_coverage_bar(self, output_file, borders=50, tlen=0):
         """
@@ -1235,17 +1222,19 @@ class Bedgraph:
         :param output_file: The output file.
         """
 
+        new_bedgraph = self.standardize_bedgraph_mean()
+
         fig, ax = plt.subplots(figsize=(11, 3))
 
-        if len(self.coverage) <= 1:
+        if len(new_bedgraph.shape) <= 1:
             return
 
         start_time = time.perf_counter()
 
         ax.bar(
-            self.bedgraph.coord,
-            self.bedgraph.coverage,
-            width=self.bedgraph.width,
+            new_bedgraph.coord,
+            new_bedgraph.coverage,
+            width=new_bedgraph.width,
             color="skyblue",
             edgecolor="none",
         )
@@ -1254,21 +1243,20 @@ class Bedgraph:
         ax.set_ylabel("Coverage")
 
         ##
-        xmax = self.bedgraph.end.max()
+        xmax = new_bedgraph.end.max()
         if tlen:
             xmax = tlen
         ax.set_xlim(0 - borders, xmax + borders)
         ##
-
         fig.savefig(output_file, bbox_inches="tight")
+
         ax.cla()
         fig.clf()
         plt.close("all")
 
     def plot_coverage(self, output_file, borders=50, tlen=0):
 
-        # self.plot_coverage_bar(output_file, borders, tlen)
-        self.plot_coverage_hist(output_file, borders, tlen)
+        self.plot_coverage_bar(output_file, borders, tlen)
 
 
 @dataclass

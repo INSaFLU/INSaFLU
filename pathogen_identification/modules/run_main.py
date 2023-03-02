@@ -94,9 +94,9 @@ class RunDetail_main:
 
     log_dir: str
 
-    dir_classification: str = f"classification_reports"
-    dir_plots: str = f"plots"
-    igv_dir: str = f"igv"
+    dir_classification: str = "classification_reports"
+    dir_plots: str = "plots"
+    igv_dir: str = "igv"
 
     ## output content
     report: pd.DataFrame

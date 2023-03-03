@@ -413,8 +413,12 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='vic') 
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_flu(alignments=sequences_file, metadata=metadata_file, strain='yam')
-        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1):
-            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1')               
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='ha')               
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='na')   
+        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2):
+            tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_avianflu(alignments=sequences_file, metadata=metadata_file, strain='h5n1', gene='pb2')                           
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='a')
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b):

@@ -1144,7 +1144,9 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2: "",                        
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a: Reference.SPECIES_RSV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b: Reference.SPECIES_RSV

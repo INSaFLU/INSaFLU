@@ -4484,7 +4484,7 @@ class Software(object):
 
 
     def run_nextstrain_avianflu(
-        self, alignments, metadata, strain="h5n1", cores=1
+        self, alignments, metadata, strain="h5n1", gene='ha', cores=1
     ):
         """
         run nextstrain
@@ -4523,8 +4523,13 @@ class Software(object):
             )
 
         # add sequences.fasta and metadata.tsv to data folder
-        genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
+        genes = ["ha"]
+        if(gene != 'ha'):
+            genes = ["ha",gene]
+
+        #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
         for gene in genes:
+            print(gene)
             self.utils.copy_file(
                 alignments,
                 os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
@@ -4568,13 +4573,23 @@ class Software(object):
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
 
+            cmd = "rm -R -f {} {} {}".format(os.path.join(temp_dir, ".snakemake"),
+                                             os.path.join(temp_dir, "results"), 
+                                             os.path.join(temp_dir, "auspice"))
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+
             # Reput the original file...
-            self.utils.copy_file(
-                alignments,
-                os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta"),
-            )
+            if(gene == 'ha'):
+                self.utils.copy_file(
+                    alignments,
+                    os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta"),
+                )
 
-
+        # just do this one now...
+        genes = [gene]
         for gene in genes:
             # Now run Nextstrain (eventually cycle through the genes)
             cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_{}.json".format(
@@ -4584,10 +4599,7 @@ class Software(object):
             if exit_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
-                #raise CmdException(
-                #    message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
-                #)
-        
+       
 
         tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
         # Convert json to tree

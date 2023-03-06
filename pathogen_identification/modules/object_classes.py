@@ -1117,7 +1117,7 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=1000, nbins=700):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=500):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
@@ -1137,24 +1137,40 @@ class Bedgraph:
         """
         self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
 
-    def get_coverage_array(self, coverage: pd.DataFrame) -> np.ndarray:
+    def get_coverage_array(self, new_bed_coordinates: pd.DataFrame) -> np.ndarray:
         """
         Get the coverage of the remapping.
 
         :param coverage_file: The coverage file.
         """
-        coverage_values = np.array(coverage.coverage.to_list())
 
-        return coverage_values
+        def new_coordinates(x):
+            """ """
+            average_bedgraph = self.bedgraph[
+                (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
+            ].coverage.mean()
+            return average_bedgraph
 
-    def get_bar_coordinates(self):
+        new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
+            new_coordinates, axis=1
+        )
+        new_bed_coordinates.fillna(0, inplace=True)
+
+        return new_bed_coordinates
+
+    @staticmethod
+    def get_bar_coordinates(new_bed_coordinates: pd.DataFrame):
         """
         Get the bar coordinates.
         """
-        self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
-        self.bedgraph["coord"] = (self.bedgraph.start + self.bedgraph.end) / 2
+        new_bed_coordinates["width"] = (
+            new_bed_coordinates.end - new_bed_coordinates.start
+        )
+        new_bed_coordinates["coord"] = (
+            new_bed_coordinates.start + new_bed_coordinates.end
+        ) / 2
 
-        return self.bedgraph
+        return new_bed_coordinates
 
     def standardize_bedgraph_mean(self):
         """ """
@@ -1168,25 +1184,8 @@ class Bedgraph:
         new_bed_coordinates = pd.DataFrame(
             new_bed_coordinates, columns=["read_id", "start", "end"]
         )
-
-        def new_coordinates(x):
-            """ """
-            average_bedgraph = self.bedgraph[
-                (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
-            ].coverage.mean()
-            return average_bedgraph
-
-        new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
-            new_coordinates, axis=1
-        )
-        new_bed_coordinates.fillna(0, inplace=True)
-        new_bed_coordinates["coverage"] = new_bed_coordinates.coverage.astype(int)
-        new_bed_coordinates["coord"] = (
-            new_bed_coordinates.start + new_bed_coordinates.end
-        ) / 2
-        new_bed_coordinates["width"] = (
-            new_bed_coordinates.end - new_bed_coordinates.start
-        )
+        new_bed_coordinates = self.get_coverage_array(new_bed_coordinates)
+        new_bed_coordinates = self.get_bar_coordinates(new_bed_coordinates)
 
         return new_bed_coordinates
 
@@ -1229,8 +1228,6 @@ class Bedgraph:
         if len(new_bedgraph.shape) <= 1:
             return
 
-        start_time = time.perf_counter()
-
         ax.bar(
             new_bedgraph.coord,
             new_bedgraph.coverage,
@@ -1248,6 +1245,7 @@ class Bedgraph:
             xmax = tlen
         ax.set_xlim(0 - borders, xmax + borders)
         ##
+        # plt.show()
         fig.savefig(output_file, bbox_inches="tight")
 
         ax.cla()

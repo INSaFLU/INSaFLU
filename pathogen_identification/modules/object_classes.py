@@ -1121,6 +1121,8 @@ class Bedgraph:
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
+        if self.bedgraph.end.max() <= 500:
+            self.nbins = int(self.bedgraph.end.max())
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:
         coverage = pd.read_csv(coverage_file, sep="\t", header=None).rename(
@@ -1148,8 +1150,23 @@ class Bedgraph:
             """ """
             average_bedgraph = self.bedgraph[
                 (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
-            ].coverage.mean()
-            return average_bedgraph
+            ]
+
+            average_bedgraph.iloc[0]["start"] = x.start
+            average_bedgraph.iloc[average_bedgraph.shape[0] - 1]["end"] = x.end
+
+            if "width" not in average_bedgraph.columns:
+                average_bedgraph["width"] = (
+                    average_bedgraph.end - average_bedgraph.start
+                )
+
+            average_bedgraph["coverage"] = (
+                average_bedgraph.coverage * average_bedgraph.width
+            )
+
+            coverage = average_bedgraph.coverage.sum() / (x.end - x.start)
+
+            return coverage
 
         new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
             new_coordinates, axis=1
@@ -1228,6 +1245,8 @@ class Bedgraph:
         if len(new_bedgraph.shape) <= 1:
             return
 
+        start_time = time.perf_counter()
+
         ax.bar(
             new_bedgraph.coord,
             new_bedgraph.coverage,
@@ -1236,8 +1255,8 @@ class Bedgraph:
             edgecolor="none",
         )
 
-        ax.set_xlabel("Reference")
-        ax.set_ylabel("Coverage")
+        ax.set_xlabel("Reference", fontsize=9)
+        ax.set_ylabel(f"Coverage ({self.nbins} windows)", fontsize=9)
 
         ##
         xmax = new_bedgraph.end.max()
@@ -1245,8 +1264,20 @@ class Bedgraph:
             xmax = tlen
         ax.set_xlim(0 - borders, xmax + borders)
         ##
-        # plt.show()
-        fig.savefig(output_file, bbox_inches="tight")
+
+        # fig.savefig(output_file, bbox_inches="tight")
+        plt.text(
+            0.05,
+            0.9,
+            f"Bar width: {round((new_bedgraph.end.max() - new_bedgraph.start.min()) / self.nbins)} bp",
+            horizontalalignment="left",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            in_layout=True,
+            backgroundcolor="white",
+            fontsize=9,
+        )
+        plt.show()
 
         ax.cla()
         fig.clf()

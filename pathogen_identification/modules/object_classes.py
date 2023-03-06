@@ -29,7 +29,7 @@ class Temp_File:
     Temporary file.
     """
 
-    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ""):
+    def __init__(self, temp_dir: str, prefix: str = "temp", suffix: str = ".txt"):
         """
         Initialize.
         """
@@ -38,24 +38,31 @@ class Temp_File:
         self.prefix = prefix
         self.suffix = suffix
 
-        self.temp_file = os.path.join(
+        self.path = os.path.join(
             self.temp_dir, f"{self.prefix}_{randint(1000000, 9999999)}{self.suffix}"
         )
+        self.file = os.path.basename(self.path)
 
     def __enter__(self):
         """
         Enter.
         """
 
-        return self.temp_file
+        open(self.path, "w").close()
+        return self.path
 
-    def __exit__(self):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_value: BaseException,
+        traceback,
+    ):
         """
         Exit.
         """
 
-        if os.path.exists(self.temp_file):
-            os.remove(self.temp_file)
+        if os.path.exists(self.path):
+            os.remove(self.path)
 
 
 class Operation_Temp_Files:
@@ -238,11 +245,8 @@ class RunCMD:
         out, err = proc_prep.communicate()
 
         if isinstance(out, bytes):
-            out = out.decode("utf-8")
+            out = out.decode("utf-8", errors="ignore")
 
-        if isinstance(err, bytes):
-            err = err.decode("utf-8")
-        #
         exec_time = time.perf_counter() - start_time
 
         return out, err, exec_time
@@ -304,6 +308,7 @@ class RunCMD:
             cmd = " ".join(cmd)
 
         self.logger.info(f"running: {self.bin}{cmd}")
+        print(f"running: {self.bin}{cmd}")
 
         cmd_string = self.bash_software_cmd_string(cmd)
         out, err, exec_time = self.system_deploy(cmd_string)
@@ -460,7 +465,7 @@ class Read_class:
 
         self.filepath = filepath
         self.current = filepath
-        self.prefix = self.determine_read_name(filepath)
+        self.prefix = self.determine_file_name(filepath)
         self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
@@ -476,22 +481,29 @@ class Read_class:
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
         self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
 
-    def get_read_names_fastq(self, filepath):
+    def get_read_names_fastq(self):
         """
         Get read names from fastq file.
         """
+        filepath = self.current
 
         read_names = []
+        counter = 0
 
         if self.exists:
             with gzip.open(filepath, "rt") as f:
                 for line in f:
-                    if line.startswith("@"):
+                    if counter == 0:
                         read_names.append(line.split()[0][1:])
+
+                    counter += 1
+
+                    if counter == 4:
+                        counter = 0
 
         return read_names
 
-    def determine_read_name(self, filepath):
+    def determine_file_name(self, filepath):
 
         if not self.exists:
             return "none"
@@ -507,36 +519,36 @@ class Read_class:
 
         return filename
 
-    def read_filter_move(self, input: str, read_list: list, output: str = ""):
+    def read_filter_move(self, read_list: list, output: str = ""):
 
         if not self.exists:
             return
 
-        temp_reads_keep = os.path.join(
-            os.path.dirname(output), f"keep_temp_{randint(1,1999)}.lst"
-        )
-        with open(temp_reads_keep, "w") as f:
-            f.write("\n".join(read_list))
+        temp_file = Temp_File(os.path.dirname(output), suffix=".lst")
 
-        self.read_filter(input, output, temp_reads_keep)
+        with temp_file as tpf:
 
-        # os.remove(temp_reads_keep)
+            with open(tpf, "w") as f:
+                f.write("\n".join(read_list))
 
-    def read_filter_inplace(self, input: str, read_list: str):
+            self.read_filter(output, tpf)
+
+    def read_filter_inplace(self, read_list: str):
 
         if not self.exists:
             return
 
-        output_dir = os.path.dirname(input)
+        output_dir = os.path.dirname(self.current)
+
         tempreads = os.path.join(output_dir, f"temp_{randint(1,1999)}.fq.gz")
 
-        self.read_filter(input, tempreads, read_list)
+        self.read_filter(tempreads, read_list)
 
-        if os.path.isfile(tempreads) and os.path.getsize(tempreads):
-            os.remove(input)
-            os.rename(tempreads, input)
+        if os.path.isfile(tempreads) and os.path.getsize(tempreads) > 100:
+            os.remove(self.current)
+            os.rename(tempreads, self.current)
 
-    def read_filter(self, input: str, output: str, read_list: str):
+    def read_filter(self, output: str, read_list: str):
         """
         filter read file using exisiting lsit of reads.
         Args:
@@ -548,7 +560,7 @@ class Read_class:
         if not self.exists:
             return
 
-        cmd = "seqtk subseq %s %s | gzip > %s" % (input, read_list, output)
+        cmd = "seqtk subseq %s %s | gzip > %s" % (self.current, read_list, output)
 
         self.cmd.run(cmd)
 
@@ -558,7 +570,7 @@ class Read_class:
         """
 
         if len(read_list) > 0:
-            self.read_filter_move(self.current, read_list, self.enriched)
+            self.read_filter_move(read_list, self.enriched)
             self.is_enriched()
 
     def deplete(self, read_list):
@@ -566,12 +578,19 @@ class Read_class:
         filter reads and aset current status to depleted.
         """
 
-        current_reads = self.get_read_names_fastq(self.current)
+        current_reads = self.get_read_names_fastq()
+
+        print("current reads: %s" % len(current_reads))
+        print(current_reads[:10])
+        print(read_list[:10])
 
         read_list_to_keep = list(set(current_reads) - set(read_list))
+        print(read_list_to_keep[:10])
+
         print("reads to keep: %s" % len(read_list_to_keep))
+
         if len(read_list) > 0:
-            self.read_filter_move(self.current, read_list_to_keep, self.depleted)
+            self.read_filter_move(read_list_to_keep, self.depleted)
             self.is_depleted()
 
     def is_clean(self):
@@ -898,7 +917,7 @@ class Sample_runClass:
             )
             return
 
-        self.r1.read_filter_inplace(self.r1.current, unique_reads)
+        self.r1.read_filter_inplace(unique_reads)
 
     def clean_unique_PE(self):
 
@@ -914,8 +933,8 @@ class Sample_runClass:
         if os.path.getsize(common_reads) == 0:
             return
 
-        self.r1.read_filter_inplace(self.r1.current, common_reads)
-        self.r2.read_filter_inplace(self.r2.current, common_reads)
+        self.r1.read_filter_inplace(common_reads)
+        self.r2.read_filter_inplace(common_reads)
 
     def trimmomatic_sort(self):
         if self.type == "SE":
@@ -1098,12 +1117,12 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=7000, nbins=300):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=500):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
-        self.reduce_number_bars()
-        self.bar_to_histogram()
+        if self.bedgraph.end.max() <= 500:
+            self.nbins = int(self.bedgraph.end.max())
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:
         coverage = pd.read_csv(coverage_file, sep="\t", header=None).rename(
@@ -1120,59 +1139,98 @@ class Bedgraph:
         """
         self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
 
-    def get_coverage_array(self, coverage: pd.DataFrame) -> np.ndarray:
+    def get_coverage_array(self, new_bed_coordinates: pd.DataFrame) -> np.ndarray:
         """
         Get the coverage of the remapping.
 
         :param coverage_file: The coverage file.
         """
-        coverage_values = np.array(coverage.coverage.to_list())
 
-        return coverage_values
+        def new_coordinates(x):
+            """ """
+            average_bedgraph = self.bedgraph[
+                (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
+            ]
 
-    def get_bar_coordinates(self):
+            average_bedgraph.iloc[0]["start"] = x.start
+            average_bedgraph.iloc[average_bedgraph.shape[0] - 1]["end"] = x.end
+
+            if "width" not in average_bedgraph.columns:
+                average_bedgraph["width"] = (
+                    average_bedgraph.end - average_bedgraph.start
+                )
+
+            average_bedgraph["coverage"] = (
+                average_bedgraph.coverage * average_bedgraph.width
+            )
+
+            coverage = average_bedgraph.coverage.sum() / (x.end - x.start)
+
+            return coverage
+
+        new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
+            new_coordinates, axis=1
+        )
+        new_bed_coordinates.fillna(0, inplace=True)
+
+        return new_bed_coordinates
+
+    @staticmethod
+    def get_bar_coordinates(new_bed_coordinates: pd.DataFrame):
         """
         Get the bar coordinates.
         """
-        self.bedgraph["width"] = self.bedgraph.end - self.bedgraph.start
+        new_bed_coordinates["width"] = (
+            new_bed_coordinates.end - new_bed_coordinates.start
+        )
+        new_bed_coordinates["coord"] = (
+            new_bed_coordinates.start + new_bed_coordinates.end
+        ) / 2
 
-        self.bedgraph["x"] = self.bedgraph.start + self.bedgraph.end / 2
-        self.bedgraph["y"] = self.bedgraph.coverage
+        return new_bed_coordinates
 
-        return self.bedgraph
+    def standardize_bedgraph_mean(self):
+        """ """
+        chromosome = self.bedgraph.read_id.unique()[0]
+        new_bed_range = [0, max(self.bedgraph.end)]
+        new_bed_bins = np.linspace(new_bed_range[0], new_bed_range[1], self.nbins)
+        new_bed_coordinates = [
+            [chromosome, int(x), int(y)]
+            for x, y in zip(new_bed_bins[:-1], new_bed_bins[1:])
+        ]
+        new_bed_coordinates = pd.DataFrame(
+            new_bed_coordinates, columns=["read_id", "start", "end"]
+        )
+        new_bed_coordinates = self.get_coverage_array(new_bed_coordinates)
+        new_bed_coordinates = self.get_bar_coordinates(new_bed_coordinates)
+
+        return new_bed_coordinates
 
     def reduce_number_bars(self):
         """
         Reduce the number of bars.
         """
-        self.bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
+        new_bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
-        if self.bedgraph.shape[0] > self.max_bars:
+        if new_bedgraph.shape[0] > self.max_bars:
 
-            self.bedgraph = self.bedgraph.sample(self.max_bars)
+            new_bedgraph = new_bedgraph.sample(self.max_bars)
 
-    def merge_bedgraph_rows(self):
+        new_bedgraph = self.merge_bedgraph_rows(new_bedgraph)
+
+    @staticmethod
+    def merge_bedgraph_rows(bedgraph):
         """
         Merge the rows of the bedgraph.
         """
 
-        for ix in range(1, self.bedgraph.shape[0]):
-            if self.bedgraph.iloc[ix - 1].end < (self.bedgraph.iloc[ix].start - 1):
-                self.bedgraph.iloc[ix].end = self.bedgraph.iloc[ix].start - 1
+        for ix in range(1, bedgraph.shape[0]):
+            if bedgraph.iloc[ix - 1].end < (bedgraph.iloc[ix].start - 1):
+                bedgraph.iloc[ix].end = bedgraph.iloc[ix].start - 1
 
-    def bar_to_histogram(self):
-        """
-        Bar to histogram.
-        """
+        return bedgraph
 
-        self.bedgraph["coord"] = (self.bedgraph.start + self.bedgraph.end) / 2
-        self.coverage = [
-            [self.bedgraph.iloc[x]["coord"]] * self.bedgraph.iloc[x]["coverage"]
-            for x in range(self.bedgraph.shape[0])
-        ]
-        self.coverage = list(it.chain.from_iterable(self.coverage))
-
-    def plot_coverage(self, output_file, borders=50, tlen=0):
+    def plot_coverage_bar(self, output_file, borders=50, tlen=0):
         """
         Plot the coverage of the remapping.
 
@@ -1180,34 +1238,54 @@ class Bedgraph:
         :param output_file: The output file.
         """
 
+        new_bedgraph = self.standardize_bedgraph_mean()
+
         fig, ax = plt.subplots(figsize=(11, 3))
 
-        if len(self.coverage) <= 1:
+        if len(new_bedgraph.shape) <= 1:
             return
 
         start_time = time.perf_counter()
 
-        ax.hist(
-            self.coverage,
-            bins=self.nbins,
+        ax.bar(
+            new_bedgraph.coord,
+            new_bedgraph.coverage,
+            width=new_bedgraph.width,
             color="skyblue",
             edgecolor="none",
         )
 
-        ax.set_xlabel("Reference")
-        ax.set_ylabel("Coverage")
+        ax.set_xlabel("Reference", fontsize=9)
+        ax.set_ylabel(f"Coverage ({self.nbins} windows)", fontsize=9)
 
         ##
-        xmax = self.bedgraph.end.max()
+        xmax = new_bedgraph.end.max()
         if tlen:
             xmax = tlen
         ax.set_xlim(0 - borders, xmax + borders)
         ##
 
-        fig.savefig(output_file, bbox_inches="tight")
+        # fig.savefig(output_file, bbox_inches="tight")
+        plt.text(
+            0.05,
+            0.9,
+            f"Bar width: {round((new_bedgraph.end.max() - new_bedgraph.start.min()) / self.nbins)} bp",
+            horizontalalignment="left",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            in_layout=True,
+            backgroundcolor="white",
+            fontsize=9,
+        )
+        plt.show()
+
         ax.cla()
         fig.clf()
         plt.close("all")
+
+    def plot_coverage(self, output_file, borders=50, tlen=0):
+
+        self.plot_coverage_bar(output_file, borders, tlen)
 
 
 @dataclass

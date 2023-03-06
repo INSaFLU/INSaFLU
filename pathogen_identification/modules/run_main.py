@@ -94,9 +94,9 @@ class RunDetail_main:
 
     log_dir: str
 
-    dir_classification: str = f"classification_reports"
-    dir_plots: str = f"plots"
-    igv_dir: str = f"igv"
+    dir_classification: str = "classification_reports"
+    dir_plots: str = "plots"
+    igv_dir: str = "igv"
 
     ## output content
     report: pd.DataFrame
@@ -811,7 +811,9 @@ class RunMain_class(Run_Deployment_Methods):
         if self.depletion:
             self.deploy_HD()
 
-            print("depleted reads:", len(self.depletion_drone.classified_reads_list))
+            self.logger.info(
+                f"depleted reads: {len(self.depletion_drone.classified_reads_list)}"
+            )
 
             self.sample.r1.deplete(self.depletion_drone.classified_reads_list)
             self.sample.r2.deplete(self.depletion_drone.classified_reads_list)

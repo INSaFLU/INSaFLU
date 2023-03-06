@@ -4,7 +4,10 @@ from datetime import date
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+
 from settings.default_software import DefaultSoftware
+
+from settings.models import Software
 
 
 class Command(BaseCommand):
@@ -20,3 +23,6 @@ class Command(BaseCommand):
         utils.generate_default_trees(user_system)
 
         default_software.remove_all_parameters(user_system)
+
+        # users = User.objects.all()
+        # default_software.reset_user_software(users)

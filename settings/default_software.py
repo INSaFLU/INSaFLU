@@ -39,6 +39,76 @@ class DefaultSoftware(object):
         with LockedAtomicTransaction(Software):
             user_software.delete()
 
+    def remove_all_software(self, user):
+        """remove all software"""
+        user_software = Software.objects.filter(owner=user)
+        with LockedAtomicTransaction(Software):
+            user_software.delete()
+
+    def remove_all_televir_global_software(self, user):
+        """remove all software"""
+        user_software = Software.objects.filter(
+            owner=user, type_of_use=Software.TYPE_OF_USE_televir_global
+        )
+        with LockedAtomicTransaction(Software):
+            user_software.delete()
+
+    def remove_all_televir_global_Parameters(self, user):
+        """remove all software"""
+        user_parameter = Parameter.objects.filter(
+            software__type_of_use=Software.TYPE_OF_USE_televir_global,
+            software__owner=user,
+        )
+        with LockedAtomicTransaction(Parameter):
+            user_parameter.delete()
+
+    def remove_all_televir_project_Parameters(self, user):
+
+        user_project_parameter = Parameter.objects.filter(
+            software__type_of_use=Software.TYPE_OF_USE_televir_project,
+            software__owner=user,
+        )
+        with LockedAtomicTransaction(Parameter):
+            user_project_parameter.delete()
+
+    def remove_all_televir_project_software(self, user):
+        """remove all software"""
+        user_software = Software.objects.filter(
+            owner=user, type_of_use=Software.TYPE_OF_USE_televir_project
+        )
+        with LockedAtomicTransaction(Software):
+            user_software.delete()
+
+    def remove_all_televir_global(self, user):
+        """remove all software"""
+        self.remove_all_televir_global_Parameters(user)
+        self.remove_all_televir_global_software(user)
+
+    def remove_all_televir_project(self, user):
+        """remove all software"""
+        self.remove_all_televir_project_Parameters(user)
+        self.remove_all_televir_project_software(user)
+
+    def remove_all_televir_software(self, user):
+        """remove all software"""
+        self.remove_all_televir_global(user)
+        self.remove_all_televir_project(user)
+
+    def reset_user_software(self, users):
+        """
+        for every user given, if has been active, remove all televir software and add the default televir software.
+        Including the default parameters.
+        Including Project software and Project parameters -> everything is reset.
+        """
+
+        for user in users:
+            global_software = Software.objects.filter(
+                type_of_use=Software.TYPE_OF_USE_televir_global
+            )
+            if global_software.exists():
+                self.remove_all_televir_software(user)
+                self.test_all_defaults_pathogen_identification(user)
+
     def test_all_defaults(self, user):
 
         ### test all defaults

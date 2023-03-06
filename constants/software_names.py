@@ -69,6 +69,7 @@ class SoftwareNames(object):
     SOFTWARE_ABRICATE_VERSION = "0.8-dev"
     SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
     SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
+    SOFTWARE_ABRICATE_PARAMETERS_mincov_20 = "--minid 70 --mincov 20"
     SOFTWARE_FASTQ_name = "FastQC"
     SOFTWARE_FASTQ_VERSION = "0.11.9"
     SOFTWARE_FASTQ_PARAMETERS = ""
@@ -187,9 +188,12 @@ class SoftwareNames(object):
     SOFTWARE_Pangolin_Env = ". {};".format(
         os.path.join(settings.DIR_SOFTWARE, "pangolin/bin/activate")
     )
-    SOFTWARE_Pangolin = "pangolin"
+    # SOFTWARE_Pangolin = "pangolin"
+    SOFTWARE_Pangolin = "{}".format(
+        os.path.join(settings.DIR_SOFTWARE, "pangolin/pangolin.sh")
+    )    
     # SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
-    SOFTWARE_Pangolin_VERSION = "v4.0.6"  ## Version Name: pangolin
+    SOFTWARE_Pangolin_VERSION = "v4.2"  ## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
     SOFTWARE_Pangolin_analysis_mode = "Analysis mode (Pangolin)"  ## Pangolin
     SOFTWARE_Pangolin_name_search_name = (
@@ -432,15 +436,24 @@ class SoftwareNames(object):
     )
 
     ### Nextstrain
+    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/"
+    )
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh"
     )
+    SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
+    )    
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
     SOFTWARE_NEXTSTRAIN_RSV = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_rsv.sh"
+    )
+    SOFTWARE_NEXTSTRAIN_LABEL = os.path.join(
+        settings.DIR_SOFTWARE, "nextstrain/flu-amd/LABEL"
     )
 
     ### Several types of builds for NEXTSTRAIN
@@ -456,11 +469,21 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y = "flu_vic_12y"
     SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y = "flu_yam_12y"
 
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha = "avianflu_h5n1_ha"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na = "avianflu_h5n1_na"
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 = "avianflu_h5n1_pb2"
+
     SOFTWARE_NEXTSTRAIN_BUILDS_flu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
+    ]
+    
+    SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -478,6 +501,9 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,        
@@ -489,11 +515,13 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "Monkeypox"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV_A"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV_B"]
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],                
+        [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV (A)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV (B)"]
     ]
-
 
     # default build
     SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic

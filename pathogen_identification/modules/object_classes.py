@@ -1117,7 +1117,7 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=1000, nbins=500):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=700):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
@@ -1148,8 +1148,23 @@ class Bedgraph:
             """ """
             average_bedgraph = self.bedgraph[
                 (self.bedgraph.end >= x.start) & (self.bedgraph.start <= x.end)
-            ].coverage.mean()
-            return average_bedgraph
+            ]
+
+            average_bedgraph.iloc[0]["start"] = x.start
+            average_bedgraph.iloc[average_bedgraph.shape[0] - 1]["end"] = x.end
+
+            if "width" not in average_bedgraph.columns:
+                average_bedgraph["width"] = (
+                    average_bedgraph.end - average_bedgraph.start
+                )
+
+            average_bedgraph["coverage"] = (
+                average_bedgraph.coverage * average_bedgraph.width
+            )
+
+            coverage = average_bedgraph.coverage.sum() / (x.end - x.start)
+
+            return coverage
 
         new_bed_coordinates["coverage"] = new_bed_coordinates.apply(
             new_coordinates, axis=1

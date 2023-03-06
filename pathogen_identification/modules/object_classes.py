@@ -1106,6 +1106,7 @@ class Software_detail:
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
 
 
+
 class Bedgraph:
     """Class to store and work with bedgraph files
 
@@ -1117,10 +1118,13 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=1000, nbins=700):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=500):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
+        if self.bedgraph.end.max()<= 500:
+            self.nbins = self.bedgraph.end.max()
+
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:
         coverage = pd.read_csv(coverage_file, sep="\t", header=None).rename(
@@ -1151,16 +1155,14 @@ class Bedgraph:
             ]
 
             average_bedgraph.iloc[0]["start"] = x.start
-            average_bedgraph.iloc[average_bedgraph.shape[0] - 1]["end"] = x.end
-
+            average_bedgraph.iloc[
+                average_bedgraph.shape[0] - 1
+            ]["end"] = x.end
+            
             if "width" not in average_bedgraph.columns:
-                average_bedgraph["width"] = (
-                    average_bedgraph.end - average_bedgraph.start
-                )
+                average_bedgraph["width"] = average_bedgraph.end - average_bedgraph.start
 
-            average_bedgraph["coverage"] = (
-                average_bedgraph.coverage * average_bedgraph.width
-            )
+            average_bedgraph["coverage"]= average_bedgraph.coverage * average_bedgraph.width
 
             coverage = average_bedgraph.coverage.sum() / (x.end - x.start)
 
@@ -1200,7 +1202,7 @@ class Bedgraph:
             new_bed_coordinates, columns=["read_id", "start", "end"]
         )
         new_bed_coordinates = self.get_coverage_array(new_bed_coordinates)
-        new_bed_coordinates = self.get_bar_coordinates(new_bed_coordinates)
+        new_bed_coordinates= self.get_bar_coordinates(new_bed_coordinates)
 
         return new_bed_coordinates
 
@@ -1243,6 +1245,8 @@ class Bedgraph:
         if len(new_bedgraph.shape) <= 1:
             return
 
+        start_time = time.perf_counter()
+
         ax.bar(
             new_bedgraph.coord,
             new_bedgraph.coverage,
@@ -1251,17 +1255,27 @@ class Bedgraph:
             edgecolor="none",
         )
 
-        ax.set_xlabel("Reference")
-        ax.set_ylabel("Coverage")
-
+        ax.set_xlabel("Reference", fontsize=9)
+        ax.set_ylabel(f"Coverage ({self.nbins} windows)", fontsize=9)
+        
         ##
         xmax = new_bedgraph.end.max()
         if tlen:
             xmax = tlen
         ax.set_xlim(0 - borders, xmax + borders)
         ##
-        # plt.show()
-        fig.savefig(output_file, bbox_inches="tight")
+        
+        #fig.savefig(output_file, bbox_inches="tight")
+        plt.text(0.05, 0.9,
+            f"Bar width: {round((new_bedgraph.end.max() - new_bedgraph.start.min()) / self.nbins)} bp",
+            horizontalalignment="left",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            in_layout=True,
+            backgroundcolor= "white",
+            fontsize=9,
+            )
+        plt.show()
 
         ax.cla()
         fig.clf()

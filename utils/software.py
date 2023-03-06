@@ -819,7 +819,7 @@ class Software(object):
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
                     #self.software_names.get_abricate_parameters_mincov_30()
-                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_20
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
             )
@@ -836,7 +836,7 @@ class Software(object):
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
                     #self.software_names.get_abricate_parameters_mincov_30()
-                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_20
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
             )
@@ -4529,7 +4529,7 @@ class Software(object):
 
         #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
         for gene in genes:
-            print(gene)
+
             self.utils.copy_file(
                 alignments,
                 os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
@@ -5018,7 +5018,7 @@ class Contigs2Sequences(object):
         software.run_abricate(
             database_name,
             file_name,
-            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_20,
+            SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS_mincov_30,
             out_file,
         )
 

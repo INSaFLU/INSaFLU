@@ -1117,7 +1117,7 @@ class Bedgraph:
     plot_coverage: barplot of coverage by window in bdgraph.
     """
 
-    def __init__(self, bedgraph_file, max_bars=1000, nbins=700):
+    def __init__(self, bedgraph_file, max_bars=1000, nbins=500):
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)

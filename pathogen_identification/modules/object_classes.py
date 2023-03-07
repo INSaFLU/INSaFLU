@@ -1121,7 +1121,7 @@ class Bedgraph:
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
-        if self.bedgraph.end.max() <= 500:
+        if self.bedgraph.end.max() <= nbins:
             self.nbins = int(self.bedgraph.end.max())
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:

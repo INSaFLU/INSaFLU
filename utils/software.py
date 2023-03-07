@@ -818,7 +818,8 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    self.software_names.get_abricate_parameters_mincov_30()
+                    #self.software_names.get_abricate_parameters_mincov_30()
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
             )
@@ -834,7 +835,8 @@ class Software(object):
                 SoftwareDesc(
                     self.software_names.get_abricate_name(),
                     self.software_names.get_abricate_version(),
-                    self.software_names.get_abricate_parameters_mincov_30()
+                    #self.software_names.get_abricate_parameters_mincov_30()
+                    self.software_names.SOFTWARE_ABRICATE_PARAMETERS_mincov_30
                     + " for segments/references assignment",
                 )
             )
@@ -4472,6 +4474,178 @@ class Software(object):
         self.utils.move_file(
             os.path.join(
                 temp_dir, "results", "aligned_{}_ha_{}.fasta".format(strain, period)
+            ),
+            alignment_file,
+        )
+
+        self.utils.remove_dir(temp_dir)
+
+        return [tree_file, alignment_file, auspice_zip]
+
+
+    def run_nextstrain_avianflu(
+        self, alignments, metadata, strain="h5n1", gene='ha', cores=1
+    ):
+        """
+        run nextstrain
+        :param  alignments: sequence file with nucleotides
+        :param  metadata: tabbed table file with properties
+        :param  strain: flu strain (one of: h5n1, h5nx, h9n2, h7n9)
+        :param  cores: the number of cores to be used in nextstrain (defaults to 1)
+        :out temp folder with all data (including results)
+        """
+
+        # Create a temp folder
+        temp_dir = self.utils.get_temp_dir()
+
+        # copy the base nexstrain folder to a temp folder
+        # TODO Make a function copy_folder in utils
+        build = "avian-flu"
+        cmd = (
+            "cp -r "
+            + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+            + "/"
+            + build
+            + "/* "
+            + temp_dir
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise Exception(
+                "Fail to copy nexstrain folder "
+                + SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_BASE
+                + "/"
+                + build
+                + "/* "
+                + temp_dir
+            )
+
+        # add sequences.fasta and metadata.tsv to data folder
+        genes = ["ha"]
+        if(gene != 'ha'):
+            genes = ["ha",gene]
+
+        #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
+        for gene in genes:
+
+            self.utils.copy_file(
+                alignments,
+                os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
+            )
+            self.utils.copy_file(
+                metadata, os.path.join(temp_dir, "data", "metadata_{}_{}.tsv".format(strain, gene))
+            )
+
+
+        # Need to estimate clades of these new samples
+        if(strain == "h5n1"):
+
+            # Now run Nextstrain for ha to get alignments
+            cmd = "cd {}; {} --cores {} auspice/flu_avian_h5n1_ha.json".format(
+                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores)
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)         
+
+            # Add this to see if it improves LABEL...
+            self.utils.copy_file(
+                os.path.join(temp_dir, "results", "aligned_h5n1_ha.fasta"),
+                os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta")
+            )
+
+            # remove some tmp data that may still be present...
+            cmd = "rm -R -f {}_RES/test_data/h5n1-new".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL)
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                # do not raise exception, hopefully the error is not fatal
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)         
+
+            cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={}".format(
+                 temp_dir,  SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+
+            cmd = "rm -R -f {} {} {}".format(os.path.join(temp_dir, ".snakemake"),
+                                             os.path.join(temp_dir, "results"), 
+                                             os.path.join(temp_dir, "auspice"))
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+
+            # Reput the original file...
+            if(gene == 'ha'):
+                self.utils.copy_file(
+                    alignments,
+                    os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta"),
+                )
+
+        # just do this one now...
+        genes = [gene]
+        for gene in genes:
+            # Now run Nextstrain (eventually cycle through the genes)
+            cmd = "cd {}; {} --cores {} auspice/flu_avian_{}_{}.json".format(
+                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), strain, gene
+            )
+            exit_status = os.system(cmd)
+            if exit_status != 0:
+                self.logger_production.error("Fail to run: " + cmd)
+                self.logger_debug.error("Fail to run: " + cmd)
+       
+
+        tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        # Convert json to tree
+        cmd = "{} --tree {} --output-tree {}".format(
+            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+            os.path.join(
+                temp_dir, "auspice", "flu_avian_" + strain + "_ha.json"
+            ),
+            tree_file,
+        )
+
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to run conversion of json to tree.",
+                cmd=cmd,
+                output_path=temp_dir
+            )
+
+        # Copy log folder to auspice to be included in the zip
+        cmd = "cp -r {} {}".format(
+            os.path.join(temp_dir, ".snakemake", "log"),
+            os.path.join(temp_dir, "auspice"),
+        )
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            self.logger_production.error("Fail to run: " + cmd)
+            self.logger_debug.error("Fail to run: " + cmd)
+            raise CmdException(
+                message="Fail to copy log to output folder.",
+                cmd=cmd,
+                output_path=temp_dir,
+            )
+
+        # Collect results
+        zip_out = self.zip_files_in_path(os.path.join(temp_dir, "auspice"))
+        auspice_zip = self.utils.get_temp_file("tempfile.zip", sz_type="zip")
+        self.utils.move_file(zip_out, auspice_zip)
+
+        # results/aligned_h3n2_ha_12y.fasta
+        alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
+        self.utils.move_file(
+            os.path.join(
+                temp_dir, "results", "aligned_{}_ha.fasta".format(strain)
             ),
             alignment_file,
         )

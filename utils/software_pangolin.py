@@ -77,8 +77,9 @@ class SoftwarePangolin(object):
 		if (not settings.DEBUG):
 			## default version
 			temp_file = self.utils.get_temp_file("pangolin_verion", ".txt")
-			cmd = "{} {} --update > {} 2>&1".format(self.software_names.get_pangolin_env(),
-				self.software_names.get_pangolin(), temp_file)
+#			cmd = "{} {} --update > {} 2>&1".format(self.software_names.get_pangolin_env(),
+#				self.software_names.get_pangolin(), temp_file)
+			cmd = "{} --update > {} 2>&1".format(self.software_names.get_pangolin(), temp_file)
 			exist_status = os.system(cmd)
 			if (exist_status != 0):
 				self.logger_production.error('Fail to run: ' + cmd)
@@ -138,8 +139,10 @@ class SoftwarePangolin(object):
 		tem_dir = self.utils.get_temp_dir()
 		
 		### run pangolin
-		cmd = "{} {} {} -o {} --analysis-mode {} -t 2".format(self.software_names.get_pangolin_env(),
-			self.software_names.get_pangolin(), file_in_fasta, tem_dir, settings.RUN_PANGOLIN_MODEL)
+		#cmd = "{} {} {} -o {} --analysis-mode {} -t 2".format(self.software_names.get_pangolin_env(),
+		#	self.software_names.get_pangolin(), file_in_fasta, tem_dir, settings.RUN_PANGOLIN_MODEL)
+		cmd = "{} {} -o {} --analysis-mode {} -t 2".format(
+			self.software_names.get_pangolin(), file_in_fasta, tem_dir, settings.RUN_PANGOLIN_MODEL)			
 		exist_status = os.system(cmd)
 		if (exist_status != 0):
 			self.logger_production.error('Fail to run: ' + cmd)

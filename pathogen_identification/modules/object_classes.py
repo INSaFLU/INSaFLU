@@ -1121,7 +1121,7 @@ class Bedgraph:
         self.max_bars = max_bars
         self.nbins = nbins
         self.bedgraph = self.read_bedgraph(bedgraph_file)
-        if self.bedgraph.end.max() <= 500:
+        if self.bedgraph.end.max() <= nbins:
             self.nbins = int(self.bedgraph.end.max())
 
     def read_bedgraph(self, coverage_file) -> pd.DataFrame:
@@ -1265,7 +1265,6 @@ class Bedgraph:
         ax.set_xlim(0 - borders, xmax + borders)
         ##
 
-        # fig.savefig(output_file, bbox_inches="tight")
         plt.text(
             0.05,
             0.9,
@@ -1277,7 +1276,7 @@ class Bedgraph:
             backgroundcolor="white",
             fontsize=9,
         )
-        plt.show()
+        fig.savefig(output_file, bbox_inches="tight")
 
         ax.cla()
         fig.clf()

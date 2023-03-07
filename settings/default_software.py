@@ -41,6 +41,7 @@ class DefaultSoftware(object):
             type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
         )
         if software.count() == 0:
+
             return False
 
         utils = Utils_Manager()

@@ -75,11 +75,20 @@ from managing_files.tables import (
     ShowProjectSamplesResults,
 )
 
+from settings.default_software import DefaultSoftware
+
+
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
 
 class ProjectIndex(TemplateView):
     template_name = "project/project_index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectIndex, self).get_context_data(**kwargs)
+        default_software = DefaultSoftware()
+        context["televir_available"] = default_software.test_televir_software_available()
+        return context
 
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):

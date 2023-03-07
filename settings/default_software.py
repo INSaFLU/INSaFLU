@@ -4,10 +4,12 @@ Created on 03/05/2020
 @author: mmp
 """
 from curses.ascii import SO
+from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
+    Utils_Manager,
 )
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
@@ -28,6 +30,25 @@ class DefaultSoftware(object):
         self.default_parameters = DefaultParameters()
         self.televir_utiltity = Utility_Pipeline_Manager()
         self.change_values_software = {}  ### the key is the name of the software
+
+    def test_televir_software_available(self):
+        """test if televir software is available"""
+        user_system = User.objects.get(username="system")
+
+        self.test_all_defaults_pathogen_identification(user_system)
+
+        software = Software.objects.filter(
+            type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
+        )
+        if software.count() == 0:
+            return False
+
+        utils = Utils_Manager()
+
+        televir_available = utils.test_televir_pipelines_available(user_system)
+        self.remove_all_parameters(user_system)
+
+        return televir_available
 
     def remove_all_parameters(self, user):
         """remove all parameters"""

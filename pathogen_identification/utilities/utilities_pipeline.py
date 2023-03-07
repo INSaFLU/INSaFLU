@@ -25,6 +25,7 @@ from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from constants.constants import Televir_Directory_Constants as Televir_Directories
 
+
 tree = lambda: defaultdict(tree)
 
 
@@ -1364,6 +1365,17 @@ class Utils_Manager:
         pipeline_tree = utility_drone.generate_default_software_tree()
 
         return pipeline_tree
+
+    def test_televir_pipelines_available(self, user_system: User):
+        """
+        Test if televir is available
+        """
+
+        for technology in self.utility_technologies:
+            if self.check_any_pipeline_possible(technology, user_system):
+                return True
+
+        return False
 
     def generate_default_trees(self, user: User):
         """

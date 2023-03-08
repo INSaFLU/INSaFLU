@@ -24,6 +24,12 @@ from settings.tables import SoftwaresTable
 class index(TemplateView):
     template_name = "settings/index.html"
 
+    def get_context_data(self, **kwargs):
+        context = super(index, self).get_context_data(**kwargs)
+        default_software = DefaultSoftware()
+        context["televir_available"] = default_software.test_televir_software_available()
+        return context
+
 
 class Maintenance(TemplateView):
     template_name = "settings/maintenance.html"

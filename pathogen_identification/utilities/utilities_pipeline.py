@@ -949,6 +949,27 @@ class Parameter_DB_Utility:
         )
 
         if parameter_set.status in [
+            ParameterSet.STATUS_QUEUED,
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            return False
+
+        return True
+    
+
+    def check_ParameterSet_available_to_run(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return True
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        if parameter_set.status in [
             ParameterSet.STATUS_FINISHED,
             ParameterSet.STATUS_RUNNING,
         ]:
@@ -956,9 +977,24 @@ class Parameter_DB_Utility:
 
         return True
 
+
+    def create_parameter_set(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        """
+        Create a ParameterSet for a sample and leaf
+        """
+        self.logger.info("Creating ParameterSet")
+        parameter_set = ParameterSet.objects.create(
+            sample=sample, leaf=leaf, project=project
+        )
+
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
+        """
+        Check if ParameterSet is finished or running or queued.
+        """
 
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
@@ -967,14 +1003,43 @@ class Parameter_DB_Utility:
             sample=sample, leaf=leaf, project=project
         )
 
-        if parameter_set.status == ParameterSet.STATUS_FINISHED:
+        if parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+            ParameterSet.STATUS_QUEUED,
+        ]:
             return True
         else:
             return False
 
+    def set_parameterset_to_queue(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        """
+        Set ParameterSet to queue if it exists and is not finished or running.
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(
+                sample=sample, leaf=leaf, project=project
+            )
+
+            if parameter_set.status not in [
+                ParameterSet.STATUS_FINISHED,
+                ParameterSet.STATUS_RUNNING,
+            ]:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
+        except ParameterSet.DoesNotExist:
+            pass
+
     def get_software_tree_node_index(
         self, owner: User, technology: str, global_index: int, node_index: int
     ):
+        """
+        Get the index of a node in a software tree.
+        """
 
         software_tree_index = self.get_software_tree_index(technology, global_index)
 
@@ -1146,65 +1211,72 @@ class Utils_Manager:
 
     def check_runs_to_deploy(self, user: User, project: Projects):
         """
-        Check if there are runs to run
+        Check if there are runs to run. sets to queue if there are.
         """
 
         technology = project.technology
+        ### UTILITIES
+        utils = Utils_Manager()
         samples = PIProject_Sample.objects.filter(project=project)
-        local_tree = self.generate_project_tree(technology, project, user)
+        local_tree = utils.generate_project_tree(technology, project, user)
+        local_paths = local_tree.get_all_graph_paths_explicit()
 
-        self.logger.info("Checking runs to deploy")
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = self.generate_software_tree(technology, tree_makeup)
-        self.logger.info("Pipeline tree generated")
-        pipeline_tree_index = self.get_software_tree_index(technology, tree_makeup)
-        self.logger.info("Pipeline tree index generated")
-        local_paths = local_tree.get_all_graph_paths_explicit()
-        sample = samples[0]
+        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        global_paths = pipeline_tree.get_all_graph_paths_explicit()
 
+        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
+        pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
+
+        ### MANAGEMENT
+
+        submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
+        matched_paths = {
+            leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
+            for leaf, path in local_paths.items()
+        }
+        available_paths = {
+            leaf: path for leaf, path in matched_paths.items() if path is not None
+        }
+
+        available_path_nodes = {
+            leaf: SoftwareTreeNode.objects.get(
+                software_tree__pk=pipeline_tree_index, index=path
+            )
+            for leaf, path in available_paths.items()
+        }
+
+        ### SUBMISSION
         runs_to_deploy = 0
-        self.logger.info(
-            "now going to start checking if existing paths correspond to branches in trees"
-        )
-        for sample in samples:
 
-            for leaf, path in local_paths.items():
+        for sample in submission_dict.keys():
 
-                try:
-                    matched_path = self.utility_manager.match_path_to_tree(
-                        path, pipeline_tree
-                    )
-                except Exception as e:
-                    self.logger.info("Path not matched to tree")
-                    self.logger.info(e)
-                    continue
-
-                self.logger.info("Matched path to tree")
-
-                matched_path_node = SoftwareTreeNode.objects.get(
-                    software_tree__pk=pipeline_tree_index, index=matched_path
-                )
+            for leaf, matched_path_node in available_path_nodes.items():
 
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
                 )
 
                 if exists:
-
-                    if self.parameter_util.check_ParameterSet_processed(
-                        sample=sample, leaf=leaf, project=project
+                    if (
+                        utils.parameter_util.check_ParameterSet_available(
+                            sample=sample, leaf=matched_path_node, project=project
+                        )
+                        is False
                     ):
-                        self.logger.info("parameter set processed")
-
                         continue
 
-                    else:
-                        self.logger.info("parameter set not processed")
-                        runs_to_deploy += 1
-
                 else:
-                    runs_to_deploy += 1
+                    self.parameter_util.create_parameter_set(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+
+                utils.parameter_util.set_parameterset_to_queue(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+                runs_to_deploy += 1
+
         if runs_to_deploy > 0:
             return True
 

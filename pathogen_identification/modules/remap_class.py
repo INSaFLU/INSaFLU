@@ -102,8 +102,6 @@ class coverage_parse:
 
             self.bedm = pd.DataFrame(columns=["contig", "i", "e", "x", "s"])
 
-        return self
-
     def compress_bed(self, bed):
         """
         merge bedfile windows with contigous end and start points, 1 idx appart.
@@ -114,7 +112,7 @@ class coverage_parse:
         nrow = bed.loc[0]
         nbed = []
 
-        for i in range(1, bed.shape[0]):
+        for i in range(bed.shape[0]):
             row = bed.loc[i]
 
             if row.i == nrow.e or row.i == nrow.e + 1:
@@ -161,10 +159,13 @@ class coverage_parse:
         windows_covered = "NA"
 
         if bedp.shape[0] == 0:
-            results.extend([0, 0, 0])
+            windows_covered = f"0/{nwindows}"
+            results.extend([0, 0, windows_covered])
+
         else:
             savg = sum(bedp.s) / bedp.shape[0]
-            if len(bedp) > 1:
+
+            if len(bedp) > 0:
                 bedp = self.compress_bed(bedp)
                 pvals = []
 
@@ -197,7 +198,8 @@ class coverage_parse:
                     pvals.append(pval)
 
                 pvals = sum(pvals) / len(pvals)
-                savg = np.median(bedp.s)
+                savg = bedp.s.median()
+
                 results.extend([bedp.shape[0], savg, windows_covered])
 
             else:
@@ -217,8 +219,12 @@ class coverage_parse:
                 for ctg in bedg.contig.unique():
                     bg = bedg[bedg.contig == ctg].copy()
                     distances.append(np.sum(np.array(bg.i[1:]) - np.array(bg.e[:-1])))
+                print(distances)
 
-                distances = np.sum(np.array(distances) / len(distances))
+                if len(distances) > 0:
+                    distances = np.sum(np.array(distances) / len(distances))
+                else:
+                    distances = 0
                 savg = np.median(bedp.s)
                 results.extend([bedg.shape[0], distances, savg])
             else:
@@ -237,13 +243,15 @@ class coverage_parse:
             return self
         tr = self.bedstats(bed)
         regions = bed[bed.x > self.Xm]
+
         regions["l"] = regions.e - regions.i
         tr[0] = tr[0] / self.glen
+
         sum_regions = sum(regions.l)
         if sum_regions == 0:
             tr[1] = 0
         else:
-            tr[1] = tr[1] / sum(regions.l)
+            tr[1] = tr[1] / sum_regions
 
         tr[2] = tr[2] * 100 / self.glen
         report = []  # [["total"] + tr]
@@ -279,8 +287,6 @@ class coverage_parse:
         report.columns = new_columns
 
         self.report = report
-
-        return self
 
     def write(self):
         self.report.to_csv(self.output, sep="\t", index=False)

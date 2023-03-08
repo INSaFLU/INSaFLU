@@ -959,6 +959,9 @@ class Parameter_DB_Utility:
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
+        """
+        Check if ParameterSet is finished or running or queued.
+        """
 
         if not self.check_ParameterSet_exists(sample, leaf, project):
             return False
@@ -967,14 +970,43 @@ class Parameter_DB_Utility:
             sample=sample, leaf=leaf, project=project
         )
 
-        if parameter_set.status == ParameterSet.STATUS_FINISHED:
+        if parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+            ParameterSet.STATUS_QUEUED,
+        ]:
             return True
         else:
             return False
 
+    def set_parameterset_to_queue(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        """
+        Set ParameterSet to queue if it exists and is not finished or running.
+        """
+
+        try:
+            parameter_set = ParameterSet.objects.get(
+                sample=sample, leaf=leaf, project=project
+            )
+
+            if parameter_set.status not in [
+                ParameterSet.STATUS_FINISHED,
+                ParameterSet.STATUS_RUNNING,
+            ]:
+                parameter_set.status = ParameterSet.STATUS_QUEUED
+                parameter_set.save()
+
+        except ParameterSet.DoesNotExist:
+            pass
+
     def get_software_tree_node_index(
         self, owner: User, technology: str, global_index: int, node_index: int
     ):
+        """
+        Get the index of a node in a software tree.
+        """
 
         software_tree_index = self.get_software_tree_index(technology, global_index)
 
@@ -1146,7 +1178,7 @@ class Utils_Manager:
 
     def check_runs_to_deploy(self, user: User, project: Projects):
         """
-        Check if there are runs to run
+        Check if there are runs to run. sets to queue if there are.
         """
 
         technology = project.technology
@@ -1201,6 +1233,9 @@ class Utils_Manager:
 
                     else:
                         self.logger.info("parameter set not processed")
+                        self.parameter_util.set_parameterset_to_queue(
+                            sample=sample, leaf=leaf, project=project
+                        )
                         runs_to_deploy += 1
 
                 else:

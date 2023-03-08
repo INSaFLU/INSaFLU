@@ -110,7 +110,7 @@ class Command(BaseCommand):
                 for leaf, matched_path_node in available_path_nodes.items():
 
                     if (
-                        utils.parameter_util.check_ParameterSet_available(
+                        utils.parameter_util.check_ParameterSet_available_to_run(
                             sample=sample, leaf=matched_path_node, project=project
                         )
                         is False

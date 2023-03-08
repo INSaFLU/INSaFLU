@@ -957,6 +957,17 @@ class Parameter_DB_Utility:
 
         return True
 
+    def create_parameter_set(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+        """
+        Create a ParameterSet for a sample and leaf
+        """
+        self.logger.info("Creating ParameterSet")
+        parameter_set = ParameterSet.objects.create(
+            sample=sample, leaf=leaf, project=project
+        )
+
     def check_ParameterSet_processed(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
     ):
@@ -1216,12 +1227,12 @@ class Utils_Manager:
         }
 
         ### SUBMISSION
+        print(available_path_nodes)
         runs_to_deploy = 0
 
         for sample in submission_dict.keys():
 
             for leaf, matched_path_node in available_path_nodes.items():
-
 
                 exists = self.parameter_util.check_ParameterSet_exists(
                     sample=sample, leaf=matched_path_node, project=project
@@ -1232,9 +1243,19 @@ class Utils_Manager:
                         utils.parameter_util.check_ParameterSet_available(
                             sample=sample, leaf=matched_path_node, project=project
                         )
-                        is True
+                        is False
                     ):
-                        runs_to_deploy += 1
+                        continue
+
+                else:
+                    self.parameter_util.create_parameter_set(
+                        sample=sample, leaf=matched_path_node, project=project
+                    )
+
+                utils.parameter_util.set_parameterset_to_queue(
+                    sample=sample, leaf=matched_path_node, project=project
+                )
+                runs_to_deploy += 1
 
         if runs_to_deploy > 0:
             return True

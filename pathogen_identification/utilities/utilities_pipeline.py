@@ -956,6 +956,27 @@ class Parameter_DB_Utility:
             return False
 
         return True
+    
+
+    def check_ParameterSet_available_to_run(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return True
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        if parameter_set.status in [
+            ParameterSet.STATUS_FINISHED,
+            ParameterSet.STATUS_RUNNING,
+        ]:
+            return False
+
+        return True
+
 
     def create_parameter_set(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -1227,7 +1248,6 @@ class Utils_Manager:
         }
 
         ### SUBMISSION
-        print(available_path_nodes)
         runs_to_deploy = 0
 
         for sample in submission_dict.keys():

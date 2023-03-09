@@ -350,12 +350,12 @@ def remove_consensus_in_dataset(request):
 				dataset_consensus.dataset.save()
 			
 			## need to run processing
-			try:
-				process_SGE = ProcessSGE()
-				taskID =  process_SGE.set_collect_dataset_global_files(dataset_consensus.dataset,
-										request.user)
-			except:
-				pass
+			#try:
+			#	process_SGE = ProcessSGE()
+			#	taskID =  process_SGE.set_collect_dataset_global_files(dataset_consensus.dataset,
+			#							request.user)
+			#except:
+			#	pass
 			data['is_ok'] = True
 		return JsonResponse(data)
 

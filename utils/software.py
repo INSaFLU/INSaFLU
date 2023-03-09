@@ -4606,7 +4606,7 @@ class Software(object):
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
             os.path.join(
-                temp_dir, "auspice", "flu_avian_" + strain + "_ha.json"
+                temp_dir, "auspice", "flu_avian_" + strain + "_"+gene+".json"
             ),
             tree_file,
         )
@@ -4645,7 +4645,7 @@ class Software(object):
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
         self.utils.move_file(
             os.path.join(
-                temp_dir, "results", "aligned_{}_ha.fasta".format(strain)
+                temp_dir, "results", "aligned_{}_{}.fasta".format(strain, gene)
             ),
             alignment_file,
         )

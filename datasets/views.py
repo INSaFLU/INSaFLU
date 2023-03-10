@@ -810,34 +810,35 @@ class AddDatasetsProjectsView(
                     ):
                         continue
 
-                    meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, 
-                                                                                MetaKeyAndValue.META_KEY_Coverage, 
-                                                                                MetaKeyAndValue.META_VALUE_Success)
-                    if (meta_value is None): continue
+                    # Only add the ones that have all segments with suficient coverage
+                    #meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, 
+                    #                                                            MetaKeyAndValue.META_KEY_Coverage, 
+                    #                                                            MetaKeyAndValue.META_VALUE_Success)
+                    #if (meta_value is None): continue
 
-                    decode_coverage = DecodeObjects()
-                    coverage = decode_coverage.decode_result(meta_value.description)
+                    #decode_coverage = DecodeObjects()
+                    #coverage = decode_coverage.decode_result(meta_value.description)
 
                     ### get consensus
-                    sample_tecnology = ConstantsSettings.TECHNOLOGY_generic
-                    if project_sample.is_sample_illumina(): 
-                        sample_tecnology = ConstantsSettings.TECHNOLOGY_illumina
-                    else:
-                        sample_tecnology = ConstantsSettings.TECHNOLOGY_minion
-                    limit_to_mask_consensus = -1               
-                    if (project_sample.is_mask_consensus_sequences): 
-                        limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,
-                                DefaultParameters.MASK_CONSENSUS_threshold, sample_tecnology))
+                    #sample_tecnology = ConstantsSettings.TECHNOLOGY_generic
+                    #if project_sample.is_sample_illumina(): 
+                    #    sample_tecnology = ConstantsSettings.TECHNOLOGY_illumina
+                    #else:
+                    #    sample_tecnology = ConstantsSettings.TECHNOLOGY_minion
+                    #limit_to_mask_consensus = -1               
+                    #if (project_sample.is_mask_consensus_sequences): 
+                    #    limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,
+                    #            DefaultParameters.MASK_CONSENSUS_threshold, sample_tecnology))
                     
-                    consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
-                    temp_dir = self.utils.get_temp_dir()
-                    if (not self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
-                         self.utils.remove_dir(temp_dir)
-                         continue
-                    self.utils.remove_dir(temp_dir)
+                    #consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+                    #temp_dir = self.utils.get_temp_dir()
+                    #if (not self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
+                    #     self.utils.remove_dir(temp_dir)
+                    #     continue
+                    #self.utils.remove_dir(temp_dir)
 
                     # Only include the ones that have all segments
-                    if not default_software.include_consensus(project_sample): continue
+                    #if not default_software.include_consensus(project_sample): continue
 
 
                     try:

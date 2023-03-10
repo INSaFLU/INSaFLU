@@ -4606,7 +4606,7 @@ class Software(object):
         cmd = "{} --tree {} --output-tree {}".format(
             os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
             os.path.join(
-                temp_dir, "auspice", "flu_avian_" + strain + "_"+gene+".json"
+                temp_dir, "auspice", "flu_avian_" + strain + "_" + gene + ".json"
             ),
             tree_file,
         )

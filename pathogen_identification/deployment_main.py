@@ -461,6 +461,7 @@ class Run_Main_from_Leaf:
 
         try:
             self.container.run_engine.Run_Assembly()
+            self.container.run_engine.export_assembly()
             db_updated = Update_Assembly(self.container.run_engine, self.parameter_set)
             if not db_updated:
                 return False

@@ -860,6 +860,52 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
+def infer_media_dir(run_main: RunMain):
+
+    if run_main.params_file_path:
+        media_dir = os.path.dirname(run_main.params_file_path)
+        return media_dir
+    elif run_main.processed_reads_r1:
+        media_dir = os.path.dirname(run_main.processed_reads_r1)
+        return media_dir
+    elif run_main.processed_reads_r2:
+        media_dir = os.path.dirname(run_main.processed_reads_r2)
+        return media_dir
+    else:
+        return None
+
+
+def update_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
+    """
+    check contigs exist, if not, replace path with media path check again, if so, replace with media path.
+    """
+    ##
+    assembly_contigs = run_assembly.assembly_contigs
+
+    print("####")
+    print(assembly_contigs)
+
+    if not assembly_contigs:
+        return
+
+    media_dir = infer_media_dir(run_main)
+    print(media_dir)
+
+    if not media_dir:
+        return
+
+    assembly_contigs_exist = os.path.exists(assembly_contigs)
+    print(assembly_contigs_exist)
+
+    if not assembly_contigs_exist:
+        assembly_contigs = os.path.basename(assembly_contigs)
+        assembly_contigs = os.path.join(media_dir, assembly_contigs)
+        assembly_contigs_exist = os.path.exists(assembly_contigs)
+        if assembly_contigs_exist:
+            run_assembly.assembly_contigs = assembly_contigs
+            run_assembly.save()
+
+
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -916,6 +962,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
         run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+
+        update_assembly_contigs(run_main, run_assembly)
+
         #
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
         #

@@ -894,20 +894,15 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
     ##
     assembly_contigs = run_assembly.assembly_contigs
 
-    print("####")
-    print(assembly_contigs)
-
     if not assembly_contigs:
         return
 
     assembly_contigs_exist = os.path.exists(assembly_contigs)
-    print(assembly_contigs_exist)
 
     if assembly_contigs_exist:
         return
 
     media_dir = infer_media_dir(run_main)
-    print(media_dir)
 
     if not media_dir:
         return

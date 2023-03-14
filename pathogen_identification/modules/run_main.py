@@ -922,6 +922,8 @@ class RunMain_class(Run_Deployment_Methods):
 
     def export_sequences(self):
         self.sample.export_reads(self.media_dir)
+    
+    def export_assembly(self):
         self.assembly_drone.export_assembly(self.media_dir)
 
     def Summarize(self):

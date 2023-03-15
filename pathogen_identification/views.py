@@ -61,6 +61,8 @@ from pathogen_identification.tables import (
     SampleTable,
 )
 
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+
 
 def clean_check_box_in_session(request):
     """
@@ -306,7 +308,7 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             self.request.session[Constants.PROJECT_NAME] = name
             b_error = True
 
-        if not form.cleaned_data["name"].isalnum():
+        if not form.cleaned_data["name"].replace("_", "").isalnum():
             self.request.session[
                 Constants.ERROR_PROJECT_NAME
             ] = "The project name can only contain letters and numbers."
@@ -871,33 +873,6 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
-def infer_media_dir(run_main: RunMain):
-
-    if run_main.params_file_path:
-        params_exist = os.path.exists(run_main.params_file_path)
-        if params_exist:
-
-            media_classification_dir = os.path.dirname(run_main.params_file_path)
-            media_dir = os.path.dirname(media_classification_dir)
-            return media_dir
-
-    elif run_main.processed_reads_r1:
-        reads_r1_exist = os.path.exists(run_main.processed_reads_r1)
-
-        if reads_r1_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r1)
-            return media_dir
-
-    elif run_main.processed_reads_r2:
-        reads_r2_exist = os.path.exists(run_main.processed_reads_r2)
-
-        if reads_r2_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r2)
-            return media_dir
-
-    return None
-
-
 def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
     """
     check contigs exist, if not, replace path with media path check again, if so, replace with media path.
@@ -913,7 +888,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
     if assembly_contigs_exist:
         return
 
-    media_dir = infer_media_dir(run_main)
+    media_dir = infer_run_media_dir(run_main)
 
     if not media_dir:
         return

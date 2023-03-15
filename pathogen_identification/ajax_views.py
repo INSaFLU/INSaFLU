@@ -108,7 +108,7 @@ def validate_project_name(request):
             data["error_message"] = _("Spaces are not allowed in the project name.")
 
         ## check if name has special characters:
-        if not project_name.isalnum():
+        if not project_name.replace('_', '').isalnum():
             data["has_special_characters"] = True
             data["error_message"] = _(
                 "Special characters are not allowed in the project name."

@@ -188,6 +188,7 @@ class ConstantsSettings:
     media_directory = MEDIA_ROOT
     static_directory = STATIC_ROOT
     televir_subdirectory = "televir_projects"
+    run_files_zipped = "run.zip"
     PAGINATE_NUMBER = 10
 
     USER_TREE_INDEX = 0

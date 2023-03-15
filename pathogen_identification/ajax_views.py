@@ -85,28 +85,6 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
-def validate_project_name_old(request):
-    if request.is_ajax():
-        data = {"is_taken": False}
-
-        if request.method == "GET":
-            user_obj = Projects.objects.filter(
-                owner=request.user,
-                name=request.GET.get("projectname"),
-                is_deleted=False,
-            ).exists()
-
-            has_spaces = " " in request.GET.get("projectname")
-
-            if user_obj:
-                return HttpResponse("exists")
-
-            if has_spaces:
-                return HttpResponse("has_spaces")
-
-            return HttpResponse(False)
-
-
 @csrf_protect
 def validate_project_name(request):
     """

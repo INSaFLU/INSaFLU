@@ -181,12 +181,6 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         ):
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
-                | Q(reference__name__icontains=self.request.GET.get(tag_search))
-                | Q(
-                    project_samples__sample__name__icontains=self.request.GET.get(
-                        tag_search
-                    )
-                )
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -254,9 +248,8 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             ]
             del self.request.session[Constants.ERROR_PROJECT_NAME]
 
-        ###
-
-        ###
+        else:
+            context[Constants.ERROR_PROJECT_NAME] = ""
 
         context["project_name"] = project_name
         context["show_paginatior"] = False
@@ -302,6 +295,24 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             b_error = True
         except Projects.DoesNotExist:
             pass
+        ###
+        if context[Constants.ERROR_PROJECT_NAME] != "":
+            b_error = True
+
+        if not form.cleaned_data["name"]:
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can not be empty."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
+        if not form.cleaned_data["name"].isalnum():
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can only contain letters and numbers."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
         ### exists an error
         if b_error:
             return super(PathID_ProjectCreateView, self).form_invalid(form)
@@ -789,7 +800,7 @@ def Project_reports(requesdst, pk1):
 
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
-            "-coverage"
+            "run__name", "-coverage"
         )
         project_name = project.name
 
@@ -832,7 +843,7 @@ def Sample_reports(requesdst, pk1, pk2):
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(
             run__project__pk=int(pk1), sample__pk=int(pk2)
-        ).order_by("-coverage")
+        ).order_by("run__name", "-coverage")
         project_name = project.name
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 

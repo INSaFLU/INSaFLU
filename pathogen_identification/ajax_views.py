@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from utils.process_SGE import ProcessSGE
+from django.utils.translation import ugettext_lazy as _
 
 from pathogen_identification.models import (
     PIProject_Sample,
@@ -84,7 +85,7 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
-def validate_project_name(request):
+def validate_project_name_old(request):
     if request.is_ajax():
         data = {"is_taken": False}
 
@@ -104,6 +105,41 @@ def validate_project_name(request):
                 return HttpResponse("has_spaces")
 
             return HttpResponse(False)
+
+
+@csrf_protect
+def validate_project_name(request):
+    """
+    test if exist this project name
+    """
+    if request.is_ajax():
+
+        project_name = request.GET.get("project_name")
+
+        data = {
+            "is_taken": Projects.objects.filter(
+                name__iexact=project_name,
+                is_deleted=False,
+                owner__username=request.user.username,
+            ).exists()
+        }
+
+        ## check if name has spaces:
+        if " " in project_name:
+            data["has_spaces"] = True
+            data["error_message"] = _("Spaces are not allowed in the project name.")
+
+        ## check if name has special characters:
+        if not project_name.isalnum():
+            data["has_special_characters"] = True
+            data["error_message"] = _(
+                "Special characters are not allowed in the project name."
+            )
+
+        if data["is_taken"]:
+            data["error_message"] = _("Exists a project with this name.")
+
+        return JsonResponse(data)
 
 
 @csrf_protect

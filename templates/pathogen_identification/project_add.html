@@ -12,11 +12,18 @@
 {% block content %}
 
 <br>
-<form method="post">
-    {% csrf_token %}
-	<div class="form-group">
-		<label for="name">Name</label>
-		<input type="text" class="form-control" id="project_name" name="name" placeholder="Name" value="{{ project.name }}">
+<form  id="id_form_table_project_reference" action=""
+    data-validate-project-reference-url="{% url 'check_project_name' %}" method="post">{% csrf_token %}
+    <div class="form-group">
+        <label for="name">Name</label>
+        
+        <input type="text" {% if project.name %} value="{{ project.name }}" {% endif %} name="name"
+                        class="textinput textInput form-control js-validate-project-reference-name" id="id_project_name"
+                        required="" maxlength="100" placeholder="Project name">
+        <div id='id_project_name_error'>
+            {% if error_project_name %} <span id="error_1_id_name" class="fields_error">
+                {{ error_project_name }} </span> {% endif %}
+        </div>
 	</div>
 	<div class="form-group">
 		<label for="description">Description</label>
@@ -41,33 +48,36 @@
 
 {% load static from staticfiles %}
 <script type="text/javascript" src="{% static 'js/televir_projects/warning_messages.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/pathogen_identification/PIProject-add.js' %}"></script>
+
 
 <script type="text/javascript">
-
-    $("#project_name").keyup(function(){
-        var projectname=$(this).val();
-        if(projectname!=""){
-          $.ajax({
-            url:'{% url 'check_project_name' %}',
-            type:'GET',
-            data:{projectname:projectname}
-    
-          })
-          .done(function(response){
-            console.log(response);
-            if(response=="exists"){
-                alert("Username already taken");    }
-            else if(response=="has_spaces"){
-                alert("Username cannot contain spaces");
+    $("#id_project_name").on("change paste keyup", function () {
+        $.ajax({
+          url: $("#id_form_table_project_reference").attr("data-validate-project-reference-url"),
+         // data: form.serialize(),
+          // dataType: 'json',
+          data : { 
+              project_name : $('#id_project_name').val(),
+              csrfmiddlewaretoken: '{{ csrf_token }}' }, // data sent with the post request
+          success: function (data) {
+            $(document).find('#error_1_id_name').remove();
+            if (data.is_taken || data.has_special_characters || data.has_spaces) {
+              var error_message = "<strong>" + data.error_message + "</strong>";
+               $("#id_project_name_error").append(
+                  $('<span/>', { 										// creates a dynamic div element on the fly
+                  id: 'error_1_id_name',
+                  class: 'fields_error',
+                  html: error_message,
+               }));
             }
-          })
-          .fail(function(){
-            console.log("failed");
-          })
-        }
-        else{
-          $(".username_error").remove();
-        }
+          },
+          
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+              console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+          }
+     });
     });
 </script>
 

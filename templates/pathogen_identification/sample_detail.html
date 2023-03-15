@@ -444,7 +444,7 @@
                             <p> After merging, a total of {{run_detail.merged_number}} taxids found in our databases were selected
                                 for remapping against.
                             </p>
-                            <p style=padding-left:3em> References were collected from the data bases:
+                            <p style=padding-left:3em> References were collected from the databases:
                                 <em>{{run_detail.merged_files}}</em>. </p>
                             {% endif %}
                         </div>
@@ -492,10 +492,10 @@
                             <p> Remapping was performed using the software <strong>{{run_remap.method}}</strong>. </p>
                             <p> Of the references identified, {{run_detail.merged_number}} corresponding accession id(s) were found in
                                 our
-                                databases. </p>
+                                databases. References tagged as phages were excluded. </p>
                             <p style=padding-left:4em> from these, {{number_validated}} successful alignments were produced.
                             </p>
-                            <p> The following table shows the results of the remapping onto identified references. </p>
+                            <p> The following <strong>Pathogen identification</strong> table shows the results of the remapping onto identified references. Below, in the <strong>Raw Classification and Mapping Summary</strong> table, you can select extra hits for remapping. </p>
                             <p> Results are shown for a minimum coverage of {{run_remap.coverage_minimum}}X and a maximum coverage
                                 of
                                 {{run_remap.coverage_maximum}}X. </p>                    

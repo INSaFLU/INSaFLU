@@ -183,6 +183,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         ):
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -802,7 +803,7 @@ def Project_reports(requesdst, pk1):
 
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
-            "run__name", "-coverage"
+            "-coverage"
         )
         project_name = project.name
 
@@ -845,7 +846,7 @@ def Sample_reports(requesdst, pk1, pk2):
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(
             run__project__pk=int(pk1), sample__pk=int(pk2)
-        ).order_by("run__name", "-coverage")
+        ).order_by("-coverage")
         project_name = project.name
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 

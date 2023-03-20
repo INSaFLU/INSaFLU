@@ -965,7 +965,8 @@ class run_bwa_mem(Classifier_init):
         rundir = os.path.dirname(self.report_path)
         unzip_seq = f"gunzip -c {self.query_path} > {rundir}/seq.fq"
 
-        self.cmd.run(unzip_seq)
+        self.cmd.run_bash(unzip_seq)
+
         cmd = f"bwa mem -t {threads} {self.args} {os.path.splitext(self.db_path)[0]} {rundir}/seq.fq > {self.report_path}"
 
         self.cmd.run(cmd)

@@ -25,6 +25,8 @@ from django_tables2 import RequestConfig
 from extend_user.models import Profile
 from managing_files.models import Project, ProjectSample, Reference
 from settings.constants_settings import ConstantsSettings
+from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.default_parameters import DefaultParameters
 from settings.models import Software as SoftwareSettings
 from settings.models import Parameter
 from settings.tables import SoftwaresTable
@@ -36,6 +38,9 @@ from utils.session_variables import (
 from utils.software import Software
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
+from utils.result import DecodeObjects
+from managing_files.manage_database import ManageDatabase
+from constants.meta_key_and_values import MetaKeyAndValue	
 
 from datasets.forms import (
     AddConsensusDatasetForm,
@@ -777,6 +782,10 @@ class AddDatasetsProjectsView(
                 vect_sample_id_add = vect_sample_id_add_temp
 
             ### start adding...
+            default_software = DefaultProjectSoftware()	
+            decode_coverage = DecodeObjects()
+            manageDatabase = ManageDatabase()
+
             reference_add, consensus_add = 0, 0
             for id_project in vect_sample_id_add:
 
@@ -800,6 +809,38 @@ class AddDatasetsProjectsView(
                         project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
                     ):
                         continue
+
+                    # Only add the ones that have all segments with suficient coverage
+                    #meta_value = manageDatabase.get_project_sample_metakey_last(project_sample, 
+                    #                                                            MetaKeyAndValue.META_KEY_Coverage, 
+                    #                                                            MetaKeyAndValue.META_VALUE_Success)
+                    #if (meta_value is None): continue
+
+                    #decode_coverage = DecodeObjects()
+                    #coverage = decode_coverage.decode_result(meta_value.description)
+
+                    ### get consensus
+                    #sample_tecnology = ConstantsSettings.TECHNOLOGY_generic
+                    #if project_sample.is_sample_illumina(): 
+                    #    sample_tecnology = ConstantsSettings.TECHNOLOGY_illumina
+                    #else:
+                    #    sample_tecnology = ConstantsSettings.TECHNOLOGY_minion
+                    #limit_to_mask_consensus = -1               
+                    #if (project_sample.is_mask_consensus_sequences): 
+                    #    limit_to_mask_consensus = int(default_software.get_mask_consensus_single_parameter(project_sample,
+                    #            DefaultParameters.MASK_CONSENSUS_threshold, sample_tecnology))
+                    
+                    #consensus_fasta = project_sample.get_consensus_file(TypePath.MEDIA_ROOT)
+                    #temp_dir = self.utils.get_temp_dir()
+                    #if (not self.utils.filter_fasta_all_sequences(consensus_fasta, project_sample.sample.name, coverage, limit_to_mask_consensus, temp_dir)):
+                    #     self.utils.remove_dir(temp_dir)
+                    #     continue
+                    #self.utils.remove_dir(temp_dir)
+
+                    # Only include the ones that have all segments
+                    #if not default_software.include_consensus(project_sample): continue
+
+
                     try:
                         dataset_consensus = DatasetConsensus.objects.get(
                             project_sample=project_sample, dataset=dataset
@@ -1144,6 +1185,9 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y: Reference.SPECIES_INFLUENZA,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y: Reference.SPECIES_INFLUENZA,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2: "",                        
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx: Reference.SPECIES_MPXV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a: Reference.SPECIES_RSV,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b: Reference.SPECIES_RSV

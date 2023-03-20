@@ -75,11 +75,20 @@ from managing_files.tables import (
     ShowProjectSamplesResults,
 )
 
+from settings.default_software import DefaultSoftware
+
+
 # http://www.craigderington.me/generic-list-view-with-django-tables/
 
 
 class ProjectIndex(TemplateView):
     template_name = "project/project_index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectIndex, self).get_context_data(**kwargs)
+        default_software = DefaultSoftware()
+        context["televir_available"] = default_software.test_televir_software_available()
+        return context
 
 
 # class ReferencesView(LoginRequiredMixin, GroupRequiredMixin, ListView):
@@ -2286,6 +2295,7 @@ class ShowSampleProjectsView(LoginRequiredMixin, ListView):
         # if os.path.exists(project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay)):
         #    context['aln2pheno_report_pokay'] = get_link_for_dropdown_item(
         #        project.get_global_file_by_project(TypePath.MEDIA_URL, Project.PROJECT_FILE_NAME_Aln2pheno_report_pokay))
+        
         if os.path.exists(
             project.get_global_file_by_project(
                 TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_zip

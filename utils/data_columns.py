@@ -101,6 +101,9 @@ DICT_MANDATORY_FIELDS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : VECT_NEXTSTRAIN_mandatory_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : VECT_NEXTSTRAIN_mandatory_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 : VECT_NEXTSTRAIN_mandatory_generic,		
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : VECT_NEXTSTRAIN_mandatory_rsv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : VECT_NEXTSTRAIN_mandatory_rsv
 }
@@ -145,8 +148,11 @@ DICT_MANDATORY_FIELDS_DEFAULTS = {
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y : DICT_NEXTSTRAIN_default_generic,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y : DICT_NEXTSTRAIN_default_generic,
-	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : DICT_NEXTSTRAIN_default_generic,	
-	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : DICT_NEXTSTRAIN_default_rsv,	
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2 : DICT_NEXTSTRAIN_default_generic,		
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic : DICT_NEXTSTRAIN_default_generic,
+	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a : DICT_NEXTSTRAIN_default_rsv,
 	SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b : DICT_NEXTSTRAIN_default_rsv,
 }
 

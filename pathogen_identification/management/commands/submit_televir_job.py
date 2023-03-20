@@ -105,12 +105,12 @@ class Command(BaseCommand):
         ### SUBMISSION
         try:
 
-            for sample in samples:
+            for sample in submission_dict.keys():
 
                 for leaf, matched_path_node in available_path_nodes.items():
 
                     if (
-                        utils.parameter_util.check_ParameterSet_available(
+                        utils.parameter_util.check_ParameterSet_available_to_run(
                             sample=sample, leaf=matched_path_node, project=project
                         )
                         is False

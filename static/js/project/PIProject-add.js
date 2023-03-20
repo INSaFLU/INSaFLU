@@ -11,7 +11,8 @@ $("#id_project_name").on("change paste keyup", function () {
           csrfmiddlewaretoken: '{{ csrf_token }}' }, // data sent with the post request
       success: function (data) {
         $(document).find('#error_1_id_name').remove();
-        if (data.is_taken) {
+        /// if data is taken or has_special_characters or has_spaces then show the error
+        if (data.is_taken || data.has_special_characters || data.has_spaces) {
           var error_message = "<strong>" + data.error_message + "</strong>";
            $("#id_project_name_error").append(
               $('<span/>', { 										// creates a dynamic div element on the fly

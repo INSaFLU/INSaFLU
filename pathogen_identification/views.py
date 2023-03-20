@@ -61,6 +61,8 @@ from pathogen_identification.tables import (
     SampleTable,
 )
 
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+
 
 def clean_check_box_in_session(request):
     """
@@ -181,12 +183,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         ):
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
-                | Q(reference__name__icontains=self.request.GET.get(tag_search))
-                | Q(
-                    project_samples__sample__name__icontains=self.request.GET.get(
-                        tag_search
-                    )
-                )
+                | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -254,9 +251,8 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             ]
             del self.request.session[Constants.ERROR_PROJECT_NAME]
 
-        ###
-
-        ###
+        else:
+            context[Constants.ERROR_PROJECT_NAME] = ""
 
         context["project_name"] = project_name
         context["show_paginatior"] = False
@@ -302,6 +298,24 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             b_error = True
         except Projects.DoesNotExist:
             pass
+        ###
+        if context[Constants.ERROR_PROJECT_NAME] != "":
+            b_error = True
+
+        if not form.cleaned_data["name"]:
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can not be empty."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
+        if not form.cleaned_data["name"].replace("_", "").isalnum():
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can only contain letters and numbers."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
         ### exists an error
         if b_error:
             return super(PathID_ProjectCreateView, self).form_invalid(form)
@@ -860,6 +874,36 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
+def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
+    """
+    check contigs exist, if not, replace path with media path check again, if so, replace with media path.
+    """
+    ##
+    assembly_contigs = run_assembly.assembly_contigs
+
+    if not assembly_contigs:
+        return
+
+    assembly_contigs_exist = os.path.exists(assembly_contigs)
+
+    if assembly_contigs_exist:
+        return
+
+    media_dir = infer_run_media_dir(run_main)
+
+    if not media_dir:
+        return
+
+    if not assembly_contigs_exist:
+        assembly_contigs = os.path.basename(assembly_contigs)
+        assembly_contigs = os.path.join(media_dir, "assembly", assembly_contigs)
+        assembly_contigs_exist = os.path.exists(assembly_contigs)
+        if assembly_contigs_exist:
+            print("assembly recovered")
+            run_assembly.assembly_contigs = assembly_contigs
+            run_assembly.save()
+
+
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -916,6 +960,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
         run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+
+        recover_assembly_contigs(run_main, run_assembly)
+
         #
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
         #

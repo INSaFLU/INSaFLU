@@ -2,15 +2,27 @@ from __future__ import absolute_import
 
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
-#from django.core.urlresolvers import reverse_lazy
+
+# from django.core.urlresolvers import reverse_lazy
 from django.urls import reverse_lazy
-from braces.views import AnonymousRequiredMixin, FormValidMessageMixin, LoginRequiredMixin, MessageMixin
+from braces.views import (
+    AnonymousRequiredMixin,
+    FormValidMessageMixin,
+    LoginRequiredMixin,
+    MessageMixin,
+)
 from ipware.ip import get_ip
 from log_login.models import LoginHistory
 from managing_files.models import DataSet
 from constants.constants import Constants
 from django.contrib import messages
-from fluwebvirus.forms import RegistrationForm, LoginForm, ResetPasswordForm, ChangePasswordForm, GetMessageConfirmEmailForm
+from fluwebvirus.forms import (
+    RegistrationForm,
+    LoginForm,
+    ResetPasswordForm,
+    ChangePasswordForm,
+    GetMessageConfirmEmailForm,
+)
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect
@@ -24,421 +36,598 @@ from django.conf import settings
 from embed_video.backends import detect_backend
 from utils.utils import ShowInfoMainPage
 import urllib, json
+from settings.default_software import DefaultSoftware
 
 class HomePageView(generic.TemplateView):
-	"""
-	Home page
-	"""
-	template_name = 'home.html'
-	
-	def get_context_data(self, **kwargs):
-		context = super(HomePageView, self).get_context_data(**kwargs)
-		context['version'] = settings.APP_VERSION_NUMBER
-		context['nav_dashboard'] = True
-		context['add_google_analytis'] = settings.ADD_GOOGLE_ANALYTICS			
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['is_authenticated'] = self.request.user.is_authenticated
-		if (settings.SHOW_VIDEO_TUTORIAL): context['video_tutorial'] = detect_backend('https://www.youtube.com/watch?v=8AGaNrCGmtI')
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		
-		return context
+    """
+    Home page
+    """
+
+    template_name = "home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(HomePageView, self).get_context_data(**kwargs)
+
+        default_software = DefaultSoftware()
+        context["televir_available"] = default_software.test_televir_software_available()
+        context["version"] = settings.APP_VERSION_NUMBER
+        context["nav_dashboard"] = True
+        context["add_google_analytis"] = settings.ADD_GOOGLE_ANALYTICS
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context["is_authenticated"] = self.request.user.is_authenticated
+        if settings.SHOW_VIDEO_TUTORIAL:
+            context["video_tutorial"] = detect_backend(
+                "https://www.youtube.com/watch?v=8AGaNrCGmtI"
+            )
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+
+        return context
+
 
 class SignUpView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	SignUpView
-	"""
-	form_class = RegistrationForm
-	model = User
-	template_name = 'accounts/signup.html'
+    """
+    SignUpView
+    """
 
-	def get_context_data(self, **kwargs):
-		context = super(SignUpView, self).get_context_data(**kwargs)
-		context['nav_modal'] = True	## short the size of modal window
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-	def form_valid(self, form):
-		
-		if form.is_valid():
-			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-			
-			if (use_recaptcha):
-				### Begin reCAPTCHA validation '''
-				recaptcha_response = self.request.POST.get('g-recaptcha-response')
-				url = 'https://www.google.com/recaptcha/api/siteverify'
-				values = {
-					'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-					'response': recaptcha_response
-				}
-				data = urllib.parse.urlencode(values).encode("utf-8")
-				req = urllib.request.Request(url, data)
-				response = urllib.request.urlopen(req).read()
-				result = json.loads(response.decode('utf-8'))
-				### End reCAPTCHA validation
-			
-			if (not use_recaptcha or result['success']):
-				user = form.save(commit=False)
-				user.is_active = True		## need to pass the confirm email
-				user.save()
-				user.profile.institution = form.cleaned_data['institution']
-				user.profile.save()
-				
-				current_site = get_current_site(self.request)
-				subject = 'Activate your INSaFLU Account'
-				messageHTML = render_to_string('accounts/account_activation_email.html', {
-					'user': user,
-					'domain': current_site.domain,
-					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-					'token': account_activation_token.make_token(user),
-				})
-				message = render_to_string('accounts/account_activation_email.txt', {
-					'user': user,
-					'domain': current_site.domain,
-					'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-					'token': account_activation_token.make_token(user),
-				})
-				user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
-				messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
-			else:
-				messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
-			return redirect('dashboard')
-			
-	## static method
-	form_valid_message = ""
+    form_class = RegistrationForm
+    model = User
+    template_name = "accounts/signup.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(SignUpView, self).get_context_data(**kwargs)
+        context["nav_modal"] = True  ## short the size of modal window
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context["use_recaptcha"] = (
+            True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+        )
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+
+        if form.is_valid():
+            use_recaptcha = (
+                True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+            )
+
+            if use_recaptcha:
+                ### Begin reCAPTCHA validation '''
+                recaptcha_response = self.request.POST.get("g-recaptcha-response")
+                url = "https://www.google.com/recaptcha/api/siteverify"
+                values = {
+                    "secret": settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+                    "response": recaptcha_response,
+                }
+                data = urllib.parse.urlencode(values).encode("utf-8")
+                req = urllib.request.Request(url, data)
+                response = urllib.request.urlopen(req).read()
+                result = json.loads(response.decode("utf-8"))
+                ### End reCAPTCHA validation
+
+            if not use_recaptcha or result["success"]:
+                user = form.save(commit=False)
+                user.is_active = True  ## need to pass the confirm email
+                user.save()
+                user.profile.institution = form.cleaned_data["institution"]
+                user.profile.save()
+
+                current_site = get_current_site(self.request)
+                subject = "Activate your INSaFLU Account"
+                messageHTML = render_to_string(
+                    "accounts/account_activation_email.html",
+                    {
+                        "user": user,
+                        "domain": current_site.domain,
+                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "token": account_activation_token.make_token(user),
+                    },
+                )
+                message = render_to_string(
+                    "accounts/account_activation_email.txt",
+                    {
+                        "user": user,
+                        "domain": current_site.domain,
+                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "token": account_activation_token.make_token(user),
+                    },
+                )
+                user.email_user(
+                    subject,
+                    message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    html_message=messageHTML,
+                )
+                messages.success(
+                    self.request,
+                    "An email was sent to validate your account. Please, follow the link in the e-mail.",
+                    fail_silently=True,
+                )
+            else:
+                messages.warning(
+                    self.request,
+                    "Wrong reCAPTCHA. Please, try again.",
+                    fail_silently=True,
+                )
+            return redirect("dashboard")
+
+    ## static method
+    form_valid_message = ""
 
 
 class ResetPasswordView(AnonymousRequiredMixin, generic.CreateView):
-	"""
-	Reset password
-	"""
-	form_class = ResetPasswordForm
-	model = User
-	template_name = 'accounts/reset_password.html'
+    """
+    Reset password
+    """
 
-	def get_context_data(self, **kwargs):
-		context = super(ResetPasswordView, self).get_context_data(**kwargs)
-		context['nav_modal'] = True	## short the size of modal window
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-	def form_valid(self, form):
-		
-		if form.is_valid():
-			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-			email_name = form.cleaned_data['email']
-			if (len(email_name.strip()) == 0 or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower() or\
-					email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()):
-				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
-				return redirect('dashboard')
-			
-			### 
-			try:
-				if (use_recaptcha):
-					### Begin reCAPTCHA validation '''
-					recaptcha_response = self.request.POST.get('g-recaptcha-response')
-				
-					url = 'https://www.google.com/recaptcha/api/siteverify'
-					values = {
-						'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-						'response': recaptcha_response
-					}
-					data = urllib.parse.urlencode(values).encode("utf-8")
-					req = urllib.request.Request(url, data)
-					response = urllib.request.urlopen(req).read()
-					result = json.loads(response.decode('utf-8'))
-					### End reCAPTCHA validation
-				
-				if (not use_recaptcha or result['success']):
-					user = User.objects.get(email__iexact=email_name, is_active=True, profile__email_confirmed=True)
-					current_site = get_current_site(self.request)
-					subject = 'Reseting password  in your INSaFLU Account'
-					messageHTML = render_to_string('accounts/account_reset_pass_email.html', {
-						'user': user,
-						'domain': current_site.domain,
-						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-						'token': account_activation_token.make_token(user),
-					})
-					message = render_to_string('accounts/account_reset_pass_email.txt', {
-						'user': user,
-						'domain': current_site.domain,
-						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-						'token': account_activation_token.make_token(user),
-					})
-					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
-					messages.success(self.request, "An email was sent to change your account. Please, follow the link.", fail_silently=True)
-				else:
-					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
-					
-			except User.DoesNotExist as e:
-				messages.warning(self.request, "The account '{}' does not exist in database or is disabled.".format(email_name), fail_silently=True)
-			
-			return redirect('dashboard')
-			
+    form_class = ResetPasswordForm
+    model = User
+    template_name = "accounts/reset_password.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(ResetPasswordView, self).get_context_data(**kwargs)
+        context["nav_modal"] = True  ## short the size of modal window
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context["use_recaptcha"] = (
+            True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+        )
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+
+        if form.is_valid():
+            use_recaptcha = (
+                True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+            )
+            email_name = form.cleaned_data["email"]
+            if (
+                len(email_name.strip()) == 0
+                or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower()
+                or email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()
+            ):
+                messages.warning(
+                    self.request,
+                    "The account '{}' does not exist in database.".format(email_name),
+                    fail_silently=True,
+                )
+                return redirect("dashboard")
+
+            ###
+            try:
+                if use_recaptcha:
+                    ### Begin reCAPTCHA validation '''
+                    recaptcha_response = self.request.POST.get("g-recaptcha-response")
+
+                    url = "https://www.google.com/recaptcha/api/siteverify"
+                    values = {
+                        "secret": settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+                        "response": recaptcha_response,
+                    }
+                    data = urllib.parse.urlencode(values).encode("utf-8")
+                    req = urllib.request.Request(url, data)
+                    response = urllib.request.urlopen(req).read()
+                    result = json.loads(response.decode("utf-8"))
+                    ### End reCAPTCHA validation
+
+                if not use_recaptcha or result["success"]:
+                    user = User.objects.get(
+                        email__iexact=email_name,
+                        is_active=True,
+                        profile__email_confirmed=True,
+                    )
+                    current_site = get_current_site(self.request)
+                    subject = "Reseting password  in your INSaFLU Account"
+                    messageHTML = render_to_string(
+                        "accounts/account_reset_pass_email.html",
+                        {
+                            "user": user,
+                            "domain": current_site.domain,
+                            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                            "token": account_activation_token.make_token(user),
+                        },
+                    )
+                    message = render_to_string(
+                        "accounts/account_reset_pass_email.txt",
+                        {
+                            "user": user,
+                            "domain": current_site.domain,
+                            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                            "token": account_activation_token.make_token(user),
+                        },
+                    )
+                    user.email_user(
+                        subject,
+                        message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        html_message=messageHTML,
+                    )
+                    messages.success(
+                        self.request,
+                        "An email was sent to change your account. Please, follow the link.",
+                        fail_silently=True,
+                    )
+                else:
+                    messages.warning(
+                        self.request,
+                        "Wrong reCAPTCHA. Please, try again.",
+                        fail_silently=True,
+                    )
+
+            except User.DoesNotExist as e:
+                messages.warning(
+                    self.request,
+                    "The account '{}' does not exist in database or is disabled.".format(
+                        email_name
+                    ),
+                    fail_silently=True,
+                )
+
+            return redirect("dashboard")
+
+
 class GetMessageConfirmEmailView(AnonymousRequiredMixin, generic.CreateView):
-	"""
-	Reset password
-	"""
-	form_class = GetMessageConfirmEmailForm
-	model = User
-	template_name = 'accounts/other_confirm_email.html'
+    """
+    Reset password
+    """
 
-	def get_context_data(self, **kwargs):
-		context = super(GetMessageConfirmEmailView, self).get_context_data(**kwargs)
-		context['nav_modal'] = True	## short the size of modal window
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['use_recaptcha'] = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-	def form_valid(self, form):
-		
-		if form.is_valid():
-			use_recaptcha = True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
-			email_name = form.cleaned_data['email']
-			if (len(email_name.strip()) == 0 or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower() or\
-					email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()):
-				messages.warning(self.request, "The account '{}' does not exist in database.".format(email_name), fail_silently=True)
-				return redirect('dashboard')
-			
-			### 
-			try:
-				if (use_recaptcha):
-					### Begin reCAPTCHA validation '''
-					recaptcha_response = self.request.POST.get('g-recaptcha-response')
-					url = 'https://www.google.com/recaptcha/api/siteverify'
-					values = {
-						'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY,
-						'response': recaptcha_response
-					}
-					data = urllib.parse.urlencode(values).encode("utf-8")
-					req = urllib.request.Request(url, data)
-					response = urllib.request.urlopen(req).read()
-					result = json.loads(response.decode('utf-8'))
-					### End reCAPTCHA validation
-				
-				if (not use_recaptcha or result['success']):
-					## don't change anything in the account.
-					user = User.objects.get(email__iexact=email_name, is_active=True)
-					
-					## email already confirmed
-					if (user.profile.email_confirmed):
-						messages.warning(self.request, "Warning, this email was already confirmed.", fail_silently=True)
-						return self.form_invalid(form)
-					
-					current_site = get_current_site(self.request)
-					subject = 'Activate your INSaFLU Account'
-					messageHTML = render_to_string('accounts/account_activation_email.html', {
-						'user': user,
-						'domain': current_site.domain,
-						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-						'token': account_activation_token.make_token(user),
-					})
-					message = render_to_string('accounts/account_activation_email.txt', {
-						'user': user,
-						'domain': current_site.domain,
-						'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-						'token': account_activation_token.make_token(user),
-					})
-					user.email_user(subject, message, from_email=settings.DEFAULT_FROM_EMAIL, html_message=messageHTML)
-					messages.success(self.request, "An email was sent to validate your account. Please, follow the link in the e-mail.", fail_silently=True)
-				else:
-					messages.warning(self.request, "Wrong reCAPTCHA. Please, try again.", fail_silently=True)
-					
-			except User.DoesNotExist as e:
-				messages.warning(self.request, "The account '{}' does not exist in database or is disabled.".format(email_name), fail_silently=True)
-			
-			return redirect('dashboard')
+    form_class = GetMessageConfirmEmailForm
+    model = User
+    template_name = "accounts/other_confirm_email.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(GetMessageConfirmEmailView, self).get_context_data(**kwargs)
+        context["nav_modal"] = True  ## short the size of modal window
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context["use_recaptcha"] = (
+            True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+        )
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+
+        if form.is_valid():
+            use_recaptcha = (
+                True if len(settings.GOOGLE_RECAPTCHA_SECRET_KEY) > 0 else False
+            )
+            email_name = form.cleaned_data["email"]
+            if (
+                len(email_name.strip()) == 0
+                or email_name.lower() == settings.DEFAULT_USER_EMAIL.lower()
+                or email_name.lower() == settings.USER_ANONYMOUS_EMAIL.lower()
+            ):
+                messages.warning(
+                    self.request,
+                    "The account '{}' does not exist in database.".format(email_name),
+                    fail_silently=True,
+                )
+                return redirect("dashboard")
+
+            ###
+            try:
+                if use_recaptcha:
+                    ### Begin reCAPTCHA validation '''
+                    recaptcha_response = self.request.POST.get("g-recaptcha-response")
+                    url = "https://www.google.com/recaptcha/api/siteverify"
+                    values = {
+                        "secret": settings.GOOGLE_RECAPTCHA_SECRET_KEY,
+                        "response": recaptcha_response,
+                    }
+                    data = urllib.parse.urlencode(values).encode("utf-8")
+                    req = urllib.request.Request(url, data)
+                    response = urllib.request.urlopen(req).read()
+                    result = json.loads(response.decode("utf-8"))
+                    ### End reCAPTCHA validation
+
+                if not use_recaptcha or result["success"]:
+                    ## don't change anything in the account.
+                    user = User.objects.get(email__iexact=email_name, is_active=True)
+
+                    ## email already confirmed
+                    if user.profile.email_confirmed:
+                        messages.warning(
+                            self.request,
+                            "Warning, this email was already confirmed.",
+                            fail_silently=True,
+                        )
+                        return self.form_invalid(form)
+
+                    current_site = get_current_site(self.request)
+                    subject = "Activate your INSaFLU Account"
+                    messageHTML = render_to_string(
+                        "accounts/account_activation_email.html",
+                        {
+                            "user": user,
+                            "domain": current_site.domain,
+                            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                            "token": account_activation_token.make_token(user),
+                        },
+                    )
+                    message = render_to_string(
+                        "accounts/account_activation_email.txt",
+                        {
+                            "user": user,
+                            "domain": current_site.domain,
+                            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                            "token": account_activation_token.make_token(user),
+                        },
+                    )
+                    user.email_user(
+                        subject,
+                        message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        html_message=messageHTML,
+                    )
+                    messages.success(
+                        self.request,
+                        "An email was sent to validate your account. Please, follow the link in the e-mail.",
+                        fail_silently=True,
+                    )
+                else:
+                    messages.warning(
+                        self.request,
+                        "Wrong reCAPTCHA. Please, try again.",
+                        fail_silently=True,
+                    )
+
+            except User.DoesNotExist as e:
+                messages.warning(
+                    self.request,
+                    "The account '{}' does not exist in database or is disabled.".format(
+                        email_name
+                    ),
+                    fail_silently=True,
+                )
+
+            return redirect("dashboard")
 
 
+class ChangePasswordView(
+    AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView
+):
+    """
+    Change the passwords
+    """
 
-class ChangePasswordView(AnonymousRequiredMixin, FormValidMessageMixin, generic.CreateView):
-	"""
-	Change the passwords
-	"""
-	form_class = ChangePasswordForm
-	model = User
-	template_name = 'accounts/change_password.html'
+    form_class = ChangePasswordForm
+    model = User
+    template_name = "accounts/change_password.html"
 
-	def get_context_data(self, **kwargs):
-		context = super(ChangePasswordView, self).get_context_data(**kwargs)
-		context['nav_modal'] = True	## short the size of modal window
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-	def form_valid(self, form):
-		
-		if form.is_valid() and Constants.SESSION_KEY_USER_ID in self.request.session:
-			try:
-				user = User.objects.get(pk=self.request.session[Constants.SESSION_KEY_USER_ID])
-				user.set_password(form.cleaned_data['password1'])
-				user.is_active = True
-				user.profile.email_confirmed = True
-				user.save()
-				
-				## clean value in session
-				del self.request.session[Constants.SESSION_KEY_USER_ID]
-				
-				messages.success(self.request, "Congratulations, your account has a new password.", fail_silently=True)
-				return redirect('dashboard')
-			except User.DoesNotExist as e:
-				pass
+    def get_context_data(self, **kwargs):
+        context = super(ChangePasswordView, self).get_context_data(**kwargs)
+        context["nav_modal"] = True  ## short the size of modal window
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
 
-		messages.error(self.request, "Error, fail to change passwords.", fail_silently=True)
-		return redirect('dashboard')
-			
-	## static method
-	form_valid_message = ""
+    def form_valid(self, form):
+
+        if form.is_valid() and Constants.SESSION_KEY_USER_ID in self.request.session:
+            try:
+                user = User.objects.get(
+                    pk=self.request.session[Constants.SESSION_KEY_USER_ID]
+                )
+                user.set_password(form.cleaned_data["password1"])
+                user.is_active = True
+                user.profile.email_confirmed = True
+                user.save()
+
+                ## clean value in session
+                del self.request.session[Constants.SESSION_KEY_USER_ID]
+
+                messages.success(
+                    self.request,
+                    "Congratulations, your account has a new password.",
+                    fail_silently=True,
+                )
+                return redirect("dashboard")
+            except User.DoesNotExist as e:
+                pass
+
+        messages.error(
+            self.request, "Error, fail to change passwords.", fail_silently=True
+        )
+        return redirect("dashboard")
+
+    ## static method
+    form_valid_message = ""
+
 
 class LoginView(AnonymousRequiredMixin, FormValidMessageMixin, generic.FormView):
-	"""
-	Login
-	"""
-	form_class = LoginForm
-	success_url = reverse_lazy('home')
-	template_name = 'accounts/login.html'
+    """
+    Login
+    """
 
-	def get_context_data(self, **kwargs):
-		context = super(LoginView, self).get_context_data(**kwargs)
-		context['nav_modal'] = True	## short the size of modal window
-		context['not_show_breadcrumbs'] = True	## to not show breadcrumbs
-		context['show_info_main_page'] = ShowInfoMainPage()		## show main information about the institute
-		return context
-	
-	def form_valid(self, form):
-		username = form.cleaned_data['username']
-		password = form.cleaned_data['password']
-		
-		###
-		if ('login_anonymous' in form.cleaned_data and form.cleaned_data['login_anonymous']):
-			username = Constants.USER_ANONYMOUS
-			password = Constants.USER_ANONYMOUS_PASS
-		
-		user = authenticate(username=username, password=password)
-		if (user is not None and not user.profile.email_confirmed):
-			messages.warning(self.request, "Warning, your email is not confirmed.", fail_silently=True)
-			return self.form_invalid(form)
-		
-		if user is not None and user.is_active:
-			login(self.request, user)
-			
-			## set login history
-			login_history = LoginHistory()
-			login_history.ip = get_ip(self.request)
-			login_history.owner = self.request.user
-			login_history.operation = LoginHistory.LOGIN_IN
-			login_history.description = get_all_info(self.request)
-			login_history.save()
-			
-			if (DataSet.objects.filter(owner__id=user.id).count() == 0):
-				### need to create it generic
-				dataSet = DataSet()
-				dataSet.name = Constants.DATA_SET_GENERIC
-				dataSet.owner = self.request.user
-				dataSet.save()
-				
-			return super(LoginView, self).form_valid(form)
-		else:
-			return self.form_invalid(form)
+    form_class = LoginForm
+    success_url = reverse_lazy("home")
+    template_name = "accounts/login.html"
 
-	## static method
-	form_valid_message = "You've been logged in. Welcome back!"
-	
-	## dinamic method instead
-#	def get_form_valid_message(self):
-#		return u"{0} created!".format(self.object.title)
+    def get_context_data(self, **kwargs):
+        context = super(LoginView, self).get_context_data(**kwargs)
+        context["nav_modal"] = True  ## short the size of modal window
+        context["not_show_breadcrumbs"] = True  ## to not show breadcrumbs
+        context[
+            "show_info_main_page"
+        ] = ShowInfoMainPage()  ## show main information about the institute
+        return context
+
+    def form_valid(self, form):
+        username = form.cleaned_data["username"]
+        password = form.cleaned_data["password"]
+
+        ###
+        if (
+            "login_anonymous" in form.cleaned_data
+            and form.cleaned_data["login_anonymous"]
+        ):
+            username = Constants.USER_ANONYMOUS
+            password = Constants.USER_ANONYMOUS_PASS
+
+        user = authenticate(username=username, password=password)
+        if user is not None and not user.profile.email_confirmed:
+            messages.warning(
+                self.request,
+                "Warning, your email is not confirmed.",
+                fail_silently=True,
+            )
+            return self.form_invalid(form)
+
+        if user is not None and user.is_active:
+            login(self.request, user)
+
+            ## set login history
+            login_history = LoginHistory()
+            login_history.ip = get_ip(self.request)
+            login_history.owner = self.request.user
+            login_history.operation = LoginHistory.LOGIN_IN
+            login_history.description = get_all_info(self.request)
+            login_history.save()
+
+            if DataSet.objects.filter(owner__id=user.id).count() == 0:
+                ### need to create it generic
+                dataSet = DataSet()
+                dataSet.name = Constants.DATA_SET_GENERIC
+                dataSet.owner = self.request.user
+                dataSet.save()
+
+            return super(LoginView, self).form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    ## static method
+    form_valid_message = "You've been logged in. Welcome back!"
+
+    ## dinamic method instead
+
+
+# 	def get_form_valid_message(self):
+# 		return u"{0} created!".format(self.object.title)
 
 
 class LogOutView(LoginRequiredMixin, MessageMixin, generic.RedirectView):
-	"""
-	Logout
-	"""
-	url = reverse_lazy('home')
-	def get(self, request, *args, **kwargs):
-		## set login history
-		login_history = LoginHistory()
-		## need to set a proxy if they use one...
-		## get_trusted_ip(request, trusted_proxies=['23.91.45.15'])
-		login_history.ip = get_ip(self.request)
-		login_history.owner = self.request.user
-		login_history.operation = LoginHistory.LOGIN_OUT
-		login_history.save()
-		logout(request)
-		
-		self.messages.success("You've been logged out. Come back soon!")
-		return super(LogOutView, self).get(request, *args, **kwargs)
+    """
+    Logout
+    """
+
+    url = reverse_lazy("home")
+
+    def get(self, request, *args, **kwargs):
+        ## set login history
+        login_history = LoginHistory()
+        ## need to set a proxy if they use one...
+        ## get_trusted_ip(request, trusted_proxies=['23.91.45.15'])
+        login_history.ip = get_ip(self.request)
+        login_history.owner = self.request.user
+        login_history.operation = LoginHistory.LOGIN_OUT
+        login_history.save()
+        logout(request)
+
+        self.messages.success("You've been logged out. Come back soon!")
+        return super(LogOutView, self).get(request, *args, **kwargs)
+
 
 def activate(request, uidb64, token):
-	try:
-		uid = force_text(urlsafe_base64_decode(uidb64))
-		user = User.objects.get(pk=uid)
-	except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-		user = None
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
 
-	if user is not None and account_activation_token.check_token(user, token):
-		user.is_active = True
-		user.profile.email_confirmed = True
-		user.save()
-		login(request, user)
-		
-		## set login history
-		login_history = LoginHistory()
-		login_history.ip = get_ip(request)
-		login_history.owner = user
-		login_history.operation = LoginHistory.LOGIN_IN
-		login_history.description = get_all_info(request)
-		login_history.save()
-		
-		if (DataSet.objects.filter(owner__id=user.id).count() == 0):
-			### need to create it generic
-			dataSet = DataSet()
-			dataSet.name = Constants.DATA_SET_GENERIC
-			dataSet.owner = user
-			dataSet.save()
-		
-		messages.success(request, "Congratulations, your account was confirmed. Enjoy the experience.", fail_silently=True)
-		return redirect('dashboard')
-	else:
-		messages.error(request, "Error, your account activation token is invalid.", fail_silently=True)
-		return redirect('dashboard')
-	
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.profile.email_confirmed = True
+        user.save()
+        login(request, user)
+
+        ## set login history
+        login_history = LoginHistory()
+        login_history.ip = get_ip(request)
+        login_history.owner = user
+        login_history.operation = LoginHistory.LOGIN_IN
+        login_history.description = get_all_info(request)
+        login_history.save()
+
+        if DataSet.objects.filter(owner__id=user.id).count() == 0:
+            ### need to create it generic
+            dataSet = DataSet()
+            dataSet.name = Constants.DATA_SET_GENERIC
+            dataSet.owner = user
+            dataSet.save()
+
+        messages.success(
+            request,
+            "Congratulations, your account was confirmed. Enjoy the experience.",
+            fail_silently=True,
+        )
+        return redirect("dashboard")
+    else:
+        messages.error(
+            request,
+            "Error, your account activation token is invalid.",
+            fail_silently=True,
+        )
+        return redirect("dashboard")
+
+
 def reset_password_key(request, uidb64, token):
-	try:
-		uid = force_text(urlsafe_base64_decode(uidb64))
-		user = User.objects.get(pk=uid)
-	except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-		user = None
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
 
-	if user is not None and account_activation_token.check_token(user, token):
-		request.session[Constants.SESSION_KEY_USER_ID] = uid
-		return redirect('change_password')
-	else:
-		messages.error(request, "Error, your reset password token is invalid.", fail_silently=True)
-		return redirect('dashboard')
+    if user is not None and account_activation_token.check_token(user, token):
+        request.session[Constants.SESSION_KEY_USER_ID] = uid
+        return redirect("change_password")
+    else:
+        messages.error(
+            request, "Error, your reset password token is invalid.", fail_silently=True
+        )
+        return redirect("dashboard")
 
 
 def get_all_info(request):
-	"""
-	return all info about user
-	"""
-	sz_return = "is_mobile: {}".format(request.user_agent.is_mobile) # returns True
-	sz_return += ";   is_tablet: {}".format(request.user_agent.is_tablet) # returns False
-	sz_return += ";   is_touch_capable: {}".format(request.user_agent.is_touch_capable) # returns True
-	sz_return += ";   is_pc: {}".format(request.user_agent.is_pc) # returns False
-	sz_return += ";   is_bot: {}".format(request.user_agent.is_bot) # returns False
+    """
+    return all info about user
+    """
+    sz_return = "is_mobile: {}".format(request.user_agent.is_mobile)  # returns True
+    sz_return += ";   is_tablet: {}".format(
+        request.user_agent.is_tablet
+    )  # returns False
+    sz_return += ";   is_touch_capable: {}".format(
+        request.user_agent.is_touch_capable
+    )  # returns True
+    sz_return += ";   is_pc: {}".format(request.user_agent.is_pc)  # returns False
+    sz_return += ";   is_bot: {}".format(request.user_agent.is_bot)  # returns False
 
-	# Accessing user agent's browser attributes
-	sz_return += ";   browser_family: {}".format(request.user_agent.browser.family)  # returns 'Mobile Safari'
-	sz_return += ";   browser_version: {}".format(request.user_agent.browser.version_string)   # returns '5.1'
+    # Accessing user agent's browser attributes
+    sz_return += ";   browser_family: {}".format(
+        request.user_agent.browser.family
+    )  # returns 'Mobile Safari'
+    sz_return += ";   browser_version: {}".format(
+        request.user_agent.browser.version_string
+    )  # returns '5.1'
 
-	# Operating System properties
-	sz_return += ";   os_family: {}".format(request.user_agent.os.family)  # returns 'iOS'
-	sz_return += ";   os_version: {}".format(request.user_agent.os.version_string)  # returns '5.1'
+    # Operating System properties
+    sz_return += ";   os_family: {}".format(
+        request.user_agent.os.family
+    )  # returns 'iOS'
+    sz_return += ";   os_version: {}".format(
+        request.user_agent.os.version_string
+    )  # returns '5.1'
 
-	# Device properties
-	sz_return += ";   device_family: {}".format(request.user_agent.device.family)  # returns 'iPhone'
-	return sz_return
+    # Device properties
+    sz_return += ";   device_family: {}".format(
+        request.user_agent.device.family
+    )  # returns 'iPhone'
+    return sz_return

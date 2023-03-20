@@ -71,15 +71,14 @@ class Projects(models.Model):
         return self.name + " " + self.description
 
     def check_delete_schedule(self):
-        
-        time_since_last_change= datetime.datetime.now() - self.last_change_date
 
-        if time_since_last_change > datetime.timedelta(weeks= 24):
+        time_since_last_change = datetime.datetime.now() - self.last_change_date
 
-            parametersets= ParameterSet.objects.filter(project= self)
+        if time_since_last_change > datetime.timedelta(weeks=24):
+
+            parametersets = ParameterSet.objects.filter(project=self)
             for parameterset in parametersets:
                 parameterset.delete_run_data()
-                
 
 
 class SoftwareTree(models.Model):
@@ -257,7 +256,7 @@ class ParameterSet(models.Model):
     def register_error(self):
         self.status = self.STATUS_ERROR
         self.save()
-    
+
     def delete_run_data(self):
 
         if self.status in [self.STATUS_FINISHED, self.STATUS_ERROR]:
@@ -265,14 +264,10 @@ class ParameterSet(models.Model):
             self.save()
 
             try:
-                run= RunMain.objects.get(parameter_set=self)
+                run = RunMain.objects.get(parameter_set=self)
                 run.delete_data()
             except RunMain.DoesNotExist:
                 pass
-
-
-
-
 
     def __str__(self):
         return self.sample.name + " " + str(self.leaf.index)
@@ -425,7 +420,7 @@ class RunMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
 
-    data_deleted= models.BooleanField(default=False)
+    data_deleted = models.BooleanField(default=False)
 
     params_file_path = models.CharField(max_length=250, blank=True, null=True)
 
@@ -509,15 +504,15 @@ class RunMain(models.Model):
 
     def delete_data(self):
 
-        try: 
+        try:
 
             if os.path.isfile(self.processed_reads_r1):
                 os.remove(self.processed_reads_r1)
-                self.processed_reads_r1= None
+                self.processed_reads_r1 = None
 
             if os.path.isfile(self.processed_reads_r2):
                 os.remove(self.processed_reads_r2)
-                self.processed_reads_r2= None
+                self.processed_reads_r2 = None
 
             run_assembly = RunAssembly.objects.get(run=self)
             if run_assembly:
@@ -527,13 +522,14 @@ class RunMain(models.Model):
 
             for mapped_reference in mapped_references:
                 mapped_reference.delete_data()
-            
-            self.data_deleted= True
+
+            self.data_deleted = True
 
             self.save()
-        
-            
-            
+
+        except Exception as e:
+
+            print(e)
 
 
 class RunDetail(models.Model):
@@ -627,8 +623,8 @@ class RunAssembly(models.Model):
 
         if os.path.isfile(self.assembly_contigs):
             os.remove(self.assembly_contigs)
-            self.assembly_contigs= None
-        
+            self.assembly_contigs = None
+
         self.save()
 
 
@@ -802,43 +798,41 @@ class ReferenceMap_Main(models.Model):
 
         if os.path.isfile(self.bam_file_path):
             os.remove(self.bam_file_path)
-            self.bam_file_path= None
+            self.bam_file_path = None
 
         if os.path.isfile(self.bai_file_path):
             os.remove(self.bai_file_path)
-            self.bai_file_path= None
+            self.bai_file_path = None
 
         if os.path.isfile(self.fasta_file_path):
             os.remove(self.fasta_file_path)
-            self.fasta_file_path= None
+            self.fasta_file_path = None
 
         if os.path.isfile(self.fai_file_path):
             os.remove(self.fai_file_path)
-            self.fai_file_path= None
+            self.fai_file_path = None
 
         if os.path.isfile(self.mapped_subset_r1):
             os.remove(self.mapped_subset_r1)
-            self.mapped_subset_r1= None
+            self.mapped_subset_r1 = None
 
         if os.path.isfile(self.mapped_subset_r2):
             os.remove(self.mapped_subset_r2)
-            self.mapped_subset_r2= None
+            self.mapped_subset_r2 = None
 
         if os.path.isfile(self.mapped_subset_r1_fasta):
             os.remove(self.mapped_subset_r1_fasta)
-            self.mapped_subset_r1_fasta= None
+            self.mapped_subset_r1_fasta = None
 
         if os.path.isfile(self.mapped_subset_r2_fasta):
             os.remove(self.mapped_subset_r2_fasta)
-            self.mapped_subset_r2_fasta= None
+            self.mapped_subset_r2_fasta = None
 
         if os.path.isfile(self.vcf):
             os.remove(self.vcf)
-            self.vcf= None
-        
-        self.save()
-        
+            self.vcf = None
 
+        self.save()
 
 
 class FinalReport(models.Model):

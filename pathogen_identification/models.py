@@ -420,7 +420,7 @@ class RunMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
 
-    data_deleted = models.BooleanField(default=False)
+    # data_deleted = models.BooleanField(default=False)
 
     params_file_path = models.CharField(max_length=250, blank=True, null=True)
 
@@ -523,7 +523,7 @@ class RunMain(models.Model):
             for mapped_reference in mapped_references:
                 mapped_reference.delete_data()
 
-            self.data_deleted = True
+            # self.data_deleted = True
 
             self.save()
 

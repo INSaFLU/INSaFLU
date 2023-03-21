@@ -1,8 +1,8 @@
-'''
+"""
 Created on January 30, 2023
 
 @author: daniel.sobral
-'''
+"""
 import os
 import logging
 import pandas as pd
@@ -13,75 +13,81 @@ from managing_files.models import Sample
 from pathogen_identification.models import Projects, RunMain, ParameterSet, FinalReport
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as ConstantsSettingsPI,
+)
+from fluwebvirus.settings import MEDIA_ROOT
+import pandas as pd
+
 
 class Command(BaseCommand):
-	'''
-	classdocs
-	'''
-	help = "Checks if a given televir project finished."
+    """
+    classdocs
+    """
 
-	# logging
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+    help = "Checks if a given televir project finished."
 
-	def __init__(self, *args, **kwargs):
-		super(Command, self).__init__(*args, **kwargs)
+    # logging
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
 
-	def add_arguments(self, parser):
-		parser.add_argument('--project_name', nargs='?', type=str,
-							required=True, help='Project Name')				
-		parser.add_argument('--user_login', nargs='?', type=str, required=True,
-							help='User login of the project and sample owner')	
-		#parser.add_argument('--report_file', nargs='?', type=str, required=True,
-		#					help='Path for the report file to be saved (if project finished)')								
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(*args, **kwargs)
 
-	# A command must define handle()
-	def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--project_name", nargs="?", type=str, required=True, help="Project Name"
+        )
+        parser.add_argument(
+            "--user_login",
+            nargs="?",
+            type=str,
+            required=True,
+            help="User login of the project and sample owner",
+        )
+        # parser.add_argument('--report_file', nargs='?', type=str, required=True,
+        # 					help='Path for the report file to be saved (if project finished)')
 
-		project_name = options['project_name']
-		account = options['user_login']
-		#report_file = options['report_file']
+    # A command must define handle()
+    def handle(self, *args, **options):
 
-		try:
+        project_name = options["project_name"]
+        account = options["user_login"]
+        # report_file = options['report_file']
 
-			user = User.objects.get(username=account)
+        try:
 
-			project = Projects.objects.get(
-                    name__iexact=project_name,
-                    is_deleted=False,
-                    owner__username=user.username,
+            user = User.objects.get(username=account)
+
+            project = Projects.objects.get(
+                name__iexact=project_name,
+                is_deleted=False,
+                owner__username=user.username,
+            )
+
+            project_media_dir = os.path.join(
+                MEDIA_ROOT,
+                ConstantsSettingsPI.televir_subdirectory,
+                user.pk,
+                project.pk,
+            )
+
+            project_results_path = os.path.join(project_media_dir, "results.tsv")
+
+            runs = RunMain.objects.filter(
+                project=project, parameter_set__status=ParameterSet.STATUS_FINISHED
+            )
+
+            runs_to_pandas = pd.DataFrame(runs.values())
+
+            if not runs_to_pandas.empty:
+                runs_to_pandas.to_csv(
+                    project_results_path, sep="\t", index=False, header=True
                 )
-			
-			runs = RunMain.objects.filter(project = project)
-			if(len(runs)>0):
-				finished = True
-				for run in runs:
-					if(run.parameter_set.status != ParameterSet.STATUS_FINISHED): 
-						finished = False
-				if(finished):
 
-					# Experiments to save file etc...
-					#runids = map(lambda x: x.id, runs)
-					#all_reports = FinalReport.objects.filter(
-            		#	run__project__pk=int(pk1), sample__pk=int(pk2)
-        			#).order_by("-coverage")
-					#all_reports = FinalReport.objects.filter(
-            		#	run__project__pk__in=runids
-        			#).order_by("-coverage")
-					#report_pd = pd.DataFrame(all_reports.values())
-					#report_pd.to_csv(report_file, sep="\t")
-					
-					self.stdout.write("Project finished.")
-					
-				else:
-					self.stdout.write("Error: Project not finished yet.")
+            self.stdout.write(project_results_path)
 
-			else:
-				self.stdout.write("Error: no runs found for this project.")
-
-		except User.DoesNotExist as e:
-			self.stdout.write("Error: User '{}' does not exist.".format(account))                
-		except Exception as e:
-			self.stdout.write("Error: {}.".format(e))
-           
-
+        except User.DoesNotExist as e:
+            self.stdout.write("Error: User '{}' does not exist.".format(account))
+        except Exception as e:
+            self.stdout.write("Error: {}.".format(e))

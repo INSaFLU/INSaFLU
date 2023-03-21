@@ -1,8 +1,8 @@
-'''
+"""
 Created on January 30, 2023
 
 @author: daniel.sobral
-'''
+"""
 import os
 import logging
 from django.core.management import BaseCommand
@@ -15,126 +15,117 @@ from settings.constants_settings import ConstantsSettings
 from utils.process_SGE import ProcessSGE
 from constants.constants import Constants
 
+
 class Command(BaseCommand):
-	'''
-	classdocs
-	'''
-	help = "Create a TELEVIR project and add a sample to it. Returns project id."
+    """
+    classdocs
+    """
 
-	# logging
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+    help = "Create a TELEVIR project and add a sample to it. Returns project id."
 
-	def __init__(self, *args, **kwargs):
-		super(Command, self).__init__(*args, **kwargs)
+    # logging
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
 
-	def add_arguments(self, parser):
-		parser.add_argument('--project_name', nargs='?', type=str,
-							required=True, help='Project Name')
-		parser.add_argument('--sample_name', nargs='?', type=str,
-							required=True, help='Sample Name')
-		parser.add_argument('--user_login', nargs='?', type=str, required=True,
-							help='User login of the project and sample owner')		
-					
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(*args, **kwargs)
 
-	# A command must define handle()
-	def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--project_name", nargs="?", type=str, required=True, help="Project Name"
+        )
+        parser.add_argument(
+            "--sample_name", nargs="?", type=str, required=True, help="Sample Name"
+        )
+        parser.add_argument(
+            "--user_login",
+            nargs="?",
+            type=str,
+            required=True,
+            help="User login of the project and sample owner",
+        )
 
-		project_name = options['project_name']
-		sample_name = options['sample_name']
-		account = options['user_login']
+    # A command must define handle()
+    def handle(self, *args, **options):
 
-		try:
-			
-			process_SGE = ProcessSGE()
-			user = User.objects.get(username=account)
-			sample = Sample.objects.get(name=sample_name, owner=user)
+        project_name = options["project_name"]
+        sample_name = options["sample_name"]
+        account = options["user_login"]
 
-			project_count = Projects.objects.filter(
-				name__iexact=project_name,
-                is_deleted=False,
-                owner__username=user.username,
-            ).count()
-			
-			if(project_count > 0):
+        try:
 
-				self.stdout.write("Project '{}' already exists, reusing...".format(project_name))
+            process_SGE = ProcessSGE()
+            user = User.objects.get(username=account)
+            sample = Sample.objects.get(name=sample_name, owner=user)
 
-				project = Projects.objects.filter(
-				    name__iexact=project_name,
+            try:
+                project = Projects.objects.get(
+                    name__iexact=project_name,
                     is_deleted=False,
                     owner__username=user.username,
-                )[0]
+                )
+            except Projects.DoesNotExist:
 
-				with transaction.atomic():
-					project_sample = PIProject_Sample()
-					project_sample.project = project
-					project_sample.sample = sample
-					project_sample.name = sample.name
-					project_sample_input = sample.file_name_1
-					if sample.is_valid_2:
-						project_sample_input += ";" + sample.file_name_2                    
-					project_sample.input = project_sample_input
-					sample_technology = "ONT"
-					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
-						sample_technology = "Illumina/IonTorrent"			
-					if(project.technology != sample_technology):
-						self.stdout.write("Project has different technology {} from sample technology {}...".format(project.technology, sample_technology))
-					project_sample.technology = sample.type_of_fastq
-					project_sample.report = "report"
-					project_sample.save()
+                with transaction.atomic():
+                    project = Projects()
+                    project.name = project_name
+                    project.owner = user
+                    project.owner_id = user.id
+                    # TODO Check where these constants are, or define them somewhere...
+                    technology = ConstantsSettings.TECHNOLOGY_minion
+                    if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
+                        technology = ConstantsSettings.TECHNOLOGY_illumina
+                    project.technology = technology
+                    project.save()
 
-				utils = Utils_Manager()
-				runs_to_deploy = utils.check_runs_to_deploy(user, project)
+            try:
+                project_sample = PIProject_Sample.objects.get(
+                    project=project,
+                    sample=sample,
+                )
 
-				if runs_to_deploy:
-					taskID = process_SGE.set_submit_televir_job(
-                    	user=user,
-                    	project_pk=project.pk,
-					)
-					self.stdout.write("Project submitted as task {}.".format(project.id, taskID))   
+            except PIProject_Sample.DoesNotExist:
 
-			else:
+                with transaction.atomic():
+                    project_sample = PIProject_Sample()
+                    project_sample.project = project
+                    project_sample.sample = sample
+                    project_sample.name = sample.name
+                    project_sample_input = sample.file_name_1
+                    if sample.is_valid_2:
+                        project_sample_input += ";" + sample.file_name_2
+                    project_sample.input = project_sample_input
+                    sample_technology = "ONT"
+                    if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
+                        sample_technology = "Illumina/IonTorrent"
+                    if project.technology != sample_technology:
+                        self.stdout.write(
+                            "Project has different technology {} from sample technology {}...".format(
+                                project.technology, sample_technology
+                            )
+                        )
+                    project_sample.technology = sample.type_of_fastq
+                    project_sample.report = "report"
+                    project_sample.save()
 
-				sample = Sample.objects.get(name=sample_name, owner=user)
+            utils = Utils_Manager()
+            runs_to_deploy = utils.check_runs_to_deploy(user, project)
 
-				with transaction.atomic():
-					project = Projects()
-					project.name = project_name
-					project.owner = user
-					project.owner_id = user.id
-					# TODO Check where these constants are, or define them somewhere...
-					technology = "ONT"
-					if(sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina):
-						technology = "Illumina/IonTorrent"
-					project.technology = technology
-					project.save()
-					project_sample_input = sample.file_name_1
-					if sample.is_valid_2:
-						project_sample_input += ";" + sample.file_name_2
-					project_sample = PIProject_Sample()
-					project_sample.project = project
-					project_sample.sample = sample
-					project_sample.name = sample.name
-					project_sample.input = project_sample_input
-					project_sample.technology = sample.type_of_fastq
-					project_sample.report = "report"
-					project_sample.save()
-					self.stdout.write("Project created with id {}.".format(project.id))   
+            if runs_to_deploy:
+                taskID = process_SGE.set_submit_televir_job(
+                    user=user,
+                    project_pk=project.pk,
+                )
+                self.stdout.write(
+                    "Project submitted as task {}.".format(project.id, taskID)
+                )
 
-				utils = Utils_Manager()
-				runs_to_deploy = utils.check_runs_to_deploy(user, project)
+            else:
+                self.stdout.write(
+                    "Project already submitted as task {}.".format(project.id)
+                )
 
-				if runs_to_deploy:
-					taskID = process_SGE.set_submit_televir_job(
-                    	user=user,
-                    	project_pk=project.pk,
-                	)
-					self.stdout.write("Project submitted as task {}.".format(project.id, taskID))   
-
-		except User.DoesNotExist as e:
-			self.stdout.write("Error: User '{}' does not exist.".format(account))                
-		except Exception as e:
-			self.stdout.write("Error: {}.".format(e))
-           
-
+        except User.DoesNotExist as e:
+            self.stdout.write("Error: User '{}' does not exist.".format(account))
+        except Exception as e:
+            self.stdout.write("Error: {}.".format(e))

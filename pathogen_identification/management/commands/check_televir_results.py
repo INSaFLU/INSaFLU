@@ -68,8 +68,8 @@ class Command(BaseCommand):
             project_media_dir = os.path.join(
                 MEDIA_ROOT,
                 ConstantsSettingsPI.televir_subdirectory,
-                user.pk,
-                project.pk,
+                str(user.pk),
+                str(project.pk),
             )
 
             project_results_path = os.path.join(project_media_dir, "results.tsv")

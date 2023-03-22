@@ -95,9 +95,9 @@ class Command(BaseCommand):
                     if sample.is_valid_2:
                         project_sample_input += ";" + sample.file_name_2
                     project_sample.input = project_sample_input
-                    sample_technology = "ONT"
+                    sample_technology = ConstantsSettings.TECHNOLOGY_minion
                     if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
-                        sample_technology = "Illumina/IonTorrent"
+                        sample_technology = ConstantsSettings.TECHNOLOGY_illumina
                     if project.technology != sample_technology:
                         self.stdout.write(
                             "Project has different technology {} from sample technology {}...".format(

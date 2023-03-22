@@ -78,12 +78,14 @@ class Command(BaseCommand):
                 project=project, parameter_set__status=ParameterSet.STATUS_FINISHED
             )
 
-            runs_to_pandas = pd.DataFrame(runs.values())
+            final_report = FinalReport.objects.filter(run_in=runs)
 
-            if not runs_to_pandas.empty:
-                runs_to_pandas.to_csv(
-                    project_results_path, sep="\t", index=False, header=True
-                )
+            reports_to_pandas = pd.DataFrame(final_report.values())
+
+            # if not reports_to_pandas.empty:
+            reports_to_pandas.to_csv(
+                project_results_path, sep="\t", index=False, header=True
+            )
 
             self.stdout.write(project_results_path)
 

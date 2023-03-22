@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 project=project, parameter_set__status=ParameterSet.STATUS_FINISHED
             )
 
-            final_report = FinalReport.objects.filter(run_in=runs)
+            final_report = FinalReport.objects.filter(run__in=runs)
 
             reports_to_pandas = pd.DataFrame(final_report.values())
 

@@ -93,8 +93,16 @@ class Command(BaseCommand):
                 sample = PIProject_Sample.objects.get(id=sample_id)
                 return sample.name
 
+            def get_leaf_id(run_id):
+                run = RunMain.objects.get(id=run_id)
+                return run.parameter_set.leaf.pk
+
             reports_to_pandas["sample_name"] = reports_to_pandas.apply(
                 lambda row: get_sample_name(row["sample_id"]), axis=1
+            )
+
+            reports_to_pandas["leaf_id"] = reports_to_pandas.apply(
+                lambda row: get_leaf_id(row["run_id"]), axis=1
             )
 
             # if not reports_to_pandas.empty:

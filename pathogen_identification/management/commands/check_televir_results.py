@@ -10,7 +10,13 @@ from django.core.management import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction
 from managing_files.models import Sample
-from pathogen_identification.models import Projects, RunMain, ParameterSet, FinalReport
+from pathogen_identification.models import (
+    Projects,
+    RunMain,
+    ParameterSet,
+    FinalReport,
+    PIProject_Sample,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import (
@@ -81,6 +87,15 @@ class Command(BaseCommand):
             final_report = FinalReport.objects.filter(run__in=runs)
 
             reports_to_pandas = pd.DataFrame(final_report.values())
+            reports_to_pandas["project_name"] = project.name
+
+            def get_sample_name(sample_id):
+                sample = PIProject_Sample.objects.get(id=sample_id)
+                return sample.name
+
+            reports_to_pandas["sample_name"] = reports_to_pandas.apply(
+                lambda row: get_sample_name(row["sample_id"]), axis=1
+            )
 
             # if not reports_to_pandas.empty:
             reports_to_pandas.to_csv(

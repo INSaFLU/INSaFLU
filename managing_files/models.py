@@ -2143,6 +2143,7 @@ class ProcessControler(models.Model):
     PREFIX_PROJECT = "project_"
     PREFIX_DATASET = "dataset_"
     PREFIX_TELEVIR_PROJECT = "televir_project_"
+    PREFIX_TELEVIR_PROJECT_SAMPLE = "televir_project_sample"
     PREFIX_TELEVIR_REFERENCE_MAP = "televir_reference_map_"
     PREFIX_UPLOAD_FILES = "upload_files_"
     PREFIX_LINK_FILES_USER = "link_files_user_"
@@ -2200,6 +2201,9 @@ class ProcessControler(models.Model):
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
+    
+    def get_name_televir_project_sample(self, project_pk, sample_pk):
+        return "{}_sample_{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk)
 
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(

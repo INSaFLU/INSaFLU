@@ -1209,7 +1209,7 @@ class Utils_Manager:
 
         return all_paths[parameter_leaf.index]
 
-    def check_runs_to_deploy(self, user: User, project: Projects):
+    def check_runs_to_deploy(self, user: User, project: Projects) -> list:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -1224,10 +1224,8 @@ class Utils_Manager:
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        global_paths = pipeline_tree.get_all_graph_paths_explicit()
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
-        pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
 
@@ -1249,6 +1247,7 @@ class Utils_Manager:
 
         ### SUBMISSION
         runs_to_deploy = 0
+        samples_available= []
 
         for sample in submission_dict.keys():
 
@@ -1276,11 +1275,9 @@ class Utils_Manager:
                     sample=sample, leaf=matched_path_node, project=project
                 )
                 runs_to_deploy += 1
+                samples_available.append(sample)
 
-        if runs_to_deploy > 0:
-            return True
-
-        return False
+        return samples_available
 
     def get_all_technology_pipelines(self, technology: str, tree_makeup: int) -> dict:
         """

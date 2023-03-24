@@ -1,6 +1,6 @@
 import codecs
 import os
-
+import datetime
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
@@ -69,6 +69,16 @@ class Projects(models.Model):
 
     def __str__(self):
         return self.name + " " + self.description
+
+    def check_delete_schedule(self):
+
+        time_since_last_change = datetime.datetime.now() - self.last_change_date
+
+        if time_since_last_change > datetime.timedelta(weeks=24):
+
+            parametersets = ParameterSet.objects.filter(project=self)
+            for parameterset in parametersets:
+                parameterset.delete_run_data()
 
 
 class SoftwareTree(models.Model):
@@ -247,6 +257,18 @@ class ParameterSet(models.Model):
         self.status = self.STATUS_ERROR
         self.save()
 
+    def delete_run_data(self):
+
+        if self.status in [self.STATUS_FINISHED, self.STATUS_ERROR]:
+            self.status = self.STATUS_NOT_STARTED
+            self.save()
+
+            try:
+                run = RunMain.objects.get(parameter_set=self)
+                run.delete_data()
+            except RunMain.DoesNotExist:
+                pass
+
     def __str__(self):
         return self.sample.name + " " + str(self.leaf.index)
 
@@ -398,6 +420,8 @@ class RunMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
 
+    # data_deleted = models.BooleanField(default=False)
+
     params_file_path = models.CharField(max_length=250, blank=True, null=True)
 
     processed_reads_r1 = models.CharField(
@@ -477,6 +501,35 @@ class RunMain(models.Model):
 
     def __str__(self):
         return self.name
+
+    def delete_data(self):
+
+        try:
+
+            if os.path.isfile(self.processed_reads_r1):
+                os.remove(self.processed_reads_r1)
+                self.processed_reads_r1 = None
+
+            if os.path.isfile(self.processed_reads_r2):
+                os.remove(self.processed_reads_r2)
+                self.processed_reads_r2 = None
+
+            run_assembly = RunAssembly.objects.get(run=self)
+            if run_assembly:
+                run_assembly.delete_data()
+
+            mapped_references = ReferenceMap_Main.objects.filter(run=self)
+
+            for mapped_reference in mapped_references:
+                mapped_reference.delete_data()
+
+            # self.data_deleted = True
+
+            self.save()
+
+        except Exception as e:
+
+            print(e)
 
 
 class RunDetail(models.Model):
@@ -565,6 +618,14 @@ class RunAssembly(models.Model):
 
     def __str__(self):
         return self.method
+
+    def delete_data(self):
+
+        if os.path.isfile(self.assembly_contigs):
+            os.remove(self.assembly_contigs)
+            self.assembly_contigs = None
+
+        self.save()
 
 
 class ReadClassification(models.Model):
@@ -732,6 +793,46 @@ class ReferenceMap_Main(models.Model):
 
     def __str__(self):
         return self.reference
+
+    def delete_data(self):
+
+        if os.path.isfile(self.bam_file_path):
+            os.remove(self.bam_file_path)
+            self.bam_file_path = None
+
+        if os.path.isfile(self.bai_file_path):
+            os.remove(self.bai_file_path)
+            self.bai_file_path = None
+
+        if os.path.isfile(self.fasta_file_path):
+            os.remove(self.fasta_file_path)
+            self.fasta_file_path = None
+
+        if os.path.isfile(self.fai_file_path):
+            os.remove(self.fai_file_path)
+            self.fai_file_path = None
+
+        if os.path.isfile(self.mapped_subset_r1):
+            os.remove(self.mapped_subset_r1)
+            self.mapped_subset_r1 = None
+
+        if os.path.isfile(self.mapped_subset_r2):
+            os.remove(self.mapped_subset_r2)
+            self.mapped_subset_r2 = None
+
+        if os.path.isfile(self.mapped_subset_r1_fasta):
+            os.remove(self.mapped_subset_r1_fasta)
+            self.mapped_subset_r1_fasta = None
+
+        if os.path.isfile(self.mapped_subset_r2_fasta):
+            os.remove(self.mapped_subset_r2_fasta)
+            self.mapped_subset_r2_fasta = None
+
+        if os.path.isfile(self.vcf):
+            os.remove(self.vcf)
+            self.vcf = None
+
+        self.save()
 
 
 class FinalReport(models.Model):

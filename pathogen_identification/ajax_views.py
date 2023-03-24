@@ -48,12 +48,15 @@ def deploy_ProjectPI(request):
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
 
         try:
-            if runs_to_deploy:
+            if len(runs_to_deploy) > 0:
 
-                taskID = process_SGE.set_submit_televir_job(
-                    user=request.user,
-                    project_pk=project.pk,
-                )
+                for sample in runs_to_deploy:
+
+                    taskID = process_SGE.set_submit_televir_sample(
+                        user=request.user,
+                        project_pk=project.pk,
+                        sample_pk=sample.pk,
+                    )
 
                 data["is_deployed"] = True
 
@@ -108,7 +111,7 @@ def validate_project_name(request):
             data["error_message"] = _("Spaces are not allowed in the project name.")
 
         ## check if name has special characters:
-        if not project_name.replace('_', '').isalnum():
+        if not project_name.replace("_", "").isalnum():
             data["has_special_characters"] = True
             data["error_message"] = _(
                 "Special characters are not allowed in the project name."

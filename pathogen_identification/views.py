@@ -183,6 +183,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         ):
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
+                | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -367,7 +368,7 @@ class AddSamples_PIProjectsView(
             context["error_cant_see"] = "1"
             return context
 
-        ## catch everything that is not in connection with project
+        ##
         count_active_projects = PIProject_Sample.objects.filter(
             project=project, is_deleted=False, is_error=False
         ).count()
@@ -579,56 +580,6 @@ class AddSamples_PIProjectsView(
                     project_sample.save()
                     project_sample_add += 1
 
-                ### create a task to perform the analysis of snippy and freebayes
-                ### Important, it is necessary to run again because can have some changes in the parameters.
-                try:
-                    if len(job_name_wait) == 0:
-                        (
-                            job_name_wait,
-                            job_name,
-                        ) = self.request.user.profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
-                        )
-                    if sample.is_type_fastq_gz_sequencing():
-                        taskID = process_SGE.set_second_stage_snippy(
-                            project_sample, self.request.user, job_name, [job_name_wait]
-                        )
-                    else:
-                        taskID = process_SGE.set_second_stage_medaka(
-                            project_sample, self.request.user, job_name, [job_name_wait]
-                        )
-
-                    ### set project sample queue ID
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        self.request.user,
-                        metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
-                            project_sample.id
-                        ),
-                        MetaKeyAndValue.META_VALUE_Queue,
-                        taskID,
-                    )
-                except:
-                    pass
-
-            ### necessary to calculate the global results again
-            if project_sample_add > 0:
-                try:
-                    taskID = process_SGE.set_collect_global_files(
-                        project, self.request.user
-                    )
-                    manageDatabase.set_project_metakey(
-                        project,
-                        self.request.user,
-                        metaKeyAndValue.get_meta_key(
-                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
-                        ),
-                        MetaKeyAndValue.META_VALUE_Queue,
-                        taskID,
-                    )
-                except:
-                    pass
-
             if project_sample_add == 0:
                 messages.warning(
                     self.request,
@@ -802,7 +753,7 @@ def Project_reports(requesdst, pk1):
 
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(run__project__pk=int(pk1)).order_by(
-            "run__name", "-coverage"
+            "-coverage"
         )
         project_name = project.name
 
@@ -845,7 +796,7 @@ def Sample_reports(requesdst, pk1, pk2):
     if project.owner == requesdst.user:
         all_reports = FinalReport.objects.filter(
             run__project__pk=int(pk1), sample__pk=int(pk2)
-        ).order_by("run__name", "-coverage")
+        ).order_by("-coverage")
         project_name = project.name
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 

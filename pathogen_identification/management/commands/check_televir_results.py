@@ -1,8 +1,8 @@
-'''
+"""
 Created on January 30, 2023
 
 @author: daniel.sobral
-'''
+"""
 import os
 import logging
 import pandas as pd
@@ -10,78 +10,109 @@ from django.core.management import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction
 from managing_files.models import Sample
-from pathogen_identification.models import Projects, RunMain, ParameterSet, FinalReport
+from pathogen_identification.models import (
+    Projects,
+    RunMain,
+    ParameterSet,
+    FinalReport,
+    PIProject_Sample,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as ConstantsSettingsPI,
+)
+from fluwebvirus.settings import MEDIA_ROOT
+import pandas as pd
+
 
 class Command(BaseCommand):
-	'''
-	classdocs
-	'''
-	help = "Checks if a given televir project finished."
+    """
+    classdocs
+    """
 
-	# logging
-	logger_debug = logging.getLogger("fluWebVirus.debug")
-	logger_production = logging.getLogger("fluWebVirus.production")
+    help = "Checks if a given televir project finished."
 
-	def __init__(self, *args, **kwargs):
-		super(Command, self).__init__(*args, **kwargs)
+    # logging
+    logger_debug = logging.getLogger("fluWebVirus.debug")
+    logger_production = logging.getLogger("fluWebVirus.production")
 
-	def add_arguments(self, parser):
-		parser.add_argument('--project_name', nargs='?', type=str,
-							required=True, help='Project Name')				
-		parser.add_argument('--user_login', nargs='?', type=str, required=True,
-							help='User login of the project and sample owner')	
-		#parser.add_argument('--report_file', nargs='?', type=str, required=True,
-		#					help='Path for the report file to be saved (if project finished)')								
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(*args, **kwargs)
 
-	# A command must define handle()
-	def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--project_name", nargs="?", type=str, required=True, help="Project Name"
+        )
+        parser.add_argument(
+            "--user_login",
+            nargs="?",
+            type=str,
+            required=True,
+            help="User login of the project and sample owner",
+        )
+        # parser.add_argument('--report_file', nargs='?', type=str, required=True,
+        # 					help='Path for the report file to be saved (if project finished)')
 
-		project_name = options['project_name']
-		account = options['user_login']
-		#report_file = options['report_file']
+    # A command must define handle()
+    def handle(self, *args, **options):
 
-		try:
+        project_name = options["project_name"]
+        account = options["user_login"]
+        # report_file = options['report_file']
 
-			user = User.objects.get(username=account)
+        try:
 
-			project = Projects.objects.get(
-                    name__iexact=project_name,
-                    is_deleted=False,
-                    owner__username=user.username,
-                )
-			
-			runs = RunMain.objects.filter(project = project)
-			if(len(runs)>0):
-				finished = True
-				for run in runs:
-					if(run.parameter_set.status != ParameterSet.STATUS_FINISHED): 
-						finished = False
-				if(finished):
+            user = User.objects.get(username=account)
 
-					# Experiments to save file etc...
-					#runids = map(lambda x: x.id, runs)
-					#all_reports = FinalReport.objects.filter(
-            		#	run__project__pk=int(pk1), sample__pk=int(pk2)
-        			#).order_by("-coverage")
-					#all_reports = FinalReport.objects.filter(
-            		#	run__project__pk__in=runids
-        			#).order_by("-coverage")
-					#report_pd = pd.DataFrame(all_reports.values())
-					#report_pd.to_csv(report_file, sep="\t")
-					
-					self.stdout.write("Project finished.")
-					
-				else:
-					self.stdout.write("Error: Project not finished yet.")
+            project = Projects.objects.get(
+                name__iexact=project_name,
+                is_deleted=False,
+                owner__username=user.username,
+            )
 
-			else:
-				self.stdout.write("Error: no runs found for this project.")
+            project_media_dir = os.path.join(
+                MEDIA_ROOT,
+                ConstantsSettingsPI.televir_subdirectory,
+                str(user.pk),
+                str(project.pk),
+            )
 
-		except User.DoesNotExist as e:
-			self.stdout.write("Error: User '{}' does not exist.".format(account))                
-		except Exception as e:
-			self.stdout.write("Error: {}.".format(e))
-           
+            project_results_path = os.path.join(project_media_dir, "results.tsv")
 
+            runs = RunMain.objects.filter(
+                project=project, parameter_set__status=ParameterSet.STATUS_FINISHED
+            )
+
+            final_report = FinalReport.objects.filter(run__in=runs)
+
+            reports_to_pandas = pd.DataFrame(final_report.values())
+            reports_to_pandas["project_name"] = project.name
+
+            def get_sample_name(sample_id):
+                sample = PIProject_Sample.objects.get(id=sample_id)
+                return sample.name
+
+            def get_leaf_id(run_id):
+                run = RunMain.objects.get(id=run_id)
+                return run.parameter_set.leaf.pk
+
+            reports_to_pandas["sample_name"] = reports_to_pandas.apply(
+                lambda row: get_sample_name(row["sample_id"]), axis=1
+            )
+
+            reports_to_pandas["leaf_id"] = reports_to_pandas.apply(
+                lambda row: get_leaf_id(row["run_id"]), axis=1
+            )
+
+            # if not reports_to_pandas.empty:
+            reports_to_pandas.to_csv(
+                project_results_path, sep="\t", index=False, header=True
+            )
+
+            self.stdout.write(project_results_path)
+
+        except User.DoesNotExist as e:
+            self.stdout.write("Error: User '{}' does not exist.".format(account))
+        except Exception as e:
+            self.stdout.write("Error: {}.".format(e))

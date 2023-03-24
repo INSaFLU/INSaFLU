@@ -807,7 +807,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "python3 {} submit_televir_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,

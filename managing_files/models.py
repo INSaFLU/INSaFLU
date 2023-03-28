@@ -2204,7 +2204,10 @@ class ProcessControler(models.Model):
     
     def get_name_televir_project_sample(self, project_pk, sample_pk):
         return "{}_sample_{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk)
-
+    
+    def get_name_televir_run(self, project_pk, sample_pk, leaf_pk):
+        return "{}_sample_{}_leaf_{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk, leaf_pk)
+    
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(
             ProcessControler.PREFIX_TELEVIR_REFERENCE_MAP, reference_pk

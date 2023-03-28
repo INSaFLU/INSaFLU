@@ -956,7 +956,6 @@ class Parameter_DB_Utility:
             return False
 
         return True
-    
 
     def check_ParameterSet_available_to_run(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -976,7 +975,6 @@ class Parameter_DB_Utility:
             return False
 
         return True
-
 
     def create_parameter_set(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -1209,7 +1207,7 @@ class Utils_Manager:
 
         return all_paths[parameter_leaf.index]
 
-    def check_runs_to_deploy(self, user: User, project: Projects) -> list:
+    def check_runs_to_deploy(self, user: User, project: Projects) -> dict:
         """
         Check if there are runs to run. sets to queue if there are.
         """
@@ -1247,7 +1245,8 @@ class Utils_Manager:
 
         ### SUBMISSION
         runs_to_deploy = 0
-        samples_available= []
+        samples_available = []
+        samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
 
@@ -1276,8 +1275,11 @@ class Utils_Manager:
                 )
                 runs_to_deploy += 1
                 samples_available.append(sample)
+                samples_leaf_dict[sample].append(matched_path_node)
 
-        return samples_available
+        samples_leaf_dict = {x: g for x, g in samples_leaf_dict.items() if g}
+
+        return samples_leaf_dict
 
     def get_all_technology_pipelines(self, technology: str, tree_makeup: int) -> dict:
         """

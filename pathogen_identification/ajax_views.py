@@ -46,17 +46,21 @@ def deploy_ProjectPI(request):
 
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy(user, project)
+        print(runs_to_deploy)
 
         try:
             if len(runs_to_deploy) > 0:
 
-                for sample in runs_to_deploy:
+                for sample, leafs_to_deploy in runs_to_deploy.items():
 
-                    taskID = process_SGE.set_submit_televir_sample(
-                        user=request.user,
-                        project_pk=project.pk,
-                        sample_pk=sample.pk,
-                    )
+                    for leaf in leafs_to_deploy:
+
+                        taskID = process_SGE.set_submit_televir_run(
+                            user=request.user,
+                            project_pk=project.pk,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
 
                 data["is_deployed"] = True
 

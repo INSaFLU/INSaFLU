@@ -167,15 +167,13 @@ class ProjectTable(tables.Table):
         ## there's nothing to show
         count = ParameterSet.objects.filter(project__id=record.id).count()
         project_sample = record.name
-        if count > 0:
-            project_sample = (
-                "<a href="
-                + reverse("PIproject_samples", args=[record.pk])
-                + ' data-toggle="tooltip" title="See Results">'
-                + "{}</a>".format(record.name)
-            )
-        else:
-            project_sample = record.name
+
+        project_sample = (
+            "<a href="
+            + reverse("PIproject_samples", args=[record.pk])
+            + ' data-toggle="tooltip" title="See Results">'
+            + "{}</a>".format(record.name)
+        )
 
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe(project_sample)
@@ -334,7 +332,7 @@ class SampleTable(tables.Table):
             color = 'style="color: red;"'
 
             record_name += (
-                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Kill"'
+                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Terminate"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'

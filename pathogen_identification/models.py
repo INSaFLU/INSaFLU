@@ -231,6 +231,7 @@ class ParameterSet(models.Model):
     STATUS_FINISHED = 2
     STATUS_ERROR = 3
     STATUS_QUEUED = 4
+    STATUS_KILLED = 5
     STATUS_CHOICES = (
         (STATUS_NOT_STARTED, "Not started"),
         (STATUS_RUNNING, "Running"),
@@ -795,42 +796,50 @@ class ReferenceMap_Main(models.Model):
         return self.reference
 
     def delete_data(self):
+        if self.bam_file_path:
+            if os.path.isfile(self.bam_file_path):
+                os.remove(self.bam_file_path)
+                self.bam_file_path = None
 
-        if os.path.isfile(self.bam_file_path):
-            os.remove(self.bam_file_path)
-            self.bam_file_path = None
+        if self.bai_file_path:
+            if os.path.isfile(self.bai_file_path):
+                os.remove(self.bai_file_path)
+                self.bai_file_path = None
 
-        if os.path.isfile(self.bai_file_path):
-            os.remove(self.bai_file_path)
-            self.bai_file_path = None
+        if self.fasta_file_path:
+            if os.path.isfile(self.fasta_file_path):
+                os.remove(self.fasta_file_path)
+                self.fasta_file_path = None
 
-        if os.path.isfile(self.fasta_file_path):
-            os.remove(self.fasta_file_path)
-            self.fasta_file_path = None
+        if self.fai_file_path:
+            if os.path.isfile(self.fai_file_path):
+                os.remove(self.fai_file_path)
+                self.fai_file_path = None
 
-        if os.path.isfile(self.fai_file_path):
-            os.remove(self.fai_file_path)
-            self.fai_file_path = None
+        if self.mapped_subset_r1:
+            if os.path.isfile(self.mapped_subset_r1):
+                os.remove(self.mapped_subset_r1)
+                self.mapped_subset_r1 = None
 
-        if os.path.isfile(self.mapped_subset_r1):
-            os.remove(self.mapped_subset_r1)
-            self.mapped_subset_r1 = None
+        if self.mapped_subset_r2:
+            if os.path.isfile(self.mapped_subset_r2):
+                os.remove(self.mapped_subset_r2)
+                self.mapped_subset_r2 = None
 
-        if os.path.isfile(self.mapped_subset_r2):
-            os.remove(self.mapped_subset_r2)
-            self.mapped_subset_r2 = None
+        if self.mapped_subset_r1_fasta:
+            if os.path.isfile(self.mapped_subset_r1_fasta):
+                os.remove(self.mapped_subset_r1_fasta)
+                self.mapped_subset_r1_fasta = None
 
-        if os.path.isfile(self.mapped_subset_r1_fasta):
-            os.remove(self.mapped_subset_r1_fasta)
-            self.mapped_subset_r1_fasta = None
+        if self.mapped_subset_r2_fasta:
+            if os.path.isfile(self.mapped_subset_r2_fasta):
+                os.remove(self.mapped_subset_r2_fasta)
+                self.mapped_subset_r2_fasta = None
 
-        if os.path.isfile(self.mapped_subset_r2_fasta):
-            os.remove(self.mapped_subset_r2_fasta)
-            self.mapped_subset_r2_fasta = None
-
-        if os.path.isfile(self.vcf):
-            os.remove(self.vcf)
-            self.vcf = None
+        if self.vcf:
+            if os.path.isfile(self.vcf):
+                os.remove(self.vcf)
+                self.vcf = None
 
         self.save()
 

@@ -4,12 +4,13 @@ import logging
 import os
 import time
 from datetime import datetime
+from django.contrib.auth.models import User
 
 from constants.constants import Constants, FileExtensions, TypePath
 from django.conf import settings
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-
+import subprocess
 from utils.utils import Utils
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
@@ -35,7 +36,7 @@ from utils.utils import Utils
 # /etc/default/gridengine
 class ProcessSGE(object):
 
-    utils = Utils()
+    utils: Utils = Utils()
 
     FILE_NAME_SCRIPT_SGE = "launch_job_insa.sh"
     SGE_JOB_ID_PROCESSING = 1
@@ -799,7 +800,7 @@ class ProcessSGE(object):
         return sge_id
 
     def set_submit_televir_run(
-        self, user, project_pk: int, sample_pk: int, leaf_pk: int
+        self, user: User, project_pk: int, sample_pk: int, leaf_pk: int
     ):
         """
         submit the job to televir
@@ -839,13 +840,22 @@ class ProcessSGE(object):
             sge_id = self.submitte_job(path_file)
             print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
+                pc_name = process_controler.get_name_televir_run(
+                    project_pk, sample_pk, leaf_pk
+                )
                 self.set_process_controlers(
                     user,
-                    process_controler.get_name_televir_run(
-                        project_pk, sample_pk, leaf_pk
-                    ),
+                    pc_name,
                     sge_id,
                 )
+
+                self.set_specific_controler_flag(
+                    user,
+                    pc_name,
+                    sge_id,
+                    ProcessControler.FLAG_RUNNING,
+                )
+
         except:
             raise Exception("Fail to submit the job.")
         return sge_id
@@ -1017,38 +1027,87 @@ class ProcessSGE(object):
         """
         Add a record in ProcessControlers
         """
+
         process_controler = ProcessControler()
         process_controler.owner = user
         process_controler.name = name_of_process
         process_controler.name_sge_id = name_sge_id
         process_controler.save()
 
-    def kill_process(sge_id):
+    def kill_process(self, process_id: str):
         """
         kill the process
         """
 
-        os.system("qdel {}".format(sge_id))
+        bash_command = [
+            "qdel {}".format(process_id),
+        ]
 
-    def kill_process_controler(self, user_pk: int, name_of_process: str, sge_id: str):
+        process = subprocess.Popen(
+            bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+        )
+
+        output, error = process.communicate()
+
+        if error:
+            raise Exception("Fail to kill the process")
+
+        return output.decode("utf-8")
+
+    def kill_televir_process_controler(
+        self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
+    ):
         """
         Kill the process in process controler.
         """
+        process_controler = ProcessControler()
 
-        process = ProcessControler.objects.filter(
+        processes = ProcessControler.objects.filter(
             owner__id=user_pk,
-            name=name_of_process,
-            name_sge_id=sge_id,
+            name=process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
             is_running=True,
         )
 
-        if process.exists():
-            self.kill_process(sge_id)
-            process.update(
-                is_running=False,
-                is_finished=False,
-                is_error=True,
+        for process in processes:
+
+            if process.name_sge_id:
+                self.kill_process(process.name_sge_id)
+
+            process.is_running = False
+            process.is_finished = False
+            process.is_error = False
+            process.save()
+
+    def set_specific_controler_flag(self, user, name_of_process, sge_id, flags):
+
+        try:
+            process_controler = ProcessControler.objects.get(
+                owner__id=user.pk,
+                name=name_of_process,
+                name_sge_id=sge_id,
             )
+
+        except ProcessControler.DoesNotExist:
+            process_controler = ProcessControler(
+                owner=user,
+                name=name_of_process,
+                name_sge_id=sge_id,
+            )
+
+        if flags == ProcessControler.FLAG_FINISHED:
+            process_controler.is_finished = True
+            process_controler.is_running = False
+            process_controler.is_error = False
+        elif flags == ProcessControler.FLAG_RUNNING:
+            process_controler.is_finished = False
+            process_controler.is_running = True
+            process_controler.is_error = False
+        elif flags == ProcessControler.FLAG_ERROR:
+            process_controler.is_finished = False
+            process_controler.is_running = False
+            process_controler.is_error = True
+
+        process_controler.save()
 
     def set_process_controler(self, user, name_of_process, flags):
         """
@@ -1077,6 +1136,7 @@ class ProcessSGE(object):
                 is_finished=False,
                 is_error=False,
             )
+
         else:
             data_set = ProcessControler.objects.filter(
                 owner__id=user.pk,

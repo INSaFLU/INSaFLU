@@ -82,7 +82,11 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project(project_pk=project.pk),
+            process_controler.get_name_televir_run(
+                project_pk=project.pk,
+                sample_pk=target_sample.pk,
+                leaf_pk=matched_path_node.pk,
+            ),
             ProcessControler.FLAG_RUNNING,
         )
 
@@ -97,40 +101,59 @@ class Command(BaseCommand):
         ### MANAGEMENT
         submission_dict = {target_sample: []}
 
+        was_run_killed = utils.parameter_util.check_ParameterSet_killed(
+            sample=target_sample, leaf=matched_path_node, project=project
+        )
+
+        print("was_run_killed", was_run_killed)
+
         ### SUBMISSION
         try:
 
-            if (
-                utils.parameter_util.check_ParameterSet_available_to_run(
-                    sample=target_sample, leaf=matched_path_node, project=project
+            if was_run_killed:
+
+                utils.parameter_util.parameterset_update_status(
+                    sample=target_sample,
+                    leaf=matched_path_node,
+                    project=project,
+                    status=ParameterSet.STATUS_NOT_STARTED,
                 )
-                is False
-            ):
-                raise Exception("ParameterSet not available")
 
-            run = Run_Main_from_Leaf(
-                user=user,
-                input_data=target_sample,
-                project=project,
-                pipeline_leaf=matched_path_node,
-                pipeline_tree=pipeline_tree_query,
-                odir=options["outdir"],
-                threads=ConstantsSettings.DEPLOYMENT_THREADS,
-            )
+            else:
 
-            if run.is_available:
-                run.get_in_line()
-                submission_dict[target_sample].append(run)
+                if (
+                    utils.parameter_util.check_ParameterSet_available_to_run(
+                        sample=target_sample, leaf=matched_path_node, project=project
+                    )
+                    is False
+                ):
+                    raise Exception("ParameterSet not available")
 
-            for sample, runs in submission_dict.items():
-                for run in runs:
+                run = Run_Main_from_Leaf(
+                    user=user,
+                    input_data=target_sample,
+                    project=project,
+                    pipeline_leaf=matched_path_node,
+                    pipeline_tree=pipeline_tree_query,
+                    odir=options["outdir"],
+                    threads=ConstantsSettings.DEPLOYMENT_THREADS,
+                )
 
-                    run.Submit()
+                if run.is_available:
+                    run.get_in_line()
+                    submission_dict[target_sample].append(run)
+
+                for sample, runs in submission_dict.items():
+                    for run in runs:
+
+                        run.Submit()
 
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_sample(
-                    project_pk=project.pk, sample_pk=target_sample.pk
+                process_controler.get_name_televir_run(
+                    project_pk=project.pk,
+                    sample_pk=target_sample.pk,
+                    leaf_pk=matched_path_node.pk,
                 ),
                 ProcessControler.FLAG_FINISHED,
             )
@@ -139,8 +162,10 @@ class Command(BaseCommand):
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_sample(
-                    project_pk=project.pk, sample_pk=target_sample.pk
+                process_controler.get_name_televir_run(
+                    project_pk=project.pk,
+                    sample_pk=target_sample.pk,
+                    leaf_pk=matched_path_node.pk,
                 ),
                 ProcessControler.FLAG_ERROR,
             )

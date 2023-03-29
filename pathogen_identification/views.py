@@ -51,6 +51,7 @@ from pathogen_identification.models import (
     RunDetail,
     RunMain,
     RunRemapMain,
+    ParameterSet,
     Sample,
 )
 from pathogen_identification.tables import (
@@ -609,7 +610,7 @@ class AddSamples_PIProjectsView(
 
 class MainPage(LoginRequiredMixin, generic.CreateView):
     """
-    home page
+    Page with samples of a project
     """
 
     template_name = "pathogen_identification/main_page.html"
@@ -668,7 +669,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 class Sample_main(LoginRequiredMixin, generic.CreateView):
     """
-    sample main page
+    sample main page with list runs per sample
     """
 
     template_name = "pathogen_identification/sample_main.html"
@@ -698,6 +699,10 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 sample__pk=sample_pk,
                 project__pk=project_pk,
                 project__owner=user,
+                parameter_set__status__in=[
+                    ParameterSet.STATUS_FINISHED,
+                    ParameterSet.STATUS_RUNNING,
+                ],
             )
             sample_name = sample.sample.name
             project_name = project.name
@@ -737,7 +742,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
 
 def Project_reports(requesdst, pk1):
     """
-    sample main page
+    Projects reports
     """
     template_name = "pathogen_identification/allreports_table.html"
 

@@ -9,12 +9,14 @@ from django.views.decorators.http import require_POST
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from utils.process_SGE import ProcessSGE
 from django.utils.translation import ugettext_lazy as _
+from managing_files.models import ProcessControler
 
 from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     ReferenceMap_Main,
     RunMain,
+    ParameterSet,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
@@ -31,10 +33,114 @@ def simplify_name(name):
 
 @login_required
 @require_POST
+def submit_televir_project_sample(request):
+    """
+    submit a new sample to televir project
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+        project = Projects.objects.get(id=int(sample.project.pk))
+
+        utils = Utils_Manager()
+
+        runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+
+        try:
+            if len(runs_to_deploy) > 0:
+
+                for sample, leafs_to_deploy in runs_to_deploy.items():
+
+                    for leaf in leafs_to_deploy:
+
+                        taskID = process_SGE.set_submit_televir_run(
+                            user=request.user,
+                            project_pk=project.pk,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def kill_televir_project_sample(request):
+    """
+    kill all processes a sample, set queued to false
+    """
+    print("kill_televir_project_sample")
+    print(request.is_ajax())
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        print(request.POST)
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+        project = Projects.objects.get(id=int(sample.project.pk))
+        print("HI")
+        utils = Utils_Manager()
+        process_controler = ProcessControler()
+
+        runs = ParameterSet.objects.filter(
+            sample=sample,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_QUEUED,
+            ],
+        )
+
+        print("HOIHOIH")
+
+        for run in runs:
+
+            print("run.status: ", run.status)
+            print(process_controler.get_name_televir_run(project, sample, run.leaf))
+
+            try:  # kill process
+                process_SGE.kill_televir_process_controler(
+                    user.pk, project.pk, sample.pk, run.leaf.pk
+                )
+
+            except ProcessControler.DoesNotExist as e:
+                print(e)
+                print("ProcessControler.DoesNotExist")
+                pass
+
+            if run.status == ParameterSet.STATUS_RUNNING:
+
+                run.delete_run_data()
+
+            run.status = ParameterSet.STATUS_KILLED
+            run.save()
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def deploy_ProjectPI(request):
     """
     prepare data for deployment of pathogen identification.
     """
+
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
@@ -45,7 +151,7 @@ def deploy_ProjectPI(request):
         project = Projects.objects.get(id=int(project_id))
 
         utils = Utils_Manager()
-        runs_to_deploy = utils.check_runs_to_deploy(user, project)
+        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
         print(runs_to_deploy)
 
         try:

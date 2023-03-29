@@ -81,6 +81,16 @@ urlpatterns = [
         name="deploy_ProjectPI",
     ),
     url(
+        r"^ajax/submit_televir_sample$",
+        PIajax_views.submit_televir_project_sample,
+        name="submit_televir_project_sample",
+    ),  ## remove a televir project
+    url(
+        r"^ajax/kill_televir_sample$",
+        PIajax_views.kill_televir_project_sample,
+        name="kill_televir_project_sample",
+    ),  ## remove a televir project
+    url(
         r"ajax/deploy_televir_map$",
         PIajax_views.deploy_televir_map,
         name="deploy_televir_map",

@@ -325,19 +325,19 @@ class SampleTable(tables.Table):
                     "submit_televir_project_sample",
                 )
                 + '"'
-                + '"><i class="fa fa-bug"></i></span> </a>'
+                + '"><i class="fa fa-flask"></i></span> </a>'
             )
 
         if active_runs.count() > 0:
             color = 'style="color: red;"'
 
             record_name += (
-                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Terminate"'
+                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Run"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'
                 + str(record.pk)
-                + '"><i class="fa fa-plug"></i></span> </a>'
+                + '"><i class="fa fa-power-off"></i></span> </a>'
             )
 
         return mark_safe(record_name)

@@ -165,19 +165,15 @@ class ProjectTable(tables.Table):
         user = current_request.user
 
         ## there's nothing to show
-        count = PIProject_Sample.objects.filter(
-            project__id=record.id, is_deleted=False, is_error=False, is_finished=True
-        ).count()
+        count = ParameterSet.objects.filter(project__id=record.id).count()
         project_sample = record.name
-        if count > 0:
-            project_sample = (
-                "<a href="
-                + reverse("show-sample-project-results", args=[record.pk])
-                + ' data-toggle="tooltip" title="See Results">'
-                + "{}</a>".format(record.name)
-            )
-        else:
-            project_sample = record.name
+
+        project_sample = (
+            "<a href="
+            + reverse("PIproject_samples", args=[record.pk])
+            + ' data-toggle="tooltip" title="See Results">'
+            + "{}</a>".format(record.name)
+        )
 
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe(project_sample)
@@ -226,6 +222,7 @@ class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
 
     input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
+    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
@@ -240,6 +237,7 @@ class SampleTable(tables.Table):
         fields = (
             "name",
             "report",
+            "deploy",
             "input",
             "combinations",
             "running_processes",
@@ -275,7 +273,12 @@ class SampleTable(tables.Table):
 
     def render_combinations(self, record):
         return RunMain.objects.filter(
-            sample__name=record.name, project=record.project
+            sample__name=record.name,
+            project=record.project,
+            parameter_set__status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_FINISHED,
+            ],
         ).count()
 
     def render_report(self, record):
@@ -295,6 +298,49 @@ class SampleTable(tables.Table):
             return mark_safe("report")
         if user.username == record.project.owner.username:
             return mark_safe(record_name)
+
+    def render_deploy(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        color = ""
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        active_runs = ParameterSet.objects.filter(
+            sample=record,
+            status__in=[ParameterSet.STATUS_RUNNING, ParameterSet.STATUS_QUEUED],
+        )
+
+        record_name = '<a><i class="fa fa-bug"></i></span> </a>'
+
+        if user.username == record.project.owner.username:
+            record_name = (
+                '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Deploy"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '" deploy-url="'
+                + reverse(
+                    "submit_televir_project_sample",
+                )
+                + '"'
+                + '"><i class="fa fa-flask"></i></span> </a>'
+            )
+
+        if active_runs.count() > 0:
+            color = 'style="color: red;"'
+
+            record_name += (
+                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Run"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-power-off"></i></span> </a>'
+            )
+
+        return mark_safe(record_name)
 
     def render_name(self, record):
         from crequest.middleware import CrequestMiddleware

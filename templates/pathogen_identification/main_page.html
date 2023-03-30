@@ -7,6 +7,13 @@
 {% load static %}
 
 
+{% block extra_messages %}
+	<!-- set the messages -->
+	<div class="container">
+		<div id="id_messages_terminate"></div>
+	</div>
+{% endblock %}
+
 {% block breadcrumbs %}
 {{block.super}}
 {% breadcrumb "Project Index" "project-index" %}
@@ -29,7 +36,9 @@
                     <th colspan="9">
                         {% if not demo %}
                         <div class="btn-group">
+                            
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url 'deploy_ProjectPI' %}" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                               </button>
                                
@@ -97,13 +106,43 @@
 
 
 <!-- The remove Modal -->
+<div class="modal fade" id="id_kill_modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header alert alert-warning">
+				<h4 class="modal-title-kill">Terminate Sample Runs</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+
+			<!-- Modal body -->
+			<div class="modal-body mx-auto mw-100">
+				<div id="id-modal-body-kill-sample" csrfmiddlewaretoken="{{ csrf_token }}" kill-single-value-url="{% url 'kill_televir_project_sample' %}">
+					<label id="id-label-kill" class="col-form-label">Sample Name</label>
+				</div>
+			</div>
+			<!-- Modal footer -->
+			<div class="modal-footer" id="id-modal-footer-remove">
+                
+				<button id="id-kill-button" type="button"  class="btn btn-primary" data-dismiss="modal">Terminate</button>
+				<button id="id-cancel-button" type="button" class="btn btn-secondary" data-dismiss="modal"
+					aria-hidden="true">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<!-- The sample submit Modal -->
 <div class="modal fade" id="id_remove_modal">
 	<div class="modal-dialog">
 		<div class="modal-content">
 
 			<!-- Modal Header -->
 			<div class="modal-header alert alert-warning">
-				<h4 class="modal-title-remove">Remove a sample</h4>
+				<h4 class="modal-title-submit">Submit sample deployment</h4>
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
 			</div>
 
@@ -127,9 +166,46 @@
 {% endblock content %}
 
 {% block js %}
+
+<script type="text/javascript" src="{% static 'js/televir_projects/televir_kill_sample.js' %}"></script> 
+<script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
+
 {% load static from staticfiles %}
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
 <script>
+
+    $(document).on("click", "a", function (e) {
+
+        if ($(this).attr("id") == "deploypi_sample_btn") {
+            e.preventDefault();
+        
+            url= $(this).attr("deploy-url");
+            console.log(url);
+            $.ajax({
+                url: $(this).attr("deploy-url"),
+                type: "POST",
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'sample_id': $(this).attr("pk"),
+                },
+                data_type: 'json',
+                success: function(data){
+                    console.log(data);
+                    if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                        alert("No runs to deploy");
+                    }
+                    else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                        alert("Runs deployed");
+                    }
+
+                }
+        
+            });
+
+        }
+
+    })
+
     $("#deploypi_btn").click(function(){
         $.ajax({
             url: $('#deploypi_btn').attr("deploy-url"),
@@ -155,13 +231,16 @@
     })
 </script>
 
-<script type="text/javascript" src="{% static 'js/televir_projects/remove_project_sample.js' %}"></script>
+
 <script>
 	$(document).ready(function () {
 		$('#id-cancel-button').click(function () {
 			$.unblockUI();
 		});
 		$('#id-remove-button').click(function () {
+			$.unblockUI();
+		});
+		$('#id-kill-button').click(function () {
 			$.unblockUI();
 		});
 	});
@@ -171,7 +250,7 @@
 		var id_ = $(this).attr('id');
 		var href = $(this).attr('href');
 		var onclick = $(this).attr('onclick');
-		if (href !== '#id_set_default_modal' && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
+		if (href !== '#id_set_default_modal' && id_ !== "deploypi_sample_btn" && onclick !== 'return false;' && id_ !== 'sidenavToggler' &&
 			!href.startsWith('/media') && !href.startsWith('http')) {
 			wait_screen();
 		}

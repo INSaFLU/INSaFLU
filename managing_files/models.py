@@ -786,15 +786,15 @@ class Sample(models.Model):
         if not b_first_file and not self.exist_file_2():
             return None
         return os.path.join(
-            self.__get_path__(type_path, b_first_file), 
-            self.file_name_1.replace(FileExtensions.FILE_FASTQ_GZ, 
-                "_fastqc.html").replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html") \
-			if b_first_file 
-            else 
-                self.file_name_2.replace(FileExtensions.FILE_FASTQ_GZ, 
-                "_fastqc.html").replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+            self.__get_path__(type_path, b_first_file),
+            self.file_name_1.replace(
+                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html")
+            if b_first_file
+            else self.file_name_2.replace(
+                FileExtensions.FILE_FASTQ_GZ, "_fastqc.html"
+            ).replace(FileExtensions.FILE_FQ_GZ, "_fastqc.html"),
         )
-        
 
     def get_rabbitQC_output(self, type_path):
         """
@@ -803,10 +803,11 @@ class Sample(models.Model):
         """
         b_first_file = True
         return os.path.join(
-            self.__get_path__(type_path, b_first_file), 
-                self.file_name_1.replace(FileExtensions.FILE_FASTQ_GZ, 
-                    "_rabbitQC.html").replace(FileExtensions.FILE_FQ_GZ, 
-                                        "_rabbitQC.html"))
+            self.__get_path__(type_path, b_first_file),
+            self.file_name_1.replace(
+                FileExtensions.FILE_FASTQ_GZ, "_rabbitQC.html"
+            ).replace(FileExtensions.FILE_FQ_GZ, "_rabbitQC.html"),
+        )
 
     def __get_path__(self, type_path, b_first_file):
         """
@@ -2154,6 +2155,7 @@ class ProcessControler(models.Model):
     FLAG_FINISHED = "flag_finished"
     FLAG_RUNNING = "flag_running"
     FLAG_ERROR = "flag_error"
+    FLAG_KILLED = "flag_killed"
 
     owner = models.ForeignKey(
         User, related_name="process_controles", on_delete=models.CASCADE
@@ -2201,9 +2203,16 @@ class ProcessControler(models.Model):
 
     def get_name_televir_project(self, project_pk):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
-    
+
     def get_name_televir_project_sample(self, project_pk, sample_pk):
-        return "{}_sample_{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk)
+        return "{}_sample_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk
+        )
+
+    def get_name_televir_run(self, project_pk, sample_pk, leaf_pk) -> str:
+        return "{}_sample_{}_leaf_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk, leaf_pk
+        )
 
     def get_name_televir_map(self, reference_pk):
         return "{}{}".format(

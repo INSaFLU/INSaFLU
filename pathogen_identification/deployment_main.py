@@ -394,7 +394,11 @@ class Run_Main_from_Leaf:
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
             self.user,
-            process_controler.get_name_televir_project(self.unique_id),
+            process_controler.get_name_televir_run(
+                self.project.pk,
+                self.sample.pk,
+                self.pipeline_leaf.pk,
+            ),
             ProcessControler.FLAG_RUNNING,
         )
 
@@ -403,7 +407,11 @@ class Run_Main_from_Leaf:
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
             self.user,
-            process_controler.get_name_televir_project(self.unique_id),
+            process_controler.get_name_televir_run(
+                self.project.pk,
+                self.sample.pk,
+                self.pipeline_leaf.pk,
+            ),
             ProcessControler.FLAG_ERROR,
         )
 
@@ -412,7 +420,11 @@ class Run_Main_from_Leaf:
         process_SGE = ProcessSGE()
         process_SGE.set_process_controler(
             self.user,
-            process_controler.get_name_televir_project(self.unique_id),
+            process_controler.get_name_televir_run(
+                self.project.pk,
+                self.sample.pk,
+                self.pipeline_leaf.pk,
+            ),
             ProcessControler.FLAG_FINISHED,
         )
 
@@ -519,10 +531,13 @@ class Run_Main_from_Leaf:
         self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
-        run = RunMain.objects.get(parameter_set=new_run)
-
         new_run.register_error()
-        run.delete()
+
+        try:
+            run = RunMain.objects.get(parameter_set=new_run)
+            run.delete()
+        except RunMain.DoesNotExist:
+            pass
 
         self.container.delete_run()
 

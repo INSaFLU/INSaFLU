@@ -161,7 +161,7 @@ class Command(BaseCommand):
                     project_sample.save()
 
                 utils = Utils_Manager()
-                runs_to_deploy = utils.check_runs_to_deploy(user, project)
+                runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
 
                 if runs_to_deploy:
                     taskID = process_SGE.set_submit_televir_job(
@@ -201,7 +201,7 @@ class Command(BaseCommand):
                     self.stdout.write("Project created with id {}.".format(project.id))
 
                 utils = Utils_Manager()
-                runs_to_deploy = utils.check_runs_to_deploy(user, project)
+                runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
 
                 if runs_to_deploy:
                     taskID = process_SGE.set_submit_televir_job(

@@ -81,22 +81,16 @@ def kill_televir_project_sample(request):
     """
     kill all processes a sample, set queued to false
     """
-    print("kill_televir_project_sample")
-    print(request.is_ajax())
+
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
         user = request.user
 
-        print(request.POST)
-
         sample_id = int(request.POST["sample_id"])
         sample = PIProject_Sample.objects.get(id=int(sample_id))
         project = Projects.objects.get(id=int(sample.project.pk))
-        print("HI")
-        utils = Utils_Manager()
-        process_controler = ProcessControler()
 
         runs = ParameterSet.objects.filter(
             sample=sample,
@@ -106,12 +100,7 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        print("HOIHOIH")
-
         for run in runs:
-
-            print("run.status: ", run.status)
-            print(process_controler.get_name_televir_run(project, sample, run.leaf))
 
             try:  # kill process
                 process_SGE.kill_televir_process_controler(

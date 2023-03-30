@@ -1040,7 +1040,7 @@ class ProcessSGE(object):
         """
 
         bash_command = [
-            "qdel {}".format(process_id),
+            "export SGE_ROOT={}; qdel {}".format(settings.SGE_ROOT, process_id),
         ]
 
         process = subprocess.Popen(

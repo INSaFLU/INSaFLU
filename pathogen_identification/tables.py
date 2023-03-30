@@ -315,7 +315,7 @@ class SampleTable(tables.Table):
 
         if user.username == record.project.owner.username:
             record_name = (
-                '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Deploy"'
+                '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'
@@ -332,7 +332,7 @@ class SampleTable(tables.Table):
             color = 'style="color: red;"'
 
             record_name += (
-                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Run"'
+                '<a href="#id_kill_modal" id="id_kill_reference_modal" data-toggle="modal" data-toggle="tooltip" title="Cancel"'
                 + ' ref_name="'
                 + record.name
                 + '" pk="'

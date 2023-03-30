@@ -90,7 +90,15 @@ class Command(BaseCommand):
             reports_to_pandas["project_name"] = project.name
 
             def get_sample_name(sample_id):
-                sample = PIProject_Sample.objects.get(id=sample_id)
+                sample = (
+                    PIProject_Sample.objects.filter(id=sample_id)
+                    .order_by("creation_date")
+                    .last()
+                )
+
+                if sample is None:
+                    return None
+
                 return sample.name
 
             def get_leaf_id(run_id):

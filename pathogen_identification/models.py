@@ -217,6 +217,10 @@ class PIProject_Sample(models.Model):
         default=0
     )  ## has the number of running processes
 
+    is_control = models.BooleanField(
+        default=False
+    )  ## if this sample is a control sample
+
     class Meta:
         ordering = ["project__id", "-creation_date"]
 
@@ -421,7 +425,8 @@ class RunMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
 
-    # data_deleted = models.BooleanField(default=False)
+    data_deleted = models.BooleanField(default=False)
+    last_modified = models.DateTimeField(default=None, null=True, blank=True)
 
     params_file_path = models.CharField(max_length=250, blank=True, null=True)
 
@@ -846,6 +851,10 @@ class ReferenceMap_Main(models.Model):
 
 class FinalReport(models.Model):
 
+    CONTROL_FLAG_NONE = 0
+    CONTROL_FLAG_PRESENT = 1
+    CONTROL_FLAG_WARNING = 2
+
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -890,6 +899,8 @@ class FinalReport(models.Model):
     mapped_scaffolds_index_path = models.CharField(
         max_length=1000, blank=True, null=True
     )
+
+    control_flag = models.IntegerField(default=CONTROL_FLAG_NONE)
 
 
 class ReferenceContigs(models.Model):

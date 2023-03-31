@@ -529,7 +529,7 @@ class RunMain(models.Model):
             for mapped_reference in mapped_references:
                 mapped_reference.delete_data()
 
-            # self.data_deleted = True
+            self.data_deleted = True
 
             self.save()
 

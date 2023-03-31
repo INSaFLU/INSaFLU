@@ -2210,7 +2210,7 @@ class ProcessControler(models.Model):
         )
 
     def get_name_televir_run(self, project_pk, sample_pk, leaf_pk) -> str:
-        return "{}_sample_{}_leaf_{}".format(
+        return "{}{}_sample_{}_leaf_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk, leaf_pk
         )
 

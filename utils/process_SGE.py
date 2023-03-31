@@ -12,6 +12,7 @@ from extend_user.models import Profile
 from managing_files.models import ProcessControler
 import subprocess
 from utils.utils import Utils
+from django.db import transaction
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
@@ -838,7 +839,6 @@ class ProcessSGE(object):
         )
         try:
             sge_id = self.submitte_job(path_file)
-            print("sample submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 pc_name = process_controler.get_name_televir_run(
                     project_pk, sample_pk, leaf_pk
@@ -847,13 +847,6 @@ class ProcessSGE(object):
                     user,
                     pc_name,
                     sge_id,
-                )
-
-                self.set_specific_controler_flag(
-                    user,
-                    pc_name,
-                    sge_id,
-                    ProcessControler.FLAG_RUNNING,
                 )
 
         except:
@@ -1054,6 +1047,7 @@ class ProcessSGE(object):
 
         return output.decode("utf-8")
 
+    @transaction.atomic
     def kill_televir_process_controler(
         self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
     ):
@@ -1065,17 +1059,20 @@ class ProcessSGE(object):
         processes = ProcessControler.objects.filter(
             owner__id=user_pk,
             name=process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            is_running=True,
+            is_error=False,
+            is_finished=False,
         )
 
         for process in processes:
+
+            print("Killing process {}".format(process.name_sge_id))
 
             if process.name_sge_id:
                 self.kill_process(process.name_sge_id)
 
             process.is_running = False
             process.is_finished = False
-            process.is_error = False
+            process.is_error = True
             process.save()
 
     def set_specific_controler_flag(self, user, name_of_process, sge_id, flags):

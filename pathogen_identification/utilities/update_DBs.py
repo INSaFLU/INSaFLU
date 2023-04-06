@@ -595,7 +595,7 @@ def Update_RunMain_noCheck(
     )
     runmain.runtime = f"{run_class.exec_time / 60:.2f} m"
     runmain.report = tag
-    last_modified=datetime.datetime.now(),
+    runmain.last_modified = (datetime.datetime.now(),)
     # static_dir=run_class.static_dir,
 
     runmain.save()

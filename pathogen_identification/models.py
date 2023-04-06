@@ -227,6 +227,16 @@ class PIProject_Sample(models.Model):
     def __str__(self):
         return self.sample.name
 
+    def get_taxid_list(self):
+
+        taxid_list = (
+            FinalReport.objects.filter(sample=self)
+            .distinct("taxid")
+            .values_list("taxid", flat=True)
+        )
+
+        return taxid_list
+
 
 class ParameterSet(models.Model):
 

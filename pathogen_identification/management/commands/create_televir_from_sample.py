@@ -66,17 +66,16 @@ class Command(BaseCommand):
                 )
             except Projects.DoesNotExist:
 
-                with transaction.atomic():
-                    project = Projects()
-                    project.name = project_name
-                    project.owner = user
-                    project.owner_id = user.id
-                    # TODO Check where these constants are, or define them somewhere...
-                    technology = ConstantsSettings.TECHNOLOGY_minion
-                    if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
-                        technology = ConstantsSettings.TECHNOLOGY_illumina
-                    project.technology = technology
-                    project.save()
+                project = Projects()
+                project.name = project_name
+                project.owner = user
+                project.owner_id = user.id
+                # TODO Check where these constants are, or define them somewhere...
+                technology = ConstantsSettings.TECHNOLOGY_minion
+                if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
+                    technology = ConstantsSettings.TECHNOLOGY_illumina
+                project.technology = technology
+                project.save()
 
             try:
                 project_sample = PIProject_Sample.objects.get(
@@ -109,16 +108,22 @@ class Command(BaseCommand):
                     project_sample.save()
 
             utils = Utils_Manager()
-            runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+            runs_to_deploy = utils.check_runs_to_deploy_sample(
+                user, project, project_sample
+            )
 
-            if runs_to_deploy:
-                taskID = process_SGE.set_submit_televir_job(
-                    user=user,
-                    project_pk=project.pk,
-                )
-                self.stdout.write(
-                    "Project submitted as task {}.".format(project.id, taskID)
-                )
+            if len(runs_to_deploy) > 0:
+
+                for proj_sample, leafs_to_deploy in runs_to_deploy.items():
+
+                    for leaf in leafs_to_deploy:
+
+                        taskID = process_SGE.set_submit_televir_run(
+                            user=user,
+                            project_pk=project.pk,
+                            sample_pk=proj_sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
 
             else:
                 self.stdout.write(

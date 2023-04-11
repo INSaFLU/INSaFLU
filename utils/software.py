@@ -4523,9 +4523,10 @@ class Software(object):
             )
 
         # add sequences.fasta and metadata.tsv to data folder
-        genes = ["ha"]
-        if(gene != 'ha'):
-            genes = ["ha",gene]
+        #genes = ["ha"]
+        #if(gene != 'ha'):
+        #    genes = ["ha",gene]
+        genes = [gene]
 
         #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
         for gene in genes:
@@ -4539,32 +4540,9 @@ class Software(object):
             )
 
 
-        # Need to estimate clades of these new samples
-        if(strain == "h5n1"):
-
-            # Now run Nextstrain for ha to get alignments
-            cmd = "cd {}; {} --cores {} auspice/flu_avian_h5n1_ha.json".format(
-                temp_dir, SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores)
-            )
-            exit_status = os.system(cmd)
-            if exit_status != 0:
-                self.logger_production.error("Fail to run: " + cmd)
-                self.logger_debug.error("Fail to run: " + cmd)         
-
-            # Add this to see if it improves LABEL...
-            self.utils.copy_file(
-                os.path.join(temp_dir, "results", "aligned_h5n1_ha.fasta"),
-                os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta")
-            )
-
-            # remove some tmp data that may still be present...
-            cmd = "rm -R -f {}_RES/test_data/h5n1-new".format(SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL)
-            exit_status = os.system(cmd)
-            if exit_status != 0:
-                # do not raise exception, hopefully the error is not fatal
-                self.logger_production.error("Fail to run: " + cmd)
-                self.logger_debug.error("Fail to run: " + cmd)         
-
+        # Need to estimate clades of these new samples (only for H5N1 ha)
+        if((strain == "h5n1") and (gene == 'ha')):
+     
             cmd = "cd {}; {} -s Snakefile_h5n1.clades --cores {} --config label={}".format(
                  temp_dir,  SoftwareNames.SOFTWARE_NEXTSTRAIN_snakemake, str(cores), SoftwareNames.SOFTWARE_NEXTSTRAIN_LABEL
             )
@@ -4581,12 +4559,6 @@ class Software(object):
                 self.logger_production.error("Fail to run: " + cmd)
                 self.logger_debug.error("Fail to run: " + cmd)
 
-            # Reput the original file...
-            if(gene == 'ha'):
-                self.utils.copy_file(
-                    alignments,
-                    os.path.join(temp_dir, "data", "sequences_h5n1_ha.fasta"),
-                )
 
         # just do this one now...
         genes = [gene]

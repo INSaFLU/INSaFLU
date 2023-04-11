@@ -17,8 +17,9 @@ from managing_files.models import ProcessControler, Project, Reference
 from datasets.models import Dataset
 from constants.meta_key_and_values import MetaKeyAndValue
 from datasets.manage_database import ManageDatabase
-from datasets.models import UploadFiles
+from datasets.models import UploadFiles, DatasetConsensus
 from utils.parse_in_files_nextstrain import ParseNextStrainFiles
+from utils.parse_out_files import ParseOutFiles
 
 class CollectExtraDatasetData(object):
     '''
@@ -342,8 +343,6 @@ class CollectExtraDatasetData(object):
         merge all consensus files
         """
 
-        ## TODO?: Some build require the presence of reference sequences... add them here?
-
         out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
         vect_to_process = []
         for dataset_consensus in dataset.dataset_consensus.all():
@@ -361,23 +360,75 @@ class CollectExtraDatasetData(object):
         dataset.number_passed_sequences = len(vect_to_process)
         dataset.save()
         
-
         # check what is the build that is configured, otherwise use the default
-        #build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
+        build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
         # See if there is a build parameter specific for this dataset, in which case use it
-        #parameters_list = Parameter.objects.filter(dataset=dataset)
-        #if len(list(parameters_list)) == 1:
-        #    build = list(parameters_list)[0].parameter
+        parameters_list = Parameter.objects.filter(dataset=dataset)
+        if len(list(parameters_list)) == 1:
+            build = list(parameters_list)[0].parameter
 
-        # If the nextstrain build is flu, only use specific segments
-        segment = None
-        #if(build in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu):
-        #    # TODO make this more generic... use abricate to screen for HA segment
-        #    segment = '4'
+        temp_out_fasta = self.utils.get_temp_file('temp_consensus_fasta', FileExtensions.FILE_FASTA)
 
-        self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file, segment)
+        possiblename_to_id = self.utils.merge_fasta_files_dataset(vect_to_process, temp_out_fasta)
+        
+        # List of final samples that will go to nextstrain
+        sample_list = []
+
+        builds_to_ignore = [
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b
+        ]
+        # #if(build==SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
+        if(build in builds_to_ignore):
+            # just copy (all samples are considered)
+            self.utils.copy_file(temp_out_fasta, out_file)
+            sample_list = possiblename_to_id.keys()
+
+        else:
+            
+            temp_out_abricate = self.utils.get_temp_file('temp_abricate', FileExtensions.FILE_TXT)
+
+            try:
+                cmd = self.software.run_abricate(
+                    "nextstrain", # Need to change this
+                    temp_out_fasta,
+                    SoftwareNames.SOFTWARE_ABRICATE_PARAMETERS,
+                    temp_out_abricate
+                )
+                parseOutFiles = ParseOutFiles()
+                dict_data_out = parseOutFiles.parse_abricate_file_simple(temp_out_abricate)
+                # This doesn't really matter
+                self.utils.remove_temp_file(temp_out_abricate)
+                
+                for sample in dict_data_out.keys():
+                    for entry_dic in dict_data_out[sample]:
+                        if(entry_dic["Gene"]==build):
+                           sample_list.append(sample)
+                self.utils.filter_fasta_by_ids(temp_out_fasta, sample_list, out_file)
+            
+            except Exception as e:
+                print("Welp... Could not run abricate")
+                print(e)
+
+        self.utils.remove_temp_file(temp_out_fasta)
+
+        for sample in sample_list:
+
+			### set all_consensus name in table dataset_consensus
+            if( (sample in possiblename_to_id) and (possiblename_to_id[sample] !=-1)):
+                try:
+                    dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
+                    ## if the sample starts like this
+                    dataset_consensus.seq_name_all_consensus = sample
+                    dataset_consensus.save()
+                except DatasetConsensus.DoesNotExist:	## need to create with last version
+                    continue
 
         return out_file
+
 
     def run_nextstrain(self, dataset, build):
         """

@@ -4526,11 +4526,10 @@ class Software(object):
         #genes = ["ha"]
         #if(gene != 'ha'):
         #    genes = ["ha",gene]
-        genes = [gene]
 
+        genes = [gene]
         #genes = ("ha","mp","na","ns","np","pa","pb1","pb2")
         for gene in genes:
-
             self.utils.copy_file(
                 alignments,
                 os.path.join(temp_dir, "data", "sequences_{}_{}.fasta".format(strain, gene))
@@ -4625,6 +4624,8 @@ class Software(object):
         self.utils.remove_dir(temp_dir)
 
         return [tree_file, alignment_file, auspice_zip]
+
+
 
     def run_nextstrain_rsv(
         self, alignments, metadata, type="a", cores=1

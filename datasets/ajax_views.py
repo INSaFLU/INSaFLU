@@ -392,6 +392,8 @@ def dataset_rebuild(request):
 			dataset_id = int(request.GET.get(key_with_dataset_id))
 			try:
 				dataset = Dataset.objects.get(id=dataset_id)
+				dataset.is_processed = False
+				dataset.save()
 				## need to run processing
 				try:
 					process_SGE = ProcessSGE()

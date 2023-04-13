@@ -1390,9 +1390,6 @@ class Utils(object):
 
 	def merge_fasta_files_dataset(self, vect_sample_path_and_name, out_file):
 		"""
-		:param vect_sample_path_and_name = [[path_file, sample_name],
-					[path_file, sample_name], ... ]
-		:param outfile file 
 		"""
 		vect_out_fasta = []
 		dt_out_name = {}
@@ -1405,12 +1402,10 @@ class Utils(object):
 				for record in SeqIO.parse(handle_fasta, "fasta"):			
 
 					sample_name = data_file[1].replace(" ", "_")
-					# If the name is the same as the record.id then ignore it.
-					if(sample_name == record.id):
-						possible_name = sample_name
-					else:
-						possible_name = "{}{}{}".format(sample_name,
+
+					possible_name = "{}{}{}".format(sample_name,
 							Constants.SEPARATOR_sample_record_id, record.id)
+					
 					while True:
 						if possible_name in dt_out_name:
 							possible_name = "{}_{}".format(possible_name, count)
@@ -1418,6 +1413,7 @@ class Utils(object):
 						else: 
 							dt_out_name[possible_name] = 1
 							break
+
 					# Need to remove "-"
 					new_record = SeqRecord(Seq(str(record.seq).replace("-","")),id=possible_name,description="")	
 					possiblename_to_id[possible_name] = data_file[2]

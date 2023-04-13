@@ -338,7 +338,35 @@ class CollectExtraDatasetData(object):
             self.logger.error('Sample csv file does not exist: {}'.format(file_name_root_sample))
         return None
     
+
     def merge_all_consensus_files(self, dataset):
+        """
+        merge all consensus files
+        """
+
+        out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
+        vect_to_process = []
+        for dataset_consensus in dataset.dataset_consensus.all():
+            if (dataset_consensus.is_deleted): continue
+            if (dataset_consensus.is_error): continue
+            
+            if (not dataset_consensus.is_ready_to_proccess()): continue
+            if not os.path.exists(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT)): continue
+
+            vect_to_process.append([
+                dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT),\
+                dataset_consensus.get_name(), dataset_consensus.pk])    ## need to pass ID to save possible new name
+        
+        ### set the number sequences that passed     
+        dataset.number_passed_sequences = len(vect_to_process)
+        dataset.save()
+        
+        self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file, None)
+
+        return out_file
+
+
+    def merge_all_consensus_files_dev(self, dataset):
         """
         merge all consensus files
         """
@@ -369,11 +397,7 @@ class CollectExtraDatasetData(object):
 
         temp_out_fasta = self.utils.get_temp_file('temp_consensus_fasta', FileExtensions.FILE_FASTA)
 
-        possiblename_to_id = self.utils.merge_fasta_files_dataset(vect_to_process, temp_out_fasta)
-        
-        # List of final samples that will go to nextstrain
-        sample_list = []
-
+        # These builds are not to be filtered by Abricate (for now)
         builds_to_ignore = [
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
@@ -381,14 +405,34 @@ class CollectExtraDatasetData(object):
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b
         ]
-        # #if(build==SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
+
+        build_to_ignore = False
         if(build in builds_to_ignore):
-            # just copy (all samples are considered)
-            self.utils.copy_file(temp_out_fasta, out_file)
-            sample_list = possiblename_to_id.keys()
+            build_to_ignore = True
+
+        # Concatenates all segments together to potentially filter by abricate
+        # obtains a dictionary linking fasta record.id to dataset_consensus id
+        # Can have more than one record.id to the same dataset_consensus id
+        possiblename_to_id = self.utils.merge_fasta_files_dataset(vect_to_process, 
+                                                                  temp_out_fasta)
+        
+        # List of final segments that will go to nextstrain
+        # Maximum of one per dataset_consensus id (but can be 0)
+        sample_list = []
+
+        if(build_to_ignore):
+
+            # just make sure there is only one per dataset consensus
+            # for now randomly chose one (just the first one will do)
+            already_done_dataset_consensus = []
+            for sample in possiblename_to_id.keys():
+                if(possiblename_to_id[sample] not in already_done_dataset_consensus):
+                    sample_list.append(sample)
+                    already_done_dataset_consensus.append(possiblename_to_id[sample])
 
         else:
             
+            # Filter by abricate
             temp_out_abricate = self.utils.get_temp_file('temp_abricate', FileExtensions.FILE_TXT)
 
             try:
@@ -403,25 +447,43 @@ class CollectExtraDatasetData(object):
                 # This doesn't really matter
                 self.utils.remove_temp_file(temp_out_abricate)
                 
+                # TODO: for each dataset consensus, chose segment with best match to desired target
+                best_matches = {}
                 for sample in dict_data_out.keys():
                     for entry_dic in dict_data_out[sample]:
                         if(entry_dic["Gene"]==build):
-                           sample_list.append(sample)
-                self.utils.filter_fasta_by_ids(temp_out_fasta, sample_list, out_file)
-            
+                            if(sample in best_matches.keys()):
+                                if(float(entry_dic['%IDENTITY']) > best_matches[sample]):
+                                    best_matches[sample] = float(entry_dic['%IDENTITY'])
+                            else:
+                                best_matches[sample] = float(entry_dic['%IDENTITY'])
+                            #sample_list.append(sample)                
+                sample_list = best_matches.keys()
             except Exception as e:
                 print("Welp... Could not run abricate")
                 print(e)
 
+        
+        self.utils.filter_fasta_by_ids(temp_out_fasta, sample_list, out_file)
+
         self.utils.remove_temp_file(temp_out_fasta)
+        
 
+        # First mark all as not going (so they can be removed from metadata table)
+        for sample in possiblename_to_id.keys():
+            try:
+                dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
+                dataset_consensus.seq_name_all_consensus = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD
+                dataset_consensus.save()
+            except DatasetConsensus.DoesNotExist:	## need to create with last version
+                continue
+
+        #  Now register the ones that are going
         for sample in sample_list:
-
 			### set all_consensus name in table dataset_consensus
             if( (sample in possiblename_to_id) and (possiblename_to_id[sample] !=-1)):
                 try:
                     dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
-                    ## if the sample starts like this
                     dataset_consensus.seq_name_all_consensus = sample
                     dataset_consensus.save()
                 except DatasetConsensus.DoesNotExist:	## need to create with last version
@@ -618,9 +680,10 @@ class CollectExtraDatasetData(object):
             if not dataset_consensus.reference is None: 
                 #print("Need to do metadata for reference: {}".format(dataset_consensus.reference))
                 if dataset_consensus.reference.name not in dt_out_id_project:
-                    data_columns.add_header(dataset_consensus.reference.name, ['id'])
-                    consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
-                    data_columns.add_metadata(dataset_consensus.reference.name, 
+                    if(dataset_consensus.seq_name_all_consensus != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD):    
+                        data_columns.add_header(dataset_consensus.reference.name, ['id'])
+                        consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                        data_columns.add_metadata(dataset_consensus.reference.name, 
                                                  dataset_consensus.reference.name,
                                                  dataset_consensus.reference.name,
                                                  dataset_consensus.seq_name_all_consensus, 
@@ -631,9 +694,10 @@ class CollectExtraDatasetData(object):
             if not dataset_consensus.consensus is None: 
                 #print("Need to do metadata for user-provided consensus: {}".format(dataset_consensus.consensus))
                 if dataset_consensus.consensus.name not in dt_out_id_project:
-                    data_columns.add_header(dataset_consensus.consensus.name, ['id'])
-                    consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
-                    data_columns.add_metadata(dataset_consensus.consensus.name, 
+                    if(dataset_consensus.seq_name_all_consensus != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD):    
+                        data_columns.add_header(dataset_consensus.consensus.name, ['id'])
+                        consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                        data_columns.add_metadata(dataset_consensus.consensus.name, 
                                                  dataset_consensus.consensus.name,
                                                  dataset_consensus.consensus.name,
                                                  dataset_consensus.seq_name_all_consensus, 
@@ -650,12 +714,13 @@ class CollectExtraDatasetData(object):
 
                     if not row is None:
                         ### get consensus length
-                        consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
-                        data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
-                            dataset_consensus.project_sample.pk,
-                            dataset_consensus.project_sample.project.name, 
-                            dataset_consensus.seq_name_all_consensus, row,
-                            consensus_length)
+                        if(dataset_consensus.seq_name_all_consensus != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD):                        
+                            consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                            data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
+                                dataset_consensus.project_sample.pk,
+                                dataset_consensus.project_sample.project.name, 
+                                dataset_consensus.seq_name_all_consensus, row,
+                                consensus_length)
                     continue
                                
                 dt_out_temp = {}
@@ -676,8 +741,9 @@ class CollectExtraDatasetData(object):
                 dt_out_id_project[dataset_consensus.project_sample.project.pk] = dt_out_temp
                 row = dt_out_id_project[dataset_consensus.project_sample.project.pk].get(dataset_consensus.project_sample.sample.name, None)
                 if not row is None:
-                    consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
-                    data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
+                    if(dataset_consensus.seq_name_all_consensus != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD):
+                        consensus_length = self.utils.get_total_length_fasta(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT))
+                        data_columns.add_metadata(dataset_consensus.project_sample.project.pk, 
                             dataset_consensus.project_sample.pk,
                             dataset_consensus.project_sample.project.name, 
                             dataset_consensus.seq_name_all_consensus, row,

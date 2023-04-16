@@ -1,1 +1,0 @@
-copy /a *.fastq concat.fastq

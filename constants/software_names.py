@@ -525,6 +525,7 @@ class SoftwareNames(object):
 
     # default build
     SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic
+    SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD = "DONOTADDTONEXTSTRAIN"
     SOFTWARE_NEXTSTRAIN_name = "Nextstrain"
     SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
 

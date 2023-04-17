@@ -41,7 +41,7 @@ from django.utils.translation import ugettext_lazy as _
 from pysam import pysam
 
 from utils.result import CountHits, DecodeObjects, MaskingConsensus
-
+#from utils.parse_out_files import ParseOutFiles
 
 class Utils(object):
 	'''
@@ -1386,6 +1386,61 @@ class Utils(object):
 			if (len(vect_out_fasta) > 0):
 				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")
 		return len(vect_out_fasta)
+
+
+	def merge_fasta_files_dataset(self, vect_sample_path_and_name, out_file):
+		"""
+		"""
+		vect_out_fasta = []
+		dt_out_name = {}
+		
+		possiblename_to_id = {}
+		for data_file in vect_sample_path_and_name:
+			count = 1
+			if (not os.path.exists(data_file[0])): continue
+			with open(data_file[0], "rU") as handle_fasta:
+				for record in SeqIO.parse(handle_fasta, "fasta"):			
+
+					sample_name = data_file[1].replace(" ", "_")
+
+					possible_name = "{}{}{}".format(sample_name,
+							Constants.SEPARATOR_sample_record_id, record.id)
+					
+					while True:
+						if possible_name in dt_out_name:
+							possible_name = "{}_{}".format(possible_name, count)
+							count += 1
+						else: 
+							dt_out_name[possible_name] = 1
+							break
+
+					# Need to remove "-"
+					new_record = SeqRecord(Seq(str(record.seq).replace("-","")),id=possible_name,description="")	
+					possiblename_to_id[possible_name] = data_file[2]
+					vect_out_fasta.append(new_record)
+		
+		### write the output
+		with open(out_file, "w") as handle_fasta_out:
+			if (len(vect_out_fasta) > 0):
+				SeqIO.write(vect_out_fasta, handle_fasta_out, "fasta")		
+
+		return possiblename_to_id
+
+
+	def filter_fasta_by_ids(self, input_fasta, id_list, output_fasta):
+		"""
+		"""
+
+		if (not os.path.exists(input_fasta)): return False
+	
+		with open(input_fasta) as handle_input:
+			with open(output_fasta, 'w') as handle_output:					
+					for record in SeqIO.parse(handle_input, "fasta"):
+						if(record.id in id_list):
+							SeqIO.write(record, handle_output, "fasta")
+
+		return True
+	
 
 	def merge_fasta_files_and_join_multifasta(self, vect_sample_path_and_name, out_file, segment=None):
 		"""

@@ -482,7 +482,7 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             contig_classification=run_class.contig_classification_drone.classifier_method.name,
             runtime=f"{run_class.exec_time / 60:.2f} m",
             report="initial",
-            last_modified=datetime.datetime.now(),
+            last_modified=str(datetime.datetime.now()),
             # static_dir=run_class.static_dir,
         )
 

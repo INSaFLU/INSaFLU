@@ -8,8 +8,7 @@ import logging
 import pandas as pd
 from django.core.management import BaseCommand
 from django.contrib.auth.models import User
-from django.db import transaction
-from managing_files.models import Sample
+
 from pathogen_identification.models import (
     Projects,
     RunMain,
@@ -17,8 +16,6 @@ from pathogen_identification.models import (
     FinalReport,
     PIProject_Sample,
 )
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from settings.constants_settings import ConstantsSettings
 from pathogen_identification.constants_settings import (
     ConstantsSettings as ConstantsSettingsPI,
 )
@@ -51,14 +48,23 @@ class Command(BaseCommand):
             required=True,
             help="User login of the project and sample owner",
         )
-        # parser.add_argument('--report_file', nargs='?', type=str, required=True,
-        # 					help='Path for the report file to be saved (if project finished)')
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Test if sample is ready for projects message",
+        )
 
     # A command must define handle()
     def handle(self, *args, **options):
 
         project_name = options["project_name"]
         account = options["user_login"]
+
+        if options["test"]:
+            self.stdout.write("Test mode.")
+            return False
         # report_file = options['report_file']
 
         try:

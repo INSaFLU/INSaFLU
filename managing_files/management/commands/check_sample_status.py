@@ -48,19 +48,53 @@ class Command(BaseCommand):
             required=True,
             help="User login of the sample owner",
         )
+        parser.add_argument(
+            "--test_ready",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Test if sample is ready for projects message",
+        )
+        parser.add_argument(
+            "--test_missing",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Test if sample is ready for projects message",
+        )
 
     # A command must define handle()
+    def success_message(self, sample_name: str, is_ready: bool):
+
+        self.stdout.write(f"Sample {sample_name}. Is Ready: {is_ready}")
+
+    def sample_does_not_exist_message(self, sample_name: str):
+
+        self.stdout.write(f"Sample {sample_name} does not exist.")
+
     def handle(self, *args, **options):
 
         sample_name = options["name"]
         account = options["user_login"]
+
+        if options["test_ready"]:
+            self.success_message(sample_name, True)
+            return False
+
+        if options["test_missing"]:
+            self.sample_does_not_exist_message(sample_name)
+            return False
 
         try:
 
             user = User.objects.get(username=account)
             sample = get_sample_name(user, sample_name)
 
-            self.stdout.write("Is Ready: {}".format(sample.is_ready_for_projects))
+            if sample:
+                self.success_message(sample_name, sample.is_ready_for_projects)
+
+            else:
+                self.sample_does_not_exist_message(sample_name)
 
         except User.DoesNotExist as e:
             self.stdout.write("Error: User '{}' does not exist.".format(account))

@@ -44,13 +44,27 @@ class Command(BaseCommand):
             required=True,
             help="User login of the project and sample owner",
         )
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Test if sample is ready for projects message",
+        )
 
     # A command must define handle()
+
+    def success_message(self, project_id: int):
+        self.stdout.write(f"Project {project_id} submitted.")
+
     def handle(self, *args, **options):
 
         project_name = options["project_name"]
         sample_name = options["sample_name"]
         account = options["user_login"]
+
+        if options["test"]:
+            self.success_message(1)
 
         try:
 
@@ -125,10 +139,7 @@ class Command(BaseCommand):
                             leaf_pk=leaf.pk,
                         )
 
-            else:
-                self.stdout.write(
-                    "Project already submitted as task {}.".format(project.id)
-                )
+            self.success_message(project.pk)
 
         except User.DoesNotExist as e:
             self.stdout.write("Error: User '{}' does not exist.".format(account))

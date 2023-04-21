@@ -1427,7 +1427,7 @@ class Utils(object):
 		return possiblename_to_id
 
 
-	def filter_fasta_by_ids(self, input_fasta, id_list, output_fasta):
+	def filter_fasta_by_ids(self, input_fasta, id_list_rename, output_fasta):
 		"""
 		"""
 
@@ -1436,8 +1436,8 @@ class Utils(object):
 		with open(input_fasta) as handle_input:
 			with open(output_fasta, 'w') as handle_output:					
 					for record in SeqIO.parse(handle_input, "fasta"):
-						if(record.id in id_list):
-							SeqIO.write(record, handle_output, "fasta")
+						if(record.id in id_list_rename.keys()):
+							SeqIO.write(SeqRecord(record.seq,id=id_list_rename[record.id],description=""), handle_output, "fasta")
 
 		return True
 	

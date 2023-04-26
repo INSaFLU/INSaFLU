@@ -444,20 +444,41 @@ class CollectExtraDatasetData(object):
                 print(e)
 
         # Since there can be only one sequence per sample, get back sample names
+        # unless there are repeated names, in which case, add extra number...
+        # TODO find another way to avoid name conflicts...
         rename = {}
+        used_names = {}
         for sample in sample_list:
             try:
                 dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
                 # Sample names can only contain letters, numbers and underscores so it should be ok
-                rename[sample] = dataset_consensus.get_name()
+                possible_name = "{}_{}".format(dataset_consensus.get_name(),dataset_consensus.get_project_name())
+                count = 1
+                while (True):
+                    if(possible_name in used_names):
+                        possible_name = "{}_{}".format(dataset_consensus.get_name(), count)
+                        count += 1
+                    else:
+                        break
+                rename[sample] = possible_name
+                used_names[possible_name] = 1
             except DatasetConsensus.DoesNotExist:	## need to create with last version
-                rename[sample] = sample
+                possible_name = sample
+                count = 1
+                while (True):
+                    if(possible_name in used_names):
+                        possible_name = "{}_{}".format(sample, count)
+                        count += 1                
+                    else:
+                        break
+                rename[sample] = possible_name
+                used_names[possible_name] = 1
                 continue               
 
 
         self.utils.filter_fasta_by_ids(temp_out_fasta, rename, out_file)
 
-        #self.utils.remove_temp_file(temp_out_fasta)
+        self.utils.remove_temp_file(temp_out_fasta)
         
 
         # First mark all as not going (so they can be removed from metadata table)

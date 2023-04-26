@@ -457,7 +457,7 @@ class CollectExtraDatasetData(object):
 
         self.utils.filter_fasta_by_ids(temp_out_fasta, rename, out_file)
 
-        self.utils.remove_temp_file(temp_out_fasta)
+        #self.utils.remove_temp_file(temp_out_fasta)
         
 
         # First mark all as not going (so they can be removed from metadata table)

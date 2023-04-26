@@ -1401,10 +1401,14 @@ class Utils(object):
 			with open(data_file[0], "rU") as handle_fasta:
 				for record in SeqIO.parse(handle_fasta, "fasta"):			
 
-					sample_name = data_file[1].replace(" ", "_")
-
-					possible_name = "{}{}{}".format(sample_name,
-							Constants.SEPARATOR_sample_record_id, record.id)
+					possible_name = data_file[1].replace(" ", "_")				
+					if(possible_name != record.id):
+						possible_name = "{}{}{}".format(possible_name,
+							Constants.SEPARATOR_sample_record_id, record.id)			
+					# replace a few characters to avoid abricate breaking
+					possible_name = possible_name.replace("|", "_")								
+					possible_name = possible_name.replace("/", "_")		
+					possible_name = possible_name.replace("\\", "_")
 					
 					while True:
 						if possible_name in dt_out_name:
@@ -1414,7 +1418,7 @@ class Utils(object):
 							dt_out_name[possible_name] = 1
 							break
 
-					# Need to remove "-"
+					# Need to remove "-" from sequence data...
 					new_record = SeqRecord(Seq(str(record.seq).replace("-","")),id=possible_name,description="")	
 					possiblename_to_id[possible_name] = data_file[2]
 					vect_out_fasta.append(new_record)

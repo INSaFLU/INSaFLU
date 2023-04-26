@@ -1488,6 +1488,8 @@ class Utils(object):
 					dataset_consensus = DatasetConsensus.objects.get(id=data_file[2])
 					## if the sample starts like this
 					dataset_consensus.seq_name_all_consensus = possible_name
+					## Also need to change this...
+					dataset_consensus.name = possible_name
 					dataset_consensus.save()
 				except DatasetConsensus.DoesNotExist:	## need to create with last version
 					continue

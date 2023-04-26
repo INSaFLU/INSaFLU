@@ -452,7 +452,8 @@ class CollectExtraDatasetData(object):
             try:
                 dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
                 # Sample names can only contain letters, numbers and underscores so it should be ok
-                possible_name = "{}_{}".format(dataset_consensus.get_name(),dataset_consensus.get_project_name())
+                #possible_name = "{}_{}".format(dataset_consensus.get_name(),dataset_consensus.get_project_name())
+                possible_name = dataset_consensus.get_name()
                 count = 1
                 while (True):
                     if(possible_name in used_names):

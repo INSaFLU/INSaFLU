@@ -44,13 +44,27 @@ class Command(BaseCommand):
             required=True,
             help="User login of the project and sample owner",
         )
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            required=False,
+            default=False,
+            help="Test if sample is ready for projects message",
+        )
 
     # A command must define handle()
+
+    def success_message(self, project_id: int):
+        self.stdout.write(f"Project {project_id} submitted.")
+
     def handle(self, *args, **options):
 
         project_name = options["project_name"]
         sample_name = options["sample_name"]
         account = options["user_login"]
+
+        if options["test"]:
+            self.success_message(1)
 
         try:
 
@@ -66,17 +80,16 @@ class Command(BaseCommand):
                 )
             except Projects.DoesNotExist:
 
-                with transaction.atomic():
-                    project = Projects()
-                    project.name = project_name
-                    project.owner = user
-                    project.owner_id = user.id
-                    # TODO Check where these constants are, or define them somewhere...
-                    technology = ConstantsSettings.TECHNOLOGY_minion
-                    if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
-                        technology = ConstantsSettings.TECHNOLOGY_illumina
-                    project.technology = technology
-                    project.save()
+                project = Projects()
+                project.name = project_name
+                project.owner = user
+                project.owner_id = user.id
+                # TODO Check where these constants are, or define them somewhere...
+                technology = ConstantsSettings.TECHNOLOGY_minion
+                if sample.type_of_fastq == Sample.TYPE_OF_FASTQ_illumina:
+                    technology = ConstantsSettings.TECHNOLOGY_illumina
+                project.technology = technology
+                project.save()
 
             try:
                 project_sample = PIProject_Sample.objects.get(
@@ -109,21 +122,24 @@ class Command(BaseCommand):
                     project_sample.save()
 
             utils = Utils_Manager()
-            runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+            runs_to_deploy = utils.check_runs_to_deploy_sample(
+                user, project, project_sample
+            )
 
-            if runs_to_deploy:
-                taskID = process_SGE.set_submit_televir_job(
-                    user=user,
-                    project_pk=project.pk,
-                )
-                self.stdout.write(
-                    "Project submitted as task {}.".format(project.id, taskID)
-                )
+            if len(runs_to_deploy) > 0:
 
-            else:
-                self.stdout.write(
-                    "Project already submitted as task {}.".format(project.id)
-                )
+                for proj_sample, leafs_to_deploy in runs_to_deploy.items():
+
+                    for leaf in leafs_to_deploy:
+
+                        taskID = process_SGE.set_submit_televir_run(
+                            user=user,
+                            project_pk=project.pk,
+                            sample_pk=proj_sample.pk,
+                            leaf_pk=leaf.pk,
+                        )
+
+            self.success_message(project.pk)
 
         except User.DoesNotExist as e:
             self.stdout.write("Error: User '{}' does not exist.".format(account))

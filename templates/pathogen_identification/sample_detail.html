@@ -558,6 +558,9 @@
                             <th>class. success</th>
                             <th>mapping success</th>                
                             <th>Warning</th>
+                            {% if in_control %}
+                            <th>Control</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -590,6 +593,10 @@
                                 {{value.mapping_success}}</td>
                             <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
                                 {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
+                            {% if in_control %}
+                            <td data-title="Control" style="{% flag_control_color value.control_flag %}">
+                                {% flag_control value.control_flag %}</td>
+                            {% endif %}
 
                         </tr>
                         <tr class="collapse-report">

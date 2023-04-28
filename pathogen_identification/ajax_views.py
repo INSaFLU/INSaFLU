@@ -16,6 +16,7 @@ from pathogen_identification.models import (
     Projects,
     ReferenceMap_Main,
     RunMain,
+    FinalReport,
     ParameterSet,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
@@ -185,6 +186,82 @@ def deploy_televir_map(request):
         data["is_ok"] = True
 
         return JsonResponse(data)
+
+
+def set_control_reports(project_pk: int):
+    """
+    set control reports
+    """
+
+    try:
+        project = Projects.objects.get(pk=project_pk)
+
+        control_samples = PIProject_Sample.objects.filter(
+            project=project, is_control=True
+        )
+
+        control_reports = FinalReport.objects.filter(sample__in=control_samples)
+
+        control_report_taxids = control_reports.values_list("taxid", flat=True)
+        control_report_taxids_set = set(control_report_taxids)
+        print(control_report_taxids_set)
+
+        other_reports = FinalReport.objects.filter(sample__project=project).exclude(
+            sample__in=control_samples
+        )
+
+        for sample_report in other_reports:
+
+            if sample_report.taxid in control_report_taxids_set:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
+            else:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_NONE
+
+            sample_report.save()
+
+        for report in control_reports:
+            report.control_flag = FinalReport.CONTROL_FLAG_NONE
+            report.save()
+
+    except Exception as e:
+        print(e)
+        pass
+
+
+@login_required
+@require_POST
+def set_sample_reports_control(request):
+    """
+    set sample reports control
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+
+        sample_id = int(request.POST["sample_id"])
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=int(sample_id))
+
+            sample_control_flag = False if sample.is_control else True
+
+            sample_reports = FinalReport.objects.filter(sample=sample)
+            for report in sample_reports:
+                report.control_flag = FinalReport.CONTROL_FLAG_NONE
+
+                report.save()
+
+            sample.is_control = sample_control_flag
+            sample.save()
+
+            set_control_reports(sample.project.pk)
+
+            data["is_ok"] = True
+            return JsonResponse(data)
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+            return JsonResponse(data)
 
 
 @csrf_protect

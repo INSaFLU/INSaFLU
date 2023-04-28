@@ -227,6 +227,16 @@ class PIProject_Sample(models.Model):
     def __str__(self):
         return self.sample.name
 
+    def get_taxid_list(self):
+
+        taxid_list = (
+            FinalReport.objects.filter(sample=self)
+            .distinct("taxid")
+            .values_list("taxid", flat=True)
+        )
+
+        return taxid_list
+
 
 class ParameterSet(models.Model):
 
@@ -529,7 +539,7 @@ class RunMain(models.Model):
             for mapped_reference in mapped_references:
                 mapped_reference.delete_data()
 
-            # self.data_deleted = True
+            self.data_deleted = True
 
             self.save()
 
@@ -852,8 +862,9 @@ class ReferenceMap_Main(models.Model):
 class FinalReport(models.Model):
 
     CONTROL_FLAG_NONE = 0
-    CONTROL_FLAG_PRESENT = 1
-    CONTROL_FLAG_WARNING = 2
+    CONTROL_FLAG_SOURCE = 1
+    CONTROL_FLAG_PRESENT = 2
+    CONTROL_FLAG_WARNING = 3
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
@@ -901,6 +912,10 @@ class FinalReport(models.Model):
     )
 
     control_flag = models.IntegerField(default=CONTROL_FLAG_NONE)
+
+    @property
+    def in_control(self):
+        return self.control_flag in [self.CONTROL_FLAG_PRESENT]
 
 
 class ReferenceContigs(models.Model):

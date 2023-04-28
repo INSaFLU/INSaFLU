@@ -73,6 +73,10 @@ class CollectExtraDatasetData(object):
         """
         Only for update metadata
         """
+
+        dataset.is_processed = False
+        dataset.save()
+
         ### make it running 
         process_controler = ProcessControler()
         process_SGE = ProcessSGE()
@@ -83,6 +87,10 @@ class CollectExtraDatasetData(object):
         
         ## run collect data
         self.__collect_update_extra_metadata_for_dataset(dataset, user)
+
+        dataset.is_processed = True
+        dataset.save()
+
         
     def __collect_update_extra_metadata_for_dataset(self, dataset, user):
         """
@@ -147,11 +155,11 @@ class CollectExtraDatasetData(object):
             
             ## calculate the max sample label size of the samples that belong to this dataset
             ## used in MSA viewer 
-            b_calculate_again = True
-            manage_database.get_max_length_label(dataset, user, b_calculate_again)
-            self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
-            count += 1
-            start = time.time()
+            #b_calculate_again = True
+            #manage_database.get_max_length_label(dataset, user, b_calculate_again)
+            #self.logger.info("COLLECT_EXTRA_FILES: Step {}  diff_time:{}".format(count, time.time() - start))
+            #count += 1
+            #start = time.time()
 
             ## collect all consensus files for a dataset
             self.calculate_global_files(Dataset.DATASET_FILE_NAME_RESULT_all_consensus, dataset)
@@ -361,33 +369,6 @@ class CollectExtraDatasetData(object):
         dataset.number_passed_sequences = len(vect_to_process)
         dataset.save()
         
-        self.utils.merge_fasta_files_and_join_multifasta(vect_to_process, out_file, None)
-
-        return out_file
-
-
-    def merge_all_consensus_files_dev(self, dataset):
-        """
-        merge all consensus files
-        """
-
-        out_file = self.utils.get_temp_file('all_consensus', FileExtensions.FILE_FASTA)
-        vect_to_process = []
-        for dataset_consensus in dataset.dataset_consensus.all():
-            if (dataset_consensus.is_deleted): continue
-            if (dataset_consensus.is_error): continue
-            
-            if (not dataset_consensus.is_ready_to_proccess()): continue
-            if not os.path.exists(dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT)): continue
-
-            vect_to_process.append([
-                dataset_consensus.get_consensus_file(TypePath.MEDIA_ROOT),\
-                dataset_consensus.get_name(), dataset_consensus.pk])    ## need to pass ID to save possible new name
-        
-        ### set the number sequences that passed     
-        dataset.number_passed_sequences = len(vect_to_process)
-        dataset.save()
-        
         # check what is the build that is configured, otherwise use the default
         build = SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_parameter
         # See if there is a build parameter specific for this dataset, in which case use it
@@ -447,24 +428,56 @@ class CollectExtraDatasetData(object):
                 # This doesn't really matter
                 self.utils.remove_temp_file(temp_out_abricate)
                 
-                # TODO: for each dataset consensus, chose segment with best match to desired target
+                # for each dataset consensus, chose segment with best match to desired target
                 best_matches = {}
                 for sample in dict_data_out.keys():
                     for entry_dic in dict_data_out[sample]:
                         if(entry_dic["Gene"]==build):
                             if(sample in best_matches.keys()):
-                                if(float(entry_dic['%IDENTITY']) > best_matches[sample]):
-                                    best_matches[sample] = float(entry_dic['%IDENTITY'])
+                                if(float(entry_dic['Identity']) > best_matches[sample]):
+                                    best_matches[sample] = float(entry_dic['Identity'])
                             else:
-                                best_matches[sample] = float(entry_dic['%IDENTITY'])
-                            #sample_list.append(sample)                
+                                best_matches[sample] = float(entry_dic['Identity'])               
                 sample_list = best_matches.keys()
             except Exception as e:
                 print("Welp... Could not run abricate")
                 print(e)
 
-        
-        self.utils.filter_fasta_by_ids(temp_out_fasta, sample_list, out_file)
+        # Since there can be only one sequence per sample, get back sample names
+        # unless there are repeated names, in which case, add extra number...
+        # TODO find another way to avoid name conflicts...
+        rename = {}
+        used_names = {}
+        for sample in sample_list:
+            try:
+                dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
+                # Sample names can only contain letters, numbers and underscores so it should be ok
+                #possible_name = "{}_{}".format(dataset_consensus.get_name(),dataset_consensus.get_project_name())
+                possible_name = dataset_consensus.get_name()
+                count = 1
+                while (True):
+                    if(possible_name in used_names):
+                        possible_name = "{}_{}".format(dataset_consensus.get_name(), count)
+                        count += 1
+                    else:
+                        break
+                rename[sample] = possible_name
+                used_names[possible_name] = 1
+            except DatasetConsensus.DoesNotExist:	## need to create with last version
+                possible_name = sample
+                count = 1
+                while (True):
+                    if(possible_name in used_names):
+                        possible_name = "{}_{}".format(sample, count)
+                        count += 1                
+                    else:
+                        break
+                rename[sample] = possible_name
+                used_names[possible_name] = 1
+                continue               
+
+
+        self.utils.filter_fasta_by_ids(temp_out_fasta, rename, out_file)
 
         self.utils.remove_temp_file(temp_out_fasta)
         
@@ -478,13 +491,13 @@ class CollectExtraDatasetData(object):
             except DatasetConsensus.DoesNotExist:	## need to create with last version
                 continue
 
-        #  Now register the ones that are going
-        for sample in sample_list:
+        #  Now register the ones that are going to nextstrain
+        for sample in rename.keys():
 			### set all_consensus name in table dataset_consensus
             if( (sample in possiblename_to_id) and (possiblename_to_id[sample] !=-1)):
                 try:
                     dataset_consensus = DatasetConsensus.objects.get(id=possiblename_to_id[sample])
-                    dataset_consensus.seq_name_all_consensus = sample
+                    dataset_consensus.seq_name_all_consensus = rename[sample]
                     dataset_consensus.save()
                 except DatasetConsensus.DoesNotExist:	## need to create with last version
                     continue

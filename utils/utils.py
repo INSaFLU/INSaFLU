@@ -1401,10 +1401,14 @@ class Utils(object):
 			with open(data_file[0], "rU") as handle_fasta:
 				for record in SeqIO.parse(handle_fasta, "fasta"):			
 
-					sample_name = data_file[1].replace(" ", "_")
-
-					possible_name = "{}{}{}".format(sample_name,
-							Constants.SEPARATOR_sample_record_id, record.id)
+					possible_name = data_file[1].replace(" ", "_")				
+					if(possible_name != record.id):
+						possible_name = "{}{}{}".format(possible_name,
+							Constants.SEPARATOR_sample_record_id, record.id)			
+					# replace a few characters to avoid abricate breaking
+					possible_name = possible_name.replace("|", "_")								
+					possible_name = possible_name.replace("/", "_")		
+					possible_name = possible_name.replace("\\", "_")
 					
 					while True:
 						if possible_name in dt_out_name:
@@ -1414,7 +1418,7 @@ class Utils(object):
 							dt_out_name[possible_name] = 1
 							break
 
-					# Need to remove "-"
+					# Need to remove "-" from sequence data...
 					new_record = SeqRecord(Seq(str(record.seq).replace("-","")),id=possible_name,description="")	
 					possiblename_to_id[possible_name] = data_file[2]
 					vect_out_fasta.append(new_record)
@@ -1427,7 +1431,7 @@ class Utils(object):
 		return possiblename_to_id
 
 
-	def filter_fasta_by_ids(self, input_fasta, id_list, output_fasta):
+	def filter_fasta_by_ids(self, input_fasta, id_list_rename, output_fasta):
 		"""
 		"""
 
@@ -1436,8 +1440,8 @@ class Utils(object):
 		with open(input_fasta) as handle_input:
 			with open(output_fasta, 'w') as handle_output:					
 					for record in SeqIO.parse(handle_input, "fasta"):
-						if(record.id in id_list):
-							SeqIO.write(record, handle_output, "fasta")
+						if(record.id in id_list_rename.keys()):
+							SeqIO.write(SeqRecord(record.seq,id=id_list_rename[record.id],description=""), handle_output, "fasta")
 
 		return True
 	
@@ -1484,6 +1488,8 @@ class Utils(object):
 					dataset_consensus = DatasetConsensus.objects.get(id=data_file[2])
 					## if the sample starts like this
 					dataset_consensus.seq_name_all_consensus = possible_name
+					## Also need to change this...
+					dataset_consensus.name = possible_name
 					dataset_consensus.save()
 				except DatasetConsensus.DoesNotExist:	## need to create with last version
 					continue

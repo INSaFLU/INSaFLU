@@ -1203,6 +1203,10 @@ class ProcessSGE(object):
         job_name = "job_name_<user_id>_<seq_id>"
         only run this task after all second_stage_snippy
         """
+
+        dataset.is_processed = False
+        dataset.save()
+
         process_controler = ProcessControler()
         vect_command = [
             "python3 {} collect_global_dataset_files_for_update_metadata --dataset_id {} --user_id {}".format(

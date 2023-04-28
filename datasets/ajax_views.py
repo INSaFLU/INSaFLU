@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils.safestring import mark_safe
 from datasets.models import Dataset, Consensus, DatasetConsensus
 from settings.default_parameters import DefaultParameters
+
 from settings.models import Software
 from utils.process_SGE import ProcessSGE
 from utils.utils import Utils
@@ -113,12 +114,17 @@ def add_dataset_name(request):
 
 			message = "The Dataset '{}' was created".format(dataset_name_str)
 			# TODO If there are specified parameters, change them before saving...
+
 			try:
 				default_parameters =  DefaultParameters()
 				vect_parameters = default_parameters.get_nextstrain_default(user=request.user, dataset=dataset)
-				# This will repeat the same software over and over for each dataset, but well...
-				# TODO reuse existing software entry (only save new parameter)
+				if("build" in request.GET):
+					#message = "Hey, the build should be there!!! "+request.GET["build"]
+					for parameter in vect_parameters:
+						parameter.parameter = request.GET["build"]
 				default_parameters.persist_parameters(vect_parameters, type_of_use=Software.TYPE_OF_USE_dataset)
+
+
 			except Exception as e:
 				message = "The Dataset '{}' was created, but with problems: {}".format(dataset_name_str, str(e))				
 
@@ -349,13 +355,15 @@ def remove_consensus_in_dataset(request):
 					dataset_consensus.reference.name)
 				dataset_consensus.dataset.save()
 			
-			## need to run processing
+			## need to run processing of metadata
+			## Having more entries in metadata is not an issue
 			#try:
 			#	process_SGE = ProcessSGE()
-			#	taskID =  process_SGE.set_collect_dataset_global_files(dataset_consensus.dataset,
+			#	taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset_consensus.dataset,
 			#							request.user)
 			#except:
 			#	pass
+
 			data['is_ok'] = True
 		return JsonResponse(data)
 

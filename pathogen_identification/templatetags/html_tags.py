@@ -26,7 +26,7 @@ def igv_app_script(directory, bamfile, indexBam):
 @register.simple_tag
 def flag_control(flag):
     if flag == FinalReport.CONTROL_FLAG_PRESENT:
-        return "Taxid found in Control"
+        return "Taxid found in control"
 
     else:
         return "not in control"

@@ -188,6 +188,46 @@ def deploy_televir_map(request):
         return JsonResponse(data)
 
 
+def set_control_reports(project_pk: int):
+    """
+    set control reports
+    """
+
+    try:
+        project = Projects.objects.get(pk=project_pk)
+
+        control_samples = PIProject_Sample.objects.filter(
+            project=project, is_control=True
+        )
+
+        control_reports = FinalReport.objects.filter(sample__in=control_samples)
+
+        control_report_taxids = control_reports.values_list("taxid", flat=True)
+        control_report_taxids_set = set(control_report_taxids)
+        print(control_report_taxids_set)
+
+        other_reports = FinalReport.objects.filter(sample__project=project).exclude(
+            sample__in=control_samples
+        )
+
+        for sample_report in other_reports:
+
+            if sample_report.taxid in control_report_taxids_set:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
+            else:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_NONE
+
+            sample_report.save()
+
+        for report in control_reports:
+            report.control_flag = FinalReport.CONTROL_FLAG_NONE
+            report.save()
+
+    except Exception as e:
+        print(e)
+        pass
+
+
 @login_required
 @require_POST
 def set_sample_reports_control(request):
@@ -201,43 +241,26 @@ def set_sample_reports_control(request):
 
         try:
             sample = PIProject_Sample.objects.get(pk=int(sample_id))
-            project = sample.project
+
+            sample_control_flag = False if sample.is_control else True
 
             sample_reports = FinalReport.objects.filter(sample=sample)
+            for report in sample_reports:
+                report.control_flag = FinalReport.CONTROL_FLAG_NONE
 
-            for sample_report in sample_reports:
+                report.save()
 
-                project_reports = FinalReport.objects.filter(
-                    sample__project=project, taxid=sample_report.taxid
-                ).exclude(sample=sample)
+            sample.is_control = sample_control_flag
+            sample.save()
 
-                flag_provide = (
-                    FinalReport.CONTROL_FLAG_NONE
-                    if sample_report.control_flag == FinalReport.CONTROL_FLAG_SOURCE
-                    else FinalReport.CONTROL_FLAG_PRESENT
-                )
-                sample_control_flag = (
-                    FinalReport.CONTROL_FLAG_SOURCE
-                    if sample_report.control_flag == FinalReport.CONTROL_FLAG_NONE
-                    else FinalReport.CONTROL_FLAG_NONE
-                )
-
-                for project_report in project_reports:
-                    project_report.control_flag = flag_provide
-                    project_report.save()
-
-                sample_report.control_flag = sample_control_flag
-
-                sample_report.save()
+            set_control_reports(sample.project.pk)
 
             data["is_ok"] = True
-
             return JsonResponse(data)
 
         except Exception as e:
             print(e)
             data["is_ok"] = False
-
             return JsonResponse(data)
 
 

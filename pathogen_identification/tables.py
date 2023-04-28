@@ -248,11 +248,9 @@ class SampleTable(tables.Table):
         """
         return a reference name
         """
-        sample_reports = FinalReport.objects.filter(
-            sample=record, control_flag=FinalReport.CONTROL_FLAG_SOURCE
-        ).count()
+        is_sample_control = record.is_control
 
-        if sample_reports > 0:
+        if is_sample_control:
             return mark_safe(
                 '<a href="#id_set_control_modal" id="id_set_control" data-toggle="modal" title="Remove"'
                 + ' ref_name="'

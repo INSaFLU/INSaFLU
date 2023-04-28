@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pathogen_identification.models import RunMain
 
+
 def simplify_name(name):
     """simplify sample name"""
     return (

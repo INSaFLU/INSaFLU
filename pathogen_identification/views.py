@@ -63,6 +63,7 @@ from pathogen_identification.tables import (
 )
 
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.ajax_views import set_control_reports
 
 
 def clean_check_box_in_session(request):
@@ -652,6 +653,9 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         RequestConfig(
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
+
+        ### set control reports
+        set_control_reports(project.pk)
 
         context["table"] = samples
         context["project_index"] = project.pk

@@ -16,6 +16,7 @@ from pathogen_identification.models import (
     Projects,
     ReferenceMap_Main,
     RunMain,
+    FinalReport,
     ParameterSet,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
@@ -185,6 +186,59 @@ def deploy_televir_map(request):
         data["is_ok"] = True
 
         return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def set_sample_reports_control(request):
+    """
+    set sample reports control
+    """
+    if request.is_ajax():
+        data = {"is_ok": False}
+
+        sample_id = int(request.POST["sample_id"])
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=int(sample_id))
+            project = sample.project
+
+            sample_reports = FinalReport.objects.filter(sample=sample)
+
+            for sample_report in sample_reports:
+
+                project_reports = FinalReport.objects.filter(
+                    sample__project=project, taxid=sample_report.taxid
+                ).exclude(sample=sample)
+
+                flag_provide = (
+                    FinalReport.CONTROL_FLAG_NONE
+                    if sample_report.control_flag == FinalReport.CONTROL_FLAG_SOURCE
+                    else FinalReport.CONTROL_FLAG_PRESENT
+                )
+                sample_control_flag = (
+                    FinalReport.CONTROL_FLAG_SOURCE
+                    if sample_report.control_flag == FinalReport.CONTROL_FLAG_NONE
+                    else FinalReport.CONTROL_FLAG_NONE
+                )
+
+                for project_report in project_reports:
+                    project_report.control_flag = flag_provide
+                    project_report.save()
+
+                sample_report.control_flag = sample_control_flag
+
+                sample_report.save()
+
+            data["is_ok"] = True
+
+            return JsonResponse(data)
+
+        except Exception as e:
+            print(e)
+            data["is_ok"] = False
+
+            return JsonResponse(data)
 
 
 @csrf_protect

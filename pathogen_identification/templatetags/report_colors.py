@@ -2,6 +2,7 @@ import os
 
 from django import template
 from django.utils.safestring import mark_safe
+from pathogen_identification.models import FinalReport
 
 register = template.Library()
 cell_color = "2, 155, 194"
@@ -119,3 +120,12 @@ def success_count_color(success):
 
     ncol = f"background-color: rgba({cell_color}, {counts_dict[success] * 50}%);"
     return ncol
+
+
+@register.simple_tag
+def flag_control_color(flag):
+    """
+    set background color to red if flag is True"""
+    if flag in [FinalReport.CONTROL_FLAG_PRESENT]:
+        return "background-color: rgba(255, 0, 0, 0.5);"
+    return ""

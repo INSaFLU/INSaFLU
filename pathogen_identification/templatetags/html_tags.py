@@ -3,6 +3,7 @@ import os
 
 from django import template
 from django.utils.safestring import mark_safe
+from pathogen_identification.models import FinalReport
 
 register = template.Library()
 
@@ -20,6 +21,15 @@ def igv_app_script(directory, bamfile, indexBam):
     </script>
     """
     )
+
+
+@register.simple_tag
+def flag_control(flag):
+    if flag == FinalReport.CONTROL_FLAG_PRESENT:
+        return "Taxid found in Control"
+
+    else:
+        return "not in control"
 
 
 @register.filter

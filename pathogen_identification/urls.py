@@ -95,4 +95,9 @@ urlpatterns = [
         PIajax_views.deploy_televir_map,
         name="deploy_televir_map",
     ),
+    url(
+        r"ajax/set_sample_control$",
+        PIajax_views.set_sample_reports_control,
+        name="set_control_televir_project_sample",
+    ),
 ]

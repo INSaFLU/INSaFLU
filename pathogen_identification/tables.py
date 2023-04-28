@@ -229,6 +229,7 @@ class SampleTable(tables.Table):
     report = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
+    set_control = tables.Column("Control", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -242,6 +243,33 @@ class SampleTable(tables.Table):
             "combinations",
             "running_processes",
         )
+
+    def render_set_control(self, record):
+        """
+        return a reference name
+        """
+        sample_reports = FinalReport.objects.filter(
+            sample=record, control_flag=FinalReport.CONTROL_FLAG_SOURCE
+        ).count()
+
+        if sample_reports > 0:
+            return mark_safe(
+                '<a href="#id_set_control_modal" id="id_set_control" data-toggle="modal" title="Remove"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-circle"></i></span> </a>'
+            )
+        else:
+            return mark_safe(
+                '<a href="#id_set_control_modal" id="id_set_control" data-toggle="modal" title="Set as control"'
+                + ' ref_name="'
+                + record.name
+                + '" pk="'
+                + str(record.pk)
+                + '"><i class="fa fa-circle-o"></i></span> </a>'
+            )
 
     def render_running_processes(self, record):
         """

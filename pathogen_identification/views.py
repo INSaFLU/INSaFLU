@@ -929,6 +929,13 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
+        # check has control_flag present
+        has_controlled_flag = False
+        for report in final_report:
+            if report.in_control:
+                has_controlled_flag = True
+                break
+        #
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )
@@ -957,6 +964,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_index": run_pk,
             "reference_table": raw_reference_table,
             "owner": True,
+            "in_control": has_controlled_flag,
         }
 
         return context

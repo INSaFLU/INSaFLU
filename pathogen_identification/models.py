@@ -279,8 +279,9 @@ class ParameterSet(models.Model):
             self.save()
 
             try:
-                run = RunMain.objects.get(parameter_set=self)
-                run.delete_data()
+                runs = RunMain.objects.filter(parameter_set=self)
+                for run in runs:
+                    run.delete_data()
             except RunMain.DoesNotExist:
                 pass
 

@@ -236,7 +236,7 @@ def set_sample_reports_control(request):
     """
     if request.is_ajax():
         data = {"is_ok": False}
-
+        data["set_control"] = False
         sample_id = int(request.POST["sample_id"])
 
         try:
@@ -256,6 +256,7 @@ def set_sample_reports_control(request):
             set_control_reports(sample.project.pk)
 
             data["is_ok"] = True
+            data["set_control"] = sample_control_flag
             return JsonResponse(data)
 
         except Exception as e:

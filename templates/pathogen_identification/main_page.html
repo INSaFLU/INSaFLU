@@ -202,6 +202,7 @@
 
 <script>
     $(document).on("click", "a", function (e) {
+        console.log("clicked");
         if ($(this).attr("id") === "id_set_control") {
     
             console.log("set control modal");
@@ -217,8 +218,19 @@
             // For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
             if (attr === 'id_set_control'){
                 // add show to class 
-
-                $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
+                //check if class icon is filled circle or empty circle
+                var icon = $(this).find('i');
+                var icon_class = icon.attr('class');
+                console.log(icon_class);
+                
+                if (icon_class === 'fa fa-circle-o'){
+                    $('#id-label-set-control').text('Set \'' + ref_name + '\' as control?');
+                }
+                else {
+                    $('#id-label-set-control').text('Unset \'' + ref_name + '\' as control?');
+                    $('#id-set-control-button').text('Unset');
+                }
+                
                 $('#id-modal-body-set-control').attr('pk', sample_pk);
                 $('#id-modal-body-set-control').attr('ref_name', ref_name);
             }
@@ -246,11 +258,20 @@
             }, // data sent with the post request
                     
             success: function (data) {
-              if (data['is_ok']) {
+
+                if (data['is_ok'] && data['set_control']){
                   
                   /// add message with informaton
                   $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-success">' +
                     'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was successfully set as control.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                    location.reload() 
+                }
+                if (data['is_ok'] && data['set_control'] == false){
+                    /// add message with informaton
+                    $('#id_messages_set_control').append('<div class="alert alert-dismissible alert-warning">' +
+                    'The sample \'' + $('#id-modal-body-set-control').attr('ref_name') + '\' was unset as control.' +
                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                     '</div>');
                     location.reload() 

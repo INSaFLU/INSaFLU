@@ -934,12 +934,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         ).order_by("-coverage")
         #
         # check has control_flag present
-        has_controlled_flag = False
-        for report in final_report:
-            if report.in_control:
-                has_controlled_flag = True
-                break
-        #
+        has_controlled_flag = False if sample_main.is_control else True
+
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )

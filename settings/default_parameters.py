@@ -129,8 +129,6 @@ class DefaultParameters(object):
             ## set sequential number
             dt_out_sequential[parameter.sequence_out] = 1
 
-
-
     def get_software_global_with_step(
         self,
         user,
@@ -1851,7 +1849,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""
@@ -2151,7 +2149,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""

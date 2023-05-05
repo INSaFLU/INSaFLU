@@ -29,7 +29,7 @@ def flag_control(flag):
         return "Taxid found in control"
 
     else:
-        return "not in control"
+        return ""
 
 
 @register.filter

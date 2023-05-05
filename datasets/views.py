@@ -1401,8 +1401,9 @@ class AddSingleMetadataDatasetFile(LoginRequiredMixin, FormValidMessageMixin, ge
 			try:                                
 				process_SGE = ProcessSGE()
 				#taskID =  process_SGE.set_read_sample_file_with_metadata(upload_files, self.request.user)
-				taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset=dataset)
-			except:
+				taskID =  process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset=dataset, user=self.request.user)
+			except Exception as e:
+				# messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully with strange results " + str(e), fail_silently=True)                
 				return super(AddSingleMetadataDatasetFile, self).form_invalid(form)
 			
 			messages.success(self.request, "File '" + upload_files.file_name + "' with metadata was uploaded successfully", fail_silently=True)

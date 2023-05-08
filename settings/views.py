@@ -1,12 +1,13 @@
 from braces.views import LoginRequiredMixin
 from constants.meta_key_and_values import MetaKeyAndValue
-from datasets.models import Dataset
+from datasets.models import Dataset, DatasetConsensus
 from django.contrib import messages
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.views.generic import ListView, TemplateView, UpdateView
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
+from datasets.manage_database import ManageDatabase as ManageDatasetDatabase
 from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import Projects as Televir_Project
 from utils.process_SGE import ProcessSGE
@@ -729,15 +730,54 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         parameter.save()
 
             if b_change:
-                messages.success(
-                    self.request,
-                    "{} '".format("Software" if software.is_software() else "INSaFLU")
-                    + software.name
-                    + "' parameters were successfully updated for dataset '"
-                    + dataset.name
-                    + "'.",
-                    fail_silently=True,
+
+                # Only update metadata if there are dataset_consensus already
+                query_set = DatasetConsensus.objects.filter(
+                    dataset_id=dataset.id,
                 )
+
+                if(query_set.count() > 0):
+
+                    try:
+
+                        # Now update the meetadata, if there are dataset_consensus
+                        metaKeyAndValue = MetaKeyAndValue()
+                        manageDatabase = ManageDatasetDatabase()
+                        process_SGE = ProcessSGE()
+
+                        ### get the user
+                        user = dataset.owner
+
+                        ### need to collect global files again
+                        taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, user)
+
+                        manageDatabase.set_dataset_metakey(
+                            dataset,
+                            user,
+                            metaKeyAndValue.get_meta_key(
+                                MetaKeyAndValue.META_KEY_Queue_TaskID_Project,
+                                dataset.id,
+                            ),
+                            MetaKeyAndValue.META_VALUE_Queue,
+                            taskID,
+                        )
+                    except:
+                        messages.warning(
+                            self.request,
+                            "Error updating dataset metadata",
+                            fail_silently=True
+                        )                            
+
+                    messages.success(
+                        self.request,
+                        "{} '".format("Software" if software.is_software() else "INSaFLU")
+                        + software.name
+                        + "' parameters were successfully updated for dataset '"
+                        + dataset.name
+                        + "'.",
+                        fail_silently=True,
+                    )
+                    
             else:
                 messages.success(
                     self.request,

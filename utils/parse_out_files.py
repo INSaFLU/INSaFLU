@@ -122,6 +122,42 @@ class ParseOutFiles(object):
 		return dict_data_out, clean_abricate_file
 
 
+	def parse_abricate_file_simple(self, file_name):
+		"""
+		"""
+		with open(file_name) as handle:
+			b_fisrt_line_found = False 
+			dict_data_out = {}
+			for line in handle:
+				sz_temp = line.strip()
+				if (len(sz_temp) == 0): continue
+				if (sz_temp.find('#FILE') == 0):
+					b_fisrt_line_found = True
+				elif (b_fisrt_line_found):
+					lst_split = line.split('\t')
+					if (len(lst_split) != 13): continue												
+					dt_data = {}
+					dt_data[self.GENE] = lst_split[4]
+					if self.utils.is_float(lst_split[8]): dt_data[self.COVERAGE] = float(lst_split[8])
+					else: raise ValueError(_("Value must be float '" + lst_split[8] + "'"))
+					if self.utils.is_float(lst_split[8]): dt_data[self.IDENTITY] = float(lst_split[9])
+					else: raise ValueError(_("Value must be float '" + lst_split[9] + "'"))
+					dt_data[self.TYPE] = lst_split[10]
+					dt_data[self.ACCESSION] = lst_split[11]
+					dt_data[self.SEQ_NAME] = lst_split[1]
+					if (dt_data[self.SEQ_NAME] in dict_data_out): dict_data_out[dt_data[self.SEQ_NAME]].append(dt_data)
+					else: dict_data_out[dt_data[self.SEQ_NAME]] = [dt_data]
+		
+		### order the geneId by coverage
+		for key in dict_data_out:
+			dict_data_out[key] = sorted(dict_data_out[key], reverse=True, key=lambda k: (k[self.COVERAGE],
+															k[self.IDENTITY]) )
+
+		### order the key 
+		## order by coverage and identity, bigger better...
+		return dict_data_out
+
+
 	def parse_tab_files(self, sample_name, file_to_parse, csv_writer, vect_type_out, vect_type_remove, limit_freq, b_add_header):
 		"""
 		Only used in FreeBayes

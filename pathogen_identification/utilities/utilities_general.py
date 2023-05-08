@@ -10,6 +10,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathogen_identification.models import RunMain
 
 
 def simplify_name(name):
@@ -343,3 +344,30 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     merged_final = merged_final[["taxid", "counts", "source"]]
 
     return merged_final, full_descriptor
+
+
+def infer_run_media_dir(run_main: RunMain):
+
+    if run_main.params_file_path:
+        params_exist = os.path.exists(run_main.params_file_path)
+        if params_exist:
+
+            media_classification_dir = os.path.dirname(run_main.params_file_path)
+            media_dir = os.path.dirname(media_classification_dir)
+            return media_dir
+
+    elif run_main.processed_reads_r1:
+        reads_r1_exist = os.path.exists(run_main.processed_reads_r1)
+
+        if reads_r1_exist:
+            media_dir = os.path.dirname(run_main.processed_reads_r1)
+            return media_dir
+
+    elif run_main.processed_reads_r2:
+        reads_r2_exist = os.path.exists(run_main.processed_reads_r2)
+
+        if reads_r2_exist:
+            media_dir = os.path.dirname(run_main.processed_reads_r2)
+            return media_dir
+
+    return None

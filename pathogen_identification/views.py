@@ -51,6 +51,7 @@ from pathogen_identification.models import (
     RunDetail,
     RunMain,
     RunRemapMain,
+    ParameterSet,
     Sample,
 )
 from pathogen_identification.tables import (
@@ -60,6 +61,9 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
+
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.ajax_views import set_control_reports
 
 
 def clean_check_box_in_session(request):
@@ -181,12 +185,7 @@ class PathId_ProjectsView(LoginRequiredMixin, ListView):
         ):
             query_set = query_set.filter(
                 Q(name__icontains=self.request.GET.get(tag_search))
-                | Q(reference__name__icontains=self.request.GET.get(tag_search))
-                | Q(
-                    project_samples__sample__name__icontains=self.request.GET.get(
-                        tag_search
-                    )
-                )
+                | Q(project_samples__name__icontains=self.request.GET.get(tag_search))
             ).distinct()
 
         table = ProjectTable(query_set)
@@ -254,9 +253,8 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             ]
             del self.request.session[Constants.ERROR_PROJECT_NAME]
 
-        ###
-
-        ###
+        else:
+            context[Constants.ERROR_PROJECT_NAME] = ""
 
         context["project_name"] = project_name
         context["show_paginatior"] = False
@@ -302,6 +300,24 @@ class PathID_ProjectCreateView(LoginRequiredMixin, generic.CreateView):
             b_error = True
         except Projects.DoesNotExist:
             pass
+        ###
+        if context[Constants.ERROR_PROJECT_NAME] != "":
+            b_error = True
+
+        if not form.cleaned_data["name"]:
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can not be empty."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
+        if not form.cleaned_data["name"].replace("_", "").isalnum():
+            self.request.session[
+                Constants.ERROR_PROJECT_NAME
+            ] = "The project name can only contain letters and numbers."
+            self.request.session[Constants.PROJECT_NAME] = name
+            b_error = True
+
         ### exists an error
         if b_error:
             return super(PathID_ProjectCreateView, self).form_invalid(form)
@@ -354,7 +370,7 @@ class AddSamples_PIProjectsView(
             context["error_cant_see"] = "1"
             return context
 
-        ## catch everything that is not in connection with project
+        ##
         count_active_projects = PIProject_Sample.objects.filter(
             project=project, is_deleted=False, is_error=False
         ).count()
@@ -566,56 +582,6 @@ class AddSamples_PIProjectsView(
                     project_sample.save()
                     project_sample_add += 1
 
-                ### create a task to perform the analysis of snippy and freebayes
-                ### Important, it is necessary to run again because can have some changes in the parameters.
-                try:
-                    if len(job_name_wait) == 0:
-                        (
-                            job_name_wait,
-                            job_name,
-                        ) = self.request.user.profile.get_name_sge_seq(
-                            Profile.SGE_PROCESS_projects, Profile.SGE_GLOBAL
-                        )
-                    if sample.is_type_fastq_gz_sequencing():
-                        taskID = process_SGE.set_second_stage_snippy(
-                            project_sample, self.request.user, job_name, [job_name_wait]
-                        )
-                    else:
-                        taskID = process_SGE.set_second_stage_medaka(
-                            project_sample, self.request.user, job_name, [job_name_wait]
-                        )
-
-                    ### set project sample queue ID
-                    manageDatabase.set_project_sample_metakey(
-                        project_sample,
-                        self.request.user,
-                        metaKeyAndValue.get_meta_key_queue_by_project_sample_id(
-                            project_sample.id
-                        ),
-                        MetaKeyAndValue.META_VALUE_Queue,
-                        taskID,
-                    )
-                except:
-                    pass
-
-            ### necessary to calculate the global results again
-            if project_sample_add > 0:
-                try:
-                    taskID = process_SGE.set_collect_global_files(
-                        project, self.request.user
-                    )
-                    manageDatabase.set_project_metakey(
-                        project,
-                        self.request.user,
-                        metaKeyAndValue.get_meta_key(
-                            MetaKeyAndValue.META_KEY_Queue_TaskID_Project, project.id
-                        ),
-                        MetaKeyAndValue.META_VALUE_Queue,
-                        taskID,
-                    )
-                except:
-                    pass
-
             if project_sample_add == 0:
                 messages.warning(
                     self.request,
@@ -645,7 +611,7 @@ class AddSamples_PIProjectsView(
 
 class MainPage(LoginRequiredMixin, generic.CreateView):
     """
-    home page
+    Page with samples of a project
     """
 
     template_name = "pathogen_identification/main_page.html"
@@ -688,6 +654,9 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
+        ### set control reports
+        set_control_reports(project.pk)
+
         context["table"] = samples
         context["project_index"] = project.pk
         context["project_name"] = project_name
@@ -704,7 +673,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
 
 class Sample_main(LoginRequiredMixin, generic.CreateView):
     """
-    sample main page
+    sample main page with list runs per sample
     """
 
     template_name = "pathogen_identification/sample_main.html"
@@ -734,6 +703,10 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
                 sample__pk=sample_pk,
                 project__pk=project_pk,
                 project__owner=user,
+                parameter_set__status__in=[
+                    ParameterSet.STATUS_FINISHED,
+                    ParameterSet.STATUS_RUNNING,
+                ],
             )
             sample_name = sample.sample.name
             project_name = project.name
@@ -773,7 +746,7 @@ class Sample_main(LoginRequiredMixin, generic.CreateView):
 
 def Project_reports(requesdst, pk1):
     """
-    sample main page
+    Projects reports
     """
     template_name = "pathogen_identification/allreports_table.html"
 
@@ -860,33 +833,6 @@ def Sample_reports(requesdst, pk1, pk2):
     )
 
 
-def infer_media_dir(run_main: RunMain):
-
-    if run_main.params_file_path:
-        params_exist = os.path.exists(run_main.params_file_path)
-        if params_exist:
-
-            media_classification_dir = os.path.dirname(run_main.params_file_path)
-            media_dir = os.path.dirname(media_classification_dir)
-            return media_dir
-
-    elif run_main.processed_reads_r1:
-        reads_r1_exist = os.path.exists(run_main.processed_reads_r1)
-
-        if reads_r1_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r1)
-            return media_dir
-
-    elif run_main.processed_reads_r2:
-        reads_r2_exist = os.path.exists(run_main.processed_reads_r2)
-
-        if reads_r2_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r2)
-            return media_dir
-
-    return None
-
-
 def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
     """
     check contigs exist, if not, replace path with media path check again, if so, replace with media path.
@@ -902,7 +848,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
     if assembly_contigs_exist:
         return
 
-    media_dir = infer_media_dir(run_main)
+    media_dir = infer_run_media_dir(run_main)
 
     if not media_dir:
         return
@@ -987,6 +933,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
+        # check has control_flag present
+        has_controlled_flag = False if sample_main.is_control else True
+
         contig_classification = ContigClassification.objects.get(
             sample=sample_main, run=run_main
         )
@@ -1015,6 +964,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "run_index": run_pk,
             "reference_table": raw_reference_table,
             "owner": True,
+            "in_control": has_controlled_flag,
         }
 
         return context

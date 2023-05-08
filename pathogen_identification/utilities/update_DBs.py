@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 from ast import Param
@@ -481,6 +482,7 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             contig_classification=run_class.contig_classification_drone.classifier_method.name,
             runtime=f"{run_class.exec_time / 60:.2f} m",
             report="initial",
+            last_modified=str(datetime.datetime.now()),
             # static_dir=run_class.static_dir,
         )
 
@@ -593,6 +595,7 @@ def Update_RunMain_noCheck(
     )
     runmain.runtime = f"{run_class.exec_time / 60:.2f} m"
     runmain.report = tag
+    runmain.last_modified = str(datetime.datetime.now())
     # static_dir=run_class.static_dir,
 
     runmain.save()

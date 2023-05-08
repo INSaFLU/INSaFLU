@@ -501,9 +501,9 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
-        #SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
-        #SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
-        #SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
         SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,        
@@ -515,9 +515,9 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y, "Influenza (Vic HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y, "Influenza (Yam HA 12years)"],
-        #[SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
-        #[SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
-        #[SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],                
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],                
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,"RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,"RSV (B)"]
@@ -525,6 +525,7 @@ class SoftwareNames(object):
 
     # default build
     SOFTWARE_NEXTSTRAIN_BUILDS_parameter = SOFTWARE_NEXTSTRAIN_BUILDS_generic
+    SOFTWARE_NEXTSTRAIN_BUILDS_NOBUILD = "DONOTADDTONEXTSTRAIN"
     SOFTWARE_NEXTSTRAIN_name = "Nextstrain"
     SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
 

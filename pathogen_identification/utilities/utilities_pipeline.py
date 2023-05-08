@@ -956,7 +956,42 @@ class Parameter_DB_Utility:
             return False
 
         return True
-    
+
+    def parameterset_update_status(
+        self,
+        sample: PIProject_Sample,
+        leaf: SoftwareTreeNode,
+        project: Projects,
+        status: int,
+    ):
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return False
+
+        parameter_set = ParameterSet.objects.get(
+            sample=sample, leaf=leaf, project=project
+        )
+
+        parameter_set.status = status
+        parameter_set.save()
+
+        return True
+
+    def check_ParameterSet_killed(
+        self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
+    ) -> bool:
+
+        if not self.check_ParameterSet_exists(sample, leaf, project):
+            return False
+
+        parameter_set_killed = ParameterSet.objects.filter(
+            sample=sample,
+            leaf=leaf,
+            project=project,
+            status__in=[ParameterSet.STATUS_KILLED],
+        ).exists()
+
+        return parameter_set_killed
 
     def check_ParameterSet_available_to_run(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -972,11 +1007,11 @@ class Parameter_DB_Utility:
         if parameter_set.status in [
             ParameterSet.STATUS_FINISHED,
             ParameterSet.STATUS_RUNNING,
+            ParameterSet.STATUS_KILLED,
         ]:
             return False
 
         return True
-
 
     def create_parameter_set(
         self, sample: PIProject_Sample, leaf: SoftwareTreeNode, project: Projects
@@ -1209,29 +1244,26 @@ class Utils_Manager:
 
         return all_paths[parameter_leaf.index]
 
-    def check_runs_to_deploy(self, user: User, project: Projects):
+    def get_project_pathnodes(self, project: Projects) -> dict:
         """
-        Check if there are runs to run. sets to queue if there are.
+        Get all pathnodes for a project
         """
-
-        technology = project.technology
-        ### UTILITIES
+        print("NMOIE")
         utils = Utils_Manager()
-        samples = PIProject_Sample.objects.filter(project=project)
+        technology = project.technology
+        user = project.owner
+
         local_tree = utils.generate_project_tree(technology, project, user)
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        global_paths = pipeline_tree.get_all_graph_paths_explicit()
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
-        pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT
 
-        submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
@@ -1247,8 +1279,55 @@ class Utils_Manager:
             for leaf, path in available_paths.items()
         }
 
+        return available_path_nodes
+
+    def collect_project_samples(self, project: Projects) -> dict:
+        """
+        Collect all samples from a project
+        """
+        samples = PIProject_Sample.objects.filter(project=project)
+        submission_dict = {sample: [] for sample in samples if not sample.is_deleted}
+        return submission_dict
+
+    def check_runs_to_deploy_project(self, user: User, project: Projects) -> dict:
+        """
+        Check if there are runs to run. sets to queue if there are.
+        """
+
+        submission_dict = self.collect_project_samples(project)
+
+        available_path_nodes = self.get_project_pathnodes(project)
+        clean_samples_leaf_dict = self.sample_nodes_check(
+            submission_dict, available_path_nodes, project
+        )
+
+        return clean_samples_leaf_dict
+
+    def check_runs_to_deploy_sample(
+        self, user: User, project: Projects, sample: PIProject_Sample
+    ) -> dict:
+        """
+        Check if there are runs to run. sets to queue if there are.
+        """
+
+        submission_dict = {sample: []}
+
+        available_path_nodes = self.get_project_pathnodes(project)
+        print(available_path_nodes)
+        clean_samples_leaf_dict = self.sample_nodes_check(
+            submission_dict, available_path_nodes, project
+        )
+
+        return clean_samples_leaf_dict
+
+    def sample_nodes_check(
+        self, submission_dict: dict, available_path_nodes: dict, project: Projects
+    ):
+        utils = Utils_Manager()
         ### SUBMISSION
         runs_to_deploy = 0
+        samples_available = []
+        samples_leaf_dict = {sample: [] for sample in submission_dict.keys()}
 
         for sample in submission_dict.keys():
 
@@ -1276,11 +1355,12 @@ class Utils_Manager:
                     sample=sample, leaf=matched_path_node, project=project
                 )
                 runs_to_deploy += 1
+                samples_available.append(sample)
+                samples_leaf_dict[sample].append(matched_path_node)
 
-        if runs_to_deploy > 0:
-            return True
+        samples_leaf_dict = {x: g for x, g in samples_leaf_dict.items() if g}
 
-        return False
+        return samples_leaf_dict
 
     def get_all_technology_pipelines(self, technology: str, tree_makeup: int) -> dict:
         """

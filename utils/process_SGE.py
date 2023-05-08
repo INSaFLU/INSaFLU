@@ -1196,7 +1196,6 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-
     ##### set collect global files
     def set_collect_dataset_global_files_for_update_metadata(self, dataset, user):
         """

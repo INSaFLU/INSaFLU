@@ -1248,7 +1248,6 @@ class Utils_Manager:
         """
         Get all pathnodes for a project
         """
-        print("NMOIE")
         utils = Utils_Manager()
         technology = project.technology
         user = project.owner

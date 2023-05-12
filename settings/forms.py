@@ -156,6 +156,15 @@ class SoftwareForm(forms.ModelForm):
                         for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
                     ]
                 elif (
+                    parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
+                    and parameter.software.name 
+                    == SoftwareNames.SOFTWARE_SNIPPY_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                    ]                    
+                elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
                     and parameter.software.name
                     == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name

@@ -31,6 +31,8 @@ class DefaultParameters(object):
     SNIPPY_MAPQUAL_NAME = "--mapqual"
     SNIPPY_PRIMER_NAME = "--primer"
 
+    MEDAKA_PRIMER_NAME = "-p"
+
     ### used in NANOfilt
     NANOfilt_quality_read = "-q"
 
@@ -311,7 +313,15 @@ class DefaultParameters(object):
                             settings.DIR_SOFTWARE,
                             "trimmomatic/adapters",
                             dict_out[par_name][1][0],
-                        ))                
+                        ))
+                elif (
+                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
+                ):
+                    return_parameter += " {}".format(os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ))                                    
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -1388,6 +1398,24 @@ class DefaultParameters(object):
             + "{pore}_{device}_{caller variant}_{caller version}"
         )
         vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME     
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "PRIMER: fasta of primers used for amplicon sequencing"
+        )
+        vect_parameters.append(parameter)
+
+
         return vect_parameters
 
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):

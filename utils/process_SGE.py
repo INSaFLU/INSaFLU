@@ -1032,20 +1032,19 @@ class ProcessSGE(object):
         kill the process
         """
 
-        bash_command = [
-            "export SGE_ROOT={}; qdel {}".format(settings.SGE_ROOT, process_id),
-        ]
-
-        process = subprocess.Popen(
-            bash_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+        bash_command = (
+            "export SGE_ROOT={}; export PATH={}/bin/lx-amd64/:$PATH; qdel {}".format(
+                settings.SGE_ROOT, settings.SGE_ROOT, process_id
+            )
         )
 
-        output, error = process.communicate()
+        exit_status = os.system(bash_command)
 
-        if error:
+        if exit_status != 0:
+
             raise Exception("Fail to kill the process")
 
-        return output.decode("utf-8")
+        return exit_status
 
     @transaction.atomic
     def kill_televir_process_controler(

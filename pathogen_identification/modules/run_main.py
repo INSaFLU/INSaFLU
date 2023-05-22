@@ -21,6 +21,7 @@ from pathogen_identification.modules.object_classes import (
     RunCMD,
     Sample_runClass,
     Software_detail,
+    SoftwareUnit,
 )
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
@@ -76,7 +77,7 @@ class RunDetail_main:
     house_cleaning: bool
 
     ## methods
-    preprocess_method: Software_detail
+    preprocess_method: SoftwareUnit
     depletion_method: Software_detail
     enrichment_method: Software_detail
     assembly_method: Software_detail
@@ -264,12 +265,14 @@ class RunDetail_main:
         self.taxid_limit = config["taxid_limit"]
 
         ### methods
-        self.preprocess_method = Software_detail(
-            CS.PIPELINE_NAME_read_quality_analysis,
-            self.method_args,
-            config,
-            self.prefix,
+        self.preprocess_method = SoftwareUnit(
+            module= CS.PIPELINE_NAME_read_quality_analysis,
+            name= "prinseq",
+            args= "-lc_entropy=0.3 -lc_dust=0.3",
         )
+        self.preprocess_method.get_bin(config)
+        ###
+
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
             method_args,

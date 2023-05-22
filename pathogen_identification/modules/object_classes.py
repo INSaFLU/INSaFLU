@@ -1001,8 +1001,36 @@ class Sample_runClass:
             self.r1.export_reads(reads_dir)
             self.r2.export_reads(reads_dir)
 
+class SoftwareUnit:
+        
+    def __init__(self, module: str= "None", name: str= "None", args: str= "None", db: str= "None", db_name: str= "None", bin: str= "None", dir: str= "None", output_dir: str= "None"):
+        """ """
+        self.module = module
+        self.name = name
+        self.args = args
+        self.db = db
+        self.db_name = db_name
+        self.bin = bin
+        self.dir = dir
+        self.output_dir = output_dir
 
-class Software_detail:
+    
+    def get_bin(self, config: dict):
+
+        try:
+            self.bin = os.path.join(
+                config["bin"]["ROOT"], config["bin"]["software"][self.name], "bin"
+            )
+        except KeyError:
+            try:
+                self.bin = os.path.join(
+                    config["bin"]["ROOT"], config["bin"][self.module]["default"], "bin"
+                )
+            except KeyError:
+                self.bin = ""
+        
+
+class Software_detail(SoftwareUnit):
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1012,69 +1040,65 @@ class Software_detail:
             config: dictionary containing module configuration.
             prefix: prefix of module.
         """
-        if module not in args_df.module.unique():
-            self.module = "None"
-            self.name = "None"
-            self.args = "None"
-            self.db = "None"
-            self.db_name = "None"
-            self.bin = "None"
-            self.dir = "None"
-            self.output_dir = "None"
-        else:
+        super().__init__()
+
+        if module in args_df.module.unique():
+
             method_details = args_df[(args_df.module == module)]
             self.module = module
             self.name = method_details.software.values[0]
 
-            try:
-                args_string = method_details[
-                    method_details.parameter.str.contains("ARGS")
-                ].value.values[0]
+            self.extract_args(method_details)
 
-                self.args, self.db = self.excise_db_from_args(args_string)
-                self.db_name = self.db.split("/")[-1]
+            self.extract_db(method_details, config)
 
-            except IndexError:
-                self.args = ""
-                self.db = ""
-                self.db_name = ""
+            self.get_bin(config)
 
-            try:
-                db_name = method_details[
-                    method_details.parameter.str.contains("DB")
-                ].value.values[0]
-                if ".gz" in db_name:
-                    self.db = os.path.join(config["source"]["REF_FASTA"], db_name)
-                    self.db_name = db_name
-                else:
-                    self.db = os.path.join(config["source"]["DBDIR_MAIN"], db_name)
-                    self.db_name = db_name
-
-            except IndexError:
-                pass
-
-            try:
-                self.bin = os.path.join(
-                    config["bin"]["ROOT"], config["bin"]["software"][self.name], "bin"
-                )
-            except KeyError:
-                try:
-                    self.bin = os.path.join(
-                        config["bin"]["ROOT"], config["bin"][module]["default"], "bin"
-                    )
-                except KeyError:
-                    self.bin = ""
-
-            try:
-                self.dir = config["directories"][module]
-            except KeyError:
-                self.dir = ""
+            self.get_dir_from_config(config)
 
             print(
                 f"Module: {self.module}, Software: {self.name}, Args: {self.args}, DB: {self.db}, Bin: {self.bin}, Dir: {self.dir}"
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
+    
+    def get_dir_from_config(self, config: dict):
+        try:
+            self.dir = config["directories"][self.module]
+        except KeyError:
+            self.dir = ""
+
+
+    def extract_db(self, method_details: pd.DataFrame, config: dict):
+        try:
+            db_name = method_details[
+                method_details.parameter.str.contains("DB")
+            ].value.values[0]
+            if ".gz" in db_name:
+                self.db = os.path.join(config["source"]["REF_FASTA"], db_name)
+                self.db_name = db_name
+            else:
+                self.db = os.path.join(config["source"]["DBDIR_MAIN"], db_name)
+                self.db_name = db_name
+
+        except IndexError:
+            pass
+    
+    def extract_args(self, method_details: pd.DataFrame):
+
+        try:
+            args_string = method_details[
+                method_details.parameter.str.contains("ARGS")
+            ].value.values[0]
+
+            self.args, self.db = self.excise_db_from_args(args_string)
+            self.db_name = self.db.split("/")[-1]
+
+        except IndexError:
+            self.args = ""
+            self.db = ""
+            self.db_name = ""
+
 
     def excise_db_from_args(self, args: str):
         """replace db name in args with db path

@@ -530,6 +530,11 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_name_extended = "Nextstrain pathogen evolution"
 
     ### PATHOGEN IDENTIFICATION SOFTWARE
+    ### REMAP PARAMETERS
+    SOFTWARE_REMAP_PARAMS_max_taxids= "--max-taxids"
+    SOFTWARE_REMAP_PARAMS_max_accids= "--max-accids"
+
+    ###
 
     PATHOGEN_IDENTIFICATION_name = "Pathogen Identification"
     PATHOGEN_IDENTIFICATION_deplete = True
@@ -747,7 +752,14 @@ class SoftwareNames(object):
     #####
     #####    END Global parameters for INSaFLU
     #####
-    ###################################
+    ###################################a
+
+    #####   Global parameters for TELEVIR
+
+    SOFTWARE_REMAP_PARAMS_name = "remap defaults"
+    SOFTWARE_REMAP_PARAMS_extended= "remap defaults"
+    SOFTWARE_REMAP_PARAMS_VERSION= "1"
+    
 
     ###################################
     ###################################

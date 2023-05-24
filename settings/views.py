@@ -97,7 +97,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         query_set = Software.objects.filter(
             owner=self.request.user,
             type_of_use=Software.TYPE_OF_USE_televir_global,
-            type_of_software=Software.TYPE_SOFTWARE,
+            type_of_software__in=[Software.TYPE_SOFTWARE, Software.TYPE_INSAFLU_PARAMETER],
             is_obsolete=False,
         )
         project = Televir_Project.objects.get(pk=project.pk)

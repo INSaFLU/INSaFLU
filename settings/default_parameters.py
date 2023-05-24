@@ -664,6 +664,14 @@ class DefaultParameters(object):
         ####
         #### PATHOGEN IDENTIFICATION
         ####
+        elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
+            return self.get_remap_defaults(
+                software.owner, 
+                Software.TYPE_OF_USE_televir_global,
+                software.technology.name,
+            )
+        
+
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
                 software.owner,
@@ -1361,6 +1369,82 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
         return vect_parameters
 
+    def get_remap_defaults(
+            self, user, type_of_use, technology_name, sample=None,
+            is_to_run=True,
+    ):
+        """
+        remapping parameters, namely:
+            max number of taxids to map against.
+            max number of acccids to map for each taxid. 
+            minimum coverage?
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_name
+        software.name_extended = SoftwareNames.SOFTWARE_REMAP_PARAMS_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.version = SoftwareNames.SOFTWARE_REMAP_PARAMS_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_remapping
+        )
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids
+        parameter.parameter = "12"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.range_available = "[5:30]"
+        parameter.range_max = "30"
+        parameter.range_min = "5"
+        parameter.description = (
+            "Maximum number of taxids to map against"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids
+        parameter.parameter = "12"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 2
+        parameter.range_available = "[5:30]"
+        parameter.range_max = "30"
+        parameter.range_min = "5"
+        parameter.description = (
+            "Number of accession IDs to map against."
+        )
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+
+
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):
         """
         -l <LENGTH>, Filter on a minimum read length. Range: [50:1000].
@@ -1938,7 +2022,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = True
 
@@ -3006,7 +3090,7 @@ class DefaultParameters(object):
         )
         software.technology = self.get_technology(technology_name)
         software.can_be_on_off_in_pipeline = (
-            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
         )
         software.is_to_run = True
 

@@ -257,12 +257,16 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
 
         ### metadata
+        from pathogen_identification.utilities.televir_globals import get_remap_software
+        remap_params= get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap = config["max_output_number"]
-        self.taxid_limit = config["taxid_limit"]
+        self.max_remap= remap_params.max_accids
+        self.taxid_limit= remap_params.max_taxids
+        #self.max_remap = config["max_output_number"]
+        #self.taxid_limit = config["taxid_limit"]
 
         ### methods
         self.preprocess_method = SoftwareUnit(

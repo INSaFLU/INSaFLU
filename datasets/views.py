@@ -719,7 +719,7 @@ class AddDatasetsProjectsView(
         context["query_set_count"] = len(query_set_result)
         context["dataset_name"] = dataset.name
         context["add_all_references_message"] = "Add {} project{}".format(
-            len(query_set_result), pluralize(len(query_set_result), "es")
+            len(query_set_result), pluralize(len(query_set_result), "s")
         )
         context[
             "show_info_main_page"

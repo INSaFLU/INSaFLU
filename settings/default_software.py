@@ -239,7 +239,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             self.default_parameters.get_remap_defaults(
                 user,
-                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
                 ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
@@ -249,7 +249,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             self.default_parameters.get_remap_defaults(
                 user,
-                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
                 ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
@@ -667,7 +667,7 @@ class DefaultSoftware(object):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             user,
-            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
             None,
             None,
             None,
@@ -957,7 +957,7 @@ class DefaultSoftware(object):
             self.test_default_db(
                 SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
                 self.default_parameters.get_remap_defaults(
-                    user, Software.TYPE_OF_USE_televir_global, technology_name
+                    user, Software.TYPE_OF_USE_televir_settings, technology_name
                 ),
                 user,
             )

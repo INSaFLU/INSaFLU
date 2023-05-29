@@ -756,8 +756,8 @@ class SoftwareNames(object):
 
     #####   Global parameters for TELEVIR
 
-    SOFTWARE_REMAP_PARAMS_name = "remap defaults"
-    SOFTWARE_REMAP_PARAMS_extended= "remap defaults"
+    SOFTWARE_REMAP_PARAMS_name = "Remap Management"
+    SOFTWARE_REMAP_PARAMS_extended= "Remap Management"
     SOFTWARE_REMAP_PARAMS_VERSION= "1"
     
 

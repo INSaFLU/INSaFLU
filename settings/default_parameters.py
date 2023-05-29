@@ -667,7 +667,7 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
                 software.owner, 
-                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
         
@@ -1399,7 +1399,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remapping
+            ConstantsSettings.PIPELINE_NAME_extra
         )
         software.owner = user
 
@@ -1433,9 +1433,9 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.is_to_run = True  ### by default it's True
         parameter.sequence_out = 2
-        parameter.range_available = "[5:30]"
+        parameter.range_available = "[1:30]"
         parameter.range_max = "30"
-        parameter.range_min = "5"
+        parameter.range_min = "1"
         parameter.description = (
             "Number of accession IDs to map against."
         )

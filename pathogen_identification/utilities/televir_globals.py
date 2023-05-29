@@ -20,14 +20,14 @@ def get_remap_software(username:str, project_name):
                 name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name, 
                 owner__username= username, 
                 technology__name=project.technology,
-                type_of_use= Software.TYPE_OF_USE_televir_project)
+                type_of_use= Software.TYPE_OF_USE_televir_project_settings)
         
         except Software.DoesNotExist:
             remap = Software.objects.filter(
                 name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name, 
                 owner__username= username, 
                 technology__name=project.technology,
-                type_of_use= Software.TYPE_OF_USE_televir_global)
+                type_of_use= Software.TYPE_OF_USE_televir_settings)
         
     except Software.DoesNotExist:
         raise Exception(f"Remap software not found for user {username}")    

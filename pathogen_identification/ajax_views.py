@@ -38,6 +38,8 @@ def submit_televir_project_sample(request):
     """
     submit a new sample to televir project
     """
+    print("heloo")
+    print(request.is_ajax())
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
 
@@ -51,6 +53,7 @@ def submit_televir_project_sample(request):
         utils = Utils_Manager()
 
         runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+        print("RUNS TO DEPLOY")
 
         try:
             if len(runs_to_deploy) > 0:

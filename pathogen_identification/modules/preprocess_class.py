@@ -221,6 +221,7 @@ class Preprocess:
         elif self.preprocess_method.name == "nanofilt":
             self.run_nanofilt()
         elif self.preprocess_method.name == "prinseq":
+            self.run_prinseq()
         else:
             raise ValueError(
                 "preprocess method {} not supported".format(self.preprocess_method.name)

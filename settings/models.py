@@ -60,6 +60,8 @@ class Software(models.Model):
     TYPE_OF_USE_televir_global = 5  ### used for pathogen_identification.
     TYPE_OF_USE_televir_project = 6  ### Used for  pathogen_identification_projects.
     TYPE_OF_USE_dataset = 7  ### Used in a particular dataset
+    TYPE_OF_USE_televir_settings= 8 ### Used in televir settings
+    TYPE_OF_USE_televir_project_settings= 9 ### Used in televir project settings
     ### if it is a software parameter or a general parameter (INSaFLU parameter)
     TYPE_SOFTWARE = 0  ### normal software
     TYPE_INSAFLU_PARAMETER = 1  ### it is a general parameter (INSaFLU parameter)

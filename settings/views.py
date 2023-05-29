@@ -56,7 +56,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_use__in=[Software.TYPE_OF_USE_televir_global, Software.TYPE_OF_USE_televir_settings],
             type_of_software=Software.TYPE_SOFTWARE,
             is_obsolete=False,
         )
@@ -68,7 +68,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
             )
 
             software.pk = None
-            software.type_of_use = Software.TYPE_OF_USE_televir_project
+            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project
+            else:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
             try:
                 Software.objects.get(
@@ -96,7 +99,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use=Software.TYPE_OF_USE_televir_global,
+            type_of_use__in=[Software.TYPE_OF_USE_televir_global, Software.TYPE_OF_USE_televir_settings],
             type_of_software__in=[Software.TYPE_SOFTWARE, Software.TYPE_INSAFLU_PARAMETER],
             is_obsolete=False,
         )
@@ -108,7 +111,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
             )
 
             software.pk = None
-            software.type_of_use = Software.TYPE_OF_USE_televir_project
+            if software.type_of_use == Software.TYPE_OF_USE_televir_global:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project
+            else:
+                software.type_of_use = Software.TYPE_OF_USE_televir_project_settings
 
             software.save()
 
@@ -165,7 +171,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 if televir_project is None:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
-                        type_of_use=Software.TYPE_OF_USE_televir_global,
+                        type_of_use__in=[
+                            Software.TYPE_OF_USE_televir_global,
+                            Software.TYPE_OF_USE_televir_settings,
+                            ],
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
@@ -178,7 +187,10 @@ class PISettingsView(LoginRequiredMixin, ListView):
                 else:
                     query_set = Software.objects.filter(
                         owner=self.request.user,
-                        type_of_use=Software.TYPE_OF_USE_televir_project,
+                        type_of_use__in=[
+                            Software.TYPE_OF_USE_televir_project,
+                            Software.TYPE_OF_USE_televir_project_settings,
+                            ],
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,

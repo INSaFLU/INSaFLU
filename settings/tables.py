@@ -218,7 +218,7 @@ class SoftwaresTable(tables.Table):
             return default_software_projects.get_parameters(
                 record.name,
                 user,
-                Software.TYPE_OF_USE_televir_project,
+                record.type_of_use,
                 None,
                 None,
                 None,

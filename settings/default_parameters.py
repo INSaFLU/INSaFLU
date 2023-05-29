@@ -670,8 +670,14 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
-        
 
+        elif software.name == SoftwareNames.SOFTWARE_PRINSEQ_name:
+            return self.get_prinseq_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_settings,
+                software.technology.name,
+            )
+        
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
                 software.owner,
@@ -1443,6 +1449,78 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+    def get_prinseq_defaults(
+        self, user, type_of_use, technology_name, sample=None, is_to_run=True
+    ):
+        """
+        -lc_entropy <float>  Filter on a minimum entropy score. Range: [0.0:1.0].
+        -lc_dust <float>     Filter on a maximum DUST score. Range: [0.0:1.0].
+        """
+        software= Software()
+        software.name = SoftwareNames.SOFTWARE_PRINSEQ_name
+        software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
+        software.version = SoftwareNames.SOFTWARE_PRINSEQ_VERSION
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            True  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = (
+            "Prinseq is a program for processing and filtering sequencing data."
+        )
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_extra
+        )
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_PRINSEQ_lc_entropy
+        parameter.parameter = "0.5"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 1
+        parameter.range_available = "[0.0:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.0"
+        parameter.description = (
+            "Filter on a minimum entropy score."
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_PRINSEQ_lc_dust
+        parameter.parameter = "0.7"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 2
+        parameter.range_available = "[0.0:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.0"
+        parameter.description = (
+            "Filter on a maximum DUST score."
+        )
+        vect_parameters.append(parameter)
+
+        return vect_parameters
 
 
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):

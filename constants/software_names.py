@@ -534,6 +534,17 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_taxids= "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids= "--max-accids"
 
+    ### QC SOFTWARE
+    SOFTWARE_PRINSEQ = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/prinseq/bin/prinseq++",
+    )
+    SOFTWARE_PRINSEQ_name = "Prinseq"
+    SOFTWARE_PRINSEQ_name_extended = "Prinseq (remove low complexity reads)"
+    SOFTWARE_PRINSEQ_VERSION = "1.2.4"
+    SOFTWARE_PRINSEQ_lc_entropy= "--lc_entropy"
+    SOFTWARE_PRINSEQ_lc_dust= "--lc_dust"
+
     ###
 
     PATHOGEN_IDENTIFICATION_name = "Pathogen Identification"

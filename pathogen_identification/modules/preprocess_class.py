@@ -93,7 +93,7 @@ class Preprocess:
         """
         cmd = "gunzip -c {} | grep '^>\|^@' | wc -l".format(file)
         number_of_sequences = int(self.cmd.run_bash_return(cmd))
-        print("Number of sequences: {}".format(number_of_sequences))
+        
         if number_of_sequences > 0:
             return True
         else:
@@ -175,7 +175,6 @@ class Preprocess:
             self.subsample_reads()
 
         self.fastqc_input()
-
         self.preprocess_QC()
         self.clean_read_names()
 
@@ -290,6 +289,7 @@ class Preprocess:
         ]
 
         self.cmd.run_script(fastq_cmd)
+
 
     def fastqc_processed(self, suffix="processed_data"):
         """
@@ -425,7 +425,7 @@ class Preprocess:
         """
 
         prinseq_cmd = [
-            "prinseq-lite.pl",
+            "prinseq++",
             "-fastq",
             self.r1,
             "-fastq2",
@@ -453,7 +453,7 @@ class Preprocess:
         """
 
         prinseq_cmd = [
-            "prinseq-lite.pl",
+            "prinseq++",
             "-fastq",
             self.r1,
             "-out_good",

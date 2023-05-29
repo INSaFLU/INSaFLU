@@ -1,0 +1,658 @@
+LOCUS       1                2280 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 1 polymerase PB2
+            (PB2) gene, complete cds.
+ACCESSION   1
+VERSION     OQ719004.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2280)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..2280
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="1"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..2280
+                     /gene="PB2"
+     CDS             1..2280
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
+                     /codon_start=1
+                     /product="polymerase PB2"
+                     /protein_id="WEY08924.1"
+                     /translation="MERIKELRNLMSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPS
+                     LRMKWMMAMKYPITADKRITEMVPERNEQGQTLWSKMSDAGSDRVMVSPLAVTWWNRN
+                     GPVTDTVHYPKVYKTYFDKVERLKHGTFGPVHFRNQVKIRRRVDINPGHADLSAKEAQ
+                     DVIMEVVFPNEVGARILTSESQLTITKEKKEELRDCKISPLMVAYMLERELVRKTRFL
+                     PVAGGTSSIYIEVLHLTQGTCWEQMYTPGGGVRNDDVDQSLIIAARNIVRRAAVSADP
+                     LASLLEMCHSTQIGGTRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTS
+                     GSSVKREEEVLTGNLQTLRIRVHEGYEEFTMVGKRATAILRKATRRLVQLIVSGRDEQ
+                     SIAEAIIVAMVFSQEDCVIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVLFQNWG
+                     VEHIDSVMGMVGVLPDMTPSTEMSMRGIRVSKMGVDEYSSTERVVVSIDRFLRVRDQR
+                     GNVLLSPEEVSETQGTERLTITYSSSMMWEINGPESVLVNTYQWIIRNWEAVKIQWSQ
+                     NPAMLYNKMEFEPFQSLVPKATRSQYSGFVRTLFQQMRDVLGTFDTAQIIKLLPFAAA
+                     PPKQSRMQFSSLTVNVRGSGMRILVRGNSPVFNYNKTTKRLTILGKDAGTLIEDPDES
+                     TSGVESAVLRGFLIIGKEDRRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRD
+                     SSILTDSQTATKRIRMAIN"
+ORIGIN      
+        1 atggaaagaa taaaagaact acggaatcta atgtcgcagt cccgcactcg cgagatactg
+       61 acaaaaacca cagtggacca tatggccata attaagaagt acacatcggg gagacaggaa
+      121 aagaacccgt cacttagaat gaaatggatg atggcaatga aatatccaat tactgctgac
+      181 aaaaggataa cagaaatggt tccggagaga aatgaacaag gacaaactct atggagtaaa
+      241 atgagtgatg ctggatcaga cagagtgatg gtatcacctt tggctgtaac atggtggaat
+      301 aggaatggac ccgtgacaga tacggtccat tacccaaaag tgtacaaaac ttatttcgac
+      361 aaagtcgaaa ggttaaaaca tggaaccttt ggccctgtcc attttagaaa tcaagtcaaa
+      421 atacgaagaa gagtagacat aaatcctggt catgcagacc tcagtgccaa agaggcacaa
+      481 gatgtaatta tggaagttgt ttttcccaat gaagtgggag ccagaatact aacatcagaa
+      541 tcacagctaa caataactaa agagaaaaaa gaagaactcc gagattgcaa aatttctccc
+      601 ttgatggtcg catacatgct agagagagaa cttgtgcgga aaacaagatt tctcccagtt
+      661 gctggcggaa caagcagtat atacattgaa gttttacatt tgactcaagg aacgtgttgg
+      721 gaacaaatgt acactccagg tggaggagtg aggaatgacg atgttgacca aagcctaatt
+      781 attgctgcca ggaacatagt gagaagagcc gcagtgtcag cagatccact agcatcttta
+      841 ttggagatgt gccacagcac gcaaattggc ggaacaagga tggtggacat tcttagacag
+      901 aacccgactg aagaacaggc tgtggatata tgcaaagctg caatgggatt gagaatcagc
+      961 tcatctttca gctttggtgg cttcacattt aaaagaacga gcgggtcgtc agtcaaaaga
+     1021 gaggaagagg ttcttacagg caatctccag acattgagaa taagagtaca tgaggggtat
+     1081 gaggagttca caatggtggg gaaaagagca acagctatac taagaaaagc aaccagaaga
+     1141 ctggttcaac tcatagtgag tggaagagac gaacagtcaa tagccgaagc aataatcgtg
+     1201 gccatggtgt tttcacaaga agattgcgtg ataaaagcag ttagaggtga cctgaatttt
+     1261 gtcaacagag caaatcagcg gttgaacccc atgcatcagc ttttaaggca ttttcagaaa
+     1321 gatgcgaaag tactctttca aaattgggga gttgaacaca tcgacagtgt gatgggaatg
+     1381 gttggagtat taccagatat gactccaagc acagagatgt caatgagagg aataagagtc
+     1441 agcaaaatgg gtgtggatga atactccagt acagagaggg tggtggttag cattgatcgg
+     1501 tttttgagag ttcgagacca acgtgggaat gtattattat ctcctgagga ggtcagtgaa
+     1561 acacagggaa ctgaaagact gaccataact tattcatcat cgatgatgtg ggagattaac
+     1621 ggccctgagt cggttttggt caatacctat caatggatca tcaggaattg ggaggctgtc
+     1681 aaaattcaat ggtctcagaa ccctgcaatg ttgtacaaca aaatggaatt tgaaccattt
+     1741 caatctttag tccccaaggc cactagaagc caatacagtg ggtttgtcag aactctattc
+     1801 caacaaatga gagacgtact tgggacattt gacactgccc agataataaa gcttctccct
+     1861 tttgcagctg ctccaccgaa gcaaagcaga atgcagttct cttcactgac tgtaaatgtg
+     1921 aggggatcag ggatgagaat acttgtaagg ggcaattctc ctgtattcaa ctacaacaag
+     1981 accactaaaa ggctaacaat tcttggaaaa gatgctggca ctttaattga agacccagat
+     2041 gaaagcacat ccggagtgga gtccgccgtc ttgagagggt tcctcattat aggtaaggaa
+     2101 gacagaagat acggaccagc attaagcatc aatgaactga gtaaccttgc aaaaggggaa
+     2161 aaggctaatg tgctaattgg gcaaggagac gtggtgttgg taatgaaacg gaaacgggac
+     2221 tctagtatac ttactgacag ccagacagcg accaaaagaa ttcggatggc catcaattaa
+//
+LOCUS       2                2274 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 2 polymerase PB1
+            (PB1) and PB1-F2 protein (PB1-F2) genes, complete cds.
+ACCESSION   2
+VERSION     OQ719005.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2274)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..2274
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="2"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..2274
+                     /gene="PB1"
+     CDS             1..2274
+                     /gene="PB1"
+                     /locus_tag="locus_00002"
+                     /codon_start=1
+                     /product="polymerase PB1"
+                     /protein_id="WEY08925.1"
+                     /translation="MDVNPTLLFLKVPAQNAISTTFPYTGDPPYSHGTGTGYTMDTVN
+                     RTHQYSERGKWTTNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGI
+                     FENSCLETMEAVQQTRVDKLTQGRQTYDWTLNRNQPAATALANTIEVFRSNGLTANES
+                     GRLIDFLKDVMESMDKEEMEITTHFQRKRRVRDNMTKKMVTQRTIGKKKQRVNKRGYL
+                     IRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVETLARSICEKLEQSGLPVGGN
+                     EKKAKLANVVRKMMTNSQDTELSFTITGDNTKWNENQNPRMFLAMITYITKNQPEWFR
+                     NILSIAPIMFSNKMARLGKGYMFESKRMKLRTQIPAEMLANIDLKYFNESTRKKIEKI
+                     RPLLIDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKKYTKTTYWWDGLQSSDDFALI
+                     VNAPNHEGIQAGVDRFYRTCKLVGINMSKKKSYINKTGTFEFTSFFYRYGFVANFSME
+                     LPSFGVSGINESADMSIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDT
+                     QIQTRRSFEIKKLWDQTQSKTGLLVSDGGPNLYNIRNLHIPEVCLKWELMDDNYRGRL
+                     CNPLNPFVSHKEIESVNNAVVMPAHGPAKSMEYDAVATTHSWIPKRNRSILNTSQRGI
+                     LEDEQMYQKCCNLFEKFFPSSSYRRPIGISSMVEAMVSRARIDARIDFESGRIKKEEF
+                     SEIMKICSTIEELRRQK"
+ORIGIN      
+        1 atggatgtca atccgactct attgttctta aaagttccag cgcaaaatgc cataagcaca
+       61 acattccctt atactggaga tcctccatac agccatggaa cagggacagg gtacactatg
+      121 gacacagtca acagaacaca ccaatactca gagaggggga agtggacgac aaatacagaa
+      181 actggggctc cccagctcaa cccaattgat ggaccactac ctgaggataa tgaaccaagt
+      241 ggatatgcac aaacagactg tgtcctggag gctatggcct ttcttgaaga atcccaccca
+      301 ggtatctttg aaaactcctg ccttgaaaca atggaagccg ttcaacagac aagggtagac
+      361 aaactaaccc aaggtcgcca gacttatgat tggacattaa acaggaacca accggcagca
+      421 actgcattag ccaacaccat agaagtcttt agatcgaacg gattaacagc taatgaatca
+      481 ggaaggctaa tagatttcct caaggatgtg atggaatcaa tggataagga ggaaatggag
+      541 ataacaacac actttcaaag aaaaaggaga gtaagggaca acatgaccaa gaaaatggtc
+      601 acacaaagaa caatagggaa gaaaaaacaa agagtgaata agagaggcta cctaataaga
+      661 gctctgacat tgaacacgat gaccaaggat gcagagagag gcaaattaaa aagaagggct
+      721 attgcaacac ccgggatgca aattagagga ttcgtgtatt tcgttgaaac tttagctaga
+      781 agcatttgcg aaaaacttga acaatctgga cttccggttg ggggtaatga aaagaaggcc
+      841 aaactggcaa atgttgtgag aaaaatgatg actaattcac aagacacaga gctttctttc
+      901 acaatcactg gagacaacac taagtggaat gaaaatcaaa acccccgaat gtttttggca
+      961 atgattacat atatcacaaa gaaccaacct gaatggttca gaaacatcct gagcatcgca
+     1021 ccaataatgt tctcaaacaa aatggcaaga ctgggaaaag gatacatgtt cgagagtaag
+     1081 agaatgaagc tccggacaca aatacctgca gaaatgctag caaacattga cctgaagtat
+     1141 ttcaatgaat caacaaggaa gaaaattgag aaaataaggc ctcttctaat agatggaaca
+     1201 gcatcattga gccctggaat gatgatgggc atgttcaaca tgctaagtac agttttagga
+     1261 gtctcgatac tgaatcttgg acaaaagaaa tacaccaaga caacgtactg gtgggatggg
+     1321 ctccaatcct cagacgattt tgccctcata gtgaatgcac caaatcatga gggaatacaa
+     1381 gcaggagtgg atagattcta taggacctgc aagttagtgg gaatcaacat gagcaaaaag
+     1441 aagtcctata taaataaaac agggacattt gaattcacta gcttctttta tcgatatgga
+     1501 tttgtggcta attttagcat ggagctgcca agttttggag tgtctggaat aaacgagtca
+     1561 gctgacatga gcattggagt aacagtgata aagaacaaca tgataaataa tgaccttgga
+     1621 ccagcaacag cccaaatggc tctccaattg ttcatcaaag attacagata cacgtatcgg
+     1681 tgccatagag gagacacaca aatccaaaca agaagatcat tcgagataaa gaagctgtgg
+     1741 gatcagaccc aatcaaagac aggattattg gtatcagatg ggggaccaaa cttatacaat
+     1801 atccgaaatc ttcacatccc tgaagtctgc ttgaagtggg agctgatgga cgacaattat
+     1861 cggggaagac tttgtaatcc cctgaatccc tttgtcagcc ataaagaaat tgaatctgta
+     1921 aacaatgctg tagtaatgcc agcccatggt ccggccaaaa gtatggaata tgatgccgtt
+     1981 gcgactacac actcctggat tcccaaaagg aaccgctcta ttctaaacac aagccaaagg
+     2041 ggaattcttg aggatgaaca aatgtaccag aaatgctgca acttgttcga gaaatttttc
+     2101 cctagtagtt catataggag accgattgga atttctagca tggtggaggc catggtatct
+     2161 agggcccgga ttgatgccag aattgacttc gagtctggaa ggattaagaa ggaagagttc
+     2221 tctgagatca tgaagatctg ttccaccatt gaagaactca gacggcaaaa ataa
+//
+LOCUS       3                2151 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 3 polymerase PA
+            (PA) and PA-X protein (PA-X) genes, complete cds.
+ACCESSION   3
+VERSION     OQ719003.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2151)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..2151
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="3"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..2151
+                     /gene="PA"
+     CDS             1..2151
+                     /gene="PA"
+                     /locus_tag="locus_00003"
+                     /codon_start=1
+                     /product="polymerase PA"
+                     /protein_id="WEY08922.1"
+                     /translation="MEDFVRQCFNPMIVELAEKAMKEYGEDLKIETNKFAAICTHLEV
+                     CFMYSDFHFINEQGESIVVELDDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTEAGK
+                     PKFLPDLYDYKENRFIEIGVTRREVHIYYLEKANKIKSENTHIHIFSFTGEEMATRAD
+                     YTLDEESRARIKTRLFTIRQEMANRGLWDSFRQSERGEETIEEKFEITGTMRRLADQS
+                     LPPNFSCLENFRAYVDGFEPNGCIEGKLSQMSKEVNAQIEPFLKTTPRPIKLPSGPPC
+                     YQRSKFLLMDALKLSIEDPSHEGEGIPLYDAIKCIKTFFGWKEPYIVKPHEKGINSNY
+                     LLSWKQVLSELQDIENEEKIPRTKNMKKTSQLKWALGENMAPEKVDFENCRDISDLKQ
+                     YDSEEPELRALSSWVQSEFNKACELTDSVWIELDEIGEDVAPIEHIASMRRNYFTAEV
+                     SHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIIKGR
+                     SHLRNDTDVVNFVSMEFSLTDPRLEPHKWEKYCVLEIGDMLLRSAIGQISRPMFLYVR
+                     TNGTSKVKMKWGMEMRRCLLQSLQQIESMIEAESSVKEKDMTKEFFENKSEAWPIGES
+                     PKGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSSESRKLLLIVQALRDKLEPGTFD
+                     LGGLYEAIEECLINDPWVLLNASWFNSFLTHALK"
+ORIGIN      
+        1 atggaagatt ttgtgcggca atgcttcaac ccgatgattg tcgaacttgc agaaaaagca
+       61 atgaaagagt atggagagga tctgaaaatt gaaaccaaca aatttgcagc aatatgcact
+      121 cacttggagg tgtgtttcat gtattcagat ttccatttca tcaatgaaca aggcgaatca
+      181 atagtagtag aacttgacga tccaaatgca ctgttaaaac acagatttga aataatcgag
+      241 gggagagaca gaacaatggc ctggacagta gtaaacagta tctgcaacac tactgaagct
+      301 ggaaaaccga agtttttacc ggatctgtat gattacaaag aaaacagatt catcgaaatt
+      361 ggagtgacaa ggagagaagt ccacatatat taccttgaaa aggccaataa aattaaatca
+      421 gagaacacac acattcacat tttttcattc actggggagg aaatggccac aagggcagac
+      481 tacactctcg acgaggaaag cagggctagg attaaaacca ggctatttac cataagacaa
+      541 gaaatggcca acagaggcct ctgggattcc tttcgtcaat ccgaaagagg cgaagaaaca
+      601 attgaagaaa aatttgaaat cacaggaact atgcgcaggc ttgccgacca aagtctccca
+      661 ccgaacttct cctgccttga gaattttaga gcctatgtgg atggattcga accgaacggc
+      721 tgcattgagg gcaagctttc tcaaatgtcc aaagaagtga atgcccaaat tgaacctttt
+      781 ctgaagacaa caccaagacc aatcaaactt cctagtggac ctccttgtta tcagcgatcc
+      841 aaattcctcc tgatggatgc tttgaaattg agcattgaag acccaagtca cgaaggagaa
+      901 gggatcccat tatatgatgc aatcaagtgc ataaaaacat tctttggatg gaaagaacct
+      961 tatatagtca aaccacatga aaagggaata aattcaaatt acctgctgtc atggaagcaa
+     1021 gtactgtcag aattgcagga cattgaaaat gaggagaaga ttccaagaac taaaaacatg
+     1081 aagaaaacga gtcaattgaa gtgggctctt ggtgaaaaca tggcaccaga gaaggtagac
+     1141 tttgaaaact gcagagacat aagcgatttg aagcaatatg acagtgaaga acctgaatta
+     1201 agggcacttt caagctgggt acaaagtgag ttcaacaagg cctgtgagct aactgattca
+     1261 gtctggatag agctcgatga aattggagag gacgtagccc caattgaaca cattgcaagc
+     1321 atgagaagga attacttcac agcagaggtg tcccattgca gagctactga atacataatg
+     1381 aaaggggtat acattaatac tgccctgctc aatgcatcct gtgcggcaat ggacgatttt
+     1441 caactaattc ccatgataag caagtgcaga actaaagagg gaaggcgaaa aaccaattta
+     1501 tatggattca tcataaaggg aagatctcat ctgaggaatg acacagacgt ggtaaacttt
+     1561 gtgagcatgg agttttctct cacagatccg agacttgaac cacataaatg ggagaaatat
+     1621 tgtgtccttg agataggaga tatgttacta aggagtgcca taggccaaat ttcaaggccg
+     1681 atgttcttgt atgtgaggac aaacggaaca tcaaaagtca aaatgaaatg gggaatggag
+     1741 atgagacgtt gcctccttca gtcactccag cagatcgaga gcatgattga agccgagtcc
+     1801 tcagttaaag agaaagacat gaccaaagag ttttttgaga ataaatcaga agcatggccc
+     1861 attggggagt cccccaaagg agtggaagaa ggttccattg ggaaagtctg taggactcta
+     1921 ttggctaagt cagtattcaa tagcctgtat gcatcaccac aattggaagg attttcatca
+     1981 gagtcaagaa aactgctcct tattgttcag gctcttaggg acaaactcga acctgggacc
+     2041 tttgatcttg gggggctata tgaagcaatt gaggagtgcc tgattaatga tccctgggtt
+     2101 ttgctcaatg catcttggtt caactccttc ctgacacatg cattaaaata g
+//
+LOCUS       4                1718 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 4 hemagglutinin
+            (HA) gene, complete cds.
+ACCESSION   4
+VERSION     OQ718999.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1718)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..1718
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="4"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     CDS             1..48
+                     /gene="HA_sp"
+                     /locus_tag="locus_00004a"
+                     /product="Hemagglutinin sig_peptide"
+     CDS             49..1035
+                     /gene="HA1"
+                     /locus_tag="locus_00004b"					 
+                     /product="Hemagglutinin HA1"
+     CDS             1036..1698
+                     /gene="HA2"
+                     /locus_tag="locus_00004c"					 
+                     /product="Hemagglutinin HA2"
+                     /translation="MKTIIALSNILCLVFAQKIPGNDNSTATLCLGHHAVPNGTIVKT
+                     ITNDRIEVTNATELVQNSSIGEICGSPHQILDGGNCTLIDALLGDPQCDGFQNKEWDL
+                     FVERSRANSNCYPYDVPDYASLRSLVASSGTLEFKNESFNWTGVKQNGTSSACIRGSS
+                     SSFFSRLNWLTSLNNIYPAQNVTMPNKEQFDKLYIWGVHHPDTDKNQISLFAQSSGRI
+                     TVSTKRSQQAVIPNIGSRPRIRGIPSRISIYWTIVKPGDILLINSTGNLIAPRGYFKI
+                     RSGKSSIMRSDAPIGKCKSECITPNGSIPNDKPFQNVNRITYGACPRYVKQSTLKLAT
+                     GMRNVPEKQTRGIFGAIAGFIENGWEGMVDGWYGFRHQNSEGRGQAADLKSTQAAIDQ
+                     INGKLNRLIGKTNEKFHQIEKEFSEVEGRVQDLEKYVEDTKIDLWSYNAELLVALENQ
+                     HTIDLTDSEMNKLFEKTKKQLRENAEDMGNGCFKIYHKCDNACIGSIRNETYDHNVYR
+                     DEALNNRFQIKGVELKSGYKDWILWISFAMSCFLLCIALLGFIMWACQKGNIRCNICI
+                     "
+ORIGIN      
+        1 atgaagacta tcattgcttt gagcaacatt ctatgtcttg ttttcgctca aaaaatacct
+       61 ggaaatgaca atagcacggc aacgctgtgc cttgggcacc atgcagtacc aaacggaacg
+      121 atagtgaaaa caatcacaaa tgaccgaatt gaagttacta atgctactga gttggttcag
+      181 aattcatcaa taggtgaaat atgcggcagt cctcatcaga tccttgatgg agggaactgc
+      241 acactaatag atgctctatt gggggaccct cagtgtgacg gctttcaaaa taaggaatgg
+      301 gacctttttg ttgaaagaag cagagccaac agcaactgtt acccttatga tgtgccggat
+      361 tatgcctccc ttaggtcact agttgcctca tccggcacac tggagtttaa aaatgaaagc
+      421 ttcaattgga ctggagtcaa acaaaacgga acaagttctg cgtgcataag gggatctagt
+      481 agtagttttt ttagtagatt aaattggttg accagcttaa acaacatata tccagcacag
+      541 aacgtgacta tgccaaacaa ggaacaattt gacaaattgt acatttgggg ggttcaccac
+      601 ccggatacgg acaagaacca aatctccctg tttgctcaat catcaggaag aatcacagta
+      661 tctaccaaaa gaagccaaca agctgtaatc ccaaatatcg gatctagacc cagaataagg
+      721 ggtatcccta gcagaataag catctattgg acaatagtaa aaccgggaga catacttttg
+      781 attaacagca cagggaatct aattgctcct aggggttact tcaaaatacg aagtgggaaa
+      841 agctcaataa tgagatcaga tgcacccatt ggcaaatgta agtctgaatg catcactcca
+      901 aatggaagca ttcccaatga caaaccgttc caaaatgtaa acaggatcac atacggggcc
+      961 tgtcccagat atgttaagca aagcaccctg aaattggcaa caggaatgcg aaatgtacca
+     1021 gagaaacaaa ccagaggcat atttggcgca atagcgggtt tcatagaaaa tggatgggag
+     1081 ggaatggtgg atggttggta cggtttcagg catcaaaatt ctgagggaag aggacaagca
+     1141 gcagatctca aaagcactca agcagcaatc gatcaaatca atgggaagct gaatcgattg
+     1201 atcggaaaaa ccaacgagaa attccatcag attgaaaaag aattctcaga agtagaagga
+     1261 agagttcaag accttgagaa atatgttgag gacactaaaa tagatctctg gtcatacaac
+     1321 gcggagcttc ttgttgccct ggagaaccaa catacgattg acctaactga ctcagaaatg
+     1381 aacaaactgt ttgaaaaaac aaagaagcaa ctgagggaaa atgctgagga tatgggaaat
+     1441 ggttgtttca aaatatacca caaatgtgac aatgcctgca taggatcaat aagaaatgaa
+     1501 acttatgacc acaatgtgta cagggatgaa gcattaaaca accggttcca gatcaaggga
+     1561 gttgagctga agtcagggta caaagattgg atcctatgga tttcctttgc catgtcatgt
+     1621 tttttgcttt gtattgcttt gttggggttc atcatgtggg cctgccaaaa gggcaacatt
+     1681 agatgcaaca tttgcatttg agtgcattaa ttaaaaac
+//
+LOCUS       5                1497 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 5 nucleocapsid
+            protein (NP) gene, complete cds.
+ACCESSION   5
+VERSION     OQ719000.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1497)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..1497
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="5"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..1497
+                     /gene="NP"
+     CDS             1..1497
+                     /gene="NP"
+                     /locus_tag="locus_00005"
+                     /codon_start=1
+                     /product="nucleocapsid protein"
+                     /protein_id="WEY08917.1"
+                     /translation="MASQGTKRSYEQMETDGDRQNATEIRASVGKMIDGIGRFYIQMC
+                     TELKLSDHEGRLIQNSLTIEKMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDG
+                     KWMRELVLYDKEEIRRIWRQANNGEDATSGLTHMMIWHSNLNDATYQRTRALVRTGMD
+                     PRMCSLMQGSTLPRRSGAAGAAVKGIGTMVMELIRMIKRGINDRNFWRGENGRKTRSA
+                     YDRMCNILKGKFQTAAQRAMVDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCL
+                     PACAYGPAVSSGYDFEKEGYSLVGIDPFKLLQNSQIYSLIRPNENPAHKSQLVWMACH
+                     SAAFEDLRLLSFIRGTKVSPRGKLSTRGVQIASNENMDNMGSSTLELRSGYWAIRTRS
+                     GGNTNQQRASAGQTSVQPTFSVQRNIPFEKSTIMAAFTGNTEGRTSDMRAEIIRMMEG
+                     AKPEEVSFRGRGVFELSDEKAANPIVPSFDMSNEGSYFFGDNAEEYDN"
+ORIGIN      
+        1 atggcgtccc aaggcaccaa acggtcttat gaacagatgg aaactgatgg agatcgccag
+       61 aatgcaactg agattagggc atccgtcggg aagatgattg atggaattgg gagattctac
+      121 atccaaatgt gcactgaact taaactcagt gatcatgaag gacggttgat ccaaaatagc
+      181 ttgacaatag agaaaatggt actctctgct tttgatgaaa gaaggaataa atacctggaa
+      241 gaacacccca gcgcggggaa agatcccaag aaaactgggg ggcccatata cagaagagtc
+      301 gatggaaaat ggatgaggga actcgtcctt tatgacaaag aggaaataag gcgaatctgg
+      361 cgccaagcca acaatggtga ggatgctaca tctggtctaa cccacatgat gatttggcat
+      421 tccaatttga atgatgcgac ataccagagg acaagagctc ttgttcggac tggaatggat
+      481 cccagaatgt gctctctgat gcaggggtcg actctcccta gaaggtccgg agctgcaggt
+      541 gctgcagtca aaggaatcgg aacaatggtg atggaactga tcaggatgat caaacggggg
+      601 atcaacgatc gaaatttttg gagaggtgag aatgggcgga aaacaagaag tgcttatgat
+      661 agaatgtgca acattcttaa aggaaaattt caaacagctg cacaaagagc aatggtggat
+      721 caagttagag aaagccggaa cccaggaaac gctgagatcg aagatctcat atttttagca
+      781 agatctgcac tgatattgag aggatcagtt gctcacaaat cttgcctacc tgcctgtgca
+      841 tatggacctg cagtatccag tggttacgac tttgaaaaag agggatattc cttggtggga
+      901 atagaccctt tcaaactact tcaaaatagc caaatataca gcttaatcag acctaatgag
+      961 aatccagcac acaagagtca gctggtgtgg atggcatgcc attctgctgc atttgaagat
+     1021 ttaagattgt taagtttcat cagagggaca aaagtatctc ctcgggggaa actgtcaact
+     1081 agaggagtac aaattgcttc aaatgagaac atggataata tgggatcaag cactcttgaa
+     1141 ctgagaagcg ggtactgggc cataaggacc aggagtggag gaaacactaa tcaacagagg
+     1201 gcctccgcag gccaaaccag tgtgcaacct acgttttctg tacaaagaaa catcccattt
+     1261 gaaaagtcaa ccatcatggc agcattcact ggaaatacgg agggaagaac ttcagacatg
+     1321 agggcagaaa tcataaggat gatggaaggt gcaaaaccag aagaagtgtc attccggggg
+     1381 aggggagttt tcgagctctc agatgagaag gcagcgaacc cgatcgtgcc ctcttttgat
+     1441 atgagtaacg aaggatctta tttcttcgga gacaatgcag aagagtacga caattaa
+//
+LOCUS       6                1439 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 6 neuraminidase
+            (NA) gene, complete cds.
+ACCESSION   6
+VERSION     OQ718998.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1439)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..1439
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="6"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            8..1417
+                     /gene="NA"
+     CDS             8..1417
+                     /gene="NA"
+                     /locus_tag="locus_00006"
+                     /codon_start=1
+                     /product="neuraminidase"
+                     /protein_id="WEY08915.1"
+                     /translation="MNPNQKIITIGSVSLTISTICFFMQIAILITTVTLHFKQYEFNS
+                     PPNNQVMLCEPTIIERNITEIVYLTNTTIEKEICPKPAEYRNWSKPQCGITGFAPFSK
+                     DNSIRLSAGGDIWVTREPYVSCDLDKCYQFALGQGTTLNNVHSNNTVRDRTPYRTLLM
+                     NELGVPFHLGTKQVCIAWSSSSCHDGKAWLHVCITGDDKNATASFIYNGRLVDSVVSW
+                     SNDILRTQESECVCINGTCTVVMTDGNATGKADTKILFIEEGKIVHTSKLSGSAQHVE
+                     ECSCYPRYPGVRCVCRDNWKGSNRPIIDINIKDHSIVSRYVCSGLVGDTPRKSDSSSS
+                     SHCLNPNNEKGDHGVKGWAFDDGNDVWMGRTINETSRLGYETFKVVEGWSNPKSKLQI
+                     NRQVIVDRGDRSGYSGIFSVEGKSCINRCFYVELIRGRKEETEVLWTSNSIVVFCGTS
+                     GTYGTGSWPDGANLSLMHI"
+ORIGIN      
+        1 agtaaagatg aatccaaatc aaaagataat aacgattggc tctgtttctc tcacaatttc
+       61 cacaatatgc ttcttcatgc aaattgccat cctgataact actgtaacat tgcatttcaa
+      121 gcaatatgaa ttcaactccc ccccaaataa ccaagtgatg ctgtgtgaac caacaataat
+      181 agaaagaaac ataacagaga tagtgtattt gaccaacacc accatagaga aggaaatatg
+      241 ccccaaacca gcagaataca gaaattggtc aaaaccgcaa tgtggcatta caggatttgc
+      301 acctttctct aaggacaatt cgattaggct ttccgctggt ggggacatct gggtgacaag
+      361 agaaccttat gtgtcatgcg atcttgacaa gtgttatcaa tttgcccttg gacagggaac
+      421 aacactaaac aatgtgcatt caaataacac agtacgtgat agaacccctt atcggactct
+      481 attgatgaat gagttgggtg ttcctttcca tctggggacc aagcaagtgt gcatagcatg
+      541 gtccagctca agttgtcacg atggaaaagc atggctgcat gtttgtataa cgggggatga
+      601 taaaaatgca actgctagct tcatttacaa tgggaggctt gtagatagtg ttgtttcatg
+      661 gtccaacgat attctcagaa cccaggagtc agaatgcgtt tgtatcaatg gaacttgtac
+      721 agtagtaatg actgatggaa atgctacagg aaaagctgat actaaaatac tattcattga
+      781 ggaggggaaa atcgttcata ctagcaaatt gtcaggaagt gctcagcatg tcgaagagtg
+      841 ctcttgctat cctcgatatc ctggtgtcag atgtgtctgc agagacaact ggaaaggatc
+      901 caaccggccc atcatagata taaacataaa ggatcatagc attgtttcca ggtatgtgtg
+      961 ttctggactt gttggagaca cacccagaaa aagcgacagc tccagcagta gccattgttt
+     1021 gaaccctaac aatgaaaaag gtgatcatgg agtgaaaggc tgggcctttg atgatggaaa
+     1081 tgacgtgtgg atggggagaa caatcaacga gacgtcacgc ttagggtatg aaaccttcaa
+     1141 agtcgttgaa ggctggtcca accctaagtc caaattgcag ataaataggc aagtcatagt
+     1201 tgacagaggc gataggtccg gttattctgg tattttctct gttgaaggca aaagctgcat
+     1261 caatcggtgc ttttatgtgg agttgattag gggaagaaaa gaggaaactg aagtcttgtg
+     1321 gacttcaaac agtattgttg tgttttgtgg cacctcaggt acatatggaa caggctcatg
+     1381 gcctgatggg gcgaacctca gtctcatgca tatataagct ttcgcaattt tagaaaaag
+//
+LOCUS       7                 982 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 7 matrix protein
+            2 (M2) and matrix protein 1 (M1) genes, complete cds.
+ACCESSION   7
+VERSION     OQ719002.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 982)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..982
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="7"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..759
+                     /gene="M1"
+     CDS             1..759
+                     /gene="M1"
+                     /locus_tag="locus_00007"
+                     /codon_start=1
+                     /product="matrix protein 1"
+                     /protein_id="WEY08920.1"
+                     /translation="MSLLTEVETYVLSIVPSGPLKAEIAQRLEDVFAGKNTDLEALME
+                     WLKTRPILSPLTKGILGFVFTLTVPSERGLQRRRFVQNALNGNGDPNNMDKAVKLYRK
+                     LKREITFHGAKEIALSYSAGALASCMGLIYNRMGAVTTEVAFGLVCATCEQIADSQHR
+                     SHRQMVATTNPLIKHENRMVLASTTAKAMEQMAGSSEQAAEAMEIASQARQMVQAMRA
+                     IGTHPSSSTGLRDDLLENLQTYQKRMGVQMQRFK"
+ORIGIN      
+        1 atgagccttc ttaccgaggt cgaaacgtat gttctctcta tcgttccatc aggccccctc
+       61 aaagccgaga tcgcgcagag acttgaagat gtctttgctg ggaaaaacac agatcttgag
+      121 gctctcatgg aatggttaaa gacaagacca attctgtcac ctttgactaa ggggatttta
+      181 gggtttgttt tcacgctcac cgtgcccagt gagcgaggac tgcagcgtag acgttttgtc
+      241 caaaatgccc tcaatgggaa tggagaccca aataacatgg acaaagcagt taaactgtat
+      301 aggaaactta agagggagat aacgttccac ggggccaaag aaatagctct cagttattct
+      361 gctggtgcac ttgccagttg catgggcctc atatacaaca ggatgggggc tgtaaccact
+      421 gaagtggcat ttggcctggt gtgtgcaaca tgtgagcaaa ttgctgattc ccagcacagg
+      481 tctcataggc agatggtggc aacaaccaat ccattaataa aacatgagaa cagaatggtt
+      541 ttggccagca ctacagctaa ggctatggag caaatggctg gctcaagtga gcaagcagca
+      601 gaggccatgg agattgctag tcaggccagg cagatggtgc aggcaatgag agccattggg
+      661 actcatccta gttccagcac tggtctaaga gatgatcttc ttgaaaattt gcagacctat
+      721 cagaaacgaa tgggggtgca gatgcaacga ttcaagtaac ccgcttgttg ttgccgcgaa
+      781 tatcattggg atcttgcact tgatattatg gattcttgat cgtctttttt tcaaatgcgt
+      841 ctatcgactc ttcaaacacg gcattaaaag aggcccttct acggaaggtg tacctgagtc
+      901 tatgagggaa gaataccgaa aggaacagca gaatgctgtg gatgctgacg acagtcattt
+      961 tgtcagcata gagttggagt aa
+//
+LOCUS       8                 838 bp    cRNA    linear   VRL 04-APR-2023
+DEFINITION  Influenza A virus (A/Darwin/6/2021(H3N2)) segment 8 nuclear export
+            protein (NEP) and nonstructural protein 1 (NS1) genes, complete
+            cds.
+ACCESSION   8
+VERSION     OQ719001.1
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 838)
+  AUTHORS   Aziz,A., Deng,Y. and Barr,I.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (30-MAR-2023) WHOCC Reference and Research on influenza,
+            VIDRL, Melbourne Health, 792 Elizabeth St, Melbourne, VIC 3000,
+            Australia
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: IRMA v. 1.0.2
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..838
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Darwin/6/2021"
+                     /serotype="H3N2"
+                     /isolate="6"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="8"
+                     /country="Australia: Northern Territory, Darwin"
+                     /collection_date="2021-03-16"
+                     /note="EPI_ISL_2233238"
+     gene            1..693
+                     /gene="NS1"
+     CDS             1..693
+                     /gene="NS1"
+                     /locus_tag="locus_00008"
+                     /codon_start=1
+                     /product="nonstructural protein 1"
+                     /protein_id="WEY08918.1"
+                     /translation="MDSNTVSSFQVDCFLWHIRKQVVDQKLSDAPFLDRLRRDQRSLR
+                     GRGNTLGLDIKSATHVGKQIVEKILKGESDEALKMTMVSTPASRYITDMTIEELSRNW
+                     FMLMPKQKVEGPLCIRMDQAIMEKNIMLKANFNVIFGRLETIVLLRAFTEEGAIVGEI
+                     SPLPSFPGHTIEDVKNAIGVLIGGLEWNDNTVRVSKNLQRFAWRSSHENGGPPLTPKQ
+                     KREMARTARSEV"
+ORIGIN      
+        1 atggattcca acactgtgtc aagtttccag gtagattgct ttctttggca tatccggaaa
+       61 caagttgtgg accaaaaact gagtgatgcc ccattcctcg atcggcttcg ccgagatcag
+      121 aggtccctaa ggggaagagg caatactctc ggtctagaca tcaaatcagc cacccatgtt
+      181 ggaaagcaaa tcgtagaaaa gattctgaaa ggagaatctg atgaggcact taaaatgacc
+      241 atggtctcaa cacctgcttc gcgatacata actgacatga ctattgagga attgtcaaga
+      301 aactggttca tgctaatgcc caagcagaag gtggaaggac ctctttgcat cagaatggac
+      361 caggcaatca tggagaaaaa catcatgtta aaagcgaatt tcaatgtgat ttttggccgg
+      421 ctagaaacca tagtattgct aagggctttc accgaagagg gagcaattgt tggcgaaatc
+      481 tcaccattgc cttcttttcc aggacatact attgaggatg tcaaaaatgc aattggggtc
+      541 ctcatcggag gacttgaatg gaatgataac acagttcgag tctctaaaaa tctacagaga
+      601 ttcgcttgga gaagcagtca tgagaatggg ggacctccac ttactccaaa acagaaacgg
+      661 gaaatggcga gaacagctag gtcagaagtt tgaagagata agatggctga ttgaagaggt
+      721 gagacacaga ttaagaacaa ctgaaaatag ctttgaacaa ataacattca tgcaagcatt
+      781 acaactactg tttgaagtgg aacaggagat aagaactttc tcatttcagc ttatttaa
+//

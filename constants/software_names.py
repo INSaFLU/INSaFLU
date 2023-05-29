@@ -260,6 +260,14 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
+    SOFTWARE_SNIPPY_no_primer = "None"
+    SOFTWARE_SNIPPY_PRIMERS =   [
+        SOFTWARE_SNIPPY_no_primer,
+        "SARS_CoV_2_MN908947_artic_3.fa",
+        "SARS_CoV_2_MN908947_artic_4.1.fa",
+        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
+        "MPXV_comb-ccc7sszn.fa",
+    ]      
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~

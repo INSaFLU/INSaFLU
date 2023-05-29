@@ -29,6 +29,9 @@ class DefaultParameters(object):
     ### used in snippy
     SNIPPY_COVERAGE_NAME = "--mincov"
     SNIPPY_MAPQUAL_NAME = "--mapqual"
+    SNIPPY_PRIMER_NAME = "--primer"
+
+    MEDAKA_PRIMER_NAME = "-p"
 
     ### used in NANOfilt
     NANOfilt_quality_read = "-q"
@@ -300,6 +303,23 @@ class DefaultParameters(object):
                         ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
+                elif (
+                    software_name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
+                ):
+                    return_parameter += " {}".format(os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ))
+                elif (
+                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
+                ):
+                    return_parameter += " {}".format(os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ))                                    
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -815,6 +835,7 @@ class DefaultParameters(object):
         –mapqual: minimum mapping quality to allow (–mapqual 20)
         —mincov: minimum coverage of variant site (–mincov 10)
         –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+        primer: Fasta of amplicon scheme primers for filtering ("")
         """
         if not pipeline_step:
             pipeline_step = ConstantsSettings.PIPELINE_NAME_variant_detection
@@ -891,6 +912,22 @@ class DefaultParameters(object):
         parameter.range_min = "0.5"
         parameter.description = (
             "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME     
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 4
+        parameter.description = (
+            "PRIMER: fasta of primers used for amplicon sequencing"
         )
         vect_parameters.append(parameter)
 
@@ -1359,6 +1396,24 @@ class DefaultParameters(object):
             + "{pore}_{device}_{caller variant}_{caller version}"
         )
         vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME     
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "PRIMER: fasta of primers used for amplicon sequencing"
+        )
+        vect_parameters.append(parameter)
+
+
         return vect_parameters
 
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):

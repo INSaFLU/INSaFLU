@@ -1,0 +1,523 @@
+LOCUS       1                       2313 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2313
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             1..2313
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:O36431"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Polymerase basic protein 2"
+                     /translation="MTLAKIELLKQLLRDNEAKTVLKQTTVDQYNIIRKFNTSRIEKN
+                     PSLRMKWAMCSNFPLALTKGDMANRIPLEYKGIQLKTNAEDIGTKGQMCSIAAVTWWN
+                     TYGPIGDTEGFEKVYESFFLRKMRLDNATWGRITFGPVERVRKRVLLNPLTKEMPPDE
+                     ASNVIMEILFPKEAGIPRESTWIHRELIKEKREKLKGTMITPIVLAYMLERELVARRR
+                     FLPVAGATSAEFIEMLHCLQGENWRQIYHPGGNKLTESRSQSTIVACRKIIRRSIVAS
+                     NPLELAVEIANKTVIDTEPLKSCLTAIDGGDVACDIIRAALGLKIRQRQRFGRLELKR
+                     ISGRGFKNDEEILIGNGTIQKIGIWDGEEEFHVRCGECRGILKKSKMRMEKLLINSAK
+                     KEDMKDLIILCMVFSQDTRMFQGVRGEINFLNRAGQLLSPMYQLQRYFLNRSNDLFDQ
+                     WGYEESPKASELHGINELMNASDYTLKGVVVTKNVIDDFSSTETEKVSITKNLSLIKR
+                     TGEVIMGANDVSELESQAQLMITYDTPKMWEMGTTKELVQNTYQWVLKNLVTLKAQFL
+                     LGKEDMFQWDAFEAFESIIPQKMAGQYSGFARAVLKQMRDQEVMKTDQFIKLLPFCFS
+                     PPKLRSNGEPYQFLRLVLKGGGENFIEVRKGSPLFSYNPQTEVLTICGRMMSLKGKIE
+                     DEERNRSMGNAVLAGFLVSGKYDPDLGDFKTIEELEKLKPGEKANILLYQGKPVKVVK
+                     RKRYSALSNDISQGIKRQRMTVESMGWALS"
+ORIGIN      
+        1 atgacattgg ctaaaattga attgttaaaa caactgttaa gggacaatga agccaaaaca
+       61 gtattgaaac aaacaacggt agaccaatat aacataataa gaaaattcaa tacatcaaga
+      121 attgaaaaga acccttcatt aaggatgaag tgggcaatgt gttctaattt tcccttggct
+      181 ctgaccaagg gtgatatggc aaacagaatc cccttggaat acaagggaat acaacttaaa
+      241 acaaatgctg aagacatagg aaccaaaggc caaatgtgct caatagcagc agttacctgg
+      301 tggaatacat atggaccaat aggagatact gaaggtttcg aaaaggtcta cgaaagcttt
+      361 tttctcagaa agatgagact tgacaatgcc acttggggcc gaataacttt tggcccagtt
+      421 gaaagagtaa gaaaaagggt actgctaaac cctctcacca aggaaatgcc tccagatgaa
+      481 gcaagtaatg tgataatgga aatattgttc cctaaggaag caggaatacc aagagaatct
+      541 acttggatac atagggaact gataaaagaa aaaagagaaa aattgaaagg aacgatgata
+      601 actcccattg tactggcata catgcttgag agagaattgg ttgccagaag aaggttcctg
+      661 ccggtggcag gagcaacatc agctgagttc atagaaatgc tacactgctt acaaggtgaa
+      721 aattggagac aaatatatca cccaggagga aataaactaa ctgaatctag gtctcaatcg
+      781 acgattgtag cttgtagaaa gataatcaga agatcaatag tcgcatcaaa cccattagag
+      841 ctagctgtag aaattgcaaa caagactgtg atagatactg aacctttaaa atcatgtctg
+      901 acagccatag atggaggtga tgtagcctgt gacataataa gagctgcatt aggactaaag
+      961 atcagacaaa gacaaagatt tggacgactt gaactaaaga gaatatcagg aagaggattc
+     1021 aaaaatgatg aagaaatatt aatcgggaac ggaacaatac agaagattgg aatatgggac
+     1081 ggagaagagg agttccatgt aagatgtggt gaatgcaggg gaatattaaa aaagagcaaa
+     1141 atgagaatgg aaaaactact aataaattca gctaaaaagg aagacatgaa agatttaata
+     1201 atcttgtgca tggtattttc tcaagacact aggatgttcc aaggagtgag aggagaaata
+     1261 aattttctta atagagcagg ccaactttta tctccaatgt accaactcca aagatatttt
+     1321 ttgaatagaa gcaacgatct ctttgatcaa tgggggtatg aggaatcacc caaagcaagt
+     1381 gagctacatg ggataaatga attaatgaat gcatctgact acactttgaa aggggttgta
+     1441 gtaacaaaaa atgtgattga tgattttagt tctactgaaa cagaaaaagt atctataaca
+     1501 aaaaatctta gtttaataaa aaggactggg gaagtcataa tgggggctaa tgacgtaagt
+     1561 gaattagaat cacaagctca gctaatgata acatatgata cacctaagat gtgggagatg
+     1621 ggaacaacca aagaactggt gcaaaacacc taccaatggg tgctgaaaaa tttggtaaca
+     1681 ctgaaggctc agtttcttct aggaaaagaa gacatgttcc aatgggatgc atttgaagca
+     1741 tttgaaagca taatccccca gaagatggct ggccagtaca gtggatttgc aagagcagtg
+     1801 ctcaaacaaa tgagagacca agaggttatg aaaactgacc agttcataaa gttgttgccc
+     1861 ttttgtttct caccaccaaa attaaggagc aatggggagc cttatcagtt cttgaggctt
+     1921 gtattgaagg gaggaggaga aaatttcatc gaagtaagga aagggtcccc tctattctct
+     1981 tacaatccac aaacagaagt cctaactata tgcggcagaa tgatgtcatt aaaagggaaa
+     2041 attgaagatg aagaaaggaa tagatcaatg gggaatgcag tattggcggg ctttctcgtt
+     2101 agtggcaagt atgacccaga tcttggagat ttcaaaacta ttgaagaact tgaaaagcta
+     2161 aaaccggggg agaaagcaaa catcttactt tatcaaggaa agcccgttaa agtagttaaa
+     2221 aggaaaagat atagtgcttt atccaatgac atttcacaag gaattaagag acaaagaatg
+     2281 acagttgagt ccatggggtg ggccttgagc taa
+//
+LOCUS       2                       2259 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2259
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             1..2259
+                     /gene="PB1"
+                     /locus_tag="locus_00002"
+                     /EC_number="2.7.7.48"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:O36430"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="RNA-directed RNA polymerase catalytic subunit"
+                     /translation="MNINPYFLFIDVPIQAAISTTFPYTGVPPYSHGTGTGHTIDTVI
+                     RTHEYSNKGKQYVSDVTGCTMVDPTNGPLPEDNEPSAYAQLDCVLEALDRMDEEHPGL
+                     FQAASQNAMEALMVTTVDKLTQGRQTFDWTVCRNQPAATALNTTITSFRLNDLNGADK
+                     GGLVPFCQDIIDSLDKPEMTFFSVKNIKKKLPAKNRKGFLIKRIPMKVKDRITRVEYI
+                     KRALSLNTMTKDAERGKLKRRAIATAGIQIRGFVIVVENLAKNICENLEQSGLPVGGN
+                     EKKAKLSNAVAKMLSNCPPGGISMTVTGDNTKWNECLNPRIFLAMTERITRDSPIWFR
+                     DFCSIAPVLFSNKIARLGKGFMITSKTKRLKAQIPCPDLFSIPLERYNEETRAKLKKL
+                     KPFFNEEGTASLSPGMMMGMFNMLSTVLGVAALGIKNIGNKEYLWDGLQSSDDFALFV
+                     NAKDEETCMEGINDFYRTCKLLGINMSKKKSYCNETGMFEFTSMFYRDGFVSNFAMEI
+                     PSFGVAGVNESADMAIGMTIIKNNMINNGMGPATAQTAIQLFIADYRYTYKCHRGDSK
+                     VEGKRMKIIKELWENTKGRDGLLVADGGPNIYNLRNLHIPEIVLKYNLMDPEYKGRLL
+                     HPQNPFVGHLSIEGIKEADITPAHGPVKKMDYDAVSGTHSWRTKRNRSILNTDQRNMI
+                     LEEQCYAKCCNLFEACFNSASYRKPVGQHSMLEAMAHRLRMDARLDYESGRMSKDDFE
+                     KAMAHLGEIGYI"
+ORIGIN      
+        1 atgaatataa atccttattt tctcttcata gatgtaccca tacaggcagc aatttcaaca
+       61 acattcccat acaccggtgt tcccccttac tcccatggaa cgggaacagg ccacacaata
+      121 gacaccgtga tcagaacaca tgagtactcg aacaagggaa aacagtacgt ttctgacgtc
+      181 acaggatgta caatggtaga tccaacaaat gggccattac ccgaagacaa tgagccgagt
+      241 gcctatgcac aattagattg cgttctggag gctttggata gaatggatga agaacatcca
+      301 ggtctgtttc aagcagcctc acagaatgcc atggaggcac taatggtcac aactgtagac
+      361 aaattaaccc aggggagaca gacttttgat tggacagtat gcagaaacca gcctgctgca
+      421 acggcactaa acacaacaat aacctccttt aggttgaatg atttgaatgg agctgacaag
+      481 ggtggattgg tacccttttg ccaagatatc attgattcat tggacaaacc tgaaatgact
+      541 ttcttctcag taaagaatat aaagaaaaaa ttgcctgcta aaaacagaaa gggtttcctc
+      601 ataaagagaa taccaatgaa agtaaaagac agaataacca gagtggaata catcaaaaga
+      661 gcattgtcat taaacacaat gacaaaagat gctgaaaggg gcaaactaaa aagaagagcg
+      721 attgcaaccg ctggaataca aatcagaggg tttgtaatag tagttgaaaa cttggctaaa
+      781 aatatctgtg aaaatctaga acaaagtggt ttgcccgtag gtggaaacga aaagaaggcc
+      841 aaactgtcaa atgcagtggc caaaatgctc agtaactgcc caccaggagg gatcagcatg
+      901 acagtaacag gagacaatac taaatggaat gaatgcttaa atccaagaat ctttttggct
+      961 atgactgaaa gaataaccag agacagccca atttggttcc gggatttttg tagtatagca
+     1021 ccggtcttgt tctccaataa aatagccaga ttgggaaaag gatttatgat aacaagcaaa
+     1081 acaaaaagac tgaaggctca aataccttgt cctgatctgt ttagcatacc attagaaaga
+     1141 tataatgaag aaacaagggc aaaattgaaa aagctgaaac cattcttcaa tgaagaagga
+     1201 acggcatctt tgtcgcctgg gatgatgatg ggaatgttta atatgctatc taccgtgttg
+     1261 ggagtagccg cactaggtat caaaaacatt ggaaacaaag aatacttatg ggatggactg
+     1321 caatcttctg atgattttgc tctgtttgtt aatgcaaaag atgaagagac atgtatggaa
+     1381 ggaataaacg acttttaccg aacatgtaaa ttattgggaa taaacatgag caaaaagaaa
+     1441 agttactgta atgaaactgg aatgtttgaa tttacaagca tgttctatag agatggattt
+     1501 gtatctaatt ttgcaatgga aattccttca tttggagttg ctggagtaaa tgaatcagca
+     1561 gatatggcaa taggaatgac aataataaag aacaatatga tcaacaatgg gatgggtcca
+     1621 gcaacagcac aaacagccat acaattattc atagctgatt ataggtacac ctacaaatgc
+     1681 cacaggggag attccaaagt ggaaggaaaa agaatgaaaa ttataaagga gctatgggaa
+     1741 aacactaaag gaagagatgg tctgttagta gcagatggtg ggcctaacat ttacaatttg
+     1801 agaaacttac atatcccaga aatagtattg aagtacaacc taatggaccc tgaatacaaa
+     1861 gggcgattac ttcatcctca aaatcccttt gtaggacatt tgtctattga gggcatcaaa
+     1921 gaagcagata taaccccagc acatggtccc gtaaagaaaa tggattatga tgcagtgtct
+     1981 ggaactcata gttggagaac caaaaggaac agatctatac taaatactga tcagaggaac
+     2041 atgattcttg aggaacaatg ctacgctaag tgttgcaacc tttttgaggc ctgttttaac
+     2101 agtgcatcat acaggaaacc agtaggtcag cacagcatgc ttgaggctat ggcccacaga
+     2161 ttaagaatgg atgcacgact agattatgaa tcaggaagaa tgtcaaagga tgattttgag
+     2221 aaagcaatgg ctcaccttgg tgagattggg tacatataa
+//
+LOCUS       3                       2181 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..2181
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             61..2181
+                     /gene="PA"
+                     /locus_tag="locus_00003"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:O36432"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Polymerase acidic protein"
+                     /translation="MAEFSEDPELQPAMLFNICVHLEVCYVISDMNFLDEEGKAYTAL
+                     EGQGKEQNLRPQYEVIEGMPRNIAWMVQRSLAQEHGIETPKYLADLFDYKTKRFIEVG
+                     ITKGLADDYFWKKKEKLGNSMELMIFSYNQDYSLSNESSLDEEGKGRVLSRLTELQAE
+                     LSLKNLWQVLIGEEDVEKGIDFKLGQTISRLRDISVPAGFSNFEGMRSYIDNIDPKGA
+                     IERNLARMSPLVSATPKKLKWEDLRPIGPHIYNHELPEVPYNAFLLMSDELGLANMTE
+                     GKSKKPKTLAKECLEKYSTLRDQTDPILIMKSEKANENFLWKLWRDCVNTISNEEMSN
+                     ELQKTNYAKWATGDGLTYQKIMKEVAIDDETMCQEEPKIPNKCRVAAWVQTEMNLLSN
+                     LTSKRALDLPEIGPDVAPVEHVGSERRKYFVNEINYCKASTVMMKYVLFHTSLLNESN
+                     ASMGKYKVIPITNRVVNEKGESFDMLYGLAVKGQSHLRGDTDVVTVVTFEFSSTDPRV
+                     DSGKWPKYTVFRIGSLFVSGREKSVYLYCRVNGTNKIQMKWGMEARRCLLQSMQQMEA
+                     IVEQESSIQGYDMTKACFKGDRVNSPKTFSIGTQEGKLVKGSFGKALRVIFTKCLMHY
+                     VFGNAQLEGFSAESRRLLLLIQALKDRKGPWVFDLEGMYSGIEECISNNPWVIQSAYW
+                     FNEWLGFEKEGSKVLESVDEIMDE"
+ORIGIN      
+        1 atggatactt ttattacaag aaacttccag actacaataa tacaaaaggc caaaaacaca
+       61 atggcagaat ttagtgaaga tcctgaatta caaccagcaa tgctattcaa catctgcgtc
+      121 catctagagg tttgctatgt aataagtgac atgaattttc ttgacgaaga aggaaaagca
+      181 tatacagcat tagaaggaca aggaaaagaa caaaacttga gaccacaata tgaagtaatt
+      241 gagggaatgc caagaaacat agcatggatg gtccaaagat ccttagctca agagcatgga
+      301 atagagactc caaagtatct ggctgatttg tttgattata aaaccaagag gtttatagaa
+      361 gttggaataa caaaaggatt ggctgatgat tacttttgga aaaagaaaga aaagctggga
+      421 aatagcatgg aactgatgat attcagctac aatcaagact attcgttaag taatgaatcc
+      481 tcattggatg aggaagggaa agggagagtg ctaagcagac tcacagaact tcaggctgaa
+      541 ttaagtctga aaaacctatg gcaagttctc ataggagaag aagatgttga aaagggaatt
+      601 gactttaaac ttggacaaac aatatctaga ctaagggata tatctgttcc agctggtttc
+      661 tccaattttg aaggaatgag gagctacata gacaatatag atcctaaagg agcaatagag
+      721 agaaatctag caaggatgtc tcccttagta tcagccacac ctaaaaagtt gaaatgggag
+      781 gacctaagac caatagggcc tcacatttac aaccatgagc taccagaagt tccatataat
+      841 gcctttcttc taatgtctga tgaattgggg ctggccaata tgactgaggg aaagtccaaa
+      901 aaaccgaaga cattagccaa agaatgtcta gaaaagtact caacactacg ggatcaaact
+      961 gacccaatat taataatgaa aagcgaaaaa gctaacgaaa acttcctatg gaagctgtgg
+     1021 agggactgtg taaatacaat aagtaatgag gaaatgagta acgagttaca gaaaaccaat
+     1081 tatgccaagt gggccacagg agatggatta acataccaga aaataatgaa agaagtagca
+     1141 atagatgacg aaacaatgtg ccaagaagag cctaaaatcc ctaacaaatg tagagtggct
+     1201 gcttgggttc aaacagagat gaatctattg agcaatctga caagtaaaag agctctggac
+     1261 ctaccagaaa tagggccaga cgtagcaccc gtggagcatg tagggagtga aagaaggaaa
+     1321 tactttgtta atgaaatcaa ctactgtaag gcctccacag ttatgatgaa gtatgtgctt
+     1381 tttcacactt cattgttgaa tgaaagcaat gccagcatgg gaaaatataa agtaatacca
+     1441 ataaccaata gagtagtaaa tgaaaaagga gaaagtttcg acatgcttta tggtctggcg
+     1501 gttaaaggac aatctcatct gaggggagat actgatgttg taacagttgt gactttcgaa
+     1561 tttagtagta cagatcccag agtggactca ggaaagtggc caaaatatac tgtgtttagg
+     1621 attggctccc tatttgtgag tgggagggaa aaatctgtgt acctatattg ccgagtgaat
+     1681 ggcacaaata agatccaaat gaaatgggga atggaagcta gaagatgtct gcttcaatca
+     1741 atgcaacaaa tggaagcaat tgttgaacaa gaatcatcga tacaaggata tgacatgacc
+     1801 aaagcttgtt tcaagggaga cagagtaaat agccccaaaa ctttcagtat tgggactcaa
+     1861 gaaggaaaac tagtaaaagg atcctttggg aaagcactaa gagtaatatt taccaaatgt
+     1921 ttgatgcact atgtatttgg aaatgcccaa ttggaggggt ttagtgccga gtctaggaga
+     1981 cttctactgt taattcaagc attaaaggac agaaagggcc cttgggtgtt cgacttagag
+     2041 ggaatgtatt ctggaataga agaatgtatt agtaacaacc cttgggtaat acagagtgca
+     2101 tactggttca atgaatggtt gggctttgaa aaggagggga gtaaagtatt agaatcagta
+     2161 gatgaaataa tggatgaatg a
+//
+LOCUS       4                       1752 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1752
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             1..45
+                     /gene="HA_sp"
+                     /locus_tag="locus_00004a"
+                     /product="Hemagglutinin sig_peptide"
+     CDS             46..1080
+                     /gene="HA1"
+                     /locus_tag="locus_00004b"					 
+                     /product="Hemagglutinin HA1"
+     CDS             1081..1752
+                     /gene="HA2"
+                     /locus_tag="locus_00004c"					 
+                     /product="Hemagglutinin HA2"					 
+                     /translation="MKAIIVLLMVVTSNADRICTGITSSNSPHVVKTATQGEVNVTGV
+                     IPLTTTPTKSHFANLKGTKTRGKLCPNCLNCTDLDVALGRPMCMGTIPSAKASILHEV
+                     RPVTSGCFPIMHDRTKIRQLPNLLRGYENIRLSTHNVINAERAPGGPYRLGTSGSCPN
+                     VTSRNGFFATMAWAVPRDNKTATNPLTVEVPYICTKGEDQITVWGFHSDDKTQMKNLY
+                     GDSNPQKFTSSANGVTTHYVSQIGDFPNQTEDGGLPQSGRIVVDYMVQKPGKTGTIVY
+                     QRGVLLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNC
+                     PIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGV
+                     AVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRAD
+                     TISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVDIGNGCFETKHKCNQTC
+                     LDRIAAGTFNAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAI
+                     FIVYMVSRDNVSCSICL"
+ORIGIN      
+        1 atgaaggcaa taattgtact actcatggta gtaacatcca acgcagatcg aatctgcact
+       61 gggataacat cttcaaactc acctcatgtg gtcaaaacag ctactcaagg ggaagttaat
+      121 gtgactggtg tgataccact gacaacaaca ccaacaaaat ctcattttgc aaatctcaaa
+      181 ggaacaaaga ccagagggaa actatgccca aactgtctca actgcacaga tctggatgtg
+      241 gccttgggca gaccaatgtg tatggggacc ataccttcgg caaaagcttc aatactccac
+      301 gaagtcagac ctgttacatc cgggtgcttt cctataatgc acgacagaac aaaaatcaga
+      361 cagctaccca atcttctcag aggatatgaa aatatcagat tatcaaccca taacgttatc
+      421 aacgcagaaa gggcaccagg aggaccctac agacttggaa cctcaggatc ttgccctaac
+      481 gttaccagta gaaacggatt cttcgcaaca atggcttggg ctgtcccaag ggacaacaaa
+      541 acagcaacga atccactaac agtagaagta ccatacattt gcacaaaagg agaagaccaa
+      601 attactgttt gggggttcca ttctgatgac aaaacccaaa tgaaaaacct ctatggagac
+      661 tcaaatcctc aaaagttcac ctcatctgcc aatggagtaa ccacacatta tgtttctcag
+      721 attggtgact tcccaaatca aacagaagac ggagggctac cacaaagcgg cagaattgtt
+      781 gttgattaca tggtgcaaaa acctgggaaa acaggaacaa ttgtctatca aagaggtgtt
+      841 ttgttgcctc aaaaggtgtg gtgcgcaagt ggcaggagca aggtaataaa agggtccttg
+      901 cctttaattg gtgaagcaga ttgccttcac gaaaaatacg gtggattaaa caaaagcaag
+      961 ccttactaca caggagaaca tgcaaaagcc ataggaaatt gcccaatatg ggtgaaaaca
+     1021 cctttgaagc ttgccaatgg aaccaaatat agacctcctg caaaactatt aaaggaaagg
+     1081 ggtttcttcg gagctattgc tggtttctta gagggaggat gggaaggaat gattgcaggt
+     1141 tggcacggat acacatctca tggagcacat ggagtggcag tggcagcaga ccttaagagc
+     1201 acgcaagaag ccataaacaa gataacaaaa aatctcaatt ctttgagtga gctagaagta
+     1261 aagaatcttc aaagactaag tggtgccatg gatgaactcc acaacgaaat actcgagctg
+     1321 gatgagaaag tggatgatct cagagctgac acaataagct cgcaaataga gcttgcagtc
+     1381 ttgctttcca acgaaggaat aataaacagt gaagatgagc atctattggc acttgagaga
+     1441 aaactaaaga aaatgctggg tccctctgct gtagacatag ggaatggatg cttcgaaacc
+     1501 aaacacaagt gcaaccagac ctgcttagac aggatagctg ctggcacctt taatgcagga
+     1561 gaattttctc ttcccacttt tgattcactg aatattactg ctgcatcttt aaatgatgat
+     1621 ggattggata atcatactat actgctctac tactcaactg ctgcttctag tttggccgta
+     1681 acattgatga tagctatttt tattgtttat atggtctcca gagacaatgt ttcttgctcc
+     1741 atctgtctat aa
+//
+LOCUS       5                       1683 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1683
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             1..1683
+                     /gene="NP"
+                     /locus_tag="locus_00005"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:O36433"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Nucleoprotein"
+                     /translation="MSNMDIDGINTGTIDKTPEEITSGTSGTTRPIIRPATLAPPSNK
+                     RTRNPSPERATTSSEADVGRKTQKKQTPTEIKKSVYNMVVKLGEFYNQMMVKAGLNDD
+                     MERNLIQNAHAVERILLAATDDKKTEFQKKKNARDVKEGKEEIDHNKTGGTFYKMVRD
+                     DKTIYFSPIRITFLKEEVKTMYKTTMGSDGFSGLNHIMIGHSQMNDVCFQRSKALKRV
+                     GLDPSLISTFAGSTLPRRSGATGVAIKGGGTLVAEAIRFIGRAMADRGLLRDIKAKTA
+                     YEKILLNLKNKCSAPQQKALVDQVIGSRNPGIADIEDLTLLARSMVVVRPSVASKVVL
+                     PISIYAKIPQLGFNVEEYSMVGYEAMALYNMATPVSILRMGDDAKDKSQLFFMSCFGA
+                     AYEDLRVLSALTGTEFKPRSALKCKGFHVPAKEQVEGMGAALMSIKLQFWAPMTRSGG
+                     NEVGGDGGSGQISCSPVFAVERPIALSKQAVRRMLSMNIEGRDADVKGNLLKMMNDSM
+                     AKKTNGNAFIGKKMFQISDKNKTNPVEIPIKQTIPNFFFGRDTAEDYDDLDY"
+ORIGIN      
+        1 atgtccaaca tggatattga cggtatcaac actgggacaa ttgacaaaac accggaagaa
+       61 ataacttctg gaaccagtgg gacaaccaga ccaatcatca gaccagcaac ccttgcccca
+      121 ccaagcaaca aacgaacccg gaacccatcc ccggaaagag caaccacaag cagtgaagct
+      181 gatgtcggaa ggaaaaccca aaagaaacag accccgacag agataaagaa gagcgtctac
+      241 aatatggtag tgaaactggg tgaattctat aaccagatga tggtcaaagc tggactcaac
+      301 gatgacatgg agagaaacct aatccaaaat gcgcatgctg tggaaagaat tctattggct
+      361 gccactgatg acaagaaaac tgaattccag aagaaaaaga atgccagaga tgtcaaagaa
+      421 gggaaagaag aaatagacca caacaaaaca ggaggcacct tttacaagat ggtaagagat
+      481 gataaaacca tctacttcag ccctataaga attacctttt taaaagaaga ggtgaaaaca
+      541 atgtacaaaa ccaccatggg gagtgatggt ttcagtggac taaatcacat aatgattggg
+      601 cattcacaga tgaatgatgt ctgtttccaa agatcaaagg cactaaaaag agttggactt
+      661 gacccttcat taatcagtac ctttgcagga agcacactcc ccagaagatc aggtgcaact
+      721 ggtgttgcga tcaaaggagg tggaacttta gtggctgaag ccattcgatt tataggaaga
+      781 gcaatggcag acagagggct attgagagac atcaaagcca agactgccta tgaaaagatt
+      841 cttctgaatc taaaaaacaa gtgctctgcg ccccaacaaa aggctctagt tgatcaagtg
+      901 atcggaagta gaaatccagg gattgcagac attgaagacc taaccctgct tgctcgtagt
+      961 atggtcgttg ttaggccctc tgtggcgagc aaagtagtgc ttcccataag catttatgct
+     1021 aaaatacctc aactagggtt caatgttgaa gaatactcta tggttgggta tgaagccatg
+     1081 gctctttaca atatggcaac acctgtttcc atattaagaa tgggagatga tgcaaaagat
+     1141 aaatcgcaat tattcttcat gtcttgcttc ggagctgcct atgaagacct gagagttttg
+     1201 tctgcattaa caggcacaga attcaagcct agatcagcat taaaatgcaa gggtttccat
+     1261 gttccagcaa aggaacaggt ggaaggaatg ggggcagctc tgatgtccat caagctccag
+     1321 ttttgggctc caatgaccag atctgggggg aacgaagtag gtggagacgg agggtctggc
+     1381 caaataagtt gcagcccagt gtttgcagta gaaagaccta ttgctctaag caagcaagct
+     1441 gtaagaagaa tgctgtcaat gaatattgag ggacgtgatg cagatgtcaa aggaaatcta
+     1501 ctcaagatga tgaatgactc aatggctaag aaaaccaatg gaaatgcttt cattgggaag
+     1561 aaaatgtttc aaatatcaga caaaaacaaa accaatcccg ttgaaattcc aattaagcag
+     1621 accatcccca atttcttctt tgggagggac acagcagagg attatgatga cctcgactat
+     1681 taa
+//
+LOCUS       6                       1408 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1408
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             8..1408
+                     /gene="NA"
+                     /locus_tag="locus_00006"
+                     /EC_number="3.2.1.18"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P27907"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Neuraminidase"
+                     /translation="MLPSTIQTLTLFLTSGGVLLSLYVSASLSYLLYSDILLKFSPTE
+                     ITAPKVPLDCANASNVQAVNRSATKGMTLLLSEPEWTYPRLSCQGSTFQKALLISPHR
+                     FGETRGNSAPLIIREPFIACGPKECKHFALTHYAAQPGGYYNGTREDRNKLRHLISVK
+                     LGKIPTVENSIFHMAAWSGSACHDGREWTYIGVDGPDSNALIKIKYGEAYTDTYHSYA
+                     NNILRTQESACNCIGGDCYLMITDGSASGISKCRFLKIREGRIIKEIFPTGRVEHTEE
+                     CTCGFASNKTIECACRDNSYTAKRPFVKLNVETDTAEIRLMCTETYLDTPRPDDGSIT
+                     GPCESNGDKGRGGIKGGFVHQRMASKIGRWYSRTMSKTERMGMELYVKYDGDPWTDSD
+                     ALAPSGVMVSMKEPGWYSFGFEIKDKKCDVPCIGIEMVHDGGKKTWHSAATAIYCLMG
+                     SGQLLWDTVTGVDMAL"
+ORIGIN      
+        1 atgaacaatg ctaccttcaa ctatacaaac gttaacccta tttctcacat cagggggagt
+       61 gttattatca ctatatgtgt cagcttcact gtcatactta ctgtattcgg atatattgct
+      121 aaaattttca ccaacagaaa taactgcacc aaaagtgcca ttggattgtg caaacgcatc
+      181 aaatgttcag gctgtgaacc gttctgcaac aaaagggatg acacttcttc tctcagaacc
+      241 ggagtggaca taccctcgtt tatcttgcca gggctcaacc tttcagaaag cactcctaat
+      301 tagccctcat agattcggag aaaccagagg aaactcagct cccttgataa taagggaacc
+      361 ttttattgct tgtggaccaa aggaatgcaa acactttgct ctaacccatt atgcagctca
+      421 accaggggga tactacaatg gaacaagaga ggacagaaac aagctgaggc atctgatttc
+      481 agtcaaattg ggcaaaatcc caacagtaga aaactccatt ttccacatgg cagcttggag
+      541 cgggtccgca tgccatgatg gtagagaatg gacatatatc ggagttgatg gccctgacag
+      601 taatgcattg atcaaaataa aatatggaga agcatatact gacacatacc attcctatgc
+      661 aaacaacatc ctaagaacac aagaaagtgc ctgcaattgc atcgggggag attgttatct
+      721 tatgataact gatggctcag cttcaggaat tagtaaatgc agatttctta agattcgaga
+      781 gggtcgaata ataaaagaaa tatttccaac aggaagagta gaacatactg aagaatgcac
+      841 atgcggattt gccagcaata aaaccataga atgtgcctgt agagataaca gttacacagc
+      901 aaaaagaccc tttgtcaaat taaatgtgga gactgataca gctgaaataa gattgatgtg
+      961 cacagagact tatttggaca cccccagacc agatgatgga agcataacag ggccttgcga
+     1021 atctaatggg gacaaagggc gtggaggcat caagggagga tttgttcatc aaagaatggc
+     1081 atccaagatt ggaagatggt actctcgaac gatgtctaaa actgaaagaa tggggatgga
+     1141 actgtatgtc aagtatgatg gagacccatg gactgacagt gacgcccttg ctcctagtgg
+     1201 agtaatggtt tcaatgaaag aacctggttg gtattccttt ggcttcgaaa taaaagataa
+     1261 gaaatgtgat gtcccctgta ttgggataga gatggtacat gatggtggaa aaaagacttg
+     1321 gcactcagca gcaacagcca tttactgttt aatgggctca ggacaattgc tatgggacac
+     1381 tgtcacaggt gttgatatgg ctctgtaa
+//
+LOCUS       7                       1076 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1076
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             1..747
+                     /gene="M_1"
+                     /locus_tag="locus_00007"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:Q76ZA3"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Matrix protein 1"
+                     /translation="MSLFGDTIAYLLSLTEDGEGKAELAEKLHCWFGGKEFDLDSALE
+                     WIKNKRCLTDIQKALIGASICFLKPKDQERKRRFITEPLSGMGTTATKKKGLILAERK
+                     MRRCVSFHEAFEIAEGHESSALLYCLMVMYLNPGNYSMQVKLGTLCALCEKQASHSHR
+                     AHSRAARSSVPGVRREMQMVSAMNTAKTMNGMGKGEDVQKLAEELQSNIGVLRSLGAS
+                     QKNGEGIAKDVMEVLKQSSMGNSALVKKYL"
+     CDS             855..1076
+                     /gene="M_2"
+                     /locus_tag="locus_00008"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P0C0X4"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Matrix protein 2"
+                     /translation="MKIRIKNPNKETINREVSILRHSYQKEIQAKETMKEVLSDNMEV
+                     LSDHIVIEGLSAEEIIKMGETVLEVEELH"
+ORIGIN      
+        1 atgtcgctgt ttggagacac aattgcctac ctgctttcat tgacagaaga tggagaaggc
+       61 aaagcagaac tagcagaaaa attacactgt tggttcggtg ggaaagaatt tgacctagac
+      121 tctgccttgg aatggataaa aaacaaaaga tgcttaactg atatacagaa agcactaatt
+      181 ggtgcctcta tctgcttttt aaaacccaaa gaccaagaaa gaaaaagaag attcatcaca
+      241 gagcccctat caggaatggg gacaacagca acaaaaaaga aaggcctgat tctagctgag
+      301 agaaaaatga gaagatgtgt gagttttcat gaagcatttg aaatagcaga aggccatgaa
+      361 agctcagcgc tactatattg tctcatggtc atgtacctga accctggaaa ttattcaatg
+      421 caagtaaaac taggaacgct ctgtgctttg tgcgagaaac aagcatcaca ttcacacagg
+      481 gctcatagca gagcagcaag atcttcagtg cctggagtga ggcgagaaat gcagatggtc
+      541 tcagctatga acacagcaaa aacaatgaat ggaatgggaa agggagaaga cgtccaaaaa
+      601 ctggcagaag agctgcaaag caacattgga gtattgagat ctcttggggc aagtcaaaag
+      661 aatggggaag gaattgcaaa ggatgtgatg gaagtgctaa agcagagctc tatgggaaat
+      721 tcagctcttg tgaagaaata cctataatgc tcgaaccatt tcagattctt tcaatttgtt
+      781 ctttcatctt atcagctctc catttcatgg cttggacaat agggcatttg aatcaaataa
+      841 aaagaggagt aaacatgaaa atacgaataa aaaatccaaa taaagagaca ataaacagag
+      901 aggtatcaat tttgagacac agttaccaaa aagaaatcca ggccaaagaa acaatgaagg
+      961 aagtactctc tgacaacatg gaggtattga gtgaccacat agtaattgag gggctttctg
+     1021 ctgaagagat aataaaaatg ggtgaaacag ttttggaggt agaagaattg cattaa
+//
+LOCUS       8                       1024 bp    DNA     linear       13-MAY-2018
+DEFINITION  Influenzavirus influenzavirus strain B_Yam_B_Yamagata_16_1988.
+ACCESSION   
+VERSION
+KEYWORDS    .
+SOURCE      Influenzavirus influenzavirus
+  ORGANISM  Influenzavirus influenzavirus
+            Unclassified.
+COMMENT     Annotated using prokka 1.12 from
+            https://github.com/tseemann/prokka.
+FEATURES             Location/Qualifiers
+     source          1..1024
+                     /organism="Influenzavirus influenzavirus"
+                     /strain="B_Yam_B_Yamagata_16_1988"
+     CDS             13..846
+                     /gene="NS"
+                     /locus_tag="locus_00009"
+                     /inference="ab initio prediction:Prodigal:2.6"
+                     /inference="similar to AA sequence:UniProtKB:P08013"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="Non-structural protein 1"
+                     /translation="MTTTQIEVGPGATNATINFEAGILECYERLSWQRALDYPGQDRL
+                     NRLKRKLESRIKTHNKSEPESKRMSLEERKAIGVKMMKVLLFMNPSAGVEGFEPYCMK
+                     NSSNSNCPDCNWADYPPTPGKYLDDIEEEPENVGDPTEIVLRDMNNKDARQKIKEEVN
+                     TQKEGKFRLTIKRDIRNVLSLRVLVNGTFIKHPNGYKSLSTLHRLNAYDQSGRLVAKL
+                     VATDDLTVEDEEDGHRILNSLFERFNEGHSKPIRAAETAVGVLSQFGQEHRLSPEERD
+                     N"
+ORIGIN      
+        1 atggcggaca acatgaccac aacacaaatt gaggtgggtc cgggagcaac caatgccacc
+       61 ataaactttg aagcaggaat tttggagtgc tacgaaaggc tttcatggca aagagccctt
+      121 gactaccctg gtcaagaccg cctaaacaga ctaaagagaa aattagaatc aagaataaag
+      181 actcacaaca aaagtgagcc tgaaagtaaa aggatgtctc ttgaagagag aaaagctatt
+      241 ggagtaaaaa tgatgaaagt gctcctattt atgaacccat ctgctggagt tgaagggttt
+      301 gagccatatt gtatgaaaaa ttcctccaat agcaactgtc cagactgcaa ttgggctgat
+      361 taccctccaa caccaggaaa gtaccttgat gacatagaag aagaaccgga gaatgttggt
+      421 gacccaactg aaatagtatt aagggacatg aacaacaaag atgcaaggca aaagataaaa
+      481 gaggaagtaa acactcagaa agaagggaaa ttccgtttga caataaaaag ggatatacgt
+      541 aatgtgttgt ccttgagagt gttggtaaac ggaacattca tcaagcaccc taatggatac
+      601 aagtccttat caactctgca tagattgaat gcatatgacc agagtggaag acttgttgct
+      661 aaacttgttg ctactgatga tcttacagtg gaggatgaag aagatggcca tcggatcctc
+      721 aactcactct tcgagcgttt taatgaagga cattcaaagc caattcgagc agctgaaact
+      781 gcggtgggag tcttatccca atttggtcaa gagcaccgat tatcaccaga agagagagac
+      841 aattagactg gttacggaag aactttatct tttaagtaaa agaattgatg ataacatatt
+      901 gttccacaaa acagtaatag ccaacagctc cataatagct gacatgattg tatcattatc
+      961 attattggaa acattgtatg aaatgaagga tgtggttgaa gtgtacagca ggcagtgctt
+     1021 gtga
+//

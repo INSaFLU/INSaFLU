@@ -1,0 +1,817 @@
+LOCUS       1                2316 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 1 polymerase
+            PB2 (PB2) gene, complete cds.
+ACCESSION   1
+VERSION     OQ203979.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: PB2
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224975
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2316
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="1"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            16..2295
+                     /gene="PB2"
+     CDS             16..2295
+                     /gene="PB2"
+                     /locus_tag="locus_00001"
+                     /codon_start=1
+                     /product="polymerase PB2"
+                     /protein_id="WBO08834.1"
+                     /translation="MERIKELRDLMSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPA
+                     LRMKWMMAMKYPITADKRIMDIIPERNEQGQTLWSKINDAGSDRVMVSPLAVTWWNRN
+                     GPTTSTVHYPKVYKTYFEKVERLKHGTFGPVHFRNQVKIRRRVDTNPGHADLSAKEAQ
+                     DVIMEVVFPNEVGARILTSESQLAITKEKKEELQNCKIAPLMVAYMLERELVRKTRFL
+                     PVAGGTSSVYIEVLHLTQGTCWEQMYTPGGEVRNDDVDQSLIIAARNIVRRAAVSADP
+                     LASLLEMCHSTQIGGVKMVDILKQNPTEEQAVDICKAAIGLRISSSFSFGGFTFKRTS
+                     GSSVKKEEEMLTGNLQTLKLRVHEGYEEFTMVGRRATAILRKATRRLIQLIVSGRDEQ
+                     SIAEAIIVAMVFSQEDCMIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVLFQNWG
+                     IETIDNVMGMIGILPDMTPSTEMSLRGIRVSKMGVDEYSSTERVVVSIDRFLRVRDQR
+                     GNVLLSPEEVSETQGTEKLTITYSSSMMWEINGPESVLVNTYQWIIRNWEIVKIQWSQ
+                     DPTMLYNKMEFEPFQSLVPKATRSRYSGFVRTLFQQMRDVLGTFDTVQIIKLLPFAAA
+                     PPEQSRMQFSSLTVNVRGSGLRILVRGNSPVFNYNKATKRLTILGKDAGALTEDPDEG
+                     TSGVESAVLRGFLILGKEDKRYGPALSINELSNLAKGEKANVLIGQGDIVLVMKRKRD
+                     SSILTDSQTATKRIRMAIN"
+ORIGIN      
+        1 tcaaatatat tcaatatgga gagaataaaa gagctaagag atctaatgtc gcagtcccgc
+       61 actcgcgaga tactcactaa gaccactgtg gaccatatgg ccatcatcaa aaagtacaca
+      121 tcgggaaggc aagagaagaa ccccgcgctc agaatgaagt ggatgatggc aatgaaatac
+      181 ccaattacgg cagacaagag aataatggac ataatcccag agaggaatga acaaggacaa
+      241 accctctgga gcaaaataaa cgatgctgga tcagaccgag tgatggtatc acctctggca
+      301 gtaacatggt ggaataggaa tggtccaaca acaagtacag ttcattaccc taaggtatat
+      361 aaaacttatt tcgaaaaggt cgaaaggttg aaacatggta ccttcggccc tgtccacttc
+      421 agaaatcaag ttaaaataag gaggagagtt gatacaaacc ctggccatgc agatctcagt
+      481 gccaaggagg cacaggatgt gattatggaa gttgttttcc caaatgaagt gggggcaaga
+      541 atactgacat cagagtcaca gctggcaata acaaaagaga agaaagaaga gctccagaat
+      601 tgtaaaattg ctcccttgat ggtggcgtac atgctagaaa gagaattggt ccgtaaaaca
+      661 aggtttctcc cagtagccgg tgggacaagc agtgtttata ttgaggtgtt gcacttgacc
+      721 caagggacgt gctgggagca gatgtacact ccagggggag aagtgagaaa tgatgatgtt
+      781 gaccaaagct tgattatcgc tgctagaaac atagtaagaa gagcagcagt gtcagcagac
+      841 ccattagcat ctctcttgga aatgtgccac agcacacaga ttggaggtgt gaagatggtg
+      901 gacatcctta aacagaatcc aactgaggag caagccgtag acatatgcaa ggcagcaata
+      961 gggttgagaa tcagctcatc tttcagtttt ggtgggttca ctttcaaaag gacaagcgga
+     1021 tcatcagtca agaaagaaga agaaatgcta acgggcaacc tccaaacatt gaaattaaga
+     1081 gtacatgaag ggtatgaaga attcacaatg gttgggagaa gagcaacggc tattctcaga
+     1141 aaggcaacca ggagattaat ccaattaata gtaagcggga gagacgagca gtcaatagct
+     1201 gaagcaataa ttgtggccat ggttttttca caagaggatt gcatgatcaa agcagttagg
+     1261 ggcgatctga actttgtcaa tagggcaaac cagagactga atcccatgca ccaactcttg
+     1321 aggcatttcc aaaaagatgc aaaggtgctt ttccagaact ggggaattga aaccatcgac
+     1381 aatgtgatgg gaatgatcgg aatactgccc gacatgaccc caagcacgga gatgtcactg
+     1441 agaggaataa gagtaagcaa gatgggagta gatgaatact ccagcacgga gagagtggta
+     1501 gtgagtattg accgattttt gagggttaga gaccaaagag gaaacgtact gttatctccc
+     1561 gaagaagtca gtgaaacgca aggaactgag aagttgacaa taacttattc gtcatcaatg
+     1621 atgtgggaaa tcaacggccc tgagtcagtg ctagtcaaca cttatcaatg gataatcaga
+     1681 aactgggaaa ttgtgaaaat tcaatggtca caagacccca caatgttata caacaaaatg
+     1741 gaatttgaac catttcagtc tcttgttcct aaggcaacca gaagccggta cagtggattc
+     1801 gtaaggacac tgttccagca aatgagggat gtgcttggga catttgacac tgtccaaata
+     1861 ataaaacttc tcccctttgc tgctgctcca ccagaacaga gcaggatgca attttcttca
+     1921 ttgactgtga atgtgagagg atcagggtta aggatactgg taagaggcaa ttctccagta
+     1981 ttcaattaca acaaggcaac caaacgactt acgattcttg gaaaggatgc aggtgcactg
+     2041 actgaagatc cagatgaagg cacatcgggg gtggagtctg ctgtcctgag aggattcctc
+     2101 attttaggca aagaagacaa gagatatggc ccagcactaa gcatcaatga actgagcaat
+     2161 cttgcaaaag gagagaaagc taatgtgcta attgggcagg gggacatagt gttggtaatg
+     2221 aaacgaaaac gggactctag catacttact gacagccaga cagcgaccaa aagaattcga
+     2281 atggccatca attagtgtcg aattgtttaa aaacga
+//
+LOCUS       2               2316 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 2 polymerase
+            PB1 (PB1) gene, complete cds; and nonfunctional PB1-F2 protein
+            (PB1-F2) gene, complete sequence.
+ACCESSION   2
+VERSION     OQ203980.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2316)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: PB1
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224976
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2316
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="2"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            13..2286
+                     /gene="PB1"
+     CDS             13..2286
+                     /gene="PB1"
+                     /locus_tag="locus_00002"
+                     /codon_start=1
+                     /product="polymerase PB1"
+                     /protein_id="WBO08835.1"
+                     /translation="MDVNPTLLFLKIPAQNAISTTFPYTGDPPYSHGTGTGYTMDTVN
+                     RTHQYSEKGKWTKNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGI
+                     FENSCLETMEVVQQTRVDKLTQGRQTYDWTLNRNQPAATALANTIEVFRSNDLTANES
+                     GRLIDFLKDVMESMNKEEIEITTHFQRKRRVRDNMTKKMITQRTIGKKKQRLNKRGYL
+                     IRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVETLARSICEKLEQSGLPVGGN
+                     EKKAKLANVVRKMMTNSQDTEISFTITGDNTKWNENQNPRMFLAMITYITRNQPEWFR
+                     NILSMAPIMFSNKMARLGKGYMFESKRMKIRTQIPAEMLASIDLKYFNESTRKKIEKI
+                     RPLLMDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKKYTKTTYWWDGLQSSDDFALI
+                     VNAPNHEGIQAGVDRFYRTCKLVGINMSKKKSYINKTGTFEFTSFFYRYGFVANFSME
+                     LPSFGVSGVNESADMSIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDT
+                     QIQTRRSFELKKLWDQTQSKVGLLVSDGGPNLYNIRNLHIPEVCLKWELMDDDYRGRL
+                     CNPLNPFVSHKEIDSVNNAVVMPAHGPAKSMEYDAVATTHSWIPKRNRSILNTSQRGI
+                     LEDEQMYQKCCNLFEKFFPSSSYRRPVGISSMVEAMVSRARIDARVDFESGRIKKEEF
+                     SEIMKICSTIEELRRQK"
+ORIGIN      
+        1 caaaccattt gaatggatgt caatccgact ctacttttcc taaaaattcc agcacaaaat
+       61 gccataagca ccacattccc ttatactgga gatcctccat acagccatgg aacaggaaca
+      121 ggatacacca tggatacagt aaacagaaca caccaatact cagaaaaggg gaagtggaca
+      181 aaaaacacag aaactggtgc acctcagctc aacccgattg acggaccact acccgaagat
+      241 aatgaaccaa gtgggtatgc acaaacagac tgtgttctag aggctatggc tttccttgaa
+      301 gaatcccatc caggaatatt tgaaaattca tgccttgaaa caatggaagt tgttcaacaa
+      361 acaagggtag ataaactgac tcaaggtcgc cagacttatg attggacatt aaacagaaat
+      421 caaccggcag caactgcatt ggccaacacc atagaagttt tcaggtcgaa tgacctaaca
+      481 gctaacgagt caggaaggct aatagatttc ttaaaggatg tgatggaatc aatgaacaaa
+      541 gaggaaatag agataacaac ccactttcaa agaaaaagga gagtaagaga caacatgacc
+      601 aagaagatga tcacgcaaag aacaataggg aagaaaaaac agagactgaa taagaggggc
+      661 tatctaataa gagcactgac attaaatacg atgaccaaag atgcagagag aggcaagtta
+      721 aaaagaaggg ctatcgcaac acctgggatg cagattagag gtttcgtata ctttgttgaa
+      781 actttagcta ggagtatttg cgaaaagctt gaacagtctg ggctcccagt agggggcaat
+      841 gaaaagaagg ccaaattggc aaatgttgtg agaaagatga tgactaattc acaagataca
+      901 gaaatttctt tcacaatcac tggggacaac actaaatgga atgagaatca aaatcctcga
+      961 atgttcctgg cgatgattac ttatatcacc agaaatcaac ccgagtggtt tagaaacatc
+     1021 ctgagcatgg cacccataat gttctcaaat aaaatggcaa gactaggaaa agggtacatg
+     1081 ttcgagagta aaagaatgaa gattcgaaca caaataccag cagaaatgct agcaagcatt
+     1141 gatctaaagt atttcaatga atcaacaagg aagaaaattg agaagataag gcctctttta
+     1201 atggatggca cagcatcact gagtcctggg atgatgatgg gcatgttcaa catgctaagt
+     1261 acggtattgg gagtctcgat actgaatctt ggacaaaaga aatacaccaa gacaacatac
+     1321 tggtgggatg ggctccaatc atccgatgat tttgctctca tagtgaatgc accaaaccat
+     1381 gaagggatac aagcaggagt ggacagattc tacaggacct gcaaattagt gggaatcaac
+     1441 atgagcaaaa agaagtccta tataaataag acagggacat ttgaattcac aagctttttt
+     1501 tatcgctatg gatttgtggc taattttagc atggagctac ccagctttgg agtgtctgga
+     1561 gtaaatgaat cagctgacat gagtattgga gtaacagtga taaagaacaa catgataaac
+     1621 aatgaccttg gacctgcaac ggctcagatg gctcttcaat tgttcataaa agactacaga
+     1681 tacacatata ggtgtcatag gggagacaca caaattcaga cgagaagatc atttgagttg
+     1741 aagaagctat gggatcaaac ccaatcaaaa gtagggctat tagtatcaga tggaggacca
+     1801 aacttataca acatacggaa tcttcacatt cctgaagtct gcttaaaatg ggagctaatg
+     1861 gatgatgatt atcggggaag actttgtaat cccctgaatc cctttgtgag tcataaggag
+     1921 attgattctg taaacaatgc tgtggtaatg ccagcccatg gcccagccaa aagcatggaa
+     1981 tatgatgccg ttgctactac acattcctgg attcccaaga ggaatcgttc tattctcaac
+     2041 acaagccaaa ggggaattct tgaggatgaa cagatgtacc agaagtgttg caatttattc
+     2101 gagaaatttt tccctagcag ttcatatagg agaccggttg gaatttctag catggtggag
+     2161 gccatggtgt ctagggcccg gattgatgcc agagtcgact ttgagtctgg acggattaag
+     2221 aaagaagagt tctctgagat catgaagatc tgttccacca ttgaagaact cagacggcaa
+     2281 aaataatgaa tttaacttgt ccttcatgaa aaaatg
+//
+LOCUS       3                2208 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 3 polymerase
+            PA (PA) and PA-X protein (PA-X) genes, complete cds.
+ACCESSION   3
+VERSION     OQ203981.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 2208)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2208)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: PA
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224974
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..2208
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="3"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            13..2163
+                     /gene="PA"
+     CDS             13..2163
+                     /gene="PA"
+                     /locus_tag="locus_00003"
+                     /codon_start=1
+                     /product="polymerase PA"
+                     /protein_id="WBO08836.1"
+                     /translation="MEDFVRQCFNPMIVELAEKAMKEYGEDPKVETNKFAAICTHLEV
+                     CFMYSDFHFIDERGESMILESGDPNALLKHRFEIIEGRDRIMAWTVVNSICNTTGIEK
+                     PKFLPDLYDYKENRFIEIGVTRREVHIYYLEKANKIKSEKTHIHIFSFTGEEMATKAD
+                     YTLDEESRARIKTRLFTIRQEMASRSLWDSFRQSERGEETIEEKFEITGTMRRLADQS
+                     LPPNFSCLENFRAYVDGFEPNGCIEGKLSQMSKEVNAKIEPFLRTTPRPLRLPDGPLC
+                     HQRSKFLLMDALKLSIEDPSHEGEGIPLYDAIKCMKTFFGWKEPKIVKPHEKGVNPNY
+                     LMTWKQVLAELQDIENEEKIPRTKNMKKTSQLKWALGENMAPEKVDFDDCKDVGDLKQ
+                     YDSDEPEPRSLASWVQNEFNKACELTDSSWIELDEIGEDVAPIEHVASMRRNYFTAEV
+                     SHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIVKGR
+                     SHLRNDTDVVNFVSMEFSLTDPRLEPHKWEKYCVLEIGDMLLRTAIGQVSRPMFLYVR
+                     TNGTSKIKMKWGMEMRRCLLQSLQQIESMIEAESSVKEKDMTKEFFENKSETWPIGES
+                     PRGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSAESRKLLLIVQALRDNLEPGTFD
+                     LGGLYEAIEECLINDPWVLLNASWFNSFLTHALK"
+ORIGIN      
+        1 tactgatcca aaatggaaga ctttgtgcga caatgcttca atccaatgat cgtcgagctt
+       61 gcggaaaagg caatgaaaga atatggggaa gaccccaaag ttgaaactaa taagtttgct
+      121 gcaatttgca cacatttgga agtttgtttc atgtattcgg attttcattt cattgatgaa
+      181 cggggtgaat caatgatttt agaatctggt gacccaaatg cactattgaa gcaccgattt
+      241 gagataattg aaggaagaga ccgaatcatg gcctggacag tggtgaacag tatatgtaac
+      301 acaacaggga tagagaagcc taaatttctt cctgatttgt atgattacaa agagaaccgg
+      361 ttcattgaaa ttggagtaac acggagggaa gtccacatat attacctaga gaaagccaac
+      421 aaaataaaat ctgagaagac acacatccac atcttttcat tcactggaga ggagatggcc
+      481 accaaagcgg actacaccct tgacgaagaa agcagagcaa gaatcaaaac taggcttttc
+      541 actataagac aagaaatggc cagtaggagt ctatgggatt cctttcgtca gtccgaaaga
+      601 ggcgaagaaa caattgaaga aaagtttgaa attacaggaa ctatgcgcag gcttgccgac
+      661 caaagtctcc caccaaactt ctcctgcctt gaaaacttca gagcctatgt agatggattc
+      721 gagccgaacg gctgcattga gggcaagctt tcccaaatgt cgaaagaagt gaacgccaaa
+      781 attgaaccat tcttgaggac gacaccacgg cccctcagat tacctgatgg acctctttgc
+      841 catcagcggt caaagttcct gctgatggat gctctgaaat taagcattga agacccgagt
+      901 cacgaggggg aaggaatacc actatatgat gcaatcaaat gcatgaagac attctttggc
+      961 tggaaagagc ctaaaatagt caaaccacat gagaaaggcg taaatcccaa ttacctcatg
+     1021 acttggaagc aggtgctagc agagctacag gacattgaaa atgaagagaa aatcccaagg
+     1081 acaaagaaca tgaagaagac aagccaattg aagtgggcac tcggtgaaaa tatggcacct
+     1141 gaaaaagtgg actttgatga ctgtaaagat gttggagacc ttaaacagta tgacagtgat
+     1201 gagccagagc ccagatctct agcaagctgg gtccaaaatg aattcaataa ggcatgtgaa
+     1261 ttgactgatt caagctggat agaacttgat gaaataggag aagatgttgc cccgattgaa
+     1321 catgtagcaa gcatgaggag gaactatttc acagcagaag tgtcccactg cagggctact
+     1381 gaatacataa tgaagggagt gtacataaat acggccttgc ttaatgcatc ctgtgcagcc
+     1441 atggatgact ttcagctgat tccaatgata agcaaatgta ggaccaaaga aggaagacgg
+     1501 aaaacaaacc tgtatgggtt cattgtaaag ggaaggtctc atttgagaaa tgatactgat
+     1561 gtagtgaact ttgtaagtat ggagttctca ctcactgatc caagactgga accacacaaa
+     1621 tgggaaaaat actgtgttct tgaaatagga gacatgctat tgaggactgc gataggtcaa
+     1681 gtgtcgaggc ccatgttcct atatgtgaga accaatggaa cctccaagat caagatgaaa
+     1741 tggggcatgg aaatgaggcg ctgccttctt caatctcttc aacagattga gagcatgatt
+     1801 gaagccgagt cttctgtcaa agagaaagac atgaccaagg aattctttga aaacaaatcg
+     1861 gaaacatggc caatcggaga gtcacccagg ggagtagaag aaggctctat tggaaaagtg
+     1921 tgcagaacct tactggcaaa atctgtgttc aacagtctat atgcttctcc acaacttgag
+     1981 gggttttcgg ctgaatcaag aaaattgctt ctcattgttc aggcacttag ggacaacctg
+     2041 gaacctggaa cctttgatct tggggggcta tatgaagcaa tcgaggagtg cttgattaat
+     2101 gatccctggg ttttgcttaa tgcatcttgg ttcaactcct tcctcacaca tgcactgaag
+     2161 tagttgtggc aatgctacta tttgctatcc atattgtcca aaaaagta
+//
+LOCUS       4                1752 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 4
+            hemagglutinin (HA) gene, complete cds.
+ACCESSION   4
+VERSION     OQ203982.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1752)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1752)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: HA
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224978
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1752
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="4"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     CDS             21..71
+                     /gene="HA_sp"
+                     /locus_tag="locus_00004a"
+                     /product="Hemagglutinin sig_peptide"
+     CDS             72..1052
+                     /gene="HA1"
+                     /locus_tag="locus_00004b"					 
+                     /product="Hemagglutinin HA1"
+     CDS             1053..1718
+                     /gene="HA2"
+                     /locus_tag="locus_00004c"					 
+                     /product="Hemagglutinin HA2"
+                     /translation="MKAILVVMLYTFTTANADTLCIGYHANNSTDTVDTVLEKNVTVT
+                     HSVNLLEDKHNGKLCKLRGVAPLHLGQCNIAGWILGNPECESLSTARSWSYIVETSNS
+                     DNGTCYPGDFINYEELREQLSSVSSFERFEIFPKTSSWPNHDSDNGVTAACSHAGARS
+                     FYKNLIWLVKKGKSYPKINQTYINDKGKEVLVLWGIHHPPTITDQESLYQNADAYVFV
+                     GTSRYSKKFKPEIATRPKVRDQAGRMNYYWTLVEPGDKITFEATGNLVAPRYAFTMEK
+                     EAGSGIIISDTPVHDCNATCQTPEGAINTSLPFQNVHPITIGKCPKYVRSTKLRLATG
+                     LRNVPSIQSRGLFGAIAGFIEGGWTGMVDGWYGYHHQNDQGSGYAADLKSTQNAIDKI
+                     TNKVNSVIEKMNTQFTAVGKEFNHLEKRIENLNKKVDDGFLDVWTYNAELLVLLENER
+                     TLDYHDSNVKNLYEKVRHQLKNNAKEIGNGCFEFYHKCDNTCMESVKNGTYDYPKYSE
+                     EAKLNREKIDGVKLDSTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI
+                     "
+ORIGIN      
+        1 ggaaaacaaa agcaacaaaa atgaaggcaa tactagtagt tatgctgtat acatttacaa
+       61 ccgcaaatgc agacacatta tgtataggtt atcatgcgaa caattcaaca gacactgtgg
+      121 acacagtact agaaaagaat gtaacagtaa cacactctgt caatcttcta gaagacaagc
+      181 ataacggaaa actatgcaaa ctaagagggg tagccccatt gcatttgggt caatgtaaca
+      241 ttgctggctg gatcctggga aatccagagt gtgaatcact ctccacagca agatcatggt
+      301 cctacattgt ggaaacatct aattcagaca atggaacgtg ttacccagga gatttcatca
+      361 attatgagga gctaagagag caattgagct cagtgtcatc atttgaaagg tttgaaatat
+      421 tccccaagac aagttcatgg cctaatcatg actcggacaa tggtgtaacg gcagcatgtt
+      481 ctcacgctgg agcaaggagc ttctacaaaa acttgatatg gctggttaaa aaaggaaaat
+      541 cgtacccaaa gattaaccaa acctacatta atgataaagg gaaagaagtc ctcgtgctgt
+      601 ggggcattca ccatccaccc actattactg accaagaaag tctctatcag aatgcagatg
+      661 catatgtttt tgtggggaca tcaagataca gcaagaagtt caagccggaa atagcaacaa
+      721 gacccaaagt gagggatcaa gcagggagaa tgaactatta ctggacacta gtagaaccgg
+      781 gagacaaaat aacattcgaa gcaactggta atctagtggc accgaggtat gcattcacaa
+      841 tggaaaaaga agctggatct ggtattatca tttcagatac accagtccac gattgcaatg
+      901 caacttgtca gacacccgag ggtgctataa acaccagcct cccatttcaa aatgtacatc
+      961 cgatcacgat tgggaaatgt ccaaagtatg taagaagcac aaaattgaga ctggccacag
+     1021 gattgaggaa tgtcccgtct attcaatcta gaggcctatt cggggccatt gctggattca
+     1081 tcgaaggggg gtggacaggg atggtagatg gatggtacgg ttatcaccat caaaatgatc
+     1141 agggatcagg atatgcagcc gatctgaaga gcacacaaaa tgccattgat aagattacca
+     1201 acaaagtaaa ttctgttatt gaaaagatga atacacagtt cacagcagtt ggtaaagagt
+     1261 tcaaccacct tgaaaaaaga atagagaatc taaataaaaa ggttgatgat ggtttcctgg
+     1321 acgtttggac ttacaatgcc gaactgctag ttctactgga aaatgaaaga actttggact
+     1381 atcacgattc aaatgtgaag aacttgtatg aaaaagtaag acatcagtta aaaaacaatg
+     1441 ccaaggaaat tggaaacggc tgctttgaat tttaccacaa atgcgacaac acatgcatgg
+     1501 aaagtgtcaa gaatgggact tatgactacc caaaatactc agaggaagca aaattaaaca
+     1561 gagaaaaaat agatggagta aagctggact caacaaggat ttaccagatt ttggcaatct
+     1621 attcaactgt tgccagttca ttggtactgg tagtctccct gggggcaatc agcttctgga
+     1681 tgtgctccaa tgggtctcta cagtgtagaa tatgtattta acattaggat ttcagaatca
+     1741 tgagaaaaac ac
+//
+LOCUS       5                1540 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 5
+            nucleocapsid protein (NP) gene, complete cds.
+ACCESSION   5
+VERSION     OQ203983.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1540)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1540)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: NP
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224971
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1540
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="5"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            34..1530
+                     /gene="NP"
+     CDS             34..1530
+                     /gene="NP"
+                     /locus_tag="locus_00005"
+                     /codon_start=1
+                     /product="nucleocapsid protein"
+                     /protein_id="WBO08839.1"
+                     /translation="MASQGTKRSYEQMETGGERQDTTEIRASVGRMIGGIGRFYIQMC
+                     TELKLSDYDGRLIQNSITIERMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRIDG
+                     KWTRELILYDKEEIRRVWRQANNGEDATAGLTHIMIWHSNLNDATYQRTRALVRTGMD
+                     PRMCSLMQGSTLPRRSGAAGAAVKGVGTIAMELIRMIKRGINDRNFWRGENGRRTRVA
+                     YERMCNILKGKFQTAAQRAMMDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCL
+                     PACVYGLAVASGHDFEREGYSLVGIDPFKLLQNSQVVSLMRPNENPAHKSQLVWMACH
+                     SAAFEDLRVSSFIRGKKVIPRGKLSTRGVQIASNENVETMDSNTLELRSRYWAIRTRS
+                     GGNTNQQKASAGQISVQPTFSVQRNLPFERATIMAAFSGNNEGRTSDMRTEVIRMMES
+                     AKPEDLSFQGRGVFELSDEKATNPIVPSFDMSNEGSYFFGDNAEEYDN"
+ORIGIN      
+        1 gtagataatc actcaatgag tgacatcgaa gccatggcgt ctcaaggcac caaacgatca
+       61 tatgaacaaa tggagactgg tggggagcgc caggatacca cagaaatcag agcatctgtt
+      121 ggaagaatga ttggtggaat cgggagattc tatatccaaa tgtgcactga actaaaactc
+      181 agtgattatg atggacgact aatccagaac agcataacaa tagagaggat ggtgctttct
+      241 gcttttgatg agagaagaaa taaataccta gaagagcatc caagtgctgg gaaggaccct
+      301 aagaaaacag gaggacccat ctatagaaga atagacggaa aatggacaag agaactcatc
+      361 ctttatgaca aagaagaaat aaggagagtt tggcgccaag caaacaatgg cgaagatgca
+      421 acagcaggtc ttactcatat catgatttgg cattccaatc tgaatgatgc cacatatcag
+      481 aggacaagag cacttgttcg cactggaatg gatcccagaa tgtgctctct aatgcaaggt
+      541 tcaacacttc ccagaaggtc cggtgccgca ggtgctgcag taaaaggagt tggaacaata
+      601 gctatggagt taatcagaat gataaaacgt ggaatcaatg accgaaattt ctggaggggt
+      661 gaaaatggac gaaggacaag agttgcttat gaaagaatgt gcaatatcct caaaggaaaa
+      721 tttcaaacag ctgctcagag ggcaatgatg gatcaagtaa gggaaagccg aaacccagga
+      781 aacgctgaga ttgaagacct cattttcctg gcgcggtcag cactcattct gagaggatca
+      841 gttgcacata aatcctgcct gcctgcttgt gtgtatgggc ttgcagtagc aagtggccat
+      901 gactttgaaa gggaagggta ctcattggtc gggatagacc cgttcaaatt actccaaaac
+      961 agtcaagtgg tcagcctgat gagaccaaat gaaaatccag ctcacaagag tcaattggta
+     1021 tggatggcat gccactctgc tgcatttgaa gatttaagag tatcaagttt cataagagga
+     1081 aagaaggtga tcccaagagg aaagctttcc acaagagggg ttcagattgc ttcaaatgag
+     1141 aatgtggaaa ccatggactc caataccctg gaactaagaa gcagatactg ggccataaga
+     1201 accaggagtg gaggaaatac caatcaacag aaggcatctg caggccagat cagtgtgcag
+     1261 cctacattct cagtgcagcg aaatctcccc tttgaaagag caaccattat ggcagcattc
+     1321 agcgggaaca atgaaggacg gacatccgac atgcgaacag aagttataag aatgatggaa
+     1381 agtgcaaagc cagaggattt gtccttccag gggcggggag tcttcgagct ctcggacgaa
+     1441 aaggcaacga acccgatcgt gccttccttt gacatgagta acgaagggtc ttatttcttc
+     1501 ggagacaatg cagaggagta tgacaattga agaaaaatac
+//
+LOCUS       6                1434 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 6
+            neuraminidase (NA) gene, complete cds.
+ACCESSION   6
+VERSION     OQ203984.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1434)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1434)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: NA
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224977
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1434
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="6"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            9..1418
+                     /gene="NA"
+     CDS             9..1418
+                     /gene="NA"
+                     /locus_tag="locus_00006"
+                     /codon_start=1
+                     /product="neuraminidase"
+                     /protein_id="WBO08840.1"
+                     /translation="MNPNQKIITIGSVCMTIGTANLILQIGNIISIWVSHSIQIGNQS
+                     QIETCNKSVITYENNTWVNQTFVNISNTNSAARQSVASVKLAGNSSLCPVSGWAIYSK
+                     DNSVRIGSKGDVFVIREPFISCSPLECRTFFLTQGALLNDKHSNGTIKDRSPYRTLMS
+                     CPIGEVPSPYNSRFESVAWSASACHDGTNWLTIGISGPDSGAVAVLKYNGIITDTIKS
+                     WRNKILRTQESECACVNGSCFTIMTDGPSDGQASYKIFRIEKGKIIKSVEMKAPNYHY
+                     EECSCYPDSSEITCVCRDNWHGSNRPWVSFNQNLEYQMGYICSGVFGDNPRPNDKTGS
+                     CGPVLSNGANGVKGFSFKYGNGVWIGRTKSISSRKGFEMIWDPNGWTGTDNKFSKKQD
+                     IVGINEWSGYSGSFVQHPELTGLNCIRPCFWVELIRGRPEENTIWTSGSSISFCGVDS
+                     DIMGWSWPDGAELPFTIDN"
+ORIGIN      
+        1 agtttaaaat gaatccaaac caaaagataa taaccattgg ttctgtttgt atgacaattg
+       61 gaacggctaa cttaatatta caaattggaa acataatctc aatatgggtt agccactcaa
+      121 ttcaaattgg aaatcaaagc cagattgaaa catgcaataa aagcgtcatt acttatgaaa
+      181 acaacacttg ggtaaatcag acatttgtta acatcagcaa cactaactct gctgctagac
+      241 agtcagtggc ttccgtgaaa ttagcgggca attcttctct ctgccctgtt agtggatggg
+      301 ctatatacag taaagacaac agtgtaagaa tcggttccaa gggggatgtg tttgtcataa
+      361 gggaaccatt catatcatgc tctcccttgg aatgcagaac cttcttcttg actcaagggg
+      421 ctttgctaaa tgacaaacat tccaatggaa caatcaaaga cagaagccca tatcgaaccc
+      481 taatgagctg tcctattggt gaagttccct ctccatacaa ctcaagattt gagtcagtcg
+      541 cttggtcagc aagtgcttgt catgatggca ccaattggct aacaattgga atttctggcc
+      601 cagacagtgg ggcagtggct gtgttaaaat acaatggcat aataacagac actatcaaga
+      661 gttggaggaa caagatattg agaacacaag agtctgaatg tgcatgtgta aatggttctt
+      721 gctttaccat aatgactgat ggaccaagtg atggacaggc ctcatacaaa atcttcagaa
+      781 tagagaaggg aaagataatc aaatcagtcg aaatgaaggc ccctaattat cactatgaag
+      841 aatgctcctg ttaccctgat tctagtgaaa tcacatgtgt gtgcagggat aattggcatg
+      901 gctcgaatcg accttgggtg tctttcaacc agaatctgga atatcagatg ggatacatat
+      961 gcagtggggt tttcggagac aatccacgcc ctaatgataa gacaggcagt tgtggtccag
+     1021 tattgtctaa tggagcaaat ggggtaaaag gattttcatt caaatacggc aatggtgttt
+     1081 ggatagggag aactaagagc attagttcaa gaaaaggttt tgagatgatt tgggatccga
+     1141 atggatggac tgggactgac aataaattct caaaaaagca agatattgta gggataaatg
+     1201 agtggtcagg gtatagcggg agttttgttc agcatccaga actaacaggg ctgaattgta
+     1261 taagaccttg cttctgggtt gaactaataa gaggacgacc tgaagagaac acgatctgga
+     1321 ctagcgggag cagcatatcc ttttgtggtg tagacagtga cattatgggt tggtcttggc
+     1381 cagacggtgc tgagttgcca ttcaccattg acaattaatt tgttcaaaaa aact
+//
+LOCUS       7                1002 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 7 matrix
+            protein 2 (M2) and matrix protein 1 (M1) genes, complete cds.
+ACCESSION   7
+VERSION     OQ203985.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 1002)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1002)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: M
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224973
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..1002
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="7"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            14..772
+                     /gene="M1"
+     CDS             14..772
+                     /gene="M1"
+                     /locus_tag="locus_00007"
+                     /codon_start=1
+                     /product="matrix protein 1"
+                     /protein_id="WBO08841.1"
+                     /translation="MSLLTEVETYVLSIIPSGPLKAEIAQRLESVFAGKNTDLEAIME
+                     WLKTRPILSPLTKGILGFVFTLTVPSERGLQRRRFIQNALNGNGDPNNMDRAVRLYKK
+                     LKREITFHGAKEVSLSYSTGALASCMGLIYNRMGTVTTEAAFGLVCATCEQIADSQHR
+                     SHRQMATTTNPLIRHENRMVLASTTAKAMEQVAGSSEQAAEAMEVANKTRQMVHAMRT
+                     IGTHPSSSAGLRDDLLENLQAYQKRMGVQMQRFK"
+ORIGIN      
+        1 tagatgttta aagatgagtc ttctaaccga ggtcgaaacg tacgttcttt ctatcatccc
+       61 gtcaggcccc ctcaaagccg agatcgcaca gagactggaa agtgtctttg caggaaagaa
+      121 cacagatctt gaggctatca tggaatggct aaaaacaaga ccaatcttgt cacctctgac
+      181 taagggaatt ttaggatttg tgttcacgct caccgtgccc agtgagcgag gactgcagcg
+      241 tagacgcttt atccaaaatg ccctaaatgg aaatggggac ccgaacaaca tggatagagc
+      301 agttagacta tacaagaaac tcaaaagaga aataacgttc catggggcca aagaagtgtc
+      361 actaagctat tcaactggtg cacttgcaag ttgcatgggc ctcatataca acaggatggg
+      421 aactgtgacc acagaagctg ctttcggtct agtttgtgcc acttgtgaac agattgctga
+      481 ttcacagcat cggtctcaca gacaaatggc tactaccaca aatccactaa tcaggcatga
+      541 aaacagaatg gtgctggcta gcactacggc aaaggctatg gaacaggtgg ctggatcgag
+      601 tgaacaggca gcggaggcca tggaggttgc taataagact aggcagatgg tacatgcaat
+      661 gagaactatt ggaactcatc ctagctccag tgctggtcta agagatgacc ttcttgaaaa
+      721 tttacaggcc taccagaagc gaatgggagt gcagatgcag cggttcaaat gatcctctcg
+      781 tcattgcagc aaacatcatt gggatcttgc acctgatatt gtggattact gatcgtcttt
+      841 ttttcaaatg catttatcgt cgctttaaat acggtttgaa aagagggcct tctacggaag
+      901 gagtgcctga gtccatgagg gaagaatatc aacaggagca gcagagtgct gtggatgttg
+      961 acgatggtca ttttgtcaac atagagctag agtaaaaaac ta
+//
+LOCUS       8                 865 bp    cRNA    linear   VRL 15-JAN-2023
+DEFINITION  Influenza A virus (A/Wisconsin/67/2022(H1N1)) segment 8 nuclear
+            export protein (NEP) and nonstructural protein 1 (NS1) genes,
+            complete cds.
+ACCESSION   8
+VERSION     OQ203986.1
+DBLINK      BioProject: PRJNA37813
+KEYWORDS    .
+SOURCE      Influenza A virus
+  ORGANISM  Influenza A virus
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus.
+REFERENCE   1  (bases 1 to 865)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Influenza Sequencing Activity group
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 865)
+  AUTHORS   Wentworth,D., Barnes,J., Steel,J., Garten,R., Davis,T. and Dugan,V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2023) WHO Collaborating Center for Surveillance,
+            Epidemiology and Control of Influenza, Influenza Division, Centers
+            for Disease Control and Prevention, 1600 Clifton Road, N.E.,
+            Atlanta, GA 30333, USA
+COMMENT     ##FluData-START##
+            EPI_ISOLATE_ID        :: EPI_ISL_15928563
+            NAME                  :: A/Wisconsin/67/2022
+            TYPE                  :: H1
+            Segment_name          :: NS
+            HOST_AGE              :: 31
+            HOST_GENDER           :: F
+            PASSAGE               :: S1 (2022-11-11)
+            LOCATION              :: United States / Wisconsin
+            COLLECT_DATE          :: 25-Oct-2022
+            Lineage               :: A(H1N1)pdm09
+            RESIST_TO_OSELTAMIVIR :: Sensitive
+            RESIST_TO_ZANAMVIR    :: Sensitive
+            SPECIMEN_ID           :: 22VR031406 ORIGINAL
+            SENDER_LAB            :: Wisconsin State Laboratory of Hygiene
+            SEQLAB_SAMPLE_ID      :: 3030726954
+            EPI_SEQUENCE_ID       :: EPI2224972
+            ##FluData-END##
+FEATURES             Location/Qualifiers
+     source          1..865
+                     /organism="Influenza A virus"
+                     /mol_type="viral cRNA"
+                     /strain="A/Wisconsin/67/2022"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:11320"
+                     /segment="8"
+                     /country="USA: Wisconsin"
+                     /collection_date="25-Oct-2022"
+                     /note="passage details:S1 (2022-11-11)"
+     gene            15..674
+                     /gene="NS1"
+     CDS             15..674
+                     /gene="NS1"
+                     /locus_tag="locus_00008"
+                     /codon_start=1
+                     /product="nonstructural protein 1"
+                     /protein_id="WBO08843.1"
+                     /translation="MESNTMSSFQVDCFLWHIRKRFADNGLGDAPFLDRLRRDQKSLK
+                     GRGNTLGLDIKTATLVGKQIVEWILKEESSETLRMAIASIPTSRYISDMTLEEMSRDW
+                     FMLMPRQKIIGPLCVRLDQAVMDKNIVLEANFSVIFNRLETLILLRAFTEEGTIVGEI
+                     SPLPSLPGHTYEDVKNAVGVLIGGLEWNGNTVRVSENIQRFAWRSCDENGRPSLPPEQ
+                     K"
+ORIGIN      
+        1 gtgacaaaaa cataatggaa tccaacacca tgtcaagctt tcaggtagac tgttttcttt
+       61 ggcatattcg caagcgattt gcagacaatg gattgggtga tgccccattc ctcgatcggc
+      121 tacgccgaga tcaaaagtcc ttaaaaggaa gaggcaacac ccttggcctc gacatcaaaa
+      181 cagccactct tgttgggaaa caaattgtgg aatggatttt gaaagaggaa tccagcgaga
+      241 cacttagaat ggcaattgca tctataccca cttcgcgtta catttctgac atgaccctcg
+      301 aggaaatgtc acgagactgg ttcatgctta tgcctaggca aaagataata ggccctcttt
+      361 gcgtgcgatt ggaccaggcg gtcatggata agaacatagt actagaagca aacttcagtg
+      421 taatcttcaa ccgattagaa accttgatac tactaagggc tttcactgag gagggaacaa
+      481 tagttggaga aatttcacca ttaccttctc ttccaggaca tacttatgag gatgtcaaaa
+      541 atgcagttgg ggtcctcatc ggaggacttg agtggaatgg taacacggtt cgagtctctg
+      601 aaaatataca gagattcgct tggagaagct gtgatgagaa tgggagacct tcactacctc
+      661 cagagcagaa atgagaaatg gcgggaacaa ttgggacaga aatttgagga aataagatgg
+      721 ttaattgaag aaatacgaca aagattgaaa gcgacagaaa atagtttcga acaaataaca
+      781 tttatgcaag ccttacaaat actgcttgaa gtagagcaag agataagagc tttctcgttt
+      841 cagcttattt aatgataaaa aacac
+//

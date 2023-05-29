@@ -76,7 +76,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
             try:
                 Software.objects.get(
                     name=software.name,
-                    type_of_use=Software.TYPE_OF_USE_televir_project,
+                    type_of_use=software.type_of_use,
                     parameter__televir_project=project,
                     pipeline_step=software.pipeline_step,
                 )

@@ -31,7 +31,7 @@ def get_remap_software(username:str, project_name):
                 parameter__televir_project= project
                 ).distinct()[0]
         
-        except Software.DoesNotExist:
+        except IndexError:
             remap = Software.objects.get(
                 name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name, 
                 owner__username= username, 
@@ -78,7 +78,7 @@ def get_prinseq_software(username:str, project_name) -> PrinseqParams:
                 parameter__televir_project= project
                 ).distinct()[0]
         
-        except Software.DoesNotExist:
+        except IndexError:
             prinseq = Software.objects.get(
                 name=SoftwareNames.SOFTWARE_PRINSEQ_name, 
                 owner__username= username, 

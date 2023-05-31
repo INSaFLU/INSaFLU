@@ -143,9 +143,15 @@ class SoftwareForm(forms.ModelForm):
                     parameter.software.name
                     == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
-                    list_data = [
-                        [data_, data_] for data_ in self.utils.get_all_medaka_models()
-                    ]
+                    if ( parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME
+                    ):
+                        list_data = [
+                            [data_, data_] for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                        ]    
+                    else:
+                        list_data = [
+                            [data_, data_] for data_ in self.utils.get_all_medaka_models()
+                        ]
                 elif (
                     parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
                     and parameter.software.name
@@ -155,6 +161,15 @@ class SoftwareForm(forms.ModelForm):
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_vect_available
                     ]
+                elif (
+                    parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
+                    and parameter.software.name 
+                    == SoftwareNames.SOFTWARE_SNIPPY_name
+                ):
+                    list_data = [
+                        [data_, data_]
+                        for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                    ]                                       
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
                     and parameter.software.name

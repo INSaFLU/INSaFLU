@@ -47,7 +47,7 @@ class DefaultSoftware(object):
         utils = Utils_Manager()
 
         televir_available = utils.test_televir_pipelines_available(user_system)
-        self.remove_all_parameters(user_system)
+        #self.remove_all_parameters(user_system)
 
         return televir_available
 

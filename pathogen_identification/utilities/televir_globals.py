@@ -19,7 +19,7 @@ def get_remap_software(username:str, project_name):
     Get remap software
     """
     try: 
-        project= Projects.objects.get(name=project_name)
+        project= Projects.objects.get(name=project_name, owner__username=username, is_deleted=False)
 
         try: 
 
@@ -66,7 +66,7 @@ def get_prinseq_software(username:str, project_name) -> PrinseqParams:
     Get prinseq software
     """
     try: 
-        project= Projects.objects.get(name=project_name)
+        project= Projects.objects.get(name=project_name, owner__username=username, is_deleted=False)
 
         try: 
 

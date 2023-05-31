@@ -2363,6 +2363,7 @@ class DefaultProjectSoftware(object):
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
         televir_project=None,
+        pipeline_step=None,
     ):
         """ """
         self.test_default_db(
@@ -2385,6 +2386,7 @@ class DefaultProjectSoftware(object):
             technology_name,
             dataset,
             televir_project=televir_project,
+            pipeline_step=pipeline_step,
         )
 
     def get_all_software(self):

@@ -466,6 +466,7 @@ class Metadata_handler:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
+                    nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
 

@@ -12,6 +12,24 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pathogen_identification.models import RunMain
 
+def reverse_dict_of_lists(dict_of_lists):
+    """
+    Return dictionary of lists with keys as values and values as keys
+    """
+    return {value: key for key, values in dict_of_lists.items() for value in values}
+
+
+def readname_from_fasta(fastafile) -> list:
+    """
+    Read in fasta file and return list of read names
+    """
+    read_names = []
+    with open(fastafile) as f:
+        for line in f:
+            if line[0] == ">":
+                read_names.append(line[1:].strip())
+    return read_names
+
 
 def simplify_name(name):
     """simplify sample name"""
@@ -23,6 +41,13 @@ def simplify_name(name):
         .lower()
     )
 
+def simplify_accid(accid):
+    accid= accid.split("_")
+
+    if len(accid) == 1:
+        return accid[0]
+    
+    return "_".join(accid[:2])
 
 def plot_dotplot(
     df: pd.DataFrame,

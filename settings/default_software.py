@@ -695,6 +695,18 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
+    def get_prinseq_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
     def get_kaiju_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KAIJU_name,

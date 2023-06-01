@@ -24,7 +24,7 @@ from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport,
     Update_ReferenceMap,
 )
-from pathogen_identification.utilities.utilities_general import simplify_name
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
@@ -356,7 +356,7 @@ class Input_Generator:
     def generate_config(self):
 
         self.config = {
-            "sample_name": simplify_name(
+            "sample_name": simplify_name_lower(
                 os.path.basename(self.r1_path).replace(".fastq.gz", "")
             ),
             "source": self.install_registry.SOURCE,

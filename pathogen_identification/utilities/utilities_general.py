@@ -30,8 +30,16 @@ def readname_from_fasta(fastafile) -> list:
                 read_names.append(line[1:].strip())
     return read_names
 
+def simplify_name(name:str):
+    """simplify sample name"""
+    return (
+        name.replace(".", "_")
+        .replace(";", "_")
+        .replace(":", "_")
+        .replace("|", "_")
+    )
 
-def simplify_name(name):
+def simplify_name_lower(name:str):
     """simplify sample name"""
     return (
         name.replace("_", "_")
@@ -47,7 +55,7 @@ def simplify_accid(accid):
     if len(accid) == 1:
         return accid[0]
     
-    return "_".join(accid[:2])
+    return "_".join(accid[:1])
 
 def plot_dotplot(
     df: pd.DataFrame,

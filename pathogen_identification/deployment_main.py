@@ -31,7 +31,7 @@ from pathogen_identification.utilities.update_DBs import (
     get_run_parents,
 )
 
-from pathogen_identification.utilities.utilities_general import simplify_name
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 
 
@@ -274,7 +274,7 @@ class Run_Main_from_Leaf:
         self.project = project
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
-        prefix = f"{simplify_name(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
+        prefix = f"{simplify_name_lower(input_data.name)}_{user.pk}_{project.pk}_{pipeline_leaf.pk}"
         self.date_submitted = datetime.datetime.now()
 
         self.file_r1 = input_data.sample.get_fastq_available(TypePath.MEDIA_ROOT, True)

@@ -7,9 +7,9 @@ from scipy.spatial.distance import pdist, squareform
 import pandas as pd
 import os
 ## pairwise matrix by individual reads
-from pathogen_identification.utilities.utilities_general import readname_from_fasta 
+from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
-
+from typing import List, Dict
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
     """
@@ -24,20 +24,15 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
 
 class ReadOverlapManager:
 
-    def __init__(self, fasta_dir: str, metadata_file: str, threshold: float= 1):
+    def __init__(self, fasta_list: List[str], metadata_df: pd.DataFrame, threshold: float= 1):
 
-        self.fasta_dir = fasta_dir
-        self.metadata_file = metadata_file
+        self.metadata = metadata_df
         self.threshold = threshold
-        self.fasta_files = os.listdir(fasta_dir)
-        self.fasta_list = [fasta_file for fasta_file in self.fasta_files if fasta_file.endswith(".fasta")]
-        ## metadata
-        self.metadata = pd.read_csv(metadata_file, sep="\t")
+        self.fasta_list = fasta_list
+
         self.metadata["filename"]= self.metadata["file"].apply(lambda x: x.split("/")[-1])
 
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
-
-
 
     def get_accid_readname_dict(self):
         """
@@ -137,6 +132,19 @@ class ReadOverlapManager:
         read_profile_matrix= self.read_profile_matrix_get(read_profile_dict)
         return read_profile_matrix
     
+    def get_accession_total_counts(self, accid: str):
+        """
+        Get total counts for accession
+        """
+        return self.read_profile_matrix.loc[accid].sum()
+    
+    def get_proportion_counts(self, accid: str):
+        """
+        Get proportion counts for accession
+        """
+
+        return self.get_accession_total_counts(accid) / self.read_profile_matrix.sum().sum()
+    
     def generate_distance_matrix(self):
         """
         Generate distance matrix
@@ -195,5 +203,23 @@ class ReadOverlapManager:
 
         leaf_clades_dict= [(leaf, clade.name) for leaf, clade in leaf_clades.items()]
         leaf_clades_df= pd.DataFrame(leaf_clades_dict, columns=["leaf", "clade"])
+        leaf_clades_df["read_count"]= leaf_clades_df["leaf"].apply(lambda x: self.get_accession_total_counts(x))
+        leaf_clades_df["proportion"]= leaf_clades_df["leaf"].apply(lambda x: self.get_proportion_counts(x))
+        # sort by clade and then read count
         
+        def group_count(clade):
+            return leaf_clades_df[leaf_clades_df["clade"]==clade].read_count.sum()
+
+        leaf_clades_df["group_count"]= leaf_clades_df["clade"].apply(group_count)
+
+        def set_single_count_to_zero(row):
+            if row.clade == "single":
+                row.group_count = 0
+            return row
+        
+        leaf_clades_df.apply(set_single_count_to_zero, axis=1)
+
+        leaf_clades_df.sort_values(by=["group_count","clade", "read_count"], ascending= [False, True, False], inplace=True)
+        
+        leaf_clades_df.reset_index(drop=True, inplace=True)
         return leaf_clades_df

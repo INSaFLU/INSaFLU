@@ -9,7 +9,7 @@ import os
 ## pairwise matrix by individual reads
 from pathogen_identification.utilities.utilities_general import readname_from_fasta
 
-from typing import List
+from typing import List, Dict
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
     """
@@ -132,6 +132,19 @@ class ReadOverlapManager:
         read_profile_matrix= self.read_profile_matrix_get(read_profile_dict)
         return read_profile_matrix
     
+    def get_accession_total_counts(self, accid: str):
+        """
+        Get total counts for accession
+        """
+        return self.read_profile_matrix.loc[accid].sum()
+    
+    def get_proportion_counts(self, accid: str):
+        """
+        Get proportion counts for accession
+        """
+
+        return self.get_accession_total_counts(accid) / self.read_profile_matrix.sum().sum()
+    
     def generate_distance_matrix(self):
         """
         Generate distance matrix
@@ -191,6 +204,7 @@ class ReadOverlapManager:
         leaf_clades_dict= [(leaf, clade.name) for leaf, clade in leaf_clades.items()]
         leaf_clades_df= pd.DataFrame(leaf_clades_dict, columns=["leaf", "clade"])
         leaf_clades_df["read_count"]= leaf_clades_df["leaf"].apply(lambda x: self.get_accession_total_counts(x))
+        leaf_clades_df["proportion"]= leaf_clades_df["leaf"].apply(lambda x: self.get_proportion_counts(x))
         # sort by clade and then read count
         
         def group_count(clade):

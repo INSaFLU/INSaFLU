@@ -4,33 +4,37 @@ import pandas as pd
 import os
 from pathogen_identification.models import FinalReport, ReferenceMap_Main
 from pathogen_identification.utilities.phylo_tree import PhyloTreeManager
+from pathogen_identification.utilities.utilities_general import simplify_name
 from typing import List
 from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 # import Django BaseManager
-from django.db.models import BaseManager
+#from django.db.models import BaseManager
 
 
 class ReportSorter:
 
-    def __init__(self, reports: BaseManager[FinalReport], threshold: float):
+    def __init__(self, reports: List[FinalReport], threshold: float):
         self.reports= reports
         self.threshold= threshold
         self.report_dict= {report.accid: report for report in reports}
         self.metadata_df= self.prep_metadata_df()
-        self.fasta_files= self.metadata_df.filename.tolist()
+
+        self.fasta_files= self.metadata_df.file.tolist()
     
     def retrieved_mapped_subset(self, report: FinalReport):
         """
         Return subset of retrieved and mapped reads
         """
         try:
-            mapped_ref= ReferenceMap_Main.objects.get(accid=report.accid, run= report.run, sample= report.sample)
+            simple_accid= simplify_name(report.accid)
 
-            if not mapped_ref.mapped_subset_r1:
+            mapped_ref= ReferenceMap_Main.objects.get(reference= simple_accid, run= report.run)
+
+            if not mapped_ref.mapped_subset_r1_fasta:
                 return None
             
-            if os.path.exists(mapped_ref.mapped_subset_r1):
-                return mapped_ref.mapped_subset_r1
+            if os.path.exists(mapped_ref.mapped_subset_r1_fasta):
+                return mapped_ref.mapped_subset_r1_fasta
 
         except ReferenceMap_Main.DoesNotExist:
             return None
@@ -50,9 +54,13 @@ class ReportSorter:
             if not mapped_subset_r1:
                 continue
             filename= mapped_subset_r1
-            metadata_dict.append({"filename": filename, "description": description, "accid": accid})
+            metadata_dict.append({"file": filename, "description": description, "accid": accid})
         
         metadata_df= pd.DataFrame(metadata_dict)
+        
+
+        if metadata_df.empty:
+            metadata_df= pd.DataFrame(columns=["file", "description", "accid"])
 
         return metadata_df
     
@@ -82,6 +90,9 @@ class ReportSorter:
         Return sorted reports
         """
 
+        if self.metadata_df.empty:
+            return [self.reports]
+
         overlap_analysis= self.read_overlap_analysis()
         overlap_groups= list(overlap_analysis.groupby(["group_count","clade"]))[::-1]
         sorted_reports= []
@@ -89,7 +100,7 @@ class ReportSorter:
         for group in overlap_groups:
             group_df= group[1]
             group_accids= group_df.leaf.tolist()
-            sorted_reports.extend([self.report_dict[accid] for accid in group_accids])
+            sorted_reports.append([self.report_dict[accid] for accid in group_accids])
         
         return sorted_reports
 

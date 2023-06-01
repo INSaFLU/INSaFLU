@@ -7,6 +7,7 @@ from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.utilities_general import (
     merge_classes,
     scrape_description,
+    simplify_name
 )
 
 
@@ -455,12 +456,7 @@ class Metadata_handler:
                 for pref in nsu.acc.unique():
 
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
-                    pref_simple = (
-                        pref.replace(".", "_")
-                        .replace(";", "_")
-                        .replace(":", "_")
-                        .replace("|", "_")
-                    )
+                    pref_simple = simplify_name(pref)
 
                     self.taxonomy_to_description.taxid = (
                         self.taxonomy_to_description.taxid.astype(int)

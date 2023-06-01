@@ -161,7 +161,7 @@ class ReportSorter:
         if self.metadata_df.empty:
             return [self.reports]
         
-        if not self.check_all_accids_analyzed(self.analysis_df_path):
+        if not self.check_analyzed():
             return [self.reports]
         
         overlap_analysis= pd.read_csv(self.analysis_df_path, sep= "\t")

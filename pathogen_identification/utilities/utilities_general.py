@@ -10,7 +10,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from pathogen_identification.models import 
+
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import RunMain
 

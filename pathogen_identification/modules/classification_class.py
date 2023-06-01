@@ -569,13 +569,14 @@ class run_centrifuge(Classifier_init):
         read classifier output, return only query and reference sequence id columns.
         """
         if check_report_empty(self.full_report_path):
-            return pd.DataFrame(columns=["qseqid", "acc"])
+            return pd.DataFrame(columns=["qseqid", "taxid"])
 
         report = pd.read_csv(
             self.full_report_path, sep="\t", header=None, usecols=[0, 2]
-        ).rename(columns={0: "qseqid", 2: "acc"})
+        ).rename(columns={0: "qseqid", 2: "taxid"})
 
-        report = report[report.acc != "unclassified"][["qseqid", "acc"]]
+        report = report[report.taxid != "unclassified"][["qseqid", "taxid"]]
+        report = report[report.taxid != "0"][["qseqid", "taxid"]]
         return pd.DataFrame(report)
 
 

@@ -256,6 +256,26 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
                 user,

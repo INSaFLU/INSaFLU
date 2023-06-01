@@ -5,8 +5,8 @@ from typing import List
 import pandas as pd
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.utilities_general import (
-    merge_classes, scrape_description)
-
+    merge_classes, scrape_description, description_passes_filter)
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 
 class Metadata_handler:
 
@@ -120,7 +120,7 @@ class Metadata_handler:
             for target_col in ["acc", "protid", "prot_acc", "taxid"]:
                 if target_col in df.columns:
                     df = df.dropna(subset=[target_col])
-                    df = df.drop_duplicates(subset=[target_col])
+                    #df = df.drop_duplicates(subset=[target_col])
                     df = df.reset_index(drop=True)
 
         return df
@@ -462,11 +462,13 @@ class Metadata_handler:
 
                 nsu = nset[nset.file == fileset]
 
+                added_counts= 0
+
                 if nsu.shape[0] > max_remap:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
-                    nsu= nsu.iloc[:max_remap, :]
+                    #nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
 
@@ -495,6 +497,10 @@ class Metadata_handler:
                     description = description[0]
                     description = scrape_description(pref, description)
 
+                    if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
+                        continue
+
+
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):
                         """
                         determine if an accession is in a dataframe.
@@ -518,6 +524,10 @@ class Metadata_handler:
                         )
                     )
                     remap_plan.append([taxid, pref, fileset, description])
+
+                    added_counts += 1
+                    if added_counts > max_remap:
+                        break
 
         print("#####")
         self.remap_plan = pd.DataFrame(

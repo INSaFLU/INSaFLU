@@ -64,6 +64,7 @@ from pathogen_identification.tables import (
 
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.ajax_views import set_control_reports
+from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
 
 
 def clean_check_box_in_session(request):
@@ -920,7 +921,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
         run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
-
         recover_assembly_contigs(run_main, run_assembly)
 
         #
@@ -934,8 +934,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        report_sorter= ReportSorter(final_report, threshold= 0.95)
-        sorted_reports = report_sorter.sort_reports()
+        read_overlap_threshold= get_read_overlap_threshold()
+        report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
+        sorted_reports = report_sorter.get_reports()
 
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True

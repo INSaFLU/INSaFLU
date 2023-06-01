@@ -10,7 +10,18 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathogen_identification.models import 
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import RunMain
+
+def description_passes_filter(description:str, filter_list: list):
+    """
+    Check if description contains any of the strings in filter_list
+    """
+    for filter_string in filter_list:
+        if filter_string in description.lower():
+            return True
+    return False
 
 def reverse_dict_of_lists(dict_of_lists):
     """

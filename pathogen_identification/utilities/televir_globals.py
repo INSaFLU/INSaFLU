@@ -2,6 +2,9 @@ from settings.models import Software, Parameter
 from constants.software_names import SoftwareNames
 from pathogen_identification.models import Projects
 from dataclasses import dataclass
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+
+
 
 @dataclass
 class RemapParams:
@@ -13,6 +16,7 @@ class PrinseqParams:
     entropy_threshold: float
     dust_threshold: float
     is_to_run: bool
+
 
 def get_remap_software(username:str, project_name):
     """
@@ -106,3 +110,11 @@ def get_prinseq_software(username:str, project_name) -> PrinseqParams:
 
     
     return prinseq
+
+
+def get_read_overlap_threshold():
+    """
+    Get overlap threshold
+    """
+
+    return CS.READ_OVERLAP_THRESHOLD

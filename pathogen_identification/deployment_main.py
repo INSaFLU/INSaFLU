@@ -19,6 +19,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
     RunMain,
+    FinalReport,
 )
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
@@ -33,7 +34,8 @@ from pathogen_identification.utilities.update_DBs import (
 
 from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-
+from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
 
 class PathogenIdentification_deployment:
 
@@ -540,6 +542,16 @@ class Run_Main_from_Leaf:
             pass
 
         self.container.delete_run()
+
+    def run_reference_overlap_analysis(self):
+        run= RunMain.objects.get(parameter_set=self.parameter_set)
+        final_report = FinalReport.objects.filter(
+            sample=self.sample, run= run
+        ).order_by("-coverage")
+        #
+        read_overlap_threshold= get_read_overlap_threshold()
+        report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
+        report_sorter.sort_reports()
 
     def register_completion(self):
 

@@ -193,7 +193,7 @@ class ConstantsSettings:
 
     USER_TREE_INDEX = 0
 
-    ###################################
+    ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [
         CS.PIPELINE_NAME_viral_enrichment,
@@ -240,6 +240,15 @@ class ConstantsSettings:
         "VIRSORT": False,
         "SIFT": True,
     }
+
+    ################################## Description filters
+
+    DESCRIPTION_FILTERS = ["phage"]
+
+
+    ################################## TAXONOMY
+
+    READ_OVERLAP_THRESHOLD = 0.9
 
     ################################## TECHNOLOGY CONSTANTS
 

@@ -5,13 +5,13 @@ from typing import List
 import pandas as pd
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.utilities_general import (
-    merge_classes,
-    scrape_description,
-    simplify_name
-)
+    merge_classes, scrape_description)
 
 
 class Metadata_handler:
+
+    remap_targets: List[Remap_Target] = []
+
     def __init__(self, config, sift_query: str = "phage", prefix: str = ""):
         """
         Initialize metadata handler.
@@ -49,7 +49,7 @@ class Metadata_handler:
 
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
-        self.merged_targets: pd.DataFrame
+        self.merged_targets: pd.DataFrame = pd.DataFrame()
         self.remap_targets: List[Remap_Target]
         self.remap_absent_taxid_list: List[str]
         self.remap_plan = pd.DataFrame
@@ -71,9 +71,11 @@ class Metadata_handler:
             report_1,
             report_2,
         )
-        self.merge_reports_clean(
-            taxid_limit=taxid_limit,
-        )
+
+        if self.merged_targets.empty:
+            self.merge_reports_clean(
+                taxid_limit=taxid_limit,
+            )
 
         #######
         #######
@@ -108,6 +110,21 @@ class Metadata_handler:
 
         return df
 
+    @staticmethod
+    def clean_report(df: pd.DataFrame):
+        """
+        Clean report.
+        """
+
+        if df.shape[0] > 0:
+            for target_col in ["acc", "protid", "prot_acc", "taxid"]:
+                if target_col in df.columns:
+                    df = df.dropna(subset=[target_col])
+                    df = df.drop_duplicates(subset=[target_col])
+                    df = df.reset_index(drop=True)
+
+        return df
+
     def results_process(self, df: pd.DataFrame, sift: bool = True) -> pd.DataFrame:
         """
         Process results.
@@ -121,6 +138,9 @@ class Metadata_handler:
         df = self.merge_report_to_metadata(df)
 
         df = self.map_hit_report(df)
+
+        # replace nan by "NA" in description column
+        df["description"] = df["description"].fillna("NA")
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
@@ -174,23 +194,11 @@ class Metadata_handler:
                 self.input_protein_accession_to_taxid_path, sep="\t", header=0
             )
         except:
-            self.protein_accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
+            self.protein_accession_to_taxid = pd.DataFrame(
+                columns=["acc", "taxid"])
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
-
-    @staticmethod
-    def clean_report(df: pd.DataFrame):
-        """
-        Clean report.
-        """
-        if df.shape[0] > 0:
-            for target_col in ["acc", "protid", "prot_acc", "taxid"]:
-                if target_col in df.columns:
-                    df = df.dropna(subset=[target_col])
-                    # df = df.drop_duplicates(subset=[target_col])
-                    df = df.reset_index(drop=True)
-        return df
 
     def merge_report_to_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -228,7 +236,12 @@ class Metadata_handler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
-        df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
+        df = self.merge_check_column_types(
+            df, self.taxonomy_to_description, "taxid")
+
+        df = df.dropna(subset=["taxid"])
+        df.taxid = df.taxid.astype(float)
+        df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
 
         return df
@@ -256,7 +269,7 @@ class Metadata_handler:
         if df2[column_two].dtype != str:
             df2[column_two] = df2[column_two].astype(str)
 
-        return pd.merge(df1, df2, left_on=column, right_on=column_two)
+        return pd.merge(df1, df2, left_on=column, right_on=column_two, how="left")
 
     @staticmethod
     def sift_report_filter(df, query: str = "phage"):
@@ -392,14 +405,16 @@ class Metadata_handler:
 
         print("TAXID LIMIT: ", taxid_limit)
 
-        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
+        targets, raw_targets = merge_classes(
+            self.rclass, self.aclass, maxt=taxid_limit)
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
         raw_targets["description"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_description
         )
-        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
+        raw_targets["status"] = raw_targets["taxid"].isin(
+            targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
         self.merged_targets = targets
@@ -417,12 +432,12 @@ class Metadata_handler:
         for each accession ID.
 
         """
-        print("MAX REMAP: ", max_remap)
 
         remap_targets = []
         remap_absent = []
         taxf = self.accession_to_taxid
         remap_plan = []
+        targets.taxid = targets.taxid.astype(int)
 
         for taxid in targets.taxid.unique():
 
@@ -430,7 +445,7 @@ class Metadata_handler:
                 remap_absent.append(taxid)
 
                 nset = pd.DataFrame(columns=["taxid"])
-                remap_plan.append([taxid, "none", "none"])
+                remap_plan.append([taxid, "none", "none", "none"])
                 continue
 
             nset = (
@@ -451,18 +466,23 @@ class Metadata_handler:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
-                    nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
 
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
-                    pref_simple = simplify_name(pref)
+                    pref_simple = (
+                        pref.replace(".", "_")
+                        .replace(";", "_")
+                        .replace(":", "_")
+                        .replace("|", "_")
+                    )
 
                     self.taxonomy_to_description.taxid = (
                         self.taxonomy_to_description.taxid.astype(int)
                     )
                     description = self.taxonomy_to_description[
-                        self.taxonomy_to_description.taxid.astype(int) == int(taxid)
+                        self.taxonomy_to_description.taxid.astype(
+                            int) == int(taxid)
                     ].description.unique()
 
                     if len(description) == 0:
@@ -498,6 +518,7 @@ class Metadata_handler:
                     )
                     remap_plan.append([taxid, pref, fileset, description])
 
+        print("#####")
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )

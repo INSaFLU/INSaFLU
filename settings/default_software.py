@@ -997,6 +997,16 @@ class DefaultSoftware(object):
             )
 
             return self.get_remap_parameters(user, technology_name)
+        
+        if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_PRINSEQ_name,
+                self.default_parameters.get_prinseq_defaults(
+                    user, Software.TYPE_OF_USE_qc, technology_name
+                ),
+                user,
+            )
+            return self.get_prinseq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             self.test_default_db(

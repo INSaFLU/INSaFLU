@@ -862,6 +862,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
             run_assembly.assembly_contigs = assembly_contigs
             run_assembly.save()
 
+from pathogen_identification.utilities.utilties_views import ReportSorter
 
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
@@ -933,6 +934,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
+        report_sorter= ReportSorter(final_report, threshold= 0.95)
+        sorted_reports = report_sorter.sort_reports()
+
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True
 
@@ -965,6 +969,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_table": raw_reference_table,
             "owner": True,
             "in_control": has_controlled_flag,
+            "report_list": sorted_reports,
         }
 
         return context

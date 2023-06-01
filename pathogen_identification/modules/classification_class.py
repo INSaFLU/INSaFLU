@@ -4,7 +4,7 @@ import re
 import shutil
 from random import randint
 from typing import Type
-
+import csv
 import pandas as pd
 from pathogen_identification.modules.object_classes import RunCMD, Software_detail
 
@@ -572,8 +572,8 @@ class run_centrifuge(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.full_report_path, sep="\t", header=None, usecols=[0, 6]
-        ).rename(columns={0: "qseqid", 6: "acc"})
+            self.full_report_path, sep="\t", header=None, usecols=[0, 2]
+        ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report.acc != "unclassified"][["qseqid", "acc"]]
         return pd.DataFrame(report)
@@ -1013,7 +1013,12 @@ class run_bwa_mem(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+            self.report_path,
+            sep="\t",
+            header=None,
+            usecols=[0, 2],
+            comment="@",
+            quoting=csv.QUOTE_NONE,
         ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]

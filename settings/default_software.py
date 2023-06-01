@@ -954,7 +954,6 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_mask_consensus_threshold_parameters(user, technology_name)
-<<<<<<< HEAD
         
         if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             self.test_default_db(
@@ -967,8 +966,6 @@ class DefaultSoftware(object):
 
             return self.get_remap_parameters(user, technology_name)
 
-=======
->>>>>>> read_phylo
         if software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name,

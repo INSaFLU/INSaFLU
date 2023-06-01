@@ -18,6 +18,7 @@ def reverse_dict_of_lists(dict_of_lists):
     """
     return {value: key for key, values in dict_of_lists.items() for value in values}
 
+
 def readname_from_fasta(fastafile) -> list:
     """
     Read in fasta file and return list of read names

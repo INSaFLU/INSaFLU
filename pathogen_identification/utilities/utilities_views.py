@@ -17,7 +17,7 @@ class ReportSorter:
     def __init__(self, reports: List[FinalReport], threshold: float, force= False):
         self.reports= reports
         self.threshold= threshold
-        self.report_dict= {report.accid: report for report in reports}
+        self.report_dict= {report.accid: report for report in reports if self.retrieved_mapped_subset(report)}
         self.metadata_df= self.prep_metadata_df()
 
         self.fasta_files= self.metadata_df.file.tolist()
@@ -132,13 +132,10 @@ class ReportSorter:
         try:
             analysis_df= pd.read_csv(self.analysis_df_path, sep= "\t") 
 
-            if not os.path.isfile(analysis_df):
-                return True
-            
             if self.check_all_accids_analyzed(analysis_df):
-                return False
+                return True
         
-            return True
+            return False
         
         except pd.errors.EmptyDataError:
             return False

@@ -580,6 +580,7 @@ class Run_Main_from_Leaf:
             if run_success:
                 # update_successful = self.Update_dbs()
                 # if update_successful:
+                self.run_reference_overlap_analysis()
                 self.register_completion()
                 self.update_project_change_date()
 

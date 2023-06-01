@@ -256,26 +256,6 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_PRINSEQ_name,
-            self.default_parameters.get_prinseq_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
-
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_PRINSEQ_name,
-            self.default_parameters.get_prinseq_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_settings,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
-
-        self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
                 user,
@@ -695,18 +675,6 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_prinseq_parameters(self, user, technology_name):
-        result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_PRINSEQ_name,
-            user,
-            Software.TYPE_OF_USE_televir_settings,
-            None,
-            None,
-            None,
-            technology_name,
-        )
-        return "" if result is None else result
-
     def get_kaiju_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_KAIJU_name,
@@ -995,16 +963,6 @@ class DefaultSoftware(object):
             )
 
             return self.get_remap_parameters(user, technology_name)
-
-        if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_PRINSEQ_name,
-                self.default_parameters.get_prinseq_defaults(
-                    user, Software.TYPE_OF_USE_qc, technology_name
-                ),
-                user,
-            )
-            return self.get_prinseq_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             self.test_default_db(

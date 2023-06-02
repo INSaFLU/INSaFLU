@@ -195,13 +195,23 @@ class ReadOverlapManager:
         """
         return [node for node, proportion in private_read_dict.items() if proportion >= self.threshold]
 
+    @staticmethod
+    def safe_clade_name(clade: Phylo.BaseTree.Clade) -> str:
+        """
+        Return clade name if exists, otherwise return None
+        """
+        try:
+            return clade.name
+        except:
+            return "None"
+
 
     def leaf_clades_to_pandas(self, leaf_clades: Dict[str, Phylo.BaseTree.Clade]) -> pd.DataFrame:
         """
         Return dataframe of leaf clades
         """
 
-        leaf_clades_dict= [(leaf, clade.name) for leaf, clade in leaf_clades.items()]
+        leaf_clades_dict= [(leaf, self.safe_clade_name(clade)) for leaf, clade in leaf_clades.items()]
         leaf_clades_df= pd.DataFrame(leaf_clades_dict, columns=["leaf", "clade"])
         leaf_clades_df["read_count"]= leaf_clades_df["leaf"].apply(lambda x: self.get_accession_total_counts(x))
         leaf_clades_df["proportion"]= leaf_clades_df["leaf"].apply(lambda x: self.get_proportion_counts(x))

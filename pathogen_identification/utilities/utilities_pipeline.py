@@ -1093,6 +1093,31 @@ class Parameter_DB_Utility:
                 return None
         else:
             return None
+    
+    @staticmethod
+    def software_pipeline_tree(software_tree: SoftwareTree):
+
+        tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
+
+        edges = []
+        nodes = []
+        leaves = []
+        for node in tree_nodes:
+            if node.parent:
+
+                edges.append((node.parent.index, node.index))
+            nodes.append((node.index, (node.name, node.value, node.node_type)))
+            if node.node_place == 1:
+                leaves.append(node.index)
+
+        return PipelineTree(
+            technology=software_tree.technology,
+            nodes=[x[1] for x in sorted(nodes)],
+            edges=edges,
+            leaves=leaves,
+            makeup=software_tree.global_index,
+        )
+    
 
     def query_software_default_tree(
         self, technology: str, global_index: int
@@ -1109,26 +1134,9 @@ class Parameter_DB_Utility:
             .last()
         )
 
-        tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
-
-        edges = []
-        nodes = []
-        leaves = []
-        for node in tree_nodes:
-            if node.parent:
-
-                edges.append((node.parent.index, node.index))
-            nodes.append((node.index, (node.name, node.value, node.node_type)))
-            if node.node_place == 1:
-                leaves.append(node.index)
-
-        return PipelineTree(
-            technology=technology,
-            nodes=[x[1] for x in sorted(nodes)],
-            edges=edges,
-            leaves=leaves,
-            makeup=global_index,
-        )
+        return self.software_pipeline_tree(software_tree)
+    
+    
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -1236,10 +1244,9 @@ class Utils_Manager:
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """
-        pipeline_tree = self.generate_software_tree(
-            parameter_leaf.software_tree.technology,
-            parameter_leaf.software_tree.global_index,
-        )
+        pipeline_tree = self.parameter_util.software_pipeline_tree(parameter_leaf.software_tree)
+        print(pipeline_tree.leaves)
+        print(parameter_leaf.index)
 
         if parameter_leaf.index not in pipeline_tree.leaves:
             raise Exception("Node is not a leaf")

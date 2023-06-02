@@ -26,6 +26,7 @@ from pathogen_identification.modules.object_classes import (
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
 from settings.constants_settings import ConstantsSettings as CS
+from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
@@ -257,7 +258,6 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
         remap_params= get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix

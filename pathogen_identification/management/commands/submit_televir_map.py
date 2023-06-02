@@ -28,6 +28,7 @@ from pathogen_identification.utilities.utilities_general import simplify_name_lo
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
+from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
 
 
 class RunMain:
@@ -128,18 +129,19 @@ class RunMain:
             threads=self.threads,
         )
 
-        ### mapping parameters
+        ### mapping parameters 
         self.min_scaffold_length = config["assembly_contig_min_length"]
         self.minimum_coverage = int(config["minimum_coverage_threshold"])
         self.maximum_coverage = 1000000000
 
         ### metadata
+        remap_params= get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap = config["max_output_number"]
-        self.taxid_limit = config["taxid_limit"]
+        self.max_remap= remap_params.max_accids
+        self.taxid_limit= remap_params.max_taxids
 
         ### methods
         self.remapping_method = Software_detail(

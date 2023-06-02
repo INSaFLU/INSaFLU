@@ -478,6 +478,7 @@ class RunMain(models.Model):
     reads_after_processing = models.CharField(
         max_length=100, blank=True, null=True
     )  # reads after processing
+    
     reads_proc_percent = models.CharField(
         max_length=100, blank=True, null=True
     )  # percent of reads after processing

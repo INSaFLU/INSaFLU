@@ -381,6 +381,7 @@ class CollectExtraDatasetData(object):
         # These builds are not to be filtered by Abricate (for now)
         builds_to_ignore = [
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic,
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_mpx,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
             SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
@@ -549,8 +550,11 @@ class CollectExtraDatasetData(object):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='a')
         elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b):
             tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_rsv(alignments=sequences_file, metadata=metadata_file, type='b')            
-        elif (build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic):
+        elif (build in [SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic, SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time]):
             # Need to get the reference fasta and genbank (if there is more than one reference, get the first one??)
+            time = False
+            if(build == SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time):
+                time = True
             reference = dataset.get_first_reference()
             if reference is None or reference == "":
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
@@ -559,8 +563,12 @@ class CollectExtraDatasetData(object):
                 return None, Dataset.RUN_out_path
             try:
                 # Check for user?
-                tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_generic(alignments=sequences_file, metadata=metadata_file, 
-                    ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT)) 
+                tree_file, alignment_file, auspice_zip = self.software.run_nextstrain_generic(
+                    alignments=sequences_file, 
+                    metadata=metadata_file,
+                    ref_fasta=reference.get_reference_fasta(TypePath.MEDIA_ROOT), 
+                    ref_genbank=reference.get_reference_gbk(TypePath.MEDIA_ROOT),
+                    time=time) 
             except Reference.DoesNotExist:
                 out_file_file_system = dataset.get_global_file_by_dataset(TypePath.MEDIA_ROOT, Dataset.DATASET_FILE_NAME_nextstrain_error)
                 with open(out_file_file_system, 'w') as handle_write: 

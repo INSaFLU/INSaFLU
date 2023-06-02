@@ -973,6 +973,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "owner": True,
             "in_control": has_controlled_flag,
             "report_list": sorted_reports,
+            "data_exists": True if not run_main.data_deleted else False,
         }
 
         return context

@@ -965,6 +965,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_table": raw_reference_table,
             "owner": True,
             "in_control": has_controlled_flag,
+            "data_exists": True if not run_main.data_deleted else False,
         }
 
         return context

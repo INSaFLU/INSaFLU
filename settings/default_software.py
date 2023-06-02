@@ -491,21 +491,21 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        
 
-            try:
-                Software.objects.get(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=vect_parameters[0].software.type_of_use,
-                    technology__name=vect_parameters[0].software.technology.name,
-                    version_parameters=self.default_parameters.get_software_parameters_version(
-                        software_name
-                    ),
-                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
-                )
-            except Software.DoesNotExist:  ### if not exist save it
-                self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+        try:
+            Software.objects.get(
+                name=software_name,
+                owner=user,
+                type_of_use=vect_parameters[0].software.type_of_use,
+                technology__name=vect_parameters[0].software.technology.name,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                pipeline_step__name=vect_parameters[0].software.pipeline_step,
+            )
+        except Software.DoesNotExist:  ### if not exist save it
+            self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):
         result = self.default_parameters.get_parameters(

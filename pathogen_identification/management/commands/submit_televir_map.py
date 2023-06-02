@@ -29,8 +29,9 @@ from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
-
-
+from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
+from pathogen_identification.models import FinalReport, RunMain
 class RunMain:
 
     remap_manager: Mapping_Manager
@@ -55,12 +56,12 @@ class RunMain:
     dir_plots: str = f"plots"
     igv_dir: str = f"igv"
 
-    def __init__(self, config: dict, method_args: pd.DataFrame):
+    def __init__(self, config: dict, method_args: pd.DataFrame, project_name: str, username: str):
 
         self.sample_name = config["sample_name"]
         self.type = config["type"]
-        self.project_name = "none"
-        self.username = "none"
+        self.project_name = project_name
+        self.username = username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -90,6 +91,7 @@ class RunMain:
         self.logger.propagate = False
 
         #####################################
+        
 
         self.r1 = Read_class(
             config["r1"],
@@ -135,6 +137,7 @@ class RunMain:
         self.maximum_coverage = 1000000000
 
         ### metadata
+        print(self.project_name)
         remap_params= get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
@@ -244,10 +247,6 @@ class RunMain:
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
 
-        # self.remap_manager.run_mappings()
-        # self.remap_manager.merge_mapping_reports()
-        # self.remap_manager.collect_final_report_summary_statistics()
-
         print("moving to : ", self.static_dir_plots)
         print("moving to : ", self.media_dir_igv)
 
@@ -259,8 +258,10 @@ class RunMain:
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
+    
     def run(self):
         self.deploy_REMAPPING()
+        print("remap_manager.report")
         self.report = self.remap_manager.report
         self.export_final_reports()
 
@@ -408,6 +409,17 @@ class Input_Generator:
 
             Update_ReferenceMap(ref_map, run, sample)
 
+    def run_reference_overlap_analysis(self):
+        run= self.reference.run
+        sample= run.sample
+        final_report = FinalReport.objects.filter(
+            sample=sample, run=run
+        ).order_by("-coverage")
+        #
+        read_overlap_threshold= get_read_overlap_threshold()
+        report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
+        report_sorter.sort_reports()
+
 
 class Command(BaseCommand):
     help = "deploy run"
@@ -435,6 +447,7 @@ class Command(BaseCommand):
 
         reference = RawReference.objects.get(pk=raw_reference_id)
         user = reference.run.project.owner
+        project_name= reference.run.project.name
 
         ######## register map
         process_SGE.set_process_controler(
@@ -452,13 +465,19 @@ class Command(BaseCommand):
         try:
             input_generator.generate_method_args()
             input_generator.generate_config()
+            print("config generated")
 
-            run_engine = RunMain(input_generator.config, input_generator.method_args)
+            
+            run_engine = RunMain(input_generator.config, input_generator.method_args, project_name,  user.username)
+            print("generating")
             run_engine.generate_targets()
+            print("running")
             run_engine.run()
 
             input_generator.update_raw_reference_status_mapped()
             input_generator.update_final_report(run_engine)
+            print("done")
+            input_generator.run_reference_overlap_analysis()
 
             ######## register map sucess
             process_SGE.set_process_controler(

@@ -61,7 +61,7 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
-
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
@@ -863,7 +863,6 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
             run_assembly.assembly_contigs = assembly_contigs
             run_assembly.save()
 
-from pathogen_identification.utilities.utilities_views import ReportSorter
 
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """

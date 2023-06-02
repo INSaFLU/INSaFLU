@@ -519,6 +519,10 @@ class RunMain(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def sorted_reports_get(self):
+
+        return FinalReport.objects.filter(run=self).order_by('-coverage')
 
     def delete_data(self):
 

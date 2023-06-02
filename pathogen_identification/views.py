@@ -929,9 +929,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
         #
-        final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main
-        ).order_by("-coverage")
+        final_report = run_main.sorted_reports_get()
         #
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True

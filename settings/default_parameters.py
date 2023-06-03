@@ -128,10 +128,10 @@ class DefaultParameters(object):
                         software = parameter.software
                         software.save()
             
-            if parameter.software.pk != software.pk:
-                with LockedAtomicTransaction(Parameter):
-                    parameter.software = software
-                    parameter.save()
+            #if parameter.software.pk != software.pk:
+            with LockedAtomicTransaction(Parameter):
+                parameter.software = software
+                parameter.save()
 
             ## set sequential number
             dt_out_sequential[parameter.sequence_out] = 1

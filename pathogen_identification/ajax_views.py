@@ -1,5 +1,5 @@
 import os
-
+import mimetypes
 from constants.meta_key_and_values import MetaKeyAndValue
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -20,7 +20,7 @@ from pathogen_identification.models import (
     ParameterSet,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 
 def simplify_name(name):
     return (
@@ -397,24 +397,5 @@ def IGV_display(request):
 
         return JsonResponse(data)
 
-import zipfile
 
-def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-        
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, os.path.basename(file_path))
-    
-        return zip_file_path
-
-def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-
-    zip_file_path = os.path.join(outdir, zip_file_name)
-
-    if os.path.exists(zip_file_path):
-        os.unlink(zip_file_path)
-
-    zip_file_path = generate_zip_file(file_list, zip_file_path)
-
-    return zip_file_path
 

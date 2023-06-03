@@ -8,7 +8,9 @@ from managing_files.models import Sample
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django import forms
-#from pathogen_identification.modules.object_classes import IntermediateFiles
+
+from pathogen_identification.data_classes import IntermediateFiles
+
 # Create your models here.
 
 # Create your models here.
@@ -524,7 +526,7 @@ class RunMain(models.Model):
 
         return FinalReport.objects.filter(run=self).order_by('-coverage')
     
-    def intermediate_reports_get(self):
+    def intermediate_reports_get(self) -> IntermediateFiles:
             
         contig_classification = ContigClassification.objects.get(
                     run= self
@@ -534,12 +536,13 @@ class RunMain(models.Model):
                 )
         run_remap = RunRemapMain.objects.get(run=self)
 
-        intermediate_reports = [
-            read_classification.read_classification_report,
-            contig_classification.contig_classification_report,
-            run_remap.merged_log,
-            run_remap.remap_plan,
-        ]
+        intermediate_reports = IntermediateFiles(
+            read_classification_report=read_classification.read_classification_report,
+            contig_classification_report=contig_classification.contig_classification_report,
+            remap_main_report=run_remap.merged_log,
+            database_matches=run_remap.remap_plan,
+        )
+        
 
         return intermediate_reports
 

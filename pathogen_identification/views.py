@@ -1197,7 +1197,6 @@ def download_intermediate_reports_zipfile(request):
     download intermediate report files in zip"""
 
     if request.method == "POST":
-        print(request.POST)
 
         run_pk= request.POST.get("run_pk")
         run_main= RunMain.objects.get(pk= int(run_pk))
@@ -1206,7 +1205,8 @@ def download_intermediate_reports_zipfile(request):
         run_main_dir= infer_run_media_dir(run_main)
         zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
 
-        zip_file_path= get_create_zip(intermediate_reports, run_main.static_dir, zip_file_name)
+
+        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
 
         path= open(zip_file_path, "rb")
         mime_type, _= mimetypes.guess_type(zip_file_path)

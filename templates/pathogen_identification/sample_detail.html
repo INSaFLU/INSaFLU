@@ -276,6 +276,13 @@
                                     style="border=1px solid border-color:black padding:2px">
                                 <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
                             </form>
+                            <form  id="intermediate_reports" action="{% url 'download_intermediate_reports' %}" method="POST">
+                                {% csrf_token %} 
+                                <input type=submit value="intermediate reports" name="btn2"
+                                    style="border=1px solid border-color:black padding:2px">
+                                <input type="hidden" name="run_pk" value="{{run_index}}">
+                            </form>
+
                         </div>
                     </div>
                 </div>

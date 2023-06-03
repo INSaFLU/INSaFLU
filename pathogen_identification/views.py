@@ -1192,13 +1192,14 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
 
     return zip_file_path
 
-def download_intermediate_report_zipfile(request):
+def download_intermediate_reports_zipfile(request):
     """
     download intermediate report files in zip"""
 
     if request.method == "POST":
+        print(request.POST)
 
-        run_pk= request.GET.get("run_pk")
+        run_pk= request.POST.get("run_pk")
         run_main= RunMain.objects.get(pk= int(run_pk))
 
         intermediate_reports= run_main.intermediate_reports_get()

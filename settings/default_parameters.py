@@ -128,7 +128,7 @@ class DefaultParameters(object):
                         software = parameter.software
                         software.save()
             
-            if parameter.sofware.pk != software.pk:
+            if parameter.software.pk != software.pk:
                 with LockedAtomicTransaction(Parameter):
                     parameter.software = software
                     parameter.save()

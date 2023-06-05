@@ -45,12 +45,22 @@ $('#id-remove-button').on('click', function(){
         	  }
           }
           else{
-        	/// add message with informaton
-        	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
-        		'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' was not removed.' +
-				'<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
-				'</div>');
-          }
+            /// special message in case present_in_televir_project == True
+            if (data['present_in_televir_project']){
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' was not removed,' +
+                ' because it is present in a Televir project.' +
+                '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                '</div>');
+            } else {
+                /// add message with informaton
+                $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
+                    'The sample \'' + $('#id-modal-body-remove-sample').attr('ref_name') + '\' was not removed.' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                    '</div>');
+                
+            }
+            }
         },
         
         // handle a non-successful response

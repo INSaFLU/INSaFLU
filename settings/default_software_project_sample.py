@@ -299,41 +299,41 @@ class DefaultProjectSoftware(object):
         test if exist, if not persist in database
         """
         ## lock because more than one process can duplicate software names
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-            list_software = Software.objects.filter(
-                name=software_name,
-                owner=user,
-                type_of_use=type_of_use,
-                parameter__project=project,
-                parameter__project_sample=project_sample,
-                parameter__sample=sample,
-                parameter__dataset=dataset,
-                parameter__televir_project=televir_project,
-                version_parameters=self.default_parameters.get_software_parameters_version(
-                    software_name
-                ),
-                technology__name=technology_name,
-            ).distinct("name")
+        
+        list_software = Software.objects.filter(
+            name=software_name,
+            owner=user,
+            type_of_use=type_of_use,
+            parameter__project=project,
+            parameter__project_sample=project_sample,
+            parameter__sample=sample,
+            parameter__dataset=dataset,
+            parameter__televir_project=televir_project,
+            version_parameters=self.default_parameters.get_software_parameters_version(
+                software_name
+            ),
+            technology__name=technology_name,
+        ).distinct("name")
 
-            # logger = logging.getLogger("fluWebVirus.debug")
-            # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
+        # logger = logging.getLogger("fluWebVirus.debug")
+        # logger.debug("Test default db: {} ({})".format(list_software, len(list_software)))
 
-            ### if not exist need to save
-            if len(list_software) == 0:
-                vect_parameters = self._get_default_parameters(
-                    software_name,
-                    user,
-                    type_of_use,
-                    project,
-                    project_sample,
-                    sample,
-                    technology_name,
-                    dataset,
+        ### if not exist need to save
+        if len(list_software) == 0:
+            vect_parameters = self._get_default_parameters(
+                software_name,
+                user,
+                type_of_use,
+                project,
+                project_sample,
+                sample,
+                technology_name,
+                dataset,
+            )
+            if len(vect_parameters) > 0:  ### persist
+                self.default_parameters.persist_parameters(
+                    vect_parameters, type_of_use
                 )
-                if len(vect_parameters) > 0:  ### persist
-                    self.default_parameters.persist_parameters(
-                        vect_parameters, type_of_use
-                    )
 
     def _get_default_parameters(
         self,
@@ -2363,6 +2363,7 @@ class DefaultProjectSoftware(object):
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
         televir_project=None,
+        pipeline_step=None,
     ):
         """ """
         self.test_default_db(
@@ -2385,6 +2386,7 @@ class DefaultProjectSoftware(object):
             technology_name,
             dataset,
             televir_project=televir_project,
+            pipeline_step=pipeline_step,
         )
 
     def get_all_software(self):

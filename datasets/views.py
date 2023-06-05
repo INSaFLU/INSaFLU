@@ -1180,6 +1180,7 @@ class ShowDatasetsConsensusView(LoginRequiredMixin, ListView):
 		# TODO define this elsewhere...
 		SPECIES_TAG = {
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic: "",
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_generic_time: "",
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov: Reference.SPECIES_SARS_COV_2,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y: Reference.SPECIES_INFLUENZA,
 			SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y: Reference.SPECIES_INFLUENZA,

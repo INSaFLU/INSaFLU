@@ -124,8 +124,12 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
+                    #with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
+            
+            #if parameter.software.pk != software.pk:
+            #with LockedAtomicTransaction(Parameter):
             parameter.software = software
             parameter.save()
 
@@ -209,6 +213,7 @@ class DefaultParameters(object):
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
         televir_project=None,
+        pipeline_step=None,
     ):
         """
         get software_name parameters, if it saved in database...
@@ -217,7 +222,13 @@ class DefaultParameters(object):
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         if self.check_software_is_polyvalent(software_name):
-            prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+
+            if pipeline_step is None:
+                prefered_pipeline = self.get_polyvalent_software_pipeline(
+                    software_name
+                    )
+            else:
+                prefered_pipeline = pipeline_step
 
             software = self.get_software_global_with_step(
                 user,

@@ -3,6 +3,7 @@ import mimetypes
 import os
 
 import pandas as pd
+
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
 from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
@@ -36,6 +37,7 @@ from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
+from utils.support_django_template import get_link_for_dropdown_item
 
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
@@ -62,7 +64,7 @@ from pathogen_identification.tables import (
     SampleTable,
 )
 
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir, get_create_zip
 from pathogen_identification.ajax_views import set_control_reports
 
 
@@ -869,6 +871,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
 
     template_name = "pathogen_identification/sample_detail.html"
+    utils = Utils()
 
     def get_context_data(self, **kwargs):
 
@@ -942,7 +945,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
-        #
 
         context = {
             "project": project_name,
@@ -965,6 +967,34 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "in_control": has_controlled_flag,
             "data_exists": True if not run_main.data_deleted else False,
         }
+
+        ### downloadable files
+        context["files"]= {}
+        # 1. parameters
+        params_file_path=run_main.params_file_path
+        if os.path.exists(params_file_path):
+            context["files"]["parameters"] = params_file_path
+        # intermediate files zip 
+        intermediate_reports= run_main.intermediate_reports_get()
+        run_main_dir= infer_run_media_dir(run_main)
+        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
+        file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
+        context["files"]["intermediate_reports_zip"]= file_path
+
+        # final report
+        reports_df= run_main.get_final_reports_df()
+        run_main_dir= infer_run_media_dir(run_main)
+        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index= False)
+        file_path= os.path.join(run_main_dir, "final_reports.csv")
+        context["files"]["final_reports_csv"]= file_path
+
+        for fpath in context["files"]:
+            cwd= os.getcwd()
+            context["files"][fpath]= context["files"][fpath].replace(cwd, "")
+            context["files"][fpath]= get_link_for_dropdown_item(context["files"][fpath])
+            
+        print(context["files"]["final_reports_csv"])
+
 
         return context
 
@@ -1169,49 +1199,4 @@ def download_file_ref(requestdst):
             # Return the response value
             return response
 
-
-
-import zipfile
-
-def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-        
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, os.path.basename(file_path))
-    
-        return zip_file_path
-
-def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-
-    zip_file_path = os.path.join(outdir, zip_file_name)
-
-    if os.path.exists(zip_file_path):
-        os.unlink(zip_file_path)
-
-    zip_file_path = generate_zip_file(file_list, zip_file_path)
-
-    return zip_file_path
-
-def download_intermediate_reports_zipfile(request):
-    """
-    download intermediate report files in zip"""
-
-    if request.method == "POST":
-
-        run_pk= request.POST.get("run_pk")
-        run_main= RunMain.objects.get(pk= int(run_pk))
-
-        intermediate_reports= run_main.intermediate_reports_get()
-        run_main_dir= infer_run_media_dir(run_main)
-        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
-
-
-        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
-
-        path= open(zip_file_path, "rb")
-        mime_type, _= mimetypes.guess_type(zip_file_path)
-        response= HttpResponse(path, content_type= mime_type)
-        response["Content-Disposition"]= "attachment; filename={}".format(zip_file_name)
-
-        return response
 

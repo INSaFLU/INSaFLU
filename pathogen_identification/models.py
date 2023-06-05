@@ -8,7 +8,7 @@ from managing_files.models import Sample
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django import forms
-
+import pandas as pd
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -545,6 +545,20 @@ class RunMain(models.Model):
         
 
         return intermediate_reports
+
+    def get_final_reports_df(self) -> pd.DataFrame:
+
+        final_reports = FinalReport.objects.filter(run=self).exclude(coverage= 0)
+        final_reports_df = pd.DataFrame(list(final_reports.values()))
+        final_reports_df = final_reports_df.drop(
+            columns=[
+                "id",
+                "run_id",
+            ]
+        )
+
+
+        return final_reports_df
 
 
     def delete_data(self):

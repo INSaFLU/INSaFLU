@@ -7,22 +7,15 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
+
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    Sample_runClass,
-    Software_detail,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
+    Sample_runClass, Software_detail, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
 from settings.constants_settings import ConstantsSettings as CS
@@ -257,8 +250,9 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
-        remap_params= get_remap_software(self.username, self.project_name)
+        from pathogen_identification.utilities.televir_parameters import \
+            TelevirParameters
+        remap_params= TelevirParameters.get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
@@ -267,7 +261,7 @@ class RunDetail_main:
         self.taxid_limit= remap_params.max_taxids
 
         ### methods
-        prinseq_soft= get_prinseq_software(self.username, self.project_name)
+        prinseq_soft= TelevirParameters.get_prinseq_software(self.username, self.project_name)
         if prinseq_soft.is_to_run:
             self.preprocess_method = SoftwareUnit(
                 module= CS.PIPELINE_NAME_read_quality_analysis,

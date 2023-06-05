@@ -59,8 +59,9 @@ def submit_televir_project_sample(request):
             if len(runs_to_deploy) > 0:
 
                 for sample, leafs_to_deploy in runs_to_deploy.items():
-
                     for leaf in leafs_to_deploy:
+
+                        print(request.user.username, project.pk, sample.pk, leaf.pk)
 
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,

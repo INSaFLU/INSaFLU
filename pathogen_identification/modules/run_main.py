@@ -257,7 +257,7 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        from pathogen_identification.utilities.televir_globals import get_remap_software
+        from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
         remap_params= get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
@@ -265,16 +265,24 @@ class RunDetail_main:
 
         self.max_remap= remap_params.max_accids
         self.taxid_limit= remap_params.max_taxids
-        #self.max_remap = config["max_output_number"]
-        #self.taxid_limit = config["taxid_limit"]
 
         ### methods
-        self.preprocess_method = SoftwareUnit(
-            module= CS.PIPELINE_NAME_read_quality_analysis,
-            name= "prinseq",
-            args= "-lc_entropy=0.3 -lc_dust=0.3",
-        )
-        self.preprocess_method.get_bin(config)
+        prinseq_soft= get_prinseq_software(self.username, self.project_name)
+        if prinseq_soft.is_to_run:
+            self.preprocess_method = SoftwareUnit(
+                module= CS.PIPELINE_NAME_read_quality_analysis,
+                name= "prinseq",
+                args= f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
+            )
+            self.preprocess_method.get_bin(config)
+        else:
+            self.preprocess_method = Software_detail(
+                CS.PIPELINE_NAME_read_quality_analysis,
+                method_args,
+                config,
+                self.prefix,
+            )
+
         ###
 
         self.assembly_method = Software_detail(
@@ -319,7 +327,7 @@ class RunDetail_main:
 
         ### actions
         self.subsample = False
-        self.quality_control = config["actions"]["QCONTROL"]
+        self.quality_control = bool(self.preprocess_method.name != None) #config["actions"]["QCONTROL"]
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
         self.depletion = bool(self.depletion_method.name != "None")

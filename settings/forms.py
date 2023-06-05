@@ -390,7 +390,7 @@ class SoftwareForm(forms.ModelForm):
         self, project, project_sample, sample, dataset, instance, televir_project
     ):
         """ """
-        if instance.type_of_use == 5:
+        if instance.type_of_use in [5, 8]:
             return reverse("pathogenID_pipeline", args=[0])
         if not televir_project is None:
             return reverse("pathogenID_pipeline", args=[televir_project.pk])

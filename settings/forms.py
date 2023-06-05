@@ -14,6 +14,9 @@ from django.utils.translation import ugettext_lazy as _
 
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
+
+from constants.software_names import SoftwareNames
+from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
@@ -22,6 +25,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
 )
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
+from utils.utils import Utils
 from utils.utils import Utils
 
 
@@ -144,13 +148,18 @@ class SoftwareForm(forms.ModelForm):
                     == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
                     if parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME:
+                    if parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME:
                         list_data = [
+                            [data_, data_]
+                            for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                        ]
                             [data_, data_]
                             for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                         ]
                     else:
                         list_data = [
                             [data_, data_]
+                           
                             for data_ in self.utils.get_all_medaka_models()
                         ]
                 elif (
@@ -165,10 +174,12 @@ class SoftwareForm(forms.ModelForm):
                 elif (
                     parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
                     and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
                 ):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                    ]
                     ]
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS

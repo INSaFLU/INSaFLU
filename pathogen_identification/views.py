@@ -1198,5 +1198,3 @@ def download_file_ref(requestdst):
             ] = "attachment; filename=%s" % os.path.basename(filepath)
             # Return the response value
             return response
-
-

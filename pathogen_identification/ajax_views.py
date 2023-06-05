@@ -1,5 +1,5 @@
 import os
-
+import mimetypes
 from constants.meta_key_and_values import MetaKeyAndValue
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -20,7 +20,7 @@ from pathogen_identification.models import (
     ParameterSet,
 )
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 
 def simplify_name(name):
     return (
@@ -396,3 +396,6 @@ def IGV_display(request):
             data["sample_name"] = sample_name
 
         return JsonResponse(data)
+
+
+

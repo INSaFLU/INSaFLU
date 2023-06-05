@@ -21,7 +21,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from extend_user.models import Profile
-from pathogen_identification.models import PIProject_Sample
+from pathogen_identification.models import PIProject_Sample, ParameterSet
 from pathogen_identification.models import Projects as Televir_Project
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
@@ -36,7 +36,7 @@ from managing_files.manage_database import ManageDatabase
 from managing_files.models import (DataSet, MetaKey, ProcessControler, Project,
                                    ProjectSample, Reference, Sample,
                                    UploadFiles, VaccineStatus)
-
+from pathogen_identification.models import PIProject_Sample
 ### Logger
 logger_debug = logging.getLogger("fluWebVirus.debug")
 logger_production = logging.getLogger("fluWebVirus.production")
@@ -1243,7 +1243,8 @@ def remove_sample(request):
     remove a sample, It can only be removed if not belongs to any deleted project
     """
     if request.is_ajax():
-        data = {"is_ok": False}
+        data = {"is_ok": False, "present_in_televir_project": False}
+        
         sample_id_a = "sample_id"
         if sample_id_a in request.GET:
 
@@ -1262,6 +1263,13 @@ def remove_sample(request):
                 sample = Sample.objects.get(pk=sample_id)
             except Sample.DoesNotExist:
                 return JsonResponse(data)
+            
+            #### check if found in televir projects
+            televir_samples = PIProject_Sample.objects.filter(sample= sample)
+            for pisample in televir_samples:
+                if pisample.is_deleted == False:
+                    data["present_in_televir_project"] = True
+                    return JsonResponse(data)
 
             ## different owner or belong to a project not deleted
             if (
@@ -1405,6 +1413,10 @@ def remove_televir_project(request):
 
             ### delete all project samples
             ### this is only necessary for consistency
+            
+            for parameter_set in ParameterSet.objects.filter(project=project):
+                parameter_set.delete_run_data()
+
             for project_sample in PIProject_Sample.objects.filter(project=project):
                 project_sample.is_deleted = True
                 project_sample.is_deleted_in_file_system = False

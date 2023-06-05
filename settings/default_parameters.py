@@ -124,15 +124,17 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
+                    #with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
+            
+            #if parameter.software.pk != software.pk:
+            #with LockedAtomicTransaction(Parameter):
             parameter.software = software
             parameter.save()
 
             ## set sequential number
             dt_out_sequential[parameter.sequence_out] = 1
-
-
 
     def get_software_global_with_step(
         self,
@@ -211,6 +213,7 @@ class DefaultParameters(object):
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
         televir_project=None,
+        pipeline_step=None,
     ):
         """
         get software_name parameters, if it saved in database...
@@ -219,7 +222,13 @@ class DefaultParameters(object):
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         if self.check_software_is_polyvalent(software_name):
-            prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+
+            if pipeline_step is None:
+                prefered_pipeline = self.get_polyvalent_software_pipeline(
+                    software_name
+                    )
+            else:
+                prefered_pipeline = pipeline_step
 
             software = self.get_software_global_with_step(
                 user,
@@ -1906,7 +1915,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""
@@ -2206,7 +2215,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""
@@ -2539,7 +2548,10 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_bwa_default(self, user, type_of_use, technology_name, sample=None):
+    def get_bwa_default(self, user, type_of_use, technology_name, sample=None, pipeline_step=""):
+
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BWA_name
@@ -2559,7 +2571,7 @@ class DefaultParameters(object):
         ###  small description of software
         software.help_text = ""
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_host_depletion
+            pipeline_step
         )
 
         software.owner = user

@@ -187,7 +187,7 @@ class Metadata_handler:
             for target_col in ["acc", "protid", "prot_acc", "taxid"]:
                 if target_col in df.columns:
                     df = df.dropna(subset=[target_col])
-                    df = df.drop_duplicates(subset=[target_col])
+                    # df = df.drop_duplicates(subset=[target_col])
                     df = df.reset_index(drop=True)
         return df
 

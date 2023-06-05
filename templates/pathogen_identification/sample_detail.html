@@ -230,6 +230,10 @@
     border-top: 1px;
     }
 
+    .select option.hidden_option{
+        display: none;
+    }
+
 </style>
 
 {% if owner %}
@@ -270,12 +274,16 @@
                             <p style="margin: 0;"> <strong>Remapping:</strong> {{run_main.remap}} </p>                        
                         </div>
                         <div class= "col-sm">
-                            <form  id="download_params" action="{% url 'download_file' %}" method="POST">
-                                {% csrf_token %}
-                                <input type=submit value="parameters (.tsv)" name="btn1"
-                                    style="border=1px solid border-color:black padding:2px">
-                                <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
-                            </form>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Summary Downloads
+                                  </button>
+                                  <div class="dropdown-menu">
+                                    {% if files.parameters %} {{ files.parameters }} {% endif %}
+                                    {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
+                                    {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
+                                </div>
+                            </div>     
                         </div>
                     </div>
                 </div>

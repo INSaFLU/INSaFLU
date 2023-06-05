@@ -1,14 +1,16 @@
 import codecs
-import os
 import datetime
+import os
+
+import pandas as pd
+from django import forms
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.safestring import mark_safe
-from managing_files.models import Sample
-from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
-from django import forms
 
+from managing_files.models import Sample
 from pathogen_identification.data_classes import IntermediateFiles
 
 # Create your models here.
@@ -73,11 +75,9 @@ class Projects(models.Model):
         return self.name + " " + self.description
 
     def check_delete_schedule(self):
-
         time_since_last_change = datetime.datetime.now() - self.last_change_date
 
         if time_since_last_change > datetime.timedelta(weeks=24):
-
             parametersets = ParameterSet.objects.filter(project=self)
             for parameterset in parametersets:
                 parameterset.delete_run_data()
@@ -105,7 +105,6 @@ class SoftwareTree(models.Model):
 
 
 class SoftwareTreeNode(models.Model):
-
     INTERNAL_node = 0
     LEAF_node = 1
     id = models.AutoField(primary_key=True)
@@ -230,7 +229,6 @@ class PIProject_Sample(models.Model):
         return self.sample.name
 
     def get_taxid_list(self):
-
         taxid_list = (
             FinalReport.objects.filter(sample=self)
             .distinct("taxid")
@@ -241,7 +239,6 @@ class PIProject_Sample(models.Model):
 
 
 class ParameterSet(models.Model):
-
     STATUS_NOT_STARTED = 0
     STATUS_RUNNING = 1
     STATUS_FINISHED = 2
@@ -275,7 +272,6 @@ class ParameterSet(models.Model):
         self.save()
 
     def delete_run_data(self):
-
         if self.status in [self.STATUS_FINISHED, self.STATUS_ERROR]:
             self.status = self.STATUS_NOT_STARTED
             self.save()
@@ -302,7 +298,6 @@ class Submitted(models.Model):
 
 
 class Processed(models.Model):
-
     parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
     date_processed = models.DateTimeField(auto_now_add=True)
 
@@ -380,7 +375,6 @@ class SampleQC(models.Model):
 
 
 class QC_REPORT(models.Model):
-
     RAW = "input"
     PROCESSED = "processed"
 
@@ -417,7 +411,6 @@ class RunIndex(models.Model):
 
 
 class RunMain(models.Model):
-
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
     )
@@ -480,7 +473,7 @@ class RunMain(models.Model):
     reads_after_processing = models.CharField(
         max_length=100, blank=True, null=True
     )  # reads after processing
-    
+
     reads_proc_percent = models.CharField(
         max_length=100, blank=True, null=True
     )  # percent of reads after processing
@@ -514,26 +507,19 @@ class RunMain(models.Model):
     static_dir = models.CharField(max_length=250, blank=True, null=True)
 
     class Meta:
-
         ordering = [
             "name",
         ]
 
     def __str__(self):
         return self.name
-    
-    def sorted_reports_get(self):
 
-        return FinalReport.objects.filter(run=self).order_by('-coverage')
-    
+    def sorted_reports_get(self):
+        return FinalReport.objects.filter(run=self).order_by("-coverage")
+
     def intermediate_reports_get(self) -> IntermediateFiles:
-            
-        contig_classification = ContigClassification.objects.get(
-                    run= self
-                )
-        read_classification = ReadClassification.objects.get(
-                    run= self   
-                )
+        contig_classification = ContigClassification.objects.get(run=self)
+        read_classification = ReadClassification.objects.get(run=self)
         run_remap = RunRemapMain.objects.get(run=self)
 
         intermediate_reports = IntermediateFiles(
@@ -542,15 +528,47 @@ class RunMain(models.Model):
             remap_main_report=run_remap.merged_log,
             database_matches=run_remap.remap_plan,
         )
-        
 
         return intermediate_reports
 
+    def get_final_reports_df(self) -> pd.DataFrame:
+        final_reports = FinalReport.objects.filter(run=self).exclude(coverage=0)
+        final_reports_df = pd.DataFrame(list(final_reports.values()))
+        final_reports_df = final_reports_df.drop(
+            columns=[
+                "id",
+                "run_id",
+            ]
+        )
+
+        columns_to_keep = [
+            "taxid",
+            "accid",
+            "description",
+            "ref_db",
+            "reference_length",
+            "reference_contig_str",
+            "coverage",
+            "windows_covered",
+            "depth",
+            "depthR",
+            "mapped_reads",
+            "ref_proportion",
+            "mapped_proportion",
+            "ngaps",
+            "mapping_success",
+            "classification_success",
+        ]
+
+        final_reports_df = final_reports_df[columns_to_keep]
+        final_reports_df["ref_db"] = final_reports_df["ref_db"].apply(
+            lambda x: x.split("/")[-1]
+        )
+
+        return final_reports_df
 
     def delete_data(self):
-
         try:
-
             if os.path.isfile(self.processed_reads_r1):
                 os.remove(self.processed_reads_r1)
                 self.processed_reads_r1 = None
@@ -573,12 +591,10 @@ class RunMain(models.Model):
             self.save()
 
         except Exception as e:
-
             print(e)
 
 
 class RunDetail(models.Model):
-
     name = models.CharField(
         max_length=100, db_index=True, blank=True, null=True
     )  # Create your models here.
@@ -614,7 +630,6 @@ class RunDetail(models.Model):
     merged_files = models.CharField(max_length=1000, blank=True, null=True)
 
     class Meta:
-
         ordering = [
             "name",
         ]
@@ -624,7 +639,6 @@ class RunDetail(models.Model):
 
 
 class RunAssembly(models.Model):
-
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -665,7 +679,6 @@ class RunAssembly(models.Model):
         return self.method
 
     def delete_data(self):
-
         if os.path.isfile(self.assembly_contigs):
             os.remove(self.assembly_contigs)
             self.assembly_contigs = None
@@ -674,7 +687,6 @@ class RunAssembly(models.Model):
 
 
 class ReadClassification(models.Model):
-
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -712,7 +724,6 @@ class ReadClassification(models.Model):
 
 
 class ContigClassification(models.Model):
-
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -750,7 +761,6 @@ class ContigClassification(models.Model):
 
 
 class RawReference(models.Model):
-
     STATUS_MAPPED = 0
     STATUS_UNMAPPED = 1
     STATUS_MAPPING = 2
@@ -773,7 +783,6 @@ class RawReference(models.Model):
 
 
 class RunRemapMain(models.Model):
-
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
     sample = models.ForeignKey(
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
@@ -803,7 +812,6 @@ class RunRemapMain(models.Model):
 
 
 class ReferenceMap_Main(models.Model):
-
     reference = models.CharField(
         max_length=100, db_index=True, blank=True, null=True
     )  # Create your models here.
@@ -831,7 +839,6 @@ class ReferenceMap_Main(models.Model):
     vcf = models.CharField(max_length=1000, blank=True, null=True)
 
     class Meta:
-
         ordering = [
             "reference",
         ]
@@ -889,7 +896,6 @@ class ReferenceMap_Main(models.Model):
 
 
 class FinalReport(models.Model):
-
     CONTROL_FLAG_NONE = 0
     CONTROL_FLAG_SOURCE = 1
     CONTROL_FLAG_PRESENT = 2
@@ -948,7 +954,6 @@ class FinalReport(models.Model):
 
 
 class ReferenceContigs(models.Model):
-
     reference = models.ForeignKey(
         ReferenceMap_Main, blank=True, null=True, on_delete=models.CASCADE
     )
@@ -960,7 +965,6 @@ class ReferenceContigs(models.Model):
     coverage = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-
         ordering = [
             "reference",
         ]

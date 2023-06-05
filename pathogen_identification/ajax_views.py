@@ -19,12 +19,7 @@ from pathogen_identification.models import (
     ReferenceMap_Main,
     RunMain,
 )
-from pathogen_identification.utilities.televir_parameters import (
-    get_read_overlap_threshold,
-)
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE
 
 

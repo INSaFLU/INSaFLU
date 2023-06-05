@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.models import Projects
+from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from settings.models import Parameter, Software
 
 

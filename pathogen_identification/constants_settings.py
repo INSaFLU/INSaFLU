@@ -9,6 +9,7 @@ import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from pathogen_identification.models import Projects as PIprojects
+from pathogen_identification.utilities.mapping_flags import MapFlagViruses
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Software
 
@@ -240,11 +241,7 @@ class ConstantsSettings:
     }
 
     ################################## FLAG BUILDS
-
-    FLAG_BUILD_virus = 0
-    FLAG_BUILD_bacteria = 1
-    FLAG_BUILD_probes = 2
-    FLAG_BUILD_DEFAULT = FLAG_BUILD_virus
+    FLAG_BUILD_DEFAULT = MapFlagViruses
 
     ################################## Description filters
 

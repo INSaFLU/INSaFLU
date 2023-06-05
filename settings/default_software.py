@@ -4,18 +4,16 @@ Created on 03/05/2020
 @author: mmp
 """
 from curses.ascii import SO
+
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
-from utils.lock_atomic_transaction import LockedAtomicTransaction
-
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultSoftware(object):
@@ -41,13 +39,12 @@ class DefaultSoftware(object):
             type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
         )
         if software.count() == 0:
-
             return False
 
         utils = Utils_Manager()
 
         televir_available = utils.test_televir_pipelines_available(user_system)
-        #self.remove_all_parameters(user_system)
+        # self.remove_all_parameters(user_system)
 
         return televir_available
 
@@ -85,7 +82,6 @@ class DefaultSoftware(object):
             user_parameter.delete()
 
     def remove_all_televir_project_Parameters(self, user):
-
         user_project_parameter = Parameter.objects.filter(
             software__type_of_use=Software.TYPE_OF_USE_televir_project,
             software__owner=user,
@@ -132,7 +128,6 @@ class DefaultSoftware(object):
                 self.test_all_defaults_pathogen_identification(user)
 
     def test_all_defaults(self, user):
-
         ### test all defaults
         self.test_default_db(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
@@ -234,7 +229,6 @@ class DefaultSoftware(object):
         self.test_all_defaults_pathogen_identification(user)
 
     def test_all_defaults_pathogen_identification(self, user):
-
         self.test_default_db(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
             self.default_parameters.get_remap_defaults(
@@ -268,6 +262,26 @@ class DefaultSoftware(object):
         self.test_default_db(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
             self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
+            self.default_parameters.get_map_flag_default(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
+            self.default_parameters.get_map_flag_default(
                 user,
                 Software.TYPE_OF_USE_televir_settings,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -514,7 +528,6 @@ class DefaultSoftware(object):
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
-
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):
@@ -532,7 +545,6 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-        
 
         try:
             Software.objects.get(
@@ -682,7 +694,7 @@ class DefaultSoftware(object):
 
     ###
     ### PATHOGEN DETECTION PARAMETERS
-    
+
     def get_remap_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
@@ -698,6 +710,18 @@ class DefaultSoftware(object):
     def get_prinseq_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+
+    def get_televir_map_flag_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
             user,
             Software.TYPE_OF_USE_televir_settings,
             None,
@@ -728,7 +752,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
-            pipeline_step=pipeline_step
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -741,7 +765,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
-            pipeline_step=pipeline_step
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -931,7 +955,11 @@ class DefaultSoftware(object):
         return self.change_values_software.get(key_value, False)
 
     def get_parameters(
-        self, software_name, user, technology_name=ConstantsSettings.TECHNOLOGY_illumina, pipeline_step=None
+        self,
+        software_name,
+        user,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        pipeline_step=None,
     ):
         """
         Return the parameters for a software
@@ -986,7 +1014,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_mask_consensus_threshold_parameters(user, technology_name)
-        
+
         if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
@@ -997,7 +1025,7 @@ class DefaultSoftware(object):
             )
 
             return self.get_remap_parameters(user, technology_name)
-        
+
         if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_PRINSEQ_name,
@@ -1007,6 +1035,17 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_prinseq_parameters(user, technology_name)
+        
+        if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
+                self.default_parameters.get_map_flag_default(
+                    user, Software.TYPE_OF_USE_televir_settings, technology_name
+                ),
+                user,
+            )
+
+            return self.get_televir_map_flag_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             self.test_default_db(
@@ -1136,7 +1175,9 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
-            return self.get_centrifuge_parameters(user, technology_name, pipeline_step=pipeline_step)
+            return self.get_centrifuge_parameters(
+                user, technology_name, pipeline_step=pipeline_step
+            )
 
         if software_name == SoftwareNames.SOFTWARE_MINIMAP2_REMAP_ONT_name:
             self.test_default_db(

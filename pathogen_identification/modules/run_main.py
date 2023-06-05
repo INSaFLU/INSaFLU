@@ -18,6 +18,8 @@ from pathogen_identification.modules.object_classes import (
     Sample_runClass, Software_detail, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -250,8 +252,7 @@ class RunDetail_main:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        from pathogen_identification.utilities.televir_parameters import \
-            TelevirParameters
+
         remap_params= TelevirParameters.get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix

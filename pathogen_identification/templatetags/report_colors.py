@@ -2,7 +2,9 @@ import os
 
 from django import template
 from django.utils.safestring import mark_safe
+
 from pathogen_identification.models import FinalReport
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 
 register = template.Library()
 cell_color = "2, 155, 194"
@@ -11,7 +13,6 @@ cell_color = "255, 210, 112"
 
 @register.filter(name="color_code")
 def coverage_col(coverage_value):
-
     if coverage_value is None or coverage_value == "":
         coverage_value = 0
     ncol = f"background-color: rgba({cell_color}, {int(coverage_value)}%);"
@@ -46,7 +47,6 @@ def round_to_percent(value):
 
 @register.filter("reconvert_string_to_int")
 def reconvert_string_to_int(value):
-
     if value is None or value == "":
         value = 0
     elif "," in value:
@@ -71,7 +71,6 @@ def map_success_col(success_count):
 
 @register.simple_tag
 def depth_color(depth_value, max_value):
-
     if depth_value and max_value:
         ncol = float(depth_value) * 100 / float(max_value)
     else:
@@ -83,13 +82,11 @@ def depth_color(depth_value, max_value):
 
 @register.simple_tag
 def flag_false_positive(depth, depthc, coverage, mapped):
-
     if depthc > 0 or coverage > 0:
         if depthc / depth > 10 and coverage < 5:
             return "Likely False Positive"
 
         elif mapped < 3:
-
             return "Vestigial Mapping"
 
     return ""
@@ -97,9 +94,7 @@ def flag_false_positive(depth, depthc, coverage, mapped):
 
 @register.simple_tag
 def flag_false_positive_color(depth, depthc, coverage, mapped):
-
     if depthc > 0 or coverage > 0:
-
         if depthc / depth > 10 and coverage < 5:
             return "background-color: rgba(255, 0, 0, 0.5);"
 

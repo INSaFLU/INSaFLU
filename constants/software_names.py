@@ -781,12 +781,11 @@ class SoftwareNames(object):
     #####    END Global parameters for INSaFLU
     #####
     ###################################a
-
     #####   Global parameters for TELEVIR
 
     SOFTWARE_REMAP_PARAMS_name = "Remap Management"
     SOFTWARE_REMAP_PARAMS_extended = "Remap Management"
-    SOFTWARE_REMAP_PARAMS_VERSION = "1"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
 
     ###################################
     ###################################

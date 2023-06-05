@@ -4228,7 +4228,7 @@ class Software(object):
         return [tree_file, alignment_file, auspice_zip]
 
     def run_nextstrain_generic(
-        self, alignments, metadata, ref_fasta, ref_genbank, cores=1
+        self, alignments, metadata, ref_fasta, ref_genbank, time=False, cores=1
     ):
         """
         run nextstrain
@@ -4295,6 +4295,12 @@ class Software(object):
             reference,
             os.path.join(temp_dir, "Snakefile"),
         )
+        if(time):
+            # replace the command
+            cmd = "cp {} {}".format(
+                os.path.join(temp_dir, "Snakefile_base_timetree"),  
+                os.path.join(temp_dir, "Snakefile"),
+            )
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)

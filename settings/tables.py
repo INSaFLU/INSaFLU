@@ -224,6 +224,7 @@ class SoftwaresTable(tables.Table):
                 None,
                 technology_name,
                 televir_project=self.televir_project,
+                pipeline_step=record.pipeline_step.name,
             )
         return ""
 

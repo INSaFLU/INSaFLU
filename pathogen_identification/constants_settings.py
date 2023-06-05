@@ -6,11 +6,11 @@ Ceated on 06/05/2022
 import os
 
 import networkx as nx
+
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
+from pathogen_identification.models import Projects as PIprojects
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Software
-
-from pathogen_identification.models import Projects as PIprojects
 
 
 class Pipeline_Makeup:
@@ -115,9 +115,7 @@ class Pipeline_Makeup:
         return list(self.MAKEUP.values())
 
     def match_makeup_name_from_list(self, makeup_list: list):
-
         for makeup, mlist in self.MAKEUP.items():
-
             if set(makeup_list) == set(mlist):
                 return makeup
         return None
@@ -241,10 +239,16 @@ class ConstantsSettings:
         "SIFT": True,
     }
 
+    ################################## FLAG BUILDS
+
+    FLAG_BUILD_virus = 0
+    FLAG_BUILD_bacteria = 1
+    FLAG_BUILD_probes = 2
+    FLAG_BUILD_DEFAULT = FLAG_BUILD_virus
+
     ################################## Description filters
 
     DESCRIPTION_FILTERS = ["phage"]
-
 
     ################################## TAXONOMY
 

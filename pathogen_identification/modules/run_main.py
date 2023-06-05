@@ -250,9 +250,10 @@ class RunDetail_main:
         self.min_scaffold_length = config["assembly_contig_min_length"]
         self.minimum_coverage = int(config["minimum_coverage_threshold"])
         self.maximum_coverage = 1000000000
-
         ### metadata
-        remap_params= get_remap_software(self.username, self.project_name)
+        from pathogen_identification.utilities.televir_parameters import \
+            TelevirParameters
+        remap_params= TelevirParameters.get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
@@ -261,7 +262,7 @@ class RunDetail_main:
         self.taxid_limit= remap_params.max_taxids
 
         ### methods
-        prinseq_soft= get_prinseq_software(self.username, self.project_name)
+        prinseq_soft= TelevirParameters.get_prinseq_software(self.username, self.project_name)
         if prinseq_soft.is_to_run:
             self.preprocess_method = SoftwareUnit(
                 module= CS.PIPELINE_NAME_read_quality_analysis,

@@ -9,8 +9,12 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -20,8 +24,7 @@ from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import STATICFILES_DIRS
@@ -29,24 +32,6 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
-from pathogen_identification.ajax_views import set_control_reports
-from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample)
-from pathogen_identification.tables import (ContigTable, ProjectTable,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.televir_parameters import \
-    get_read_overlap_threshold
-from pathogen_identification.utilities.utilities_general import (
-    get_create_zip, infer_run_media_dir)
-from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
@@ -959,32 +944,35 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         }
 
         ### downloadable files
-        context["files"]= {}
+        context["files"] = {}
         # 1. parameters
-        params_file_path=run_main.params_file_path
+        params_file_path = run_main.params_file_path
         if os.path.exists(params_file_path):
             context["files"]["parameters"] = params_file_path
-        # intermediate files zip 
-        intermediate_reports= run_main.intermediate_reports_get()
-        run_main_dir= infer_run_media_dir(run_main)
-        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
-        file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
-        context["files"]["intermediate_reports_zip"]= file_path
+        # intermediate files zip
+        intermediate_reports = run_main.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
+        file_path = get_create_zip(
+            intermediate_reports.files, run_main_dir, zip_file_name
+        )
+        context["files"]["intermediate_reports_zip"] = file_path
 
         # final report
-        reports_df= run_main.get_final_reports_df()
-        run_main_dir= infer_run_media_dir(run_main)
-        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index= False)
-        file_path= os.path.join(run_main_dir, "final_reports.csv")
-        context["files"]["final_reports_csv"]= file_path
+        reports_df = run_main.get_final_reports_df()
+        run_main_dir = infer_run_media_dir(run_main)
+        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
+        file_path = os.path.join(run_main_dir, "final_reports.csv")
+        context["files"]["final_reports_csv"] = file_path
 
         for fpath in context["files"]:
-            cwd= os.getcwd()
-            context["files"][fpath]= context["files"][fpath].replace(cwd, "")
-            context["files"][fpath]= get_link_for_dropdown_item(context["files"][fpath])
-            
-        print(context["files"]["final_reports_csv"])
+            cwd = os.getcwd()
+            context["files"][fpath] = context["files"][fpath].replace(cwd, "")
+            context["files"][fpath] = get_link_for_dropdown_item(
+                context["files"][fpath]
+            )
 
+        print(context["files"]["final_reports_csv"])
 
         return context
 
@@ -1189,20 +1177,18 @@ def download_file_ref(requestdst):
             return response
 
 
-
 import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-        
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, os.path.basename(file_path))
-    
-        return zip_file_path
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        for file_path in file_list:
+            zip_file.write(file_path, os.path.basename(file_path))
+
+    return zip_file_path
+
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
@@ -1212,26 +1198,28 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
 
     return zip_file_path
 
+
 def download_intermediate_reports_zipfile(request):
     """
     download intermediate report files in zip"""
 
     if request.method == "POST":
+        run_pk = request.POST.get("run_pk")
+        run_main = RunMain.objects.get(pk=int(run_pk))
 
-        run_pk= request.POST.get("run_pk")
-        run_main= RunMain.objects.get(pk= int(run_pk))
+        intermediate_reports = run_main.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
 
-        intermediate_reports= run_main.intermediate_reports_get()
-        run_main_dir= infer_run_media_dir(run_main)
-        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
+        zip_file_path = get_create_zip(
+            intermediate_reports.files, run_main_dir, zip_file_name
+        )
 
-
-        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
-
-        path= open(zip_file_path, "rb")
-        mime_type, _= mimetypes.guess_type(zip_file_path)
-        response= HttpResponse(path, content_type= mime_type)
-        response["Content-Disposition"]= "attachment; filename={}".format(zip_file_name)
+        path = open(zip_file_path, "rb")
+        mime_type, _ = mimetypes.guess_type(zip_file_path)
+        response = HttpResponse(path, content_type=mime_type)
+        response["Content-Disposition"] = "attachment; filename={}".format(
+            zip_file_name
+        )
 
         return response
-

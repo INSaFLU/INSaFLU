@@ -6,7 +6,8 @@ Created on 04/05/2020
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
@@ -14,18 +15,13 @@ from django.utils.translation import ugettext_lazy as _
 
 from constants.software_names import SoftwareNames
 from datasets.models import Dataset
-
-from constants.software_names import SoftwareNames
-from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
 from pathogen_identification.models import Projects as TelevirProject
 from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
-from utils.utils import Utils
 from utils.utils import Utils
 
 
@@ -148,18 +144,13 @@ class SoftwareForm(forms.ModelForm):
                     == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
                     if parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME:
-                    if parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME:
                         list_data = [
-                            [data_, data_]
-                            for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
-                        ]
                             [data_, data_]
                             for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
                         ]
                     else:
                         list_data = [
                             [data_, data_]
-                           
                             for data_ in self.utils.get_all_medaka_models()
                         ]
                 elif (
@@ -179,7 +170,6 @@ class SoftwareForm(forms.ModelForm):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
-                    ]
                     ]
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
@@ -401,6 +391,7 @@ class SoftwareForm(forms.ModelForm):
         self, project, project_sample, sample, dataset, instance, televir_project
     ):
         """ """
+
         if instance.type_of_use in [5, 8]:
             return reverse("pathogenID_pipeline", args=[0])
         if not televir_project is None:

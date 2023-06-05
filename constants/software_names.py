@@ -469,6 +469,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_builds/"
     )
     SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
+    SOFTWARE_NEXTSTRAIN_BUILDS_generic_time = "generic_time"
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
 
@@ -504,6 +505,7 @@ class SoftwareNames(object):
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
+        SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
         SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
@@ -518,6 +520,7 @@ class SoftwareNames(object):
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_generic_time, "Generic with Time Tree"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],

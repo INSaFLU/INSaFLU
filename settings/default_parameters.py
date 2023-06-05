@@ -124,8 +124,12 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
+                    #with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
+            
+            #if parameter.software.pk != software.pk:
+            #with LockedAtomicTransaction(Parameter):
             parameter.software = software
             parameter.save()
 

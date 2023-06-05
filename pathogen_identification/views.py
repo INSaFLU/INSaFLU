@@ -4,19 +4,13 @@ import os
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
 from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (
-    Http404,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
+                         JsonResponse)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -25,46 +19,38 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
+
+from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
+                                 TypePath)
+from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
+from pathogen_identification.ajax_views import set_control_reports
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import (ContigClassification, FinalReport,
+                                            ParameterSet, PIProject_Sample,
+                                            Projects, RawReference,
+                                            ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunMain, RunRemapMain,
+                                            Sample)
+from pathogen_identification.tables import (ContigTable, ProjectTable,
+                                            RawReferenceTable, RunMainTable,
+                                            SampleTable)
+from pathogen_identification.utilities.televir_globals import \
+    get_read_overlap_threshold
+from pathogen_identification.utilities.utilities_general import \
+    infer_run_media_dir
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage, Utils
-
-from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    ParameterSet,
-    Sample,
-)
-from pathogen_identification.tables import (
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
-
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
-from pathogen_identification.ajax_views import set_control_reports
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
 
 
 def clean_check_box_in_session(request):
@@ -865,6 +851,7 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
 
 from pathogen_identification.utilities.utilities_views import ReportSorter
 
+
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -930,9 +917,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
         #
-        final_report = FinalReport.objects.filter(
-            sample=sample_main, run=run_main
-        ).order_by("-coverage")
+        final_report = run_main.sorted_reports_get()
         #
         read_overlap_threshold= get_read_overlap_threshold()
         report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
@@ -973,6 +958,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "owner": True,
             "in_control": has_controlled_flag,
             "report_list": sorted_reports,
+            "data_exists": True if not run_main.data_deleted else False,
         }
 
         return context
@@ -1177,3 +1163,51 @@ def download_file_ref(requestdst):
             ] = "attachment; filename=%s" % os.path.basename(filepath)
             # Return the response value
             return response
+
+
+
+import zipfile
+
+
+def generate_zip_file(file_list: list, zip_file_path: str) -> str:
+        
+        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+            for file_path in file_list:
+                zip_file.write(file_path, os.path.basename(file_path))
+    
+        return zip_file_path
+
+def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
+
+    zip_file_path = os.path.join(outdir, zip_file_name)
+
+    if os.path.exists(zip_file_path):
+        os.unlink(zip_file_path)
+
+    zip_file_path = generate_zip_file(file_list, zip_file_path)
+
+    return zip_file_path
+
+def download_intermediate_reports_zipfile(request):
+    """
+    download intermediate report files in zip"""
+
+    if request.method == "POST":
+
+        run_pk= request.POST.get("run_pk")
+        run_main= RunMain.objects.get(pk= int(run_pk))
+
+        intermediate_reports= run_main.intermediate_reports_get()
+        run_main_dir= infer_run_media_dir(run_main)
+        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
+
+
+        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
+
+        path= open(zip_file_path, "rb")
+        mime_type, _= mimetypes.guess_type(zip_file_path)
+        response= HttpResponse(path, content_type= mime_type)
+        response["Content-Disposition"]= "attachment; filename={}".format(zip_file_name)
+
+        return response
+

@@ -233,12 +233,31 @@ class CollectExtraData(object):
 					report_data.to_csv(file_aln2pheno_report_pokay, sep=Constants.SEPARATOR_TAB, index=False)
 
 					self.utils.remove_temp_file(tmp_aln2pheno)
+
+					tmp_aln2pheno = self.utils.get_temp_file("tmp_file", ".tab")
+
+					file_aln2pheno_report_carabelli = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli)
+					file_aln2pheno_flagged_carabelli = project.get_global_file_by_project(TypePath.MEDIA_ROOT, Project.PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli)
+
+					# add output as parameters of individual files, or output a zip with the folder...
+					self.software.run_aln2pheno(reference="{}_{}_{}".format(project.reference.name, sequence_name, GENE_NAME),
+								gene=GENE_NAME, sequences=file_alignments, report=tmp_aln2pheno,
+								flagged=file_aln2pheno_flagged_carabelli, db="DB_SARS_CoV_2_Spike_EpitopeResidues_Carabelli_2023_NatRevMic_Fig1.tsv")
+
+					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
+					report_data = report_data.merge(pangolin_data, on=["Sequence"])
 					
+					report_data.to_csv(file_aln2pheno_report_carabelli, sep=Constants.SEPARATOR_TAB, index=False)
+
+					self.utils.remove_temp_file(tmp_aln2pheno)
+
 					temp_dir = self.utils.get_temp_dir()
 					self.utils.copy_file(file_aln2pheno_report_COG_UK, temp_dir)
 					self.utils.copy_file(file_aln2pheno_flagged_COG_UK, temp_dir)
 					self.utils.copy_file(file_aln2pheno_report_pokay, temp_dir)
 					self.utils.copy_file(file_aln2pheno_flagged_pokay, temp_dir)
+					self.utils.copy_file(file_aln2pheno_report_carabelli, temp_dir)
+					self.utils.copy_file(file_aln2pheno_flagged_carabelli, temp_dir)					
 					# README file to be always added
 					self.utils.copy_file(SoftwareNames.SOFTWARE_ALN2PHENO_README, temp_dir)
 					zip_out = self.software.zip_files_in_path(temp_dir)

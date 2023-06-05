@@ -7,8 +7,9 @@ Created on Nov 26, 2017
 import os
 
 from django.conf import settings
-from settings.constants_settings import ConstantsSettings
+
 from constants.constants import Constants
+from settings.constants_settings import ConstantsSettings
 
 
 class SoftwareNames(object):
@@ -544,6 +545,13 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids= "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids= "--max-accids"
+
+    ### MAPPING FLAGS
+    SOFTWARE_REMAP_PARAMS_mapping_flags = "mapping-flags"
+    SOFTWARE_REMAP_PARAMS_mapping_flags_name = "Mapping Flags"
+    SOFTWARE_REMAP_PARAMS_mapping_flags_desc = "Mapping Flags"
+    SOFTWARE_REMAP_PARAMS_mapping_flags_default = ""
+    SOFTWARE_REMAP_PARAMS_mapping_flags_version = "1.0.0"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

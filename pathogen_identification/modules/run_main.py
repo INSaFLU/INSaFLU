@@ -7,26 +7,20 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
+
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    Sample_runClass,
-    Software_detail,
-    SoftwareUnit,
-)
+    Assembly_results, Contig_classification_results, Read_class,
+    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
+    Sample_runClass, Software_detail, SoftwareUnit)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
+from pathogen_identification.utilities.televir_parameters import (
+    get_prinseq_software, get_remap_software)
 from settings.constants_settings import ConstantsSettings as CS
-from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):

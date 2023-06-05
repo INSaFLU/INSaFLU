@@ -1,28 +1,31 @@
+import mimetypes
 import os
 
-from constants.meta_key_and_values import MetaKeyAndValue
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
-from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
-from utils.process_SGE import ProcessSGE
-from django.utils.translation import ugettext_lazy as _
-from managing_files.models import ProcessControler
 
+from constants.meta_key_and_values import MetaKeyAndValue
+from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
+from managing_files.models import ProcessControler
 from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
     PIProject_Sample,
     Projects,
     ReferenceMap_Main,
     RunMain,
-    FinalReport,
-    ParameterSet,
 )
+from pathogen_identification.utilities.televir_parameters import (
+    get_read_overlap_threshold,
+)
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
 from pathogen_identification.utilities.utilities_views import ReportSorter
-
+from utils.process_SGE import ProcessSGE
 
 
 def simplify_name(name):
@@ -60,10 +63,8 @@ def submit_televir_project_sample(request):
 
         try:
             if len(runs_to_deploy) > 0:
-
                 for sample, leafs_to_deploy in runs_to_deploy.items():
                     for leaf in leafs_to_deploy:
-
                         print(request.user.username, project.pk, sample.pk, leaf.pk)
 
                         taskID = process_SGE.set_submit_televir_run(
@@ -109,7 +110,6 @@ def kill_televir_project_sample(request):
         )
 
         for run in runs:
-
             try:  # kill process
                 process_SGE.kill_televir_process_controler(
                     user.pk, project.pk, sample.pk, run.leaf.pk
@@ -121,7 +121,6 @@ def kill_televir_project_sample(request):
                 pass
 
             if run.status == ParameterSet.STATUS_RUNNING:
-
                 run.delete_run_data()
 
             run.status = ParameterSet.STATUS_KILLED
@@ -153,11 +152,8 @@ def deploy_ProjectPI(request):
 
         try:
             if len(runs_to_deploy) > 0:
-
                 for sample, leafs_to_deploy in runs_to_deploy.items():
-
                     for leaf in leafs_to_deploy:
-
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,
                             project_pk=project.pk,
@@ -218,7 +214,6 @@ def set_control_reports(project_pk: int):
         )
 
         for sample_report in other_reports:
-
             if sample_report.taxid in control_report_taxids_set:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
             else:
@@ -278,7 +273,6 @@ def validate_project_name(request):
     test if exist this project name
     """
     if request.is_ajax():
-
         project_name = request.GET.get("project_name")
 
         data = {
@@ -328,7 +322,6 @@ def IGV_display(request):
             )
 
             def remove_pre_static(path: str, pattern: str) -> str:
-
                 cwd = os.getcwd()
                 if path.startswith(cwd):
                     path = path[len(cwd) :]
@@ -403,7 +396,3 @@ def IGV_display(request):
             data["sample_name"] = sample_name
 
         return JsonResponse(data)
-
-
-
-

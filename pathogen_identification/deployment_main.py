@@ -4,38 +4,31 @@ import shutil
 import traceback
 
 import pandas as pd
-from constants.constants import Constants, FileType, TypePath
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from managing_files.models import ProcessControler
-from utils.process_SGE import ProcessSGE
 
-from pathogen_identification.constants_settings import ConstantsSettings
+from constants.constants import Constants, FileType
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-    RunMain,
-    FinalReport,
-)
+from constants.constants import TypePath
+from managing_files.models import ProcessControler
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.utilities.televir_parameters import \
+    get_read_overlap_threshold
 from pathogen_identification.utilities.update_DBs import (
-    Update_Sample_Runs,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    get_run_parents,
-)
-
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, Update_Sample_Runs,
+    get_run_parents)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import ReportSorter
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
+from utils.process_SGE import ProcessSGE
+
 
 class PathogenIdentification_deployment:
 

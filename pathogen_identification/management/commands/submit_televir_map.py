@@ -5,33 +5,32 @@ import shutil
 
 import pandas as pd
 from django.core.management.base import BaseCommand
-from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
+
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
-from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import RawReference
+from managing_files.models import ProcessControler
+from pathogen_identification.constants_settings import (MEDIA_ROOT,
+                                                        ConstantsSettings)
+from pathogen_identification.install_registry import (Params_Illumina,
+                                                      Params_Nanopore)
+from pathogen_identification.models import FinalReport, RawReference, RunMain
 from pathogen_identification.modules.metadata_handler import Metadata_handler
-from pathogen_identification.modules.object_classes import (
-    Read_class,
-    Sample_runClass,
-    Software_detail,
-)
-from pathogen_identification.modules.remap_class import (
-    Mapping_Instance,
-    Mapping_Manager,
-)
-from pathogen_identification.utilities.update_DBs import (
-    Update_FinalReport,
-    Update_ReferenceMap,
-)
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+from pathogen_identification.modules.object_classes import (Read_class,
+                                                            Sample_runClass,
+                                                            Software_detail)
+from pathogen_identification.modules.remap_class import (Mapping_Instance,
+                                                         Mapping_Manager)
+from pathogen_identification.utilities.televir_parameters import (
+    get_prinseq_software, get_read_overlap_threshold, get_remap_software)
+from pathogen_identification.utilities.update_DBs import (Update_FinalReport,
+                                                          Update_ReferenceMap)
+from pathogen_identification.utilities.utilities_general import \
+    simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
-from pathogen_identification.utilities.televir_globals import get_remap_software, get_prinseq_software
-from pathogen_identification.utilities.utilities_views import ReportSorter
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
-from pathogen_identification.models import FinalReport, RunMain
+
+
 class RunMain:
 
     remap_manager: Mapping_Manager

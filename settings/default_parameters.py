@@ -122,14 +122,14 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
-                    with LockedAtomicTransaction(Software):
-                        software = parameter.software
-                        software.save()
+                    #with LockedAtomicTransaction(Software):
+                    software = parameter.software
+                    software.save()
             
-            if parameter.sofware.pk != software.pk:
-                with LockedAtomicTransaction(Parameter):
-                    parameter.software = software
-                    parameter.save()
+            #if parameter.software.pk != software.pk:
+            #with LockedAtomicTransaction(Parameter):
+            parameter.software = software
+            parameter.save()
 
             ## set sequential number
             dt_out_sequential[parameter.sequence_out] = 1

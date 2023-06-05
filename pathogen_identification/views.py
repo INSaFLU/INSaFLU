@@ -4,8 +4,6 @@ import os
 
 import pandas as pd
 from braces.views import FormValidMessageMixin, LoginRequiredMixin
-from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
-from constants.meta_key_and_values import MetaKeyAndValue
 from django import forms
 from django.contrib import messages
 from django.db import transaction
@@ -25,22 +23,21 @@ from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
+
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import STATICFILES_DIRS
 from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
-from settings.constants_settings import ConstantsSettings as CS
-from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.models import Technology
-from utils.process_SGE import ProcessSGE
-from utils.utils import ShowInfoMainPage, Utils
-
+from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
+    ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
@@ -51,7 +48,6 @@ from pathogen_identification.models import (
     RunDetail,
     RunMain,
     RunRemapMain,
-    ParameterSet,
     Sample,
 )
 from pathogen_identification.tables import (
@@ -61,10 +57,16 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.televir_parameters import (
+    get_read_overlap_threshold,
+)
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
-from pathogen_identification.ajax_views import set_control_reports
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
+from pathogen_identification.utilities.utilities_views import ReportSorter
+from settings.constants_settings import ConstantsSettings as CS
+from settings.default_software_project_sample import DefaultProjectSoftware
+from settings.models import Technology
+from utils.process_SGE import ProcessSGE
+from utils.utils import ShowInfoMainPage, Utils
 
 
 def clean_check_box_in_session(request):
@@ -142,7 +144,6 @@ class download_form(forms.Form):
     file_path = forms.CharField(max_length=300)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -157,7 +158,6 @@ class download_ref_form(forms.Form):
     accid = forms.CharField(max_length=50)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -354,7 +354,6 @@ class AddSamples_PIProjectsView(
     logger_production = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
-
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
@@ -811,7 +810,6 @@ def Sample_reports(requesdst, pk1, pk2):
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 
     else:
-
         messages.error(
             requesdst,
             "You do not have permission to access this project.",
@@ -872,7 +870,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/sample_detail.html"
 
     def get_context_data(self, **kwargs):
-
         project_pk = int(self.kwargs["pk1"])
         sample_pk = int(self.kwargs["pk2"])
         run_pk = int(self.kwargs["pk3"])
@@ -933,8 +930,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        read_overlap_threshold= get_read_overlap_threshold()
-        report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
+        read_overlap_threshold = get_read_overlap_threshold()
+        report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
         sorted_reports = report_sorter.get_reports()
 
         # check has control_flag present
@@ -963,7 +960,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "read_classification": read_classification,
             "run_remap": run_remap,
             "reference_remap_main": reference_remap_main,
-            #"final_report": final_report,
+            # "final_report": final_report,
             "number_validated": len(final_report),
             "project_index": project_pk,
             "sample_index": sample_pk,
@@ -1005,7 +1002,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         if project_main.owner == user:
-
             run_name = run_main.name
             sample_name = sample.name
             project_name = project_main.name

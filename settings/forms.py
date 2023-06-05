@@ -6,7 +6,8 @@ Created on 04/05/2020
 import os
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
+from crispy_forms.layout import (Button, ButtonHolder, Div, Fieldset, Layout,
+                                 Submit)
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
@@ -16,9 +17,8 @@ from constants.software_names import SoftwareNames
 from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
 from pathogen_identification.models import Projects as TelevirProject
-from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-)
+from pathogen_identification.utilities.utilities_pipeline import \
+    Utility_Pipeline_Manager
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
 from utils.utils import Utils
@@ -384,7 +384,7 @@ class SoftwareForm(forms.ModelForm):
         self, project, project_sample, sample, dataset, instance, televir_project
     ):
         """ """
-        if instance.type_of_use == [5, 8]:
+        if instance.type_of_use == [Software.TYPE_OF_USE_televir_global, Software.TYPE_OF_USE_televir_settings]:
             return reverse("pathogenID_pipeline", args=[0])
         if not televir_project is None:
             return reverse("pathogenID_pipeline", args=[televir_project.pk])

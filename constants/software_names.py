@@ -545,9 +545,9 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
     ### MAPPING FLAGS
-    SOFTWARE_televir_report_layout = "mapping-flags"
-    SOFTWARE_televir_report_layout_name = "Mapping Flags"
-    SOFTWARE_televir_report_layout_name_extended = "Mapping Flags"
+    SOFTWARE_televir_report_layout = "report_layout"
+    SOFTWARE_televir_report_layout_name = "Report Layout"
+    SOFTWARE_televir_report_layout_name_extended = "Report Layout"
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
 

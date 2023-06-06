@@ -934,8 +934,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
         report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
-        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
-        report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
         sorted_reports = report_sorter.get_reports()
 
         # check has control_flag present

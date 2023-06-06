@@ -8,6 +8,8 @@ import os
 
 from django.conf import settings
 
+from django.conf import settings
+
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import \
@@ -16,6 +18,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
     Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
@@ -124,9 +127,12 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
-                    # with LockedAtomicTransaction(Software):
+                    #  with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
+
+            # if parameter.software.pk != software.pk:
+            # with LockedAtomicTransaction(Parameter):
 
             # if parameter.software.pk != software.pk:
             # with LockedAtomicTransaction(Parameter):
@@ -224,6 +230,7 @@ class DefaultParameters(object):
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+                prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
             else:
                 prefered_pipeline = pipeline_step
 
@@ -317,6 +324,8 @@ class DefaultParameters(object):
                 ):
                     return_parameter += " {}".format(
                         os.path.join(
+                    return_parameter += " {}".format(
+                        os.path.join(
                             settings.DIR_SOFTWARE,
                             "trimmomatic/adapters",
                             dict_out[par_name][1][0],
@@ -325,9 +334,16 @@ class DefaultParameters(object):
                 elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
                     return_parameter += " {}".format(
                         os.path.join(
+                        )
+                    )
+                elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
+                    return_parameter += " {}".format(
+                        os.path.join(
                             settings.DIR_SOFTWARE,
                             "trimmomatic/adapters",
                             dict_out[par_name][1][0],
+                        )
+                    )
                         )
                     )
                 elif par_name == "--db":
@@ -696,6 +712,7 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
                 software.owner,
+                software.owner,
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
@@ -706,6 +723,14 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
+
+        elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
+            return self.get_televir_report_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_settings,
+                software.technology.name,
+            )
+
 
         elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             return self.get_televir_report_defaults(
@@ -1437,6 +1462,7 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.sequence_out = 2
         parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
+        parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1448,10 +1474,17 @@ class DefaultParameters(object):
         technology_name,
         sample=None,
         is_to_run=True,
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=True,
     ):
         """
         remapping parameters, namely:
             max number of taxids to map against.
+            max number of acccids to map for each taxid.
             max number of acccids to map for each taxid.
             minimum coverage?
         """
@@ -1645,7 +1678,62 @@ class DefaultParameters(object):
         parameter.range_max = "1.0"
         parameter.range_min = "0.2"
         parameter.sequence_out = 2
+        parameter.description = "Filter on a maximum DUST score."
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+    def get_televir_report_defaults(
+        self, user, type_of_use, technology_name, sample=None, is_to_run=True
+    ):
+        """
+        flag calculations to use for mapping. defaults for viruses, bacteria, probes.
+        """
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_televir_report_layout_name
+        software.name_extended = (
+            SoftwareNames.SOFTWARE_televir_report_layout_name_extended
+        )
+        software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = False
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = "flag calculations to use for mapping. defaults for viruses, bacteria, probes."
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_extra
+        )
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+
+        parameter.name = "read overlap threshold"
+        parameter.parameter = "0.95"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.range_available = "[0.0:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.2"
+        parameter.sequence_out = 2
         parameter.description = (
+            "read sharing threshold used to group references into groups"
             "read sharing threshold used to group references into groups"
         )
         vect_parameters.append(parameter)
@@ -2775,6 +2863,9 @@ class DefaultParameters(object):
     def get_bwa_default(
         self, user, type_of_use, technology_name, sample=None, pipeline_step=""
     ):
+    def get_bwa_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         if not pipeline_step:
             pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
 
@@ -2795,6 +2886,7 @@ class DefaultParameters(object):
 
         ###  small description of software
         software.help_text = ""
+        software.pipeline_step = self._get_pipeline(pipeline_step)
         software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user

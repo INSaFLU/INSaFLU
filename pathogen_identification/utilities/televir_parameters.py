@@ -1,10 +1,19 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Union
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import Projects, RunMain
-from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
+from pathogen_identification.utilities.mapping_flags import (
+    MapFlagViruses,
+    MappingFlagBuild,
+)
 from settings.models import Parameter, Software
+
+
+class WrongParameters(Exception):
+    pass
 
 
 @dataclass
@@ -18,6 +27,36 @@ class PrinseqParams:
     entropy_threshold: float
     dust_threshold: float
     is_to_run: bool
+
+
+@dataclass
+class LayoutParams:
+    read_overlap_threshold: float
+    flag_str: str
+    flag_build: MappingFlagBuild
+
+    def __init__(self, read_overlap_threshold, flag_str):
+        self.read_overlap_threshold = read_overlap_threshold
+        self.flag_str = flag_str
+
+    def __post_init__(self):
+        self.update_flag_build(self.flag_str)
+
+    def get_flag_build(self):
+        return self.flag_build
+
+    def update_flag_build(self, flag_str):
+        flag_build_list = [
+            x for x in MappingFlagBuild.__subclasses__() if x.build_name == flag_str
+        ]
+
+        if len(flag_build_list) == 0:
+            raise WrongParameters(
+                f"Wrong flag build name {flag_str}. Available options are: {MappingFlagBuild.__subclasses__()}"
+            )
+
+        else:
+            self.flag_build = flag_build_list[0]
 
 
 class TelevirParameters:
@@ -69,7 +108,7 @@ class TelevirParameters:
         Get remap software
         """
 
-        remap_params, remap_software = TelevirParameters.retrieve_project_software(
+        remap_params, _ = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
         )
 
@@ -112,6 +151,24 @@ class TelevirParameters:
         return prinseq
 
     @staticmethod
+    def layout_params_get(run_params: List[Parameter]) -> LayoutParams:
+        """
+        Get layout parameters
+        """
+        report_layout_params = LayoutParams(0, "")
+
+        for param in run_params:
+            if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:
+                report_layout_params.update_flag_build(param.parameter)
+            elif (
+                param.name
+                == SoftwareNames.SOFTWARE_televir_report_layout_threshold_name
+            ):
+                report_layout_params.read_overlap_threshold = float(param.parameter)
+
+        return report_layout_params
+
+    @staticmethod
     def get_flag_build(run_pk) -> MappingFlagBuild:
         """
         Get flag build
@@ -123,30 +180,36 @@ class TelevirParameters:
 
         (
             flag_build_params,
-            flag_build_software,
+            _,
         ) = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             username,
             project.name,
         )
 
-        flag_build_str = flag_build_params[0].parameter
-        flag_build_list = [
-            x
-            for x in MappingFlagBuild.__subclasses__()
-            if x.build_name == flag_build_str
-        ]
-        if len(flag_build_list) == 0:
-            raise Exception(
-                f"Flag build software parameters not found for user {username} and project {project_name}"
-            )
+        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
 
-        return flag_build_list[0]
+        return report_layout_params.flag_build
 
     @staticmethod
-    def get_read_overlap_threshold():
+    def get_read_overlap_threshold(run_pk) -> float:
         """
         Get overlap threshold
         """
 
-        return CS.READ_OVERLAP_THRESHOLD
+        run_main = RunMain.objects.get(pk=run_pk)
+        project = run_main.project
+        username = project.owner.username
+
+        (
+            flag_build_params,
+            _,
+        ) = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            username,
+            project.name,
+        )
+
+        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
+
+        return report_layout_params.read_overlap_threshold

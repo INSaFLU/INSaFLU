@@ -1654,7 +1654,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
 
-        parameter.name = "--r-overlap"
+        parameter.name = SoftwareNames.SOFTWARE_televir_report_layout_threshold_name
         parameter.parameter = "0.95"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software

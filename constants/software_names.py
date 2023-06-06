@@ -551,6 +551,7 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
+    SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

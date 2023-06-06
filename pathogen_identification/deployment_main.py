@@ -536,7 +536,9 @@ class Run_Main_from_Leaf:
             "-coverage"
         )
         #
-        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
+        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold(
+            run_pk=run.pk
+        )
         report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
         report_sorter.sort_reports()
 

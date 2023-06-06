@@ -3,13 +3,17 @@ import os
 from typing import List
 
 import pandas as pd
+
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.utilities_general import (
-    merge_classes, scrape_description, description_passes_filter)
-from pathogen_identification.constants_settings import ConstantsSettings as CS
+    description_passes_filter,
+    merge_classes,
+    scrape_description,
+)
+
 
 class Metadata_handler:
-
     remap_targets: List[Remap_Target] = []
 
     def __init__(self, config, sift_query: str = "phage", prefix: str = ""):
@@ -66,7 +70,6 @@ class Metadata_handler:
         max_remap: int = 15,
         taxid_limit: int = 12,
     ):
-
         self.process_reports(
             report_1,
             report_2,
@@ -92,7 +95,6 @@ class Metadata_handler:
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
-
         if "acc_x" in df.columns:
             df = df.rename(columns={"acc_x": "acc"})
 
@@ -120,7 +122,7 @@ class Metadata_handler:
             for target_col in ["acc", "protid", "prot_acc", "taxid"]:
                 if target_col in df.columns:
                     df = df.dropna(subset=[target_col])
-                    #df = df.drop_duplicates(subset=[target_col])
+                    # df = df.drop_duplicates(subset=[target_col])
                     df = df.reset_index(drop=True)
 
         return df
@@ -194,8 +196,7 @@ class Metadata_handler:
                 self.input_protein_accession_to_taxid_path, sep="\t", header=0
             )
         except:
-            self.protein_accession_to_taxid = pd.DataFrame(
-                columns=["acc", "taxid"])
+            self.protein_accession_to_taxid = pd.DataFrame(columns=["acc", "taxid"])
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
@@ -215,7 +216,6 @@ class Metadata_handler:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
         if "taxid" not in df.columns:
-
             if "prot_acc" in df.columns:
                 return self.merge_check_column_types(
                     df, self.protein_accession_to_taxid, "prot_acc"
@@ -236,8 +236,7 @@ class Metadata_handler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
-        df = self.merge_check_column_types(
-            df, self.taxonomy_to_description, "taxid")
+        df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
 
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(float)
@@ -357,7 +356,6 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
 
@@ -405,16 +403,14 @@ class Metadata_handler:
 
         print("TAXID LIMIT: ", taxid_limit)
 
-        targets, raw_targets = merge_classes(
-            self.rclass, self.aclass, maxt=taxid_limit)
+        targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
         raw_targets["description"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_description
         )
-        raw_targets["status"] = raw_targets["taxid"].isin(
-            targets["taxid"].to_list())
+        raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
         self.merged_targets = targets
@@ -440,7 +436,6 @@ class Metadata_handler:
         targets.taxid = targets.taxid.astype(int)
 
         for taxid in targets.taxid.unique():
-
             if len(taxf[taxf.taxid == taxid]) == 0:
                 remap_absent.append(taxid)
 
@@ -459,19 +454,17 @@ class Metadata_handler:
             ####
 
             for fileset in files_to_map:
-
                 nsu = nset[nset.file == fileset]
 
-                added_counts= 0
+                added_counts = 0
 
                 if nsu.shape[0] > max_remap:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
-                    #nsu= nsu.iloc[:max_remap, :]
+                    # nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
-
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
                     pref_simple = (
                         pref.replace(".", "_")
@@ -484,8 +477,7 @@ class Metadata_handler:
                         self.taxonomy_to_description.taxid.astype(int)
                     )
                     description = self.taxonomy_to_description[
-                        self.taxonomy_to_description.taxid.astype(
-                            int) == int(taxid)
+                        self.taxonomy_to_description.taxid.astype(int) == int(taxid)
                     ].description.unique()
 
                     if len(description) == 0:
@@ -496,10 +488,14 @@ class Metadata_handler:
 
                     description = description[0]
                     description = scrape_description(pref, description)
+                    print("DESCRIPTION: ", description)
+
+                    print(
+                        description_passes_filter(description, CS.DESCRIPTION_FILTERS)
+                    )
 
                     if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
                         continue
-
 
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):
                         """
@@ -523,6 +519,7 @@ class Metadata_handler:
                             determine_taxid_in_file(taxid, self.aclass),
                         )
                     )
+
                     remap_plan.append([taxid, pref, fileset, description])
 
                     added_counts += 1

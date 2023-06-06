@@ -11,7 +11,9 @@ from django.conf import settings
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -122,12 +124,12 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
-                    #with LockedAtomicTransaction(Software):
+                    # with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
-            
-            #if parameter.software.pk != software.pk:
-            #with LockedAtomicTransaction(Parameter):
+
+            # if parameter.software.pk != software.pk:
+            # with LockedAtomicTransaction(Parameter):
             parameter.software = software
             parameter.save()
 
@@ -220,11 +222,8 @@ class DefaultParameters(object):
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         if self.check_software_is_polyvalent(software_name):
-
             if pipeline_step is None:
-                prefered_pipeline = self.get_polyvalent_software_pipeline(
-                    software_name
-                    )
+                prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
             else:
                 prefered_pipeline = pipeline_step
 
@@ -316,19 +315,21 @@ class DefaultParameters(object):
                     software_name == SoftwareNames.SOFTWARE_SNIPPY_name
                     and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
                 ):
-                    return_parameter += " {}".format(os.path.join(
+                    return_parameter += " {}".format(
+                        os.path.join(
                             settings.DIR_SOFTWARE,
                             "trimmomatic/adapters",
                             dict_out[par_name][1][0],
-                        ))
-                elif (
-                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
-                ):
-                    return_parameter += " {}".format(os.path.join(
+                        )
+                    )
+                elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
+                    return_parameter += " {}".format(
+                        os.path.join(
                             settings.DIR_SOFTWARE,
                             "trimmomatic/adapters",
                             dict_out[par_name][1][0],
-                        ))                                    
+                        )
+                    )
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -535,7 +536,6 @@ class DefaultParameters(object):
         :output True if the is_to_run is changed"""
 
         with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
-
             ## get parameters for a specific sample, project or project_sample
             parameters = Parameter.objects.filter(
                 software=software,
@@ -695,7 +695,7 @@ class DefaultParameters(object):
         ####
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
-                software.owner, 
+                software.owner,
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
@@ -706,7 +706,14 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
-        
+
+        elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
+            return self.get_televir_report_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_settings,
+                software.technology.name,
+            )
+
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
                 software.owner,
@@ -939,7 +946,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME     
+        parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME
         parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.type_data = Parameter.PARAMETER_char_list
@@ -949,9 +956,7 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = True
         parameter.sequence_out = 4
-        parameter.description = (
-            "PRIMER: fasta of primers used for amplicon sequencing"
-        )
+        parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1421,7 +1426,7 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         parameter = Parameter()
-        parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME     
+        parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME
         parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
         parameter.type_data = Parameter.PARAMETER_char_list
@@ -1431,22 +1436,23 @@ class DefaultParameters(object):
         parameter.union_char = " "
         parameter.can_change = True
         parameter.sequence_out = 2
-        parameter.description = (
-            "PRIMER: fasta of primers used for amplicon sequencing"
-        )
+        parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
         vect_parameters.append(parameter)
-
 
         return vect_parameters
 
     def get_remap_defaults(
-            self, user, type_of_use, technology_name, sample=None,
-            is_to_run=True,
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=True,
     ):
         """
         remapping parameters, namely:
             max number of taxids to map against.
-            max number of acccids to map for each taxid. 
+            max number of acccids to map for each taxid.
             minimum coverage?
         """
         software = Software()
@@ -1488,9 +1494,7 @@ class DefaultParameters(object):
         parameter.range_available = "[5:30]"
         parameter.range_max = "30"
         parameter.range_min = "5"
-        parameter.description = (
-            "Maximum number of taxids to map against"
-        )
+        parameter.description = "Maximum number of taxids to map against"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -1506,9 +1510,7 @@ class DefaultParameters(object):
         parameter.range_available = "[1:30]"
         parameter.range_max = "30"
         parameter.range_min = "1"
-        parameter.description = (
-            "Number of accession IDs to map against."
-        )
+        parameter.description = "Number of accession IDs to map against."
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1520,7 +1522,7 @@ class DefaultParameters(object):
         -lc_entropy <float>  Filter on a minimum entropy score. Range: [0.0:1.0].
         -lc_dust <float>     Filter on a maximum DUST score. Range: [0.0:1.0].
         """
-        software= Software()
+        software = Software()
         software.name = SoftwareNames.SOFTWARE_PRINSEQ_name
         software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
         software.version = SoftwareNames.SOFTWARE_PRINSEQ_VERSION
@@ -1561,9 +1563,7 @@ class DefaultParameters(object):
         parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
         parameter.range_min = "0.0"
-        parameter.description = (
-            "Filter on a minimum entropy score."
-        )
+        parameter.description = "Filter on a minimum entropy score."
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -1579,13 +1579,10 @@ class DefaultParameters(object):
         parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
         parameter.range_min = "0.0"
-        parameter.description = (
-            "Filter on a maximum DUST score."
-        )
+        parameter.description = "Filter on a maximum DUST score."
         vect_parameters.append(parameter)
 
         return vect_parameters
-
 
     def get_televir_report_defaults(
         self, user, type_of_use, technology_name, sample=None, is_to_run=True
@@ -1596,7 +1593,9 @@ class DefaultParameters(object):
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_televir_report_layout_name
-        software.name_extended = SoftwareNames.SOFTWARE_televir_report_layout_name_extended
+        software.name_extended = (
+            SoftwareNames.SOFTWARE_televir_report_layout_name_extended
+        )
         software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
@@ -1848,7 +1847,6 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_trimmomatic_default(self, user, type_of_use, technology_name, sample=None):
-
         software = Software()
         software.name = SoftwareNames.SOFTWARE_TRIMMOMATIC_name
         software.name_extended = SoftwareNames.SOFTWARE_TRIMMOMATIC_name_extended
@@ -2762,8 +2760,9 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_bwa_default(self, user, type_of_use, technology_name, sample=None, pipeline_step=""):
-
+    def get_bwa_default(
+        self, user, type_of_use, technology_name, sample=None, pipeline_step=""
+    ):
         if not pipeline_step:
             pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
 
@@ -2784,9 +2783,7 @@ class DefaultParameters(object):
 
         ###  small description of software
         software.help_text = ""
-        software.pipeline_step = self._get_pipeline(
-            pipeline_step
-        )
+        software.pipeline_step = self._get_pipeline(pipeline_step)
 
         software.owner = user
 
@@ -3356,7 +3353,6 @@ class DefaultParameters(object):
     ############################## END OF PI SOFTWARE DEFAULTS.
 
     def get_abricate_default(self, user, type_of_use, technology_name, sample=None):
-
         software = Software()
         software.name = SoftwareNames.SOFTWARE_ABRICATE_name
         software.name_extended = SoftwareNames.SOFTWARE_ABRICATE_name_extended

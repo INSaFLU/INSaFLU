@@ -7,24 +7,15 @@ from typing import Type
 from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunIndex,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-)
+
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunIndex, RunMain,
+                                            RunRemapMain, SampleQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class

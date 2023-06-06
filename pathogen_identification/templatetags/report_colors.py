@@ -81,25 +81,27 @@ def depth_color(depth_value, max_value):
 
 
 @register.simple_tag
-def flag_false_positive(depth, depthc, coverage, mapped):
-    if depthc > 0 or coverage > 0:
-        if depthc / depth > 10 and coverage < 5:
-            return "Likely False Positive"
+def flag_false_positive(depth, depthc, coverage, mapped, run_pk):
+    flag_build = TelevirParameters.get_flag_build(run_pk)
 
-        elif mapped < 3:
-            return "Vestigial Mapping"
+    if flag_build.assert_false_positive(depth, depthc, coverage, mapped):
+        return "Likely False Positive"
+
+    elif flag_build.assert_vestigial(depth, depthc, coverage, mapped):
+        return "Vestigial Mapping"
 
     return ""
 
 
 @register.simple_tag
-def flag_false_positive_color(depth, depthc, coverage, mapped):
-    if depthc > 0 or coverage > 0:
-        if depthc / depth > 10 and coverage < 5:
-            return "background-color: rgba(255, 0, 0, 0.5);"
+def flag_false_positive_color(depth, depthc, coverage, mapped, run_pk):
+    flag_build = TelevirParameters.get_flag_build(run_pk)
 
-        elif mapped < 3:
-            return "background-color: rgba(255, 0, 0, 0.5);"
+    if flag_build.assert_false_positive(depth, depthc, coverage, mapped):
+        return "background-color: rgba(255, 0, 0, 0.5);"
+
+    elif flag_build.assert_vestigial(depth, depthc, coverage, mapped):
+        return "background-color: rgba(255, 0, 0, 0.5);"
 
     return ""
 

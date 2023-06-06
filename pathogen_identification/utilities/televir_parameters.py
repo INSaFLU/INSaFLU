@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from constants.software_names import SoftwareNames
-from pathogen_identification.models import Projects
+from pathogen_identification.models import Projects, RunMain
 from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from settings.models import Parameter, Software
 
@@ -111,15 +111,19 @@ class TelevirParameters:
         return prinseq
 
     @staticmethod
-    def get_flag_build(username: str, project_name: str) -> MappingFlagBuild:
+    def get_flag_build(run_pk) -> MappingFlagBuild:
         """
         Get flag build
         """
 
+        run_main = RunMain.objects.get(pk=run_pk)
+        project = run_main.project
+        username = project.owner.username
+
         flag_build_params = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
             username,
-            project_name,
+            project.name,
         )
 
         flag_build_str = flag_build_params[0].parameter

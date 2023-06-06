@@ -5,16 +5,19 @@ import matplotlib
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
 matplotlib.use("Agg")
+
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from pathogen_identification.models import 
+
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import RunMain
-from typing import Optional
 
-def description_passes_filter(description:str, filter_list: list):
+
+def description_passes_filter(description: str, filter_list: list):
     """
     Check if description contains any of the strings in filter_list
     """
@@ -22,6 +25,7 @@ def description_passes_filter(description:str, filter_list: list):
         if filter_string in description.lower():
             return True
     return False
+
 
 def reverse_dict_of_lists(dict_of_lists):
     """
@@ -41,16 +45,13 @@ def readname_from_fasta(fastafile) -> list:
                 read_names.append(line[1:].strip())
     return read_names
 
-def simplify_name(name:str):
-    """simplify sample name"""
-    return (
-        name.replace(".", "_")
-        .replace(";", "_")
-        .replace(":", "_")
-        .replace("|", "_")
-    )
 
-def simplify_name_lower(name:str):
+def simplify_name(name: str):
+    """simplify sample name"""
+    return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
+
+
+def simplify_name_lower(name: str):
     """simplify sample name"""
     return (
         name.replace("_", "_")
@@ -60,13 +61,15 @@ def simplify_name_lower(name:str):
         .lower()
     )
 
+
 def simplify_accid(accid):
-    accid= accid.split("_")
+    accid = accid.split("_")
 
     if len(accid) == 1:
         return accid[0]
-    
+
     return "_".join(accid[:1])
+
 
 def plot_dotplot(
     df: pd.DataFrame,
@@ -123,7 +126,6 @@ def fastqc_parse(fastqc_path: str, stdin_fastqc_name: str = "stdin_fastqc"):
         return fqreads
 
     with zipfile.ZipFile(fastqc_path) as zf:
-
         fqreads = zf.read(f"{stdin_fastqc_name}/fastqc_data.txt").decode("utf-8")
         fqreads = fqreads.split("\n")[5:10]
         fqreads = [x.split("\t") for x in fqreads]
@@ -251,10 +253,8 @@ def process_class(r2, maxt=6):
                     taxids_tokeep.remove(r2.taxid[i])
                     nr2.append(r2.loc[i])
             else:
-
                 break
     else:
-
         r2 = r2.head(maxt)
 
     if len(nr2):
@@ -315,7 +315,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             r1 = shared
 
         else:
-
             r2 = (
                 pd.merge(r2, shared, indicator=True, how="outer")
                 .query('_merge=="left_only"')
@@ -337,7 +336,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         r1 = r2.head(maxt)
 
     def get_source(row):
-
         if row.counts_x > 0 and row.counts_y > 0:
             return 3
         elif row.counts_x > 0:
@@ -368,7 +366,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         return fd
 
     def get_counts(row):
-
         if row.counts_x > 0 and row.counts_y > 0:
             return f"{int(row.counts_x)} / {int(row.counts_y)}"
         elif row.counts_x > 0:
@@ -391,11 +388,9 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
-
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)
         if params_exist:
-
             media_classification_dir = os.path.dirname(run_main.params_file_path)
             media_dir = os.path.dirname(media_classification_dir)
             return media_dir

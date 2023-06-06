@@ -7,8 +7,9 @@ Created on Nov 26, 2017
 import os
 
 from django.conf import settings
-from settings.constants_settings import ConstantsSettings
+
 from constants.constants import Constants
+from settings.constants_settings import ConstantsSettings
 
 
 class SoftwareNames(object):
@@ -544,6 +545,13 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids= "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids= "--max-accids"
+
+    ### MAPPING FLAGS
+    SOFTWARE_televir_report_layout = "report_layout"
+    SOFTWARE_televir_report_layout_name = "Report Layout"
+    SOFTWARE_televir_report_layout_name_extended = "Report Layout"
+    SOFTWARE_televir_report_layout_default = ""
+    SOFTWARE_televir_report_layout_version = "1.0.0"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

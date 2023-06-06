@@ -6,17 +6,15 @@ Created on 10/04/2021
 import logging
 import os
 
+from django.conf import settings
+
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from django.conf import settings
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility,
-    Utility_Pipeline_Manager,
-)
-from utils.lock_atomic_transaction import LockedAtomicTransaction
-
+    Parameter_DB_Utility, Utility_Pipeline_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
+from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
 class DefaultParameters(object):
@@ -1588,6 +1586,60 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+
+    def get_televir_report_defaults(
+        self, user, type_of_use, technology_name, sample=None, is_to_run=True
+    ):
+        """
+        flag calculations to use for mapping. defaults for viruses, bacteria, probes.
+        """
+
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_televir_report_layout_name
+        software.name_extended = SoftwareNames.SOFTWARE_televir_report_layout_name_extended
+        software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_SOFTWARE
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = False
+        software.is_to_run = is_to_run
+
+        ###  small description of software
+        software.help_text = "flag calculations to use for mapping. defaults for viruses, bacteria, probes."
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_extra
+        )
+
+        software.owner = user
+
+        vect_parameters = []
+
+        parameter = Parameter()
+
+        parameter.name = "read overlap threshold"
+        parameter.parameter = "0.95"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.range_available = "[0.0:1.0]"
+        parameter.range_max = "1.0"
+        parameter.range_min = "0.2"
+        parameter.sequence_out = 2
+        parameter.description = (
+            "read sharing threshold used to group references into groups"
+        )
+        vect_parameters.append(parameter)
+
+        return vect_parameters
 
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):
         """

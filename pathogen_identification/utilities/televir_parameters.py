@@ -61,7 +61,7 @@ class TelevirParameters:
                 f"Software parameters not found for user {username} and project {project_name}"
             )
 
-        return software_params
+        return software_params, software
 
     @staticmethod
     def get_remap_software(username: str, project_name):
@@ -69,7 +69,7 @@ class TelevirParameters:
         Get remap software
         """
 
-        remap_params = TelevirParameters.retrieve_project_software(
+        remap_params, remap_software = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
         )
 
@@ -91,7 +91,7 @@ class TelevirParameters:
         Get prinseq software
         """
 
-        prinseq_params = TelevirParameters.retrieve_project_software(
+        prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
         )
 
@@ -106,7 +106,7 @@ class TelevirParameters:
         prinseq = PrinseqParams(
             entropy_threshold=entropy_threshold,
             dust_threshold=dust_threshold,
-            is_to_run=prinseq.is_to_run,
+            is_to_run=prinseq_software.is_to_run,
         )
 
         return prinseq
@@ -121,24 +121,27 @@ class TelevirParameters:
         project = run_main.project
         username = project.owner.username
 
-        flag_build_params = TelevirParameters.retrieve_project_software(
+        (
+            flag_build_params,
+            flag_build_software,
+        ) = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             username,
             project.name,
         )
 
         flag_build_str = flag_build_params[0].parameter
-        flag_build = [
+        flag_build_list = [
             x
             for x in MappingFlagBuild.__subclasses__()
             if x.build_name == flag_build_str
         ]
-        if len(flag_build) == 0:
+        if len(flag_build_list) == 0:
             raise Exception(
                 f"Flag build software parameters not found for user {username} and project {project_name}"
             )
 
-        return flag_build[0]
+        return flag_build_list[0]
 
     @staticmethod
     def get_read_overlap_threshold():

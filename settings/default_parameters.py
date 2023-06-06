@@ -728,13 +728,6 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
-        elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
-            return self.get_televir_report_defaults(
-                software.owner,
-                Software.TYPE_OF_USE_televir_settings,
-                software.technology.name,
-            )
-
         elif software.name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             return self.get_centrifuge_default(
                 software.owner,
@@ -1609,7 +1602,6 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-
     def get_televir_report_defaults(
         self, user, type_of_use, technology_name, sample=None, is_to_run=True
     ):
@@ -1647,7 +1639,22 @@ class DefaultParameters(object):
 
         parameter = Parameter()
 
-        parameter.name = "read overlap threshold"
+        parameter.name = SoftwareNames.SOFTWARE_televir_report_layout_flag_name
+        parameter.parameter = "viruses"
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True
+        parameter.sequence_out = 1
+        parameter.description = "flag calculations to use for mapping. defaults for viruses, bacteria, probes."
+
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+
+        parameter.name = "--r-overlap"
         parameter.parameter = "0.95"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
@@ -1657,7 +1664,7 @@ class DefaultParameters(object):
         parameter.is_to_run = True
         parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
-        parameter.range_min = "0.2"
+        parameter.range_min = "0.0"
         parameter.sequence_out = 2
         parameter.description = (
             "read sharing threshold used to group references into groups"

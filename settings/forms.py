@@ -191,7 +191,10 @@ class SoftwareForm(forms.ModelForm):
                             parameter.software.name.lower(), []
                         )
                     ]
-                elif parameter.name == "flag-type":
+                elif (
+                    parameter.name
+                    == SoftwareNames.SOFTWARE_televir_report_layout_flag_name
+                ):
                     list_data = [
                         [flag.build_name, flag.build_name]
                         for flag in MappingFlagBuild.__subclasses__()

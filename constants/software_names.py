@@ -544,19 +544,13 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
-    ### MAPPING FLAGS
+    ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
     SOFTWARE_televir_report_layout_name = "Report Layout"
     SOFTWARE_televir_report_layout_name_extended = "Report Layout"
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
-
-    ### MAPPING FLAGS
-    SOFTWARE_televir_report_layout = "report_layout"
-    SOFTWARE_televir_report_layout_name = "Report Layout"
-    SOFTWARE_televir_report_layout_name_extended = "Report Layout"
-    SOFTWARE_televir_report_layout_default = ""
-    SOFTWARE_televir_report_layout_version = "1.0.0"
+    SOFTWARE_televir_report_layout_flag_name = "--flag-type"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

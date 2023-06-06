@@ -721,7 +721,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_televir_map_flag_parameters(self, user, technology_name):
+    def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
             user,
@@ -1047,7 +1047,7 @@ class DefaultSoftware(object):
                 user,
             )
 
-            return self.get_televir_map_flag_parameters(user, technology_name)
+            return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CLEAN_HUMAN_READS_name:
             self.test_default_db(

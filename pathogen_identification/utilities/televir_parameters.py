@@ -122,7 +122,7 @@ class TelevirParameters:
         username = project.owner.username
 
         flag_build_params = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
             username,
             project.name,
         )

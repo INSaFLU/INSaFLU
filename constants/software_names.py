@@ -545,11 +545,11 @@ class SoftwareNames(object):
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
     ### MAPPING FLAGS
-    SOFTWARE_REMAP_PARAMS_mapping_flags = "mapping-flags"
-    SOFTWARE_REMAP_PARAMS_mapping_flags_name = "Mapping Flags"
-    SOFTWARE_REMAP_PARAMS_mapping_flags_name_extended = "Mapping Flags"
-    SOFTWARE_REMAP_PARAMS_mapping_flags_default = ""
-    SOFTWARE_REMAP_PARAMS_mapping_flags_version = "1.0.0"
+    SOFTWARE_televir_report_layout = "mapping-flags"
+    SOFTWARE_televir_report_layout_name = "Mapping Flags"
+    SOFTWARE_televir_report_layout_name_extended = "Mapping Flags"
+    SOFTWARE_televir_report_layout_default = ""
+    SOFTWARE_televir_report_layout_version = "1.0.0"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

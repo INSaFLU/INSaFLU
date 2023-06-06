@@ -707,7 +707,7 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
-        elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name:
+        elif software.name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             return self.get_televir_report_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_settings,
@@ -1592,11 +1592,9 @@ class DefaultParameters(object):
         """
 
         software = Software()
-        software.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name
-        software.name_extended = (
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name_extended
-        )
-        software.version = SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_version
+        software.name = SoftwareNames.SOFTWARE_televir_report_layout_name
+        software.name_extended = SoftwareNames.SOFTWARE_televir_report_layout_name_extended
+        software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version_parameters = self.get_software_parameters_version(
@@ -1635,7 +1633,7 @@ class DefaultParameters(object):
 
         parameter = Parameter()
 
-        parameter.name= "read overlap threshold"
+        parameter.name = "read overlap threshold"
         parameter.parameter = "0.95"
         parameter.type_data = Parameter.PARAMETER_float
         parameter.software = software
@@ -1647,7 +1645,9 @@ class DefaultParameters(object):
         parameter.range_max = "1.0"
         parameter.range_min = "0.2"
         parameter.sequence_out = 2
-        parameter.description = "read sharing threshold used to group references into groups"
+        parameter.description = (
+            "read sharing threshold used to group references into groups"
+        )
         vect_parameters.append(parameter)
 
         return vect_parameters

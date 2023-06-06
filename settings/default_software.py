@@ -272,7 +272,7 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
             self.default_parameters.get_televir_report_defaults(
                 user,
                 Software.TYPE_OF_USE_televir_settings,
@@ -282,7 +282,7 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
             self.default_parameters.get_televir_report_defaults(
                 user,
                 Software.TYPE_OF_USE_televir_settings,
@@ -723,7 +723,7 @@ class DefaultSoftware(object):
 
     def get_televir_map_flag_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
             user,
             Software.TYPE_OF_USE_televir_settings,
             None,
@@ -1038,9 +1038,9 @@ class DefaultSoftware(object):
             )
             return self.get_prinseq_parameters(user, technology_name)
 
-        if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name:
+        if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(
-                SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+                SoftwareNames.SOFTWARE_televir_report_layout_name,
                 self.default_parameters.get_televir_report_defaults(
                     user, Software.TYPE_OF_USE_televir_settings, technology_name
                 ),

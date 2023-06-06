@@ -5,18 +5,14 @@ Created on 03/05/2020
 """
 from curses.ascii import SO
 
-
 from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager,
-    Utils_Manager,
-)
+    Utility_Pipeline_Manager, Utils_Manager)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
-from utils.lock_atomic_transaction import LockedAtomicTransaction
 from utils.lock_atomic_transaction import LockedAtomicTransaction
 
 
@@ -805,7 +801,6 @@ class DefaultSoftware(object):
             None,
             technology_name,
             pipeline_step=pipeline_step,
-            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -995,11 +990,6 @@ class DefaultSoftware(object):
         return self.change_values_software.get(key_value, False)
 
     def get_parameters(
-        self,
-        software_name,
-        user,
-        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
-        pipeline_step=None,
         self,
         software_name,
         user,

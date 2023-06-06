@@ -6,7 +6,6 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-
 matplotlib.use("Agg")
 
 import zipfile
@@ -48,7 +47,6 @@ def description_passes_filter(description: str, filter_list: list):
     return False
 
 
-
 def reverse_dict_of_lists(dict_of_lists):
     """
     Return dictionary of lists with keys as values and values as keys
@@ -69,15 +67,10 @@ def readname_from_fasta(fastafile) -> list:
 
 
 def simplify_name(name: str):
-
-def simplify_name(name: str):
     """simplify sample name"""
     return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
 
-    return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
 
-
-def simplify_name_lower(name: str):
 def simplify_name_lower(name: str):
     """simplify sample name"""
     return (
@@ -89,7 +82,6 @@ def simplify_name_lower(name: str):
     )
 
 
-
 def simplify_accid(accid):
     accid = accid.split("_")
     accid = accid.split("_")
@@ -97,9 +89,7 @@ def simplify_accid(accid):
     if len(accid) == 1:
         return accid[0]
 
-
     return "_".join(accid[:1])
-
 
 
 def plot_dotplot(

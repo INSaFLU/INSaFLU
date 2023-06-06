@@ -6,6 +6,10 @@ from pathogen_identification.models import Projects
 from settings.models import Parameter, Software
 
 
+class WrongParameters(Exception):
+    pass
+
+
 @dataclass
 class RemapParams:
     max_taxids: int

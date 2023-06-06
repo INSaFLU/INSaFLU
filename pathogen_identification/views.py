@@ -926,8 +926,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
 
-        print(sorted_reports)
-
         context = {
             "project": project_name,
             "run_name": run_name,
@@ -939,7 +937,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "read_classification": read_classification,
             "run_remap": run_remap,
             "reference_remap_main": reference_remap_main,
-            # "final_report": final_report,
             "number_validated": len(final_report),
             "project_index": project_pk,
             "sample_index": sample_pk,

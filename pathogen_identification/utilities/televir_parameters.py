@@ -48,7 +48,19 @@ class TelevirParameters:
         except Software.DoesNotExist:
             raise Exception(f"Remap software not found for user {username}")
 
-        return software, project
+        software_params = Parameter.objects.filter(
+            software=software, televir_project__name=project_name
+        )
+        if software_params.count() == 0:
+            software_params = Parameter.objects.filter(
+                software=software, televir_project__name=None
+            )
+        if software_params.count() == 0:
+            raise Exception(
+                f"Software parameters not found for user {username} and project {project_name}"
+            )
+
+        return software_params
 
     @staticmethod
     def get_remap_software(username: str, project_name):
@@ -56,22 +68,10 @@ class TelevirParameters:
         Get remap software
         """
 
-        remap, project = TelevirParameters.retrieve_project_software(
+        remap_params = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
         )
 
-        remap_params = Parameter.objects.filter(
-            software=remap, televir_project__name=project_name
-        )
-
-        if remap_params.count() == 0:
-            remap_params = Parameter.objects.filter(
-                software=remap, televir_project__name=None
-            )
-        if remap_params.count() == 0:
-            raise Exception(
-                f"Remap software parameters not found for user {username} and project {project_name}"
-            )
         max_taxids = 0
         max_accids = 0
         for param in remap_params:
@@ -90,21 +90,10 @@ class TelevirParameters:
         Get prinseq software
         """
 
-        prinseq, project = TelevirParameters.retrieve_project_software(
+        prinseq_params = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
         )
 
-        prinseq_params = Parameter.objects.filter(
-            software=prinseq, televir_project__name=project_name
-        )
-        if prinseq_params.count() == 0:
-            prinseq_params = Parameter.objects.filter(
-                software=prinseq, televir_project__name=None
-            )
-        if prinseq_params.count() == 0:
-            raise Exception(
-                f"Prinseq software parameters not found for user {username} and project {project_name}"
-            )
         entropy_threshold = 0
         dust_threshold = 0
         for param in prinseq_params:
@@ -127,24 +116,11 @@ class TelevirParameters:
         Get flag build
         """
 
-        flag_build, project = TelevirParameters.retrieve_project_software(
+        flag_build_params = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
             username,
             project_name,
         )
-
-        flag_build_params = Parameter.objects.filter(
-            software=flag_build, televir_project__name=project_name
-        )
-
-        if flag_build_params.count() == 0:
-            flag_build_params = Parameter.objects.filter(
-                software=flag_build, televir_project__name=None
-            )
-        if flag_build_params.count() == 0:
-            raise Exception(
-                f"Flag build software parameters not found for user {username} and project {project_name}"
-            )
 
         flag_build_str = flag_build_params[0].parameter
         flag_build = [

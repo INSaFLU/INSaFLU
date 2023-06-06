@@ -9,7 +9,9 @@ from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -270,8 +272,8 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
-            self.default_parameters.get_map_flag_default(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            self.default_parameters.get_televir_report_defaults(
                 user,
                 Software.TYPE_OF_USE_televir_settings,
                 ConstantsSettings.TECHNOLOGY_illumina,
@@ -280,8 +282,8 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
-            self.default_parameters.get_map_flag_default(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+            self.default_parameters.get_televir_report_defaults(
                 user,
                 Software.TYPE_OF_USE_televir_settings,
                 ConstantsSettings.TECHNOLOGY_minion,
@@ -721,7 +723,7 @@ class DefaultSoftware(object):
 
     def get_televir_map_flag_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
-            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
             user,
             Software.TYPE_OF_USE_televir_settings,
             None,
@@ -1035,11 +1037,11 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_prinseq_parameters(user, technology_name)
-        
-        if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name:
+
+        if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name:
             self.test_default_db(
-                SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_flags_name,
-                self.default_parameters.get_map_flag_default(
+                SoftwareNames.SOFTWARE_REMAP_PARAMS_mapping_settings_name,
+                self.default_parameters.get_televir_report_defaults(
                     user, Software.TYPE_OF_USE_televir_settings, technology_name
                 ),
                 user,

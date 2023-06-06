@@ -8,31 +8,35 @@ from django.core.management.base import BaseCommand
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
-from pathogen_identification.constants_settings import (MEDIA_ROOT,
-                                                        ConstantsSettings)
-from pathogen_identification.install_registry import (Params_Illumina,
-                                                      Params_Nanopore)
+from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
+from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
 from pathogen_identification.models import FinalReport, RawReference, RunMain
 from pathogen_identification.modules.metadata_handler import Metadata_handler
-from pathogen_identification.modules.object_classes import (Read_class,
-                                                            Sample_runClass,
-                                                            Software_detail)
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
-from pathogen_identification.utilities.televir_parameters import (
-    get_prinseq_software, get_read_overlap_threshold, get_remap_software)
-from pathogen_identification.utilities.update_DBs import (Update_FinalReport,
-                                                          Update_ReferenceMap)
-from pathogen_identification.utilities.utilities_general import \
-    simplify_name_lower
+from pathogen_identification.modules.object_classes import (
+    Read_class,
+    Sample_runClass,
+    Software_detail,
+)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.update_DBs import (
+    Update_FinalReport,
+    Update_ReferenceMap,
+)
+from pathogen_identification.utilities.utilities_general import simplify_name_lower
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.utilities.utilities_views import ReportSorter
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    get_read_overlap_threshold,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from utils.process_SGE import ProcessSGE
 
 
 class RunMain:
-
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
     metadata_tool: Metadata_handler
@@ -55,8 +59,9 @@ class RunMain:
     dir_plots: str = f"plots"
     igv_dir: str = f"igv"
 
-    def __init__(self, config: dict, method_args: pd.DataFrame, project_name: str, username: str):
-
+    def __init__(
+        self, config: dict, method_args: pd.DataFrame, project_name: str, username: str
+    ):
         self.sample_name = config["sample_name"]
         self.type = config["type"]
         self.project_name = project_name
@@ -90,7 +95,6 @@ class RunMain:
         self.logger.propagate = False
 
         #####################################
-        
 
         self.r1 = Read_class(
             config["r1"],
@@ -130,20 +134,20 @@ class RunMain:
             threads=self.threads,
         )
 
-        ### mapping parameters 
+        ### mapping parameters
         self.min_scaffold_length = config["assembly_contig_min_length"]
         self.minimum_coverage = int(config["minimum_coverage_threshold"])
         self.maximum_coverage = 1000000000
 
         ### metadata
         print(self.project_name)
-        remap_params= get_remap_software(self.username, self.project_name)
+        remap_params = get_remap_software(self.username, self.project_name)
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap= remap_params.max_accids
-        self.taxid_limit= remap_params.max_taxids
+        self.max_remap = remap_params.max_accids
+        self.taxid_limit = remap_params.max_taxids
 
         ### methods
         self.remapping_method = Software_detail(
@@ -257,7 +261,6 @@ class RunMain:
         self.remap_manager.merge_mapping_reports()
         self.remap_manager.collect_final_report_summary_statistics()
 
-    
     def run(self):
         self.deploy_REMAPPING()
         print("remap_manager.report")
@@ -265,7 +268,6 @@ class RunMain:
         self.export_final_reports()
 
     def export_final_reports(self):
-
         ### main report
         self.report.to_csv(
             self.full_report,
@@ -276,7 +278,6 @@ class RunMain:
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
-
     if value == "":
         try:
             return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
@@ -290,7 +291,6 @@ def get_bindir_from_binaries(binaries, key, value: str = ""):
 
 
 class Input_Generator:
-
     method_args: pd.DataFrame
 
     def __init__(self, reference: RawReference, output_dir: str, threads: int = 4):
@@ -344,7 +344,6 @@ class Input_Generator:
         return new_rpath
 
     def generate_method_args(self):
-
         parameter_leaf = self.reference.run.parameter_set.leaf
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
 
@@ -356,7 +355,6 @@ class Input_Generator:
             )
 
     def generate_config(self):
-
         self.config = {
             "sample_name": simplify_name_lower(
                 os.path.basename(self.r1_path).replace(".fastq.gz", "")
@@ -398,25 +396,23 @@ class Input_Generator:
         self.reference.save()
 
     def update_final_report(self, run_class: RunMain):
-
         run = self.reference.run
         sample = run.sample
 
         Update_FinalReport(run_class, run, sample)
 
         for ref_map in run_class.remap_manager.mapped_instances:
-
             Update_ReferenceMap(ref_map, run, sample)
 
     def run_reference_overlap_analysis(self):
-        run= self.reference.run
-        sample= run.sample
-        final_report = FinalReport.objects.filter(
-            sample=sample, run=run
-        ).order_by("-coverage")
+        run = self.reference.run
+        sample = run.sample
+        final_report = FinalReport.objects.filter(sample=sample, run=run).order_by(
+            "-coverage"
+        )
         #
-        read_overlap_threshold= get_read_overlap_threshold()
-        report_sorter= ReportSorter(final_report, threshold= read_overlap_threshold)
+        read_overlap_threshold = get_read_overlap_threshold()
+        report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
         report_sorter.sort_reports()
 
 
@@ -446,7 +442,7 @@ class Command(BaseCommand):
 
         reference = RawReference.objects.get(pk=raw_reference_id)
         user = reference.run.project.owner
-        project_name= reference.run.project.name
+        project_name = reference.run.project.name
 
         ######## register map
         process_SGE.set_process_controler(
@@ -466,8 +462,12 @@ class Command(BaseCommand):
             input_generator.generate_config()
             print("config generated")
 
-            
-            run_engine = RunMain(input_generator.config, input_generator.method_args, project_name,  user.username)
+            run_engine = RunMain(
+                input_generator.config,
+                input_generator.method_args,
+                project_name,
+                user.username,
+            )
             print("generating")
             run_engine.generate_targets()
             print("running")

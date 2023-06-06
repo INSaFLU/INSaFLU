@@ -43,9 +43,14 @@ class LayoutParams:
         self.update_flag_build(self.flag_str)
 
     def get_flag_build(self):
+        """
+        Get flag build"""
         return self.flag_build
 
     def update_flag_build(self, flag_str):
+        """
+        Update flag build based on flag_str
+        """
         flag_build_list = [
             x for x in MappingFlagBuild.__subclasses__() if x.build_name == flag_str
         ]
@@ -61,7 +66,7 @@ class LayoutParams:
 
 class TelevirParameters:
     @staticmethod
-    def retrieve_project_software(software_name, username, project_name):
+    def retrieve_project_software(software_name: str, username: str, project_name: str):
         """
         Retrieve software parameters for a project
         """
@@ -85,8 +90,8 @@ class TelevirParameters:
                     type_of_use=Software.TYPE_OF_USE_televir_settings,
                 )
 
-        except Software.DoesNotExist:
-            raise Exception(f"Remap software not found for user {username}")
+        except Software.DoesNotExist as exc:
+            raise Exception(f"Remap software not found for user {username}") from exc
 
         software_params = Parameter.objects.filter(
             software=software, televir_project__name=project_name
@@ -96,7 +101,7 @@ class TelevirParameters:
                 software=software, televir_project__name=None
             )
         if software_params.count() == 0:
-            raise Exception(
+            raise WrongParameters(
                 f"Software parameters not found for user {username} and project {project_name}"
             )
 

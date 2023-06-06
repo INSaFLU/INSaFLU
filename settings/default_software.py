@@ -1045,6 +1045,17 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_clean_human_reads_parameters(user, technology_name)
+        
+        if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_televir_report_layout_name,
+                self.default_parameters.get_televir_report_defaults(
+                    user, Software.TYPE_OF_USE_televir_settings, technology_name
+                ),
+                user,
+            )
+
+            return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_NanoFilt_name:
             self.test_default_db(

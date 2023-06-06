@@ -56,8 +56,12 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
-from pathogen_identification.utilities.televir_globals import get_read_overlap_threshold
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    set_control_reports,
+)
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
@@ -859,7 +863,6 @@ def recover_assembly_contigs(run_main: RunMain, run_assembly: RunAssembly):
             run_assembly.save()
 
 
-
 class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -929,9 +932,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        read_overlap_threshold = get_read_overlap_threshold()
+        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
         report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
-        read_overlap_threshold = get_read_overlap_threshold()
+        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
         report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
         sorted_reports = report_sorter.get_reports()
 
@@ -1215,7 +1218,6 @@ def generate_zip_file(file_list: list, zip_file_path: str) -> str:
 
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
@@ -1224,7 +1226,6 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     zip_file_path = generate_zip_file(file_list, zip_file_path)
 
     return zip_file_path
-
 
 
 def download_intermediate_reports_zipfile(request):

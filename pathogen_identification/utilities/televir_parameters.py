@@ -38,7 +38,7 @@ class TelevirParameters:
                     parameter__televir_project=project,
                 ).distinct()[0]
 
-            except Software.DoesNotExist:
+            except IndexError:
                 software = Software.objects.get(
                     name=software_name,
                     owner__username=username,

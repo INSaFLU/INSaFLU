@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from constants.software_names import SoftwareNames
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import Projects, RunMain
 from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from settings.models import Parameter, Software
@@ -138,3 +139,11 @@ class TelevirParameters:
             )
 
         return flag_build[0]
+
+    @staticmethod
+    def get_read_overlap_threshold():
+        """
+        Get overlap threshold
+        """
+
+        return CS.READ_OVERLAP_THRESHOLD

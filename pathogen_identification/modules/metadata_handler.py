@@ -526,10 +526,8 @@ class Metadata_handler:
                     if added_counts > max_remap:
                         break
 
-        print("#####")
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]
         )
-        print(self.remap_plan)
 
         return remap_targets, remap_absent

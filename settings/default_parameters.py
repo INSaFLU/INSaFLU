@@ -709,7 +709,6 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
             return self.get_remap_defaults(
                 software.owner,
-                software.owner,
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )

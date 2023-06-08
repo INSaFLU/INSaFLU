@@ -2,25 +2,26 @@ import os
 from typing import DefaultDict
 
 import django_tables2 as tables
-from constants.constants import Constants
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from managing_files.manage_database import ManageDatabase
-from settings.models import Technology, Parameter
 
+from constants.constants import Constants
+from managing_files.manage_database import ManageDatabase
 from pathogen_identification.models import (
+    ContigClassification,
     FinalReport,
     ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
+    ReadClassification,
     ReferenceContigs,
-    RunMain,
     RunAssembly,
+    RunMain,
     SampleQC,
-    ContigClassification,
 )
+from settings.models import Parameter, Technology
 
 
 class ProjectTable(tables.Table):
@@ -133,7 +134,6 @@ class ProjectTable(tables.Table):
         )
 
         if project_settings_exist:
-
             parameters = parameters + (
                 '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
                 + ' ref_name="'
@@ -457,7 +457,6 @@ class RawReferenceTable(tables.Table):
             return "reads / contigs"
 
     def render_status(self, record):
-
         if record.status == RawReference.STATUS_MAPPING:
             return "Running"
         elif record.status == RawReference.STATUS_MAPPED:
@@ -473,7 +472,6 @@ class RawReferenceTable(tables.Table):
             return "Fail"
 
         elif record.status == RawReference.STATUS_UNMAPPED:
-
             button = (
                 " <a "
                 + 'href="#" '
@@ -500,7 +498,6 @@ class SampleQCTable(tables.Table):
 
 
 class ContigTable(tables.Table):
-
     contig = tables.Column(verbose_name="Contig")
     depth = tables.Column(verbose_name="Depth")
     depthr = tables.Column(verbose_name="Depth Covered")
@@ -524,7 +521,6 @@ class ContigTable(tables.Table):
 
 
 class RunMainTable(tables.Table):
-
     name = tables.Column(verbose_name="Run Name")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
@@ -594,7 +590,8 @@ class RunMainTable(tables.Table):
         finished_preprocessing = record.report != "initial"
         finished_assembly = RunAssembly.objects.filter(run=record).count() > 0
         finished_classification = (
-            ContigClassification.objects.filter(run=record).count() > 0
+            ContigClassification.objects.filter(run=record).exists()
+            and ReadClassification.objects.filter(run=record).exists()
         )
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
@@ -622,11 +619,9 @@ class RunMainTable(tables.Table):
         else:
             runlog = " <a " + 'href="#" >'
             if finished_preprocessing:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Preprocessing finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 runlog += 'title="Preprocessing running."></i>'
 
@@ -637,11 +632,9 @@ class RunMainTable(tables.Table):
             runlog += " <a " + 'href="#" >'
 
             if finished_assembly:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Assembly finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 if finished_preprocessing:
                     runlog += 'title="Assembly running."></i>'
@@ -654,11 +647,9 @@ class RunMainTable(tables.Table):
             runlog += " <a " + 'href="#" >'
 
             if finished_classification:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Classification finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 if finished_assembly:
                     runlog += 'title="Classification running."></i>'

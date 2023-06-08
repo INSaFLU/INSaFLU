@@ -6,6 +6,7 @@ from typing import Type
 
 import pandas as pd
 from Bio import SeqIO
+
 from fluwebvirus.settings import STATICFILES_DIRS
 from pathogen_identification.modules.object_classes import RunCMD
 
@@ -22,7 +23,6 @@ class Assembly_init:
         log_dir: str = "",
         prefix: str = "",
     ):
-
         self.r1 = r1
         self.r2 = r2
         self.assembly_dir = assembly_dir
@@ -211,7 +211,6 @@ class Assembly_raven(Assembly_init):
 
 
 class Assembly_class:
-
     assemblers_available = {
         "spades": Assembly_spades,
         "raven": Assembly_raven,
@@ -266,7 +265,7 @@ class Assembly_class:
         self.assembly_mean = 0
         self.assembly_number = 0
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.info("Assembly class initialized")
@@ -370,7 +369,6 @@ class Assembly_class:
         self.assembly_index_exists = self.assembly_file_check_index()
 
     def assembly_file_check_index(self):
-
         if os.path.isfile(self.assembly_file_fasta_gz_index):
             return True
         else:
@@ -439,7 +437,6 @@ class Assembly_class:
 
             with open(self.assembly_file_fasta, "w") as handle:
                 for record in short_seq_iterator:
-
                     handle.write("{}\n".format(record.format("fasta")))
 
     def get_contig_summary(self):
@@ -480,10 +477,12 @@ class Assembly_class:
             subdirectory, os.path.basename(self.assembly_file_fasta_gz)
         )
 
-        if self.assembly_exists:
-            if os.path.exists(final_file):
+        self.assembly_exists = self.assembly_file_check_fasta_gz()
+
+        if os.path.exists(final_file):
+            if self.assembly_exists:
                 os.remove(final_file)
 
-            shutil.move(self.assembly_file_fasta_gz, subdirectory)
+                shutil.move(self.assembly_file_fasta_gz, subdirectory)
 
-        self.assembly_file_fasta_gz = final_file
+            self.assembly_file_fasta_gz = final_file

@@ -11,8 +11,9 @@ from typing import Type
 import matplotlib
 import pandas as pd
 from numpy import ERR_CALL
-from pathogen_identification.utilities.utilities_general import fastqc_parse
+
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.utilities.utilities_general import fastqc_parse
 
 matplotlib.use("Agg")
 import gzip
@@ -21,6 +22,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 
 
@@ -145,13 +147,11 @@ class Operation_Temp_Files:
         print(f"timeout: {ConstantsSettings.TIMEOUT} seconds")
 
         while not found_flag:
-
             time.sleep(1)
             found_flag = os.path.exists(self.flag)
             time_delay += 1
 
             if time_delay > ConstantsSettings.TIMEOUT:
-
                 proc_prep.kill()
                 err = "Timeout"
                 out = "Timeout"
@@ -182,7 +182,7 @@ class RunCMD:
         self.bin = bin
         self.logs = []
         self.task = task
-
+        self.prefix = prefix
         self.logger = logging.getLogger(f"{prefix}_{task}")
         self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
@@ -190,7 +190,13 @@ class RunCMD:
 
         self.logfile = os.path.join(logdir, f"{prefix}_{task}.log")
         self.logdir = logdir
-        self.prefix = prefix
+
+    def set_logger(self, logger):
+        """
+        Set logger.
+        """
+
+        self.logger = logger
 
     def flag_error(self, subprocess_errorlog, cmd: str = ""):
         """
@@ -233,7 +239,6 @@ class RunCMD:
         return cmd_out
 
     def system_deploy(self, cmd: str):
-
         start_time = time.perf_counter()
 
         proc_prep = subprocess.Popen(
@@ -383,7 +388,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_software_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -406,7 +410,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -429,7 +432,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -446,7 +448,13 @@ class RunCMD:
 
 class Read_class:
     def __init__(
-        self, filepath, clean_dir: str, enriched_dir: str, depleted_dir: str, bin: str
+        self,
+        filepath,
+        clean_dir: str,
+        enriched_dir: str,
+        depleted_dir: str,
+        bin: str,
+        prefix: str = "r0",
     ):
         """
         Initialize.
@@ -465,6 +473,7 @@ class Read_class:
 
         self.filepath = filepath
         self.current = filepath
+        self.suffix = prefix
         self.prefix = self.determine_file_name(filepath)
         self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
         self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
@@ -475,11 +484,43 @@ class Read_class:
         self.read_number_enriched = 0
         self.read_number_depleted = 0
         self.read_number_filtered = 0
+        self.history = [self.current]
 
-    def update(self, clean_dir: str, enriched_dir: str, depleted_dir: str):
-        self.clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
-        self.enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
-        self.depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+    def create_link(self, file_path, new_path):
+        if os.path.isfile(file_path):
+            if os.path.isfile(new_path):
+                os.remove(new_path)
+            os.symlink(file_path, new_path)
+
+    def update(self, new_suffix, clean_dir: str, enriched_dir: str, depleted_dir: str):
+        self.prefix = self.prefix.replace(self.suffix, new_suffix)
+        self.suffix = new_suffix
+        new_clean = os.path.join(clean_dir, self.prefix + ".clean.fastq.gz")
+        if os.path.isfile(self.clean):
+            if new_clean != self.clean:
+                self.create_link(self.clean, new_clean)
+        self.clean = new_clean
+
+        new_enriched = os.path.join(enriched_dir, self.prefix + ".enriched.fastq.gz")
+        if os.path.isfile(self.enriched):
+            if new_enriched != self.enriched:
+                self.create_link(self.enriched, new_enriched)
+        self.enriched = new_enriched
+
+        new_depleted = os.path.join(depleted_dir, self.prefix + ".depleted.fastq.gz")
+        if os.path.isfile(self.depleted):
+            if new_depleted != self.depleted:
+                self.create_link(self.depleted, new_depleted)
+        self.depleted = new_depleted
+
+        if self.current_status == "raw":
+            self.current = self.filepath
+        elif self.current_status == "clean":
+            self.current = self.clean
+        elif self.current_status == "enriched":
+            self.current = self.enriched
+        elif self.current_status == "depleted":
+            self.current = self.depleted
 
     def get_read_names_fastq(self):
         """
@@ -504,7 +545,6 @@ class Read_class:
         return read_names
 
     def determine_file_name(self, filepath):
-
         if not self.exists:
             return "none"
 
@@ -520,21 +560,18 @@ class Read_class:
         return filename
 
     def read_filter_move(self, read_list: list, output: str = ""):
-
         if not self.exists:
             return
 
         temp_file = Temp_File(os.path.dirname(output), suffix=".lst")
 
         with temp_file as tpf:
-
             with open(tpf, "w") as f:
                 f.write("\n".join(read_list))
 
             self.read_filter(output, tpf)
 
     def read_filter_inplace(self, read_list: str):
-
         if not self.exists:
             return
 
@@ -563,6 +600,12 @@ class Read_class:
         cmd = "seqtk subseq %s %s | gzip > %s" % (self.current, read_list, output)
 
         self.cmd.run(cmd)
+
+    def update_history(self):
+        """
+        Update history of read file.
+        """
+        self.history.append(self.current)
 
     def enrich(self, read_list):
         """
@@ -761,18 +804,21 @@ class Read_class:
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
-        if os.path.exists(os.path.join(directory, os.path.basename(self.current))):
-            os.remove(os.path.join(directory, os.path.basename(self.current)))
+        final_file = os.path.join(directory, os.path.basename(self.current))
 
-        shutil.move(self.current, directory)
-        self.current = os.path.join(directory, os.path.basename(self.current))
+        if os.path.exists(self.current):
+            if os.path.exists(final_file):
+                os.remove(final_file)
+
+            shutil.move(self.current, directory)
+
+        self.current = final_file
 
     def __str__(self):
         return self.filepath
 
 
 class Sample_runClass:
-
     r1: Read_class
     r2: Read_class
     report: str
@@ -816,6 +862,14 @@ class Sample_runClass:
         self.QCdir = os.path.dirname(self.r1.clean)
 
         self.reads_before_processing = self.r1.read_number_raw + self.r2.read_number_raw
+
+    def sources_list(self):
+        return tuple(
+            [
+                self.r1.history[-1],
+                self.r2.history[-1],
+            ]
+        )
 
     def current_total_read_number(self):
         print("current total")
@@ -920,7 +974,6 @@ class Sample_runClass:
         self.r1.read_filter_inplace(unique_reads)
 
     def clean_unique_PE(self):
-
         WHERETO = os.path.dirname(self.r1.current)
         common_reads = os.path.join(WHERETO, "common_reads.lst")
 
@@ -943,7 +996,6 @@ class Sample_runClass:
             self.trimmomatic_sort_PE()
 
     def trimmomatic_sort_SE(self):
-
         tempdir = os.path.dirname(self.r1.current)
         tempfq = os.path.join(tempdir, f"temp{randint(1,1999)}")
 
@@ -1213,7 +1265,6 @@ class Bedgraph:
         new_bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
         if new_bedgraph.shape[0] > self.max_bars:
-
             new_bedgraph = new_bedgraph.sample(self.max_bars)
 
         new_bedgraph = self.merge_bedgraph_rows(new_bedgraph)
@@ -1283,7 +1334,6 @@ class Bedgraph:
         plt.close("all")
 
     def plot_coverage(self, output_file, borders=50, tlen=0):
-
         self.plot_coverage_bar(output_file, borders, tlen)
 
 
@@ -1369,4 +1419,3 @@ class Assembly_results:
     assembly_mean: int
     assembly_max: int
     assembly_trim: int
-

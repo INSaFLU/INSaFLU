@@ -79,7 +79,10 @@ class Preprocess:
             self.preprocess_dir, "processed_data.html"
         )
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.info("Preprocess class initialized")

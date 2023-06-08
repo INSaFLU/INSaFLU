@@ -7,6 +7,7 @@ from typing import Type
 from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
+
 from pathogen_identification.models import (
     QC_REPORT,
     ContigClassification,
@@ -318,7 +319,9 @@ def Update_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 @transaction.atomic
-def Update_Classification(run_class: RunMain_class, parameter_set: ParameterSet):
+def Update_Classification(
+    run_class: RunMain_class, parameter_set: ParameterSet, tag="secondary"
+):
     """get run data
     Update TABLES:
     - RunMain,
@@ -331,7 +334,7 @@ def Update_Classification(run_class: RunMain_class, parameter_set: ParameterSet)
 
     try:
         with transaction.atomic():
-            Update_RunMain_noCheck(run_class, parameter_set)
+            Update_RunMain_noCheck(run_class, parameter_set, tag=tag)
             Update_Run_Classification(run_class, parameter_set)
 
         return True
@@ -390,29 +393,6 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
 
 
-def RunIndex_Update_Retrieve_Key(project_name, sample_name):
-
-    run_index = retrieve_number_of_runs(project_name, sample_name)
-
-    new_name = f"run_{run_index}"
-
-    project = Projects.objects.get(name=project_name, is_deleted=False)
-    sample = PIProject_Sample.objects.get(
-        name=sample_name,
-        project__name=project_name,
-    )
-
-    try:
-        run_index = RunIndex.objects.get(
-            project=project, sample=sample, name=new_name
-        )  # check if run_index already exists
-    except RunIndex.DoesNotExist:
-        run_index = RunIndex(project=project, sample=sample, name=new_name)
-        run_index.save()
-
-    return new_name
-
-
 def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
@@ -453,7 +433,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
             parameter_set=parameter_set,
         )
     except RunMain.DoesNotExist:
-
         runmain = RunMain(
             parameter_set=parameter_set,
             suprun=run_class.suprun,
@@ -490,7 +469,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
 
 
 def Sample_update_combinations(run_class: Type[RunMain_class]):
-
     user = User.objects.get(username=run_class.username)
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
@@ -769,7 +747,6 @@ def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     try:
         run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
     except RunAssembly.DoesNotExist:
-
         run_assembly = RunAssembly(
             run=runmain,
             sample=sample,
@@ -809,7 +786,6 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
     try:
         read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
     except ReadClassification.DoesNotExist:
-
         read_classification = ReadClassification(
             run=runmain,
             sample=sample,
@@ -830,7 +806,6 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
         )
 
     except ContigClassification.DoesNotExist:
-
         contig_classification = ContigClassification(
             run=runmain,
             sample=sample,
@@ -864,7 +839,6 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
         remap_main.save()
 
     for ref, row in run_class.raw_targets.iterrows():
-
         if row.status:
             status = RawReference.STATUS_MAPPED
         else:
@@ -932,7 +906,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         run_detail = RunDetail.objects.get(run=runmain, sample=sample)
     except RunDetail.DoesNotExist:
-
         run_detail = RunDetail(
             run=runmain,
             sample=sample,
@@ -963,7 +936,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         run_assembly = RunAssembly.objects.get(run=runmain, sample=sample)
     except RunAssembly.DoesNotExist:
-
         run_assembly = RunAssembly(
             run=runmain,
             sample=sample,
@@ -982,7 +954,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
     try:
         read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
     except ReadClassification.DoesNotExist:
-
         read_classification = ReadClassification(
             run=runmain,
             sample=sample,
@@ -1003,7 +974,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         )
 
     except ContigClassification.DoesNotExist:
-
         contig_classification = ContigClassification(
             run=runmain,
             sample=sample,
@@ -1037,7 +1007,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
         remap_main.save()
 
     for ref, row in run_class.raw_targets.iterrows():
-
         if row.status:
             status = RawReference.STATUS_MAPPED
         else:
@@ -1065,7 +1034,6 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
 
 
 def Update_FinalReport(run_class, runmain, sample):
-
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue
@@ -1077,7 +1045,6 @@ def Update_FinalReport(run_class, runmain, sample):
                 unique_id=row["unique_id"],
             )
         except FinalReport.DoesNotExist:
-
             report_row = FinalReport(
                 run=runmain,
                 sample=sample,
@@ -1143,7 +1110,6 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     )
 
     for ref_map in run_class.remap_manager.mapped_instances:
-
         Update_ReferenceMap(ref_map, run, sample)
 
 
@@ -1184,7 +1150,6 @@ def Update_ReferenceMap(
         map_db.save()
 
     if ref_map.assembly is not None:
-
         remap_stats = ref_map.assembly.report.set_index("ID")
 
         for seqid, row in remap_stats.iterrows():

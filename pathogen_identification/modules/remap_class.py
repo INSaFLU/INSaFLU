@@ -8,19 +8,16 @@ from typing import List, Type
 import numpy as np
 import pandas as pd
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (
-    Bedgraph,
-    Read_class,
-    Remap_Target,
-    RunCMD,
-    Software_detail,
-)
-from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot,
-    read_paf_coordinates,
-)
 from scipy.stats import kstest
+
+from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.modules.object_classes import (Bedgraph,
+                                                            Read_class,
+                                                            Remap_Target,
+                                                            RunCMD,
+                                                            Software_detail)
+from pathogen_identification.utilities.utilities_general import (
+    plot_dotplot, read_paf_coordinates)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -636,7 +633,7 @@ class Remapping:
         self.rdir = rdir
         self.cleanup = cleanup
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
@@ -1794,6 +1791,9 @@ class Mapping_Manager(Tandem_Remap):
 
         self.mapped_instances = []
         self.remap_targets = remap_targets
+        self.target_taxids = set([str(target.taxid)
+                                 for target in remap_targets])
+
         self.reads_before_processing = r1.read_number_clean + r2.read_number_clean
         self.reads_after_processing = (
             r1.get_current_fastq_read_number() + r2.get_current_fastq_read_number()
@@ -1908,3 +1908,47 @@ class Mapping_Manager(Tandem_Remap):
 
             self.max_depth = self.report.Hdepth.max()
             self.max_depthR = self.report.HdepthR.max()
+
+
+    def verify_mapped_instance(self, mapped_instance: Mapping_Instance):
+
+        if (
+            mapped_instance.reference.r1 == self.r1
+            and mapped_instance.reference.r2 == self.r2
+        ):
+            return True
+        else:
+            return False
+
+    def validate_mapped_instance_taxid(self, mapped_instance: Mapping_Instance):
+
+        if str(mapped_instance.reference.target.taxid) in self.target_taxids:
+            return True
+        else:
+            return False
+
+    def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
+
+        if self.verify_mapped_instance(mapped_instance):
+            if self.validate_mapped_instance_taxid(mapped_instance):
+                self.mapped_instances.append(mapped_instance)
+
+    def update_mapped_instance(self, mapped_instance: Mapping_Instance):
+
+        if self.validate_mapped_instance_taxid(mapped_instance):
+            self.mapped_instances.append(mapped_instance)
+
+    def update_mapped_instances(self, mapped_instances: List[Mapping_Instance]):
+
+        print(self.r1)
+        print(self.target_taxids)
+
+        self.mapped_instances = []
+        for instance in mapped_instances:
+            self.update_mapped_instance(instance)
+
+    def get_mapped_instance(self, taxid):
+        for instance in self.mapped_instances:
+            if instance.reference.target.taxid == taxid:
+                return instance
+        return None

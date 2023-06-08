@@ -3,6 +3,7 @@ import os
 from typing import List
 
 import pandas as pd
+
 from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.utilities.utilities_general import (
     merge_classes,
@@ -23,9 +24,12 @@ class Metadata_handler:
         self.prefix = prefix
         self.config = config
         self.metadata_paths = config["metadata"]
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
 
         self.input_taxonomy_to_descriptor_path = self.metadata_paths[
             "input_taxonomy_to_descriptor_path"
@@ -65,7 +69,6 @@ class Metadata_handler:
         max_remap: int = 15,
         taxid_limit: int = 12,
     ):
-
         self.process_reports(
             report_1,
             report_2,
@@ -89,7 +92,6 @@ class Metadata_handler:
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
-
         if "acc_x" in df.columns:
             df = df.rename(columns={"acc_x": "acc"})
 
@@ -206,7 +208,6 @@ class Metadata_handler:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
         if "taxid" not in df.columns:
-
             if "prot_acc" in df.columns:
                 return self.merge_check_column_types(
                     df, self.protein_accession_to_taxid, "prot_acc"
@@ -343,7 +344,6 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
 
@@ -423,7 +423,6 @@ class Metadata_handler:
         remap_plan = []
 
         for taxid in targets.taxid.unique():
-
             if len(taxf[taxf.taxid == taxid]) == 0:
                 remap_absent.append(taxid)
 
@@ -442,7 +441,6 @@ class Metadata_handler:
             ####
 
             for fileset in files_to_map:
-
                 nsu = nset[nset.file == fileset]
 
                 if nsu.shape[0] > max_remap:
@@ -451,7 +449,6 @@ class Metadata_handler:
                     ).reset_index()
 
                 for pref in nsu.acc.unique():
-
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
                     pref_simple = (
                         pref.replace(".", "_")

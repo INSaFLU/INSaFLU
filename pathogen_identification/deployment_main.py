@@ -4,39 +4,38 @@ import shutil
 import traceback
 
 import pandas as pd
-from constants.constants import Constants, FileType, TypePath
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from managing_files.models import ProcessControler
-from utils.process_SGE import ProcessSGE
 
-from pathogen_identification.constants_settings import ConstantsSettings
+from constants.constants import Constants, FileType
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
+from constants.constants import TypePath
+from managing_files.models import ProcessControler
+from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
     Projects,
+    RunMain,
     SoftwareTree,
     SoftwareTreeNode,
-    RunMain,
 )
 from pathogen_identification.modules.run_main import RunMain_class
 from pathogen_identification.utilities.update_DBs import (
-    Update_Sample_Runs,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
     Update_Assembly,
     Update_Classification,
     Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    Update_Sample_Runs,
     get_run_parents,
 )
-
 from pathogen_identification.utilities.utilities_general import simplify_name
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from utils.process_SGE import ProcessSGE
 
 
 class PathogenIdentification_deployment:
-
     project: str
     prefix: str
     rdir: str
@@ -61,7 +60,6 @@ class PathogenIdentification_deployment:
         dir_branch: str = "deployment",
         threads: int = 3,
     ) -> None:
-
         self.pipeline_index = pipeline_index
 
         self.username = username
@@ -123,7 +121,6 @@ class PathogenIdentification_deployment:
         """delete project record in database"""
 
         if self.prepped:
-
             _, runmain, _ = get_run_parents(self.run_engine, self.parameter_set)
 
             if runmain is not None:
@@ -182,7 +179,6 @@ class PathogenIdentification_deployment:
         return True
 
     def generate_config_file(self):
-
         self.config = {
             "project": self.project,
             "source": self.install_registry.SOURCE,
@@ -336,9 +332,7 @@ class Run_Main_from_Leaf:
         ]
 
     def get_in_line(self):
-
         if self.is_available:
-
             self.parameter_set.status = ParameterSet.STATUS_QUEUED
             self.parameter_set.save()
 
@@ -346,7 +340,6 @@ class Run_Main_from_Leaf:
         if self.parameter_set.status in [
             ParameterSet.STATUS_RUNNING,
         ]:
-
             return True
 
         else:
@@ -356,14 +349,12 @@ class Run_Main_from_Leaf:
         if self.parameter_set.status in [
             ParameterSet.STATUS_FINISHED,
         ]:
-
             return True
 
         else:
             return False
 
     def register_parameter_set(self):
-
         try:
             new_run = ParameterSet.objects.get(
                 leaf=self.pipeline_leaf,
@@ -429,7 +420,6 @@ class Run_Main_from_Leaf:
         )
 
     def Deploy(self):
-
         try:
             self.container.run_main_prep()
             self.container.run_engine.Run_Full_Pipeline()
@@ -444,7 +434,6 @@ class Run_Main_from_Leaf:
             return False
 
     def Deploy_Parts(self):
-
         try:
             self.container.run_main_prep()
             self.container.run_engine.Prep_deploy()
@@ -513,13 +502,11 @@ class Run_Main_from_Leaf:
         return True
 
     def Update_dbs(self):
-
         db_updated = Update_Sample_Runs(self.container.run_engine, self.parameter_set)
 
         return db_updated
 
     def register_submission(self):
-
         self.set_run_process_running()
         self.parameter_set.register_subprocess()
         new_run = ParameterSet.objects.get(pk=self.pk)
@@ -527,7 +514,6 @@ class Run_Main_from_Leaf:
         print("registered_submission")
 
     def register_error(self):
-
         self.set_run_process_error()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
@@ -542,7 +528,6 @@ class Run_Main_from_Leaf:
         self.container.delete_run()
 
     def register_completion(self):
-
         self.set_run_process_finished()
 
         new_run = ParameterSet.objects.get(pk=self.pk)
@@ -553,7 +538,6 @@ class Run_Main_from_Leaf:
         self.project.save()
 
     def Submit(self):
-
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
             configured = self.configure()

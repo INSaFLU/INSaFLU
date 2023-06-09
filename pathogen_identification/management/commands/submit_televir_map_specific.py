@@ -10,7 +10,7 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import FinalReport, RawReference, RunMain
+from pathogen_identification.models import FinalReport, RawReference, RunMain, Projects
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -141,7 +141,9 @@ class RunMain:
 
         ### metadata
         print(self.project_name)
-        remap_params = get_remap_software(self.username, self.project_name)
+        remap_params = TelevirParameters.get_remap_software(
+            self.username, self.project_name
+        )
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
@@ -450,7 +452,7 @@ class Command(BaseCommand):
         project_pk = int(options["project_id"])
 
         reference = RawReference.objects.get(pk=raw_reference_id)
-        project = Project.objects.get(pk=project_pk)
+        project = Projects.objects.get(pk=project_pk)
         user = reference.run.project.owner
         project_name = project.name
 

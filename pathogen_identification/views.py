@@ -950,8 +950,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
 
-        print(run_pk)
-
         context = {
             "project": project_name,
             "run_name": run_name,

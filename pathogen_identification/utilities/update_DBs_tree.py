@@ -383,6 +383,28 @@ def retrieve_number_of_runs(project_name, sample_name, username):
     return RunMain.objects.filter(project=project, sample=sample).count() + 1
 
 
+def RunIndex_Update_Retrieve_Key(project_name, sample_name):
+    run_index = retrieve_number_of_runs(project_name, sample_name)
+
+    new_name = f"run_{run_index}"
+
+    project = Projects.objects.get(name=project_name, is_deleted=False)
+    sample = PIProject_Sample.objects.get(
+        name=sample_name,
+        project__name=project_name,
+    )
+
+    try:
+        run_index = RunIndex.objects.get(
+            project=project, sample=sample, name=new_name
+        )  # check if run_index already exists
+    except RunIndex.DoesNotExist:
+        run_index = RunIndex(project=project, sample=sample, name=new_name)
+        run_index.save()
+
+    return new_name
+
+
 def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     """update run data for run_class. Update run_class.run_data.
 
@@ -417,7 +439,6 @@ def Update_RunMain(run_class: RunMain_class, parameter_set: ParameterSet):
     try:
         runmain = RunMain.objects.get(
             project__name=run_class.sample.project_name,
-            suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
             parameter_set=parameter_set,
@@ -489,7 +510,6 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
     try:
         runmain = RunMain.objects.get(
             project=project,
-            suprun=run_class.suprun,
             sample=sample,
             name=run_class.prefix,
             parameter_set=parameter_set,
@@ -564,7 +584,6 @@ def Update_RunMain_noCheck(
     runmain.runtime = f"{run_class.exec_time / 60:.2f} m"
     runmain.report = tag
     runmain.last_modified = str(datetime.datetime.now())
-    # static_dir=run_class.static_dir,
 
     runmain.save()
 
@@ -786,6 +805,7 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
 
     try:
         read_classification = ReadClassification.objects.get(run=runmain, sample=sample)
+
         read_classification.read_classification_report = (
             run_class.read_classification_summary
         )
@@ -1134,23 +1154,7 @@ def Update_RefMap_DB(run_class: RunMain_class, parameter_set: ParameterSet):
     """
     print(f"updating refmap_dbs run {run_class.prefix}")
 
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
-
-    sample = PIProject_Sample.objects.get(
-        name=run_class.sample.sample_name,
-        project=project,
-    )
-
-    run = RunMain.objects.get(
-        project=project,
-        suprun=run_class.suprun,
-        name=run_class.prefix,
-        sample=sample,
-        parameter_set=parameter_set,
-    )
+    sample, run, _ = get_run_parents(run_class, parameter_set)
 
     for ref_map in run_class.remap_manager.mapped_instances:
         Update_ReferenceMap(ref_map, run, sample)

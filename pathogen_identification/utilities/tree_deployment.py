@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 import shutil
+from copy import _copy_immutable, _deepcopy_dispatch
 from typing import List
 
 import pandas as pd
@@ -18,7 +19,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.update_DBs import (
+from pathogen_identification.utilities.update_DBs_tree import (
     Update_Assembly,
     Update_Classification,
     Update_Remap,
@@ -29,6 +30,13 @@ from pathogen_identification.utilities.update_DBs import (
 from pathogen_identification.utilities.utilities_pipeline import PipelineTree
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
+
+
+def logger_copy(x, memo):
+    return x
+
+
+copy._deepcopy_dispatch[logging.Logger] = logger_copy
 
 
 class PathogenIdentification_Deployment_Manager:
@@ -184,7 +192,10 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_PreProcess()
         self.run_engine.Sanitize_reads()
         self.run_engine.Run_Assembly()
-        self.run_engine.Run_Classification()
+        self.run_engine.Run_Contig_classification()
+        self.run_engine.Run_Read_classification()
+        self.run_engine.plan_remap_prep()
+        # self.run_engine.Run_Classification()
         self.run_engine.Run_Remapping()
 
     def update_engine(self):
@@ -528,11 +539,24 @@ class Tree_Progress:
     def spawn_node_child(self, node: Tree_Node, child: int):
         new_node = Tree_Node(self.tree, child, node.software_tree_pk)
         # node.run_manager.run_engine.logger = None
-        run_manager_copy = node.run_manager  # copy.deepcopy(node.run_manager)
+
+        run_manager_copy = copy.deepcopy(node.run_manager)
         new_node.receive_run_manager(run_manager_copy)
         new_node.run_manager.update_engine()
 
         return new_node
+
+    @staticmethod
+    def disable_logger(logger: logging.Logger):
+        logger.disabled = True
+
+    @staticmethod
+    def enable_logger(logger: logging.Logger):
+        logger.disabled = False
+
+    @staticmethod
+    def copy_class_instance(instance):
+        return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
         print("registering node")
@@ -563,6 +587,8 @@ class Tree_Progress:
                     return False
 
             if node.run_manager.run_engine.assembly_performed:
+                print("##### UPDATING ASSEMBLY DBS ######")
+                print(node.run_manager.run_engine.assembly_drone.assembly_method.name)
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -571,8 +597,10 @@ class Tree_Progress:
 
             if (
                 node.run_manager.run_engine.read_classification_performed
-                or node.run_manager.run_engine.contig_classification_performed
+                and node.run_manager.run_engine.contig_classification_performed
             ):
+                print("##### UPDATING CLASSIFICATION DBS ######")
+                print(step)
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set, tag=step
                 )
@@ -620,8 +648,10 @@ class Tree_Progress:
 
     @staticmethod
     def get_remap_plans(nodes: List[Tree_Node]):
+        planned_nodes = []
         for n in nodes:
             n.run_manager.run_engine.plan_remap_prep()
+            # planned_nodes.append(copy.deepcopy(n))
 
         return nodes
 
@@ -668,7 +698,7 @@ class Tree_Progress:
             sample_source = node.run_manager.run_engine.sample.sources_list()
             parameters = node.parameters
             for source, register in source_paramaters_combinations.items():
-                if sample_source == register["source"] and parameters.equals(
+                if set(sample_source) == set(register["source"]) and parameters.equals(
                     register["parameters"]
                 ):
                     return source
@@ -739,7 +769,7 @@ class Tree_Progress:
         self, nodes_by_sample_sources: List[List[Tree_Node]]
     ):
         new_nodes = []
-        print("########## STACKED DEPLOYMENT CLASS FICATION ##########")
+        print("########## STACKED DEPLOYMENT CLASSIFICATION ##########")
         print(nodes_by_sample_sources)
         for nodes_subset in nodes_by_sample_sources:
             if len(nodes_subset) == 0:
@@ -772,7 +802,7 @@ class Tree_Progress:
                 continue
 
             nodes = self.get_remap_plans(nodes)
-
+            print("nodes: ", nodes)
             group_targets = self.get_node_node_targets(nodes)
             print("group_targets")
             print(group_targets)
@@ -873,7 +903,13 @@ class Tree_Progress:
         self.register_current_nodes()
         self.update_nodes()
 
-    def run_nodes_classification(self):
+    def run_nodes_classification_reads(self):
+        self.run_simplified_classification()
+        print("RAN CLASSIFICATION")
+        self.register_current_nodes()
+        self.update_nodes()
+
+    def run_nodes_classification_contigs(self):
         self.run_simplified_classification()
         print("RAN CLASSIFICATION")
         self.register_current_nodes()
@@ -891,14 +927,21 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
         ]:
             self.update_nodes()
+            return
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_read_classification:
-            self.run_nodes_classification()
+            self.run_nodes_classification_reads()
+            return
+
+        # if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
+        #    self.run_nodes_classification_reads()
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_remapping:
             self.run_nodes_simply()
         else:
             self.run_nodes_sequential()
+
+        return
 
     def run_current_nodes_batch_parallel(self, batch=2):
         import multiprocessing as mp

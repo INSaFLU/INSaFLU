@@ -1226,7 +1226,7 @@ class Classifier:
         self.logger.addHandler(logging.StreamHandler())
         self.log_dir = log_dir
         self.cmd = RunCMD(
-            bin, logdir=self.log_dir, prefix=prefix, task="classification"
+            bin, logdir=self.log_dir, prefix=prefix, task=f"classification_{classifier_method.name}_{prefix}"
         )
         self.prefix = prefix
         self.classifier_method = classifier_method

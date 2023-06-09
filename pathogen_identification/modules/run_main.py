@@ -66,6 +66,8 @@ class RunDetail_main:
     enrichment: bool
     assembly: bool
     classification: bool
+    contig_classification: bool
+    read_classification: bool
     remapping: bool
     house_cleaning: bool
 
@@ -339,6 +341,11 @@ class RunDetail_main:
         self.depletion = bool(self.depletion_method.name != "None")
         self.enrichment = bool(self.enrichment_method.name != "None")
         self.assembly = bool(self.assembly_method.name != "None")
+        self.contig_classification = bool(
+            self.contig_classification_method.name != "None"
+        )
+        self.read_classification = bool(self.read_classification_method.name != "None")
+
         self.classification = config["actions"]["CLASSIFY"]
         self.remapping = config["actions"]["REMAP"]
         self.house_cleaning = config["actions"]["CLEAN"]
@@ -383,6 +390,9 @@ class RunDetail_main:
         self.method_args = pd.concat((self.method_args, method_args))
         # with open(config_json) as json_file:
         #    config = json.load(json_file)
+
+        print("METHOD ARGS")
+        print(self.method_args)
 
         self.config = config
         self.prefix = config["prefix"]
@@ -726,7 +736,7 @@ class Run_Deployment_Methods(RunDetail_main):
             log_dir=self.log_dir,
         )
         self.read_classification_drone.run()
-    
+
     def prep_REMAPPING(self):
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
@@ -1226,7 +1236,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.generate_output_data_classes()
 
     def Run_Assembly(self):
-        if self.assembly:
+        if self.assembly and self.assembly_performed is False:
             self.deploy_ASSEMBLY()
             self.assembly_performed = True
 
@@ -1254,12 +1264,41 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.raw_targets = self.metadata_tool.raw_targets
             self.remap_plan = self.metadata_tool.remap_plan
 
+            self.read_classification_performed = True
+            self.contig_classification_performed = True
+
             self.export_intermediate_reports()
+
+            print("#################################")
+            print(self.merged_targets)
+
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Run_Contig_classification(self):
+        """
+        This is a special case where we only want to run contig classification"""
+
+        if self.contig_classification and not self.contig_classification_performed:
+            self.deploy_CONTIG_CLASSIFICATION()
+            self.contig_classification_performed = True
+
+        self.Update_exec_time()
+        self.generate_output_data_classes()
+
+    def Run_Read_classification(self):
+        """
+        This is a special case where we only want to run read classification"""
+
+        if self.read_classification and not self.read_classification_performed:
+            self.deploy_READ_CLASSIFICATION()
+            self.read_classification_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()
 
     def plan_remap_prep(self):
+        
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
@@ -1274,7 +1313,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_plan = self.metadata_tool.remap_plan
 
     def Run_Remapping(self):
-        if self.remapping:
+        if self.remapping and self.remapping_performed is False:
             self.plan_remap_prep()
             self.export_intermediate_reports()
 

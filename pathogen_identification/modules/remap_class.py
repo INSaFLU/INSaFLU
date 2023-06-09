@@ -11,13 +11,17 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from scipy.stats import kstest
 
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.modules.object_classes import (Bedgraph,
-                                                            Read_class,
-                                                            Remap_Target,
-                                                            RunCMD,
-                                                            Software_detail)
+from pathogen_identification.modules.object_classes import (
+    Bedgraph,
+    Read_class,
+    Remap_Target,
+    RunCMD,
+    Software_detail,
+)
 from pathogen_identification.utilities.utilities_general import (
-    plot_dotplot, read_paf_coordinates)
+    plot_dotplot,
+    read_paf_coordinates,
+)
 
 pd.options.mode.chained_assignment = None
 np.warnings.filterwarnings("ignore")
@@ -32,7 +36,6 @@ class coverage_parse:
         Xm: int = 2,
         logging_level=logging.INFO,
     ):
-
         self.fastf = fastf
         self.bedmap = bedmap
         self.Xm = Xm
@@ -167,7 +170,6 @@ class coverage_parse:
                 pvals = []
 
                 for ctg in bedp.contig.unique():
-
                     bp = bedp[bedp.contig == ctg].copy()
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
@@ -638,7 +640,7 @@ class Remapping:
             self.logger.handlers.clear()
         self.logger.propagate = False
 
-        self.logger.setLevel(logging_level)
+        self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
         self.logger.info("Starting remapping")
@@ -1037,7 +1039,6 @@ class Remapping:
             return True
 
     def assembly_to_reference_map(self):
-
         if self.check_assembly_exists():
             self.minimap2_assembly_map()
         else:
@@ -1196,7 +1197,6 @@ class Remapping:
             return False
 
     def filter_samfile_read_names(self, same=True, output_sam=""):
-
         if not output_sam:
             output_sam = os.path.join(self.rdir, f"temp{randint(1,1999)}.sam")
 
@@ -1244,7 +1244,6 @@ class Remapping:
         self.convert_sam_to_bam()
 
     def remove_duplicates_samfile(self, same=True):
-
         cmd = f"samtools rmdup -s {self.read_map_sam} {self.read_map_sam_rmdup}"
 
         self.cmd.run(cmd)
@@ -1259,16 +1258,13 @@ class Remapping:
             os.rename(self.read_map_sam_rmdup, self.read_map_sam)
 
     def convert_sam_to_bam(self):
-
         if self.check_remap_status_sam():
-
             if os.path.isfile(self.read_map_bam):
                 os.remove(self.read_map_bam)
 
             cmd = f"samtools view -bS {self.read_map_sam} > {self.read_map_bam}"
             self.cmd.run(cmd)
         else:
-
             self.logger.error("SAM file not found")
             raise FileNotFoundError
 
@@ -1307,7 +1303,6 @@ class Remapping:
         os.remove(temp_file)
 
     def get_mapped_reads_number(self):
-
         try:
             with open(self.mapped_reads, "r") as f:
                 self.number_of_reads_mapped = len(f.readlines())
@@ -1372,7 +1367,6 @@ class Remapping:
 
     def plot_coverage(self):
         if os.path.getsize(self.genome_coverage):
-
             bedgraph = Bedgraph(self.genome_coverage)
             bedgraph.plot_coverage(self.coverage_plot, tlen=self.reference_fasta_length)
 
@@ -1380,7 +1374,6 @@ class Remapping:
 
     def plot_dotplot_from_paf(self):
         if os.path.getsize(self.assembly_map_paf):
-
             df = read_paf_coordinates(self.assembly_map_paf)
             plot_dotplot(df, self.dotplot, "dotplot", xmax=self.reference_fasta_length)
             self.dotplot_exists = os.path.exists(self.dotplot)
@@ -1546,11 +1539,9 @@ class Mapping_Instance:
             self.reference.relocate_mapping_files(destination)
 
             if self.assembly:
-
                 self.assembly.relocate_mapping_files(destination)
 
     def generate_full_mapping_report_entry(self):
-
         ntax = pd.concat((self.mapping_main_info, self.reference.report), axis=1)
 
         def simplify_taxid(x):
@@ -1632,7 +1623,6 @@ class Tandem_Remap:
         logging_level: int,
         cleanup: bool,
     ):
-
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
@@ -1655,7 +1645,6 @@ class Tandem_Remap:
         self.r2 = r2.current
 
     def reciprocal_map(self, remap_target):
-
         reference_remap_drone = self.reference_map(remap_target)
         assembly_map = self.assembly_map(reference_remap_drone)
 
@@ -1698,7 +1687,6 @@ class Tandem_Remap:
         return target_remap_drone
 
     def assembly_map(self, reference_remap: Remapping):
-
         if len(reference_remap.mapped_contigs) == 0:
             return None
 
@@ -1764,7 +1752,6 @@ class Mapping_Manager(Tandem_Remap):
         cleanup: bool,
         logdir="",
     ):
-
         super().__init__(
             r1,
             r2,
@@ -1791,8 +1778,7 @@ class Mapping_Manager(Tandem_Remap):
 
         self.mapped_instances = []
         self.remap_targets = remap_targets
-        self.target_taxids = set([str(target.taxid)
-                                 for target in remap_targets])
+        self.target_taxids = set([str(target.taxid) for target in remap_targets])
 
         self.reads_before_processing = r1.read_number_clean + r2.read_number_clean
         self.reads_after_processing = (
@@ -1830,9 +1816,7 @@ class Mapping_Manager(Tandem_Remap):
             self.mapped_instances.append(mapped_instance)
 
     def export_reference_fastas_if_failed(self, media_dir):
-
         for target in self.mapped_instances:
-
             target.reference.relocate_reference_fasta(media_dir)
 
     def run_mappings_move_clean(self, static_plots_dir, media_dir):
@@ -1861,7 +1845,6 @@ class Mapping_Manager(Tandem_Remap):
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")
         for instance in self.mapped_instances:
-
             if instance.reference.number_of_reads_mapped > 0:
                 instance.reference.move_igv_files(static_dir)
 
@@ -1870,24 +1853,20 @@ class Mapping_Manager(Tandem_Remap):
             instance.export_mapping_files(output_dir)
 
     def merge_mapping_reports(self):
-
         full_report = []
 
         for instance in self.mapped_instances:
-
             ntax = instance.generate_full_mapping_report_entry()
             if len(ntax):
                 full_report.append(ntax)
 
         if len(full_report) > 0:
-
             self.report = pd.concat(full_report, axis=0)
 
         if self.cleanup:
             self.clean_final_report()
 
     def clean_final_report(self):
-
         self.report.ngaps = self.report.ngaps.fillna(0)
         self.report = self.report[self.report.coverage > 0]
         self.report = self.report.sort_values(["coverage", "Hdepth"], ascending=False)
@@ -1909,9 +1888,7 @@ class Mapping_Manager(Tandem_Remap):
             self.max_depth = self.report.Hdepth.max()
             self.max_depthR = self.report.HdepthR.max()
 
-
     def verify_mapped_instance(self, mapped_instance: Mapping_Instance):
-
         if (
             mapped_instance.reference.r1 == self.r1
             and mapped_instance.reference.r2 == self.r2
@@ -1921,25 +1898,21 @@ class Mapping_Manager(Tandem_Remap):
             return False
 
     def validate_mapped_instance_taxid(self, mapped_instance: Mapping_Instance):
-
         if str(mapped_instance.reference.target.taxid) in self.target_taxids:
             return True
         else:
             return False
 
     def update_mapped_instance_safe(self, mapped_instance: Mapping_Instance):
-
         if self.verify_mapped_instance(mapped_instance):
             if self.validate_mapped_instance_taxid(mapped_instance):
                 self.mapped_instances.append(mapped_instance)
 
     def update_mapped_instance(self, mapped_instance: Mapping_Instance):
-
         if self.validate_mapped_instance_taxid(mapped_instance):
             self.mapped_instances.append(mapped_instance)
 
     def update_mapped_instances(self, mapped_instances: List[Mapping_Instance]):
-
         print(self.r1)
         print(self.target_taxids)
 

@@ -13,12 +13,21 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    Sample_runClass, Software_detail)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    Sample_runClass,
+    Software_detail,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
-from pathogen_identification.modules.remap_class import (Mapping_Instance,
-                                                         Mapping_Manager)
+from pathogen_identification.modules.remap_class import (
+    Mapping_Instance,
+    Mapping_Manager,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -97,16 +106,6 @@ class RunDetail_main:
     ## output content
     report: pd.DataFrame
 
-    # activity log
-
-    qc_performed: bool = False
-    enrichment_performed: bool = False
-    depletion_performed: bool = False
-    assembly_performed: bool = False
-    read_classification_performed: bool = False
-    contig_classification_performed: bool = False
-    remapping_performed: bool = False
-
     def set_logger(self):
         self.logger = logging.getLogger("main {}".format(self.prefix))
         self.logger.setLevel(self.logger_level_main)
@@ -156,6 +155,18 @@ class RunDetail_main:
         self.runtime = 0
         self.start_time = time.perf_counter()
         self.exec_time = 0
+
+        # activity log
+
+        self.qc_performed: bool = False
+        self.enrichment_performed: bool = False
+        self.depletion_performed: bool = False
+        self.assembly_performed: bool = False
+        self.read_classification_performed: bool = False
+        self.contig_classification_performed: bool = False
+        self.remap_prepped: bool = False
+        self.remapping_performed: bool = False
+        self.remap_prepped: bool = False
 
         ######## DIRECTORIES ########
 
@@ -1237,12 +1248,14 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_Assembly(self):
         if self.assembly and self.assembly_performed is False:
+            print("PERFORMING ASSEMBLY")
             self.deploy_ASSEMBLY()
             self.assembly_performed = True
 
-        elif self.assembly_performed is False:
-            self.deploy_ASSEMBLY(fake_run=True)
-            self.assembly_performed = True
+        # elif self.assembly_performed is False:
+        #    print("FAKE ASSEMBLY")
+        #    self.deploy_ASSEMBLY(fake_run=True)
+        #    self.assembly_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()
@@ -1297,8 +1310,12 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Update_exec_time()
         self.generate_output_data_classes()
 
+    def plan_remap_prep_safe(self):
+        if self.read_classification_performed and self.contig_classification_performed:
+            self.plan_remap_prep()
+            self.remap_prepped = True
+
     def plan_remap_prep(self):
-        
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
@@ -1313,6 +1330,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_plan = self.metadata_tool.remap_plan
 
     def Run_Remapping(self):
+        if not self.remap_prepped:
+            return
+
         if self.remapping and self.remapping_performed is False:
             self.plan_remap_prep()
             self.export_intermediate_reports()

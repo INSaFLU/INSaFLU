@@ -115,9 +115,7 @@ class Pipeline_Makeup:
         return list(self.MAKEUP.values())
 
     def match_makeup_name_from_list(self, makeup_list: list):
-
         for makeup, mlist in self.MAKEUP.items():
-
             if set(makeup_list) == set(mlist):
                 return makeup
         return None
@@ -245,7 +243,7 @@ class ConstantsSettings:
 
     CONSTANTS_ILLUMINA = {
         "minimum_coverage_threshold": 2,
-        "max_output_number": 12,
+        "max_output_number": 1,
         "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 300,
@@ -253,7 +251,7 @@ class ConstantsSettings:
 
     CONSTANTS_ONT = {
         "minimum_coverage_threshold": 1,
-        "max_output_number": 12,
+        "max_output_number": 1,
         "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 500,

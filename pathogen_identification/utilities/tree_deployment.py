@@ -194,7 +194,7 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_Assembly()
         self.run_engine.Run_Contig_classification()
         self.run_engine.Run_Read_classification()
-        self.run_engine.plan_remap_prep()
+        self.run_engine.plan_remap_prep_safe()
         # self.run_engine.Run_Classification()
         self.run_engine.Run_Remapping()
 
@@ -606,6 +606,8 @@ class Tree_Progress:
                 )
                 if not db_updated:
                     return False
+
+                self.updated_classification = True
 
             if node.run_manager.run_engine.remapping_performed:
                 print("exporting remapping")

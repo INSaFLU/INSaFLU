@@ -1576,20 +1576,24 @@ class Utils_Manager:
         """
         Get all pathnodes for a project
         """
+        print("HIHI")
         utils = Utils_Manager()
         technology = project.technology
         user = project.owner
 
         local_tree = utils.generate_project_tree(technology, project, user)
+        print("local tree")
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
+        print("Tree Makeup: ", tree_makeup)
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
         ### MANAGEMENT
+        print("Pipeline Tree Index: ", pipeline_tree_index)
 
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)

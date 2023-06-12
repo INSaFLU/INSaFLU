@@ -368,6 +368,9 @@ class Tree_Node:
         if parameter_set is None:
             return False
 
+        parameter_set.status = ParameterSet.STATUS_RUNNING
+        parameter_set.save()
+
         self.tree_node = tree_node
         self.parameter_set = parameter_set
 

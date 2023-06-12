@@ -22,6 +22,7 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 
+
 def simplify_name(name):
     return (
         name.replace("_", "_")
@@ -34,11 +35,12 @@ def simplify_name(name):
 
 @login_required
 @require_POST
-def submit_televir_project_sample(request):
+def submit_televir_project_sample_runs(request):
     """
     submit a new sample to televir project
     """
     if request.is_ajax():
+        print("submit_televir_project_sample")
         data = {"is_ok": False, "is_deployed": False}
 
         process_SGE = ProcessSGE()
@@ -49,22 +51,59 @@ def submit_televir_project_sample(request):
         project = Projects.objects.get(id=int(sample.project.pk))
 
         utils = Utils_Manager()
-
+        print(sample, project)
         runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+        print(runs_to_deploy)
 
         try:
             if len(runs_to_deploy) > 0:
-
                 for sample, leafs_to_deploy in runs_to_deploy.items():
-
                     for leaf in leafs_to_deploy:
-
                         taskID = process_SGE.set_submit_televir_run(
                             user=request.user,
                             project_pk=project.pk,
                             sample_pk=sample.pk,
                             leaf_pk=leaf.pk,
                         )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def submit_televir_project_sample(request):
+    """
+    submit a new sample to televir project
+    """
+    if request.is_ajax():
+        print("submit_televir_project_sample")
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+        project = Projects.objects.get(id=int(sample.project.pk))
+
+        utils = Utils_Manager()
+        runs_to_deploy = utils.check_runs_to_deploy_sample(user, project, sample)
+
+        try:
+            if len(runs_to_deploy) > 0:
+                for sample, leafs_to_deploy in runs_to_deploy.items():
+                    taskID = process_SGE.set_submit_televir_sample(
+                        user=request.user,
+                        project_pk=project.pk,
+                        sample_pk=sample.pk,
+                    )
 
                 data["is_deployed"] = True
 
@@ -102,9 +141,8 @@ def kill_televir_project_sample(request):
         )
 
         for run in runs:
-
             try:  # kill process
-                process_SGE.kill_televir_process_controler(
+                process_SGE.kill_televir_process_controler_runs(
                     user.pk, project.pk, sample.pk, run.leaf.pk
                 )
 
@@ -114,11 +152,97 @@ def kill_televir_project_sample(request):
                 pass
 
             if run.status == ParameterSet.STATUS_RUNNING:
-
                 run.delete_run_data()
 
             run.status = ParameterSet.STATUS_KILLED
             run.save()
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def kill_televir_project_tree_sample(request):
+    """
+    kill all processes a sample, set queued to false
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+        project = Projects.objects.get(id=int(sample.project.pk))
+
+        try:  # kill process
+            process_SGE.kill_televir_process_controler_samples(
+                user.pk,
+                project.pk,
+                sample.pk,
+            )
+
+        except ProcessControler.DoesNotExist as e:
+            print(e)
+            print("ProcessControler.DoesNotExist")
+            pass
+
+        runs = ParameterSet.objects.filter(
+            sample=sample,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_QUEUED,
+            ],
+        )
+
+        for run in runs:
+            if run.status == ParameterSet.STATUS_RUNNING:
+                run.delete_run_data()
+
+            run.status = ParameterSet.STATUS_KILLED
+            run.save()
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def deploy_ProjectPI_runs(request):
+    """
+    prepare data for deployment of pathogen identification.
+    """
+
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+
+        utils = Utils_Manager()
+        runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
+        print(runs_to_deploy)
+
+        try:
+            if len(runs_to_deploy) > 0:
+                for sample, leafs_to_deploy in runs_to_deploy.items():
+                    taskID = process_SGE.set_submit_televir_sample(
+                        user=request.user,
+                        project_pk=project.pk,
+                        sample_pk=sample.pk,
+                    )
+
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            data["is_deployed"] = False
 
         data["is_ok"] = True
         return JsonResponse(data)
@@ -146,17 +270,12 @@ def deploy_ProjectPI(request):
 
         try:
             if len(runs_to_deploy) > 0:
-
                 for sample, leafs_to_deploy in runs_to_deploy.items():
-
-                    for leaf in leafs_to_deploy:
-
-                        taskID = process_SGE.set_submit_televir_run(
-                            user=request.user,
-                            project_pk=project.pk,
-                            sample_pk=sample.pk,
-                            leaf_pk=leaf.pk,
-                        )
+                    taskID = process_SGE.set_submit_televir_sample(
+                        user=request.user,
+                        project_pk=project.pk,
+                        sample_pk=sample.pk,
+                    )
 
                 data["is_deployed"] = True
 
@@ -211,7 +330,6 @@ def set_control_reports(project_pk: int):
         )
 
         for sample_report in other_reports:
-
             if sample_report.taxid in control_report_taxids_set:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
             else:
@@ -271,7 +389,6 @@ def validate_project_name(request):
     test if exist this project name
     """
     if request.is_ajax():
-
         project_name = request.GET.get("project_name")
 
         data = {
@@ -321,7 +438,6 @@ def IGV_display(request):
             )
 
             def remove_pre_static(path: str, pattern: str) -> str:
-
                 cwd = os.getcwd()
                 if path.startswith(cwd):
                     path = path[len(cwd) :]
@@ -396,6 +512,3 @@ def IGV_display(request):
             data["sample_name"] = sample_name
 
         return JsonResponse(data)
-
-
-

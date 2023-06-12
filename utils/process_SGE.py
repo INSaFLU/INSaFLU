@@ -5,7 +5,7 @@ import os
 import time
 from datetime import datetime
 from django.contrib.auth.models import User
-
+from typing import List
 from constants.constants import Constants, FileExtensions, TypePath
 from django.conf import settings
 from extend_user.models import Profile
@@ -33,10 +33,10 @@ from django.db import transaction
 # <sge_root>/<sge_cell>/common/accounting
 # <sge_root>/<sge_cell>/common/statistics
 
+
 ## default configuration
 # /etc/default/gridengine
 class ProcessSGE(object):
-
     utils: Utils = Utils()
 
     FILE_NAME_SCRIPT_SGE = "launch_job_insa.sh"
@@ -862,7 +862,7 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "/usr/bin/python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
                 project_pk,
@@ -883,7 +883,7 @@ class ProcessSGE(object):
             queue_name,
             vect_command,
             job_name,
-            True,
+            False,
             [job_name_wait],
             alternative_temp_dir=out_dir,
         )
@@ -1041,13 +1041,12 @@ class ProcessSGE(object):
         exit_status = os.system(bash_command)
 
         if exit_status != 0:
-
-            raise Exception("Fail to kill the process")
+            print("Fail to kill the process")
 
         return exit_status
 
     @transaction.atomic
-    def kill_televir_process_controler(
+    def kill_televir_process_controler_runs(
         self, user_pk: int, project_pk: int, sample_pk: int, leaf_pk: int
     ):
         """
@@ -1062,8 +1061,32 @@ class ProcessSGE(object):
             is_finished=False,
         )
 
-        for process in processes:
+        self.kill_processes(processes)
 
+    @transaction.atomic
+    def kill_televir_process_controler_samples(
+        self, user_pk: int, project_pk: int, sample_pk: int
+    ):
+        """
+        Kill the process in process controler.
+        """
+        process_controler = ProcessControler()
+
+        processes = ProcessControler.objects.filter(
+            owner__id=user_pk,
+            name=process_controler.get_name_televir_project_sample(
+                project_pk=project_pk, sample_pk=sample_pk
+            ),
+            is_error=False,
+            is_finished=False,
+        )
+
+        self.kill_processes(processes)
+
+    def kill_processes(self, processes: List[ProcessControler]):
+        """ """
+
+        for process in processes:
             print("Killing process {}".format(process.name_sge_id))
 
             if process.name_sge_id:
@@ -1075,7 +1098,6 @@ class ProcessSGE(object):
             process.save()
 
     def set_specific_controler_flag(self, user, name_of_process, sge_id, flags):
-
         try:
             process_controler = ProcessControler.objects.get(
                 owner__id=user.pk,

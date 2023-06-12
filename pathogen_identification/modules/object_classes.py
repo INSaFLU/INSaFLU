@@ -80,6 +80,7 @@ class Operation_Temp_Files:
         self.temp_dir = temp_dir
         self.prefix = prefix
         seed = randint(1000000, 9999999)
+        print("Operation temp dir: " + self.temp_dir)
 
         self.script = os.path.join(self.temp_dir, f"{self.prefix}_{seed}.sh")
 
@@ -204,12 +205,12 @@ class RunCMD:
         self.logfile = os.path.join(logdir, f"{prefix}_{task}.log")
         self.logdir = logdir
 
-    def __deepcopy__(self, memo):
-        """
-        ignore logger, replace with new logger
-        """
-
-        return RunCMD(self.bin, self.logdir, self.prefix, self.task)
+    # def __deepcopy__(self, memo):
+    #    """
+    #    ignore logger, replace with new logger
+    #    """
+    #
+    #    return RunCMD(self.bin, self.logdir, self.prefix, self.task)
 
     def set_logger(self, logger):
         """
@@ -487,7 +488,9 @@ class Read_class:
             bin: path to bin directory.
 
         """
-        self.cmd = RunCMD(bin, prefix="read", task="housekeeping")
+        print("Initializing Read_class")
+        print("clean_dir", clean_dir)
+        self.cmd = RunCMD(bin, prefix="read", task="housekeeping", logdir=clean_dir)
 
         self.exists = os.path.isfile(filepath)
 
@@ -867,7 +870,7 @@ class Sample_runClass:
         bin: str,
         threads: int = 1,
     ) -> None:
-        self.cmd = RunCMD(bin)
+        self.cmd = RunCMD(bin, prefix= "sample", task= "housekeeping", logdir= os.path.dirname(r1.clean))
         self.r1 = r1
         self.r2 = r2
         self.sample_name = sample_name

@@ -543,7 +543,6 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
-<<<<<<< HEAD
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
@@ -553,8 +552,6 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
-=======
->>>>>>> predev
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(

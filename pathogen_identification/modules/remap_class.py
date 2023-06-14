@@ -664,6 +664,7 @@ class Remapping:
         )
         self.read_map_sam = f"{self.rdir}/{self.prefix}.sam"
         self.read_map_bam = f"{self.rdir}/{self.prefix}.bam"
+        self.read_map_filtered_bam = f"{self.rdir}/{self.prefix}.filtered.bam"
         self.read_map_sorted_bam = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam"
         )
@@ -949,6 +950,7 @@ class Remapping:
         4) get number of mapped reads."""
 
         self.filter_bamfile_read_names()
+        self.filter_mapping_bamutil()
         self.sort_bam()
         self.index_sorted_bam()
         self.generate_vcf()
@@ -1296,7 +1298,7 @@ class Remapping:
         """
         sort bam file using samtools."""
         if self.check_remap_status_bam():
-            cmd = f"samtools sort {self.read_map_bam} -o {self.read_map_sorted_bam}"
+            cmd = f"samtools sort {self.read_map_filtered_bam} -o {self.read_map_sorted_bam}"
             self.cmd.run(cmd)
         else:
             self.logger.error("BAM file not found")

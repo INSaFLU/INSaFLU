@@ -193,6 +193,7 @@ class SoftwareNames(object):
     SOFTWARE_Pangolin = "{}".format(
         os.path.join(settings.DIR_SOFTWARE, "pangolin/pangolin.sh")
     )
+    )
     # SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
     SOFTWARE_Pangolin_VERSION = "v4.2"  ## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
@@ -263,11 +264,13 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
     SOFTWARE_SNIPPY_no_primer = "None"
     SOFTWARE_SNIPPY_PRIMERS = [
+    SOFTWARE_SNIPPY_PRIMERS = [
         SOFTWARE_SNIPPY_no_primer,
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
+    ]
     ]
 
     #### VERY important, change in snippy-vcf
@@ -446,12 +449,14 @@ class SoftwareNames(object):
 
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
+    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh"
     )
     SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
+    )
     )
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
@@ -488,10 +493,11 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
     ]
 
+
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -500,6 +506,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv = [
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
+    ]
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
@@ -528,7 +535,10 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
     ]
@@ -543,11 +553,13 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+    SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
+    SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
-    SOFTWARE_televir_report_layout_name = "Report Layout"
-    SOFTWARE_televir_report_layout_name_extended = "Report Layout"
+    SOFTWARE_televir_report_layout_name = "Final Report"
+    SOFTWARE_televir_report_layout_name_extended = "Final Report"
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
@@ -563,6 +575,8 @@ class SoftwareNames(object):
         "Preprocessing - Prinseq (remove low complexity reads)"
     )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
+    SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
+    SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
 
@@ -851,6 +865,8 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+        ],
             ConstantsSettings.PIPELINE_NAME_read_classification,
         ],
     }
@@ -1613,6 +1629,7 @@ class SoftwareNames(object):
     ### it's a way to define a threshold to mask consensus sequences, with regions with low coverage, obtained by snippy
     ### It's a global parameter for INSaFLU
     """
+
 
     ### Define the Minimum percentage of horizontal coverage to generate consensus, otherwise drop sequence
     ##def get_insaflu_parameter_mask_consensus(self): return ""

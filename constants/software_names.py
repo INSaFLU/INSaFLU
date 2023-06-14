@@ -193,7 +193,6 @@ class SoftwareNames(object):
     SOFTWARE_Pangolin = "{}".format(
         os.path.join(settings.DIR_SOFTWARE, "pangolin/pangolin.sh")
     )
-    )
     # SOFTWARE_Pangolin_VERSION = "v3.1.14"  ## Version Name: pangolin
     SOFTWARE_Pangolin_VERSION = "v4.2"  ## Version Name: pangolin
     SOFTWARE_Pangolin_name = "Pangolin"  ## Pangolin
@@ -264,13 +263,11 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
     SOFTWARE_SNIPPY_no_primer = "None"
     SOFTWARE_SNIPPY_PRIMERS = [
-    SOFTWARE_SNIPPY_PRIMERS = [
         SOFTWARE_SNIPPY_no_primer,
         "SARS_CoV_2_MN908947_artic_3.fa",
         "SARS_CoV_2_MN908947_artic_4.1.fa",
         "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
         "MPXV_comb-ccc7sszn.fa",
-    ]
     ]
 
     #### VERY important, change in snippy-vcf
@@ -457,7 +454,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
     )
-    )
+    
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
@@ -497,7 +494,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na,
-        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,,
+        SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2,
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a = "rsv_a"
@@ -506,7 +503,6 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_BUILDS_rsv = [
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a,
         SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b,
-    ]
     ]
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
@@ -865,8 +861,6 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ConstantsSettings.PIPELINE_NAME_read_classification,
-        ],
             ConstantsSettings.PIPELINE_NAME_read_classification,
         ],
     }

@@ -35,7 +35,6 @@ class coverage_parse:
         Xm: int = 2,
         logging_level=logging.INFO,
     ):
-
         self.fastf = fastf
         self.bedmap = bedmap
         self.Xm = Xm
@@ -170,7 +169,6 @@ class coverage_parse:
                 pvals = []
 
                 for ctg in bedp.contig.unique():
-
                     bp = bedp[bedp.contig == ctg].copy()
                     ctgsize = self.ctgl[ctg]
                     nwindows = self.calculate_windows(ctgsize)
@@ -666,6 +664,7 @@ class Remapping:
         )
         self.read_map_sam = f"{self.rdir}/{self.prefix}.sam"
         self.read_map_bam = f"{self.rdir}/{self.prefix}.bam"
+        self.read_map_filtered_bam = f"{self.rdir}/{self.prefix}.filtered.bam"
         self.read_map_sorted_bam = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam"
         )
@@ -951,6 +950,7 @@ class Remapping:
         4) get number of mapped reads."""
 
         self.filter_bamfile_read_names()
+        self.filter_mapping_bamutil()
         self.sort_bam()
         self.index_sorted_bam()
         self.generate_vcf()
@@ -959,6 +959,31 @@ class Remapping:
         self.filter_sam_file_mapped()
         self.subset_mapped_reads()
         self.mapped_reads_to_fasta()
+
+    def filter_mapping_bamutil(self):
+        """
+        filter bam file by mapping quality.
+        """
+
+        cmd = [
+            "bam",
+            "filter",
+            "-in",
+            self.read_map_bam,
+            "--qualityThreshold",
+            "20",
+            "--mismatchThreshold",
+            ".1",
+            "--out",
+            self.read_map_filtered_bam,
+        ]
+
+        try:
+            self.cmd.run(cmd)
+
+        except:
+            self.logger.error("Bam filtering failed.")
+            return
 
     def generate_vcf(self):
         """
@@ -1040,7 +1065,6 @@ class Remapping:
             return True
 
     def assembly_to_reference_map(self):
-
         if self.check_assembly_exists():
             self.minimap2_assembly_map()
         else:
@@ -1199,7 +1223,6 @@ class Remapping:
             return False
 
     def filter_samfile_read_names(self, same=True, output_sam=""):
-
         if not output_sam:
             output_sam = os.path.join(self.rdir, f"temp{randint(1,1999)}.sam")
 
@@ -1247,7 +1270,6 @@ class Remapping:
         self.convert_sam_to_bam()
 
     def remove_duplicates_samfile(self, same=True):
-
         cmd = f"samtools rmdup -s {self.read_map_sam} {self.read_map_sam_rmdup}"
 
         self.cmd.run(cmd)
@@ -1262,16 +1284,13 @@ class Remapping:
             os.rename(self.read_map_sam_rmdup, self.read_map_sam)
 
     def convert_sam_to_bam(self):
-
         if self.check_remap_status_sam():
-
             if os.path.isfile(self.read_map_bam):
                 os.remove(self.read_map_bam)
 
             cmd = f"samtools view -bS {self.read_map_sam} > {self.read_map_bam}"
             self.cmd.run(cmd)
         else:
-
             self.logger.error("SAM file not found")
             raise FileNotFoundError
 
@@ -1279,7 +1298,7 @@ class Remapping:
         """
         sort bam file using samtools."""
         if self.check_remap_status_bam():
-            cmd = f"samtools sort {self.read_map_bam} -o {self.read_map_sorted_bam}"
+            cmd = f"samtools sort {self.read_map_filtered_bam} -o {self.read_map_sorted_bam}"
             self.cmd.run(cmd)
         else:
             self.logger.error("BAM file not found")
@@ -1310,7 +1329,6 @@ class Remapping:
         os.remove(temp_file)
 
     def get_mapped_reads_number(self):
-
         try:
             with open(self.mapped_reads, "r") as f:
                 self.number_of_reads_mapped = len(f.readlines())
@@ -1375,7 +1393,6 @@ class Remapping:
 
     def plot_coverage(self):
         if os.path.getsize(self.genome_coverage):
-
             bedgraph = Bedgraph(self.genome_coverage)
             bedgraph.plot_coverage(self.coverage_plot, tlen=self.reference_fasta_length)
 
@@ -1383,7 +1400,6 @@ class Remapping:
 
     def plot_dotplot_from_paf(self):
         if os.path.getsize(self.assembly_map_paf):
-
             df = read_paf_coordinates(self.assembly_map_paf)
             plot_dotplot(df, self.dotplot, "dotplot", xmax=self.reference_fasta_length)
             self.dotplot_exists = os.path.exists(self.dotplot)
@@ -1549,11 +1565,9 @@ class Mapping_Instance:
             self.reference.relocate_mapping_files(destination)
 
             if self.assembly:
-
                 self.assembly.relocate_mapping_files(destination)
 
     def generate_full_mapping_report_entry(self):
-
         ntax = pd.concat((self.mapping_main_info, self.reference.report), axis=1)
 
         def simplify_taxid(x):
@@ -1635,7 +1649,6 @@ class Tandem_Remap:
         logging_level: int,
         cleanup: bool,
     ):
-
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
@@ -1658,7 +1671,6 @@ class Tandem_Remap:
         self.r2 = r2.current
 
     def reciprocal_map(self, remap_target):
-
         reference_remap_drone = self.reference_map(remap_target)
         assembly_map = self.assembly_map(reference_remap_drone)
 
@@ -1701,7 +1713,6 @@ class Tandem_Remap:
         return target_remap_drone
 
     def assembly_map(self, reference_remap: Remapping):
-
         if len(reference_remap.mapped_contigs) == 0:
             return None
 
@@ -1767,7 +1778,6 @@ class Mapping_Manager(Tandem_Remap):
         cleanup: bool,
         logdir="",
     ):
-
         super().__init__(
             r1,
             r2,
@@ -1830,9 +1840,7 @@ class Mapping_Manager(Tandem_Remap):
             self.mapped_instances.append(mapped_instance)
 
     def export_reference_fastas_if_failed(self, media_dir):
-
         for target in self.mapped_instances:
-
             target.reference.relocate_reference_fasta(media_dir)
 
     def run_mappings_move_clean(self, static_plots_dir, media_dir):
@@ -1861,7 +1869,6 @@ class Mapping_Manager(Tandem_Remap):
     def move_igv_to_static(self, static_dir):
         print("Moving IGV files to static")
         for instance in self.mapped_instances:
-
             if instance.reference.number_of_reads_mapped > 0:
                 instance.reference.move_igv_files(static_dir)
 
@@ -1870,24 +1877,20 @@ class Mapping_Manager(Tandem_Remap):
             instance.export_mapping_files(output_dir)
 
     def merge_mapping_reports(self):
-
         full_report = []
 
         for instance in self.mapped_instances:
-
             ntax = instance.generate_full_mapping_report_entry()
             if len(ntax):
                 full_report.append(ntax)
 
         if len(full_report) > 0:
-
             self.report = pd.concat(full_report, axis=0)
 
         if self.cleanup:
             self.clean_final_report()
 
     def clean_final_report(self):
-
         self.report.ngaps = self.report.ngaps.fillna(0)
         self.report = self.report[self.report.coverage > 0]
         self.report = self.report.sort_values(["coverage", "Hdepth"], ascending=False)

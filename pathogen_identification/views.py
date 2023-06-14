@@ -9,8 +9,18 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -20,8 +30,10 @@ from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
+from constants.meta_key_and_values import MetaKeyAndValue
+
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import STATICFILES_DIRS
@@ -31,19 +43,30 @@ from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
 from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample)
-from pathogen_identification.tables import (ContigTable, ProjectTable,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.utilities_general import \
-    infer_run_media_dir
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+)
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RunMainTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Technology
@@ -126,7 +149,6 @@ class download_form(forms.Form):
     file_path = forms.CharField(max_length=300)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -141,7 +163,6 @@ class download_ref_form(forms.Form):
     accid = forms.CharField(max_length=50)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -338,7 +359,6 @@ class AddSamples_PIProjectsView(
     logger_production = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
-
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
@@ -795,7 +815,6 @@ def Sample_reports(requesdst, pk1, pk2):
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 
     else:
-
         messages.error(
             requesdst,
             "You do not have permission to access this project.",
@@ -856,7 +875,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
     template_name = "pathogen_identification/sample_detail.html"
 
     def get_context_data(self, **kwargs):
-
         project_pk = int(self.kwargs["pk1"])
         sample_pk = int(self.kwargs["pk2"])
         run_pk = int(self.kwargs["pk3"])
@@ -981,7 +999,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         if project_main.owner == user:
-
             run_name = run_main.name
             sample_name = sample.name
             project_name = project_main.name
@@ -1155,19 +1172,18 @@ def download_file_ref(requestdst):
             return response
 
 
-
 import zipfile
 
+
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-        
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, os.path.basename(file_path))
-    
-        return zip_file_path
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        for file_path in file_list:
+            zip_file.write(file_path, os.path.basename(file_path))
+
+    return zip_file_path
+
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
@@ -1177,26 +1193,28 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
 
     return zip_file_path
 
+
 def download_intermediate_reports_zipfile(request):
     """
     download intermediate report files in zip"""
 
     if request.method == "POST":
+        run_pk = request.POST.get("run_pk")
+        run_main = RunMain.objects.get(pk=int(run_pk))
 
-        run_pk= request.POST.get("run_pk")
-        run_main= RunMain.objects.get(pk= int(run_pk))
+        intermediate_reports = run_main.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
 
-        intermediate_reports= run_main.intermediate_reports_get()
-        run_main_dir= infer_run_media_dir(run_main)
-        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
+        zip_file_path = get_create_zip(
+            intermediate_reports.files, run_main_dir, zip_file_name
+        )
 
-
-        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
-
-        path= open(zip_file_path, "rb")
-        mime_type, _= mimetypes.guess_type(zip_file_path)
-        response= HttpResponse(path, content_type= mime_type)
-        response["Content-Disposition"]= "attachment; filename={}".format(zip_file_name)
+        path = open(zip_file_path, "rb")
+        mime_type, _ = mimetypes.guess_type(zip_file_path)
+        response = HttpResponse(path, content_type=mime_type)
+        response["Content-Disposition"] = "attachment; filename={}".format(
+            zip_file_name
+        )
 
         return response
-

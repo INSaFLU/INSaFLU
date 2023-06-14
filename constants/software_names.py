@@ -543,6 +543,7 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
+<<<<<<< HEAD
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
@@ -552,6 +553,8 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
+=======
+>>>>>>> predev
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
@@ -559,7 +562,9 @@ class SoftwareNames(object):
         "preprocess/prinseq/bin/prinseq++",
     )
     SOFTWARE_PRINSEQ_name = "Prinseq"
-    SOFTWARE_PRINSEQ_name_extended = "Prinseq (remove low complexity reads)"
+    SOFTWARE_PRINSEQ_name_extended = (
+        "Preprocessing - Prinseq (remove low complexity reads)"
+    )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
@@ -785,9 +790,9 @@ class SoftwareNames(object):
     ###################################a
     #####   Global parameters for TELEVIR
 
-    SOFTWARE_REMAP_PARAMS_name = "Remap Management"
-    SOFTWARE_REMAP_PARAMS_extended = "Remap Management"
-    SOFTWARE_REMAP_PARAMS_VERSION = "1.0.0"
+    SOFTWARE_REMAP_PARAMS_name = "Remapping"
+    SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
+    SOFTWARE_REMAP_PARAMS_VERSION = "1"
 
     ###################################
     ###################################

@@ -256,7 +256,6 @@ class ParameterSet(models.Model):
     sample = models.ForeignKey(PIProject_Sample, on_delete=models.PROTECT)
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, null=True)
     leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.PROTECT, null=True)
-
     status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_NOT_STARTED)
 
     def register_subprocess(self):

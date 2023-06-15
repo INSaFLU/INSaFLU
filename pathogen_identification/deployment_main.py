@@ -32,7 +32,11 @@ from pathogen_identification.utilities.update_DBs import (
     Update_Sample_Runs,
     get_run_parents,
 )
-from pathogen_identification.utilities.utilities_general import simplify_name_lower
+
+from pathogen_identification.utilities.utilities_general import (
+    simplify_name,
+    simplify_name_lower,
+)
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from utils.process_SGE import ProcessSGE

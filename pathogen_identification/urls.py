@@ -66,7 +66,11 @@ urlpatterns = [
         name="igv_browser",
     ),  ## get values for IGV
     url("download_file", PIviews.download_file, name="download_file"),  ##
-
+    url(
+        "download_intermediate_reports",
+        PIviews.download_intermediate_reports_zipfile,
+        name="download_intermediate_reports",
+    ),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
         "download_refmap_files", PIviews.download_file_ref, name="download_refmap_files"
@@ -88,7 +92,7 @@ urlpatterns = [
     ),  ## remove a televir project
     url(
         r"^ajax/kill_televir_sample$",
-        PIajax_views.kill_televir_project_sample,
+        PIajax_views.kill_televir_project_tree_sample,
         name="kill_televir_project_sample",
     ),  ## remove a televir project
     url(

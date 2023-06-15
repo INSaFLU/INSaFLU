@@ -255,7 +255,7 @@ class ConstantsSettings:
 
     CONSTANTS_ILLUMINA = {
         "minimum_coverage_threshold": 2,
-        "max_output_number": 12,
+        "max_output_number": 1,
         "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 300,
@@ -263,7 +263,7 @@ class ConstantsSettings:
 
     CONSTANTS_ONT = {
         "minimum_coverage_threshold": 1,
-        "max_output_number": 12,
+        "max_output_number": 1,
         "taxid_limit": 15,
         "sift_query": "phage",
         "assembly_contig_min_length": 500,

@@ -28,9 +28,12 @@ class Metadata_handler:
         self.prefix = prefix
         self.config = config
         self.metadata_paths = config["metadata"]
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
 
         self.input_taxonomy_to_descriptor_path = self.metadata_paths[
             "input_taxonomy_to_descriptor_path"

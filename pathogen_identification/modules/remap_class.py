@@ -20,6 +20,8 @@ from pathogen_identification.utilities.utilities_general import (
     plot_dotplot,
     read_paf_coordinates,
 )
+from pathogen_identification.utilities.televir_parameters import RemapParams
+
 from scipy.stats import kstest
 
 pd.options.mode.chained_assignment = None
@@ -605,9 +607,9 @@ class Remapping:
         type: str,
         prefix: str,
         rdir: str,
+        remap_params: RemapParams,
         threads: int = 3,
         r2: str = "",
-        minimum_coverage: int = 1,
         bin: str = "",
         logging_level: int = logging.CRITICAL,
         cleanup: bool = False,
@@ -633,6 +635,7 @@ class Remapping:
         self.args = method.args
         self.rdir = rdir
         self.cleanup = cleanup
+        self.remap_params = remap_params
 
         self.logger = logging.getLogger(__name__)
         if self.logger.hasHandlers():
@@ -651,7 +654,7 @@ class Remapping:
         self.threads = str(threads)
         self.r1 = r1
         self.r2 = r2
-        self.minimum_coverage = minimum_coverage
+        #self.minimum_coverage = minimum_coverage
         self.logdir = log_dir
 
         self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_main")
@@ -717,7 +720,7 @@ class Remapping:
         self.output_analyser = coverage_parse(
             self.reference_file,
             self.genome_coverage,
-            Xm=self.minimum_coverage,
+            Xm=remap_params.min_coverage,
             logging_level=self.logger.level,
         )
 
@@ -971,9 +974,9 @@ class Remapping:
             "-in",
             self.read_map_bam,
             "--qualityThreshold",
-            "20",
+            self.remap_params.min_quality,
             "--mismatchThreshold",
-            ".1",
+            self.remap_params.min_mismatch,
             "--out",
             self.read_map_filtered_bam,
         ]
@@ -1640,11 +1643,11 @@ class Tandem_Remap:
         r1,
         r2,
         remapping_method: Software_detail,
+        remapping_params: Remap_params,
         assembly_file: str,
         type: str,
         prefix,
         threads: int,
-        minimum_coverage: int,
         bin: str,
         logging_level: int,
         cleanup: bool,
@@ -1659,11 +1662,12 @@ class Tandem_Remap:
         self.logger.info("Reciprocal Remap started")
 
         self.remapping_method = remapping_method
+        self.remapping_params = remapping_params
         self.assembly_file = assembly_file
         self.type = type
         self.prefix = prefix
         self.threads = threads
-        self.minimum_coverage = minimum_coverage
+        #self.minimum_coverage = minimum_coverage
         self.bin = bin
         self.logging_level = logging_level
         self.cleanup = cleanup
@@ -1699,9 +1703,9 @@ class Tandem_Remap:
             self.type,
             self.prefix,
             rdir,
+            self.remapping_params,
             self.threads,
             r2=self.r2,
-            minimum_coverage=self.minimum_coverage,
             bin=self.bin,
             logging_level=self.logging_level,
             cleanup=self.cleanup,
@@ -1740,9 +1744,9 @@ class Tandem_Remap:
             self.type,
             self.prefix,
             output_directory,
+            self.remapping_params,
             self.threads,
             r2=reference_remap.mapped_subset_r2,
-            minimum_coverage=self.minimum_coverage,
             bin=self.bin,
             logging_level=self.logging_level,
             cleanup=self.cleanup,
@@ -1772,21 +1776,21 @@ class Mapping_Manager(Tandem_Remap):
         type: str,
         prefix,
         threads: int,
-        minimum_coverage: int,
         bin: str,
         logging_level: int,
         cleanup: bool,
+        remap_params: RemapParams,
         logdir="",
     ):
         super().__init__(
             r1,
             r2,
             remapping_method,
+            remap_params,
             assembly_file,
             type,
             prefix,
             threads,
-            minimum_coverage,
             bin,
             logging_level,
             cleanup,
@@ -1832,6 +1836,7 @@ class Mapping_Manager(Tandem_Remap):
                 "Gsize",
             ],
         )
+        self.remap_params = remap_params
 
     def run_mappings(self):
         for target in self.remap_targets:

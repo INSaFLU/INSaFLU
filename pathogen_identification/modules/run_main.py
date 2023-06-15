@@ -13,18 +13,27 @@ from pathogen_identification.modules.assembly_class import Assembly_class
 from pathogen_identification.modules.classification_class import Classifier
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
-    Assembly_results, Contig_classification_results, Read_class,
-    Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    Sample_runClass, Software_detail, SoftwareUnit)
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    Sample_runClass,
+    Software_detail,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import (
+    TelevirParameters,
+    RemapParams,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
-
     if value == "":
         try:
             return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
@@ -79,8 +88,8 @@ class RunDetail_main:
     assembly_classification_method: Software_detail
     read_classification_method: Software_detail
     remapping_method: Software_detail
-    remap_manager = Mapping_Manager
-
+    remap_manager: Mapping_Manager
+    remap_params: RemapParams
     ## directories.
     root: str
 
@@ -98,7 +107,6 @@ class RunDetail_main:
     report: pd.DataFrame
 
     def __init__(self, config: dict, method_args: pd.DataFrame, username: str):
-
         self.project_name = config["project_name"]
         self.username = username
         self.prefix = config["prefix"]
@@ -253,21 +261,24 @@ class RunDetail_main:
 
         ### metadata
 
-        remap_params= TelevirParameters.get_remap_software(self.username, self.project_name)
+        remap_params = TelevirParameters.get_remap_software(
+            self.username, self.project_name
+        )
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap= remap_params.max_accids
-        self.taxid_limit= remap_params.max_taxids
+        self.remap_params = remap_params
 
         ### methods
-        prinseq_soft= TelevirParameters.get_prinseq_software(self.username, self.project_name)
+        prinseq_soft = TelevirParameters.get_prinseq_software(
+            self.username, self.project_name
+        )
         if prinseq_soft.is_to_run:
             self.preprocess_method = SoftwareUnit(
-                module= CS.PIPELINE_NAME_read_quality_analysis,
-                name= "prinseq",
-                args= f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
+                module=CS.PIPELINE_NAME_read_quality_analysis,
+                name="prinseq",
+                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
             )
             self.preprocess_method.get_bin(config)
         else:
@@ -322,7 +333,9 @@ class RunDetail_main:
 
         ### actions
         self.subsample = False
-        self.quality_control = bool(self.preprocess_method.name != None) #config["actions"]["QCONTROL"]
+        self.quality_control = bool(
+            self.preprocess_method.name != None
+        )  # config["actions"]["QCONTROL"]
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
         self.depletion = bool(self.depletion_method.name != "None")
@@ -369,7 +382,6 @@ class RunDetail_main:
         )
 
     def Update(self, config: dict, method_args: pd.DataFrame):
-
         self.method_args = pd.concat((self.method_args, method_args))
         # with open(config_json) as json_file:
         #    config = json.load(json_file)
@@ -508,7 +520,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.mapped_instances = []
 
     def Prep_deploy(self, fake_run: bool = False):
-
         self.preprocess_drone = Preprocess(
             self.sample.r1.current,
             self.sample.r2.current,
@@ -602,15 +613,14 @@ class Run_Deployment_Methods(RunDetail_main):
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             True,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 
     def deploy_QC(self, fake_run: bool = False):
-
         self.logger.info(f"r1 reads: {self.sample.r1.get_current_fastq_read_number()}")
         self.logger.info(f"r2 reads: {self.sample.r2.get_current_fastq_read_number()}")
 
@@ -705,7 +715,6 @@ class Run_Deployment_Methods(RunDetail_main):
         self.read_classification_drone.run()
 
     def deploy_REMAPPING(self):
-
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
             self.sample.r1,
@@ -715,10 +724,10 @@ class Run_Deployment_Methods(RunDetail_main):
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             True,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 
@@ -741,7 +750,6 @@ class RunMain_class(Run_Deployment_Methods):
         super().__init__(config_json, method_args, username)
 
     def Run_Full_Pipeline(self):
-
         self.Prep_deploy()
         self.Run_QC()
         self.Run_PreProcess()
@@ -751,7 +759,6 @@ class RunMain_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
-
         self.logger.info("Starting Pipeline")
 
         self.logger.info(f"quality control: {self.quality_control}")
@@ -852,7 +859,6 @@ class RunMain_class(Run_Deployment_Methods):
             self.generate_output_data_classes()
 
     def Run_Assembly(self):
-
         if self.assembly:
             self.deploy_ASSEMBLY()
         else:
@@ -862,7 +868,6 @@ class RunMain_class(Run_Deployment_Methods):
         self.generate_output_data_classes()
 
     def Run_Classification(self):
-
         if self.classification:
             self.deploy_READ_CLASSIFICATION()
             self.deploy_CONTIG_CLASSIFICATION()
@@ -870,8 +875,8 @@ class RunMain_class(Run_Deployment_Methods):
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,
-                self.max_remap,
-                self.taxid_limit,
+                self.remap_params.max_remap,
+                self.remap_params.taxid_limit,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass
@@ -895,7 +900,6 @@ class RunMain_class(Run_Deployment_Methods):
     #### SUMMARY FUNCTIONS ####
 
     def export_logdir(self):
-
         if os.path.exists(self.media_dir_logdir):
             shutil.rmtree(self.media_dir_logdir)
 
@@ -905,7 +909,6 @@ class RunMain_class(Run_Deployment_Methods):
         )
 
     def export_final_reports(self):
-
         ### main report
         self.report.to_csv(
             self.full_report,
@@ -927,17 +930,15 @@ class RunMain_class(Run_Deployment_Methods):
             self.merged_classification_summary: self.merged_targets,
         }
         for output_df_path, df in export_dict.items():
-
             self.save_df_check_exists(df, output_df_path)
 
     def export_sequences(self):
         self.sample.export_reads(self.media_dir)
-    
+
     def export_assembly(self):
         self.assembly_drone.export_assembly(self.media_dir)
 
     def Summarize(self):
-
         self.logger.info(f"prefix: {self.prefix}")
         with open(os.path.join(self.log_dir, self.prefix + "_latest.fofn"), "w") as f:
             f.write(self.sample.r1.current + "\n")

@@ -3,12 +3,17 @@ from dataclasses import dataclass
 from constants.software_names import SoftwareNames
 from pathogen_identification.models import Projects
 from settings.models import Parameter, Software
+from settings.constants_settings import ConstantsSettings as CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 
 
 @dataclass
 class RemapParams:
     max_taxids: int
     max_accids: int
+    min_quality: int
+    max_mismatch: int
+    min_coverage: int
 
 
 @dataclass
@@ -19,6 +24,14 @@ class PrinseqParams:
 
 
 class TelevirParameters:
+    def technology_mincov(project: Projects):
+        if project.technology in [CS.TECHNOLOGY_illumina, CS.TECHNOLOGY_illumina_old]:
+            return PI_CS.CONSTANTS_ILLUMINA["minimum_coverage_threshold"]
+        elif project.technology == CS.TECHNOLOGY_minion:
+            return PI_CS.CONSTANTS_ONT["minimum_coverage_threshold"]
+        else:
+            raise Exception(f"Unknown technology {project.technology}")
+
     @staticmethod
     def get_remap_software(username: str, project_name):
         """
@@ -60,13 +73,25 @@ class TelevirParameters:
             )
         max_taxids = 0
         max_accids = 0
+        min_quality = 0
+        max_mismatch = 0
         for param in remap_params:
             if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids:
                 max_taxids = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids:
                 max_accids = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality:
+                min_quality = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch:
+                max_mismatch = int(param.parameter)
 
-        remap = RemapParams(max_taxids=max_taxids, max_accids=max_accids)
+        remap = RemapParams(
+            max_taxids=max_taxids,
+            max_accids=max_accids,
+            min_quality=min_quality,
+            max_mismatch=max_mismatch,
+            min_coverage=TelevirParameters.technology_mincov(project),
+        )
 
         return remap
 

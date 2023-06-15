@@ -299,9 +299,7 @@ class RunDetail_main:
         remap_params = TelevirParameters.get_remap_software(
             self.username, self.project_name
         )
-        remap_params = TelevirParameters.get_remap_software(
-            self.username, self.project_name
-        )
+
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
@@ -1279,8 +1277,8 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,
-                self.max_remap,
-                self.taxid_limit,
+                self.remap_params.max_accids,
+                self.remap_params.max_taxids,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass
@@ -1330,8 +1328,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.metadata_tool.match_and_select_targets(
             self.read_classification_drone.classification_report,
             self.contig_classification_drone.classification_report,
-            self.max_remap,
-            self.taxid_limit,
+            self.remap_params.max_accids,
+            self.remap_params.max_taxids,
         )
 
         self.aclass_summary = self.metadata_tool.aclass

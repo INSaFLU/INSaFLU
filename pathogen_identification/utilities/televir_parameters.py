@@ -12,7 +12,7 @@ class RemapParams:
     max_taxids: int
     max_accids: int
     min_quality: int
-    max_mismatch: int
+    max_mismatch: float
     min_coverage: int
 
 
@@ -49,7 +49,7 @@ class TelevirParameters:
                     parameter__televir_project=project,
                 ).distinct()[0]
 
-            except Software.DoesNotExist:
+            except IndexError:
                 remap = Software.objects.get(
                     name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
                     owner__username=username,
@@ -83,7 +83,7 @@ class TelevirParameters:
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality:
                 min_quality = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch:
-                max_mismatch = int(param.parameter)
+                max_mismatch = float(param.parameter)
 
         remap = RemapParams(
             max_taxids=max_taxids,
@@ -112,7 +112,7 @@ class TelevirParameters:
                     parameter__televir_project=project,
                 ).distinct()[0]
 
-            except Software.DoesNotExist:
+            except IndexError:
                 prinseq = Software.objects.get(
                     name=SoftwareNames.SOFTWARE_PRINSEQ_name,
                     owner__username=username,

@@ -654,7 +654,7 @@ class Remapping:
         self.threads = str(threads)
         self.r1 = r1
         self.r2 = r2
-        #self.minimum_coverage = minimum_coverage
+        # self.minimum_coverage = minimum_coverage
         self.logdir = log_dir
 
         self.cmd = RunCMD(bin, logdir=log_dir, prefix=prefix, task="remapping_main")
@@ -667,6 +667,7 @@ class Remapping:
         )
         self.read_map_sam = f"{self.rdir}/{self.prefix}.sam"
         self.read_map_bam = f"{self.rdir}/{self.prefix}.bam"
+        self.current = self.read_map_bam
         self.read_map_filtered_bam = f"{self.rdir}/{self.prefix}.filtered.bam"
         self.read_map_sorted_bam = (
             f"{self.rdir}/{self.prefix}.{target.acc_simple}.sorted.bam"
@@ -971,21 +972,27 @@ class Remapping:
         cmd = [
             "bam",
             "filter",
-            "-in",
+            "--in",
             self.read_map_bam,
+            "--refFile",
+            self.reference_file,
             "--qualityThreshold",
-            self.remap_params.min_quality,
+            str(self.remap_params.min_quality),
             "--mismatchThreshold",
-            self.remap_params.min_mismatch,
+            str(self.remap_params.max_mismatch),
             "--out",
             self.read_map_filtered_bam,
         ]
+
+        print("BAMUTIL FILTERING")
+        print(" ".join([self.cmd.bin] + cmd))
 
         try:
             self.cmd.run(cmd)
 
         except:
             self.logger.error("Bam filtering failed.")
+            self.read_map_filtered_bam = self.read_map_bam
             return
 
     def generate_vcf(self):
@@ -1643,7 +1650,7 @@ class Tandem_Remap:
         r1,
         r2,
         remapping_method: Software_detail,
-        remapping_params: Remap_params,
+        remapping_params: RemapParams,
         assembly_file: str,
         type: str,
         prefix,
@@ -1667,7 +1674,7 @@ class Tandem_Remap:
         self.type = type
         self.prefix = prefix
         self.threads = threads
-        #self.minimum_coverage = minimum_coverage
+        # self.minimum_coverage = minimum_coverage
         self.bin = bin
         self.logging_level = logging_level
         self.cleanup = cleanup

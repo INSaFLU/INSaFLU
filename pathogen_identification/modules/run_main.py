@@ -875,8 +875,8 @@ class RunMain_class(Run_Deployment_Methods):
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,
-                self.remap_params.max_remap,
-                self.remap_params.taxid_limit,
+                self.remap_params.max_accids,
+                self.remap_params.max_taxids,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass

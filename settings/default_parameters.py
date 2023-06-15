@@ -10,10 +10,13 @@ from django.conf import settings
 
 from constants.meta_key_and_values import MetaKeyAndValue
 from constants.software_names import SoftwareNames
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PI_ConstantsSettings
+from pathogen_identification.constants_settings import (
+    ConstantsSettings as PI_ConstantsSettings,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Parameter_DB_Utility, Utility_Pipeline_Manager)
+    Parameter_DB_Utility,
+    Utility_Pipeline_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, PipelineStep, Software, Technology
 from utils.lock_atomic_transaction import LockedAtomicTransaction
@@ -124,12 +127,9 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
-                    #  with LockedAtomicTransaction(Software):
+                    # with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
-
-            # if parameter.software.pk != software.pk:
-            # with LockedAtomicTransaction(Parameter):
 
             # if parameter.software.pk != software.pk:
             # with LockedAtomicTransaction(Parameter):
@@ -226,7 +226,6 @@ class DefaultParameters(object):
 
         if self.check_software_is_polyvalent(software_name):
             if pipeline_step is None:
-                prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
                 prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
             else:
                 prefered_pipeline = pipeline_step
@@ -334,15 +333,6 @@ class DefaultParameters(object):
                             dict_out[par_name][1][0],
                         )
                     )
-                elif par_name == DefaultParameters.MEDAKA_PRIMER_NAME:
-                    return_parameter += " {}".format(
-                        os.path.join(
-                            settings.DIR_SOFTWARE,
-                            "trimmomatic/adapters",
-                            dict_out[par_name][1][0],
-                        )
-                    )
-
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -1450,7 +1440,6 @@ class DefaultParameters(object):
         parameter.can_change = True
         parameter.sequence_out = 2
         parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
-        parameter.description = "PRIMER: fasta of primers used for amplicon sequencing"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1466,7 +1455,6 @@ class DefaultParameters(object):
         """
         remapping parameters, namely:
             max number of taxids to map against.
-            max number of acccids to map for each taxid.
             max number of acccids to map for each taxid.
             minimum coverage?
         """
@@ -1526,6 +1514,38 @@ class DefaultParameters(object):
         parameter.range_max = "30"
         parameter.range_min = "1"
         parameter.description = "Number of accession IDs to map against."
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality
+        parameter.parameter = "60"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 3
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 60)"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch
+        parameter.parameter = ".1"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 4
+        parameter.range_available = "[0:1]"
+        parameter.range_max = "1"
+        parameter.range_min = "0"
+        parameter.description = "Bamutil, maximum fraction of mismatches before marking a read unmapped. (Defaults to 0.1)"
         vect_parameters.append(parameter)
 
         return vect_parameters
@@ -1594,9 +1614,7 @@ class DefaultParameters(object):
         parameter.range_available = "[0.0:1.0]"
         parameter.range_max = "1.0"
         parameter.range_min = "0.0"
-        parameter.description = (
-            "read sharing threshold used to group references into groups"
-        )
+        parameter.description = "Filter on a maximum DUST score."
         vect_parameters.append(parameter)
 
         return vect_parameters

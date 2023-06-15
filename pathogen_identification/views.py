@@ -32,7 +32,32 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
+from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.constants_settings import ConstantsSettings
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+)
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RunMainTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -1215,6 +1240,11 @@ def generate_zip_file(file_list: list, zip_file_path: str) -> str:
             zip_file.write(file_path, os.path.basename(file_path))
 
     return zip_file_path
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        for file_path in file_list:
+            zip_file.write(file_path, os.path.basename(file_path))
+
+    return zip_file_path
 
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
@@ -1235,12 +1265,7 @@ def download_intermediate_reports_zipfile(request):
     if request.method == "POST":
         run_pk = request.POST.get("run_pk")
         run_main = RunMain.objects.get(pk=int(run_pk))
-        run_pk = request.POST.get("run_pk")
-        run_main = RunMain.objects.get(pk=int(run_pk))
 
-        intermediate_reports = run_main.intermediate_reports_get()
-        run_main_dir = infer_run_media_dir(run_main)
-        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
         intermediate_reports = run_main.intermediate_reports_get()
         run_main_dir = infer_run_media_dir(run_main)
         zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
@@ -1248,16 +1273,7 @@ def download_intermediate_reports_zipfile(request):
         zip_file_path = get_create_zip(
             intermediate_reports.files, run_main_dir, zip_file_name
         )
-        zip_file_path = get_create_zip(
-            intermediate_reports.files, run_main_dir, zip_file_name
-        )
 
-        path = open(zip_file_path, "rb")
-        mime_type, _ = mimetypes.guess_type(zip_file_path)
-        response = HttpResponse(path, content_type=mime_type)
-        response["Content-Disposition"] = "attachment; filename={}".format(
-            zip_file_name
-        )
         path = open(zip_file_path, "rb")
         mime_type, _ = mimetypes.guess_type(zip_file_path)
         response = HttpResponse(path, content_type=mime_type)

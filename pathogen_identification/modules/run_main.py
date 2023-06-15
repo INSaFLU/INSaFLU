@@ -24,9 +24,23 @@ from pathogen_identification.modules.object_classes import (
     Software_detail,
     SoftwareUnit,
 )
+    Assembly_results,
+    Contig_classification_results,
+    Read_class,
+    Read_classification_results,
+    Remap_main,
+    Run_detail_report,
+    RunCMD,
+    Sample_runClass,
+    Software_detail,
+    SoftwareUnit,
+)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import (
+    TelevirParameters,
+    RemapParams,
+)
 from settings.constants_settings import ConstantsSettings as CS
 
 
@@ -85,8 +99,8 @@ class RunDetail_main:
     assembly_classification_method: Software_detail
     read_classification_method: Software_detail
     remapping_method: Software_detail
-    remap_manager = Mapping_Manager
-
+    remap_manager: Mapping_Manager
+    remap_params: RemapParams
     ## directories.
     root: str
 
@@ -260,19 +274,27 @@ class RunDetail_main:
         remap_params = TelevirParameters.get_remap_software(
             self.username, self.project_name
         )
+        remap_params = TelevirParameters.get_remap_software(
+            self.username, self.project_name
+        )
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap = remap_params.max_accids
-        self.taxid_limit = remap_params.max_taxids
+        self.remap_params = remap_params
 
         ### methods
         prinseq_soft = TelevirParameters.get_prinseq_software(
             self.username, self.project_name
         )
+        prinseq_soft = TelevirParameters.get_prinseq_software(
+            self.username, self.project_name
+        )
         if prinseq_soft.is_to_run:
             self.preprocess_method = SoftwareUnit(
+                module=CS.PIPELINE_NAME_read_quality_analysis,
+                name="prinseq",
+                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
                 module=CS.PIPELINE_NAME_read_quality_analysis,
                 name="prinseq",
                 args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
@@ -610,10 +632,10 @@ class Run_Deployment_Methods(RunDetail_main):
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             True,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 
@@ -721,10 +743,10 @@ class Run_Deployment_Methods(RunDetail_main):
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             True,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 
@@ -872,8 +894,8 @@ class RunMain_class(Run_Deployment_Methods):
             self.metadata_tool.match_and_select_targets(
                 self.read_classification_drone.classification_report,
                 self.contig_classification_drone.classification_report,
-                self.max_remap,
-                self.taxid_limit,
+                self.remap_params.max_accids,
+                self.remap_params.max_taxids,
             )
             self.aclass_summary = self.metadata_tool.aclass
             self.rclass_summary = self.metadata_tool.rclass

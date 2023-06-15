@@ -446,7 +446,6 @@ class SoftwareNames(object):
 
     ### Nextstrain
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
-    SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain.sh"
@@ -454,7 +453,7 @@ class SoftwareNames(object):
     SOFTWARE_NEXTSTRAIN_snakemake = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_snake.sh"
     )
-    
+
     SOFTWARE_NEXTSTRAIN_MPX = os.path.join(
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_mpx.sh"
     )
@@ -489,7 +488,6 @@ class SoftwareNames(object):
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_vic_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_yam_12y,
     ]
-
 
     SOFTWARE_NEXTSTRAIN_BUILDS_avianflu = [
         SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha,
@@ -531,10 +529,7 @@ class SoftwareNames(object):
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_ha, "Avian Influenza (H5N1 HA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_na, "Avian Influenza (H5N1 NA)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_avianflu_h5n1_pb2, "Avian Influenza (H5N1 PB2)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_mpx, "mpox (hMPXV)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
-        [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_a, "RSV (A)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_rsv_b, "RSV (B)"],
     ]
@@ -549,8 +544,6 @@ class SoftwareNames(object):
     ### REMAP PARAMETERS
     SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
     SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
-    SOFTWARE_REMAP_PARAMS_max_taxids = "--max-taxids"
-    SOFTWARE_REMAP_PARAMS_max_accids = "--max-accids"
 
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
@@ -560,6 +553,8 @@ class SoftwareNames(object):
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
     SOFTWARE_televir_report_layout_threshold_name = "--r-overlap"
+    SOFTWARE_REMAP_PARAMS_min_quality = "--min-quality"
+    SOFTWARE_REMAP_PARAMS_max_mismatch = "--max-mismatch"
 
     ### QC SOFTWARE
     SOFTWARE_PRINSEQ = os.path.join(
@@ -571,8 +566,6 @@ class SoftwareNames(object):
         "Preprocessing - Prinseq (remove low complexity reads)"
     )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
-    SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
-    SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
 
@@ -797,7 +790,7 @@ class SoftwareNames(object):
     ###################################a
     #####   Global parameters for TELEVIR
 
-    SOFTWARE_REMAP_PARAMS_name = "Remapping"
+    SOFTWARE_REMAP_PARAMS_name = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_extended = "Remapping - Management"
     SOFTWARE_REMAP_PARAMS_VERSION = "1"
 
@@ -1623,7 +1616,6 @@ class SoftwareNames(object):
     ### it's a way to define a threshold to mask consensus sequences, with regions with low coverage, obtained by snippy
     ### It's a global parameter for INSaFLU
     """
-
 
     ### Define the Minimum percentage of horizontal coverage to generate consensus, otherwise drop sequence
     ##def get_insaflu_parameter_mask_consensus(self): return ""

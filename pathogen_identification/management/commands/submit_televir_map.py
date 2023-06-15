@@ -21,7 +21,10 @@ from pathogen_identification.modules.remap_class import (
     Mapping_Instance,
     Mapping_Manager,
 )
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import (
+    TelevirParameters,
+    RemapParams,
+)
 from pathogen_identification.utilities.update_DBs import (
     Update_FinalReport,
     Update_ReferenceMap,
@@ -40,7 +43,7 @@ class RunMain:
     remap_manager: Mapping_Manager
     mapping_instance: Mapping_Instance
     metadata_tool: Metadata_handler
-
+    remap_params: TelevirParameters
     ##  metadata
     sift_query: str
     max_remap: int
@@ -60,7 +63,7 @@ class RunMain:
     igv_dir: str = f"igv"
 
     def __init__(
-        self, config: dict, method_args: pd.DataFrame, project_name: str, username: str
+        self, config: dict, method_args: pd.DataFrame, username: str, project_name: str
     ):
         self.sample_name = config["sample_name"]
         self.type = config["type"]
@@ -140,14 +143,16 @@ class RunMain:
         self.maximum_coverage = 1000000000
 
         ### metadata
-        print(self.project_name)
-        remap_params = get_remap_software(self.username, self.project_name)
+        self.remap_params = TelevirParameters.get_remap_software(
+            self.username, self.project_name
+        )
+
         self.metadata_tool = Metadata_handler(
             self.config, sift_query=config["sift_query"], prefix=self.prefix
         )
 
-        self.max_remap = remap_params.max_accids
-        self.taxid_limit = remap_params.max_taxids
+        self.max_remap = self.remap_params.max_accids
+        self.taxid_limit = self.remap_params.max_taxids
 
         ### methods
         self.remapping_method = Software_detail(
@@ -239,13 +244,12 @@ class RunMain:
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             self.house_cleaning,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
-
         self.logger.info(
             f"{self.prefix} remapping # targets: {len(self.metadata_tool.remap_targets)}"
         )
@@ -443,6 +447,7 @@ class Command(BaseCommand):
         raw_reference_id = int(options["ref_id"])
 
         reference = RawReference.objects.get(pk=raw_reference_id)
+        project_name = reference.run.project.name
         user = reference.run.project.owner
         project_name = reference.run.project.name
 
@@ -467,10 +472,9 @@ class Command(BaseCommand):
             run_engine = RunMain(
                 input_generator.config,
                 input_generator.method_args,
-                project_name,
-                user.username,
+                username=user.username,
+                project_name=project_name,
             )
-            print("generating")
             run_engine.generate_targets()
             print("running")
             run_engine.run()

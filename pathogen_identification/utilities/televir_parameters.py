@@ -10,6 +10,12 @@ from pathogen_identification.utilities.mapping_flags import (
     MappingFlagBuild,
 )
 from settings.models import Parameter, Software
+from settings.constants_settings import ConstantsSettings as CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
+
+
+class WrongParameters(Exception):
+    pass
 
 
 class WrongParameters(Exception):
@@ -20,6 +26,9 @@ class WrongParameters(Exception):
 class RemapParams:
     max_taxids: int
     max_accids: int
+    min_quality: int
+    max_mismatch: float
+    min_coverage: int
 
 
 @dataclass
@@ -65,6 +74,14 @@ class LayoutParams:
 
 
 class TelevirParameters:
+    def technology_mincov(project: Projects):
+        if project.technology in [CS.TECHNOLOGY_illumina, CS.TECHNOLOGY_illumina_old]:
+            return PI_CS.CONSTANTS_ILLUMINA["minimum_coverage_threshold"]
+        elif project.technology == CS.TECHNOLOGY_minion:
+            return PI_CS.CONSTANTS_ONT["minimum_coverage_threshold"]
+        else:
+            raise Exception(f"Unknown technology {project.technology}")
+
     @staticmethod
     def retrieve_project_software(software_name: str, username: str, project_name: str):
         """
@@ -119,13 +136,25 @@ class TelevirParameters:
 
         max_taxids = 0
         max_accids = 0
+        min_quality = 0
+        max_mismatch = 0
         for param in remap_params:
             if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids:
                 max_taxids = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids:
                 max_accids = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality:
+                min_quality = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch:
+                max_mismatch = float(param.parameter)
 
-        remap = RemapParams(max_taxids=max_taxids, max_accids=max_accids)
+        remap = RemapParams(
+            max_taxids=max_taxids,
+            max_accids=max_accids,
+            min_quality=min_quality,
+            max_mismatch=max_mismatch,
+            min_coverage=TelevirParameters.technology_mincov(project),
+        )
 
         return remap
 
@@ -135,8 +164,28 @@ class TelevirParameters:
         Get prinseq software
         """
 
-        prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
-            SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
+            try:
+                prinseq = Software.objects.filter(
+                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
+                    owner__username=username,
+                    technology__name=project.technology,
+                    type_of_use=Software.TYPE_OF_USE_televir_project_settings,
+                    parameter__televir_project=project,
+                ).distinct()[0]
+
+            except IndexError:
+                prinseq = Software.objects.get(
+                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
+                    owner__username=username,
+                    technology__name=project.technology,
+                    type_of_use=Software.TYPE_OF_USE_televir_settings,
+                )
+
+        except Software.DoesNotExist:
+            raise Exception(f"Prinseq software not found for user {username}")
+
+        prinseq_params = Parameter.objects.filter(
+            software=prinseq, televir_project__name=project_name
         )
 
         entropy_threshold = 0

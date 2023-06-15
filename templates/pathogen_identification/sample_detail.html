@@ -323,7 +323,7 @@
                         <div id="piechart"></div>
                     </div>
                     {% endif %}
-                    
+                    {% if data_exists %}
                     <div class="column-sm">
                         {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         <form id="download_processed_reads_r1" action="{% url 'download_file' %}" method="POST">
@@ -340,6 +340,7 @@
                         {% endif %}
                         {% endif %}
                     </div>
+                    {% endif %}
                     </div>
                 </div>
             </div>
@@ -371,6 +372,7 @@
                             <p> Assembly not performed </p>
                         {% endif %}
                     </div>  
+                    {% if data_exists %}
                     <div class="col-sm">
                         {% if assembly.contig_number > 0 %}
                         <form id="download_assembly" action="{% url 'download_file' %}" method="POST">
@@ -380,6 +382,7 @@
                         </form>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -448,6 +451,7 @@
                                 <em>{{run_detail.merged_files}}</em>. </p>
                             {% endif %}
                         </div>
+                        {% if data_exists %}
                         <div class="col-sm">
                             {% if contig_classification.classification_number > 0 %}
                             <form id="download_contig_class_report" action="{% url 'download_file' %}" method="POST">
@@ -471,6 +475,7 @@
                             </form>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -500,6 +505,7 @@
                                 of
                                 {{run_remap.coverage_maximum}}X. </p>                    
                         </div>
+                        {% if data_exists %}
                         <div class="col-sm">
                             <form id="download_remap_plan" action="{% url 'download_file' %}" method="POST">
                                 {% csrf_token %}
@@ -507,6 +513,7 @@
                                 <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
                             </form>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -665,7 +672,7 @@
                                                 <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
                                                 run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
                                             </div>
-                                            
+                                            {% if data_exists %}
                                             <div id="cov_div" >
                                                 <br>
                                                 <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
@@ -682,10 +689,11 @@
                                                     <input type="hidden" name="file_path" value="{{value.bai_path}}">
                                                 </form>
                                             </div>
+                                            {% endif %}
                         
                                         </td>
                                         <td colspan="1" align="center">
-                        
+                                            {% if data_exists %}
                                             <div id="cov_div" style="position:relative height=100%">
                                                 <br>
                                                 <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
@@ -711,6 +719,7 @@
                                                 </form>
                                                 {% endif %}
                                             </div>
+                                            {% endif %}
                                         </td>
                                     </tr>
         
@@ -725,6 +734,7 @@
                                             <img src="{% static run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
                                         </td>
                                         <td colspan="1" align="center" style="position:relative">
+                                            {% if data_exists %}
                                             <div>
                                                 <a style="position:relative"
                                                     href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=run_index reference=value.simple_id %}>Sample
@@ -750,6 +760,7 @@
                                                 <input type=submit value=".fai" name="btn3">
                                                 <input type="hidden" name="file_path" value="{{value.mapped_scaffolds_index_path}}">
                                             </form>
+                                            {% endif %}
                         
                                         </td>
                                     </tr>

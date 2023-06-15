@@ -47,7 +47,7 @@ class DefaultSoftware(object):
         utils = Utils_Manager()
 
         televir_available = utils.test_televir_pipelines_available(user_system)
-        self.remove_all_parameters(user_system)
+        #self.remove_all_parameters(user_system)
 
         return televir_available
 
@@ -272,6 +272,18 @@ class DefaultSoftware(object):
             self.default_parameters.get_centrifuge_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
+                is_to_run=False,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_CENTRIFUGE_name,
+            self.default_parameters.get_centrifuge_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
@@ -283,6 +295,17 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_read_classification,
             ),
             user,
         )
@@ -468,21 +491,21 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-        with LockedAtomicTransaction(Software), LockedAtomicTransaction(Parameter):
+        
 
-            try:
-                Software.objects.get(
-                    name=software_name,
-                    owner=user,
-                    type_of_use=vect_parameters[0].software.type_of_use,
-                    technology__name=vect_parameters[0].software.technology.name,
-                    version_parameters=self.default_parameters.get_software_parameters_version(
-                        software_name
-                    ),
-                    pipeline_step__name=vect_parameters[0].software.pipeline_step,
-                )
-            except Software.DoesNotExist:  ### if not exist save it
-                self.default_parameters.persist_parameters(vect_parameters, type_of_use)
+        try:
+            Software.objects.get(
+                name=software_name,
+                owner=user,
+                type_of_use=vect_parameters[0].software.type_of_use,
+                technology__name=vect_parameters[0].software.technology.name,
+                version_parameters=self.default_parameters.get_software_parameters_version(
+                    software_name
+                ),
+                pipeline_step__name=vect_parameters[0].software.pipeline_step,
+            )
+        except Software.DoesNotExist:  ### if not exist save it
+            self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):
         result = self.default_parameters.get_parameters(

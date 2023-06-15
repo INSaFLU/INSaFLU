@@ -67,7 +67,7 @@ class SoftwareNames(object):
     SOFTWARE_ABRICATE_name_extended = "Abricate"
     SOFTWARE_ABRICATE_DB = os.path.join(settings.DIR_SOFTWARE, "abricate/db")
     SOFTWARE_ABRICATE_VERSION = "0.8-dev"
-    SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
+    SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 40"
     SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
     SOFTWARE_ABRICATE_PARAMETERS_mincov_20 = "--minid 70 --mincov 20"
     SOFTWARE_FASTQ_name = "FastQC"
@@ -260,6 +260,14 @@ class SoftwareNames(object):
     SOFTWARE_SNIPPY_name_extended = "Mapping (Snippy)"
     SOFTWARE_SNIPPY_VERSION = "3.2-dev"
     SOFTWARE_SNIPPY_PARAMETERS = "--mapqual 20 --mincov 10 --minfrac 0.51"
+    SOFTWARE_SNIPPY_no_primer = "None"
+    SOFTWARE_SNIPPY_PRIMERS =   [
+        SOFTWARE_SNIPPY_no_primer,
+        "SARS_CoV_2_MN908947_artic_3.fa",
+        "SARS_CoV_2_MN908947_artic_4.1.fa",
+        "MPXV_MT903345_Yale_PrimalSeq_v.1.fa",
+        "MPXV_comb-ccc7sszn.fa",
+    ]      
 
     #### VERY important, change in snippy-vcf
     #     mmp@california:/usr/local/software/insaflu/snippy/bin$ diff snippy-vcf_to_tab_add_freq snippy-vcf_to_tab_add_freq~
@@ -461,6 +469,7 @@ class SoftwareNames(object):
         settings.DIR_SOFTWARE, "nextstrain/nextstrain_builds/"
     )
     SOFTWARE_NEXTSTRAIN_BUILDS_generic = "generic"
+    SOFTWARE_NEXTSTRAIN_BUILDS_generic_time = "generic_time"
     SOFTWARE_NEXTSTRAIN_BUILDS_ncov = "ncov"
     SOFTWARE_NEXTSTRAIN_BUILDS_mpx = "mpx"
 
@@ -496,6 +505,7 @@ class SoftwareNames(object):
 
     SOFTWARE_NEXTSTRAIN_BUILDS = [
         SOFTWARE_NEXTSTRAIN_BUILDS_generic,
+        SOFTWARE_NEXTSTRAIN_BUILDS_generic_time,
         SOFTWARE_NEXTSTRAIN_BUILDS_ncov,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y,
         SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y,
@@ -510,6 +520,7 @@ class SoftwareNames(object):
     ]
     SOFTWARE_NEXTSTRAIN_BUILDS_DESC = [
         [SOFTWARE_NEXTSTRAIN_BUILDS_generic, "Generic"],
+        [SOFTWARE_NEXTSTRAIN_BUILDS_generic_time, "Generic with Time Tree"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_ncov, "SARS-CoV-2"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h3n2_12y, "Influenza (H3N2 HA 12years)"],
         [SOFTWARE_NEXTSTRAIN_BUILDS_flu_h1n1pdm_12y, "Influenza (H1N1PDM HA 12years)"],
@@ -791,6 +802,7 @@ class SoftwareNames(object):
     polyvalent_software = [
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_SNIPPY_name,
+        SOFTWARE_BWA_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
     polyvalent_software_pipelines = {
@@ -806,6 +818,9 @@ class SoftwareNames(object):
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
         ],
+        SOFTWARE_BWA_name: [
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_read_classification,]
     }
 
     ###################################

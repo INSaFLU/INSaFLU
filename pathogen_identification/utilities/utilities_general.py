@@ -5,12 +5,12 @@ import matplotlib
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathogen_identification.models import RunMain
+from typing import Optional
 
 
 def simplify_name(name):
@@ -346,7 +346,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     return merged_final, full_descriptor
 
 
-def infer_run_media_dir(run_main: RunMain):
+def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
 
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)

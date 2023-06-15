@@ -29,6 +29,9 @@ class DefaultParameters(object):
     ### used in snippy
     SNIPPY_COVERAGE_NAME = "--mincov"
     SNIPPY_MAPQUAL_NAME = "--mapqual"
+    SNIPPY_PRIMER_NAME = "--primer"
+
+    MEDAKA_PRIMER_NAME = "-p"
 
     ### used in NANOfilt
     NANOfilt_quality_read = "-q"
@@ -121,15 +124,17 @@ class DefaultParameters(object):
                         pipeline_step=parameter.software.pipeline_step,
                     )
                 except Software.DoesNotExist:
+                    #with LockedAtomicTransaction(Software):
                     software = parameter.software
                     software.save()
+            
+            #if parameter.software.pk != software.pk:
+            #with LockedAtomicTransaction(Parameter):
             parameter.software = software
             parameter.save()
 
             ## set sequential number
             dt_out_sequential[parameter.sequence_out] = 1
-
-
 
     def get_software_global_with_step(
         self,
@@ -208,6 +213,7 @@ class DefaultParameters(object):
         technology_name=ConstantsSettings.TECHNOLOGY_illumina,
         dataset=None,
         televir_project=None,
+        pipeline_step=None,
     ):
         """
         get software_name parameters, if it saved in database...
@@ -216,7 +222,13 @@ class DefaultParameters(object):
         # logger.debug("Get parameters: software-{} user-{} typeofuse-{} project-{} psample-{} sample-{} tec-{} dataset-{}",software_name, user, type_of_use, project, project_sample, sample, technology_name, dataset)
 
         if self.check_software_is_polyvalent(software_name):
-            prefered_pipeline = self.get_polyvalent_software_pipeline(software_name)
+
+            if pipeline_step is None:
+                prefered_pipeline = self.get_polyvalent_software_pipeline(
+                    software_name
+                    )
+            else:
+                prefered_pipeline = pipeline_step
 
             software = self.get_software_global_with_step(
                 user,
@@ -302,6 +314,23 @@ class DefaultParameters(object):
                         ),
                         SoftwareNames.SOFTWARE_TRIMMOMATIC_addapter_trim_used_to_assemble,
                     )
+                elif (
+                    software_name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    and par_name == DefaultParameters.SNIPPY_PRIMER_NAME
+                ):
+                    return_parameter += " {}".format(os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ))
+                elif (
+                    par_name == DefaultParameters.MEDAKA_PRIMER_NAME
+                ):
+                    return_parameter += " {}".format(os.path.join(
+                            settings.DIR_SOFTWARE,
+                            "trimmomatic/adapters",
+                            dict_out[par_name][1][0],
+                        ))                                    
                 elif par_name == "--db":
                     return_parameter += "{}{}".format(
                         dict_out[par_name][0][0],
@@ -817,6 +846,7 @@ class DefaultParameters(object):
         –mapqual: minimum mapping quality to allow (–mapqual 20)
         —mincov: minimum coverage of variant site (–mincov 10)
         –minfrac: minumum proportion for variant evidence (–minfrac 0.51)
+        primer: Fasta of amplicon scheme primers for filtering ("")
         """
         if not pipeline_step:
             pipeline_step = ConstantsSettings.PIPELINE_NAME_variant_detection
@@ -893,6 +923,22 @@ class DefaultParameters(object):
         parameter.range_min = "0.5"
         parameter.description = (
             "MINFRAC: minimum proportion for variant evidence (–minfrac 0.51)"
+        )
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.SNIPPY_PRIMER_NAME     
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 4
+        parameter.description = (
+            "PRIMER: fasta of primers used for amplicon sequencing"
         )
         vect_parameters.append(parameter)
 
@@ -1361,6 +1407,24 @@ class DefaultParameters(object):
             + "{pore}_{device}_{caller variant}_{caller version}"
         )
         vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = DefaultParameters.MEDAKA_PRIMER_NAME     
+        parameter.parameter = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.not_set_value = SoftwareNames.SOFTWARE_SNIPPY_no_primer
+        parameter.type_data = Parameter.PARAMETER_char_list
+        parameter.software = software
+        parameter.project = project
+        parameter.project_sample = project_sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.sequence_out = 2
+        parameter.description = (
+            "PRIMER: fasta of primers used for amplicon sequencing"
+        )
+        vect_parameters.append(parameter)
+
+
         return vect_parameters
 
     def get_nanofilt_default(self, user, type_of_use, technology_name, sample=None):
@@ -1851,7 +1915,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""
@@ -2151,7 +2215,7 @@ class DefaultParameters(object):
         parameter.software = software
         parameter.sample = sample
         parameter.union_char = " "
-        parameter.can_change = False
+        parameter.can_change = True
         parameter.is_to_run = True
         parameter.sequence_out = 4
         parameter.range_available = ""
@@ -2484,7 +2548,10 @@ class DefaultParameters(object):
 
         return vect_parameters
 
-    def get_bwa_default(self, user, type_of_use, technology_name, sample=None):
+    def get_bwa_default(self, user, type_of_use, technology_name, sample=None, pipeline_step=""):
+
+        if not pipeline_step:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_host_depletion
 
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BWA_name
@@ -2504,7 +2571,7 @@ class DefaultParameters(object):
         ###  small description of software
         software.help_text = ""
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_host_depletion
+            pipeline_step
         )
 
         software.owner = user

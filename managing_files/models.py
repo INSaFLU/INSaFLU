@@ -1397,6 +1397,12 @@ class Project(models.Model):
     PROJECT_FILE_NAME_Aln2pheno_flagged_pokay = (
         "aln2pheno_flagged_mutation_report_pokay.tsv"  ### has results of aln2pheno
     )
+    PROJECT_FILE_NAME_Aln2pheno_report_carabelli = (
+        "aln2pheno_final_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
+    )
+    PROJECT_FILE_NAME_Aln2pheno_flagged_carabelli = (
+        "aln2pheno_flagged_mutation_report_EpitopeResidues_Carabelli_2023.tsv"  ### has results of aln2pheno
+    )    
     PROJECT_FILE_NAME_Aln2pheno_zip = "aln2pheno.zip"  ### has results of aln2pheno
 
     PROJECT_FILE_NAME_all_files_zipped = "AllFiles.zip"  ### Several files zipped

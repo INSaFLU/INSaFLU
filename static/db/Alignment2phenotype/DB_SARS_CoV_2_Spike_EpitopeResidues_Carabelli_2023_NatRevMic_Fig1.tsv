@@ -1,0 +1,55 @@
+Mutation	Phenotype category	Flag
+T19I	Antibody class NTD	T19I
+T19R	Antibody class NTD	T19R
+G142D	Antibody class NTD	G142D
+V143del	Antibody class NTD	V143del
+Y144del	Antibody class NTD	Y144del
+H145del	Antibody class NTD	H145del
+H146Q	Antibody class NTD	H146Q
+E156del	Antibody class NTD	E156del
+F157del	Antibody class NTD	F157del
+R158G	Antibody class NTD	R158G
+G339D	Antibody class RBD 2	G339D
+G339D	Antibody class RBD 3	G339D
+G339H	Antibody class RBD 2	G339H
+G339H	Antibody class RBD 3	G339H
+R346T	Antibody class RBD 2	R346T
+R346T	Antibody class RBD 3	R346T
+L368I	Antibody class RBD 2	L368I
+S371F	Antibody class RBD 2	S371F
+S371F	Antibody class RBD 4	S371F
+S371L	Antibody class RBD 2	S371L
+S371L	Antibody class RBD 4	S371L
+S373P	Antibody class RBD 2	S373P
+D405N	Antibody class RBD 1	D405N
+D405N	Antibody class RBD 2	D405N
+R408S	Antibody class RBD 1	R408S
+K417N	Antibody class RBD 1	K417N
+K417N	Antibody class RBD 2	K417N
+N440K	Antibody class RBD 3	N440K
+K444T	Antibody class RBD 2	K444T
+V445P	Antibody class RBD 2	V445P
+G446S	Antibody class RBD 2	G446S
+G446S	Antibody class RBD 3	G446S
+L452R	Antibody class RBD 2	L452R
+N460K	Antibody class RBD 1	N460K
+S477N	Antibody class RBD 1	S477N
+T478K	Antibody class RBD 2	T478K
+E484A	Antibody class RBD 1	E484A
+E484A	Antibody class RBD 2	E484A
+F486S	Antibody class RBD 1	F486S
+F486S	Antibody class RBD 2	F486S
+F486V	Antibody class RBD 1	F486V
+F486V	Antibody class RBD 2	F486V
+F490S	Antibody class RBD 1	F490S
+F490S	Antibody class RBD 2	F490S
+Q493R	Antibody class RBD 1	Q493R
+Q493R	Antibody class RBD 2	Q493R
+G496S	Antibody class RBD 1	G496S
+G496S	Antibody class RBD 2	G496S
+Q498R	Antibody class RBD 1	Q498R
+Q498R	Antibody class RBD 2	Q498R
+N501Y	Antibody class RBD 1	N501Y
+N501Y	Antibody class RBD 2	N501Y
+Y505H	Antibody class RBD 1	Y505H
+Y505H	Antibody class RBD 2	Y505H

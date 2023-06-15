@@ -774,6 +774,23 @@ class Run_Deployment_Methods(RunDetail_main):
         )
         self.read_classification_drone.run()
 
+    def prep_REMAPPING(self):
+        self.remap_manager = Mapping_Manager(
+            self.metadata_tool.remap_targets,
+            self.sample.r1,
+            self.sample.r2,
+            self.remapping_method,
+            self.assembly_drone.assembly_file_fasta_gz,
+            self.type,
+            self.prefix,
+            self.threads,
+            self.minimum_coverage,
+            get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
+            self.logger_level_detail,
+            True,
+            logdir=self.config["directories"]["log_dir"],
+        )
+
     def deploy_REMAPPING(self):
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,

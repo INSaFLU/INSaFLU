@@ -145,13 +145,11 @@ class Operation_Temp_Files:
         print(f"timeout: {ConstantsSettings.TIMEOUT} seconds")
 
         while not found_flag:
-
             time.sleep(1)
             found_flag = os.path.exists(self.flag)
             time_delay += 1
 
             if time_delay > ConstantsSettings.TIMEOUT:
-
                 proc_prep.kill()
                 err = "Timeout"
                 out = "Timeout"
@@ -233,7 +231,6 @@ class RunCMD:
         return cmd_out
 
     def system_deploy(self, cmd: str):
-
         start_time = time.perf_counter()
 
         proc_prep = subprocess.Popen(
@@ -285,6 +282,8 @@ class RunCMD:
         if self.logdir:
             with open(os.path.join(self.logdir, self.logfile), "a") as f:
                 software = cmd.split(" ")[0]
+                f.write(f"####################\n")
+
                 f.write(f"exec\t{software}\t{exec_time}\n")
                 f.write(f"bin\t{bin}\n")
                 f.write(f"{cmd}\n")
@@ -383,7 +382,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_software_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -406,7 +404,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -429,7 +426,6 @@ class RunCMD:
         operation_files = Operation_Temp_Files(self.logdir)
 
         with operation_files as op_files:
-
             cmd_string = self.bash_cmd_string(cmd)
 
             op_files.write_bash_script(cmd_string)
@@ -504,7 +500,6 @@ class Read_class:
         return read_names
 
     def determine_file_name(self, filepath):
-
         if not self.exists:
             return "none"
 
@@ -520,21 +515,18 @@ class Read_class:
         return filename
 
     def read_filter_move(self, read_list: list, output: str = ""):
-
         if not self.exists:
             return
 
         temp_file = Temp_File(os.path.dirname(output), suffix=".lst")
 
         with temp_file as tpf:
-
             with open(tpf, "w") as f:
                 f.write("\n".join(read_list))
 
             self.read_filter(output, tpf)
 
     def read_filter_inplace(self, read_list: str):
-
         if not self.exists:
             return
 
@@ -772,7 +764,6 @@ class Read_class:
 
 
 class Sample_runClass:
-
     r1: Read_class
     r2: Read_class
     report: str
@@ -920,7 +911,6 @@ class Sample_runClass:
         self.r1.read_filter_inplace(unique_reads)
 
     def clean_unique_PE(self):
-
         WHERETO = os.path.dirname(self.r1.current)
         common_reads = os.path.join(WHERETO, "common_reads.lst")
 
@@ -943,7 +933,6 @@ class Sample_runClass:
             self.trimmomatic_sort_PE()
 
     def trimmomatic_sort_SE(self):
-
         tempdir = os.path.dirname(self.r1.current)
         tempfq = os.path.join(tempdir, f"temp{randint(1,1999)}")
 
@@ -1001,9 +990,19 @@ class Sample_runClass:
             self.r1.export_reads(reads_dir)
             self.r2.export_reads(reads_dir)
 
+
 class SoftwareUnit:
-        
-    def __init__(self, module: str= "None", name: str= "None", args: str= "None", db: str= "None", db_name: str= "None", bin: str= "None", dir: str= "None", output_dir: str= "None"):
+    def __init__(
+        self,
+        module: str = "None",
+        name: str = "None",
+        args: str = "None",
+        db: str = "None",
+        db_name: str = "None",
+        bin: str = "None",
+        dir: str = "None",
+        output_dir: str = "None",
+    ):
         """ """
         self.module = module
         self.name = name
@@ -1014,9 +1013,7 @@ class SoftwareUnit:
         self.dir = dir
         self.output_dir = output_dir
 
-    
     def get_bin(self, config: dict):
-
         try:
             self.bin = os.path.join(
                 config["bin"]["ROOT"], config["bin"]["software"][self.name], "bin"
@@ -1028,7 +1025,7 @@ class SoftwareUnit:
                 )
             except KeyError:
                 self.bin = ""
-        
+
 
 class Software_detail(SoftwareUnit):
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
@@ -1043,7 +1040,6 @@ class Software_detail(SoftwareUnit):
         super().__init__()
 
         if module in args_df.module.unique():
-
             method_details = args_df[(args_df.module == module)]
             self.module = module
             self.name = method_details.software.values[0]
@@ -1061,13 +1057,12 @@ class Software_detail(SoftwareUnit):
             )
 
             self.output_dir = os.path.join(self.dir, f"{self.name}.{prefix}")
-    
+
     def get_dir_from_config(self, config: dict):
         try:
             self.dir = config["directories"][self.module]
         except KeyError:
             self.dir = ""
-
 
     def extract_db(self, method_details: pd.DataFrame, config: dict):
         try:
@@ -1083,9 +1078,8 @@ class Software_detail(SoftwareUnit):
 
         except IndexError:
             pass
-    
-    def extract_args(self, method_details: pd.DataFrame):
 
+    def extract_args(self, method_details: pd.DataFrame):
         try:
             args_string = method_details[
                 method_details.parameter.str.contains("ARGS")
@@ -1098,7 +1092,6 @@ class Software_detail(SoftwareUnit):
             self.args = ""
             self.db = ""
             self.db_name = ""
-
 
     def excise_db_from_args(self, args: str):
         """replace db name in args with db path
@@ -1237,7 +1230,6 @@ class Bedgraph:
         new_bedgraph = self.bedgraph[self.bedgraph.coverage > 0]
 
         if new_bedgraph.shape[0] > self.max_bars:
-
             new_bedgraph = new_bedgraph.sample(self.max_bars)
 
         new_bedgraph = self.merge_bedgraph_rows(new_bedgraph)
@@ -1307,7 +1299,6 @@ class Bedgraph:
         plt.close("all")
 
     def plot_coverage(self, output_file, borders=50, tlen=0):
-
         self.plot_coverage_bar(output_file, borders, tlen)
 
 
@@ -1393,4 +1384,3 @@ class Assembly_results:
     assembly_mean: int
     assembly_max: int
     assembly_trim: int
-

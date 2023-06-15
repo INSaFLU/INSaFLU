@@ -122,16 +122,16 @@ function show_aln2pheno() {
 
 								// COG
 	    			        	"10%",	// Sequence
-								"5%",	// lineage								
-	    			            "5%",	// RBD1
-	    			            "5%",	// RDB2
-	    			            "5%",	// NTD
-	    			            "5%",   // RDB3
-	    			            "5%",	// RDB4
-	    			            null,	// Flagged mutations
-	    			            null,	// All mutations
-	    			            "5%",	// Nflagged
-	    			            "5%",	// Nmutations
+								"8%",	// lineage								
+	    			            "8%",	// RBD1
+	    			            "8%",	// RDB2
+	    			            "8%",	// NTD
+	    			            "8%",   // RDB3
+	    			            "8%",	// RDB4
+	    			            "8%",	// Flagged mutations
+	    			            "8%",	// All mutations
+	    			            "8%",	// Nflagged
+	    			            null,	// Nmutations
 
 								// New
 								// "10%",	// Sequence
@@ -150,11 +150,11 @@ function show_aln2pheno() {
 	    			        ],
 	    			        
 	    			        col_1: 'select',
-	    			        col_2: 'select',
-	    			        col_3: 'select',
-	    			        col_4: 'select',
-	    			        col_5: 'select',
-	    			        col_6: 'select',
+	    			        // col_2: 'select',
+	    			        // col_3: 'select',
+	    			        // col_4: 'select',
+	    			        // col_5: 'select',
+	    			        // col_6: 'select',
 	    			        // col_7: 'select',
                             // col_8: 'select',
                             // col_9: 'select',

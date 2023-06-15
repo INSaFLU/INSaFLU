@@ -230,6 +230,10 @@ class CollectExtraData(object):
 					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
 					report_data = report_data.merge(pangolin_data, on=["Sequence"])
 					
+					# Reorder lineage column to second
+					cols = report_data.columns.tolist()
+					report_data = report_data[[cols[0]] + [cols[len(cols)-1]] + cols[1:(len(cols)-1)]]
+
 					report_data.to_csv(file_aln2pheno_report_pokay, sep=Constants.SEPARATOR_TAB, index=False)
 
 					self.utils.remove_temp_file(tmp_aln2pheno)
@@ -246,6 +250,10 @@ class CollectExtraData(object):
 
 					report_data = pandas.read_csv(tmp_aln2pheno, delimiter=Constants.SEPARATOR_TAB)
 					report_data = report_data.merge(pangolin_data, on=["Sequence"])
+
+					# Reorder lineage column to second
+					cols = report_data.columns.tolist()
+					report_data = report_data[[cols[0]] + [cols[len(cols)-1]] + cols[1:(len(cols)-1)]]
 					
 					report_data.to_csv(file_aln2pheno_report_carabelli, sep=Constants.SEPARATOR_TAB, index=False)
 

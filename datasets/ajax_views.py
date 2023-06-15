@@ -253,11 +253,10 @@ def add_consensus_name(request):
 			}
 		return JsonResponse(data)
 
-@transaction.atomic
 @csrf_protect
 def remove_consensus(request):
 	"""
-	remove a dataset.
+	remove a consensus in a dataset.
 	"""
 	if request.is_ajax():
 		data = { 'is_ok' : False }

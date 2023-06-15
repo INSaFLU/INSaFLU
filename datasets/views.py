@@ -874,22 +874,28 @@ class AddDatasetsProjectsView(
                         consensus_add += 1
 
                 ### Add the reference of this project if not there yet
-                try:
-                    dataset_consensus = DatasetConsensus.objects.get(
-                        reference=project.reference, dataset=dataset
-                    )
-                    if dataset_consensus.is_deleted or dataset_consensus.is_error:
-                        dataset_consensus.is_deleted = False
-                        dataset_consensus.is_error = False
+                build = 'NA'
+                parameters = Parameter.objects.filter(dataset=dataset)
+                if(len(parameters) > 0):
+                     build = parameters[0].parameter
+                
+                if(build != SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_ncov):
+                     try:
+                        dataset_consensus = DatasetConsensus.objects.get(
+                            reference=project.reference, dataset=dataset
+                        )
+                        if dataset_consensus.is_deleted or dataset_consensus.is_error:
+                            dataset_consensus.is_deleted = False
+                            dataset_consensus.is_error = False
+                            dataset_consensus.save()
+                            reference_add += 1
+                     except DatasetConsensus.DoesNotExist:
+                        dataset_consensus = DatasetConsensus()
+                        dataset_consensus.name = project.reference.name
+                        dataset_consensus.dataset = dataset
+                        dataset_consensus.reference = project.reference
                         dataset_consensus.save()
                         reference_add += 1
-                except DatasetConsensus.DoesNotExist:
-                    dataset_consensus = DatasetConsensus()
-                    dataset_consensus.name = project.reference.name
-                    dataset_consensus.dataset = dataset
-                    dataset_consensus.reference = project.reference
-                    dataset_consensus.save()
-                    reference_add += 1
 
             ### necessary to calculate the global results again
             if reference_add > 0 or consensus_add > 0:

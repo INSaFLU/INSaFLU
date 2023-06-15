@@ -24,17 +24,7 @@ from pathogen_identification.modules.object_classes import (
     Software_detail,
     SoftwareUnit,
 )
-    Assembly_results,
-    Contig_classification_results,
-    Read_class,
-    Read_classification_results,
-    Remap_main,
-    Run_detail_report,
-    RunCMD,
-    Sample_runClass,
-    Software_detail,
-    SoftwareUnit,
-)
+
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import Mapping_Manager
 from pathogen_identification.utilities.televir_parameters import (
@@ -284,17 +274,12 @@ class RunDetail_main:
         self.remap_params = remap_params
 
         ### methods
-        prinseq_soft = TelevirParameters.get_prinseq_software(
-            self.username, self.project_name
-        )
+
         prinseq_soft = TelevirParameters.get_prinseq_software(
             self.username, self.project_name
         )
         if prinseq_soft.is_to_run:
             self.preprocess_method = SoftwareUnit(
-                module=CS.PIPELINE_NAME_read_quality_analysis,
-                name="prinseq",
-                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
                 module=CS.PIPELINE_NAME_read_quality_analysis,
                 name="prinseq",
                 args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",

@@ -18,10 +18,6 @@ class WrongParameters(Exception):
     pass
 
 
-class WrongParameters(Exception):
-    pass
-
-
 @dataclass
 class RemapParams:
     max_taxids: int
@@ -87,8 +83,11 @@ class TelevirParameters:
         """
         Retrieve software parameters for a project
         """
+        print(project_name)
         try:
-            project = Projects.objects.get(name=project_name)
+            project = Projects.objects.get(
+                name=project_name, owner__username=username, is_deleted=False
+            )
 
             try:
                 software = Software.objects.filter(
@@ -130,6 +129,10 @@ class TelevirParameters:
         Get remap software
         """
 
+        project = Projects.objects.get(
+            name=project_name, owner__username=username, is_deleted=False
+        )
+
         remap_params, _ = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
         )
@@ -164,28 +167,12 @@ class TelevirParameters:
         Get prinseq software
         """
 
-            try:
-                prinseq = Software.objects.filter(
-                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
-                    owner__username=username,
-                    technology__name=project.technology,
-                    type_of_use=Software.TYPE_OF_USE_televir_project_settings,
-                    parameter__televir_project=project,
-                ).distinct()[0]
+        project = Projects.objects.get(
+            name=project_name, owner__username=username, is_deleted=False
+        )
 
-            except IndexError:
-                prinseq = Software.objects.get(
-                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
-                    owner__username=username,
-                    technology__name=project.technology,
-                    type_of_use=Software.TYPE_OF_USE_televir_settings,
-                )
-
-        except Software.DoesNotExist:
-            raise Exception(f"Prinseq software not found for user {username}")
-
-        prinseq_params = Parameter.objects.filter(
-            software=prinseq, televir_project__name=project_name
+        prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
         )
 
         entropy_threshold = 0

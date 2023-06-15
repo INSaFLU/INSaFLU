@@ -1369,3 +1369,4 @@ class Assembly_results:
     assembly_mean: int
     assembly_max: int
     assembly_trim: int
+

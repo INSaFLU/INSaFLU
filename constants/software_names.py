@@ -802,6 +802,7 @@ class SoftwareNames(object):
     polyvalent_software = [
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_SNIPPY_name,
+        SOFTWARE_BWA_name,
     ]
     # pipeline_steps per software, for software with multiple pipeline_steps.
     polyvalent_software_pipelines = {
@@ -817,6 +818,9 @@ class SoftwareNames(object):
             ConstantsSettings.PIPELINE_NAME_remapping,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
         ],
+        SOFTWARE_BWA_name: [
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_read_classification,]
     }
 
     ###################################

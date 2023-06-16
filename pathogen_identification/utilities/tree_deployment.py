@@ -16,7 +16,12 @@ from pathogen_identification.models import (
     Projects,
     SoftwareTree,
     SoftwareTreeNode,
+    RunMain,
+    FinalReport,
 )
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_views import ReportSorter
+
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.update_DBs_tree import (
@@ -261,6 +266,19 @@ class Tree_Node:
         self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
         self.leaves = pipe_tree.leaves_from_node_compress(node_index)
+
+    def run_reference_overlap_analysis(self):
+        run = RunMain.objects.get(parameter_set=self.parameter_set)
+        final_report = FinalReport.objects.filter(
+            sample=self.parameter_set.sample, run=run
+        ).order_by("-coverage")
+        #
+        print(final_report)
+        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold(
+            run_pk=run.pk
+        )
+        report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
+        report_sorter.sort_reports()
 
     def receive_run_manager(
         self, run_manager: PathogenIdentification_Deployment_Manager
@@ -645,7 +663,7 @@ class Tree_Progress:
     def merge_node_targets(self):
         """
         Merge targets from all nodes in the current node list
-        
+
         :return: merged targets"""
         node_merged_targets = [
             n.run_manager.run_engine.merged_targets for n in self.current_nodes
@@ -668,7 +686,7 @@ class Tree_Progress:
     def merge_node_targets_list(self, targetdf_list: List[Tree_Node]):
         """
         Merge targets from a list of nodes
-        
+
         :param targetdf_list: list of nodes
         """
         node_merged_targets = [
@@ -682,7 +700,7 @@ class Tree_Progress:
     def get_node_node_targets(self, nodes_list: List[Tree_Node]):
         """
         Get merged targets from a list of nodes
-        
+
         :param nodes_list: list of nodes"""
         node_merged_targets = self.merge_node_targets_list(nodes_list)
 
@@ -864,9 +882,8 @@ class Tree_Progress:
             new_nodes.append(node)
 
         return new_nodes
-    
-    def export_intermediate_reports_leaves(self, nodes_to_update: List[Tree_Node]):
 
+    def export_intermediate_reports_leaves(self, nodes_to_update: List[Tree_Node]):
         for node in nodes_to_update:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
@@ -890,11 +907,10 @@ class Tree_Progress:
                 new_node = self.spawn_node_child(node, child)
                 new_nodes.append(new_node)
 
-        self.current_nodes = new_nodes
-
         if len(new_nodes) == 0:
             self.current_module = "end"
         else:
+            self.current_nodes = new_nodes
             self.determine_current_module()
 
     def run_current_nodes(self):
@@ -948,6 +964,19 @@ class Tree_Progress:
         for node in self.current_nodes:
             self.register_node_leaves(node)
 
+    def register_leaves_finished(self):
+        for node in self.current_nodes:
+            for leaf in node.leaves:
+                leaf_node = self.spawn_node_child(node, leaf)
+                self.register_finished(leaf_node)
+
+    def calculate_report_overlaps(self):
+        for node in self.current_nodes:
+            for leaf in node.leaves:
+                leaf_node = self.spawn_node_child(node, leaf)
+                _ = leaf_node.register(self.project, self.sample, self.tree)
+                leaf_node.run_reference_overlap_analysis()
+
     def deploy_nodes(self):
         if self.current_module == "end":
             return
@@ -995,3 +1024,22 @@ class Tree_Progress:
 
             pool.close()
             pool.join()
+
+    def cycle_process(self):
+        current_module = self.get_current_module()
+
+        while current_module != "end":
+            # for x in range(0):
+            print("NEXT")
+            print(len(self.current_nodes))
+            print(self.get_current_module())
+            print([x.node_index for x in self.current_nodes])
+            print([x.children for x in self.current_nodes])
+            self.deploy_nodes()
+            # deployment_tree.update_nodes()
+
+            current_module = self.get_current_module()
+
+        self.register_leaves_finished()
+        self.calculate_report_overlaps()
+        print("DONE")

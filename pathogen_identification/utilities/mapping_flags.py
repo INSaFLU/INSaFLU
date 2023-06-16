@@ -5,30 +5,34 @@ from dataclasses import dataclass
 class MappingFlagBuild(ABC):
     build_name = None
 
-    @staticmethod
+    def __init__(self, depth, depthc, coverage, mapped, windows_covered):
+        self.depth = depth
+        self.depthc = depthc
+        self.coverage = coverage
+        self.mapped = mapped
+        self.windows_covered = windows_covered
+
     @abstractmethod
-    def assert_false_positive(depth, depthc, coverage, mapped):
+    def assert_false_positive(self):
         pass
 
     @staticmethod
     @abstractmethod
-    def assert_vestigial(depth, depthc, coverage, mapped):
+    def assert_vestigial(self):
         pass
 
 
 class MapFlagViruses(MappingFlagBuild):
     build_name = "viruses"
 
-    @staticmethod
-    def assert_false_positive(depth, depthc, coverage, mapped):
-        if depthc / depth > 10 and coverage < 5:
+    def assert_false_positive(self):
+        if self.depthc / self.depth > 10 and self.coverage < 5:
             return True
 
         return False
 
-    @staticmethod
-    def assert_vestigial(depth, depthc, coverage, mapped):
-        if mapped < 3:
+    def assert_vestigial(self):
+        if self.mapped < 3:
             return True
 
         return False
@@ -37,16 +41,14 @@ class MapFlagViruses(MappingFlagBuild):
 class MapFlagBacteria(MappingFlagBuild):
     build_name = "bacteria"
 
-    @staticmethod
-    def assert_false_positive(depth, depthc, coverage, mapped):
-        if depthc / depth > 10 and coverage < 5:
+    def assert_false_positive(self):
+        if self.depthc / self.depth > 10 and self.coverage < 5:
             return True
 
         return False
 
-    @staticmethod
-    def assert_vestigial(depth, depthc, coverage, mapped):
-        if mapped < 3:
+    def assert_vestigial(self):
+        if self.mapped < 3:
             return True
 
         return False
@@ -55,16 +57,28 @@ class MapFlagBacteria(MappingFlagBuild):
 class MapFlagProbes(MappingFlagBuild):
     build_name = "probes"
 
-    @staticmethod
-    def assert_false_positive(depth, depthc, coverage, mapped):
-        if depthc / depth > 10 and coverage < 5:
+    def __init__(self, depth, depthc, coverage, mapped, windows_covered):
+        super().__init__(depth, depthc, coverage, mapped, windows_covered)
+
+        self.windows_covered = self.split_windows_covered(windows_covered)
+        self.windows_covered = self.windows_covered[0] / self.windows_covered[1]
+
+    def assert_false_positive(self):
+        if self.windows_covered < 0.5 and self.coverage < 5:
+            return True
+
+        return False
+
+    def assert_vestigial(self):
+        if self.mapped < 3:
             return True
 
         return False
 
     @staticmethod
-    def assert_vestigial(depth, depthc, coverage, mapped):
-        if mapped < 3:
-            return True
+    def split_windows_covered(window_str: str):
+        try:
+            return [int(x) for x in window_str.split("/")]
 
-        return False
+        except:
+            return [0, 1]

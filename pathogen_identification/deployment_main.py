@@ -548,7 +548,6 @@ class Run_Main_from_Leaf:
 
     def register_completion(self):
         self.set_run_process_finished()
-
         new_run = ParameterSet.objects.get(pk=self.pk)
         new_run.register_finished()
 

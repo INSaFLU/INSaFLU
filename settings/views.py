@@ -28,10 +28,12 @@ class index(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(index, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
-        context["televir_available"] = default_software.test_televir_software_available()
+        context[
+            "televir_available"
+        ] = default_software.test_televir_software_available()
         context[
             "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute                
+        ] = ShowInfoMainPage()  ## show main information about the institute
         return context
 
 
@@ -59,13 +61,15 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use__in=[Software.TYPE_OF_USE_televir_global, Software.TYPE_OF_USE_televir_settings],
+            type_of_use__in=[
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
+            ],
             type_of_software=Software.TYPE_SOFTWARE,
             is_obsolete=False,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
-
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
@@ -102,13 +106,18 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ### get all global software
         query_set = Software.objects.filter(
             owner=self.request.user,
-            type_of_use__in=[Software.TYPE_OF_USE_televir_global, Software.TYPE_OF_USE_televir_settings],
-            type_of_software__in=[Software.TYPE_SOFTWARE, Software.TYPE_INSAFLU_PARAMETER],
+            type_of_use__in=[
+                Software.TYPE_OF_USE_televir_global,
+                Software.TYPE_OF_USE_televir_settings,
+            ],
+            type_of_software__in=[
+                Software.TYPE_SOFTWARE,
+                Software.TYPE_INSAFLU_PARAMETER,
+            ],
             is_obsolete=False,
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
-
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
@@ -177,7 +186,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         type_of_use__in=[
                             Software.TYPE_OF_USE_televir_global,
                             Software.TYPE_OF_USE_televir_settings,
-                            ],
+                        ],
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
@@ -193,7 +202,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         type_of_use__in=[
                             Software.TYPE_OF_USE_televir_project,
                             Software.TYPE_OF_USE_televir_project_settings,
-                            ],
+                        ],
                         type_of_software__in=[
                             Software.TYPE_SOFTWARE,
                             Software.TYPE_INSAFLU_PARAMETER,
@@ -329,7 +338,6 @@ class SettingsView(LoginRequiredMixin, ListView):
         return []
 
     def get_context_data(self, **kwargs):
-
         context = super(SettingsView, self).get_context_data(**kwargs)
 
         ### test all defaults first, if exist in database
@@ -413,7 +421,10 @@ class UpdateParametersView(LoginRequiredMixin, UpdateView):
         context = super(UpdateParametersView, self).get_context_data(**self.kwargs)
         type_of_use = context["software"].type_of_use
 
-        if type_of_use == Software.TYPE_OF_USE_televir_global:
+        if type_of_use in [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]:
             return reverse_lazy("pathogenID_pipeline", args=(0,))
 
         return reverse_lazy("settings-index")
@@ -745,16 +756,13 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         parameter.save()
 
             if b_change:
-
                 # Only update metadata if there are dataset_consensus already
                 query_set = DatasetConsensus.objects.filter(
                     dataset_id=dataset.id,
                 )
 
-                if(query_set.count() > 0):
-
+                if query_set.count() > 0:
                     try:
-
                         # Now update the meetadata, if there are dataset_consensus
                         metaKeyAndValue = MetaKeyAndValue()
                         manageDatabase = ManageDatasetDatabase()
@@ -764,7 +772,9 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         user = dataset.owner
 
                         ### need to collect global files again
-                        taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, user)
+                        taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                            dataset, user
+                        )
 
                         manageDatabase.set_dataset_metakey(
                             dataset,
@@ -780,19 +790,21 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         messages.warning(
                             self.request,
                             "Error updating dataset metadata",
-                            fail_silently=True
-                        )                            
+                            fail_silently=True,
+                        )
 
                     messages.success(
                         self.request,
-                        "{} '".format("Software" if software.is_software() else "INSaFLU")
+                        "{} '".format(
+                            "Software" if software.is_software() else "INSaFLU"
+                        )
                         + software.name
                         + "' parameters were successfully updated for dataset '"
                         + dataset.name
                         + "'.",
                         fail_silently=True,
                     )
-                    
+
             else:
                 messages.success(
                     self.request,

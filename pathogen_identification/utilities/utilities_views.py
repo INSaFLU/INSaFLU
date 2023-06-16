@@ -52,7 +52,7 @@ def set_control_reports(project_pk: int):
 
 
 class ReportSorter:
-    analysis_filename = "overlap_analysis.tsv"
+    analysis_filename = "{}_overlap_analysis_{}.tsv"
 
     def __init__(self, reports: List[FinalReport], threshold: float, force=False):
         self.reports = reports
@@ -71,7 +71,10 @@ class ReportSorter:
         print(self.run)
         self.run_media_dir = self.inferred_run_media_dir()
         print(self.run_media_dir, self.analysis_filename)
-        self.analysis_df_path = os.path.join(self.run_media_dir, self.analysis_filename)
+        self.analysis_df_path = os.path.join(
+            self.run_media_dir,
+            self.analysis_filename.format(self.run.name, self.threshold),
+        )
 
         self.force = force
 

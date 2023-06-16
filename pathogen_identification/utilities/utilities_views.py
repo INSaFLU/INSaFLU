@@ -63,10 +63,14 @@ class ReportSorter:
             if self.retrieved_mapped_subset(report)
         }
         self.metadata_df = self.prep_metadata_df()
+        print("reports", len(reports))
+        print([x.run for x in reports])
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.run = self.infer_run()
+        print(self.run)
         self.run_media_dir = self.inferred_run_media_dir()
+        print(self.run_media_dir, self.analysis_filename)
         self.analysis_df_path = os.path.join(self.run_media_dir, self.analysis_filename)
 
         self.force = force

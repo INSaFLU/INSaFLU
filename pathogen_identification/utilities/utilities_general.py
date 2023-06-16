@@ -409,25 +409,30 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
+    print("infer_run_media_dir")
+    print(run_main.params_file_path)
+    print(run_main.processed_reads_r1)
+    print(run_main.processed_reads_r2)
+
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)
-        if params_exist:
-            media_classification_dir = os.path.dirname(run_main.params_file_path)
-            media_dir = os.path.dirname(media_classification_dir)
+        media_classification_dir = os.path.dirname(run_main.params_file_path)
+        media_dir = os.path.dirname(media_classification_dir)
+        if os.path.isdir(media_dir):
             return media_dir
 
     elif run_main.processed_reads_r1:
         reads_r1_exist = os.path.exists(run_main.processed_reads_r1)
 
-        if reads_r1_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r1)
+        media_dir = os.path.dirname(run_main.processed_reads_r1)
+        if os.path.isdir(media_dir):
             return media_dir
 
     elif run_main.processed_reads_r2:
         reads_r2_exist = os.path.exists(run_main.processed_reads_r2)
 
-        if reads_r2_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r2)
+        media_dir = os.path.dirname(run_main.processed_reads_r2)
+        if os.path.isdir(media_dir):
             return media_dir
 
     return None

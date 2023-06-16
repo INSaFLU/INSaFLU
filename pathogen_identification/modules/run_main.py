@@ -784,10 +784,10 @@ class Run_Deployment_Methods(RunDetail_main):
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             True,
+            remap_params=self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 

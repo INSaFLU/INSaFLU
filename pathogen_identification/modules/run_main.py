@@ -1339,6 +1339,7 @@ class RunMainTree_class(Run_Deployment_Methods):
     def plan_remap_prep_safe(self):
         if self.read_classification_performed and self.contig_classification_performed:
             self.plan_remap_prep()
+            self.export_intermediate_reports()
             self.remap_prepped = True
 
     def plan_remap_prep(self):

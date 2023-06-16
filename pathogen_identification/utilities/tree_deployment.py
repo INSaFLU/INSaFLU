@@ -643,6 +643,10 @@ class Tree_Progress:
         self.update_node_dbs(node, step=node.module)
 
     def merge_node_targets(self):
+        """
+        Merge targets from all nodes in the current node list
+        
+        :return: merged targets"""
         node_merged_targets = [
             n.run_manager.run_engine.merged_targets for n in self.current_nodes
         ]
@@ -653,14 +657,20 @@ class Tree_Progress:
 
     @staticmethod
     def get_remap_plans(nodes: List[Tree_Node]):
+        """
+        Get remap plans for all nodes in a list"""
         planned_nodes = []
         for n in nodes:
             n.run_manager.run_engine.plan_remap_prep()
-            # planned_nodes.append(copy.deepcopy(n))
 
         return nodes
 
     def merge_node_targets_list(self, targetdf_list: List[Tree_Node]):
+        """
+        Merge targets from a list of nodes
+        
+        :param targetdf_list: list of nodes
+        """
         node_merged_targets = [
             n.run_manager.run_engine.merged_targets for n in targetdf_list
         ]
@@ -670,6 +680,10 @@ class Tree_Progress:
         return node_merged_targets
 
     def get_node_node_targets(self, nodes_list: List[Tree_Node]):
+        """
+        Get merged targets from a list of nodes
+        
+        :param nodes_list: list of nodes"""
         node_merged_targets = self.merge_node_targets_list(nodes_list)
 
         node_merged_targets = self.process_mapping_managerdf(node_merged_targets)
@@ -678,6 +692,9 @@ class Tree_Progress:
 
     @staticmethod
     def process_mapping_managerdf(df: pd.DataFrame):
+        """
+        Process mapping manager dataframe
+        """
         if "accid" in df.columns:
             df = df.drop_duplicates(subset=["accid"])
         if "protein_id" in df.columns:
@@ -758,8 +775,7 @@ class Tree_Progress:
         )
 
         volonteer.run_manager.update_merged_targets(group_targets)
-        print("running_main")
-        print(volonteer.run_manager.run_engine.remapping)
+
         run_success = self.run_node(volonteer)
 
         volonteer.run_manager.update_merged_targets(original_targets)
@@ -821,6 +837,7 @@ class Tree_Progress:
             print(len(mapped_instances_shared))
 
             nodes = self.update_mapped_instances(nodes, mapped_instances_shared)
+            self.export_intermediate_reports_leaves(nodes)
 
             print("deployment_success: " + str(deployment_success))
             print("updated nodes")
@@ -847,6 +864,13 @@ class Tree_Progress:
             new_nodes.append(node)
 
         return new_nodes
+    
+    def export_intermediate_reports_leaves(self, nodes_to_update: List[Tree_Node]):
+
+        for node in nodes_to_update:
+            for leaf in node.leaves:
+                leaf_node = self.spawn_node_child(node, leaf)
+                leaf_node.run_manager.run_engine.export_intermediate_reports()
 
     def run_simplified_mapping(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()

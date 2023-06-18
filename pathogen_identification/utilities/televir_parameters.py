@@ -37,11 +37,13 @@ class PrinseqParams:
 @dataclass
 class LayoutParams:
     read_overlap_threshold: float
+    shared_proportion_threshold: float
     flag_str: str
     flag_build: MappingFlagBuild
 
-    def __init__(self, read_overlap_threshold, flag_str):
+    def __init__(self, read_overlap_threshold, shared_proportion_threshold, flag_str):
         self.read_overlap_threshold = read_overlap_threshold
+        self.shared_proportion_threshold = shared_proportion_threshold
         self.flag_str = flag_str
 
     def __post_init__(self):
@@ -196,7 +198,7 @@ class TelevirParameters:
         """
         Get layout parameters
         """
-        report_layout_params = LayoutParams(0, "")
+        report_layout_params = LayoutParams(0.8, 0.5, "viruses")
 
         for param in run_params:
             if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:
@@ -253,4 +255,4 @@ class TelevirParameters:
 
         report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
 
-        return report_layout_params.read_overlap_threshold
+        return report_layout_params

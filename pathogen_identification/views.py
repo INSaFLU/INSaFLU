@@ -928,9 +928,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         final_report = run_main.sorted_reports_get()
         #
-        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold()
+        report_layout_params = TelevirParameters.get_read_overlap_threshold()
         report_sorter = ReportSorter(
-            final_report, private_threshold=read_overlap_threshold
+            final_report, report_layout_params
         )
         sorted_reports = report_sorter.get_reports()
 

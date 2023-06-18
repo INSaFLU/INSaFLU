@@ -9,6 +9,7 @@ from pathogen_identification.utilities.utilities_general import (
 from typing import List
 from pathogen_identification.utilities.overlap_manager import ReadOverlapManager
 from pathogen_identification.utilities.clade_objects import Clade
+from pathogen_identification.utilities.televir_parameters import LayoutParams
 
 # import Django BaseManager
 # from django.db.models import BaseManager
@@ -20,15 +21,11 @@ class ReportSorter:
     def __init__(
         self,
         reports: List[FinalReport],
-        private_threshold: float,
-        min_shared_threshold: float,
+        report_layout_params: LayoutParams,
         force=False,
     ):
         self.reports = reports
-        self.threshold = private_threshold
-        self.reference_clade = self.generate_reference_clade(
-            private_threshold, min_shared_threshold
-        )
+        self.reference_clade = self.generate_reference_clade(report_layout_params)
         self.report_dict = {report.accid: report for report in reports}
         self.metadata_df = self.prep_metadata_df()
 
@@ -40,16 +37,16 @@ class ReportSorter:
         self.force = force
 
     @staticmethod
-    def generate_reference_clade(private_threshold: float, min_shared_threshold: float):
+    def generate_reference_clade(layout_params: LayoutParams):
         """
         Return reference clade"""
         ref_clade = Clade(
             name="ref",
             leaves=[],
-            private_proportion=private_threshold,
-            shared_proportion_std=min_shared_threshold,
-            shared_proportion_min=min_shared_threshold,
-            shared_proportion_max=min_shared_threshold,
+            private_proportion=LayoutParams.read_overlap_threshold,
+            shared_proportion_std=LayoutParams.shared_proportion_threshold,
+            shared_proportion_min=LayoutParams.shared_proportion_threshold,
+            shared_proportion_max=LayoutParams.shared_proportion_threshold,
         )
         return ref_clade
 

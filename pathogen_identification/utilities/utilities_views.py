@@ -181,12 +181,11 @@ class ReportSorter:
         tree_manager = PhyloTreeManager(njtree)
         inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
 
-        private_read_dict = overlap_manager.node_private_reads(inner_node_leaf_dict)
-        private_clades = overlap_manager.filter_clades_by_private_reads(
-            private_read_dict
-        )
-        leaf_clades = tree_manager.leaf_clades_clean(private_clades)
-        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades)
+        statistics_dict = overlap_manager.node_statistics(inner_node_leaf_dict)
+
+        selected_clades = overlap_manager.filter_clades(statistics_dict)
+
+        leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
 
         return clades
 

@@ -186,6 +186,7 @@ class ReportSorter:
         selected_clades = overlap_manager.filter_clades(statistics_dict)
 
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
+        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades)
 
         return clades
 

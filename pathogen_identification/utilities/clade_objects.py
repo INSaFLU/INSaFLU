@@ -1,5 +1,3 @@
-
-
 ## pairwise matrix by individual reads
 
 from typing import List
@@ -24,19 +22,16 @@ class Clade:
     shared_proportion_max: float
 
 
-
 class CladeFilterMethod(ABC):
-
-    def __init__(self, reference_clade: Clade)
+    def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
-    
-    
+
     def filter_clades(self, clades: List[Clade]) -> List[Clade]:
         """
         Return filtered clades
         """
         return [clade for clade in clades if self.filter_clade(clade)]
-    
+
     @abstractmethod
     def filter_clade(self, clade: Clade) -> bool:
         """
@@ -44,29 +39,25 @@ class CladeFilterMethod(ABC):
         """
         pass
 
-class CladeFilterByPrivateProportion(CladeFilterMethod):
 
+class CladeFilterByPrivateProportion(CladeFilterMethod):
     def filter_clade(self, clade: Clade) -> bool:
         """
         Return True if clade passes filter
         """
         return clade.private_proportion >= self.reference_clade.private_proportion
 
+
 class CladeFilterBySharedProportion(CladeFilterMethod):
-    
     def filter_clade(self, clade: Clade) -> bool:
         """
         Return True if clade passes filter
         """
-        return (
-            clade.shared_proportion_max
-            >= self.reference_clade.shared_proportion_max
-        )
+        return clade.shared_proportion_max >= self.reference_clade.shared_proportion_max
+
 
 class CladeFilterComposed(CladeFilterMethod):
-
     def filter_clade(self, clade_obj: Clade) -> bool:
-
         if clade_obj.private_proportion < self.reference_clade.private_proportion:
             return False
 
@@ -75,32 +66,31 @@ class CladeFilterComposed(CladeFilterMethod):
 
         return True
 
+
 class CladeFilter:
-    
-        def __init__(self, reference_clade: Clade):
-            self.reference_clade = reference_clade
-            self.filters: List[CladeFilterMethod] = [
-                CladeFilterByPrivateProportion,
-                CladeFilterBySharedProportion,
-            ]
+    def __init__(self, reference_clade: Clade):
+        self.reference_clade = reference_clade
+        self.filters: List[CladeFilterMethod] = [
+            CladeFilterByPrivateProportion,
+            CladeFilterBySharedProportion,
+        ]
 
-        def add_filter(self, filter: CladeFilterMethod):
-            """
-            Add filter to filter manager
-            """
-            self.filters.append(filter)
+    def add_filter(self, filter: CladeFilterMethod):
+        """
+        Add filter to filter manager
+        """
+        self.filters.append(filter)
 
-        def filter_clade(self, clade: Clade) -> bool:
-            """
-            Return True if clade passes filter
-            """
-            return all([filter.filter_clade(clade) for filter in self.filters])
-    
-    
-        def filter_clades(self, clades: List[Clade]) -> List[Clade]:
-            """
-            Return filtered clades
-            """
-            for filter in self.filters:
-                clades = filter.filter_clades(clades)
-            return clades
+    def filter_clade(self, clade: Clade) -> bool:
+        """
+        Return True if clade passes filter
+        """
+        return all([filter.filter_clade(clade) for filter in self.filters])
+
+    def filter_clades(self, clades: List[Clade]) -> List[Clade]:
+        """
+        Return filtered clades
+        """
+        for filter in self.filters:
+            clades = filter.filter_clades(clades)
+        return clades

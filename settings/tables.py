@@ -22,6 +22,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
+from pathogen_identification.utilities.televir_parameters import LayoutParams
 
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -32,7 +33,6 @@ class CheckBoxColumnWithName(tables.CheckBoxColumn):
 
 
 class SoftwaresTable(tables.Table):
-
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     select_to_run = CheckBoxColumnWithName(
@@ -157,7 +157,6 @@ class SoftwaresTable(tables.Table):
             default_software = DefaultSoftware()
             return default_software.get_parameters(record.name, user, technology_name)
         elif self.dataset is not None:
-
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
             # TODO need to make this work...
@@ -237,7 +236,6 @@ class SoftwaresTable(tables.Table):
         )
 
     def render_options(self, record):
-
         ### if project
         ## Edit
         from crequest.middleware import CrequestMiddleware
@@ -706,7 +704,6 @@ class SoftwaresTable(tables.Table):
 
 
 class INSaFLUParametersTable(tables.Table):
-
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     select_to_run = CheckBoxColumnWithName(
@@ -743,7 +740,6 @@ class INSaFLUParametersTable(tables.Table):
         return record.name if record.name_extended is None else record.name_extended
 
     def render_select_to_run(self, value, record):
-
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project)
@@ -813,7 +809,6 @@ class INSaFLUParametersTable(tables.Table):
         return ""
 
     def render_options(self, record):
-
         ### if project
         ## Edit
         from crequest.middleware import CrequestMiddleware

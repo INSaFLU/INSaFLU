@@ -368,7 +368,7 @@ class ReadOverlapManager:
             clade
             for clade, clade_obj in clades_dict.items()
             if self.clade_filter.filter_clade(clade_obj)
-            and self.safe_clade_name(node) != "None"
+            and self.safe_clade_name(clade) != "None"
         ]
         return clades_filtered
 

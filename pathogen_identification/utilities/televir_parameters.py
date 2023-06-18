@@ -1,9 +1,17 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Union
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.constants_settings import ConstantsSettings as CS
-from pathogen_identification.models import Projects
+from pathogen_identification.models import Projects, RunMain
+from pathogen_identification.utilities.mapping_flags import (
+    MapFlagViruses,
+    MappingFlagBuild,
+)
 from settings.models import Parameter, Software
+from settings.constants_settings import ConstantsSettings as CS
+from pathogen_identification.constants_settings import ConstantsSettings as PI_CS
 
 
 class WrongParameters(Exception):
@@ -14,6 +22,9 @@ class WrongParameters(Exception):
 class RemapParams:
     max_taxids: int
     max_accids: int
+    min_quality: int
+    max_mismatch: float
+    min_coverage: int
 
 
 @dataclass
@@ -23,55 +34,130 @@ class PrinseqParams:
     is_to_run: bool
 
 
+@dataclass
+class LayoutParams:
+    read_overlap_threshold: float
+    flag_str: str
+    flag_build: MappingFlagBuild
+
+    def __init__(self, read_overlap_threshold, flag_str):
+        self.read_overlap_threshold = read_overlap_threshold
+        self.flag_str = flag_str
+
+    def __post_init__(self):
+        self.update_flag_build(self.flag_str)
+
+    def get_flag_build(self):
+        """
+        Get flag build"""
+        return self.flag_build
+
+    def update_flag_build(self, flag_str):
+        """
+        Update flag build based on flag_str
+        """
+        flag_build_list = [
+            x for x in MappingFlagBuild.__subclasses__() if x.build_name == flag_str
+        ]
+
+        if len(flag_build_list) == 0:
+            raise WrongParameters(
+                f"Wrong flag build name {flag_str}. Available options are: {MappingFlagBuild.__subclasses__()}"
+            )
+
+        else:
+            self.flag_build = flag_build_list[0]
+
+
 class TelevirParameters:
+    def technology_mincov(project: Projects):
+        if project.technology in [CS.TECHNOLOGY_illumina, CS.TECHNOLOGY_illumina_old]:
+            return PI_CS.CONSTANTS_ILLUMINA["minimum_coverage_threshold"]
+        elif project.technology == CS.TECHNOLOGY_minion:
+            return PI_CS.CONSTANTS_ONT["minimum_coverage_threshold"]
+        else:
+            raise Exception(f"Unknown technology {project.technology}")
+
     @staticmethod
-    def get_remap_software(username: str, project_name):
+    def retrieve_project_software(software_name: str, username: str, project_name: str):
         """
-        Get remap software
+        Retrieve software parameters for a project
         """
+        print(project_name)
         try:
-            project = Projects.objects.get(name=project_name)
+            project = Projects.objects.get(
+                name=project_name, owner__username=username, is_deleted=False
+            )
 
             try:
-                remap = Software.objects.filter(
-                    name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+                software = Software.objects.filter(
+                    name=software_name,
                     owner__username=username,
                     technology__name=project.technology,
                     type_of_use=Software.TYPE_OF_USE_televir_project_settings,
                     parameter__televir_project=project,
                 ).distinct()[0]
 
-            except Software.DoesNotExist:
-                remap = Software.objects.get(
-                    name=SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+            except IndexError:
+                software = Software.objects.get(
+                    name=software_name,
                     owner__username=username,
                     technology__name=project.technology,
                     type_of_use=Software.TYPE_OF_USE_televir_settings,
                 )
 
-        except Software.DoesNotExist:
-            raise Exception(f"Remap software not found for user {username}")
+        except Software.DoesNotExist as exc:
+            raise Exception(f"Remap software not found for user {username}") from exc
 
-        remap_params = Parameter.objects.filter(
-            software=remap, televir_project__name=project_name
+        software_params = Parameter.objects.filter(
+            software=software, televir_project__name=project_name
         )
-        if remap_params.count() == 0:
-            remap_params = Parameter.objects.filter(
-                software=remap, televir_project__name=None
+        if software_params.count() == 0:
+            software_params = Parameter.objects.filter(
+                software=software, televir_project__name=None
             )
-        if remap_params.count() == 0:
-            raise Exception(
-                f"Remap software parameters not found for user {username} and project {project_name}"
+        if software_params.count() == 0:
+            raise WrongParameters(
+                f"Software parameters not found for user {username} and project {project_name}"
             )
+
+        return software_params, software
+
+    @staticmethod
+    def get_remap_software(username: str, project_name):
+        """
+        Get remap software
+        """
+
+        project = Projects.objects.get(
+            name=project_name, owner__username=username, is_deleted=False
+        )
+
+        remap_params, _ = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name, username, project_name
+        )
+
         max_taxids = 0
         max_accids = 0
+        min_quality = 0
+        max_mismatch = 0
         for param in remap_params:
             if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids:
                 max_taxids = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids:
                 max_accids = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality:
+                min_quality = int(param.parameter)
+            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch:
+                max_mismatch = float(param.parameter)
 
-        remap = RemapParams(max_taxids=max_taxids, max_accids=max_accids)
+        remap = RemapParams(
+            max_taxids=max_taxids,
+            max_accids=max_accids,
+            min_quality=min_quality,
+            max_mismatch=max_mismatch,
+            min_coverage=TelevirParameters.technology_mincov(project),
+        )
 
         return remap
 
@@ -80,40 +166,15 @@ class TelevirParameters:
         """
         Get prinseq software
         """
-        try:
-            project = Projects.objects.get(name=project_name)
 
-            try:
-                prinseq = Software.objects.filter(
-                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
-                    owner__username=username,
-                    technology__name=project.technology,
-                    type_of_use=Software.TYPE_OF_USE_televir_project_settings,
-                    parameter__televir_project=project,
-                ).distinct()[0]
-
-            except Software.DoesNotExist:
-                prinseq = Software.objects.get(
-                    name=SoftwareNames.SOFTWARE_PRINSEQ_name,
-                    owner__username=username,
-                    technology__name=project.technology,
-                    type_of_use=Software.TYPE_OF_USE_televir_settings,
-                )
-
-        except Software.DoesNotExist:
-            raise Exception(f"Prinseq software not found for user {username}")
-
-        prinseq_params = Parameter.objects.filter(
-            software=prinseq, televir_project__name=project_name
+        project = Projects.objects.get(
+            name=project_name, owner__username=username, is_deleted=False
         )
-        if prinseq_params.count() == 0:
-            prinseq_params = Parameter.objects.filter(
-                software=prinseq, televir_project__name=None
-            )
-        if prinseq_params.count() == 0:
-            raise Exception(
-                f"Prinseq software parameters not found for user {username} and project {project_name}"
-            )
+
+        prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name
+        )
+
         entropy_threshold = 0
         dust_threshold = 0
         for param in prinseq_params:
@@ -125,15 +186,71 @@ class TelevirParameters:
         prinseq = PrinseqParams(
             entropy_threshold=entropy_threshold,
             dust_threshold=dust_threshold,
-            is_to_run=prinseq.is_to_run,
+            is_to_run=prinseq_software.is_to_run,
         )
 
         return prinseq
 
     @staticmethod
-    def get_read_overlap_threshold():
+    def layout_params_get(run_params: List[Parameter]) -> LayoutParams:
+        """
+        Get layout parameters
+        """
+        report_layout_params = LayoutParams(0, "")
+
+        for param in run_params:
+            if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:
+                report_layout_params.update_flag_build(param.parameter)
+            elif (
+                param.name
+                == SoftwareNames.SOFTWARE_televir_report_layout_threshold_name
+            ):
+                report_layout_params.read_overlap_threshold = float(param.parameter)
+
+        return report_layout_params
+
+    @staticmethod
+    def get_flag_build(run_pk) -> MappingFlagBuild:
+        """
+        Get flag build
+        """
+
+        run_main = RunMain.objects.get(pk=run_pk)
+        project = run_main.project
+        username = project.owner.username
+
+        (
+            flag_build_params,
+            _,
+        ) = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            username,
+            project.name,
+        )
+
+        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
+
+        return report_layout_params.flag_build
+
+    @staticmethod
+    def get_read_overlap_threshold(run_pk) -> float:
         """
         Get overlap threshold
         """
 
-        return CS.READ_OVERLAP_THRESHOLD
+        run_main = RunMain.objects.get(pk=run_pk)
+        project = run_main.project
+        username = project.owner.username
+
+        (
+            flag_build_params,
+            _,
+        ) = TelevirParameters.retrieve_project_software(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            username,
+            project.name,
+        )
+
+        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
+
+        return report_layout_params.read_overlap_threshold

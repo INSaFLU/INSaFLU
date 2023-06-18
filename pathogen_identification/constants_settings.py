@@ -250,6 +250,7 @@ class ConstantsSettings:
     ################################## TAXONOMY
 
     READ_OVERLAP_THRESHOLD = 0.9
+    SHARED_READS_THRESHOLD = 0.5
 
     ################################## TECHNOLOGY CONSTANTS
 

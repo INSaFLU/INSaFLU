@@ -957,10 +957,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        read_overlap_threshold = TelevirParameters.get_read_overlap_threshold(
-            run_main.pk
-        )
-        report_sorter = ReportSorter(final_report, threshold=read_overlap_threshold)
+        report_layout_params = TelevirParameters.get_read_overlap_threshold()
+        report_sorter = ReportSorter(final_report, report_layout_params)
         sorted_reports = report_sorter.get_reports()
 
         # check has control_flag present

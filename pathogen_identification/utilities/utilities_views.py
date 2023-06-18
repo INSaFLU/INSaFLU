@@ -54,29 +54,47 @@ def set_control_reports(project_pk: int):
 class ReportSorter:
     analysis_filename = "{}_overlap_analysis_{}.tsv"
 
-    def __init__(self, reports: List[FinalReport], threshold: float, force=False):
+    def __init__(
+        self,
+        reports: List[FinalReport],
+        report_layout_params: LayoutParams,
+        force=False,
+    ):
         self.reports = reports
-        self.threshold = threshold
+        self.reference_clade = self.generate_reference_clade(report_layout_params)
         self.report_dict = {
             report.accid: report
             for report in reports
             if self.retrieved_mapped_subset(report)
         }
         self.metadata_df = self.prep_metadata_df()
-        print("reports", len(reports))
-        print([x.run for x in reports])
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.run = self.infer_run()
-        print(self.run)
         self.run_media_dir = self.inferred_run_media_dir()
-        print(self.run_media_dir, self.analysis_filename)
+        self.analysis_df_path = os.path.join(self.run_media_dir, self.analysis_filename)
+
         self.analysis_df_path = os.path.join(
             self.run_media_dir,
-            self.analysis_filename.format(self.run.name, self.threshold),
+            self.analysis_filename.format(
+                self.run.name, report_layout_params.threshold
+            ),
         )
-
         self.force = force
+
+    @staticmethod
+    def generate_reference_clade(layout_params: LayoutParams):
+        """
+        Return reference clade"""
+        ref_clade = Clade(
+            name="ref",
+            leaves=[],
+            private_proportion=LayoutParams.read_overlap_threshold,
+            shared_proportion_std=LayoutParams.shared_proportion_threshold,
+            shared_proportion_min=LayoutParams.shared_proportion_threshold,
+            shared_proportion_max=LayoutParams.shared_proportion_threshold,
+        )
+        return ref_clade
 
     def infer_run(self):
         """
@@ -185,10 +203,13 @@ class ReportSorter:
         try:
             analysis_df = pd.read_csv(self.analysis_df_path, sep="\t")
 
-            if self.check_all_accids_analyzed(analysis_df):
+            if not os.path.isfile(analysis_df):
                 return True
 
-            return False
+            if self.check_all_accids_analyzed(analysis_df):
+                return False
+
+            return True
 
         except pd.errors.EmptyDataError:
             return False
@@ -209,7 +230,7 @@ class ReportSorter:
         if self.metadata_df.empty:
             return [self.reports]
 
-        if not self.check_analyzed():
+        if not self.check_all_accids_analyzed(self.analysis_df_path):
             return [self.reports]
 
         overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")

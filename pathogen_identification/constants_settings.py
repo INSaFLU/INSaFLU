@@ -115,9 +115,7 @@ class Pipeline_Makeup:
         return list(self.MAKEUP.values())
 
     def match_makeup_name_from_list(self, makeup_list: list):
-
         for makeup, mlist in self.MAKEUP.items():
-
             if set(makeup_list) == set(mlist):
                 return makeup
         return None
@@ -245,10 +243,10 @@ class ConstantsSettings:
 
     DESCRIPTION_FILTERS = ["phage"]
 
-
     ################################## TAXONOMY
 
     READ_OVERLAP_THRESHOLD = 0.9
+    SHARED_READS_THRESHOLD = 0.5
 
     ################################## TECHNOLOGY CONSTANTS
 

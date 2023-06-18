@@ -1,3 +1,4 @@
+from typing import Tuple
 import itertools as it
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceMatrix
@@ -14,21 +15,8 @@ from typing import List, Dict
 from dataclasses import dataclass
 import itertools
 import numpy as np
-
-
-@dataclass
-class Clade:
-    """
-    Clade object
-    """
-
-    name: str
-    leaves: list
-    private_proportion: float
-
-    shared_proportion_std: float
-    shared_proportion_min: float
-    shared_proportion_max: float
+from abc import ABC, abstractmethod
+from pathogen_identification.utilities.clade_objects import Clade, CladeFilter
 
 
 def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
@@ -44,11 +32,14 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
 
 class ReadOverlapManager:
     def __init__(
-        self, fasta_list: List[str], metadata_df: pd.DataFrame, threshold: float = 1
+        self,
+        fasta_list: List[str],
+        metadata_df: pd.DataFrame,
+        reference_clade: Clade,
     ):
         self.metadata = metadata_df
-        self.threshold = threshold
         self.fasta_list = fasta_list
+        self.clade_filter = CladeFilter(reference_clade=reference_clade)
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -72,7 +63,14 @@ class ReadOverlapManager:
         return readname_dict
 
     @staticmethod
+    def readoverlap_2_files(lista, listb) -> list:
+        """
+        Return list of read names that are in both lists
+        """
+        return list(set(lista).intersection(set(listb)))
+
     def readoverlap_allpairs(
+        self,
         read_lists: List[List[str]],
     ) -> Dict[Tuple[str, str], List[str]]:
         """
@@ -81,7 +79,7 @@ class ReadOverlapManager:
         read_overlap_dict = {}
         for i in range(len(read_lists)):
             for j in range(len(read_lists)):
-                read_overlap = readoverlap_2_files(read_lists[i], read_lists[j])
+                read_overlap = self.readoverlap_2_files(read_lists[i], read_lists[j])
                 percent_i = len(read_overlap) / len(read_lists[i])
                 percent_j = len(read_overlap) / len(read_lists[j])
                 summary = f"{percent_i:.2f} - {percent_j:.2f}"
@@ -278,7 +276,7 @@ class ReadOverlapManager:
         return combinations
 
     def clade_private_proportions(self, leaves: list) -> float:
-        group = read_profile_matrix.loc[leaves]
+        group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
         group_sum_as_bool_list = group_sum_as_bool.tolist()
@@ -363,15 +361,15 @@ class ReadOverlapManager:
 
         return node_private_dict
 
-    def filter_clades_by_private_reads(self, private_read_dict: dict) -> list:
+    def filter_clades(self, clades_dict):
         """
-        Return list of clades with private reads above threshold
-        """
-        return [
-            node
-            for node, proportion in private_read_dict.items()
-            if proportion >= self.threshold and self.safe_clade_name(node) != "None"
+        Return list of clades with private reads above threshold"""
+        clades_filtered = [
+            clade
+            for clade, clade_obj in clades_dict.items()
+            if self.clade_filter.filter_clade(clade_obj)
         ]
+        return clades_filtered
 
     @staticmethod
     def safe_clade_name(clade: Phylo.BaseTree.Clade) -> str:

@@ -172,7 +172,7 @@ class ReportSorter:
         columns: leaf (accid), clade, read_count, group_count
         """
         overlap_manager = ReadOverlapManager(
-            self.fasta_files, self.metadata_df, threshold=self.threshold
+            self.fasta_files, self.metadata_df, self.reference_clade
         )
 
         njtree = overlap_manager.generate_tree()

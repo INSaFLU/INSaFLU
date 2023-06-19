@@ -191,25 +191,29 @@
   							<div class="form-group row">
   								<label id="id-label-dataset" class="col-6 col-form-label">New name for the Dataset</label>
  								<div class="col-10">
+									<div class="row-10 form-group">
          								<input class="form-control" id="id-name-to-insert" placeholder="" type="text" autocomplete="off"
          									add-dataset-name-url="{% url 'test_dataset_name' %}" />
+									</div>
+									<div class="row-10 form-group">
 										<!-- Add here available builds: TODO FILL in options automatically -->
 										<label for="id-build">Choose a Nextstrain build:</label>
-										<select id="id-build">
-											<option value="generic">Generic</option>
-											<option value="generic_time">Generic with Time Tree</option>
-											<option value="ncov">SARS-CoV-2</option>
-											<option value="flu_h3n2_12y">Influenza (H3N2 HA 12years)</option>
-											<option value="flu_h1n1pdm_12y">Influenza (H1N1PDM HA 12years)</option>
-											<option value="flu_vic_12y">Influenza (Vic HA 12years)</option>
-											<option value="flu_yam_12y">Influenza (Yam HA 12years)</option>
-											<option value="avianflu_h5n1_ha">Avian Influenza (H5N1 HA)</option>
-											<option value="avianflu_h5n1_na">Avian Influenza (H5N1 NA)</option>
-											<option value="avianflu_h5n1_pb2">Avian Influenza (H5N1 PB2)</option>
-											<option value="mpx">mpox (hMPXV)</option>
-											<option value="rsv_a">RSV (A)</option>
-											<option value="rsv_b">RSV (B)</option>																																						
+										<select class="btn btn-primary" id="id-build">
+											<option class="bg-insa-fixed-top" value="generic">Generic</option>
+											<option class="bg-insa-fixed-top" value="generic_time">Generic with Time Tree</option>
+											<option class="bg-insa-fixed-top" value="ncov">SARS-CoV-2</option>
+											<option class="bg-insa-fixed-top" value="flu_h3n2_12y">Influenza (H3N2 HA 12years)</option>
+											<option class="bg-insa-fixed-top" value="flu_h1n1pdm_12y">Influenza (H1N1PDM HA 12years)</option>
+											<option class="bg-insa-fixed-top" value="flu_vic_12y">Influenza (Vic HA 12years)</option>
+											<option class="bg-insa-fixed-top" value="flu_yam_12y">Influenza (Yam HA 12years)</option>
+											<option class="bg-insa-fixed-top" value="avianflu_h5n1_ha">Avian Influenza (H5N1 HA)</option>
+											<option class="bg-insa-fixed-top" value="avianflu_h5n1_na">Avian Influenza (H5N1 NA)</option>
+											<option class="bg-insa-fixed-top" value="avianflu_h5n1_pb2">Avian Influenza (H5N1 PB2)</option>
+											<option class="bg-insa-fixed-top" value="mpx">mpox (hMPXV)</option>
+											<option class="bg-insa-fixed-top" value="rsv_a">RSV (A)</option>
+											<option class="bg-insa-fixed-top" value="rsv_b">RSV (B)</option>																																						
 										</select>
+									</div>
        							</div>
        							<div id="id_dataset_name_error">
 									<!-- <span id="error_1_id_name" class="fields_error"><strong>Exists a project with this name.</strong></span> -->

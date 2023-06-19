@@ -198,7 +198,7 @@ class TelevirParameters:
         """
         Get layout parameters
         """
-        report_layout_params = LayoutParams(0.8, 0.5, "viruses")
+        report_layout_params = LayoutParams(0.8, 0.3, "viruses")
 
         for param in run_params:
             if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:
@@ -235,7 +235,7 @@ class TelevirParameters:
         return report_layout_params.flag_build
 
     @staticmethod
-    def get_read_overlap_threshold(run_pk) -> float:
+    def get_read_overlap_threshold(run_pk) -> LayoutParams:
         """
         Get overlap threshold
         """

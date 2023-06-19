@@ -70,9 +70,10 @@ class CladeFilterComposed(CladeFilterMethod):
 class CladeFilter:
     def __init__(self, reference_clade: Clade):
         self.reference_clade = reference_clade
+        print("reference_clade", reference_clade)
         self.filters: List[CladeFilterMethod] = [
-            CladeFilterByPrivateProportion,
-            CladeFilterBySharedProportion,
+            CladeFilterByPrivateProportion(self.reference_clade),
+            CladeFilterBySharedProportion(self.reference_clade),
         ]
 
     def add_filter(self, filter: CladeFilterMethod):

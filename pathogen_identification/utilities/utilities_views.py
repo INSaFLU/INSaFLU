@@ -18,6 +18,10 @@ from pathogen_identification.utilities.utilities_general import (
     simplify_name,
 )
 
+from pathogen_identification.utilities.clade_objects import (
+    Clade,
+)
+
 
 def set_control_reports(project_pk: int):
     """
@@ -84,7 +88,7 @@ class ReportSorter:
         self.analysis_df_path = os.path.join(
             self.run_media_dir,
             self.analysis_filename.format(
-                self.run.name, report_layout_params.threshold
+                self.run.name, report_layout_params.read_overlap_threshold
             ),
         )
         self.force = force
@@ -96,10 +100,10 @@ class ReportSorter:
         ref_clade = Clade(
             name="ref",
             leaves=[],
-            private_proportion=LayoutParams.read_overlap_threshold,
-            shared_proportion_std=LayoutParams.shared_proportion_threshold,
-            shared_proportion_min=LayoutParams.shared_proportion_threshold,
-            shared_proportion_max=LayoutParams.shared_proportion_threshold,
+            private_proportion=layout_params.read_overlap_threshold,
+            shared_proportion_std=layout_params.shared_proportion_threshold,
+            shared_proportion_min=layout_params.shared_proportion_threshold,
+            shared_proportion_max=layout_params.shared_proportion_threshold,
         )
         return ref_clade
 
@@ -180,13 +184,14 @@ class ReportSorter:
         ### inner node to leaf dict
         tree_manager = PhyloTreeManager(njtree)
         inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
+        all_node_children = tree_manager.all_clades_leaves()
 
-        statistics_dict = overlap_manager.node_statistics(inner_node_leaf_dict)
+        statistics_dict = overlap_manager.node_statistics(all_node_children)
 
         selected_clades = overlap_manager.filter_clades(statistics_dict)
 
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
-        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades)
+        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict)
 
         return clades
 
@@ -204,19 +209,14 @@ class ReportSorter:
         """
         Return True if all accids have been analyzed
         """
+
         if not os.path.isfile(self.analysis_df_path):
             return False
 
         try:
             analysis_df = pd.read_csv(self.analysis_df_path, sep="\t")
 
-            if not os.path.isfile(analysis_df):
-                return True
-
-            if self.check_all_accids_analyzed(analysis_df):
-                return False
-
-            return True
+            return self.check_all_accids_analyzed(analysis_df)
 
         except pd.errors.EmptyDataError:
             return False
@@ -234,13 +234,15 @@ class ReportSorter:
         Return sorted reports
         """
 
+        self.sort_reports()
         if self.metadata_df.empty:
             return [self.reports]
 
-        if not self.check_all_accids_analyzed(self.analysis_df_path):
+        if not self.check_analyzed():
             return [self.reports]
 
         overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
+        print(overlap_analysis)
 
         overlap_groups = list(overlap_analysis.groupby(["group_count", "clade"]))[::-1]
 

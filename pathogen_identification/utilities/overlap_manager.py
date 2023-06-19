@@ -276,6 +276,7 @@ class ReadOverlapManager:
         return combinations
 
     def clade_private_proportions(self, leaves: list) -> float:
+        print(leaves)
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
@@ -383,16 +384,46 @@ class ReadOverlapManager:
             return "None"
 
     def leaf_clades_to_pandas(
-        self, leaf_clades: Dict[str, Phylo.BaseTree.Clade]
+        self,
+        leaf_clades: Dict[str, Phylo.BaseTree.Clade],
+        statistics_dict: Dict[Phylo.BaseTree.Clade, Clade],
     ) -> pd.DataFrame:
         """
         Return dataframe of leaf clades
         """
+        leaf_clades_dict = []
+        print(statistics_dict)
+        for leaf, clade in leaf_clades.items():
+            if clade is None:
+                leaf_clades_dict.append(
+                    (
+                        leaf,
+                        "None",
+                        0,
+                        0,
+                    )
+                )
+            else:
+                leaf_clades_dict.append(
+                    (
+                        leaf,
+                        self.safe_clade_name(clade),
+                        statistics_dict[clade].private_proportion,
+                        statistics_dict[clade].shared_proportion_max,
+                    )
+                )
 
-        leaf_clades_dict = [
-            (leaf, self.safe_clade_name(clade)) for leaf, clade in leaf_clades.items()
-        ]
-        leaf_clades_df = pd.DataFrame(leaf_clades_dict, columns=["leaf", "clade"])
+        leaf_clades_df = pd.DataFrame(
+            leaf_clades_dict,
+            columns=["leaf", "clade", "private_proportion", "shared_proportion"],
+        )
+
+        def copy_leaf_to_clade_if_none(row):
+            if row.clade == "None":
+                row.clade = row.leaf
+            return row
+
+        leaf_clades_df = leaf_clades_df.apply(copy_leaf_to_clade_if_none, axis=1)
 
         leaf_clades_df["read_count"] = leaf_clades_df["leaf"].apply(
             lambda x: self.get_accession_total_counts(x)

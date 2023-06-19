@@ -2,6 +2,7 @@ import networkx as nx
 import Bio
 from Bio import Phylo
 from pathogen_identification.utilities.utilities_general import reverse_dict_of_lists
+from pathogen_identification.utilities.clade_objects import Clade
 
 
 class PhyloTreeManager:
@@ -38,7 +39,11 @@ class PhyloTreeManager:
 
         if node == self.tree.root:
             # return neighbours
-            return [neighbour for neighbour in self.nx_tree.neighbors(node)]
+            return [
+                neighbour
+                for neighbour in self.nx_tree.neighbors(node)
+                if len(neighbour) == 1
+            ]
         else:
             return self.leaves_use(node, leaves=[])
 
@@ -107,6 +112,21 @@ class PhyloTreeManager:
 
         return inner_node_clades
 
+    def all_clades_leaves(self):
+        """
+        Return dictionary of inner node clades
+        """
+        clade_leaves = {
+            clade: self.get_node_leaves(clade) for clade in self.nx_tree.nodes()
+        }
+
+        clade_leaves = {
+            node: [leaf.name for leaf in leaves]
+            for node, leaves in clade_leaves.items()
+        }
+
+        return clade_leaves
+
     def clades_get_leaves_clades(self, private_clades=[]):
         """
         Return dictionary of inner nodes and leaves
@@ -154,10 +174,12 @@ class PhyloTreeManager:
         inner_node_clades = self.inner_node_clades_get_clean(private_clades)
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 
-        tree_leaf_names = [leaf.name for leaf in self.tree.get_terminals()]
+        tree_leaf_names_dict = {leaf.name: leaf for leaf in self.tree.get_terminals()}
+        print("H")
+        print(leaf_clades)
 
-        for leaf in tree_leaf_names:
-            if leaf not in leaf_clades.keys():
-                leaf_clades[leaf] = None
+        for leafname, leaf in tree_leaf_names_dict.items():
+            if leafname not in leaf_clades.keys():
+                leaf_clades[leafname] = leaf
 
         return leaf_clades

@@ -957,7 +957,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        report_layout_params = TelevirParameters.get_read_overlap_threshold()
+        report_layout_params = TelevirParameters.get_read_overlap_threshold(
+            run_pk=run_pk
+        )
         report_sorter = ReportSorter(final_report, report_layout_params)
         sorted_reports = report_sorter.get_reports()
 

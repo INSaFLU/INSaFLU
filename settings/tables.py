@@ -32,7 +32,6 @@ class CheckBoxColumnWithName(tables.CheckBoxColumn):
 
 
 class SoftwaresTable(tables.Table):
-
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     select_to_run = CheckBoxColumnWithName(
@@ -147,6 +146,7 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
+
         if (
             self.project is None
             and self.project_sample is None
@@ -155,9 +155,10 @@ class SoftwaresTable(tables.Table):
             and self.televir_project is None
         ):
             default_software = DefaultSoftware()
-            return default_software.get_parameters(record.name, user, technology_name)
+            return default_software.get_parameters(
+                record.name, user, technology_name, pipeline_step=record.pipeline_step
+            )
         elif self.dataset is not None:
-
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))
             # TODO need to make this work...
@@ -237,7 +238,6 @@ class SoftwaresTable(tables.Table):
         )
 
     def render_options(self, record):
-
         ### if project
         ## Edit
         from crequest.middleware import CrequestMiddleware
@@ -706,7 +706,6 @@ class SoftwaresTable(tables.Table):
 
 
 class INSaFLUParametersTable(tables.Table):
-
     #   Renders a normal value as an internal hyperlink to another page.
     #   account_number = tables.LinkColumn('customer-detail', args=[A('pk')])
     select_to_run = CheckBoxColumnWithName(
@@ -743,7 +742,6 @@ class INSaFLUParametersTable(tables.Table):
         return record.name if record.name_extended is None else record.name_extended
 
     def render_select_to_run(self, value, record):
-
         sz_ids = ""
         if not self.project is None:
             sz_ids += 'project_id="{}"'.format(self.project)
@@ -813,7 +811,6 @@ class INSaFLUParametersTable(tables.Table):
         return ""
 
     def render_options(self, record):
-
         ### if project
         ## Edit
         from crequest.middleware import CrequestMiddleware

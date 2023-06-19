@@ -1421,10 +1421,9 @@ class Parameter_DB_Utility:
                 return None
         else:
             return None
-    
+
     @staticmethod
     def software_pipeline_tree(software_tree: SoftwareTree):
-
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
 
         edges = []
@@ -1444,7 +1443,6 @@ class Parameter_DB_Utility:
             leaves=leaves,
             makeup=software_tree.global_index,
         )
-    
 
     def query_software_default_tree(
         self, technology: str, global_index: int
@@ -1462,8 +1460,6 @@ class Parameter_DB_Utility:
         )
 
         return self.software_pipeline_tree(software_tree)
-    
-    
 
     def update_SoftwareTree_nodes(
         self, software_tree: SoftwareTree, tree: PipelineTree
@@ -1568,7 +1564,9 @@ class Utils_Manager:
 
     def get_leaf_parameters(self, parameter_leaf: SoftwareTreeNode) -> pd.DataFrame:
         """ """
-        pipeline_tree = self.parameter_util.software_pipeline_tree(parameter_leaf.software_tree)
+        pipeline_tree = self.parameter_util.software_pipeline_tree(
+            parameter_leaf.software_tree
+        )
         print(pipeline_tree.leaves)
         print(parameter_leaf.index)
 
@@ -1767,7 +1765,6 @@ class Utils_Manager:
             if len(dag_dict[node]) == 0:
                 leaves.append(node)
 
-        print("HAIL")
         return PipelineTree(
             nodes=node_index.reset_index().to_numpy().tolist(),
             edges=edge_list,

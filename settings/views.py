@@ -12,7 +12,7 @@ from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import Projects as Televir_Project
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage
-
+from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -28,10 +28,12 @@ class index(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(index, self).get_context_data(**kwargs)
         default_software = DefaultSoftware()
-        context["televir_available"] = default_software.test_televir_software_available()
+        context[
+            "televir_available"
+        ] = default_software.test_televir_software_available()
         context[
             "show_info_main_page"
-        ] = ShowInfoMainPage()  ## show main information about the institute                
+        ] = ShowInfoMainPage()  ## show main information about the institute
         return context
 
 
@@ -65,7 +67,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
-
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
@@ -105,7 +106,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
         )
         project = Televir_Project.objects.get(pk=project.pk)
         for software in query_set:
-
             software_parameters = Parameter.objects.filter(
                 software=software,
             )
@@ -130,6 +130,41 @@ class PISettingsView(LoginRequiredMixin, ListView):
         if query_set.count() == 0:
             return False
         return True
+
+    @staticmethod
+    def patch_filter_software_televir(software: Software, pipeline_step):
+        """
+        return trye if software is to run in params, not db
+        """
+
+        filter_dict = {
+            SoftwareNames.SOFTWARE_BWA_name: [
+                ConstantsSettings.PIPELINE_NAME_read_classification
+            ]
+        }
+
+        if software.name in filter_dict:
+            if pipeline_step in filter_dict[software.name]:
+                return False
+
+        return True
+
+    def patch_filter_queryset(self, queryset, pipeline_step: str):
+        """
+        return trye if software is to run in params, not db
+        """
+
+        filtered_software = [
+            software
+            for software in queryset
+            if self.patch_filter_software_televir(software, pipeline_step)
+        ]
+
+        queryset = queryset.filter(
+            pk__in=[software.pk for software in filtered_software]
+        )
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(PISettingsView, self).get_context_data(**kwargs)
@@ -191,6 +226,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         parameter__televir_project=televir_project,
                         is_obsolete=False,
                     ).distinct()
+
+                query_set = self.patch_filter_queryset(query_set, pipeline_step)
 
                 ### if there are software
                 if query_set.count() > 0:
@@ -317,7 +354,6 @@ class SettingsView(LoginRequiredMixin, ListView):
         return []
 
     def get_context_data(self, **kwargs):
-
         context = super(SettingsView, self).get_context_data(**kwargs)
 
         ### test all defaults first, if exist in database
@@ -733,16 +769,13 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         parameter.save()
 
             if b_change:
-
                 # Only update metadata if there are dataset_consensus already
                 query_set = DatasetConsensus.objects.filter(
                     dataset_id=dataset.id,
                 )
 
-                if(query_set.count() > 0):
-
+                if query_set.count() > 0:
                     try:
-
                         # Now update the meetadata, if there are dataset_consensus
                         metaKeyAndValue = MetaKeyAndValue()
                         manageDatabase = ManageDatasetDatabase()
@@ -752,7 +785,9 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         user = dataset.owner
 
                         ### need to collect global files again
-                        taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(dataset, user)
+                        taskID = process_SGE.set_collect_dataset_global_files_for_update_metadata(
+                            dataset, user
+                        )
 
                         manageDatabase.set_dataset_metakey(
                             dataset,
@@ -768,19 +803,21 @@ class UpdateParametersDatasetView(LoginRequiredMixin, UpdateView):
                         messages.warning(
                             self.request,
                             "Error updating dataset metadata",
-                            fail_silently=True
-                        )                            
+                            fail_silently=True,
+                        )
 
                     messages.success(
                         self.request,
-                        "{} '".format("Software" if software.is_software() else "INSaFLU")
+                        "{} '".format(
+                            "Software" if software.is_software() else "INSaFLU"
+                        )
                         + software.name
                         + "' parameters were successfully updated for dataset '"
                         + dataset.name
                         + "'.",
                         fail_silently=True,
                     )
-                    
+
             else:
                 messages.success(
                     self.request,

@@ -41,13 +41,12 @@ class DefaultSoftware(object):
             type_of_use=Software.TYPE_OF_USE_televir_global, owner=user_system
         )
         if software.count() == 0:
-
             return False
 
         utils = Utils_Manager()
 
         televir_available = utils.test_televir_pipelines_available(user_system)
-        #self.remove_all_parameters(user_system)
+        # self.remove_all_parameters(user_system)
 
         return televir_available
 
@@ -85,7 +84,6 @@ class DefaultSoftware(object):
             user_parameter.delete()
 
     def remove_all_televir_project_Parameters(self, user):
-
         user_project_parameter = Parameter.objects.filter(
             software__type_of_use=Software.TYPE_OF_USE_televir_project,
             software__owner=user,
@@ -132,7 +130,6 @@ class DefaultSoftware(object):
                 self.test_all_defaults_pathogen_identification(user)
 
     def test_all_defaults(self, user):
-
         ### test all defaults
         self.test_default_db(
             SoftwareNames.SOFTWARE_TRIMMOMATIC_name,
@@ -473,7 +470,6 @@ class DefaultSoftware(object):
                 vect_parameters[0].software.pipeline_step.name
                 in self.televir_utiltity.steps_db_dependant
             ):
-
                 if not self.televir_utiltity.check_software_db_available(
                     software_name=software_name,
                 ):
@@ -491,7 +487,6 @@ class DefaultSoftware(object):
             return
 
         ## lock because more than one process can duplicate software names
-        
 
         try:
             Software.objects.get(
@@ -654,7 +649,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_centrifuge_parameters(self, user, technology_name):
+    def get_centrifuge_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             user,
@@ -663,10 +658,11 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
-    def get_bwa_parameters(self, user, technology_name):
+    def get_bwa_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters(
             SoftwareNames.SOFTWARE_BWA_name,
             user,
@@ -675,6 +671,7 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
+            pipeline_step=pipeline_step,
         )
         return "" if result is None else result
 
@@ -864,7 +861,11 @@ class DefaultSoftware(object):
         return self.change_values_software.get(key_value, False)
 
     def get_parameters(
-        self, software_name, user, technology_name=ConstantsSettings.TECHNOLOGY_illumina
+        self,
+        software_name,
+        user,
+        technology_name=ConstantsSettings.TECHNOLOGY_illumina,
+        pipeline_step=None,
     ):
         """
         Return the parameters for a software
@@ -1109,7 +1110,9 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
-            return self.get_bwa_parameters(user, technology_name)
+            return self.get_bwa_parameters(
+                user, technology_name, pipeline_step=pipeline_step
+            )
 
         if software_name == SoftwareNames.SOFTWARE_DIAMOND_name:
             self.test_default_db(

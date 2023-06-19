@@ -613,6 +613,31 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
 
     try:
         run_detail = RunDetail.objects.get(run=runmain)
+        run_detail.run=runmain
+        run_detail.sample=sample
+        run_detail.max_depth=run_class.run_detail_report.max_depth  #
+        run_detail.max_depthR=run_class.run_detail_report.max_depthR  #
+        run_detail.max_gaps=run_class.run_detail_report.max_gaps  #
+        run_detail.max_prop=run_class.run_detail_report.max_prop  #
+        run_detail.max_mapped=run_class.run_detail_report.max_mapped,  #
+        run_detail.input=run_class.run_detail_report.input  #
+        run_detail.enriched_reads=run_class.run_detail_report.enriched_reads  #
+        run_detail.enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent  #
+        run_detail.depleted_reads=run_class.run_detail_report.depleted_reads  #
+        run_detail.depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent  #
+        run_detail.processed=run_class.run_detail_report.processed  #
+        run_detail.processed_percent=run_class.run_detail_report.processed_percent  #
+        run_detail.sift_preproc=run_class.run_detail_report.sift_preproc  #
+        run_detail.sift_remap=run_class.run_detail_report.sift_remap  #
+        run_detail.sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc
+        run_detail.processing_final=run_class.run_detail_report.processing_final  #
+        run_detail.processing_final_percent=run_class.run_detail_report.processing_final_percent  #
+        run_detail.merged=run_class.run_detail_report.merged  #
+        run_detail.merged_number=run_class.run_detail_report.merged_number  #
+        run_detail.merged_files=run_class.run_detail_report.merged_files  #
+
+        run_detail.save()
+        
     except RunDetail.DoesNotExist:
         run_detail = RunDetail(
             run=runmain,

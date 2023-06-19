@@ -1176,7 +1176,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
 
             self.sample.reads_after_processing = self.sample.current_total_read_number()
-            self.sample.get_qc_data()
+            self.sample.get_fake_qc_data()
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
             self.qc_performed = True
@@ -1209,6 +1209,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.qc_performed = True
 
         self.Update_exec_time()
+        self.generate_output_data_classes()
 
     def Run_PreProcess(self):
         self.logger.info(

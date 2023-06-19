@@ -235,13 +235,20 @@ class TelevirParameters:
         return report_layout_params.flag_build
 
     @staticmethod
-    def get_read_overlap_threshold(run_pk) -> LayoutParams:
+    def get_read_overlap_threshold(
+        run_pk: Optional[int] = None, project_pk: Optional[int] = None
+    ) -> LayoutParams:
         """
         Get overlap threshold
         """
+        if run_pk:
+            run_main = RunMain.objects.get(pk=run_pk)
+            project = run_main.project
+        elif project_pk:
+            project = Projects.objects.get(pk=project_pk)
+        else:
+            raise Exception("No run or project pk")
 
-        run_main = RunMain.objects.get(pk=run_pk)
-        project = run_main.project
         username = project.owner.username
 
         (

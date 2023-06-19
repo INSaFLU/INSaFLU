@@ -1031,6 +1031,62 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         return context
 
 
+class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
+    """
+    home page
+    """
+
+    template_name = "pathogen_identification/sample_detail.html"
+    utils = Utils()
+
+    def get_context_data(self, **kwargs):
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+
+        try:
+            project_main = Projects.objects.get(pk=project_pk)
+
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception as e:
+            messages.error(self.request, "Sample does not exist")
+            raise Http404
+
+        ####
+        project_name = project_main.name
+        sample_name = sample.name
+
+        #
+
+        final_report = (
+            FinalReport.objects.filter(
+                sample=sample,
+            )
+            .order_by("-coverage")
+            .distinct("simple_id")
+        )
+        #
+        report_layout_params = TelevirParameters.get_read_overlap_threshold(
+            project_pk=project_main.pk
+        )
+        report_sorter = ReportSorter(final_report, report_layout_params)
+        sorted_reports = report_sorter.get_reports()
+
+        context = {
+            "project": project_name,
+            "sample": sample_name,
+            "project_index": project_pk,
+            "sample_index": sample_pk,
+            "report_list": sorted_reports,
+        }
+
+        return context
+
+
 # def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
 class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
     """

@@ -147,6 +147,7 @@ class SoftwaresTable(tables.Table):
             if record.technology is None
             else record.technology.name
         )
+
         if (
             self.project is None
             and self.project_sample is None
@@ -155,7 +156,9 @@ class SoftwaresTable(tables.Table):
             and self.televir_project is None
         ):
             default_software = DefaultSoftware()
-            return default_software.get_parameters(record.name, user, technology_name)
+            return default_software.get_parameters(
+                record.name, user, technology_name, pipeline_step=record.pipeline_step
+            )
         elif self.dataset is not None:
             # default_software_projects = DefaultProjectSoftware()
             # logger.debug("Dataset parameters for {}".format(self.dataset))

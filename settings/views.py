@@ -12,7 +12,7 @@ from managing_files.models import Project, ProjectSample, Sample
 from pathogen_identification.models import Projects as Televir_Project
 from utils.process_SGE import ProcessSGE
 from utils.utils import ShowInfoMainPage
-
+from constants.software_names import SoftwareNames
 from settings.constants_settings import ConstantsSettings
 from settings.default_software import DefaultSoftware
 from settings.forms import SoftwareForm
@@ -146,6 +146,41 @@ class PISettingsView(LoginRequiredMixin, ListView):
             return False
         return True
 
+    @staticmethod
+    def patch_filter_software_televir(software: Software, pipeline_step):
+        """
+        return trye if software is to run in params, not db
+        """
+
+        filter_dict = {
+            # SoftwareNames.SOFTWARE_BWA_name: [
+            #    ConstantsSettings.PIPELINE_NAME_read_classification
+            # ]
+        }
+
+        if software.name in filter_dict:
+            if pipeline_step in filter_dict[software.name]:
+                return False
+
+        return True
+
+    def patch_filter_queryset(self, queryset, pipeline_step: str):
+        """
+        return trye if software is to run in params, not db
+        """
+
+        filtered_software = [
+            software
+            for software in queryset
+            if self.patch_filter_software_televir(software, pipeline_step)
+        ]
+
+        queryset = queryset.filter(
+            pk__in=[software.pk for software in filtered_software]
+        )
+
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super(PISettingsView, self).get_context_data(**kwargs)
         televir_project = None
@@ -212,6 +247,8 @@ class PISettingsView(LoginRequiredMixin, ListView):
                         parameter__televir_project=televir_project,
                         is_obsolete=False,
                     ).distinct()
+
+                query_set = self.patch_filter_queryset(query_set, pipeline_step)
 
                 ### if there are software
                 if query_set.count() > 0:

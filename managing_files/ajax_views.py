@@ -326,7 +326,8 @@ def show_aln2pheno(request):
                 project = Project.objects.get(id=project_id)
                 out_file = project.get_global_file_by_project(
                     TypePath.MEDIA_ROOT,
-                    Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                    #Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                    Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli,
                 )
                 if os.path.exists(out_file) and os.stat(out_file).st_size > 0:
                     data["is_ok"] = True
@@ -334,7 +335,8 @@ def show_aln2pheno(request):
                         request.build_absolute_uri(
                             project.get_global_file_by_project(
                                 TypePath.MEDIA_URL,
-                                Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                                #Project.PROJECT_FILE_NAME_Aln2pheno_report_COG_UK,
+                                Project.PROJECT_FILE_NAME_Aln2pheno_report_carabelli,
                             )
                         )
                     )

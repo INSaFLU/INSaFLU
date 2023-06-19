@@ -90,45 +90,74 @@ function show_aln2pheno() {
 	    			// Sequence	NTD	RBD	RBM	RBD_RBM	S2	FP	S1	S1_other	SP	Flagged mutations	All mutations	Nflagged	Nmutations	lineage
 	    			     // columns data types
 	    			        col_types: [
+								// COG
+	    			            //'string',	// Sequence
+	    			            //'string',	// lineage
+	    			            //'string',	// NTD
+	    			            //'string',	// RDB
+	    			            //'string',	// S2
+	    			            //'string',	// F1
+	    			            //'string',	// S1
+	    			            //'string',	// S1_other
+	    			            //'string',	// SP
+	    			            //'string',	// Flagged mutations
+	    			            //'string',	// All mutations
+	    			            //'number',	// Nflagged
+	    			            //'number',	// Nmutations
+
+								// New - Antibody
 	    			            'string',	// Sequence
 	    			            'string',	// lineage
+	    			            'string',	// RBD1
+	    			            'string',	// RDB2
 	    			            'string',	// NTD
-	    			            'string',	// RDB
-	    			            'string',	// S2
-	    			            'string',	// F1
-	    			            'string',	// S1
-	    			            'string',	// S1_other
-	    			            'string',	// SP
+	    			            'string',	// RDB3
+	    			            'string',	// RDB4
 	    			            'string',	// Flagged mutations
 	    			            'string',	// All mutations
 	    			            'number',	// Nflagged
-	    			            'number',	// Nmutations
+	    			            'number',	// Nmutations								
 	    			        ],
 	    			        col_widths: [
+
+								// COG
 	    			        	"10%",	// Sequence
-								"7%",	// lineage								
-	    			            "7%",	// NTD
-	    			            "7%",	// RDB
-	    			            "7%",	// S2
-	    			            "7%",	// F1
-	    			            "7%",   // S1
-	    			            "7%",	// S1_other
-	    			            "7%",	// SP
-	    			            "7%",	// Flagged mutations
-	    			            null,	// All mutations
-	    			            "7%",	// Nflagged
-	    			            "7%",	// Nmutations
+								"8%",	// lineage								
+	    			            "8%",	// RBD1
+	    			            "8%",	// RDB2
+	    			            "8%",	// NTD
+	    			            "8%",   // RDB3
+	    			            "8%",	// RDB4
+	    			            "8%",	// Flagged mutations
+	    			            "8%",	// All mutations
+	    			            "8%",	// Nflagged
+	    			            null,	// Nmutations
+
+								// New
+								// "10%",	// Sequence
+								// "7%",	// lineage								
+	    			            // "7%",	// NTD
+	    			            // "7%",	// RDB
+	    			            // "7%",	// S2
+	    			            // "7%",	// F1
+	    			            // "7%",    // S1
+	    			            // "7%",	// S1_other
+	    			            // "7%",	// SP
+	    			            // "7%",	// Flagged mutations
+	    			            // null,	// All mutations
+	    			            // "7%",	// Nflagged
+	    			            // "7%",	// Nmutations
 	    			        ],
 	    			        
 	    			        col_1: 'select',
-	    			        col_2: 'select',
-	    			        col_3: 'select',
-	    			        col_4: 'select',
-	    			        col_5: 'select',
-	    			        col_6: 'select',
-	    			        col_7: 'select',
-                            col_8: 'select',
-                            col_9: 'select',
+	    			        // col_2: 'select',
+	    			        // col_3: 'select',
+	    			        // col_4: 'select',
+	    			        // col_5: 'select',
+	    			        // col_6: 'select',
+	    			        // col_7: 'select',
+                            // col_8: 'select',
+                            // col_9: 'select',
 	    			        // Sort extension: in this example the column data types are provided by the
 	    			        // 'col_types' property. The sort extension also has a 'types' property
 	    			        // defining the columns data type for column sorting. If the 'types'

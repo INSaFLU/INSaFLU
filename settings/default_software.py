@@ -9,7 +9,9 @@ from django.contrib.auth.models import User
 
 from constants.software_names import SoftwareNames
 from pathogen_identification.utilities.utilities_pipeline import (
-    Utility_Pipeline_Manager, Utils_Manager)
+    Utility_Pipeline_Manager,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Software
@@ -567,7 +569,6 @@ class DefaultSoftware(object):
 
         ## lock because more than one process can duplicate software names
 
-
         try:
             Software.objects.get(
                 name=software_name,
@@ -717,7 +718,6 @@ class DefaultSoftware(object):
 
     ###
     ### PATHOGEN DETECTION PARAMETERS
-
 
     def get_remap_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
@@ -1062,7 +1062,6 @@ class DefaultSoftware(object):
 
             return self.get_remap_parameters(user, technology_name)
 
-
         if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_PRINSEQ_name,
@@ -1093,7 +1092,7 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_clean_human_reads_parameters(user, technology_name)
-        
+
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(
                 SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -1290,7 +1289,9 @@ class DefaultSoftware(object):
                 ),
                 user,
             )
-            return self.get_bwa_parameters(user, technology_name)
+            return self.get_bwa_parameters(
+                user, technology_name, pipeline_step=pipeline_step
+            )
 
         if software_name == SoftwareNames.SOFTWARE_DIAMOND_name:
             self.test_default_db(

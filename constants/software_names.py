@@ -68,7 +68,7 @@ class SoftwareNames(object):
     SOFTWARE_ABRICATE_name_extended = "Abricate"
     SOFTWARE_ABRICATE_DB = os.path.join(settings.DIR_SOFTWARE, "abricate/db")
     SOFTWARE_ABRICATE_VERSION = "0.8-dev"
-    SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 60"
+    SOFTWARE_ABRICATE_PARAMETERS = "--minid 70 --mincov 40"
     SOFTWARE_ABRICATE_PARAMETERS_mincov_30 = "--minid 70 --mincov 30"
     SOFTWARE_ABRICATE_PARAMETERS_mincov_20 = "--minid 70 --mincov 20"
     SOFTWARE_FASTQ_name = "FastQC"

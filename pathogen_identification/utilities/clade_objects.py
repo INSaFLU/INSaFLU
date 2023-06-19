@@ -15,6 +15,7 @@ class Clade:
 
     name: str
     leaves: list
+    group_counts: int
     private_proportion: float
 
     shared_proportion_std: float
@@ -86,7 +87,10 @@ class CladeFilter:
         """
         Return True if clade passes filter
         """
-        return all([filter.filter_clade(clade) for filter in self.filters])
+        print("FILTERING CLADE", clade)
+        assessments = [filter.filter_clade(clade) for filter in self.filters]
+        print("ASSESSMENTS", assessments)
+        return all(assessments)
 
     def filter_clades(self, clades: List[Clade]) -> List[Clade]:
         """

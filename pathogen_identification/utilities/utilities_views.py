@@ -64,6 +64,7 @@ def set_control_reports(project_pk: int):
 
 class ReportSorter:
     analysis_filename = "{}_overlap_analysis_{}.tsv"
+    all_clade_filename = "{}_all_clades_{}.tsv"
 
     def __init__(
         self,
@@ -84,6 +85,9 @@ class ReportSorter:
         self.run = self.infer_run()
         self.run_media_dir = self.inferred_run_media_dir()
         self.analysis_df_path = os.path.join(self.run_media_dir, self.analysis_filename)
+        self.all_clades_df_path = os.path.join(
+            self.run_media_dir, self.all_clade_filename
+        )
 
         self.analysis_df_path = os.path.join(
             self.run_media_dir,
@@ -101,6 +105,7 @@ class ReportSorter:
             name="ref",
             leaves=[],
             private_proportion=layout_params.read_overlap_threshold,
+            group_counts=0,
             shared_proportion_std=layout_params.shared_proportion_threshold,
             shared_proportion_min=layout_params.shared_proportion_threshold,
             shared_proportion_max=layout_params.shared_proportion_threshold,
@@ -121,7 +126,7 @@ class ReportSorter:
         Return run media directory
         """
         if not self.run:
-            return None
+            raise Exception("No run found")
 
         return infer_run_media_dir(self.run)
 
@@ -176,22 +181,29 @@ class ReportSorter:
         columns: leaf (accid), clade, read_count, group_count
         """
         overlap_manager = ReadOverlapManager(
-            self.fasta_files, self.metadata_df, self.reference_clade
+            self.fasta_files,
+            self.metadata_df,
+            self.reference_clade,
+            self.run_media_dir,
+            str(self.run.pk),
         )
 
         njtree = overlap_manager.generate_tree()
 
         ### inner node to leaf dict
         tree_manager = PhyloTreeManager(njtree)
-        inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
-        all_node_children = tree_manager.all_clades_leaves()
+        # inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
+        all_node_leaves = tree_manager.all_clades_leaves()
 
-        statistics_dict = overlap_manager.node_statistics(all_node_children)
+        statistics_dict_all = overlap_manager.get_node_statistics(
+            njtree, all_node_leaves
+        )
+        # statistics_dict_inner = overlap_manager.node_statistics(inner_node_leaf_dict)
 
-        selected_clades = overlap_manager.filter_clades(statistics_dict)
+        selected_clades = overlap_manager.filter_clades(statistics_dict_all)
 
         leaf_clades = tree_manager.leaf_clades_clean(selected_clades)
-        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict)
+        clades = overlap_manager.leaf_clades_to_pandas(leaf_clades, statistics_dict_all)
 
         return clades
 
@@ -210,16 +222,27 @@ class ReportSorter:
         Return True if all accids have been analyzed
         """
 
-        if not os.path.isfile(self.analysis_df_path):
+        overlap_manager = ReadOverlapManager(
+            self.fasta_files,
+            self.metadata_df,
+            self.reference_clade,
+            self.run_media_dir,
+            str(self.run.pk),
+        )
+
+        if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
 
-        try:
-            analysis_df = pd.read_csv(self.analysis_df_path, sep="\t")
-
-            return self.check_all_accids_analyzed(analysis_df)
-
-        except pd.errors.EmptyDataError:
+        if not os.path.exists(overlap_manager.clade_statistics_path):
             return False
+
+        if not os.path.exists(overlap_manager.clade_statistics_path):
+            return False
+
+        if not overlap_manager.all_accs_analyzed():
+            return False
+
+        return True
 
     def sort_reports(self):
         """
@@ -234,17 +257,28 @@ class ReportSorter:
         Return sorted reports
         """
 
-        self.sort_reports()
+        # self.sort_reports()
         if self.metadata_df.empty:
             return [self.reports]
 
         if not self.check_analyzed():
             return [self.reports]
 
-        overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
-        print(overlap_analysis)
+        # overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
+        overlap_analysis = self.read_overlap_analysis()
+        print(
+            overlap_analysis[
+                [
+                    "leaf",
+                    "clade",
+                    "total_counts",
+                    "private_proportion",
+                    "shared_proportion",
+                ]
+            ]
+        )
 
-        overlap_groups = list(overlap_analysis.groupby(["group_count", "clade"]))[::-1]
+        overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
         sorted_reports = []
 

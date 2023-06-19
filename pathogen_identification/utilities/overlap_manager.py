@@ -31,15 +31,31 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
 
 
 class ReadOverlapManager:
+    distance_matrix_filename: str = "distance_matrix_{}.tsv"
+    clade_statistics_filename: str = "clade_statistics_{}.tsv"
+    accid_statistics_path: str = "accid_statistics_{}.tsv"
+
     def __init__(
         self,
         fasta_list: List[str],
         metadata_df: pd.DataFrame,
         reference_clade: Clade,
+        media_dir: str,
+        pid: str,
     ):
         self.metadata = metadata_df
         self.fasta_list = fasta_list
         self.clade_filter = CladeFilter(reference_clade=reference_clade)
+        self.media_dir = media_dir
+        self.distance_matrix_path = os.path.join(
+            self.media_dir, self.distance_matrix_filename.format(pid)
+        )
+        self.clade_statistics_path = os.path.join(
+            self.media_dir, self.clade_statistics_filename.format(pid)
+        )
+        self.accid_statistics_path = os.path.join(
+            self.media_dir, self.accid_statistics_path.format(pid)
+        )
 
         self.metadata["filename"] = self.metadata["file"].apply(
             lambda x: x.split("/")[-1]
@@ -47,8 +63,29 @@ class ReadOverlapManager:
 
         self.metadata["filepath"] = self.metadata["file"]
 
+    def all_accs_analyzed(self):
+        if not os.path.exists(self.accid_statistics_path):
+            return False
+
+        accid_df = pd.read_csv(self.accid_statistics_path, sep="\t")
+
+        for accid in self.metadata["accid"].unique():
+            if accid not in accid_df["accid"].tolist():
+                return False
+
+        return True
+
+    def parse_for_data(self):
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
         self.overlap_matrix: pd.DataFrame = self.readoverlap_allpairs_df()
+        accid_df = self.metadata[["accid", "description"]].drop_duplicates()
+        accid_df["read_count"] = accid_df["accid"].apply(
+            lambda x: self.get_accession_total_counts(x)
+        )
+        accid_df["proportion"] = accid_df["accid"].apply(
+            lambda x: self.get_proportion_counts(x)
+        )
+        accid_df.to_csv(self.accid_statistics_path, sep="\t", index=False)
 
     def get_accid_readname_dict(self):
         """
@@ -216,11 +253,29 @@ class ReadOverlapManager:
             / self.read_profile_matrix.sum().sum()
         )
 
+    def check_all_accessions_in_distance_matrix(self, distance_matrix):
+        for accid in self.metadata["accid"].values:
+            if accid not in distance_matrix.columns:
+                return False
+
+        return True
+
     def generate_distance_matrix(self):
         """
         Generate distance matrix
         """
-        distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
+        if os.path.isfile(self.distance_matrix_path):
+            distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
+        else:
+            self.parse_for_data()
+            distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
+
+        if not self.check_all_accessions_in_distance_matrix(distance_matrix):
+            self.parse_for_data()
+            distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
+
+        distance_matrix.to_csv(self.distance_matrix_path)
+
         return distance_matrix
 
     def generate_tree(self):
@@ -228,6 +283,7 @@ class ReadOverlapManager:
         Generate tree
         """
         distance_matrix = self.generate_distance_matrix()
+
         tree = self.tree_from_distance_matrix(distance_matrix)
         return tree
 
@@ -264,6 +320,9 @@ class ReadOverlapManager:
         combinations = pd.DataFrame(
             pair_proportions_df, columns=["accid_A", "accid_B", "proportion_shared"]
         )
+        print("#####")
+        print(combinations)
+
         combinations["proportion_max"] = combinations.proportion_shared.apply(
             lambda x: max(x)
         )
@@ -275,8 +334,15 @@ class ReadOverlapManager:
         )
         return combinations
 
+    def clade_total_counts(self, leaves: list) -> float:
+        """
+        return total counts of clade
+        """
+        return int(self.read_profile_matrix.loc[leaves].sum().sum())
+
     def clade_private_proportions(self, leaves: list) -> float:
         print(leaves)
+        print(self.read_profile_matrix.index)
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
@@ -296,12 +362,15 @@ class ReadOverlapManager:
         return proportion_private
 
     def node_statistics(self, inner_node_leaf_dict: dict) -> dict:
+        self.parse_for_data()
+
         node_stats_dict = {}
         for node, leaves in inner_node_leaf_dict.items():
             if len(leaves) == 0:
                 node_stats_dict[node] = Clade(
                     name=node,
                     leaves=leaves,
+                    group_counts=0,
                     private_proportion=0,
                     shared_proportion_std=0,
                     shared_proportion_min=0,
@@ -311,13 +380,15 @@ class ReadOverlapManager:
                 continue
 
             proportion_private = self.clade_private_proportions(leaves)
+            clade_counts = self.clade_total_counts(leaves)
 
             if len(leaves) == 1:
                 node_stats_dict[node] = Clade(
                     name=node,
                     leaves=leaves,
+                    group_counts=clade_counts,
                     private_proportion=proportion_private,
-                    shared_proportion_std=1,
+                    shared_proportion_std=0,
                     shared_proportion_min=0,
                     shared_proportion_max=0,
                 )
@@ -330,12 +401,104 @@ class ReadOverlapManager:
                 name=node,
                 leaves=leaves,
                 private_proportion=proportion_private,
+                group_counts=clade_counts,
                 shared_proportion_min=min(pairwise_shared_clade.proportion_max),
                 shared_proportion_max=max(pairwise_shared_clade.proportion_max),
                 shared_proportion_std=np.std(pairwise_shared_clade.proportion_std),
             )
 
         return node_stats_dict
+
+    def all_clades_summary(
+        self, node_stats_dict: Dict[Phylo.BaseTree.Clade, Clade]
+    ) -> pd.DataFrame:
+        clade_summary = []
+        for node, stats in node_stats_dict.items():
+            clade_summary.append(
+                [
+                    node,
+                    stats.private_proportion,
+                    stats.group_counts,
+                    stats.shared_proportion_std,
+                    stats.shared_proportion_min,
+                    stats.shared_proportion_max,
+                ]
+            )
+
+        clade_summary = pd.DataFrame(
+            clade_summary,
+            columns=[
+                "node",
+                "private_proportion",
+                "total_counts",
+                "shared_proportion_std",
+                "shared_proportion_min",
+                "shared_proportion_max",
+            ],
+        )
+
+        return clade_summary
+
+    def clade_dict_from_summary(
+        self,
+        clade_summary: pd.DataFrame,
+        tree,
+        inner_node_leaf_dict: Dict[Phylo.BaseTree.Clade, list],
+    ) -> Dict[Phylo.BaseTree.Clade, Clade]:
+        """
+        Create a dictionary of clades from the summary dataframe
+        """
+        node_stats_dict = {}
+        print(clade_summary)
+        # set the index to the node name
+        clade_summary = clade_summary.set_index("node")
+
+        for node, stats in clade_summary.iterrows():
+            try:
+                node_phylo_clade = [
+                    x for x in inner_node_leaf_dict.keys() if x.name == node
+                ][0]
+            except IndexError:
+                print("node not found in tree")
+                continue
+            print(node_phylo_clade)
+            print(stats)
+
+            node_stats_dict[node_phylo_clade] = Clade(
+                name=str(node),
+                leaves=inner_node_leaf_dict[node_phylo_clade],
+                private_proportion=stats.private_proportion,
+                group_counts=stats.total_counts,
+                shared_proportion_std=stats.shared_proportion_std,
+                shared_proportion_min=stats.shared_proportion_min,
+                shared_proportion_max=stats.shared_proportion_max,
+            )
+
+        return node_stats_dict
+
+    def get_node_statistics(
+        self, tree, inner_node_leaf_dict: dict
+    ) -> Dict[Phylo.BaseTree.Clade, Clade]:
+        if os.path.isfile(self.clade_statistics_path):
+            clade_summary = pd.read_csv(self.clade_statistics_path)
+            node_statistics_dict = self.clade_dict_from_summary(
+                clade_summary=clade_summary,
+                tree=tree,
+                inner_node_leaf_dict=inner_node_leaf_dict,
+            )
+
+        else:
+            node_statistics_dict = self.node_statistics(
+                inner_node_leaf_dict=inner_node_leaf_dict
+            )
+
+            clade_summary = self.all_clades_summary(
+                node_stats_dict=node_statistics_dict
+            )
+
+            clade_summary.to_csv(self.clade_statistics_path, index=False)
+
+        return node_statistics_dict
 
     def node_private_reads(self, inner_node_leaf_dict: dict) -> dict:
         """
@@ -401,6 +564,7 @@ class ReadOverlapManager:
                         "None",
                         0,
                         0,
+                        0,
                     )
                 )
             else:
@@ -408,14 +572,32 @@ class ReadOverlapManager:
                     (
                         leaf,
                         self.safe_clade_name(clade),
+                        statistics_dict[clade].group_counts,
                         statistics_dict[clade].private_proportion,
                         statistics_dict[clade].shared_proportion_max,
                     )
                 )
 
+        ##
+
         leaf_clades_df = pd.DataFrame(
             leaf_clades_dict,
-            columns=["leaf", "clade", "private_proportion", "shared_proportion"],
+            columns=[
+                "leaf",
+                "clade",
+                "total_counts",
+                "private_proportion",
+                "shared_proportion",
+            ],
+        )
+
+        ##
+
+        accids_df = pd.read_csv(self.accid_statistics_path, sep="\t")
+        #
+        print(accids_df)
+        leaf_clades_df = leaf_clades_df.merge(
+            accids_df, right_on="accid", left_on="leaf"
         )
 
         def copy_leaf_to_clade_if_none(row):
@@ -424,19 +606,6 @@ class ReadOverlapManager:
             return row
 
         leaf_clades_df = leaf_clades_df.apply(copy_leaf_to_clade_if_none, axis=1)
-
-        leaf_clades_df["read_count"] = leaf_clades_df["leaf"].apply(
-            lambda x: self.get_accession_total_counts(x)
-        )
-        leaf_clades_df["proportion"] = leaf_clades_df["leaf"].apply(
-            lambda x: self.get_proportion_counts(x)
-        )
-        # sort by clade and then read count
-
-        def group_count(clade):
-            return leaf_clades_df[leaf_clades_df["clade"] == clade].read_count.sum()
-
-        leaf_clades_df["group_count"] = leaf_clades_df["clade"].apply(group_count)
 
         def set_single_count_to_zero(row):
             if row.clade == "single":
@@ -452,7 +621,7 @@ class ReadOverlapManager:
         leaf_clades_df.apply(set_No_clade_to_leaf, axis=1)
 
         leaf_clades_df.sort_values(
-            by=["group_count", "clade", "read_count"],
+            by=["total_counts", "clade", "read_count"],
             ascending=[False, True, False],
             inplace=True,
         )

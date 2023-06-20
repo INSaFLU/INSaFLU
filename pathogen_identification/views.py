@@ -1031,6 +1031,58 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         return context
 
 
+from typing import List, Union
+from django.db.models.query import QuerySet
+
+
+class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+    def get_identical_reports_ps(self, report: FinalReport) -> list:
+        reports_unique = FinalReport.objects.filter(
+            project__pk=report.run.project.pk,
+            sample__pk=report.sample.pk,
+            parameter_set__status=ParameterSet.STATUS_FINISHED,
+            accid=report.accid,
+        ).distinct("parameter_set")
+
+        return [r.run.parameter_set.pk for r in reports_unique]
+
+    def get_report_rundetail(self, report: FinalReport) -> RunDetail:
+        return RunDetail.objects.get(sample=report.sample, run=report.run)
+
+    def get_report_runmain(self, report: FinalReport) -> RunMain:
+        return RunMain.objects.get(sample=report.sample, run=report.run)
+
+    def __init__(
+        self, report: FinalReport, report_list: Union[QuerySet, List[FinalReport]]
+    ):
+        """
+        copy all attributes from report
+        """
+
+        for attr in dir(report):
+            if not attr.startswith("__"):
+                setattr(self, attr, getattr(report, attr))
+
+        self.report_list = report_list
+        self.found_in = self.get_identical_reports_ps(report)
+        self.run_detail = self.get_report_rundetail(report)
+        self.run_main = self.get_report_runmain(report)
+        self.run_index = self.run_main.pk
+
+
+def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
+    """
+    get the best coverage report for each accid
+    """
+
+    pk_to_keep = []
+    for accid in reports.distinct("accid").values_list("accid", flat=True):
+        best_report = reports.filter(accid=accid).order_by("-coverage").first()
+        pk_to_keep.append(best_report.pk)
+
+    return reports.filter(pk__in=pk_to_keep)
+
+
 class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -1062,18 +1114,17 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         #
 
-        final_report = (
-            FinalReport.objects.filter(
-                sample=sample,
-            )
-            .order_by("-coverage")
-            .distinct("simple_id")
-        )
+        final_report = FinalReport.objects.filter(
+            sample=sample,
+        ).order_by("-coverage")
+
+        unique_reports = final_report_best_cov_by_accid(final_report)
+
         #
         report_layout_params = TelevirParameters.get_read_overlap_threshold(
             project_pk=project_main.pk
         )
-        report_sorter = ReportSorter(final_report, report_layout_params)
+        report_sorter = ReportSorter(unique_reports, report_layout_params)
         sorted_reports = report_sorter.get_reports()
 
         context = {
@@ -1087,7 +1138,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-# def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
 class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
     """
     scaffold remap

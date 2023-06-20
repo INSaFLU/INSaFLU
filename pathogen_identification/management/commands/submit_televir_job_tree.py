@@ -108,20 +108,7 @@ class Command(BaseCommand):
                         module_tree, project_sample, project
                     )
 
-                    print("leaves: ", module_tree.compress_dag_dict)
-
-                    current_module = deployment_tree.get_current_module()
-                    while current_module != "end":
-                        # for x in range(0):
-                        print("NEXT")
-                        print(len(deployment_tree.current_nodes))
-                        print(deployment_tree.get_current_module())
-                        print([x.node_index for x in deployment_tree.current_nodes])
-                        print([x.children for x in deployment_tree.current_nodes])
-                        deployment_tree.deploy_nodes()
-                        # deployment_tree.update_nodes()
-
-                        current_module = deployment_tree.get_current_module()
+                    deployment_tree.cycle_process()
 
             process_SGE.set_process_controler(
                 user,

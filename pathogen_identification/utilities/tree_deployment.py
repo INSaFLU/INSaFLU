@@ -351,6 +351,9 @@ class Tree_Node:
 
         if parameter_set is None:
             return False
+        
+        print("Updating run status FINISHED")
+        print(parameter_set)
 
         parameter_set.status = ParameterSet.STATUS_FINISHED
         parameter_set.save()
@@ -386,6 +389,8 @@ class Tree_Node:
         if parameter_set is None:
             return False
 
+        print("SETTING STATUS TO RUNNING")
+        print(parameter_set)
         parameter_set.status = ParameterSet.STATUS_RUNNING
         parameter_set.save()
 
@@ -523,6 +528,8 @@ class Tree_Progress:
             self.logger.info(f"Node {node.node_index} registered as finished")
         else:
             self.logger.info(f"Node {node.node_index} failed to register as finished")
+
+        return registration_success
 
     def register_failed_children(self, node: Tree_Node):
         if node.node_index in node.leaves:
@@ -965,10 +972,20 @@ class Tree_Progress:
             self.register_node_leaves(node)
 
     def register_leaves_finished(self):
+        print("register_leaves_finished")
+        print(self.current_nodes)
         for node in self.current_nodes:
+            print("node")
+            print(node)
+            print("node.leaves")
+            print(node.leaves)
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
-                self.register_finished(leaf_node)
+                _ = leaf_node.register(self.project, self.sample, self.tree)
+
+                #success_register = self.register_finished(leaf_node)
+                print("success_register")
+                print(success_register)
 
     def calculate_report_overlaps(self):
         for node in self.current_nodes:
@@ -1039,7 +1056,10 @@ class Tree_Progress:
             # deployment_tree.update_nodes()
 
             current_module = self.get_current_module()
-
-        self.register_leaves_finished()
+        print("FINISHED CYCLE")
+        print("current nodes")
+        print(self.current_nodes)
         self.calculate_report_overlaps()
+        self.register_leaves_finished()
+
         print("DONE")

@@ -212,13 +212,13 @@ class TelevirParameters:
         return report_layout_params
 
     @staticmethod
-    def get_flag_build(run_pk) -> MappingFlagBuild:
+    def get_flag_build(project_pk) -> MappingFlagBuild:
         """
         Get flag build
         """
 
-        run_main = RunMain.objects.get(pk=run_pk)
-        project = run_main.project
+        # run_main = RunMain.objects.get(pk=run_pk)
+        project = Projects.objects.get(pk=project_pk)
         username = project.owner.username
 
         (

@@ -1036,38 +1036,41 @@ from django.db.models.query import QuerySet
 
 
 class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+    def __init__(self, report: FinalReport):
+        """
+        copy all attributes from report
+        """
+
+        for attr in dir(FinalReport):
+            if not attr.startswith("__"):
+                if attr == "objects":
+                    continue
+                try:
+                    setattr(self, attr, getattr(report, attr))
+                except Exception as e:
+                    raise e
+
+        self.found_in = self.get_identical_reports_ps(report)
+        self.run_detail = self.get_report_rundetail(report)
+        self.run_main = self.get_report_runmain(report)
+        self.run_index = self.run_main.pk
+
     def get_identical_reports_ps(self, report: FinalReport) -> list:
         reports_unique = FinalReport.objects.filter(
-            project__pk=report.run.project.pk,
+            run__project__pk=report.run.project.pk,
             sample__pk=report.sample.pk,
-            parameter_set__status=ParameterSet.STATUS_FINISHED,
+            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
             accid=report.accid,
-        ).distinct("parameter_set")
+        )
 
-        return [r.run.parameter_set.pk for r in reports_unique]
+        sets = [r.run.parameter_set.pk for r in reports_unique]
+        return ", ".join([str(s) for s in sets])
 
     def get_report_rundetail(self, report: FinalReport) -> RunDetail:
         return RunDetail.objects.get(sample=report.sample, run=report.run)
 
     def get_report_runmain(self, report: FinalReport) -> RunMain:
-        return RunMain.objects.get(sample=report.sample, run=report.run)
-
-    def __init__(
-        self, report: FinalReport, report_list: Union[QuerySet, List[FinalReport]]
-    ):
-        """
-        copy all attributes from report
-        """
-
-        for attr in dir(report):
-            if not attr.startswith("__"):
-                setattr(self, attr, getattr(report, attr))
-
-        self.report_list = report_list
-        self.found_in = self.get_identical_reports_ps(report)
-        self.run_detail = self.get_report_rundetail(report)
-        self.run_main = self.get_report_runmain(report)
-        self.run_index = self.run_main.pk
+        return report.run
 
 
 def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
@@ -1076,7 +1079,7 @@ def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
     """
 
     pk_to_keep = []
-    for accid in reports.distinct("accid").values_list("accid", flat=True):
+    for accid in set(reports.values_list("accid", flat=True)):
         best_report = reports.filter(accid=accid).order_by("-coverage").first()
         pk_to_keep.append(best_report.pk)
 
@@ -1088,7 +1091,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
     home page
     """
 
-    template_name = "pathogen_identification/sample_detail.html"
+    template_name = "pathogen_identification/sample_detail_compound.html"
     utils = Utils()
 
     def get_context_data(self, **kwargs):
@@ -1124,15 +1127,26 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         report_layout_params = TelevirParameters.get_read_overlap_threshold(
             project_pk=project_main.pk
         )
+
+        print("#####")
+        print(unique_reports)
+
         report_sorter = ReportSorter(unique_reports, report_layout_params)
         sorted_reports = report_sorter.get_reports()
+        sorted_reports_compound = [
+            [FinalReportCompound(report) for report in clade]
+            for clade in sorted_reports
+        ]
+
+        print("project index", project_pk)
 
         context = {
             "project": project_name,
             "sample": sample_name,
             "project_index": project_pk,
             "sample_index": sample_pk,
-            "report_list": sorted_reports,
+            "report_list": sorted_reports_compound,
+            "owner": True,
         }
 
         return context

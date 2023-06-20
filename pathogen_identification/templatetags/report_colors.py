@@ -82,7 +82,7 @@ def depth_color(depth_value, max_value):
 
 @register.simple_tag
 def flag_false_positive(depth, depthc, coverage, mapped, windows_covered, project_pk):
-    flag_build = TelevirParameters.get_flag_build(run_pk)
+    flag_build = TelevirParameters.get_flag_build(project_pk)
     flag_build = flag_build(depth, depthc, coverage, mapped, windows_covered)
     print(flag_build.build_name)
 
@@ -99,7 +99,9 @@ def flag_false_positive(depth, depthc, coverage, mapped, windows_covered, projec
 def flag_false_positive_color(
     depth, depthc, coverage, mapped, windows_covered, project_pk
 ):
+    print(depth, depthc, coverage, mapped, windows_covered, project_pk)
     flag_build = TelevirParameters.get_flag_build(project_pk=project_pk)
+
     flag_build = flag_build(depth, depthc, coverage, mapped, windows_covered)
 
     if flag_build.assert_false_positive():

@@ -351,7 +351,7 @@ class Tree_Node:
 
         if parameter_set is None:
             return False
-        
+
         print("Updating run status FINISHED")
         print(parameter_set)
 
@@ -983,9 +983,8 @@ class Tree_Progress:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register(self.project, self.sample, self.tree)
 
-                #success_register = self.register_finished(leaf_node)
+                success_register = self.register_finished(leaf_node)
                 print("success_register")
-                print(success_register)
 
     def calculate_report_overlaps(self):
         for node in self.current_nodes:

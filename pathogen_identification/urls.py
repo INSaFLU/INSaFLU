@@ -56,6 +56,11 @@ urlpatterns = [
         name="all_PIsample_reports",
     ),
     url(
+        r"Project_Samples/(?P<pk1>\d+)/(?P<pk2>\d+)/sample_report$",
+        PIviews.Sample_ReportCombined.as_view(),
+        name="televir_sample_compound_report",
+    ),
+    url(
         r"Summary/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",

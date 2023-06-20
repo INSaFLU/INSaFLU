@@ -83,19 +83,22 @@ class ReportSorter:
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.run = self.infer_run()
-        self.run_media_dir = self.inferred_run_media_dir()
-        self.analysis_df_path = os.path.join(self.run_media_dir, self.analysis_filename)
-        self.all_clades_df_path = os.path.join(
-            self.run_media_dir, self.all_clade_filename
-        )
+        if self.run is not None:
+            self.run_media_dir = self.inferred_run_media_dir()
+            self.analysis_df_path = os.path.join(
+                self.run_media_dir, self.analysis_filename
+            )
+            self.all_clades_df_path = os.path.join(
+                self.run_media_dir, self.all_clade_filename
+            )
 
-        self.analysis_df_path = os.path.join(
-            self.run_media_dir,
-            self.analysis_filename.format(
-                self.run.name, report_layout_params.read_overlap_threshold
-            ),
-        )
-        self.force = force
+            self.analysis_df_path = os.path.join(
+                self.run_media_dir,
+                self.analysis_filename.format(
+                    self.run.name, report_layout_params.read_overlap_threshold
+                ),
+            )
+            self.force = force
 
     @staticmethod
     def generate_reference_clade(layout_params: LayoutParams):
@@ -258,6 +261,9 @@ class ReportSorter:
         """
 
         # self.sort_reports()
+        if self.run is None:
+            return [self.reports]
+
         if self.metadata_df.empty:
             return [self.reports]
 

@@ -226,7 +226,8 @@ class SampleTable(tables.Table):
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    report = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
+    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
     set_control = tables.Column("Control", orderable=False, empty_values=())
@@ -238,6 +239,7 @@ class SampleTable(tables.Table):
         fields = (
             "name",
             "report",
+            "runs",
             "deploy",
             "input",
             "combinations",
@@ -308,6 +310,27 @@ class SampleTable(tables.Table):
         ).count()
 
     def render_report(self, record):
+        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        record_name = (
+            '<a href="'
+            + reverse(
+                "televir_sample_compound_report", args=[record.project.pk, record.pk]
+            )
+            + '">'
+            + "report"
+            + "</a>"
+        )
+        print(record_name)
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        if user.username == record.project.owner.username:
+            return mark_safe(record_name)
+
+    def render_runs(self, record):
         from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()

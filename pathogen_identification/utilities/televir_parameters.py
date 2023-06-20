@@ -194,11 +194,11 @@ class TelevirParameters:
         return prinseq
 
     @staticmethod
-    def layout_params_get(run_params: List[Parameter]) -> LayoutParams:
+    def layout_config_get(run_params: List[Parameter]) -> LayoutParams:
         """
         Get layout parameters
         """
-        report_layout_params = LayoutParams(0.8, 0.3, "viruses")
+        report_layout_params = LayoutParams(0.8, 0.05, "viruses")
 
         for param in run_params:
             if param.name == SoftwareNames.SOFTWARE_televir_report_layout_flag_name:
@@ -230,12 +230,12 @@ class TelevirParameters:
             project.name,
         )
 
-        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
+        report_layout_params = TelevirParameters.layout_config_get(flag_build_params)
 
         return report_layout_params.flag_build
 
     @staticmethod
-    def get_read_overlap_threshold(
+    def get_report_layout_params(
         run_pk: Optional[int] = None, project_pk: Optional[int] = None
     ) -> LayoutParams:
         """
@@ -252,7 +252,7 @@ class TelevirParameters:
         username = project.owner.username
 
         (
-            flag_build_params,
+            layout_params,
             _,
         ) = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_televir_report_layout_name,
@@ -260,6 +260,6 @@ class TelevirParameters:
             project.name,
         )
 
-        report_layout_params = TelevirParameters.layout_params_get(flag_build_params)
+        report_layout_config = TelevirParameters.layout_config_get(layout_params)
 
-        return report_layout_params
+        return report_layout_config

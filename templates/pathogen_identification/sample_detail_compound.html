@@ -390,9 +390,9 @@
                         
                                             <div style="position:relative height=100%" >
                                                 <button class="btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" 
-                                                run_pk="{{run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
+                                                run_pk="{{value.run_index}}" accid="{{value.accid}}" reference_id="{{value.unique_id}}" >IGV</button>
                                             </div>
-                                            {% if data_exists %}
+                                            {% if value.data_exists %}
                                             <div id="cov_div" >
                                                 <br>
                                                 <form id="download_bam_{{value.accid}}" action="{% url 'download_file_igv' %}"
@@ -413,7 +413,7 @@
                         
                                         </td>
                                         <td colspan="1" align="center">
-                                            {% if data_exists %}
+                                            {% if value.data_exists %}
                                             <div id="cov_div" style="position:relative height=100%">
                                                 <br>
                                                 <form id="download_mapped_r1_{{value.accid}}" action="{% url 'download_refmap_files' %}"
@@ -454,10 +454,10 @@
                                             <img src="{% static value.run_main.static_dir %}/{{ value.refa_dotplot }}"="200"="250" alt="">
                                         </td>
                                         <td colspan="1" align="center" style="position:relative">
-                                            {% if data_exists %}
+                                            {% if value.data_exists %}
                                             <div>
                                                 <a style="position:relative"
-                                                    href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=run_index reference=value.simple_id %}>Sample
+                                                    href={% url 'scaffold_remap' pk1=project_index pk2=sample_index pk3=value.run_index reference=value.simple_id %}>Sample
                                                     remap</a>
                                             </div>
                                             <br>

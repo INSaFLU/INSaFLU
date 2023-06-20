@@ -86,6 +86,8 @@ from pathogen_identification.utilities.utilities_general import infer_run_media_
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
     set_control_reports,
+    final_report_best_cov_by_accid,
+    FinalReportCompound,
 )
 from settings.constants_settings import ConstantsSettings as CS
 from settings.default_software_project_sample import DefaultProjectSoftware
@@ -957,9 +959,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         ).order_by("-coverage")
         #
-        report_layout_params = TelevirParameters.get_read_overlap_threshold(
-            run_pk=run_pk
-        )
+        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
         sorted_reports = report_sorter.get_reports()
 
@@ -1031,61 +1031,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         return context
 
 
-from typing import List, Union
-from django.db.models.query import QuerySet
-
-
-class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
-    def __init__(self, report: FinalReport):
-        """
-        copy all attributes from report
-        """
-
-        for attr in dir(FinalReport):
-            if not attr.startswith("__"):
-                if attr == "objects":
-                    continue
-                try:
-                    setattr(self, attr, getattr(report, attr))
-                except Exception as e:
-                    raise e
-
-        self.found_in = self.get_identical_reports_ps(report)
-        self.run_detail = self.get_report_rundetail(report)
-        self.run_main = self.get_report_runmain(report)
-        self.run_index = self.run_main.pk
-
-    def get_identical_reports_ps(self, report: FinalReport) -> list:
-        reports_unique = FinalReport.objects.filter(
-            run__project__pk=report.run.project.pk,
-            sample__pk=report.sample.pk,
-            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
-            accid=report.accid,
-        )
-
-        sets = [r.run.parameter_set.pk for r in reports_unique]
-        return ", ".join([str(s) for s in sets])
-
-    def get_report_rundetail(self, report: FinalReport) -> RunDetail:
-        return RunDetail.objects.get(sample=report.sample, run=report.run)
-
-    def get_report_runmain(self, report: FinalReport) -> RunMain:
-        return report.run
-
-
-def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
-    """
-    get the best coverage report for each accid
-    """
-
-    pk_to_keep = []
-    for accid in set(reports.values_list("accid", flat=True)):
-        best_report = reports.filter(accid=accid).order_by("-coverage").first()
-        pk_to_keep.append(best_report.pk)
-
-    return reports.filter(pk__in=pk_to_keep)
-
-
 class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
     """
     home page
@@ -1118,18 +1063,15 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         #
 
         final_report = FinalReport.objects.filter(
-            sample=sample,
+            sample=sample, run__project=project_main
         ).order_by("-coverage")
 
         unique_reports = final_report_best_cov_by_accid(final_report)
 
         #
-        report_layout_params = TelevirParameters.get_read_overlap_threshold(
+        report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=project_main.pk
         )
-
-        print("#####")
-        print(unique_reports)
 
         report_sorter = ReportSorter(unique_reports, report_layout_params)
         sorted_reports = report_sorter.get_reports()

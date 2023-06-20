@@ -415,9 +415,7 @@ class Input_Generator:
             "-coverage"
         )
         #
-        report_layout_params = TelevirParameters.get_read_overlap_threshold(
-            run_pk=run.pk
-        )
+        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
         report_sorter.sort_reports()
 

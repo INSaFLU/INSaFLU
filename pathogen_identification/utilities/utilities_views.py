@@ -83,6 +83,7 @@ class ReportSorter:
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.run = self.infer_run()
+
         if self.run is not None:
             self.run_media_dir = self.inferred_run_media_dir()
             self.analysis_df_path = os.path.join(
@@ -188,7 +189,7 @@ class ReportSorter:
             self.metadata_df,
             self.reference_clade,
             self.run_media_dir,
-            str(self.run.pk),
+            str(self.run.project.pk),
         )
 
         njtree = overlap_manager.generate_tree()
@@ -230,8 +231,10 @@ class ReportSorter:
             self.metadata_df,
             self.reference_clade,
             self.run_media_dir,
-            str(self.run.pk),
+            str(self.run.project.pk),
         )
+
+        print("run media: ", self.run_media_dir)
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
@@ -259,7 +262,6 @@ class ReportSorter:
         """
         Return sorted reports
         """
-
         # self.sort_reports()
         if self.run is None:
             return [self.reports]
@@ -272,17 +274,6 @@ class ReportSorter:
 
         # overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
         overlap_analysis = self.read_overlap_analysis()
-        print(
-            overlap_analysis[
-                [
-                    "leaf",
-                    "clade",
-                    "total_counts",
-                    "private_proportion",
-                    "shared_proportion",
-                ]
-            ]
-        )
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
 
@@ -294,3 +285,66 @@ class ReportSorter:
             sorted_reports.append([self.report_dict[accid] for accid in group_accids])
 
         return sorted_reports
+
+
+from typing import List, Union
+from django.db.models.query import QuerySet
+from braces.views import FormValidMessageMixin, LoginRequiredMixin
+from django.views import generic
+from django.views.generic import ListView
+from pathogen_identification.models import RunMain, RunDetail, FinalReport, ParameterSet
+
+
+class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
+    def __init__(self, report: FinalReport):
+        """
+        copy all attributes from report
+        """
+
+        for attr in dir(FinalReport):
+            if not attr.startswith("__"):
+                if attr == "objects":
+                    continue
+                try:
+                    setattr(self, attr, getattr(report, attr))
+                except Exception as e:
+                    raise e
+
+        self.found_in = self.get_identical_reports_ps(report)
+        self.run_detail = self.get_report_rundetail(report)
+        self.run_main = self.get_report_runmain(report)
+        self.run_index = self.run_main.pk
+        self.data_exists = self.check_data_exists(report)
+
+    def get_identical_reports_ps(self, report: FinalReport) -> list:
+        reports_unique = FinalReport.objects.filter(
+            run__project__pk=report.run.project.pk,
+            sample__pk=report.sample.pk,
+            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
+            accid=report.accid,
+        )
+
+        sets = [r.run.parameter_set.pk for r in reports_unique]
+        return ", ".join([str(s) for s in sets])
+
+    def check_data_exists(self, report: FinalReport) -> bool:
+        return report.run.data_deleted == False
+
+    def get_report_rundetail(self, report: FinalReport) -> RunDetail:
+        return RunDetail.objects.get(sample=report.sample, run=report.run)
+
+    def get_report_runmain(self, report: FinalReport) -> RunMain:
+        return report.run
+
+
+def final_report_best_cov_by_accid(reports: QuerySet) -> QuerySet:
+    """
+    get the best coverage report for each accid
+    """
+
+    pk_to_keep = []
+    for accid in set(reports.values_list("accid", flat=True)):
+        best_report = reports.filter(accid=accid).order_by("-coverage").first()
+        pk_to_keep.append(best_report.pk)
+
+    return reports.filter(pk__in=pk_to_keep)

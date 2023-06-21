@@ -86,7 +86,6 @@ class PipelineTree:
         self.makeup = makeup
         self.software_tree_pk = software_tree_pk
         self.logger = logging.getLogger(f"{__name__}_{self.technology}_{self.makeup}")
-        # print(edges)
         self.dag_dict = {
             z: [
                 self.edge_dict[x][1]
@@ -112,14 +111,36 @@ class PipelineTree:
         self.generate_graph()
         parents_dict = {}
 
-        for node, name in enumerate(self.nodes):
-            parents = list(self.graph.predecessors(node))
+        for i, row in self.node_index.iterrows():
+            parents = list(self.graph.predecessors(i))
             if len(parents) == 0:
                 parents = None
             else:
                 parents = parents[0]
-            parents_dict[node] = parents
+            parents_dict[i] = parents
         return parents_dict
+
+    def nested_data(self):
+        nested_layers = [self.leaves]
+        parents_dict = self.get_parents_dict()
+
+        root = False
+        while not root:
+            new_layer = []
+            for node in nested_layers[-1]:
+                if node in parents_dict.keys():
+                    if parents_dict[node] == None:
+                        root = True
+                    else:
+                        new_layer.append(parents_dict[node])
+
+                else:
+                    root = True
+            if len(new_layer) > 0:
+                nested_layers.append(new_layer)
+
+        nested_layers.reverse()
+        return nested_layers
 
     def node_from_index(self, nix):
         return self.nodes[nix]
@@ -134,6 +155,11 @@ class PipelineTree:
         Generate a graph of pipeline
         """
         nodes_index = [i for i, x in enumerate(self.nodes)]
+
+        print("#####")
+        print(self.edge_dict)
+        print(self.node_index.index.tolist())
+        nodes_index = self.node_index.index.tolist()
 
         self.graph = nx.DiGraph()
         self.graph.add_edges_from(self.edge_dict)

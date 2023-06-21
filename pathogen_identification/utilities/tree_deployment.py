@@ -996,7 +996,6 @@ class Tree_Progress:
             return
         if self.current_module in [
             "root",
-            ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
         ]:
             self.update_nodes()
             return
@@ -1060,3 +1059,43 @@ class Tree_Progress:
         self.register_leaves_finished()
 
         print("DONE")
+
+    def stacked_changes_log(self):
+        """
+        generate stacked dataframe of software by node by pipeline step.
+        """
+        current_module = self.get_current_module()
+        modules_list = [
+            "QC",
+        ]
+        parent_dict = self.tree.get_parents_dict()
+        print("#### parent_dict")
+        print(parent_dict)
+
+        software_dict = {leaf: [] for leaf in self.tree.leaves}
+        software_dict = {parent_dict[leaf]: [] for leaf in self.tree.leaves}
+
+        while current_module != "end":
+            if self.current_module in [
+                "root",
+            ]:
+                self.update_nodes()
+            nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
+            for combination in nodes_by_sample_sources:
+                for node in combination:
+                    software = node.parameters["software"].values[0]
+                    for leaf in node.leaves:
+                        software_dict[leaf].append(software)
+
+            self.update_nodes()
+            current_module = self.get_current_module()
+            if current_module != "end":
+                modules_list.append(current_module)
+
+        stacked_df = [software_list for lead, software_list in software_dict.items()]
+
+        stacked_df = pd.DataFrame(
+            stacked_df, index=self.tree.leaves, columns=modules_list
+        )
+
+        return stacked_df

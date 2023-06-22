@@ -9,6 +9,7 @@ import networkx as nx
 
 from fluwebvirus.settings import MEDIA_ROOT, STATIC_ROOT, STATICFILES_DIRS
 from pathogen_identification.models import Projects as PIprojects
+from pathogen_identification.models import PIProject_Sample
 from pathogen_identification.utilities.mapping_flags import MapFlagViruses
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Software
@@ -99,7 +100,7 @@ class Pipeline_Makeup:
     def __init__(self):
         self.MAKEUP = self.get_denpendencies_paths_dict()
 
-    def get_makeup(self, makeup: int):
+    def get_makeup(self, makeup: int) -> list:
         return self.MAKEUP.get(makeup, None)
 
     def get_makeup_name(self, makeup: int):
@@ -269,3 +270,11 @@ class ConstantsSettings:
         "sift_query": "phage",
         "assembly_contig_min_length": 500,
     }
+
+    def project_sample_media_dir(self, sample: PIProject_Sample):
+        return os.path.join(
+            self.media_directory,
+            self.televir_subdirectory,
+            str(sample.project.pk),
+            str(sample.pk),
+        )

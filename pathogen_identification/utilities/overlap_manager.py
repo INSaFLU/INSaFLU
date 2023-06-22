@@ -320,9 +320,6 @@ class ReadOverlapManager:
         combinations = pd.DataFrame(
             pair_proportions_df, columns=["accid_A", "accid_B", "proportion_shared"]
         )
-        print("#####")
-        print(combinations)
-
         combinations["proportion_max"] = combinations.proportion_shared.apply(
             lambda x: max(x)
         )

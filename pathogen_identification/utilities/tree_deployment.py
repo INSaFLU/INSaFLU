@@ -839,6 +839,8 @@ class Tree_Progress:
             self.current_nodes = new_nodes
 
     def stacked_deployement(self, nodes_by_sample_sources: List[List[Tree_Node]]):
+        """
+        deploy nodes remap by sample sources."""
         current_nodes = []
 
         for nodes in nodes_by_sample_sources:
@@ -846,24 +848,16 @@ class Tree_Progress:
                 continue
 
             nodes = self.get_remap_plans(nodes)
-            print("nodes: ", nodes)
             group_targets = self.get_node_node_targets(nodes)
-            print("group_targets")
-            print(group_targets)
+
             volonteer = nodes[0]
 
             mapped_instances_shared, deployment_success = self.process_subject(
                 volonteer, group_targets
             )
 
-            print("mapped_instances_shared")
-            print(len(mapped_instances_shared))
-
             nodes = self.update_mapped_instances(nodes, mapped_instances_shared)
             self.export_intermediate_reports_leaves(nodes)
-
-            print("deployment_success: " + str(deployment_success))
-            print("updated nodes")
 
             if deployment_success:
                 current_nodes.extend(nodes)
@@ -970,13 +964,7 @@ class Tree_Progress:
             self.register_node_leaves(node)
 
     def register_leaves_finished(self):
-        print("register_leaves_finished")
-        print(self.current_nodes)
         for node in self.current_nodes:
-            print("node")
-            print(node)
-            print("node.leaves")
-            print(node.leaves)
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register(self.project, self.sample, self.tree)
@@ -1042,18 +1030,10 @@ class Tree_Progress:
         current_module = self.get_current_module()
 
         while current_module != "end":
-            # for x in range(0):
-            print("NEXT")
-            print(len(self.current_nodes))
-            print(self.get_current_module())
-            print([x.node_index for x in self.current_nodes])
-            print([x.children for x in self.current_nodes])
             self.deploy_nodes()
-            # deployment_tree.update_nodes()
 
             current_module = self.get_current_module()
-        print("FINISHED CYCLE")
-        print("current nodes")
+
         print(self.current_nodes)
         self.calculate_report_overlaps()
         self.register_leaves_finished()
@@ -1069,8 +1049,6 @@ class Tree_Progress:
             "QC",
         ]
         parent_dict = self.tree.get_parents_dict()
-        print("#### parent_dict")
-        print(parent_dict)
 
         software_dict = {leaf: [] for leaf in self.tree.leaves}
         software_dict = {parent_dict[leaf]: [] for leaf in self.tree.leaves}

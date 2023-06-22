@@ -18,7 +18,6 @@ class Televir_Directory_Constants:
 
 
 class Televir_Metadata_Constants:
-
     SOURCE = {
         "ENVSDIR": "/televir/mngs_benchmark/mngs_environments/",
         "CONDA": "/opt/conda/",
@@ -67,6 +66,7 @@ class Televir_Metadata_Constants:
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "prinseq": "preprocess/prinseq",
+            "R": "/software/miniconda2/envs/Renv",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
@@ -452,7 +452,6 @@ class FileType(Enum):
 
 
 class TypeFile(object):
-
     TYPE_FILE_fastq_gz = "fastq.gz"  ## fastq.fz files
     TYPE_FILE_sample_file = (
         "sample-file imported"  ## file that the user import with sample descriptions

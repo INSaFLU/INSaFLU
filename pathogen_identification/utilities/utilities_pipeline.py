@@ -24,8 +24,12 @@ from pathogen_identification.models import (
     SoftwareTreeNode,
 )
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
+from pathogen_identification.constants_settings import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
+from typing import Union, List
+from django.db.models import QuerySet
+import itertools as it
 
 tree = lambda: defaultdict(tree)
 
@@ -156,9 +160,6 @@ class PipelineTree:
         """
         nodes_index = [i for i, x in enumerate(self.nodes)]
 
-        print("#####")
-        print(self.edge_dict)
-        print(self.node_index.index.tolist())
         nodes_index = self.node_index.index.tolist()
 
         self.graph = nx.DiGraph()
@@ -184,6 +185,7 @@ class PipelineTree:
     def get_all_graph_paths_explicit(self) -> dict:
         """
         Get all possible paths in the pipeline
+        explicit -> return nodes names for nodes index list
         """
 
         self.generate_graph()
@@ -192,6 +194,17 @@ class PipelineTree:
         path_dict = {path[-1][0]: path for x, path in enumerate(all_paths)}
 
         return path_dict
+
+    def get_specific_leaf_paths_explicit(self, leaves: List[int]) -> dict:
+        """
+        Get all possible paths in the pipeline
+        explicit -> return nodes names for nodes index list
+        """
+
+        all_paths = self.get_all_graph_paths_explicit()
+        leaf_paths = {leaf: all_paths[leaf] for leaf in leaves}
+
+        return leaf_paths
 
     def df_from_path(self, path: list) -> pd.DataFrame:
         """
@@ -248,11 +261,15 @@ class PipelineTree:
     def leaves_from_node(self, node):
         """ """
         leaves = []
-        if len(self.dag_dict[node]) == 0:
-            return [node]
 
-        for n in self.dag_dict[node]:
-            leaves.extend(self.leaves_from_node(n))
+        try:
+            if len(self.dag_dict[node]) == 0:
+                return [node]
+
+            for n in self.dag_dict[node]:
+                leaves.extend(self.leaves_from_node(n))
+        except KeyError:
+            self.logger.error(f"Node {node} is not in the DAG")
 
         return leaves
 
@@ -515,12 +532,6 @@ class PipelineTree:
                         "exit": (0, self.compress_dag_dict[node[0]][0]),
                     }
                 ]
-
-            print("#########")
-            print("node", node)
-            print("parent_node", parent_node)
-            print("child_node", child_node)
-            print("same_module_branches", same_module_branches)
 
             new_nodes, new_edges, nodes_df, edge_df = edit_branches(
                 node[0],
@@ -802,7 +813,6 @@ class Utility_Pipeline_Manager:
             step: {
                 software.lower(): {
                     f"{software.upper()}_ARGS": self.generate_argument_combinations(g),
-                    # f"{software.upper()}_DB": self.software_dbs_dict[software.lower()],
                 }
                 for software, g in g.groupby("software_name")
             }
@@ -1603,6 +1613,84 @@ class Utils_Manager:
 
         return all_paths[parameter_leaf.index]
 
+    def get_parameterset_leaves(
+        self, parameterset: ParameterSet, pipeline_tree: PipelineTree
+    ) -> list:
+        """
+        retrieve list of leaves for a parameterset, matched to a given pipeline tree explicitely (using full paths).
+        """
+
+        ps_pipeline_tree = self.parameter_util.software_pipeline_tree(
+            parameterset.leaf.software_tree
+        )
+        ps_leaves = ps_pipeline_tree.leaves_from_node(parameterset.leaf.index)
+
+        ps_paths = ps_pipeline_tree.get_specific_leaf_paths_explicit(ps_leaves)
+
+        new_matched_paths = {
+            leaf: self.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
+            for leaf, path in ps_paths.items()
+        }
+
+        new_matched_paths = {
+            k: v for k, v in new_matched_paths.items() if v is not None
+        }
+
+        return list(new_matched_paths.values())
+
+    def find_combined_tree(
+        self, parameterset_list: Union[QuerySet, List[ParameterSet]]
+    ):
+        """
+        find a tree that combines all possible steps in a list of parametersets
+        """
+
+        pipeline_makeup = Pipeline_Makeup()
+        technologies = [ps.project.technology for ps in parameterset_list]
+        if len(set(technologies)) > 1:
+            raise Exception("Multiple technologies found")
+
+        technology = parameterset_list[0].project.technology
+        parameter_makeups = [
+            ps.leaf.software_tree.global_index for ps in parameterset_list
+        ]
+        tree_makeups = [pipeline_makeup.get_makeup(pm) for pm in parameter_makeups]
+
+        tree_makeups_set = list(it.chain(*tree_makeups))
+        tree_makeups_set = list(set(tree_makeups_set))
+
+        combined_makeup = pipeline_makeup.match_makeup_name_from_list(tree_makeups_set)
+
+        if combined_makeup is None:
+            raise Exception("No combined makeup found")
+        if technology is None:
+            raise Exception("No technology found")
+
+        combined_tree = self.parameter_util.query_software_default_tree(
+            technology, combined_makeup
+        )
+
+        return combined_tree
+
+    def get_parameterset_leaves_list(
+        self, parameterset_list: Union[QuerySet, List[ParameterSet]]
+    ) -> Tuple[PipelineTree, List[int]]:
+        """
+        retrieve list of leaves for a parameterset, matched to a given pipeline tree explicitely (using full paths).
+        """
+
+        combined_tree = self.find_combined_tree(parameterset_list)
+
+        matched_paths = []
+
+        for ps in parameterset_list:
+            mpaths = self.get_parameterset_leaves(ps, combined_tree)
+            matched_paths.extend(mpaths)
+
+        matched_paths = list(set(matched_paths))
+
+        return combined_tree, matched_paths
+
     def get_project_pathnodes(self, project: Projects) -> dict:
         """
         Get all pathnodes for a project
@@ -1934,6 +2022,17 @@ class Utils_Manager:
                 return True
 
         return False
+
+    def module_tree(self, pipeline_tree: PipelineTree, leaves: List[int]):
+        """
+        Return a subset of a tree
+        """
+
+        reduced_tree = self.tree_subset(pipeline_tree, leaves)
+
+        module_tree = self.utility_manager.compress_software_tree(reduced_tree)
+
+        return module_tree
 
     def generate_default_trees(self, user: User):
         """

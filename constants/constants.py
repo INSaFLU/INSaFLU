@@ -66,7 +66,7 @@ class Televir_Metadata_Constants:
             "bwa": "remap/remap",
             "bowtie2": "remap/remap",
             "prinseq": "preprocess/prinseq",
-            "R": "/software/miniconda2/envs/Renv",
+            "collapsibleTree": "remap/Renv",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},

@@ -1077,10 +1077,8 @@ class Tree_Progress:
 
         stacked_df = [software_list for lead, software_list in software_dict.items()]
 
-        stacked_df = pd.DataFrame(
-            stacked_df, columns=modules_list
-        )
-        stacked_df["leaves"]= self.tree.leaves
+        stacked_df = pd.DataFrame(stacked_df, columns=modules_list)
+        stacked_df["leaves"] = self.tree.leaves
 
         return stacked_df
 
@@ -1146,7 +1144,7 @@ class TreeProgressGraph:
         self.get_progress_df()
 
         Rgraph_cmd = [
-            Televir_Metadata.BINARIES["software"]["R"] + "/bin/" + "Rscript",
+            Televir_Metadata.BINARIES["software"]["collapsibleTree"] + "/bin/" + "Rscript",
             "--vanilla",
             os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
             self.stacked_df_path,
@@ -1182,7 +1180,7 @@ class TreeProgressGraph:
     def get_graph_data(self) -> Tuple[Optional[str], Optional[str]]:
         if not os.path.exists(self.graph_html_path):
             self.generate_graph()
-        
+
         graph_data = self.extract_graph_data(self.graph_html_path)
 
         if graph_data is None:

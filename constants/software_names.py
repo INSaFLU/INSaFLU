@@ -235,6 +235,20 @@ class SoftwareNames(object):
         "--no-alt-contigs "  ## genomeSize=<number>[g|m|k] file1 file2
     )
 
+    ## raven -t {params.threads} -k {params.kmer} -p {params.polishing} {input} 
+    ##    --graphical-fragment-assembly {output.gfa} --disable-checkpoints || 
+    ## (touch {output.gfa} && echo Warning: raven failed, were created empty files) ; 
+    ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} || 
+    ## touch {output.fasta}
+    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "raven/raven.sh")
+    SOFTWARE_RAVEN_name = "raven"
+    SOFTWARE_RAVEN_name_extended = "Assembly ONT (Raven)"
+    SOFTWARE_RAVEN_VERSION = "1.8.1"
+    SOFTWARE_RAVEN_PARAMETERS = (
+        "-k 15 -p 2 --disable-checkpoints "
+    )
+
+
     ### used to create a file with variations table
     ## git: https://github.com/SantosJGND/INSA
     ## python algn2pheno.py --db DB_COG_UK_antigenic_mutations_2022-05-30.tsv -g S --algn Alignment_aa_SARS_CoV_2_S.fasta -r <referenceName inside Alignment> --odir algn2pheno --output COG_UK_antigenic_mutations
@@ -658,11 +672,11 @@ class SoftwareNames(object):
     SOFTWARE_DESAMBA_parameters = ""
     ### RAVEN
 
-    SOFTWARE_RAVEN_name = "Raven"
-    SOFTWARE_RAVEN_name_extended = "Raven"
-    SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
-    SOFTWARE_RAVEN_VERSION = "1.8.1"
-    SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
+    #SOFTWARE_RAVEN_name = "Raven"
+    #SOFTWARE_RAVEN_name_extended = "Raven"
+    #SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "assembly/assembly/bin/raven")
+    #SOFTWARE_RAVEN_VERSION = "1.8.1"
+    #SOFTWARE_RAVEN_parameters = "--threads 4 --gzip-compressed -p2"
 
     ### SNIPPY
 

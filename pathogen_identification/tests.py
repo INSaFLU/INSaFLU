@@ -2,8 +2,10 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from pathogen_identification.models import Projects
 from pathogen_identification.models import PIProject_Sample
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.constants_settings import Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import (
+    Utils_Manager,
+    Pipeline_Makeup,
+)
 from settings.default_software import DefaultSoftware
 import os
 from django.conf import settings
@@ -45,7 +47,6 @@ class AttrDict(dict):
 
 
 def get_bindir_from_binaries(binaries, key, value: str = ""):
-
     if value == "":
         try:
             return os.path.join(binaries["ROOT"], binaries[key]["default"], "bin")
@@ -71,7 +72,6 @@ def update_software_params_global_project(project, user):
     )
     project = Projects.objects.get(pk=project.pk)
     for software in query_set:
-
         software_parameters = Parameter.objects.filter(
             software=software,
         )
@@ -112,7 +112,6 @@ def duplicate_software_params_global_project(user, project):
     )
 
     for software in query_set:
-
         software_parameters = Parameter.objects.filter(
             software=software,
         )
@@ -141,7 +140,6 @@ def check_project_params_exist(project):
 
 
 def create_project_params(user, televir_project):
-
     if not check_project_params_exist(televir_project):
         duplicate_software_params_global_project(user, televir_project)
     else:
@@ -149,7 +147,6 @@ def create_project_params(user, televir_project):
 
 
 def reset_project_params(televir_project):
-
     if not check_project_params_exist(televir_project):
         return
 
@@ -158,7 +155,6 @@ def reset_project_params(televir_project):
 
 
 def set_project_makeup(project: Projects, makeup: list):
-
     project_software = Software.objects.filter(
         type_of_use=Software.TYPE_OF_USE_televir_project,
         parameter__televir_project=project,
@@ -166,14 +162,12 @@ def set_project_makeup(project: Projects, makeup: list):
     )
 
     for software in project_software:
-
         if software.pipeline_step.name not in makeup:
             software.is_to_run = False
             software.save()
 
 
 def reset_project_makeup(project: Projects):
-
     project_software = Software.objects.filter(
         type_of_use=Software.TYPE_OF_USE_televir_project,
         parameter__televir_project=project,
@@ -225,7 +219,6 @@ class Televir_Software_Test(TestCase):
     pipeline_makeup = Pipeline_Makeup()
 
     def setUp(self):
-
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
@@ -343,7 +336,6 @@ def televir_test_project(user: User, project_ont_name: str = "project_televir"):
 
 
 def televir_test_sample(project_ont, sample_ont: Sample):
-
     try:
         ont_project_sample = PIProject_Sample.objects.get(
             project__id=project_ont.pk, sample__id=sample_ont.pk
@@ -374,7 +366,6 @@ def test_user():
 def test_fastq_file(
     baseDirectory, user: User, sample_name: str = "televir_sample_minion_1"
 ):
-
     utils = Utils()
 
     file_name = os.path.join(
@@ -442,7 +433,6 @@ class Televir_Objects_TestCase(TestCase):
         self.assertFalse(os.path.exists(tpf))
 
     def test_runCMD_strings(self):
-
         runcmd = RunCMD(
             self.baseDirectory,
             logdir=self.baseDirectory,
@@ -468,7 +458,6 @@ class Televir_Objects_TestCase(TestCase):
         )
 
     def test_runCMD_deployment(self):
-
         runcmd = RunCMD(
             self.baseDirectory,
             logdir=self.baseDirectory,
@@ -504,7 +493,6 @@ class Televir_Objects_TestCase(TestCase):
                     self.assertEqual(f.read().strip(), "Hello World")
 
         with tempf as tmp:
-
             cmd = f"echo hello world > {tmp}"
             runcmd.run_bash(cmd)
             self.assertTrue(os.path.exists(tmp))
@@ -516,7 +504,6 @@ class Televir_Objects_TestCase(TestCase):
         self.assertEqual(cmd_return.strip(), "hello world")
 
     def test_read_class(self):
-
         r1_path = self.sample_ont.path_name_1.name
 
         clean_dir = os.path.join(self.temp_directory, "clean")
@@ -599,7 +586,6 @@ class Televir_Project_Test(TestCase):
     pipeline_makeup = Pipeline_Makeup()
 
     def setUp(self):
-
         self.baseDirectory = os.path.join(
             getattr(settings, "STATIC_ROOT", None), ConstantsTestsCase.MANAGING_TESTS
         )
@@ -698,7 +684,6 @@ class Televir_Project_Test(TestCase):
             }
 
             for leaf, matched_path_node in available_path_nodes.items():
-
                 run = Run_Main_from_Leaf(
                     user=self.test_user,
                     input_data=self.ont_project_sample,

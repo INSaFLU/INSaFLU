@@ -58,6 +58,9 @@ from pathogen_identification.tables import (
     SampleTable,
 )
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.tree_deployment import (
+    TreeProgressGraph,
+)
 from pathogen_identification.models import (
     ContigClassification,
     FinalReport,
@@ -1080,14 +1083,23 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             for clade in sorted_reports
         ]
 
-        print("project index", project_pk)
+        #### graph
+        graph_progress = TreeProgressGraph(sample)
+        # graph_progress.generate_graph()
+        graph_json, graph_id = graph_progress.get_graph_data()
+        ####
+        runs = set([fr.run.pk for fr in final_report])
+        runs = RunMain.objects.filter(pk__in=runs)
 
         context = {
             "project": project_name,
+            "graph_json": graph_json,
+            "graph_id": graph_id,
             "sample": sample_name,
             "project_index": project_pk,
             "sample_index": sample_pk,
             "report_list": sorted_reports_compound,
+            "runs": runs,
             "owner": True,
         }
 

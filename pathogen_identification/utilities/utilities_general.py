@@ -409,11 +409,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
-    print("infer_run_media_dir")
-    print(run_main.params_file_path)
-    print(run_main.processed_reads_r1)
-    print(run_main.processed_reads_r2)
-
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)
         media_classification_dir = os.path.dirname(run_main.params_file_path)

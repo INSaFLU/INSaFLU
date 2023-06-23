@@ -320,11 +320,10 @@ class FinalReportCompound(LoginRequiredMixin, generic.TemplateView):
         reports_unique = FinalReport.objects.filter(
             run__project__pk=report.run.project.pk,
             sample__pk=report.sample.pk,
-            run__parameter_set__status=ParameterSet.STATUS_FINISHED,
             accid=report.accid,
         )
 
-        sets = [r.run.parameter_set.pk for r in reports_unique]
+        sets = [r.run.parameter_set.leaf.index for r in reports_unique]
         return ", ".join([str(s) for s in sets])
 
     def check_data_exists(self, report: FinalReport) -> bool:

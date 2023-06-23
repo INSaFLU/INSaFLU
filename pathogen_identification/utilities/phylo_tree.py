@@ -175,8 +175,6 @@ class PhyloTreeManager:
         leaf_clades = reverse_dict_of_lists(inner_node_clades)
 
         tree_leaf_names_dict = {leaf.name: leaf for leaf in self.tree.get_terminals()}
-        print("H")
-        print(leaf_clades)
 
         for leafname, leaf in tree_leaf_names_dict.items():
             if leafname not in leaf_clades.keys():

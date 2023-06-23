@@ -19,7 +19,8 @@ df = read.table(df_path, header = TRUE, sep = "\t")
 ### create the dendrogram
 
 p <- collapsibleTree( df, c(
-    "QC", "Assembly", "Contig.classification", "Read.classification", "Remapping"), collapsed= FALSE
+    "QC", "Assembly", "Contig.classification", "Read.classification", "Remapping", "leaves"), 
+    collapsed= FALSE, fontSize = 15, fill = "lightsteelblue", linkLength= 150
 )
 
 ### save the dendrogram as html file

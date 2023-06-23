@@ -14,17 +14,15 @@ from constants.constants import Televir_Directory_Constants as Televir_Directori
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from pathogen_identification.constants_settings import (
     ConstantsSettings,
-    Pipeline_Makeup,
 )
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
-    Projects,
     SoftwareTree,
     SoftwareTreeNode,
+    Projects,
 )
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
-from pathogen_identification.constants_settings import Pipeline_Makeup
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
 from typing import Union, List
@@ -53,6 +51,175 @@ def differences_tuple_list(lista, listb):
     list_b = [tuple([str(x) for x in y]) for y in listb]
     list_b = set(list_b)
     return list(list_a.symmetric_difference(list_b))
+
+
+#################
+# TREE UTILITIES
+
+
+class Pipeline_Makeup:
+    """
+    Pipeline steps
+    """
+
+    ROOT = "root"
+    ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
+    VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+
+    dependencies_graph_edges = {
+        CS.PIPELINE_NAME_viral_enrichment: [ROOT],
+        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT],
+        CS.PIPELINE_NAME_host_depletion: [
+            ROOT,
+            CS.PIPELINE_NAME_viral_enrichment,
+        ],
+        CS.PIPELINE_NAME_read_classification: [
+            ROOT,
+            VIRAL_ENRICHMENT_SPECIAL_STEP,
+            CS.PIPELINE_NAME_host_depletion,
+        ],
+        CS.PIPELINE_NAME_assembly: [
+            ROOT,
+            CS.PIPELINE_NAME_read_classification,
+            CS.PIPELINE_NAME_host_depletion,
+            VIRAL_ENRICHMENT_SPECIAL_STEP,
+        ],
+        ASSEMBLY_SPECIAL_STEP: [
+            CS.PIPELINE_NAME_read_classification,
+        ],
+        CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
+        CS.PIPELINE_NAME_remapping: [
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+            ASSEMBLY_SPECIAL_STEP,
+        ],
+    }
+
+    dependencies_graph_root = CS.PIPELINE_NAME_remapping
+    dependencies_graph_sink = ROOT
+
+    def generate_dependencies_graph(self):
+        """
+        Generates a graph of dependencies between pipeline steps
+        """
+        G = nx.DiGraph()
+        for (
+            pipeline_step,
+            dependencies,
+        ) in self.dependencies_graph_edges.items():
+            for dependency in dependencies:
+                G.add_edge(pipeline_step, dependency)
+        return G
+
+    def process_path(self, dpath: list):
+        """
+        Processes the path to remove the root node
+        """
+        dpath = [
+            x.replace(self.ASSEMBLY_SPECIAL_STEP, CS.PIPELINE_NAME_assembly).replace(
+                self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
+            )
+            for x in dpath
+            if x != self.dependencies_graph_sink
+        ]
+
+        return dpath[::-1]
+
+    def get_denpendencies_paths_dict(self):
+        """
+        Returns a dictionary with the dependencies between pipeline steps
+        """
+        G = self.generate_dependencies_graph()
+        paths = nx.all_simple_paths(
+            G,
+            self.dependencies_graph_root,
+            self.dependencies_graph_sink,
+        )
+
+        paths = {x: self.process_path(path) for x, path in enumerate(paths)}
+        return paths
+
+    def __init__(self):
+        self.MAKEUP = self.get_denpendencies_paths_dict()
+
+    def get_makeup(self, makeup: int) -> list:
+        return self.MAKEUP.get(makeup, None)
+
+    def get_makeup_name(self, makeup: int):
+        return self.MAKEUP[makeup][0]
+
+    def get_makeup_list(
+        self,
+    ):
+        return list(self.MAKEUP.keys())
+
+    def get_makeup_list_names(
+        self,
+    ):
+        return list(self.MAKEUP.values())
+
+    def match_makeup_name_from_list(self, makeup_list: list):
+        for makeup, mlist in self.MAKEUP.items():
+            if set(makeup_list) == set(mlist):
+                return makeup
+        return None
+
+    def makeup_available(self, makeup: int):
+        return makeup in self.MAKEUP
+
+    def get_software_pipeline_list_including(
+        self, software: Software, televir_project: Projects = None
+    ):
+        type_of_use = Software.TYPE_OF_USE_televir_global
+        if televir_project:
+            type_of_use = Software.TYPE_OF_USE_televir_project
+
+        pipeline_steps_project = Software.objects.filter(
+            type_of_use=type_of_use,
+            technology=software.technology,
+            parameter__televir_project=televir_project,
+            is_to_run=True,
+            owner=software.owner,
+        ).values_list("pipeline_step__name", flat=True)
+        return list(pipeline_steps_project)
+
+    def get_software_pipeline_list_excluding(
+        self, software: Software, televir_project: Projects = None
+    ):
+        type_of_use = Software.TYPE_OF_USE_televir_global
+        if televir_project:
+            type_of_use = Software.TYPE_OF_USE_televir_project
+
+        pipeline_steps_project = (
+            Software.objects.filter(
+                type_of_use=type_of_use,
+                technology=software.technology,
+                parameter__televir_project=televir_project,
+                is_to_run=True,
+                owner=software.owner,
+            )
+            .exclude(pk=software.pk)
+            .values_list("pipeline_step__name", flat=True)
+        )
+
+        return list(pipeline_steps_project)
+
+    def get_pipeline_makeup_result_of_operation(
+        self, software, turn_off=True, televir_project: Projects = None
+    ):
+        pipeline_steps_project = []
+
+        if turn_off:
+            pipeline_steps_project = self.get_software_pipeline_list_excluding(
+                software, televir_project=televir_project
+            )
+
+        else:
+            pipeline_steps_project = self.get_software_pipeline_list_including(
+                software, televir_project=televir_project
+            )
+
+        return pipeline_steps_project
 
 
 class PipelineTree:

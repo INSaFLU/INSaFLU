@@ -256,8 +256,19 @@
                 <div class="card-block">
                     <div style="padding: 20px">
                         <div class="row">
-                            <div id="htmlwidget-8db6c53fe18dc183987e" style="width:960px;height:500px;" class="collapsibleTree html-widget"></div>
-                            <script type="application/json" data-for="htmlwidget-8db6c53fe18dc183987e">{"x":{"data":{"name":"deployment","children":[{"name":"centrifuge","children":[{"name":"raven","children":[{"name":"blastn","children":[{"name":"kaiju","children":[{"name":"minimap2"}]},{"name":"krakenuniq","children":[{"name":"minimap2"}]}]}]}]}]},"options":{"hierarchy":["QC","Assembly","Contig.classification","Read.classification","Remapping"],"input":null,"attribute":"leafCount","linkLength":null,"fontSize":10,"tooltip":false,"collapsed":true,"zoomable":true,"margin":{"top":20,"bottom":20,"left":75,"right":65},"fill":"lightsteelblue"}},"evals":[],"jsHooks":[]}</script>
+                            <div class="col-sm-2">
+                            </div>
+                            <div class="col-sm-8">
+                                    <div id="{{graph_id}}" style="width:95%;height:300px;position:center;" class="collapsibleTree html-widget"></div>
+                                    <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                            </div>
+                            <div class="col-sm-2">
+                                {% for run in runs %}
+                                <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.name}} </a>
+                                <br>
+                                <br>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -32,9 +32,14 @@ from pathogen_identification.utilities.update_DBs_tree import (
     Update_RunMain_Secondary,
     get_run_parents,
 )
-from pathogen_identification.utilities.utilities_pipeline import PipelineTree
+from pathogen_identification.utilities.utilities_pipeline import (
+    PipelineTree,
+    Utils_Manager,
+)
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
+from fluwebvirus.settings import STATIC_ROOT
+from typing import Optional, Tuple
 
 
 def logger_copy(x, memo):
@@ -1073,7 +1078,117 @@ class Tree_Progress:
         stacked_df = [software_list for lead, software_list in software_dict.items()]
 
         stacked_df = pd.DataFrame(
-            stacked_df, index=self.tree.leaves, columns=modules_list
+            stacked_df, columns=modules_list
         )
+        stacked_df["leaves"]= self.tree.leaves
 
         return stacked_df
+
+
+class TreeProgressGraph:
+    progress_stackl_df_name = "{}_stacked_df.tsv"
+    progress_graph_html_name = "{}_graph.html"
+
+    def __init__(self, sample: PIProject_Sample):
+        self.sample = sample
+        self.media_dir = sample.get_media_dir()
+        self.project = sample.project
+        self.stacked_df_path = os.path.join(
+            self.media_dir, self.progress_stackl_df_name.format(sample.pk)
+        )
+        self.graph_html_path = os.path.join(
+            self.media_dir, self.progress_graph_html_name.format(sample.pk)
+        )
+
+        self.pipeline_utils = Utils_Manager()
+
+    def setup_tree(self):
+        existing_parameter_sets = ParameterSet.objects.filter(
+            project=self.project,
+            status=ParameterSet.STATUS_RUNNING,
+            sample=self.sample,
+        )
+        ## create a tree that contains all the parameter sets
+        (
+            combined_tree,
+            additional_leaves,
+        ) = self.pipeline_utils.get_parameterset_leaves_list(existing_parameter_sets)
+
+        # CRUNCH TREE
+        module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
+        return module_tree
+
+    def get_progress_df(self):
+        ## setup a deployment and record the progress
+        module_tree = self.setup_tree()
+        deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+
+        stacked_df = deployment_tree.stacked_changes_log()
+        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+
+        return stacked_df
+
+    @staticmethod
+    def extract_graph_data(html_filepath) -> Optional[str]:
+        """
+        graph data is stored in line cotaining: data-for="""
+
+        with open(html_filepath, "r") as f:
+            lines = f.readlines()
+
+        for line in lines:
+            if "data-for=" in line:
+                return line
+
+        return None
+
+    def generate_graph(self):
+        self.get_progress_df()
+
+        Rgraph_cmd = [
+            Televir_Metadata.BINARIES["software"]["R"] + "/bin/" + "Rscript",
+            "--vanilla",
+            os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
+            self.stacked_df_path,
+            self.graph_html_path,
+        ]
+
+        result = os.system(" ".join(Rgraph_cmd))
+
+    @staticmethod
+    def extract_graph_id(graph_data: str) -> Optional[str]:
+        """
+        graph data is stored in line cotaining: data-for="""
+
+        if graph_data is None:
+            return None
+
+        graph_id = graph_data.split("data-for=")[1].split('"')[1]
+
+        return graph_id
+
+    @staticmethod
+    def extract_graph_json(graph_data: str) -> Optional[str]:
+        """
+        graph data is stored in line cotaining: data-for="""
+
+        if graph_data is None:
+            return None
+
+        graph_json = graph_data.split(">")[1].split("<")[0]
+
+        return graph_json
+
+    def get_graph_data(self) -> Tuple[Optional[str], Optional[str]]:
+        if not os.path.exists(self.graph_html_path):
+            self.generate_graph()
+        
+        graph_data = self.extract_graph_data(self.graph_html_path)
+
+        if graph_data is None:
+            return None, None
+
+        graph_id = self.extract_graph_id(graph_data)
+        graph_json = self.extract_graph_json(graph_data)
+
+        return graph_json, graph_id

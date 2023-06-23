@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from managing_files.models import Sample
 from pathogen_identification.data_classes import IntermediateFiles
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 
 # Create your models here.
 
@@ -236,6 +237,15 @@ class PIProject_Sample(models.Model):
         )
 
         return taxid_list
+
+    def get_media_dir(self):
+        return os.path.join(
+            PICS.media_directory,
+            PICS.televir_subdirectory,
+            str(self.project.owner.pk),
+            str(self.project.pk),
+            str(self.sample.pk),
+        )
 
 
 class ParameterSet(models.Model):

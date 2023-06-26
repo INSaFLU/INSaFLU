@@ -1816,7 +1816,7 @@ class Utils_Manager:
         technologies = [ps.project.technology for ps in parameterset_list]
         if len(set(technologies)) > 1:
             raise Exception("Multiple technologies found")
-
+        
         technology = parameterset_list[0].project.technology
         parameter_makeups = [
             ps.leaf.software_tree.global_index for ps in parameterset_list

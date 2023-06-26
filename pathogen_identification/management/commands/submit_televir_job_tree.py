@@ -88,7 +88,7 @@ class Command(BaseCommand):
         tree_makeup = local_tree.makeup
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-
+        pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
         # MANAGEMENT
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
@@ -96,6 +96,26 @@ class Command(BaseCommand):
         }
 
         matched_paths = {k: v for k, v in matched_paths.items() if v is not None}
+
+        available_path_nodes = {
+            leaf: SoftwareTreeNode.objects.get(
+                software_tree__pk=pipeline_tree_index, index=path
+            )
+            for leaf, path in matched_paths.items()
+        }
+
+        available_path_nodes = {
+            leaf: utils.parameter_util.check_ParameterSet_available_to_run(
+                sample=sample, leaf=matched_path_node, project=project
+            )
+            for leaf, matched_path_node in available_path_nodes.items()
+        }
+
+        matched_paths = {
+            k: v for k, v in matched_paths.items() if available_path_nodes[k]
+        }
+        ###
+
         # SUBMISSION
 
         pipeline_utils = Utility_Pipeline_Manager()

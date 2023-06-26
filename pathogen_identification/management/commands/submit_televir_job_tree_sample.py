@@ -12,7 +12,10 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.utilities.tree_deployment import Tree_Progress
+from pathogen_identification.utilities.tree_deployment import (
+    Tree_Progress,
+    TreeProgressGraph,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
     Utils_Manager,
@@ -144,9 +147,13 @@ class Command(BaseCommand):
         try:
             for project_sample in samples:
                 if not project_sample.is_deleted:
+                    graph_progress = TreeProgressGraph(project_sample)
+
                     deployment_tree = Tree_Progress(
                         module_tree, project_sample, project
                     )
+
+                    graph_progress.generate_graph()
 
                     deployment_tree.cycle_process()
 

@@ -997,11 +997,13 @@ class Remapping:
             self.logger.error(e)
             self.read_map_filtered_bam = self.read_map_bam
             return
-        
+
         if not os.path.isfile(self.read_map_filtered_bam):
             self.logger.error("Bam filtering failed.")
             self.read_map_filtered_bam = self.read_map_bam
             return
+
+        return
 
     def generate_vcf(self):
         """

@@ -1144,12 +1144,10 @@ class TreeProgressGraph:
         self.get_progress_df()
 
         Rgraph_cmd = [
-            os.path.join(
-                Televir_Metadata.BINARIES["ROOT"],
-                Televir_Metadata.BINARIES["software"]["collapsibleTree"],
-                "/bin/",
-                "Rscript",
-            ),
+            Televir_Metadata.BINARIES["ROOT"]
+            + Televir_Metadata.BINARIES["software"]["collapsibleTree"]
+            + "/bin/"
+            + "Rscript",
             "--vanilla",
             os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
             self.stacked_df_path,

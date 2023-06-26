@@ -104,29 +104,35 @@ class Command(BaseCommand):
             for leaf, path in matched_paths.items()
         }
 
-        available_path_nodes = {
-            leaf: utils.parameter_util.check_ParameterSet_available_to_run(
-                sample=sample, leaf=matched_path_node, project=project
-            )
-            for leaf, matched_path_node in available_path_nodes.items()
-        }
-
-        matched_paths = {
-            k: v for k, v in matched_paths.items() if available_path_nodes[k]
-        }
-        ###
-
-        # SUBMISSION
-
-        pipeline_utils = Utility_Pipeline_Manager()
-
-        reduced_tree = utils.tree_subset(pipeline_tree, list(matched_paths.values()))
-
-        module_tree = pipeline_utils.compress_software_tree(reduced_tree)
-
         try:
             for project_sample in samples:
                 if not project_sample.is_deleted:
+                    available_path_nodes_sample = {
+                        leaf: utils.parameter_util.check_ParameterSet_available_to_run(
+                            sample=project_sample,
+                            leaf=matched_path_node,
+                            project=project,
+                        )
+                        for leaf, matched_path_node in available_path_nodes.items()
+                    }
+
+                    matched_paths_sample = {
+                        k: v
+                        for k, v in matched_paths.items()
+                        if available_path_nodes_sample[k]
+                    }
+                    ###
+
+                    # SUBMISSION
+
+                    pipeline_utils = Utility_Pipeline_Manager()
+
+                    reduced_tree = utils.tree_subset(
+                        pipeline_tree, list(matched_paths_sample.values())
+                    )
+
+                    module_tree = pipeline_utils.compress_software_tree(reduced_tree)
+
                     graph_progress = TreeProgressGraph(project_sample)
 
                     deployment_tree = Tree_Progress(

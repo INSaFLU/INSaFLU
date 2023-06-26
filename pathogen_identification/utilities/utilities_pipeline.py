@@ -451,7 +451,7 @@ class PipelineTree:
 
         return leaves
 
-    def reduced_tree(self, leaves_list: list) -> Tuple[dict, dict]:
+    def reduced_tree(self, leaves_list: list) -> Tuple[dict, pd.DataFrame]:
         """trims paths not leading to provided leaves"""
         root_node = ("root", None, None)
 
@@ -462,7 +462,7 @@ class PipelineTree:
                 leaves_list.remove(n)
 
         if len(leaves_list) == 0:
-            return self.dag_dict, {}
+            return self.dag_dict, pd.DataFrame()
 
         paths = self.get_all_graph_paths_explicit()
         compressed_paths = {z: paths[z] for z in leaves_list}
@@ -1542,7 +1542,6 @@ class Parameter_DB_Utility:
         if parameter_set.status in [
             ParameterSet.STATUS_FINISHED,
             ParameterSet.STATUS_RUNNING,
-            ParameterSet.STATUS_KILLED,
         ]:
             return False
 
@@ -1816,7 +1815,7 @@ class Utils_Manager:
         technologies = [ps.project.technology for ps in parameterset_list]
         if len(set(technologies)) > 1:
             raise Exception("Multiple technologies found")
-        
+
         technology = parameterset_list[0].project.technology
         parameter_makeups = [
             ps.leaf.software_tree.global_index for ps in parameterset_list

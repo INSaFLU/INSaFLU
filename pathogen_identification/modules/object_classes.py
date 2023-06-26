@@ -191,26 +191,17 @@ class RunCMD:
         self.logger.setLevel(logging.ERROR)
 
         # remove handlers
-        # for handler in self.logger.handlers[:]:
-        #    self.logger.removeHandler(handler)
+        for handler in self.logger.handlers[:]:
+            self.logger.removeHandler(handler)
 
-        # self.logger.addHandler(
-        #    logging.FileHandler(os.path.join(logdir, f"{prefix}_{task}.log"))
-        # )
+        self.logger.addHandler(
+            logging.FileHandler(os.path.join(logdir, f"{prefix}_{task}.log"))
+        )
         # set handler for stdout
-
-        # self.logger.addHandler(logging.StreamHandler())
         self.logger.propagate = False
 
         self.logfile = os.path.join(logdir, f"{prefix}_{task}.log")
         self.logdir = logdir
-
-    # def __deepcopy__(self, memo):
-    #    """
-    #    ignore logger, replace with new logger
-    #    """
-    #
-    #    return RunCMD(self.bin, self.logdir, self.prefix, self.task)
 
     def set_logger(self, logger):
         """
@@ -872,7 +863,9 @@ class Sample_runClass:
         bin: str,
         threads: int = 1,
     ) -> None:
-        self.cmd = RunCMD(bin, prefix= "sample", task= "housekeeping", logdir= os.path.dirname(r1.clean))
+        self.cmd = RunCMD(
+            bin, prefix="sample", task="housekeeping", logdir=os.path.dirname(r1.clean)
+        )
         self.r1 = r1
         self.r2 = r2
         self.sample_name = sample_name

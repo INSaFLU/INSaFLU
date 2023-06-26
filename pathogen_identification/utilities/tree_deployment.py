@@ -1144,6 +1144,7 @@ class TreeProgressGraph:
         self.get_progress_df()
 
         Rgraph_cmd = [
+            Televir_Metadata.BINARIES["ROOT"],
             Televir_Metadata.BINARIES["software"]["collapsibleTree"] + "/bin/" + "Rscript",
             "--vanilla",
             os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),

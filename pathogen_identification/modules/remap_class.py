@@ -992,7 +992,13 @@ class Remapping:
         try:
             self.cmd.run(cmd)
 
-        except:
+        except Exception as e:
+            self.logger.error("Bam filtering failed.")
+            self.logger.error(e)
+            self.read_map_filtered_bam = self.read_map_bam
+            return
+        
+        if not os.path.isfile(self.read_map_filtered_bam):
             self.logger.error("Bam filtering failed.")
             self.read_map_filtered_bam = self.read_map_bam
             return

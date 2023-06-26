@@ -1182,7 +1182,8 @@ class TreeProgressGraph:
 
     def get_graph_data(self) -> Tuple[Optional[str], Optional[str]]:
         if not os.path.exists(self.graph_html_path):
-            self.generate_graph()
+            return None, None
+            # self.generate_graph()
 
         graph_data = self.extract_graph_data(self.graph_html_path)
 

@@ -108,11 +108,12 @@ class Command(BaseCommand):
             for project_sample in samples:
                 if not project_sample.is_deleted:
                     graph_progress = TreeProgressGraph(project_sample)
-                    graph_progress.generate_graph()
 
                     deployment_tree = Tree_Progress(
                         module_tree, project_sample, project
                     )
+
+                    graph_progress.generate_graph()
 
                     deployment_tree.cycle_process()
 

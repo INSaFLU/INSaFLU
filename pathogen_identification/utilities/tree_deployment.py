@@ -1103,7 +1103,10 @@ class TreeProgressGraph:
     def setup_tree(self):
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
-            status=ParameterSet.STATUS_RUNNING,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_FINISHED,
+                ],
             sample=self.sample,
         )
         ## create a tree that contains all the parameter sets

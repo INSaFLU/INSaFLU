@@ -197,6 +197,7 @@ class ReportSorter:
             self.run_media_dir,
             str(self.run.project.pk),
         )
+        print("generating tree")
 
         njtree = overlap_manager.generate_tree()
 

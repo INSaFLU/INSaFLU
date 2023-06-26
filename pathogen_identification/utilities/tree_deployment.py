@@ -1106,7 +1106,7 @@ class TreeProgressGraph:
             status__in=[
                 ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_FINISHED,
-                ],
+            ],
             sample=self.sample,
         )
         ## create a tree that contains all the parameter sets

@@ -274,7 +274,10 @@ class ReadOverlapManager:
             self.parse_for_data()
             distance_matrix = self.pairwise_shared_reads(self.read_profile_matrix)
 
-        distance_matrix.to_csv(self.distance_matrix_path)
+        try:  # Written only on job submisision. File not written on query.
+            distance_matrix.to_csv(self.distance_matrix_path)
+        except:
+            pass
 
         return distance_matrix
 
@@ -446,6 +449,7 @@ class ReadOverlapManager:
         Create a dictionary of clades from the summary dataframe
         """
         node_stats_dict = {}
+
         print(clade_summary)
         # set the index to the node name
         clade_summary = clade_summary.set_index("node")

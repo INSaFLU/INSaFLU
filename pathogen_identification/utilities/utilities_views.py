@@ -101,6 +101,12 @@ class ReportSorter:
             )
             self.force = force
 
+        else:
+            self.run_media_dir = None
+            self.analysis_df_path = None
+            self.all_clades_df_path = None
+            self.force = False
+
     @staticmethod
     def generate_reference_clade(layout_params: LayoutParams):
         """
@@ -254,9 +260,9 @@ class ReportSorter:
         """
         Return sorted reports
         """
-
-        overlap_analysis = self.read_overlap_analysis()
-        overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
+        if self.run is not None:
+            overlap_analysis = self.read_overlap_analysis()
+            overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
     def get_reports(self):
         """

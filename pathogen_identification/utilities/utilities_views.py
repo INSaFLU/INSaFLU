@@ -288,10 +288,22 @@ class ReportSorter:
 
         for group in overlap_groups:
             group_df = group[1]
-            group_accids = group_df.leaf.tolist()
-            sorted_reports.append([self.report_dict[accid] for accid in group_accids])
 
-        return sorted_reports
+            group_accids = group_df.leaf.tolist()
+            group_list = [self.report_dict[accid] for accid in group_accids]
+            # sort by coverage
+            group_list.sort(key=lambda x: x.coverage, reverse=True)
+            sorted_reports.append(group_list)
+
+        # sort groups by max coverage among group
+
+        def get_max_coverage(group: List[FinalReport]):
+            print(group)
+            return max(y.coverage for y in group)
+
+        sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
+
+        return sorted_groups
 
 
 from typing import List, Union

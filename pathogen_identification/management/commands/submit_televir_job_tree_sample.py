@@ -55,24 +55,33 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ###
         # SETUP
-
+        process_controler = ProcessControler()
+        process_SGE = ProcessSGE()
         user = User.objects.get(pk=options["user_id"])
         project = Projects.objects.get(pk=options["project_id"])
         technology = project.technology
 
+        samples = PIProject_Sample.objects.filter(
+            project=project, is_deleted=False, pk=options["sample_id"]
+        )
+
+        sample = samples.first()
+
         # PROCESS CONTROLER
-        process_controler = ProcessControler()
-        process_SGE = ProcessSGE()
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project(project_pk=project.pk),
+            process_controler.get_name_televir_project_sample(
+                project_pk=project.pk, sample_pk=sample.pk
+            ),
             ProcessControler.FLAG_RUNNING,
         )
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
-            name=process_controler.get_name_televir_project(project_pk=project.pk),
+            name=process_controler.get_name_televir_project_sample(
+                project_pk=project.pk, sample_pk=sample.pk
+            ),
         )
 
         print(process)
@@ -87,19 +96,6 @@ class Command(BaseCommand):
 
         # UTILITIES
         utils = Utils_Manager()
-        samples = PIProject_Sample.objects.filter(
-            project=project, is_deleted=False, pk=options["sample_id"]
-        )
-        sample = samples.first()
-        if not samples.exists():
-            print("No samples found")
-            process_SGE.set_process_controler(
-                user,
-                process_controler.get_name_televir_project(project_pk=project.pk),
-                ProcessControler.FLAG_ERROR,
-            )
-
-            return
 
         ####
         local_tree = utils.generate_project_tree(technology, project, user)

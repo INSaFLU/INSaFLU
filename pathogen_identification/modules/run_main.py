@@ -452,7 +452,6 @@ class RunDetail_main:
         self.logger.addHandler(consoleHandler)
         self.logger.info(f"prefix: {self.prefix}")
         self.logger.info(f"type: {self.type}")
-        self.start_time = time.perf_counter()
 
         # directories
         self.filtered_reads_dir = config["directories"][

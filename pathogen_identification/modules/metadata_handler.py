@@ -77,7 +77,6 @@ class Metadata_handler:
             report_1,
             report_2,
         )
-
         if self.merged_targets.empty:
             self.merge_reports_clean(
                 taxid_limit=taxid_limit,
@@ -99,7 +98,10 @@ class Metadata_handler:
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
         if "acc_x" in df.columns:
-            df = df.rename(columns={"acc_x": "acc"})
+            if "acc" in df.columns:
+                df = df.drop(columns=["acc_x"])
+            else:
+                df = df.rename(columns={"acc_x": "acc"})
 
         if "acc_y" in df.columns:
             if "acc" in df.columns:
@@ -147,7 +149,10 @@ class Metadata_handler:
         # replace nan by "NA" in description column
         df["description"] = df["description"].fillna("NA")
 
-        def fill_description(row):
+        def fill_description(row) -> pd.Series:
+            """
+            Fill description column with scraped description if description is "NA".
+            """
             if row["description"] == "NA":
                 row["description"] = scrape_description(row["acc"])
 
@@ -254,9 +259,7 @@ class Metadata_handler:
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
 
-        df["accid"] = df["taxid"].apply(
-            self.get_taxid_representative_accid
-        )
+        df["acc"] = df["taxid"].apply(self.get_taxid_representative_accid)
 
         return df
 

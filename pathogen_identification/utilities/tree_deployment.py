@@ -6,7 +6,7 @@ from copy import _copy_immutable, _deepcopy_dispatch
 from typing import List
 
 import pandas as pd
-
+import traceback    # for debugging
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
@@ -939,6 +939,7 @@ class Tree_Progress:
         except Exception as e:
             print("error")
             print(e)
+            traceback.print_exc()
 
             return False
 

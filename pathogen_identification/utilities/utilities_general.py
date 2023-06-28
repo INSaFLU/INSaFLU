@@ -158,7 +158,7 @@ def fastqc_parse(fastqc_path: str, stdin_fastqc_name: str = "stdin_fastqc"):
     return fqreads
 
 
-def scrape_description(accid: str, existing_description: str = None) -> str:
+def scrape_description(accid: str, existing_description: Optional[str] = None) -> str:
     """
     Scrape the description for the relevant information.
     """
@@ -288,6 +288,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     """
     merge tables of taxids to columns.
     """
+
     ###
     if "description" in r1.columns:
         r1 = (
@@ -321,8 +322,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     ###
 
     if len(r2) and len(r1):
-        r2pres = 2
-
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
 

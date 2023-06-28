@@ -136,10 +136,17 @@ class RunDetail_main:
 
         self.method_args = method_args
         self.config = config
+        self.log_dir = config["directories"]["log_dir"]
+        print("logdir", self.log_dir)
+
         self.cmd = RunCMD(
             get_bindir_from_binaries(
-                config["bin"], CS.PIPELINE_NAME_read_quality_analysis
-            )
+                config["bin"],
+                CS.PIPELINE_NAME_read_quality_analysis,
+            ),
+            logdir=self.log_dir,
+            prefix=self.prefix,
+            task="MAIN",
         )
         self.threads = config["threads"]
 
@@ -229,7 +236,6 @@ class RunDetail_main:
         self.filtered_reads_dir = config["directories"][
             CS.PIPELINE_NAME_read_quality_analysis
         ]
-        self.log_dir = config["directories"]["log_dir"]
 
         ######### INPUT
         self.sample_name = config["sample_name"]
@@ -391,10 +397,14 @@ class RunDetail_main:
         self.depletion_drone = Classifier(
             Software_detail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+            prefix="drone",
         )
         self.enrichment_drone = Classifier(
             Software_detail("NONE", method_args, config, self.prefix),
             logging_level=self.logger_level_detail,
+            log_dir=self.log_dir,
+            prefix="drone",
         )
 
         ### output files

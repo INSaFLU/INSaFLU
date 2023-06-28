@@ -257,7 +257,7 @@ class ReportSorter:
 
         return True
 
-    def sort_reports(self):
+    def sort_reports_save(self):
         """
         Return sorted reports
         """
@@ -265,21 +265,7 @@ class ReportSorter:
             overlap_analysis = self.read_overlap_analysis()
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
-    def get_reports(self):
-        """
-        Return sorted reports
-        """
-        # self.sort_reports()
-        if self.run is None:
-            return [self.reports]
-
-        if self.metadata_df.empty:
-            return [self.reports]
-
-        if not self.check_analyzed():
-            return [self.reports]
-
-        # overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
+    def get_sorted_reports(self):
         overlap_analysis = self.read_overlap_analysis()
 
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
@@ -296,7 +282,6 @@ class ReportSorter:
             sorted_reports.append(group_list)
 
         # sort groups by max coverage among group
-
         def get_max_coverage(group: List[FinalReport]):
             print(group)
             return max(y.coverage for y in group)
@@ -304,6 +289,21 @@ class ReportSorter:
         sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
 
         return sorted_groups
+
+    def get_reports(self):
+        """
+        Return sorted reports
+        """
+        if self.run is None:
+            return [self.reports]
+
+        if self.metadata_df.empty:
+            return [self.reports]
+
+        if not self.check_analyzed():
+            return [self.reports]
+
+        return self.get_sorted_reports()
 
 
 from typing import List, Union

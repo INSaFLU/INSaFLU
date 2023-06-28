@@ -281,7 +281,7 @@ class Tree_Node:
         print(final_report)
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
-        report_sorter.sort_reports()
+        report_sorter.sort_reports_save()
 
     def receive_run_manager(
         self, run_manager: PathogenIdentification_Deployment_Manager

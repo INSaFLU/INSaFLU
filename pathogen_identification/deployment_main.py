@@ -542,7 +542,7 @@ class Run_Main_from_Leaf:
         #
         report_layout_params = TelevirParameters.get_report_layout_params(run.pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
-        report_sorter.sort_reports()
+        report_sorter.sort_reports_save()
 
     def register_completion(self):
         self.set_run_process_finished()

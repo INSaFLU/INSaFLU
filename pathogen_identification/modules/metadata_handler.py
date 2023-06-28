@@ -147,6 +147,14 @@ class Metadata_handler:
         # replace nan by "NA" in description column
         df["description"] = df["description"].fillna("NA")
 
+        def fill_description(row):
+            if row["description"] == "NA":
+                row["description"] = scrape_description(row["acc"])
+
+            return row
+
+        df = df.apply(fill_description, axis=1)
+
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
             self.sift_report = self.sift_summary(df, sifted_df)
@@ -245,6 +253,10 @@ class Metadata_handler:
         df.taxid = df.taxid.astype(float)
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
+
+        df["accid"] = df["taxid"].apply(
+            self.get_taxid_representative_accid
+        )
 
         return df
 
@@ -410,9 +422,11 @@ class Metadata_handler:
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
-        raw_targets["description"] = raw_targets["taxid"].apply(
-            self.get_taxid_representative_description
-        )
+
+        # raw_targets["description"] = raw_targets["taxid"].apply(
+        #    self.get_taxid_representative_description
+        # )
+
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets

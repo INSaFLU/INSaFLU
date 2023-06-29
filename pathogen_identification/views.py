@@ -1001,8 +1001,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "data_exists": True if not run_main.data_deleted else False,
         }
 
-        print("HIII")
-
         ### downloadable files
         context["files"] = {}
         # 1. parameters

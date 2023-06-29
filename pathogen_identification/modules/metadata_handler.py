@@ -98,16 +98,16 @@ class Metadata_handler:
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
         if "acc_x" in df.columns:
-            if "acc" in df.columns:
+            if "accid" in df.columns:
                 df = df.drop(columns=["acc_x"])
             else:
-                df = df.rename(columns={"acc_x": "acc"})
+                df = df.rename(columns={"acc_x": "accid"})
 
         if "acc_y" in df.columns:
-            if "acc" in df.columns:
+            if "accid" in df.columns:
                 df = df.drop(columns=["acc_y"])
             else:
-                df = df.rename(columns={"acc_y": "acc"})
+                df = df.rename(columns={"acc_y": "accid"})
 
         if "counts" in df.columns:
             if "counts_x" in df.columns:
@@ -151,35 +151,39 @@ class Metadata_handler:
         print(df.head())
 
         def get_acc(row: pd.Series) -> str:
-            print(row)
-            print(row.index)
+            acc = "-"
             if "acc_x" in row.index:
-                return row["acc_x"]
+                acc = row["acc_x"]
             elif "acc_y" in row.index:
-                return row["acc_y"]
+                acc = row["acc_y"]
             if "acc" in row.index:
-                return row["acc"]
+                acc = row["acc"]
 
             else:
-                return self.get_taxid_representative_accid(row["taxid"])
+                acc = self.get_taxid_representative_accid(row["taxid"])
+
+            return acc
 
         if df.shape[0] > 0:
-            df["acc"] = df.apply(get_acc, axis=1)
+            df["accid"] = df.apply(get_acc, axis=1)
             df["description"] = df["description"].fillna("NA")
 
             def fill_description(row) -> pd.Series:
                 """
                 Fill description column with scraped description if description is "NA".
                 """
+                print(row)
 
                 if row["description"] == "NA" or row["description"] == "":
-                    row["description"] = scrape_description(row["acc"])
+                    row["description"] = scrape_description(row["accid"])
+
+                print(row["description"])
 
                 return row
 
             print("FIND DESCRIPTION")
             df = df.apply(fill_description, axis=1)
-            print(df.head())
+            print(df[["description", "counts", "accid"]].head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
@@ -449,12 +453,13 @@ class Metadata_handler:
         if "description" not in raw_targets.columns:
             taxid_descriptions = pd.concat(
                 [
-                    self.rclass[["taxid", "description"]],
-                    self.aclass[["taxid", "description"]],
+                    self.rclass[["accid", "description"]],
+                    self.aclass[["accid", "description"]],
                 ]
             )
-            taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
-            raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
+            taxid_descriptions.dropna(subset=["description"], inplace=True)
+            taxid_descriptions.drop_duplicates(subset=["accid"], inplace=True)
+            raw_targets = raw_targets.merge(taxid_descriptions, on="accid", how="left")
 
         # raw_targets["description"] = raw_targets["taxid"].apply(
         #    self.get_taxid_representative_description

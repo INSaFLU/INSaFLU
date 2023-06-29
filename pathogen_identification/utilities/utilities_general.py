@@ -291,17 +291,9 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
 
     ###
     if "description" in r1.columns:
-        r1 = (
-            r1[~r1.description.str.contains(exclude)]
-            .drop_duplicates(subset=["taxid"], keep="first")
-            .sort_values("counts", ascending=False)
-        )
+        r1 = r1[~r1.description.str.contains(exclude)]
     if "description" in r2.columns:
-        r2 = (
-            r2[~r2.description.str.contains(exclude)]
-            .drop_duplicates(subset=["taxid"], keep="first")
-            .sort_values("counts", ascending=False)
-        )
+        r2 = r2[~r2.description.str.contains(exclude)]
 
     ###
 
@@ -357,16 +349,13 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
 
     ###
 
-    def descriptor_description_unique(df: pd.DataFrame):
-        if "description_x" in df.columns and "description_y" in df.columns:
-            df["description"] = df["description_x"].fillna(df["description_y"])
-            df = df.drop(["description_x", "description_y"], axis=1)
-        elif "description_x" in df.columns:
-            df["description"] = df["description_x"]
-            df = df.drop(["description_x"], axis=1)
-        elif "description_y" in df.columns:
-            df["description"] = df["description_y"]
-            df = df.drop(["description_y"], axis=1)
+    def descriptor_description_remove(df: pd.DataFrame):
+        if "description_x" in df.columns:
+            df.drop("description_x", axis=1, inplace=True)
+        if "description_y" in df.columns:
+            df.drop("description_y", axis=1, inplace=True)
+        if "description" in df.columns:
+            df.drop("description", axis=1, inplace=True)
 
         return df
 
@@ -409,7 +398,7 @@ def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
             return str(row.counts_y)
 
     full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
-    full_descriptor = descriptor_description_unique(full_descriptor)
+    full_descriptor = descriptor_description_remove(full_descriptor)
     full_descriptor = descriptor_sources(full_descriptor)
     full_descriptor = descriptor_counts(full_descriptor)
 

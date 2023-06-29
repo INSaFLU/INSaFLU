@@ -147,6 +147,7 @@ class Metadata_handler:
         df = self.map_hit_report(df)
 
         # replace nan by "NA" in description column
+        df["acc"] = df["taxid"].apply(self.get_taxid_representative_accid)
         df["description"] = df["description"].fillna("NA")
 
         def fill_description(row) -> pd.Series:
@@ -258,8 +259,6 @@ class Metadata_handler:
         df.taxid = df.taxid.astype(float)
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
-
-        df["acc"] = df["taxid"].apply(self.get_taxid_representative_accid)
 
         return df
 

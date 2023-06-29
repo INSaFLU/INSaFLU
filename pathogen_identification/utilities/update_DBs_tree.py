@@ -1122,6 +1122,8 @@ def Update_Sample_Runs_DB(run_class: RunMain_class, parameter_set: ParameterSet)
 
 
 def Update_FinalReport(run_class, runmain, sample):
+    print("# REPORT")
+    print(run_class.report)
     for i, row in run_class.report.iterrows():
         if row["ID"] == "None":
             continue

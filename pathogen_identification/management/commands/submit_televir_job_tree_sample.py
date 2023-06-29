@@ -84,8 +84,6 @@ class Command(BaseCommand):
             ),
         )
 
-        print(process)
-
         if process.exists():
             process = process.first()
 

@@ -958,7 +958,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
         #
-
         final_report = FinalReport.objects.filter(
             sample=sample_main, run=run_main
         ).order_by("-coverage")
@@ -1001,6 +1000,8 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "report_list": sorted_reports,
             "data_exists": True if not run_main.data_deleted else False,
         }
+
+        print("HIII")
 
         ### downloadable files
         context["files"] = {}
@@ -1316,18 +1317,17 @@ def generate_zip_file(file_list: list, zip_file_path: str) -> str:
             zip_file.write(file_path, os.path.basename(file_path))
 
     return zip_file_path
-    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-        for file_path in file_list:
-            zip_file.write(file_path, os.path.basename(file_path))
-
-    return zip_file_path
 
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
-        os.unlink(zip_file_path)
+        try:
+            os.unlink(zip_file_path)
+        except Exception as e:
+            print(e)
+            return zip_file_path
 
     zip_file_path = generate_zip_file(file_list, zip_file_path)
 

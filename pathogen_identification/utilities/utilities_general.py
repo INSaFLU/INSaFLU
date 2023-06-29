@@ -284,7 +284,7 @@ def process_class(r2, maxt=6):
     return r2
 
 
-def merge_classes(r1, r2, maxt=6, exclude="phage"):
+def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     """
     merge tables of taxids to columns.
     """
@@ -313,9 +313,9 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     if len(r2) > 0 and len(r1) > 0:
         full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
     elif len(r2) > 0:
-        full_descriptor = r2
+        full_descriptor = r2.copy()
     else:
-        full_descriptor = r1
+        full_descriptor = r1.copy()
 
     full_descriptor = full_descriptor.fillna(0)
 
@@ -354,6 +354,21 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
     elif len(r1) == 0:
         r1 = r2.head(maxt)
+
+    ###
+
+    def descriptor_description_unique(df: pd.DataFrame):
+        if "description_x" in df.columns and "description_y" in df.columns:
+            df["description"] = df["description_x"].fillna(df["description_y"])
+            df = df.drop(["description_x", "description_y"], axis=1)
+        elif "description_x" in df.columns:
+            df["description"] = df["description_x"]
+            df = df.drop(["description_x"], axis=1)
+        elif "description_y" in df.columns:
+            df["description"] = df["description_y"]
+            df = df.drop(["description_y"], axis=1)
+
+        return df
 
     def get_source(row):
         if row.counts_x > 0 and row.counts_y > 0:
@@ -394,6 +409,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             return str(row.counts_y)
 
     full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
+    full_descriptor = descriptor_description_unique(full_descriptor)
     full_descriptor = descriptor_sources(full_descriptor)
     full_descriptor = descriptor_counts(full_descriptor)
 

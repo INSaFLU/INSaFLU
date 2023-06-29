@@ -172,7 +172,7 @@ class Metadata_handler:
                 Fill description column with scraped description if description is "NA".
                 """
 
-                if row["description"] == "NA":
+                if row["description"] == "NA" or row["description"] == "":
                     row["description"] = scrape_description(row["acc"])
 
                 return row
@@ -446,14 +446,15 @@ class Metadata_handler:
             self.get_taxid_representative_accid
         )
 
-        taxid_descriptions = pd.concat(
-            [
-                self.rclass[["taxid", "description"]],
-                self.aclass[["taxid", "description"]],
-            ]
-        )
-        taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
-        raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
+        if "description" not in raw_targets.columns:
+            taxid_descriptions = pd.concat(
+                [
+                    self.rclass[["taxid", "description"]],
+                    self.aclass[["taxid", "description"]],
+                ]
+            )
+            taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
+            raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
         # raw_targets["description"] = raw_targets["taxid"].apply(
         #    self.get_taxid_representative_description

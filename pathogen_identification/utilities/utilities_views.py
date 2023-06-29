@@ -282,10 +282,13 @@ class ReportSorter:
             sorted_reports.append(group_list)
 
         # sort groups by max coverage among group
+        print("sorted reports")
+
         def get_max_coverage(group: List[FinalReport]):
             print(group)
             return max(y.coverage for y in group)
 
+        print(sorted_reports)
         sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
 
         return sorted_groups
@@ -302,6 +305,8 @@ class ReportSorter:
 
         if not self.check_analyzed():
             return [self.reports]
+
+        print("sorted reports")
 
         return self.get_sorted_reports()
 

@@ -142,24 +142,43 @@ class Metadata_handler:
 
         df = self.clean_report(df)
 
-        df = self.merge_report_to_metadata(df)
+        df = self.merge_report_to_metadata_taxid(df)
 
         df = self.map_hit_report(df)
 
         # replace nan by "NA" in description column
-        df["acc"] = df["taxid"].apply(self.get_taxid_representative_accid)
-        df["description"] = df["description"].fillna("NA")
+        print("FIND NA")
+        print(df.head())
 
-        def fill_description(row) -> pd.Series:
-            """
-            Fill description column with scraped description if description is "NA".
-            """
-            if row["description"] == "NA":
-                row["description"] = scrape_description(row["acc"])
+        def get_acc(row: pd.Series) -> str:
+            print(row)
+            print(row.index)
+            if "acc_x" in row.index:
+                return row["acc_x"]
+            elif "acc_y" in row.index:
+                return row["acc_y"]
+            if "acc" in row.index:
+                return row["acc"]
 
-            return row
+            else:
+                return self.get_taxid_representative_accid(row["taxid"])
 
-        df = df.apply(fill_description, axis=1)
+        if df.shape[0] > 0:
+            df["acc"] = df.apply(get_acc, axis=1)
+            df["description"] = df["description"].fillna("NA")
+
+            def fill_description(row) -> pd.Series:
+                """
+                Fill description column with scraped description if description is "NA".
+                """
+                if row["description"] == "NA":
+                    row["description"] = scrape_description(row["acc"])
+
+                return row
+
+            print("FIND DESCRIPTION")
+            df = df.apply(fill_description, axis=1)
+            print(df.head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
@@ -218,7 +237,7 @@ class Metadata_handler:
 
         self.logger.info("Finished retrieving metadata")
 
-    def merge_report_to_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
+    def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
 
         Args:
@@ -259,6 +278,7 @@ class Metadata_handler:
         df.taxid = df.taxid.astype(float)
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
+        df = df[df.taxid != 0]
 
         return df
 

@@ -453,13 +453,13 @@ class Metadata_handler:
         if "description" not in raw_targets.columns:
             taxid_descriptions = pd.concat(
                 [
-                    self.rclass[["accid", "description"]],
-                    self.aclass[["accid", "description"]],
+                    self.rclass[["taxid", "description"]],
+                    self.aclass[["taxid", "description"]],
                 ]
             )
             taxid_descriptions.dropna(subset=["description"], inplace=True)
-            taxid_descriptions.drop_duplicates(subset=["accid"], inplace=True)
-            raw_targets = raw_targets.merge(taxid_descriptions, on="accid", how="left")
+            taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
+            raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
 
         # raw_targets["description"] = raw_targets["taxid"].apply(
         #    self.get_taxid_representative_description

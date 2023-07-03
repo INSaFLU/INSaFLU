@@ -442,7 +442,7 @@ class Metadata_handler:
             new_table = new_table.sort_values("counts", ascending=False)
         else:
             new_table = (
-                merged_table.groupby(["taxid", "description", "file"])
+                merged_table.groupby(["taxid"])
                 .agg({"counts": "sum"})
                 .reset_index()
             )

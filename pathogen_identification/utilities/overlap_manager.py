@@ -569,15 +569,27 @@ class ReadOverlapManager:
                     )
                 )
             else:
-                leaf_clades_dict.append(
-                    (
-                        leaf,
-                        self.safe_clade_name(clade),
-                        statistics_dict[clade].group_counts,
-                        statistics_dict[clade].private_proportion,
-                        statistics_dict[clade].shared_proportion_max,
+                try:
+                    leaf_clades_dict.append(
+                        (
+                            leaf,
+                            self.safe_clade_name(clade),
+                            statistics_dict[clade].group_counts,
+                            statistics_dict[clade].private_proportion,
+                            statistics_dict[clade].shared_proportion_max,
+                        )
                     )
-                )
+                except KeyError:
+                    print("clade not found")
+                    leaf_clades_dict.append(
+                        (
+                            leaf,
+                            "None",
+                            0,
+                            0,
+                            0,
+                        )
+                    )
 
         ##
 

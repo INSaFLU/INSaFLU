@@ -371,7 +371,7 @@ class Metadata_handler:
             df["description"] = ""
 
         ntab = df[~df.description.str.contains(query)]
-        ntab = ntab.drop_duplicates(subset=["qseqid"])
+        #ntab = ntab.drop_duplicates(subset=["qseqid"])
 
         return ntab
 

@@ -318,6 +318,7 @@ class Metadata_handler:
 
         print("##### MERGE TAXID TO DESCRIPTION #####")
         print(df.head())
+        df["taxid"] = df["taxid"].astype(int)
         df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
         print(df.head())
         df = df.sort_values(by="taxid")
@@ -442,9 +443,7 @@ class Metadata_handler:
             new_table = new_table.sort_values("counts", ascending=False)
         else:
             new_table = (
-                merged_table.groupby(["taxid"])
-                .agg({"counts": "sum"})
-                .reset_index()
+                merged_table.groupby(["taxid"]).agg({"counts": "sum"}).reset_index()
             )
 
         return new_table

@@ -276,10 +276,12 @@ class ReportSorter:
             group_df = group[1]
 
             group_accids = group_df.leaf.tolist()
+            group_accids = [x for x in group_accids if x in self.report_dict]
             group_list = [self.report_dict[accid] for accid in group_accids]
             # sort by coverage
             group_list.sort(key=lambda x: x.coverage, reverse=True)
-            sorted_reports.append(group_list)
+            if len(group_list):
+                sorted_reports.append(group_list)
 
         # sort groups by max coverage among group
         print("sorted reports")

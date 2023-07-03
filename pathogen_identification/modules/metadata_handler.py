@@ -328,6 +328,7 @@ class Metadata_handler:
         df.taxid = df.taxid.astype(float)
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
+        df = [df.taxid != 0]
 
         return df
 
@@ -371,7 +372,7 @@ class Metadata_handler:
             df["description"] = ""
 
         ntab = df[~df.description.str.contains(query)]
-        #ntab = ntab.drop_duplicates(subset=["qseqid"])
+        # ntab = ntab.drop_duplicates(subset=["qseqid"])
 
         return ntab
 
@@ -445,6 +446,7 @@ class Metadata_handler:
             new_table = (
                 merged_table.groupby(["taxid"]).agg({"counts": "sum"}).reset_index()
             )
+            new_table = new_table.sort_values("counts", ascending=False)
 
         return new_table
 

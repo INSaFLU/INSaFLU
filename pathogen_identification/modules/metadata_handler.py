@@ -172,12 +172,11 @@ class Metadata_handler:
                 """
                 Fill description column with scraped description if description is "NA".
                 """
-                print(row)
 
                 if row["description"] == "NA" or row["description"] == "":
+                    print(row)
                     row["description"] = scrape_description(row["accid"])
-
-                print(row["description"])
+                    print(row["description"])
 
                 return row
 

@@ -270,6 +270,8 @@ class Metadata_handler:
 
         """
 
+        df = df[(df.taxid != "0") | (df.taxid != 0)]
+
         if df.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
@@ -305,7 +307,6 @@ class Metadata_handler:
         df.taxid = df.taxid.astype(float)
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
-        df = df[df.taxid != 0]
 
         return df
 

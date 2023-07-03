@@ -64,7 +64,7 @@ class MapFlagProbes(MappingFlagBuild):
         self.windows_covered = self.windows_covered[0] / self.windows_covered[1]
 
     def assert_false_positive(self):
-        if self.windows_covered < 0.5 and self.coverage < 5:
+        if self.windows_covered < 0.5:
             return True
 
         return False

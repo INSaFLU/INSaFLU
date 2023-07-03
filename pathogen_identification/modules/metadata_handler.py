@@ -257,9 +257,7 @@ class Metadata_handler:
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
-        self.logger.info(
-            "TAXID TO DESCRIPTION SHAPE: " + str(self.taxonomy_to_description.shape)
-        )
+        print("TAXID TO DESCRIPTION SHAPE: " + str(self.taxonomy_to_description.shape))
 
     def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -296,7 +294,12 @@ class Metadata_handler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
+        print("##### MERGE TAXID TO DESCRIPTION #####")
+        print(df.head())
         df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
+        print(df.head())
+        df = df.sort_values(by="taxid")
+        df = df.drop_duplicates(subset=["taxid"], keep="first")
 
         df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(float)

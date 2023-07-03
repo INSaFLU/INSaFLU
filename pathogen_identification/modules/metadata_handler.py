@@ -140,9 +140,7 @@ class Metadata_handler:
         if sift is true, filter results to only include self.sift_query.
         """
 
-
         print("MERGE REPORT TO METADATA TAXID")
-        
 
         df = self.clean_report(df)
 
@@ -180,11 +178,11 @@ class Metadata_handler:
                 df.drop(columns=["acc"])
             else:
                 df["accid"] = df["taxid"].apply(self.get_taxid_representative_accid)
-            
+
             return df
 
         if df.shape[0] > 0:
-            df= get_acc(df)
+            df = get_acc(df)
             df["description"] = df["description"].fillna("NA")
 
             def fill_description(row) -> pd.Series:
@@ -259,7 +257,9 @@ class Metadata_handler:
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
-        self.logger.info("TAXID TO DESCRIPTION SHAPE: " + str(self.taxonomy_to_description.shape))
+        self.logger.info(
+            "TAXID TO DESCRIPTION SHAPE: " + str(self.taxonomy_to_description.shape)
+        )
 
     def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -437,23 +437,23 @@ class Metadata_handler:
             return "-"
         else:
             return accid_set.acc.iloc[0]
-    
+
     def get_taxid_representative_accid_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Return representative accession for a given taxid.
         """
 
-        new_df= df.copy()
+        new_df = df.copy()
         if "acc" in new_df.columns:
             new_df.drop(columns=["acc"], inplace=True)
-        
-        new_df= (
+
+        new_df = (
             new_df.merge(self.accession_to_taxid, on="taxid", how="left")
-            .sort_values(subset= ["taxid", "acc"], ascending= [True, True], inplace=True)
+            .sort_values(["taxid", "acc"], ascending=[True, True])
             .drop_duplicates(subset=["taxid"], keep="first")
             .fillna("-")
-            )
-        
+        )
+
         return new_df
 
     def get_taxid_representative_description(self, taxid: int) -> str:
@@ -483,13 +483,12 @@ class Metadata_handler:
         print("TAXID LIMIT: ", taxid_limit)
 
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
-        #raw_targets["accid"] = raw_targets["taxid"].apply(
+        # raw_targets["accid"] = raw_targets["taxid"].apply(
         #    self.get_taxid_representative_accid
-        #)
+        # )
 
-        raw_targets= self.get_taxid_representative_accid_df(raw_targets)
+        raw_targets = self.get_taxid_representative_accid_df(raw_targets)
         raw_targets.rename(columns={"acc": "accid"}, inplace=True)
-
 
         if "description" not in raw_targets.columns:
             taxid_descriptions = pd.concat(

@@ -148,6 +148,8 @@ class Metadata_handler:
 
         df = self.map_hit_report(df)
 
+        df = self.merge_report_to_metadata_description(df)
+
         # replace nan by "NA" in description column
         print("FIND NA")
         print(df.head())
@@ -270,31 +272,49 @@ class Metadata_handler:
 
         """
 
-        df = df[(df.taxid != "0") | (df.taxid != 0)]
-
         if df.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
         if "taxid" not in df.columns:
-            if "prot_acc" in df.columns:
+            if "prot_acc" in df.columns and "acc" not in df.columns:
+                counts_df = df.groupby(["prot_acc"]).size().reset_index(name="counts")
                 return self.merge_check_column_types(
-                    df, self.protein_accession_to_taxid, "prot_acc"
+                    counts_df, self.protein_accession_to_taxid, "prot_acc"
                 )
 
-            if "protid" in df.columns:
+            if "protid" in df.columns and "acc" not in df.columns:
+                counts_df = df.groupby(["protid"]).size().reset_index(name="counts")
                 df = self.merge_check_column_types(
-                    df, self.protein_to_accession, "protid"
+                    counts_df, self.protein_to_accession, "protid"
                 )
 
             if "acc" in df.columns:
+                if "counts" in df.columns:
+                    counts_df = df.groupby(["acc"]).agg({"counts": "sum"}).reset_index()
+
+                else:
+                    counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
+
                 df = self.merge_check_column_types(
-                    df, self.accession_to_taxid, column="acc", column_two="acc_in_file"
+                    counts_df,
+                    self.accession_to_taxid,
+                    column="acc",
+                    column_two="acc_in_file",
                 )
 
             else:
                 raise ValueError(
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
+
+        df = df[(df.taxid != "0") | (df.taxid != 0)]
+
+        return df
+
+    def merge_report_to_metadata_description(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge df with taxonomy to description file.
+        """
 
         print("##### MERGE TAXID TO DESCRIPTION #####")
         print(df.head())
@@ -410,15 +430,22 @@ class Metadata_handler:
         if merged_table.shape[0] == 0:
             return pd.DataFrame(columns=["taxid", "description", "file", "counts"])
 
-        counts = merged_table.taxid.value_counts()
-        counts = pd.DataFrame(counts).reset_index()
-        counts.columns = ["taxid", "counts"]
+        if "counts" not in merged_table.columns:
+            counts = merged_table.taxid.value_counts()
+            counts = pd.DataFrame(counts).reset_index()
+            counts.columns = ["taxid", "counts"]
 
-        new_table = pd.merge(
-            left=merged_table, right=counts, on="taxid"
-        ).drop_duplicates(subset="taxid")
+            new_table = pd.merge(
+                left=merged_table, right=counts, on="taxid"
+            ).drop_duplicates(subset="taxid")
 
-        new_table = new_table.sort_values("counts", ascending=False)
+            new_table = new_table.sort_values("counts", ascending=False)
+        else:
+            new_table = (
+                merged_table.groupby(["taxid", "description", "file"])
+                .agg({"counts": "sum"})
+                .reset_index()
+            )
 
         return new_table
 

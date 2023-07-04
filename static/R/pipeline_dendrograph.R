@@ -14,12 +14,13 @@ df_path= args[1]
 output_path= args[2]
 columns= args[3]
 ## columns come separated by comma, so we need to split them
-columns= strsplit(columns, ",")
+columns= strsplit(columns, ",")[[1]]
 ## remove spaces
-columns= lapply(columns, function(x) gsub(" ", ".", x))
+columns= gsub(" ", ".", columns)
+### print columns
+print(columns)
 ### read the data frame
 df = read.table(df_path, header = TRUE, sep = "\t")
-
 ### create the dendrogram
 
 p <- collapsibleTree( df, columns, 

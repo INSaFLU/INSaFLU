@@ -1156,7 +1156,7 @@ class TreeProgressGraph:
             os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
             self.stacked_df_path,
             self.graph_html_path,
-            ",".join(stacked_df.columns)
+            ",".join(stacked_df.columns).replace(" ", "."),
         ]
 
         result = os.system(" ".join(Rgraph_cmd))

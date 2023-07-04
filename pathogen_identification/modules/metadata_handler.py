@@ -331,9 +331,9 @@ class Metadata_handler:
         """
         Get taxid descriptions from entrez.
         """
-
-        taxid_list = df.taxid.unique().tolist()
-        taxid_list = [str(i) for i in taxid_list]
+        taxid_df = df.dropna(subset=["taxid"])
+        taxid_list = taxid_df.taxid.unique().tolist()
+        taxid_list = [str(int(i)) for i in taxid_list]
 
         print("##### ENTREZ GET TAXID DESCRIPTIONS #####")
         print("taxid_list: " + str(taxid_list))

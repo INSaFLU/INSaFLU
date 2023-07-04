@@ -555,8 +555,12 @@ class Metadata_handler:
         #    self.get_taxid_representative_accid
         # )
 
-        raw_targets = self.get_taxid_representative_accid_df(raw_targets)
-        raw_targets.rename(columns={"acc": "accid"}, inplace=True)
+        # raw_targets = self.get_taxid_representative_accid_df(raw_targets)
+        # raw_targets.rename(columns={"acc": "accid"}, inplace=True)
+
+        raw_targets["acc"] = raw_targets["taxid"].apply(
+            self.get_taxid_representative_accid
+        )
 
         if "description" not in raw_targets.columns:
             taxid_descriptions = pd.concat(

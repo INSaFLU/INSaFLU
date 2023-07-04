@@ -11,12 +11,15 @@ from pathogen_identification.utilities.utilities_general import (
     merge_classes,
     scrape_description,
 )
+from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 
 
 class Metadata_handler:
     remap_targets: List[Remap_Target] = []
 
-    def __init__(self, config, sift_query: str = "phage", prefix: str = ""):
+    def __init__(
+        self, config, sift_query: str = "phage", prefix: str = "", rundir: str = ""
+    ):
         """
         Initialize metadata handler.
 
@@ -26,6 +29,7 @@ class Metadata_handler:
 
         """
         self.prefix = prefix
+        self.rundir = rundir
         self.config = config
         self.metadata_paths = config["metadata"]
         self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
@@ -34,6 +38,11 @@ class Metadata_handler:
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
+        self.entrez_conn = EntrezWrapper(
+            bindir=self.config["bin"]["software"]["entrez_direct"],
+            outdir=self.rundir,
+            outfile="entrez_output.tsv",
+        )
 
         self.input_taxonomy_to_descriptor_path = self.metadata_paths[
             "input_taxonomy_to_descriptor_path"
@@ -148,7 +157,10 @@ class Metadata_handler:
 
         df = self.map_hit_report(df)
 
-        df = self.merge_report_to_metadata_description(df)
+        df = self.entrez_get_taxid_descriptions(df)
+        # df = self.merge_report_to_metadata_description(df)
+
+        df = df.reset_index(drop=True)
 
         # replace nan by "NA" in description column
         print("FIND NA")
@@ -311,6 +323,24 @@ class Metadata_handler:
 
         return df
 
+    def entrez_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get taxid descriptions from entrez.
+        """
+
+        taxid_list = df.taxid.unique().tolist()
+        taxid_list = [str(i) for i in taxid_list]
+
+        self.entrez_conn.run_queries(taxid_list)
+        taxid_descriptions = self.entrez_conn.read_output()
+        taxid_descriptions.rename(
+            columns={"scientific_name": "description"}, inplace=True
+        )
+
+        df = df.merge(taxid_descriptions, on="taxid", how="left")
+
+        return df
+
     def merge_report_to_metadata_description(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Merge df with taxonomy to description file.
@@ -319,6 +349,7 @@ class Metadata_handler:
         print("##### MERGE TAXID TO DESCRIPTION #####")
         print(df.head())
         df["taxid"] = df["taxid"].astype(int)
+        print(df.shape)
         df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
         print(df.head())
         df = df.sort_values(by="taxid")
@@ -430,7 +461,7 @@ class Metadata_handler:
         """
 
         if merged_table.shape[0] == 0:
-            return pd.DataFrame(columns=["taxid", "description", "file", "counts"])
+            return pd.DataFrame(columns=["taxid", "file", "counts"])
 
         if "counts" not in merged_table.columns:
             counts = merged_table.taxid.value_counts()

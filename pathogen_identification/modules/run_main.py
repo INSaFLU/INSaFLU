@@ -307,7 +307,10 @@ class RunDetail_main:
         )
 
         self.metadata_tool = Metadata_handler(
-            self.config, sift_query=config["sift_query"], prefix=self.prefix
+            self.config, 
+            sift_query=config["sift_query"], 
+            prefix=self.prefix,
+            rundir= self.deployment_dir,
         )
 
         self.remap_params = remap_params

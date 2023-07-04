@@ -67,6 +67,7 @@ class Televir_Metadata_Constants:
             "bowtie2": "remap/remap",
             "prinseq": "preprocess/prinseq",
             "collapsibleTree": "remap/Renv",
+            "entrez_direct": "entrez_direct",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},

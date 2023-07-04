@@ -97,7 +97,27 @@ class RunMain:
         self.logger.addHandler(consoleHandler)
         self.logger.propagate = False
 
-        #####################################
+        ######## DIRECTORIES ########
+
+        self.deployment_root_dir = config["deployment_root_dir"]
+        self.substructure_dir = config["sub_directory"]
+        self.deployment_dir = os.path.join(
+            self.deployment_root_dir, self.substructure_dir
+        )
+
+        self.media_dir = os.path.join(
+            ConstantsSettings.media_directory, self.substructure_dir
+        )
+        self.static_dir = os.path.join(
+            ConstantsSettings.static_directory, self.substructure_dir
+        )
+
+        self.media_dir_logdir = os.path.join(
+            self.media_dir,
+            "logs",
+        )
+
+        ####################################
 
         self.r1 = Read_class(
             config["r1"],
@@ -160,26 +180,6 @@ class RunMain:
             method_args,
             config,
             self.prefix,
-        )
-
-        ######## DIRECTORIES ########
-
-        self.deployment_root_dir = config["deployment_root_dir"]
-        self.substructure_dir = config["sub_directory"]
-        self.deployment_dir = os.path.join(
-            self.deployment_root_dir, self.substructure_dir
-        )
-
-        self.media_dir = os.path.join(
-            ConstantsSettings.media_directory, self.substructure_dir
-        )
-        self.static_dir = os.path.join(
-            ConstantsSettings.static_directory, self.substructure_dir
-        )
-
-        self.media_dir_logdir = os.path.join(
-            self.media_dir,
-            "logs",
         )
 
         ###

@@ -167,6 +167,9 @@ def scrape_description(accid: str, existing_description: Optional[str] = None) -
         accid = accid.split("_")[:-1]
         accid = "_".join(accid)
 
+    if accid in ["", "NA", "nan", "NAN", "N/A", "NAN", "-"]:
+        return str(existing_description)
+
     url = f"https://www.ncbi.nlm.nih.gov/nuccore/{accid}"
     headers = {
         "Access-Control-Allow-Origin": "*",

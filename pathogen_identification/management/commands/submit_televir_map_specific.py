@@ -94,6 +94,25 @@ class RunMain:
         self.logger.addHandler(consoleHandler)
         self.logger.propagate = False
 
+        ######## DIRECTORIES ########
+
+        self.deployment_root_dir = config["deployment_root_dir"]
+        self.substructure_dir = config["sub_directory"]
+        self.deployment_dir = os.path.join(
+            self.deployment_root_dir, self.substructure_dir
+        )
+
+        self.media_dir = os.path.join(
+            ConstantsSettings.media_directory, self.substructure_dir
+        )
+        self.static_dir = os.path.join(
+            ConstantsSettings.static_directory, self.substructure_dir
+        )
+
+        self.media_dir_logdir = os.path.join(
+            self.media_dir,
+            "logs",
+        )
         #####################################
 
         self.r1 = Read_class(
@@ -145,7 +164,10 @@ class RunMain:
             self.username, self.project_name
         )
         self.metadata_tool = Metadata_handler(
-            self.config, sift_query=config["sift_query"], prefix=self.prefix
+            self.config,
+            sift_query=config["sift_query"],
+            prefix=self.prefix,
+            rundir=self.deployment_dir,
         )
 
         self.max_remap = remap_params.max_accids
@@ -157,26 +179,6 @@ class RunMain:
             method_args,
             config,
             self.prefix,
-        )
-
-        ######## DIRECTORIES ########
-
-        self.deployment_root_dir = config["deployment_root_dir"]
-        self.substructure_dir = config["sub_directory"]
-        self.deployment_dir = os.path.join(
-            self.deployment_root_dir, self.substructure_dir
-        )
-
-        self.media_dir = os.path.join(
-            ConstantsSettings.media_directory, self.substructure_dir
-        )
-        self.static_dir = os.path.join(
-            ConstantsSettings.static_directory, self.substructure_dir
-        )
-
-        self.media_dir_logdir = os.path.join(
-            self.media_dir,
-            "logs",
         )
 
         ###

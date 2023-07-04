@@ -339,9 +339,7 @@ class Metadata_handler:
         print("taxid_list: " + str(taxid_list))
 
         if len(taxid_list) == 0:
-            return pd.DataFrame(columns=["acc", "taxid", "description"])
-
-
+            return pd.DataFrame(columns=["taxid", "counts", "description"])
 
         self.entrez_conn.run_queries(taxid_list)
         taxid_descriptions = self.entrez_conn.read_output()

@@ -170,20 +170,6 @@ class Metadata_handler:
         print("FIND NA")
         print(df.head())
 
-        def get_acc_row(row: pd.Series) -> str:
-            acc = "-"
-            if "acc_x" in row.index:
-                acc = row["acc_x"]
-            elif "acc_y" in row.index:
-                acc = row["acc_y"]
-            if "acc" in row.index:
-                acc = row["acc"]
-
-            else:
-                acc = self.get_taxid_representative_accid(row["taxid"])
-
-            return acc
-
         def get_acc(df: pd.DataFrame):
             if "acc_x" in df.columns:
                 df["accid"] = df["acc_x"]
@@ -348,6 +334,9 @@ class Metadata_handler:
         )
 
         df = df.merge(taxid_descriptions, on="taxid", how="left")
+
+        df["taxid"] = df["taxid"].astype(float)
+        df["taxid"] = df["taxid"].astype(int)
 
         return df
 

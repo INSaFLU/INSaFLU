@@ -202,8 +202,8 @@ class Metadata_handler:
                 return row
 
             print("FIND DESCRIPTION")
-            df = df.apply(fill_description, axis=1)
-            print(df[["description", "counts", "accid"]].head())
+            # df = df.apply(fill_description, axis=1)
+            print(df[["description", "counts", "taxid"]].head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)

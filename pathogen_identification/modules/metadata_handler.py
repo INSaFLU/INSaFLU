@@ -335,6 +335,14 @@ class Metadata_handler:
         taxid_list = df.taxid.unique().tolist()
         taxid_list = [str(i) for i in taxid_list]
 
+        print("##### ENTREZ GET TAXID DESCRIPTIONS #####")
+        print("taxid_list: " + str(taxid_list))
+
+        if len(taxid_list) == 0:
+            return pd.DataFrame(columns=["acc", "taxid", "description"])
+
+
+
         self.entrez_conn.run_queries(taxid_list)
         taxid_descriptions = self.entrez_conn.read_output()
         taxid_descriptions.rename(

@@ -128,6 +128,8 @@ class EntrezWrapper:
     def run_queries(self, query: List[str]) -> None:
         cmds = self.cmd_chunks(query)
 
+        print("CMD CHUNKS")
+
         for cmd in cmds:
             os.system(cmd)
 

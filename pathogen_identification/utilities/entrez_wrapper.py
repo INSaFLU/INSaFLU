@@ -130,6 +130,9 @@ class EntrezWrapper:
 
         print("CMD CHUNKS")
 
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+
         for cmd in cmds:
             os.system(cmd)
 

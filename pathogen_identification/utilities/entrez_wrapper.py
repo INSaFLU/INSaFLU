@@ -112,7 +112,7 @@ class EntrezWrapper:
     def cmd_long(self, query: List[str]) -> str:
         cmd = self.query.query(query)
 
-        cmd_long = [cmd, ">", os.path.join(self.outdir, self.outfile)]
+        cmd_long = [cmd, ">>", os.path.join(self.outdir, self.outfile)]
 
         print(" ".join(cmd_long))
 

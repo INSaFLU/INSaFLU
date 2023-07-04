@@ -628,7 +628,7 @@ class Tree_Progress:
 
             if (
                 node.run_manager.run_engine.read_classification_performed
-                and node.run_manager.run_engine.contig_classification_performed
+                or node.run_manager.run_engine.contig_classification_performed
             ):
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)
@@ -998,8 +998,8 @@ class Tree_Progress:
             self.run_nodes_classification_reads()
             return
 
-        # if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
-        #    self.run_nodes_classification_reads()
+        if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
+           self.run_nodes_sequential()
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_remapping:
             self.run_nodes_simply()

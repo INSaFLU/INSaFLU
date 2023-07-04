@@ -39,7 +39,11 @@ class Metadata_handler:
             self.logger.handlers.clear()
         self.logger.propagate = False
         self.entrez_conn = EntrezWrapper(
-            bindir=self.config["bin"]["software"]["entrez_direct"],
+            bindir=os.path.join(
+                self.config["bin"]["ROOT"],
+                self.config["bin"]["software"]["entrez_direct"],
+                "bin",
+            ),
             outdir=self.rundir,
             outfile="entrez_output.tsv",
         )

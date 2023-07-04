@@ -6,7 +6,7 @@ from copy import _copy_immutable, _deepcopy_dispatch
 from typing import List
 
 import pandas as pd
-import traceback    # for debugging
+import traceback  # for debugging
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
@@ -999,7 +999,7 @@ class Tree_Progress:
             return
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
-           self.run_nodes_sequential()
+            self.run_nodes_sequential()
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_remapping:
             self.run_nodes_simply()
@@ -1145,7 +1145,7 @@ class TreeProgressGraph:
         return None
 
     def generate_graph(self):
-        self.get_progress_df()
+        stacked_df = self.get_progress_df()
 
         Rgraph_cmd = [
             Televir_Metadata.BINARIES["ROOT"]
@@ -1156,6 +1156,7 @@ class TreeProgressGraph:
             os.path.join(STATIC_ROOT, "R", "pipeline_dendrograph.R"),
             self.stacked_df_path,
             self.graph_html_path,
+            ",".join(stacked_df.columns)
         ]
 
         result = os.system(" ".join(Rgraph_cmd))

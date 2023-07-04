@@ -12,14 +12,17 @@ if (length(args)==0) {
 
 df_path= args[1]
 output_path= args[2]
-
+columns= args[3]
+## columns come separated by comma, so we need to split them
+columns= strsplit(columns, ",")
+## remove spaces
+columns= lapply(columns, function(x) gsub(" ", ".", x))
 ### read the data frame
 df = read.table(df_path, header = TRUE, sep = "\t")
 
 ### create the dendrogram
 
-p <- collapsibleTree( df, c(
-    "QC", "Assembly", "Contig.classification", "Read.classification", "Remapping", "leaves"), 
+p <- collapsibleTree( df, columns, 
     collapsed= FALSE, fontSize = 15, fill = "lightsteelblue", linkLength= 150
 )
 

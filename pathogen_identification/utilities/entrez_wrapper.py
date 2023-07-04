@@ -95,7 +95,7 @@ class EntrezWrapper:
         outdir: str,
         outfile: str,
         query_type: str = "fetch_taxid_description",
-        chunksize: int = 1000,
+        chunksize: int = 100,
     ):
         self.chunksize = chunksize
         self.bindir = bindir

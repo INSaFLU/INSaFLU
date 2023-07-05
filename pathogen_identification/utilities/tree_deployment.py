@@ -469,10 +469,11 @@ def check_planned(method):
 
 class ClassificationMonitor(ABC):
 
-    @check_planned
     @abstractmethod
     def classification_just_performed(node: Tree_Node):
         pass
+
+
 
 class ClassificationMonitor_ContigOnly(ClassificationMonitor):
 
@@ -483,6 +484,9 @@ class ClassificationMonitor_ContigOnly(ClassificationMonitor):
             return True
 
         return False
+    
+    def __str__(self) -> str:
+        return "ContigOnly"
 
 class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 
@@ -495,6 +499,9 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 
         return False
 
+    def __str__(self) -> str:
+        return "ContigAndReads"
+
 class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
 
     @check_planned
@@ -504,6 +511,9 @@ class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
             return True
 
         return False
+
+    def __str__(self) -> str:
+        return "ReadsOnly"
 
 class ClassificationMonitor_Factory:
 
@@ -553,6 +563,7 @@ class Tree_Progress:
         self.sample = sample
         self.project = project
         self.classification_monitor = ClassificationMonitor_Factory().get_monitor(pipe_tree)
+        print("##### MONITOR ", self.classification_monitor)
 
         self.initialize_nodes()
         self.determine_current_module()
@@ -704,6 +715,7 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
+            print("######### STEP CHECK", step, node.run_manager.run_engine.contig_classification_performed, node.run_manager.run_engine.contig_classification_just_performed)
             if self.classification_monitor.classification_just_performed(node):
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)
@@ -1082,7 +1094,10 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.classification_just_performed(node):
+                print("classification just performed")
                 node.run_manager.run_engine.plan_remap_prep_safe()
+        
+        return 
 
         
     def run_current_nodes_batch_parallel(self, batch=2):

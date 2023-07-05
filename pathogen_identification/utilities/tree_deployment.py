@@ -1001,6 +1001,7 @@ class Tree_Progress:
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
             self.run_nodes_sequential()
+            return
 
         if self.current_module == ConstantsSettings.PIPELINE_NAME_remapping:
             self.run_nodes_simply()

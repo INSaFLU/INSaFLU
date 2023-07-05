@@ -261,7 +261,6 @@ class Metadata_handler:
             self.logger.info("No protein accession to taxid file found.")
 
         self.logger.info("Finished retrieving metadata")
-        print("TAXID TO DESCRIPTION SHAPE: " + str(self.taxonomy_to_description.shape))
 
     def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -558,7 +557,7 @@ class Metadata_handler:
         # raw_targets = self.get_taxid_representative_accid_df(raw_targets)
         # raw_targets.rename(columns={"acc": "accid"}, inplace=True)
 
-        raw_targets["acc"] = raw_targets["taxid"].apply(
+        raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
 

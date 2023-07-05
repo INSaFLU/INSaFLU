@@ -4,7 +4,7 @@ import os
 import shutil
 from copy import _copy_immutable, _deepcopy_dispatch
 from typing import List
-
+import traceback
 import pandas as pd
 import traceback  # for debugging
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
@@ -657,6 +657,7 @@ class Tree_Progress:
         except Exception as e:
             self.logger.error("Error updating node dbs, returning false.")
             self.logger.error(e)
+            traceback.print_exc()
             return False
 
     def submit_node_run(self, node: Tree_Node):

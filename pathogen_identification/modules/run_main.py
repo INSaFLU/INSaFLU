@@ -86,6 +86,18 @@ class RunDetail_main:
     remapping: bool
     house_cleaning: bool
 
+    # activity log
+
+    qc_performed: bool 
+    enrichment_performed: bool 
+    depletion_performed: bool 
+    assembly_performed: bool 
+    read_classification_performed: bool 
+    contig_classification_performed: bool 
+    remap_prepped: bool 
+    remapping_performed: bool 
+    remap_prepped: bool 
+
     ## methods
     preprocess_method: SoftwareUnit
     depletion_method: Software_detail

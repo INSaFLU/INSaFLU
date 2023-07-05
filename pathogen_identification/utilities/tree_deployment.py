@@ -21,7 +21,7 @@ from pathogen_identification.models import (
 )
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_views import ReportSorter
-
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.update_DBs_tree import (
@@ -204,7 +204,7 @@ class PathogenIdentification_Deployment_Manager:
         self.run_engine.Run_Assembly()
         self.run_engine.Run_Contig_classification()
         self.run_engine.Run_Read_classification()
-        self.run_engine.plan_remap_prep_safe()
+        #self.run_engine.plan_remap_prep_safe()
         # self.run_engine.Run_Classification()
         self.run_engine.Run_Remapping()
 
@@ -455,6 +455,83 @@ class TreeNode_Iterator:
         return len(self.node_list)
 
 
+from abc import ABC, abstractmethod
+from functools import wraps
+
+def check_planned(method):
+    @wraps(method)
+    def _impl(self, *method_args, **method_kwargs):
+        if method_args[0].run_manager.run_engine.remap_prepped:
+            return False
+        method_output = method(self, *method_args, **method_kwargs)
+        return method_output
+    return _impl
+
+class ClassificationMonitor(ABC):
+
+    @check_planned
+    @abstractmethod
+    def classification_just_performed(node: Tree_Node):
+        pass
+
+class ClassificationMonitor_ContigOnly(ClassificationMonitor):
+
+    @check_planned
+    def classification_just_performed(self, node: Tree_Node):
+        if node.run_manager.run_engine.contig_classification_performed:
+
+            return True
+
+        return False
+
+class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
+
+    @check_planned
+    def classification_just_performed(self, node: Tree_Node):
+
+        if node.run_manager.run_engine.contig_classification_performed and node.run_manager.run_engine.read_classification_performed:
+
+            return True
+
+        return False
+
+class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
+
+    @check_planned
+    def classification_just_performed(self, node: Tree_Node):
+        if node.run_manager.run_engine.read_classification_performed:
+
+            return True
+
+        return False
+
+class ClassificationMonitor_Factory:
+
+    def __init__(self):
+
+        self.tree_makeup_config= Pipeline_Makeup()
+
+    def get_monitor(self, tree: PipelineTree):
+       
+
+        modules = self.tree_makeup_config.get_makeup(tree.makeup)
+
+        if ConstantsSettings.PIPELINE_NAME_contig_classification and ConstantsSettings.PIPELINE_NAME_read_classification in modules:
+            return ClassificationMonitor_ContigAndReads()
+        
+        elif ConstantsSettings.PIPELINE_NAME_contig_classification in modules:
+            return ClassificationMonitor_ContigOnly()
+        
+        elif ConstantsSettings.PIPELINE_NAME_read_classification in modules:
+            return ClassificationMonitor_ReadsOnly()
+        
+        else:
+            return None
+
+
+
+
+
 class Tree_Progress:
     tree: PipelineTree
     current_nodes: List[Tree_Node]
@@ -481,6 +558,9 @@ class Tree_Progress:
 
         self.initialize_nodes()
         self.determine_current_module()
+
+        ### get the monitor
+        self.classification_monitor = ClassificationMonitor_Factory().get_monitor(pipe_tree)
 
     def setup_deployment_manager(self):
         utils = Utils()
@@ -985,31 +1065,31 @@ class Tree_Progress:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register(self.project, self.sample, self.tree)
                 leaf_node.run_reference_overlap_analysis()
+    
+    def do_nothing(self):
+        pass
 
     def deploy_nodes(self):
-        if self.current_module == "end":
-            return
-        if self.current_module in [
-            "root",
-        ]:
-            self.update_nodes()
-            return
 
-        if self.current_module == ConstantsSettings.PIPELINE_NAME_read_classification:
-            self.run_nodes_classification_reads()
-            return
+        map_actions = {
+            "end": self.do_nothing,
+            "root": self.update_nodes,
+            ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
+            ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_simply,
+        }
 
-        if self.current_module == ConstantsSettings.PIPELINE_NAME_contig_classification:
-            self.run_nodes_sequential()
-            return
+        action= map_actions[self.current_module]
+        action()
 
-        if self.current_module == ConstantsSettings.PIPELINE_NAME_remapping:
-            self.run_nodes_simply()
-        else:
-            self.run_nodes_sequential()
+        for node in self.current_nodes:
+            if self.classification_monitor.classification_just_performed(node):
+                node.run_manager.run_engine.plan_remap_prep_safe()
 
-        return
-
+        
     def run_current_nodes_batch_parallel(self, batch=2):
         import multiprocessing as mp
 
@@ -1078,7 +1158,7 @@ class Tree_Progress:
             if current_module != "end":
                 modules_list.append(current_module)
 
-        stacked_df = [software_list for lead, software_list in software_dict.items()]
+        stacked_df = [software_list for leaf, software_list in software_dict.items()]
 
         stacked_df = pd.DataFrame(stacked_df, columns=modules_list)
         stacked_df["leaves"] = self.tree.leaves

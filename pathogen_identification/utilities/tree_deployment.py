@@ -552,12 +552,13 @@ class Tree_Progress:
         self.tree = pipe_tree
         self.sample = sample
         self.project = project
+        self.classification_monitor = ClassificationMonitor_Factory().get_monitor(pipe_tree)
 
         self.initialize_nodes()
         self.determine_current_module()
 
         ### get the monitor
-        self.classification_monitor = ClassificationMonitor_Factory().get_monitor(pipe_tree)
+        
 
     def setup_deployment_manager(self):
         utils = Utils()

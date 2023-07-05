@@ -529,9 +529,6 @@ class ClassificationMonitor_Factory:
             return None
 
 
-
-
-
 class Tree_Progress:
     tree: PipelineTree
     current_nodes: List[Tree_Node]
@@ -706,10 +703,7 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
-            if (
-                node.run_manager.run_engine.read_classification_performed
-                or node.run_manager.run_engine.contig_classification_performed
-            ):
+            if self.classification_monitor.classification_just_performed(node):
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)
                 db_updated = Update_Classification(

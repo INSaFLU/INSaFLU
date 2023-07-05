@@ -715,7 +715,7 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
-            print("######### STEP CHECK", step, node.run_manager.run_engine.contig_classification_performed, node.run_manager.run_engine.contig_classification_just_performed)
+            print("######### STEP CHECK", step, node.run_manager.run_engine.contig_classification_performed, node.run_manager.run_engine.contig_classification_performed)
             if self.classification_monitor.classification_just_performed(node):
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)

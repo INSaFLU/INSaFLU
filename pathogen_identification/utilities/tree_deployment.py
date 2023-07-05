@@ -643,9 +643,8 @@ class Tree_Progress:
         )
 
         run_manager = self.setup_deployment_manager()
-
+        run_manager.run_main_prep()
         origin_node.receive_run_manager(run_manager)
-        origin_node.run_manager.run_main_prep()
 
         self.register_node_leaves(origin_node)
 

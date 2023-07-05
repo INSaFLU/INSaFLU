@@ -1362,10 +1362,9 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.generate_output_data_classes()
 
     def plan_remap_prep_safe(self):
-        if self.read_classification_performed and self.contig_classification_performed:
-            self.plan_remap_prep()
-            self.export_intermediate_reports()
-            self.remap_prepped = True
+        self.plan_remap_prep()
+        self.export_intermediate_reports()
+        self.remap_prepped = True
 
     def plan_remap_prep(self):
         self.metadata_tool.match_and_select_targets(

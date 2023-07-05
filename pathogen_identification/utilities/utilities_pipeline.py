@@ -889,8 +889,10 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        self.logger.info(f"Checking software db available: {software_name}")
-
+        print(f"Checking software db available: {software_name}")
+        print(self.utility_repository.check_exists(
+            "software", "name", software_name.lower()
+        ))
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
@@ -2062,8 +2064,11 @@ class Utils_Manager:
 
         pipeline_setup = Pipeline_Makeup()
         makeup_steps = pipeline_setup.get_makeup(tree_makeup)
+        print("###")
+        print("makeup steps", makeup_steps)
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
+        print("pipelines available", pipelines_available)
         pipelines_available = [x for x in pipelines_available if x in makeup_steps]
         self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
             pipelines_available

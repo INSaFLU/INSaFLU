@@ -17,8 +17,7 @@ columns= args[3]
 columns= strsplit(columns, ",")[[1]]
 ## remove spaces
 columns= gsub(" ", ".", columns)
-### print columns
-print(columns)
+
 ### read the data frame
 df = read.table(df_path, header = TRUE, sep = "\t")
 ### create the dendrogram

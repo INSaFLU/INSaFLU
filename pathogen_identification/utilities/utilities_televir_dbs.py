@@ -43,6 +43,9 @@ class Utility_Repository:
     def __init__(self, db_path="", install_type="local") -> None:
         self.db_path = db_path
 
+        print(f"DB PATH: {self.db_path}")
+        print(f"INSTALL TYPE: {install_type}")
+        
         self.setup_engine(install_type)
 
         # self.connection = self.engine.connect()

@@ -188,7 +188,7 @@ class PathogenIdentification_Deployment_Manager:
         self.run_params_db = run_params_db
 
     def run_main_prep(self):
-        if self.prepped or self.run_params_db.empty:
+        if self.prepped:
             return
 
         self.run_engine = RunMainTree_class(
@@ -643,8 +643,9 @@ class Tree_Progress:
         )
 
         run_manager = self.setup_deployment_manager()
-        run_manager.run_main_prep()
+
         origin_node.receive_run_manager(run_manager)
+        origin_node.run_manager.run_main_prep()
 
         self.register_node_leaves(origin_node)
 

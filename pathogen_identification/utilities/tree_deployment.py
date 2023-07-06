@@ -187,10 +187,7 @@ class PathogenIdentification_Deployment_Manager:
     def import_params(self, run_params_db: pd.DataFrame):
         self.run_params_db = run_params_db
 
-    def run_main_prep_check_first(self):
-        """
-        run main prep if not already run and not root node.
-        """
+    def run_main_prep(self):
         if self.prepped or self.run_params_db.empty:
             return
 
@@ -293,7 +290,7 @@ class Tree_Node:
         run_manager.configure()
         run_manager.import_params(self.parameters)
 
-        run_manager.run_main_prep_check_first()
+        run_manager.run_main_prep()
 
         self.run_manager = run_manager
 

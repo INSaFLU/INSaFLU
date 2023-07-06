@@ -88,15 +88,15 @@ class RunDetail_main:
 
     # activity log
 
-    qc_performed: bool 
-    enrichment_performed: bool 
-    depletion_performed: bool 
-    assembly_performed: bool 
-    read_classification_performed: bool 
-    contig_classification_performed: bool 
-    remap_prepped: bool 
-    remapping_performed: bool 
-    remap_prepped: bool 
+    # qc_performed: bool
+    # enrichment_performed: bool
+    # depletion_performed: bool
+    # assembly_performed: bool
+    # read_classification_performed: bool
+    # contig_classification_performed: bool
+    # remap_prepped: bool
+    # remapping_performed: bool
+    # remap_prepped: bool
 
     ## methods
     preprocess_method: SoftwareUnit
@@ -319,10 +319,10 @@ class RunDetail_main:
         )
 
         self.metadata_tool = Metadata_handler(
-            self.config, 
-            sift_query=config["sift_query"], 
+            self.config,
+            sift_query=config["sift_query"],
             prefix=self.prefix,
-            rundir= self.deployment_dir,
+            rundir=self.deployment_dir,
         )
 
         self.remap_params = remap_params

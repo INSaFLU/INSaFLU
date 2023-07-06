@@ -187,8 +187,11 @@ class PathogenIdentification_Deployment_Manager:
     def import_params(self, run_params_db: pd.DataFrame):
         self.run_params_db = run_params_db
 
-    def run_main_prep(self):
-        if self.prepped:
+    def run_main_prep_check_first(self):
+        """
+        run main prep if not already run and not root node.
+        """
+        if self.prepped or self.run_params_db.empty:
             return
 
         self.run_engine = RunMainTree_class(
@@ -290,7 +293,7 @@ class Tree_Node:
         run_manager.configure()
         run_manager.import_params(self.parameters)
 
-        # run_manager.run_main_prep()
+        run_manager.run_main_prep_check_first()
 
         self.run_manager = run_manager
 
@@ -645,7 +648,6 @@ class Tree_Progress:
         run_manager = self.setup_deployment_manager()
 
         origin_node.receive_run_manager(run_manager)
-        origin_node.run_manager.run_main_prep()
 
         self.register_node_leaves(origin_node)
 

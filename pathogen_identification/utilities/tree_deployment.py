@@ -607,7 +607,12 @@ class Tree_Progress:
 
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child(node, leaf)
-            self.submit_node_run(leaf_node)
+            self.register_node_safe(leaf_node)
+    
+    def update_node_leaves_dbs(self, node: Tree_Node):
+        for leaf in node.leaves:
+            leaf_node = self.spawn_node_child(node, leaf)
+            self.update_node_dbs(leaf_node)
 
     def register_finished(self, node: Tree_Node):
         self.logger.info(f"Registering node {node.node_index} as finished")
@@ -747,7 +752,7 @@ class Tree_Progress:
             traceback.print_exc()
             return False
 
-    def submit_node_run(self, node: Tree_Node):
+    def register_node_safe(self, node: Tree_Node):
         print("Submitting node run: " + str(node.node_index))
 
         registration_success = self.register_node(node)
@@ -991,7 +996,7 @@ class Tree_Progress:
 
         self.stacked_deployment_classification(nodes_by_sample_sources)
 
-    def update_nodes(self):
+    def update_tree_nodes(self):
         new_nodes = []
         for node in self.current_nodes:
             children = node.children
@@ -1033,29 +1038,29 @@ class Tree_Progress:
 
     def run_nodes_sequential(self):
         self.run_current_nodes()
-        self.register_current_nodes()
-        self.update_nodes()
+        #self.register_current_nodes()
+        #self.update_tree_nodes()
 
     def run_nodes_simply(self):
         self.run_simplified_mapping()
-        self.register_current_nodes()
-        self.update_nodes()
+        #self.register_current_nodes()
+        #self.update_tree_nodes()
 
     def run_nodes_classification_reads(self):
         self.run_simplified_classification()
         print("RAN CLASSIFICATION")
-        self.register_current_nodes()
-        self.update_nodes()
+        #self.register_current_nodes()
+        #self.update_tree_nodes()
 
     def run_nodes_classification_contigs(self):
         self.run_simplified_classification()
         print("RAN CLASSIFICATION")
-        self.register_current_nodes()
-        self.update_nodes()
+        #self.register_current_nodes()
+        #self.update_tree_nodes()
 
-    def register_current_nodes(self):
-        for node in self.current_nodes:
-            self.register_node_leaves(node)
+    #def register_current_nodes(self):
+    #    for node in self.current_nodes:
+    #        self.register_node_leaves(node)
 
     def register_leaves_finished(self):
         for node in self.current_nodes:
@@ -1077,10 +1082,13 @@ class Tree_Progress:
         pass
 
     def deploy_nodes(self):
+        """
+        Deploy nodes according to pipeline sstep. 
+        """
 
         map_actions = {
             "end": self.do_nothing,
-            "root": self.update_nodes,
+            "root": self.update_tree_nodes,
             ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
             ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
@@ -1092,15 +1100,26 @@ class Tree_Progress:
         action= map_actions[self.current_module]
         action()
 
+        if self.current_module == "root":
+            return
+
         for node in self.current_nodes:
             if self.classification_monitor.classification_just_performed(node):
                 print("classification just performed")
                 node.run_manager.run_engine.plan_remap_prep_safe()
+
+            self.update_node_leaves_dbs(node)
+            self.register_node_leaves(node)
         
+        self.update_tree_nodes()
+
         return 
 
         
     def run_current_nodes_batch_parallel(self, batch=2):
+        """
+        run nodes in parallel batches
+        """
         import multiprocessing as mp
 
         node_batches = [
@@ -1155,7 +1174,7 @@ class Tree_Progress:
             if self.current_module in [
                 "root",
             ]:
-                self.update_nodes()
+                self.update_tree_nodes()
             nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
             for combination in nodes_by_sample_sources:
                 for node in combination:
@@ -1163,7 +1182,7 @@ class Tree_Progress:
                     for leaf in node.leaves:
                         software_dict[leaf].append(software)
 
-            self.update_nodes()
+            self.update_tree_nodes()
             current_module = self.get_current_module()
             if current_module != "end":
                 modules_list.append(current_module)

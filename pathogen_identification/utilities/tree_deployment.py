@@ -273,6 +273,7 @@ class Tree_Node:
         self.parameters = self.determine_params(pipe_tree)
         self.software_tree_pk = software_tree_pk
         self.leaves = pipe_tree.leaves_from_node_compress(node_index)
+        
 
     def run_reference_overlap_analysis(self):
         run = RunMain.objects.get(parameter_set=self.parameter_set)
@@ -345,46 +346,47 @@ class Tree_Node:
 
         return parameter_set
 
-    def register_finished(
+    def register(
         self, project: Projects, sample: PIProject_Sample, tree: PipelineTree
     ):
         tree_node = self.generate_software_tree_node_entry(tree)
-        if tree_node is None:
-            return False
 
         parameter_set = self.setup_parameterset(project, sample, tree_node)
 
-        if parameter_set is None:
+        self.parameter_set = parameter_set
+    
+
+    def register_finished(
+        self, project: Projects, sample: PIProject_Sample, tree: PipelineTree
+    ):
+        
+        self.register(project, sample, tree)
+
+        if self.parameter_set is None:
             return False
 
-        print("Updating run status FINISHED")
-        print(parameter_set)
-
-        parameter_set.status = ParameterSet.STATUS_FINISHED
-        parameter_set.save()
+        self.parameter_set.status = ParameterSet.STATUS_FINISHED
+        self.parameter_set.save()
 
         return True
 
     def register_failed(
         self, project: Projects, sample: PIProject_Sample, tree: PipelineTree
     ):
-        tree_node = self.generate_software_tree_node_entry(tree)
-        if tree_node is None:
+        self.register(project, sample, tree)
+
+        if self.parameter_set is None:
             return False
 
-        parameter_set = self.setup_parameterset(project, sample, tree_node)
+        self.parameter_set.status = ParameterSet.STATUS_ERROR
+        self.parameter_set.save()
 
-        if parameter_set is None:
-            return False
-
-        parameter_set.status = ParameterSet.STATUS_ERROR
-        parameter_set.save()
-
-        self.run_manager.delete_run(parameter_set)
+        self.run_manager.delete_run(self.parameter_set)
 
         return True
 
-    def register(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
+    def register_running(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
+        
         tree_node = self.generate_software_tree_node_entry(tree)
         if tree_node is None:
             return False
@@ -394,8 +396,6 @@ class Tree_Node:
         if parameter_set is None:
             return False
 
-        print("SETTING STATUS TO RUNNING")
-        print(parameter_set)
         parameter_set.status = ParameterSet.STATUS_RUNNING
         parameter_set.save()
 
@@ -614,6 +614,7 @@ class Tree_Progress:
     def update_node_leaves_dbs(self, node: Tree_Node):
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child(node, leaf)
+            self.register_node(leaf_node)
             self.update_node_dbs(leaf_node)
 
     def register_finished(self, node: Tree_Node):
@@ -691,7 +692,7 @@ class Tree_Progress:
         if node.run_manager.sent:
             return False
 
-        registraction_success = node.register(self.project, self.sample, self.tree)
+        registraction_success = node.register_running(self.project, self.sample, self.tree)
 
         return registraction_success
 
@@ -768,7 +769,7 @@ class Tree_Progress:
         if not registration_success:
             return
 
-        self.update_node_dbs(node, step=node.module)
+        #self.update_node_dbs(node, step=node.module)
 
     def merge_node_targets(self):
         """
@@ -1045,35 +1046,23 @@ class Tree_Progress:
 
     def run_nodes_sequential(self):
         self.run_current_nodes()
-        #self.register_current_nodes()
-        #self.update_tree_nodes()
 
     def run_nodes_simply(self):
         self.run_simplified_mapping()
-        #self.register_current_nodes()
-        #self.update_tree_nodes()
 
     def run_nodes_classification_reads(self):
         self.run_simplified_classification()
         print("RAN CLASSIFICATION")
-        #self.register_current_nodes()
-        #self.update_tree_nodes()
 
     def run_nodes_classification_contigs(self):
         self.run_simplified_classification()
-        print("RAN CLASSIFICATION")
-        #self.register_current_nodes()
-        #self.update_tree_nodes()
 
-    #def register_current_nodes(self):
-    #    for node in self.current_nodes:
-    #        self.register_node_leaves(node)
 
     def register_leaves_finished(self):
         for node in self.current_nodes:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
-                _ = leaf_node.register(self.project, self.sample, self.tree)
+                _ = leaf_node.register_running(self.project, self.sample, self.tree)
 
                 success_register = self.register_finished(leaf_node)
                 print("success_register")
@@ -1082,7 +1071,7 @@ class Tree_Progress:
         for node in self.current_nodes:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
-                _ = leaf_node.register(self.project, self.sample, self.tree)
+                _ = leaf_node.register_running(self.project, self.sample, self.tree)
                 leaf_node.run_reference_overlap_analysis()
 
     def do_nothing(self):
@@ -1107,7 +1096,7 @@ class Tree_Progress:
         action = map_actions[self.current_module]
         action()
 
-        if self.current_module in ["root", "end"]:
+        if self.current_module == "root":
             return
 
         for node in self.current_nodes:

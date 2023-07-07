@@ -474,13 +474,23 @@ def check_planned(method):
 
 class ClassificationMonitor(ABC):
     @abstractmethod
-    def classification_just_performed(node: Tree_Node):
+    def ready_to_merge(node: Tree_Node):
+        pass
+
+    @abstractmethod
+    def classification_performed(node: Tree_Node):
         pass
 
 
 class ClassificationMonitor_ContigOnly(ClassificationMonitor):
     @check_planned
-    def classification_just_performed(self, node: Tree_Node):
+    def ready_to_merge(self, node: Tree_Node):
+        if node.run_manager.run_engine.contig_classification_performed:
+            return True
+
+        return False
+    
+    def classification_performed(self, node: Tree_Node):
         if node.run_manager.run_engine.contig_classification_performed:
             return True
 
@@ -492,7 +502,16 @@ class ClassificationMonitor_ContigOnly(ClassificationMonitor):
 
 class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
     @check_planned
-    def classification_just_performed(self, node: Tree_Node):
+    def ready_to_merge(self, node: Tree_Node):
+        if (
+            node.run_manager.run_engine.contig_classification_performed
+            and node.run_manager.run_engine.read_classification_performed
+        ):
+            return True
+
+        return False
+    
+    def classification_performed(self, node: Tree_Node):
         if (
             node.run_manager.run_engine.contig_classification_performed
             and node.run_manager.run_engine.read_classification_performed
@@ -507,7 +526,13 @@ class ClassificationMonitor_ContigAndReads(ClassificationMonitor):
 
 class ClassificationMonitor_ReadsOnly(ClassificationMonitor):
     @check_planned
-    def classification_just_performed(self, node: Tree_Node):
+    def ready_to_merge(self, node: Tree_Node):
+        if node.run_manager.run_engine.read_classification_performed:
+            return True
+
+        return False
+
+    def classification_performed(self, node: Tree_Node):
         if node.run_manager.run_engine.read_classification_performed:
             return True
 
@@ -566,8 +591,6 @@ class Tree_Progress:
         self.classification_monitor = ClassificationMonitor_Factory().get_monitor(
             pipe_tree
         )
-        print("##### MONITOR ", self.classification_monitor)
-
         self.initialize_nodes()
         self.determine_current_module()
 
@@ -729,7 +752,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.contig_classification_performed,
                 node.run_manager.run_engine.read_classification_performed,
             )
-            if self.classification_monitor.classification_just_performed(node):
+            if self.classification_monitor.classification_performed(node) and not self.updated_classification:
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)
                 db_updated = Update_Classification(
@@ -1018,6 +1041,17 @@ class Tree_Progress:
             self.current_nodes = new_nodes
             self.determine_current_module()
 
+    def run_node(self, node: Tree_Node):
+        try:
+            node.run_manager.run_main()
+            return True
+        except Exception as e:
+            print("error")
+            print(e)
+            traceback.print_exc()
+
+            return False
+
     def run_current_nodes(self):
         new_nodes = []
 
@@ -1032,17 +1066,6 @@ class Tree_Progress:
                 self.register_failed_children(node)
 
         self.current_nodes = new_nodes
-
-    def run_node(self, node: Tree_Node):
-        try:
-            node.run_manager.run_main()
-            return True
-        except Exception as e:
-            print("error")
-            print(e)
-            traceback.print_exc()
-
-            return False
 
     def run_nodes_sequential(self):
         self.run_current_nodes()
@@ -1100,7 +1123,7 @@ class Tree_Progress:
             return
 
         for node in self.current_nodes:
-            if self.classification_monitor.classification_just_performed(node):
+            if self.classification_monitor.ready_to_merge(node):
                 print("classification just performed")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 

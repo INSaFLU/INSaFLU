@@ -68,6 +68,10 @@ class PathogenIdentification_Deployment_Manager:
     STATUS_RUNNING = 2
     STATUS_SENT = 3
 
+    assembly_udated: bool = False
+    classification_updated: bool = False
+    
+
     def __init__(
         self,
         sample: PIProject_Sample,  # sample name
@@ -95,6 +99,9 @@ class PathogenIdentification_Deployment_Manager:
             self.file_r2 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
         else:
             self.file_r2 = ""
+        
+        self.assembly_udated = False
+        self.classification_updated = False
 
     def input_read_project_path(self, filepath) -> str:
         """copy input reads to project directory and return new path"""
@@ -258,6 +265,9 @@ class Tree_Node:
     run_manager: PathogenIdentification_Deployment_Manager
     tree_node: SoftwareTreeNode
     parameter_set: ParameterSet
+
+    updated_classification: bool
+    updated_assembly: bool
 
     def __init__(self, pipe_tree: PipelineTree, node_index: int, software_tree_pk: int):
         node_metadata = pipe_tree.node_index.loc[node_index].node
@@ -740,7 +750,7 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
-            if node.run_manager.run_engine.assembly_performed:
+            if node.run_manager.run_engine.assembly_performed and node.run_manager.assembly_udated == False:
                 print("##### UPDATING ASSEMBLY DBS ######")
                 print(node.run_manager.run_engine.assembly_drone.assembly_method.name)
                 db_updated = Update_Assembly(
@@ -749,13 +759,15 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
+                node.run_manager.assembly_udated = True
+
             print(
                 "######### STEP CHECK",
                 step,
                 node.run_manager.run_engine.contig_classification_performed,
                 node.run_manager.run_engine.read_classification_performed,
             )
-            if self.classification_monitor.classification_performed(node) and not self.updated_classification:
+            if self.classification_monitor.classification_performed(node) and node.run_manager.classification_updated == False:
                 print("##### UPDATING CLASSIFICATION DBS ######")
                 print(step)
                 db_updated = Update_Classification(
@@ -764,7 +776,8 @@ class Tree_Progress:
                 if not db_updated:
                     return False
 
-                self.updated_classification = True
+                node.run_manager.classification_updated = True
+
 
             if node.run_manager.run_engine.remapping_performed:
                 print("exporting remapping")
@@ -816,7 +829,8 @@ class Tree_Progress:
         Get remap plans for all nodes in a list"""
         planned_nodes = []
         for n in nodes:
-            n.run_manager.run_engine.plan_remap_prep()
+            if n.run_manager.run_engine.remap_prepped is False:
+                n.run_manager.run_engine.plan_remap_prep()
 
         return nodes
 
@@ -970,7 +984,7 @@ class Tree_Progress:
         if len(new_nodes) > 0:
             self.current_nodes = new_nodes
 
-    def stacked_deployement(self, nodes_by_sample_sources: List[List[Tree_Node]]):
+    def stacked_deployement_mapping(self, nodes_by_sample_sources: List[List[Tree_Node]]):
         """
         deploy nodes remap by sample sources."""
         current_nodes = []
@@ -1023,7 +1037,7 @@ class Tree_Progress:
     def run_simplified_mapping(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
 
-        self.stacked_deployement(nodes_by_sample_sources)
+        self.stacked_deployement_mapping(nodes_by_sample_sources)
 
     def run_simplified_classification(self):
         nodes_by_sample_sources = self.group_nodes_by_source_and_parameters()
@@ -1234,7 +1248,7 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
-    def setup_tree(self):
+    def setup_combined_tree(self):
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
             status__in=[
@@ -1252,10 +1266,29 @@ class TreeProgressGraph:
         # CRUNCH TREE
         module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
         return module_tree
+    
+    def setup_trees(self):
+        """
+        setup the trees for the progress graph
+        """
+        pipeline_makeup = Pipeline_Makeup()
+        existing_parameter_sets = ParameterSet.objects.filter(
+            project=self.project,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_FINISHED,
+            ],
+            sample=self.sample,
+        )
+
+        parameter_makeups = [
+            ps.leaf.software_tree.global_index for ps in existing_parameter_sets
+        ]
+        tree_makeups = [pipeline_makeup.get_makeup(pm) for pm in parameter_makeups]
 
     def get_progress_df(self):
         ## setup a deployment and record the progress
-        module_tree = self.setup_tree()
+        module_tree = self.setup_combined_tree()
         deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()

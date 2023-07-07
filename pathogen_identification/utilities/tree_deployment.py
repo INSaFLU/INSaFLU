@@ -572,6 +572,7 @@ class Tree_Progress:
 
     sample: PIProject_Sample
     project: Projects
+    updated_classification: bool
 
     def __init__(
         self, pipe_tree: PipelineTree, sample: PIProject_Sample, project: Projects
@@ -591,10 +592,12 @@ class Tree_Progress:
         self.classification_monitor = ClassificationMonitor_Factory().get_monitor(
             pipe_tree
         )
+        self.updated_classification = False
+        
         self.initialize_nodes()
         self.determine_current_module()
 
-        ### get the monitor
+        
 
     def setup_deployment_manager(self):
         utils = Utils()

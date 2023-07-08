@@ -1362,14 +1362,15 @@ class TreeProgressGraph:
         stacked_df = pd.concat(stacked_df_dict.values(), axis=0)
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
-        return trees_dict
+        return stacked_df
 
     def get__combined_progress_df(self):
         ## setup a deployment and record the progress
-        module_tree = self.setup_combined_tree()
-        deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+        # module_tree = self.setup_combined_tree()
+        # deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
 
-        stacked_df = deployment_tree.stacked_changes_log()
+        # stacked_df = deployment_tree.stacked_changes_log()
+        stacked_df = self.setup_trees()
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df
@@ -1380,7 +1381,7 @@ class TreeProgressGraph:
         deployment_tree = Tree_Progress(tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()
-        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+        # stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df
 

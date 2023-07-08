@@ -8,26 +8,21 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from constants.constants import Televir_Directory_Constants as Televir_Directories
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
-from pathogen_identification.constants_settings import (
-    ConstantsSettings,
-)
+from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
     ParameterSet,
     PIProject_Sample,
+    Projects,
     SoftwareTree,
     SoftwareTreeNode,
-    Projects,
 )
 from pathogen_identification.utilities.utilities_televir_dbs import Utility_Repository
 from settings.constants_settings import ConstantsSettings as CS
 from settings.models import Parameter, PipelineStep, Software, Technology
-from typing import Union, List
-from django.db.models import QuerySet
-import itertools as it
 
 tree = lambda: defaultdict(tree)
 
@@ -890,9 +885,11 @@ class Utility_Pipeline_Manager:
         Check if a software is installed
         """
         print(f"Checking software db available: {software_name}")
-        print(self.utility_repository.check_exists(
-            "software", "name", software_name.lower()
-        ))
+        print(
+            self.utility_repository.check_exists(
+                "software", "name", software_name.lower()
+            )
+        )
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )

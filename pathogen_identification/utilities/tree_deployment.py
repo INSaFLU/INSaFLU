@@ -1296,38 +1296,42 @@ class TreeProgressGraph:
 
         technology = existing_parameter_sets[0].project.technology
 
-        parameter_makeups = [
-            ps.leaf.software_tree.global_index for ps in existing_parameter_sets
-        ]
+        parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
         parameter_makeups = list(set(parameter_makeups))
 
+        tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
+        trees_pk_list = [tree.pk for tree in tree_list]
+        trees_pk_list = list(set(trees_pk_list))
+
+        software_tree_dict = {tree.pk: tree for tree in tree_list}
+
         makeup_dict = {
-            makeup: [
+            tree.pk: [
                 ps
                 for ps in existing_parameter_sets
-                if ps.leaf.software_tree.global_index == makeup
+                if ps.leaf.software_tree.pk == tree.pk
             ]
-            for makeup in parameter_makeups
+            for tree in trees_pk_list
         }
 
-        trees_dict = {
-            makeup: pipeline_utils.parameter_util.query_software_default_tree(
-                technology, makeup
-            )
-            for makeup in parameter_makeups
+        pipetrees_dict = {
+            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
+            for tree_pk, tree in software_tree_dict.items()
         }
-        trees_dict = {
-            makeup: pipeline_utils.tree_subset(tree, makeup_dict[makeup])
-            for makeup, tree in trees_dict.items()
+
+        pipetrees_dict = {
+            tree_pk: pipeline_utils.tree_subset(tree, makeup_dict[tree_pk])
+            for tree_pk, tree in pipetrees_dict.items()
         }
-        trees_dict = {
-            makeup: pipeline_utils.utility_manager.compress_software_tree(tree)
-            for makeup, tree in trees_dict.items()
+
+        pipetrees_dict = {
+            tree_pk: pipeline_utils.utility_manager.compress_software_tree(tree)
+            for tree_pk, tree in pipetrees_dict.items()
         }
 
         stacked_df_dict = {
-            makeup: self.get_tree_progress_df(tree)
-            for makeup, tree in trees_dict.items()
+            tree_pk: self.get_tree_progress_df(tree)
+            for tree_pk, tree in pipetrees_dict.items()
         }
 
         # concatenate the stacked dfs

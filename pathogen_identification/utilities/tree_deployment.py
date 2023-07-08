@@ -1306,12 +1306,12 @@ class TreeProgressGraph:
         software_tree_dict = {tree.pk: tree for tree in tree_list}
 
         makeup_dict = {
-            tree.pk: [
-                ps
+            tree_pk: [
+                ps.leaf.index
                 for ps in existing_parameter_sets
-                if ps.leaf.software_tree.pk == tree.pk
+                if ps.leaf.software_tree.pk == tree_pk
             ]
-            for tree in trees_pk_list
+            for tree_pk in trees_pk_list
         }
 
         pipetrees_dict = {

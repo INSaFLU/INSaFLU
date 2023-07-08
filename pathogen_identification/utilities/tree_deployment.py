@@ -2,44 +2,33 @@ import copy
 import logging
 import os
 import shutil
-from copy import _copy_immutable, _deepcopy_dispatch
-from typing import List
-import traceback
-import pandas as pd
 import traceback  # for debugging
+from copy import _copy_immutable, _deepcopy_dispatch
+from typing import List, Optional, Tuple
+
+import pandas as pd
+
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    SoftwareTree,
-    SoftwareTreeNode,
-    RunMain,
-    FinalReport,
-)
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_views import ReportSorter
-from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
+from fluwebvirus.settings import STATIC_ROOT
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
-from fluwebvirus.settings import STATIC_ROOT
-from typing import Optional, Tuple
 
 
 def logger_copy(x, memo):
@@ -349,6 +338,7 @@ class Tree_Node:
         self, project: Projects, sample: PIProject_Sample, tree: PipelineTree
     ):
         tree_node = self.generate_software_tree_node_entry(tree)
+        print("generated_software_tree")
         if tree_node is None:
             return False
 
@@ -1067,7 +1057,7 @@ class Tree_Progress:
                 _ = leaf_node.register(self.project, self.sample, self.tree)
 
                 success_register = self.register_finished(leaf_node)
-                print("success_register")
+                print("success_register: ", success_register)
 
     def calculate_report_overlaps(self):
         for node in self.current_nodes:

@@ -948,8 +948,13 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
-        run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
-        recover_assembly_contigs(run_main, run_assembly)
+        try:
+            run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+            recover_assembly_contigs(run_main, run_assembly)
+            assembly_available= run_assembly.performed
+        except RunAssembly.DoesNotExist:
+            run_assembly = None
+            assembly_available= False
 
         #
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)

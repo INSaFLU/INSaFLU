@@ -6,26 +6,38 @@ import traceback  # for debugging
 from copy import _copy_immutable, _deepcopy_dispatch
 from typing import List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstants
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -1198,9 +1210,7 @@ class Tree_Progress:
         generate stacked dataframe of software by node by pipeline step.
         """
         current_module = self.get_current_module()
-        modules_list = [
-            "QC",
-        ]
+        modules_list = [ConstantsSettings.PIPELINE_NAME_read_quality_analysis]
         parent_dict = self.tree.get_parents_dict()
 
         software_dict = {leaf: [] for leaf in self.tree.leaves}
@@ -1271,7 +1281,7 @@ class TreeProgressGraph:
         """
         setup the trees for the progress graph
         """
-        pipeline_makeup = Pipeline_Makeup()
+        pipeline_utils = Utils_Manager()
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
             status__in=[
@@ -1280,16 +1290,94 @@ class TreeProgressGraph:
             ],
             sample=self.sample,
         )
+        technologies = [ps.project.technology for ps in existing_parameter_sets]
+        if len(set(technologies)) > 1:
+            raise Exception("Multiple technologies found")
+
+        technology = existing_parameter_sets[0].project.technology
 
         parameter_makeups = [
             ps.leaf.software_tree.global_index for ps in existing_parameter_sets
         ]
-        tree_makeups = [pipeline_makeup.get_makeup(pm) for pm in parameter_makeups]
+        parameter_makeups = list(set(parameter_makeups))
 
-    def get_progress_df(self):
+        makeup_dict = {
+            makeup: [
+                ps
+                for ps in existing_parameter_sets
+                if ps.leaf.software_tree.global_index == makeup
+            ]
+            for makeup in parameter_makeups
+        }
+
+        trees_dict = {
+            makeup: pipeline_utils.parameter_util.query_software_default_tree(
+                technology, makeup
+            )
+            for makeup in parameter_makeups
+        }
+        trees_dict = {
+            makeup: pipeline_utils.tree_subset(tree, makeup_dict[makeup])
+            for makeup, tree in trees_dict.items()
+        }
+        trees_dict = {
+            makeup: pipeline_utils.utility_manager.compress_software_tree(tree)
+            for makeup, tree in trees_dict.items()
+        }
+
+        stacked_df_dict = {
+            makeup: self.get_tree_progress_df(tree)
+            for makeup, tree in trees_dict.items()
+        }
+
+        # concatenate the stacked dfs
+        ## columns are not the same.
+        column_order = [
+            ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+            ConstantsSettings.PIPELINE_NAME_assembly,
+            ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            "leaves",
+        ]
+
+        all_columns = set()
+        for makeup, stacked_df in stacked_df_dict.items():
+            all_columns.update(stacked_df.columns)
+        all_columns = list(all_columns)
+        all_columns = [column for column in column_order if column in all_columns]
+
+        for makeup, stacked_df in stacked_df_dict.items():
+            missing_columns = [
+                column for column in all_columns if column not in stacked_df.columns
+            ]
+            for column in missing_columns:
+                stacked_df[column] = np.nan
+
+        stacked_df_dict = {
+            makeup: stacked_df[all_columns]
+            for makeup, stacked_df in stacked_df_dict.items()
+        }
+
+        stacked_df = pd.concat(stacked_df_dict.values(), axis=0)
+        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+
+        return trees_dict
+
+    def get__combined_progress_df(self):
         ## setup a deployment and record the progress
         module_tree = self.setup_combined_tree()
         deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+
+        stacked_df = deployment_tree.stacked_changes_log()
+        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+
+        return stacked_df
+
+    def get_tree_progress_df(self, tree: PipelineTree):
+        ## setup a deployment and record the progress
+
+        deployment_tree = Tree_Progress(tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
@@ -1311,7 +1399,7 @@ class TreeProgressGraph:
         return None
 
     def generate_graph(self):
-        stacked_df = self.get_progress_df()
+        stacked_df = self.get__combined_progress_df()
 
         Rgraph_cmd = [
             Televir_Metadata.BINARIES["ROOT"]

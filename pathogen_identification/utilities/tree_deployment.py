@@ -11,32 +11,21 @@ import pandas as pd
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
-from pathogen_identification.models import (
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RunMain,
-    SoftwareTree,
-    SoftwareTreeNode,
-)
+from pathogen_identification.constants_settings import \
+    ConstantsSettings as PIConstants
+from pathogen_identification.models import (FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RunMain, SoftwareTree,
+                                            SoftwareTreeNode)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.televir_parameters import \
+    TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly,
-    Update_Classification,
-    Update_Remap,
-    Update_RunMain_Initial,
-    Update_RunMain_Secondary,
-    get_run_parents,
-)
+    Update_Assembly, Update_Classification, Update_Remap,
+    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup,
-    PipelineTree,
-    Utils_Manager,
-)
+    Pipeline_Makeup, PipelineTree, Utils_Manager)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -356,7 +345,7 @@ class Tree_Node:
 
     def register(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
         tree_node = self.generate_software_tree_node_entry(tree)
-        print("generated_software_tree")
+        print("generated_software_tree", tree_node)
         if tree_node is None:
             return False
 
@@ -1111,12 +1100,20 @@ class Tree_Progress:
                 success_register = self.register_finished(leaf_node)
                 print("success_register: ", success_register)
 
-    def calculate_report_overlaps(self):
+    def calculate_report_overlaps_runs(self):
         for node in self.current_nodes:
             for leaf in node.leaves:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
                 leaf_node.run_reference_overlap_analysis()
+
+    def calculate_reports_overlaps(self):
+        final_reports = FinalReport.objects.filter(sample=self.sample)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=self.project.pk
+        )
+        report_sorter = ReportSorter(final_reports, report_layout_params)
+        report_sorter.sort_reports_save()
 
     def do_nothing(self):
         pass
@@ -1191,7 +1188,7 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         print(self.current_nodes)
-        self.calculate_report_overlaps()
+        self.calculate_reports_overlaps()
         self.register_leaves_finished()
 
         print("DONE")

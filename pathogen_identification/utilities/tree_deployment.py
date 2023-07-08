@@ -1140,7 +1140,7 @@ class Tree_Progress:
         action = map_actions[self.current_module]
         action()
 
-        if self.current_module == "root":
+        if self.current_module in ["root", "end"]:
             return
 
         for node in self.current_nodes:

@@ -4,29 +4,41 @@ import os
 import shutil
 import traceback  # for debugging
 from copy import _copy_immutable, _deepcopy_dispatch
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from django.db.models import QuerySet
 
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstants
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -1247,16 +1259,11 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
-    def setup_combined_tree(self):
-        existing_parameter_sets = ParameterSet.objects.filter(
-            project=self.project,
-            status__in=[
-                ParameterSet.STATUS_RUNNING,
-                ParameterSet.STATUS_FINISHED,
-            ],
-            sample=self.sample,
-        )
+    def setup_combined_tree(
+        self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
+    ):
         ## create a tree that contains all the parameter sets
+
         (
             combined_tree,
             additional_leaves,
@@ -1308,18 +1315,25 @@ class TreeProgressGraph:
             for tree_pk, tree in software_tree_dict.items()
         }
 
-        makeup_dict_leaves= {
+        makeup_dict_leaves = {
             tree_pk: [
                 pipe_tree.leaves_from_node(index) for index in makeup_dict[tree_pk]
-            ] for tree_pk, pipe_tree in pipetrees_dict.items()
+            ]
+            for tree_pk, pipe_tree in pipetrees_dict.items()
         }
 
-        makeup_dict_leaves= {
-            tree_pk: [leaf_list for leaf_list in makeup_dict_leaves[tree_pk] if len(leaf_list) > 0] for tree_pk in makeup_dict_leaves.keys()
+        makeup_dict_leaves = {
+            tree_pk: [
+                leaf_list
+                for leaf_list in makeup_dict_leaves[tree_pk]
+                if len(leaf_list) > 0
+            ]
+            for tree_pk in makeup_dict_leaves.keys()
         }
 
-        makeup_dict_leaves= {
-            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]] for tree_pk in makeup_dict_leaves.keys()
+        makeup_dict_leaves = {
+            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]]
+            for tree_pk in makeup_dict_leaves.keys()
         }
 
         pipetrees_dict = {
@@ -1373,8 +1387,23 @@ class TreeProgressGraph:
 
     def get__combined_progress_df(self):
         ## setup a deployment and record the progress
-        module_tree = self.setup_combined_tree()
+        existing_parameter_sets = ParameterSet.objects.filter(
+            project=self.project,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_FINISHED,
+            ],
+            sample=self.sample,
+        )
+
+        current_status = {ps.pk: ps.status for ps in existing_parameter_sets}
+
+        module_tree = self.setup_combined_tree(existing_parameter_sets)
         deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+
+        for ps in existing_parameter_sets:
+            ps.status = current_status[ps.pk]
+            ps.save()
 
         stacked_df = deployment_tree.stacked_changes_log()
         # stacked_df = self.setup_trees()

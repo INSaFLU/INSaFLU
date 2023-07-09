@@ -1624,7 +1624,7 @@ class Parameter_DB_Utility:
             return None
 
     @staticmethod
-    def software_pipeline_tree(software_tree: SoftwareTree):
+    def software_pipeline_tree(software_tree: SoftwareTree) -> PipelineTree:
         tree_nodes = SoftwareTreeNode.objects.filter(software_tree=software_tree)
 
         edges = []

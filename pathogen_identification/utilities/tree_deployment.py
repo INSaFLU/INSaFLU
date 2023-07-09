@@ -1283,8 +1283,6 @@ class TreeProgressGraph:
         if len(set(technologies)) > 1:
             raise Exception("Multiple technologies found")
 
-        technology = existing_parameter_sets[0].project.technology
-
         parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
         parameter_makeups = list(set(parameter_makeups))
 
@@ -1292,7 +1290,9 @@ class TreeProgressGraph:
         trees_pk_list = [tree.pk for tree in tree_list]
         trees_pk_list = list(set(trees_pk_list))
 
-        software_tree_dict = {tree.pk: tree for tree in tree_list}
+        software_tree_dict = {
+            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
+        }
 
         makeup_dict = {
             tree_pk: [
@@ -1308,8 +1308,22 @@ class TreeProgressGraph:
             for tree_pk, tree in software_tree_dict.items()
         }
 
+        makeup_dict_leaves= {
+            tree_pk: [
+                pipe_tree.leaves_from_node(index) for index in makeup_dict[tree_pk]
+            ] for tree_pk, pipe_tree in pipetrees_dict.items()
+        }
+
+        makeup_dict_leaves= {
+            tree_pk: [leaf_list for leaf_list in makeup_dict_leaves[tree_pk] if len(leaf_list) > 0] for tree_pk in makeup_dict_leaves.keys()
+        }
+
+        makeup_dict_leaves= {
+            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]] for tree_pk in makeup_dict_leaves.keys()
+        }
+
         pipetrees_dict = {
-            tree_pk: pipeline_utils.tree_subset(tree, makeup_dict[tree_pk])
+            tree_pk: pipeline_utils.tree_subset(tree, makeup_dict_leaves[tree_pk])
             for tree_pk, tree in pipetrees_dict.items()
         }
 
@@ -1363,7 +1377,7 @@ class TreeProgressGraph:
         deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
 
         stacked_df = deployment_tree.stacked_changes_log()
-        #stacked_df = self.setup_trees()
+        # stacked_df = self.setup_trees()
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df

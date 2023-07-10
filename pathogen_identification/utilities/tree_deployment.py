@@ -1273,19 +1273,11 @@ class TreeProgressGraph:
         module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
         return module_tree
     
-    def get_node_params(self) -> pd.DataFrame:
+    def get_node_params(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]) -> pd.DataFrame:
         """
         setup the trees for the progress graph
         """
         pipeline_utils = Utils_Manager()
-        existing_parameter_sets = ParameterSet.objects.filter(
-            project=self.project,
-            status__in=[
-                ParameterSet.STATUS_RUNNING,
-                ParameterSet.STATUS_FINISHED,
-            ],
-            sample=self.sample,
-        )
 
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:

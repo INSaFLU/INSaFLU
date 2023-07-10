@@ -1325,6 +1325,9 @@ class TreeProgressGraph:
         ## columns are not the same.
         column_order = [
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
             ConstantsSettings.PIPELINE_NAME_read_classification,
             ConstantsSettings.PIPELINE_NAME_assembly,
             ConstantsSettings.PIPELINE_NAME_contig_classification,

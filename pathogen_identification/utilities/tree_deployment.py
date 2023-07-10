@@ -1299,6 +1299,8 @@ class TreeProgressGraph:
             for tree_pk, tree in software_tree_dict.items()
         }
 
+        stacked_df_dict = {}
+
         for ps in existing_parameter_sets:
             index= ps.leaf.index
             tree_pk=ps.leaf.software_tree.pk
@@ -1306,11 +1308,52 @@ class TreeProgressGraph:
             node_leaves= pipetree.leaves_from_node(index)
             if len(node_leaves) == 0:
                 continue
+            leaf_node_index= node_leaves[0]
             leaf_node= SoftwareTreeNode.objects.get(
-                index= node_leaves[0], software_tree=ps.leaf.software_tree
+                index= leaf_node_index, software_tree=ps.leaf.software_tree
             )
             node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params= node_params[["module", "software"]]
+            node_params.set_index("module")
+            node_params= node_params.T
+            node_params["leaves"] = leaf_node_index
+
             print(node_params)
+            stacked_df_dict[ps.pk] = node_params
+
+        # concatenate the stacked dfs
+        ## columns are not the same.
+        column_order = [
+            ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
+            ConstantsSettings.PIPELINE_NAME_assembly,
+            ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ConstantsSettings.PIPELINE_NAME_remapping,
+            "leaves",
+        ]
+
+        all_columns = set()
+        for makeup, stacked_df in stacked_df_dict.items():
+            all_columns.update(stacked_df.columns)
+        all_columns = list(all_columns)
+        all_columns = [column for column in column_order if column in all_columns]
+
+        for makeup, stacked_df in stacked_df_dict.items():
+            missing_columns = [
+                column for column in all_columns if column not in stacked_df.columns
+            ]
+            for column in missing_columns:
+                stacked_df[column] = np.nan
+
+        stacked_df_dict = {
+            makeup: stacked_df[all_columns]
+            for makeup, stacked_df in stacked_df_dict.items()
+        }
+
+        stacked_df = pd.concat(stacked_df_dict.values(), axis=0)
+        stacked_df.to_csv(self.stacked_df_path, sep="\t")
+
+        return stacked_df
 
 
     def setup_trees(self):
@@ -1441,8 +1484,9 @@ class TreeProgressGraph:
 
         #module_tree = self.setup_combined_tree(existing_parameter_sets)
         #deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
-        self.get_node_params(existing_parameter_sets)
-        stacked_df = self.setup_trees()
+        stacked_df= self.get_node_params(existing_parameter_sets)
+        #stacked_df = self.setup_trees()
+        print(stacked_df)
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]

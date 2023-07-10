@@ -1314,7 +1314,7 @@ class TreeProgressGraph:
             )
             node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
             node_params= node_params[["module", "software"]]
-            node_params.set_index("module")
+            node_params= node_params.set_index("module")
             node_params= node_params.T
             node_params["leaves"] = leaf_node_index
 
@@ -1335,6 +1335,7 @@ class TreeProgressGraph:
         all_columns = set()
         for makeup, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
+        
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
@@ -1482,10 +1483,12 @@ class TreeProgressGraph:
 
         current_status = {ps.pk: ps.status for ps in existing_parameter_sets}
 
-        #module_tree = self.setup_combined_tree(existing_parameter_sets)
-        #deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+        #
+        if existing_parameter_sets.count() == 0:
+            return pd.DataFrame()
+            
         stacked_df= self.get_node_params(existing_parameter_sets)
-        #stacked_df = self.setup_trees()
+        #
         print(stacked_df)
 
         for ps in existing_parameter_sets:
@@ -1522,6 +1525,8 @@ class TreeProgressGraph:
 
     def generate_graph(self):
         stacked_df = self.get__combined_progress_df()
+        if stacked_df.shape[0] == 0:
+            return
 
         Rgraph_cmd = [
             Televir_Metadata.BINARIES["ROOT"]

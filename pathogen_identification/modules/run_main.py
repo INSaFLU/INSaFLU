@@ -1268,7 +1268,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
             hd_metadata_tool.rclass = hd_clean
             hd_metadata_tool.aclass = proxy_aclass
-            hd_metadata_tool.merge_reports_clean(self.taxid_limit)
+            hd_metadata_tool.merge_reports_clean(self.remap_params.max_taxids)
             print("################################# HD REPORT")
             print(hd_metadata_tool.merged_targets)
             print(hd_metadata_tool.raw_targets)

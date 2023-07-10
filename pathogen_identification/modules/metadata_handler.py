@@ -18,7 +18,7 @@ class Metadata_handler:
     remap_targets: List[Remap_Target] = []
 
     def __init__(
-        self, config, sift_query: str = "phage", prefix: str = "", rundir: str = ""
+        self, username, config, sift_query: str = "phage", prefix: str = "", rundir: str = ""
     ):
         """
         Initialize metadata handler.
@@ -38,7 +38,9 @@ class Metadata_handler:
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
+        
         self.entrez_conn = EntrezWrapper(
+            username,
             bindir=os.path.join(
                 self.config["bin"]["ROOT"],
                 self.config["bin"]["software"]["entrez_direct"],

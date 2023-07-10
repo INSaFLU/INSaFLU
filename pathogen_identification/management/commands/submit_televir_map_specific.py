@@ -164,6 +164,7 @@ class RunMain:
             self.username, self.project_name
         )
         self.metadata_tool = Metadata_handler(
+            self.username,  
             self.config,
             sift_query=config["sift_query"],
             prefix=self.prefix,

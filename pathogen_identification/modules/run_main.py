@@ -319,6 +319,7 @@ class RunDetail_main:
         )
 
         self.metadata_tool = Metadata_handler(
+            self.username,
             self.config,
             sift_query=config["sift_query"],
             prefix=self.prefix,
@@ -1257,6 +1258,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.deploy_HD()
 
             hd_metadata_tool = Metadata_handler(
+                self.username,
                 self.config, sift_query=self.config["sift_query"], prefix=self.prefix
             )
             hd_clean = hd_metadata_tool.results_process(

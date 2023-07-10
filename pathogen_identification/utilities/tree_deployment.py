@@ -1272,6 +1272,54 @@ class TreeProgressGraph:
         # CRUNCH TREE
         module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
         return module_tree
+    
+    def get_node_params(self) -> pd.DataFrame:
+        """
+        setup the trees for the progress graph
+        """
+        pipeline_utils = Utils_Manager()
+        existing_parameter_sets = ParameterSet.objects.filter(
+            project=self.project,
+            status__in=[
+                ParameterSet.STATUS_RUNNING,
+                ParameterSet.STATUS_FINISHED,
+            ],
+            sample=self.sample,
+        )
+
+        technologies = [ps.project.technology for ps in existing_parameter_sets]
+        if len(set(technologies)) > 1:
+            raise Exception("Multiple technologies found")
+
+        parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
+        parameter_makeups = list(set(parameter_makeups))
+
+        tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
+        trees_pk_list = [tree.pk for tree in tree_list]
+        trees_pk_list = list(set(trees_pk_list))
+
+        software_tree_dict = {
+            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
+        }
+
+        pipetrees_dict = {
+            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
+            for tree_pk, tree in software_tree_dict.items()
+        }
+
+        for ps in existing_parameter_sets:
+            index= ps.leaf.index
+            tree_pk=ps.leaf.software_tree.pk
+            pipetree = pipetrees_dict[tree_pk]
+            node_leaves= pipetree.leaves_from_node(index)
+            if len(node_leaves) == 0:
+                continue
+            leaf_node= SoftwareTreeNode.objects.get(
+                index= node_leaves[0], software_tree=ps.leaf.software_tree
+            )
+            node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
+            print(node_params)
+
 
     def setup_trees(self):
         """
@@ -1286,6 +1334,7 @@ class TreeProgressGraph:
             ],
             sample=self.sample,
         )
+
         technologies = [ps.project.technology for ps in existing_parameter_sets]
         if len(set(technologies)) > 1:
             raise Exception("Multiple technologies found")
@@ -1398,15 +1447,15 @@ class TreeProgressGraph:
 
         current_status = {ps.pk: ps.status for ps in existing_parameter_sets}
 
-        module_tree = self.setup_combined_tree(existing_parameter_sets)
-        deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+        #module_tree = self.setup_combined_tree(existing_parameter_sets)
+        #deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
+        self.get_node_params(existing_parameter_sets)
+        stacked_df = self.setup_trees()
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
             ps.save()
-
-        stacked_df = deployment_tree.stacked_changes_log()
-        # stacked_df = self.setup_trees()
+        
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df

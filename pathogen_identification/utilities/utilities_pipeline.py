@@ -514,7 +514,6 @@ class PipelineTree:
 
     def compress_tree(self):
         """ """
-        print(self.dag_dict)
         nodes_compress, edges_compress = self.simplify_tree(
             self.dag_dict[0], 0, [], nodes_compress=[], edge_keep=[]
         )
@@ -659,10 +658,6 @@ class PipelineTree:
             edge_df = pd.concat([edge_df, new_edges], ignore_index=True)
 
             return nodes_df, edge_df
-
-        print(edge_df)
-
-        print(self.nodes_compress)
 
         for node in self.nodes_compress:
             node_name = self.node_index.loc[node[0]].node
@@ -884,12 +879,7 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        print(f"Checking software db available: {software_name}")
-        print(
-            self.utility_repository.check_exists(
-                "software", "name", software_name.lower()
-            )
-        )
+
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
@@ -1175,19 +1165,8 @@ class Utility_Pipeline_Manager:
     def compress_software_tree(self, software_tree: PipelineTree):
         software_tree.compress_tree()
 
-        print("COMPRESS TREE")
-        print(software_tree.compress_dag_dict)
-        print(software_tree.nodes_compress)
-        print(software_tree.node_index)
-        print("######")
-
         software_tree.split_modules()
 
-        print("SPLIT TREE")
-        print(software_tree.compress_dag_dict)
-        print(software_tree.nodes_compress)
-        print(software_tree.node_index)
-        print("######")
         software_tree.get_module_tree()
 
         return software_tree
@@ -1768,8 +1747,6 @@ class Utils_Manager:
         pipeline_tree = self.parameter_util.software_pipeline_tree(
             parameter_leaf.software_tree
         )
-        print(pipeline_tree.leaves)
-        print(parameter_leaf.index)
 
         if parameter_leaf.index not in pipeline_tree.leaves:
             raise Exception("Node is not a leaf")
@@ -1803,81 +1780,24 @@ class Utils_Manager:
 
         return list(new_matched_paths.values())
 
-    def find_combined_tree(
-        self, parameterset_list: Union[QuerySet, List[ParameterSet]]
-    ):
-        """
-        find a tree that combines all possible steps in a list of parametersets
-        """
-
-        pipeline_makeup = Pipeline_Makeup()
-        technologies = [ps.project.technology for ps in parameterset_list]
-        if len(set(technologies)) > 1:
-            raise Exception("Multiple technologies found")
-
-        technology = parameterset_list[0].project.technology
-        parameter_makeups = [
-            ps.leaf.software_tree.global_index for ps in parameterset_list
-        ]
-        tree_makeups = [pipeline_makeup.get_makeup(pm) for pm in parameter_makeups]
-
-        tree_makeups_set = list(it.chain(*tree_makeups))
-        tree_makeups_set = list(set(tree_makeups_set))
-
-        combined_makeup = pipeline_makeup.match_makeup_name_from_list(tree_makeups_set)
-
-        if combined_makeup is None:
-            raise Exception("No combined makeup found")
-        if technology is None:
-            raise Exception("No technology found")
-
-        combined_tree = self.parameter_util.query_software_default_tree(
-            technology, combined_makeup
-        )
-
-        return combined_tree
-
-    def get_parameterset_leaves_list(
-        self, parameterset_list: Union[QuerySet, List[ParameterSet]]
-    ) -> Tuple[PipelineTree, List[int]]:
-        """
-        retrieve list of leaves for a parameterset, matched to a given pipeline tree explicitely (using full paths).
-        """
-
-        combined_tree = self.find_combined_tree(parameterset_list)
-
-        matched_paths = []
-
-        for ps in parameterset_list:
-            mpaths = self.get_parameterset_leaves(ps, combined_tree)
-            matched_paths.extend(mpaths)
-
-        matched_paths = list(set(matched_paths))
-
-        return combined_tree, matched_paths
-
     def get_project_pathnodes(self, project: Projects) -> dict:
         """
         Get all pathnodes for a project
         """
-        print("HIHI")
         utils = Utils_Manager()
         technology = project.technology
         user = project.owner
 
         local_tree = utils.generate_project_tree(technology, project, user)
-        print("local tree")
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
-        print("Tree Makeup: ", tree_makeup)
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
         ### MANAGEMENT
-        print("Pipeline Tree Index: ", pipeline_tree_index)
 
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
@@ -1928,7 +1848,6 @@ class Utils_Manager:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_project_pathnodes(project)
-        print(available_path_nodes)
         clean_samples_leaf_dict = self.sample_nodes_check(
             submission_dict, available_path_nodes, project
         )
@@ -2061,11 +1980,8 @@ class Utils_Manager:
 
         pipeline_setup = Pipeline_Makeup()
         makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-        print("###")
-        print("makeup steps", makeup_steps)
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-        print("pipelines available", pipelines_available)
         pipelines_available = [x for x in pipelines_available if x in makeup_steps]
         self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
             pipelines_available
@@ -2146,7 +2062,6 @@ class Utils_Manager:
             )
 
             if not tree_are_equal:
-                print("creating new tree, ", tree_makeup)
                 self.parameter_util.update_software_tree(pipeline_tree)
         else:
             self.parameter_util.update_software_tree(pipeline_tree)
@@ -2216,3 +2131,5 @@ class Utils_Manager:
                 technology_trees[technology] = self.generate_software_base_tree(
                     technology, makeup, user
                 )
+    
+    

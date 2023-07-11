@@ -17,6 +17,7 @@ from pathogen_identification.utilities.utilities_general import (
     infer_run_media_dir,
     simplify_name,
 )
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 
 from pathogen_identification.utilities.clade_objects import (
     Clade,
@@ -312,6 +313,14 @@ class ReportSorter:
 
         return self.get_sorted_reports()
 
+
+def calculate_reports_overlaps(self, sample: PIProject_Sample):
+    final_reports = FinalReport.objects.filter(sample=sample)
+    report_layout_params = TelevirParameters.get_report_layout_params(
+        project_pk=sample.project.pk
+    )
+    report_sorter = ReportSorter(final_reports, report_layout_params)
+    report_sorter.sort_reports_save()
 
 from typing import List, Union
 from django.db.models.query import QuerySet

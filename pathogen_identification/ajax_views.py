@@ -7,7 +7,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
-
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_views import ReportSorter
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
@@ -250,6 +251,46 @@ def deploy_ProjectPI_runs(request):
         except Exception as e:
             print(e)
             data["is_deployed"] = False
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def sort_report_projects(request):
+    """
+    sort report projects
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+        process_SGE = ProcessSGE()
+        user = request.user
+        samples = PIProject_Sample.objects.get(project__pk= int(request.POST["project_id"]))
+
+        try:
+            for sample in samples:
+
+                final_reports = FinalReport.objects.filter(sample=sample)
+                report_layout_params = TelevirParameters.get_report_layout_params(
+                    project_pk=sample.project.pk
+                )
+                report_sorter = ReportSorter(final_reports, report_layout_params)
+
+                if report_sorter.run is None:
+                    pass
+                elif report_sorter.check_analyzed():
+                    pass
+                else:
+                    taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                        user=request.user,
+                        pisample_pk=sample.pk,
+                    )
+                    data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
 
         data["is_ok"] = True
         return JsonResponse(data)

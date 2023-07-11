@@ -280,7 +280,6 @@ class Tree_Node:
             sample=self.parameter_set.sample, run=run
         ).order_by("-coverage")
         #
-        print(final_report)
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
         report_sorter.sort_reports_save()
@@ -347,7 +346,6 @@ class Tree_Node:
 
     def register(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
         tree_node = self.generate_software_tree_node_entry(tree)
-        print("generated_software_tree", tree_node)
         if tree_node is None:
             return False
 
@@ -623,16 +621,13 @@ class Tree_Progress:
         return deployment_manager
 
     def register_node_leaves(self, node: Tree_Node):
-        print("registering node: ", node.node_index, "leaves: ", node.leaves)
 
         if node.node_index in node.leaves:
-            print(node, node.leaves)
-            # self.submit_node_run(node)
             self.register_finished(node)
 
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child(node, leaf)
-            self.register_node_safe(leaf_node)
+            _ = self.register_node_safe(leaf_node)
 
     def update_node_leaves_dbs(self, node: Tree_Node):
         for leaf in node.leaves:
@@ -710,7 +705,6 @@ class Tree_Progress:
         return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
-        print("registering node")
 
         if node.run_manager.sent:
             return False
@@ -743,8 +737,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
-                print("##### UPDATING ASSEMBLY DBS ######")
-                print(node.run_manager.run_engine.assembly_drone.assembly_method.name)
+
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -753,18 +746,12 @@ class Tree_Progress:
 
                 node.run_manager.assembly_udated = True
 
-            print(
-                "######### STEP CHECK",
-                step,
-                node.run_manager.run_engine.contig_classification_performed,
-                node.run_manager.run_engine.read_classification_performed,
-            )
+
             if (
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
-                print("##### UPDATING CLASSIFICATION DBS ######")
-                print(step)
+
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set, tag=step
                 )
@@ -774,7 +761,6 @@ class Tree_Progress:
                 node.run_manager.classification_updated = True
 
             if node.run_manager.run_engine.remapping_performed:
-                print("exporting remapping")
                 node.run_manager.run_engine.export_sequences()
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -794,15 +780,11 @@ class Tree_Progress:
             return False
 
     def register_node_safe(self, node: Tree_Node):
-        print("Submitting node run: " + str(node.node_index))
 
         registration_success = self.register_node(node)
 
-        print("Registration success: " + str(registration_success))
-        if not registration_success:
-            return
+        return registration_success
 
-        # self.update_node_dbs(node, step=node.module)
 
     def merge_node_targets(self):
         """
@@ -910,12 +892,7 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             sample_source = node.run_manager.run_engine.sample.sources_list()
-            print("node: " + str(node.node_index))
-            print("Sample source: " + str(sample_source))
             update_combination_dict(node)
-
-        print("########### GROUPED NODES ###########")
-        print(source_paramaters_combinations)
 
         grouped_nodes = [
             register["nodes"]
@@ -953,16 +930,13 @@ class Tree_Progress:
         self, nodes_by_sample_sources: List[List[Tree_Node]]
     ):
         new_nodes = []
-        print("########## STACKED DEPLOYMENT CLASSIFICATION ##########")
-        print(nodes_by_sample_sources)
+
         for nodes_subset in nodes_by_sample_sources:
             if len(nodes_subset) == 0:
                 continue
 
             volonteer = nodes_subset[0]
-            print("volonteer: " + str(volonteer.node_index))
             run_success = self.run_node(volonteer)
-            print("run_success: " + str(run_success))
 
             if run_success:
                 for node in nodes_subset:
@@ -1100,7 +1074,6 @@ class Tree_Progress:
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
 
                 success_register = self.register_finished(leaf_node)
-                print("success_register: ", success_register)
 
     def calculate_report_overlaps_runs(self):
         for node in self.current_nodes:
@@ -1108,14 +1081,6 @@ class Tree_Progress:
                 leaf_node = self.spawn_node_child(node, leaf)
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
                 leaf_node.run_reference_overlap_analysis()
-
-    def calculate_reports_overlaps(self):
-        final_reports = FinalReport.objects.filter(sample=self.sample)
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=self.project.pk
-        )
-        report_sorter = ReportSorter(final_reports, report_layout_params)
-        report_sorter.sort_reports_save()
 
     def do_nothing(self):
         pass
@@ -1144,7 +1109,6 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
-                print("classification just performed")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1189,7 +1153,10 @@ class Tree_Progress:
 
             current_module = self.get_current_module()
 
+<<<<<<< HEAD
         print(self.current_nodes)
+=======
+>>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
         self.register_leaves_finished()
         self.calculate_reports_overlaps()
 
@@ -1249,6 +1216,7 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
+<<<<<<< HEAD
     def setup_combined_tree(
         self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
     ):
@@ -1319,6 +1287,10 @@ class TreeProgressGraph:
         }
 
     def setup_trees(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]):
+=======
+    
+    def get_node_params(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]) -> pd.DataFrame:
+>>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
         """
         setup the trees for the progress graph
         """
@@ -1339,63 +1311,41 @@ class TreeProgressGraph:
             tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
         }
 
-        makeup_dict = {
-            tree_pk: [
-                ps.leaf.index
-                for ps in existing_parameter_sets
-                if ps.leaf.software_tree.pk == tree_pk
-            ]
-            for tree_pk in trees_pk_list
-        }
-
         pipetrees_dict = {
             tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
             for tree_pk, tree in software_tree_dict.items()
         }
 
-        makeup_dict_leaves = {
-            tree_pk: [
-                pipe_tree.leaves_from_node(index) for index in makeup_dict[tree_pk]
-            ]
-            for tree_pk, pipe_tree in pipetrees_dict.items()
-        }
+        stacked_df_dict = {}
 
-        makeup_dict_leaves = {
-            tree_pk: [
-                leaf_list
-                for leaf_list in makeup_dict_leaves[tree_pk]
-                if len(leaf_list) > 0
-            ]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
+        for ps in existing_parameter_sets:
+            index= ps.leaf.index
+            tree_pk=ps.leaf.software_tree.pk
+            pipetree = pipetrees_dict[tree_pk]
+            node_leaves= pipetree.leaves_from_node(index)
+            if len(node_leaves) == 0:
+                continue
+            leaf_node_index= node_leaves[0]
+            leaf_node= SoftwareTreeNode.objects.get(
+                index= leaf_node_index, software_tree=ps.leaf.software_tree
+            )
+            node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params= node_params[["module", "software"]]
+            node_params= node_params.set_index("module")
+            node_params= node_params.T
+            node_params["leaves"] = leaf_node_index
 
-        makeup_dict_leaves = {
-            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.tree_subset(tree, makeup_dict_leaves[tree_pk])
-            for tree_pk, tree in pipetrees_dict.items()
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.utility_manager.compress_software_tree(tree)
-            for tree_pk, tree in pipetrees_dict.items()
-        }
-
-        stacked_df_dict = {
-            tree_pk: self.get_tree_progress_df(tree)
-            for tree_pk, tree in pipetrees_dict.items()
-        }
+            stacked_df_dict[ps.pk] = node_params
 
         # concatenate the stacked dfs
         ## columns are not the same.
         column_order = [
             ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
-            ConstantsSettings.PIPELINE_NAME_read_classification,
+            ConstantsSettings.PIPELINE_NAME_viral_enrichment,
+            ConstantsSettings.PIPELINE_NAME_host_depletion,
             ConstantsSettings.PIPELINE_NAME_assembly,
             ConstantsSettings.PIPELINE_NAME_contig_classification,
+            ConstantsSettings.PIPELINE_NAME_read_classification,
             ConstantsSettings.PIPELINE_NAME_remapping,
             "leaves",
         ]
@@ -1403,6 +1353,7 @@ class TreeProgressGraph:
         all_columns = set()
         for makeup, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
+        
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
@@ -1436,16 +1387,29 @@ class TreeProgressGraph:
 
         current_status = {ps.pk: ps.status for ps in existing_parameter_sets}
 
+<<<<<<< HEAD
         # module_tree = self.setup_combined_tree(existing_parameter_sets)
         # deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
 
         # stacked_df = deployment_tree.stacked_changes_log()
         stacked_df = self.setup_trees(existing_parameter_sets)
+=======
+        #
+        if existing_parameter_sets.count() == 0:
+            return pd.DataFrame()
+            
+        stacked_df= self.get_node_params(existing_parameter_sets)
+        #
+>>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
             ps.save()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df
@@ -1476,6 +1440,8 @@ class TreeProgressGraph:
 
     def generate_graph(self):
         stacked_df = self.get__combined_progress_df()
+        if stacked_df.shape[0] == 0:
+            return
 
         Rgraph_cmd = [
             Televir_Metadata.BINARIES["ROOT"]
@@ -1518,7 +1484,6 @@ class TreeProgressGraph:
     def get_graph_data(self) -> Tuple[Optional[str], Optional[str]]:
         if not os.path.exists(self.graph_html_path):
             return None, None
-            # self.generate_graph()
 
         graph_data = self.extract_graph_data(self.graph_html_path)
 

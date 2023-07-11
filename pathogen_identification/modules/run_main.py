@@ -319,6 +319,7 @@ class RunDetail_main:
         )
 
         self.metadata_tool = Metadata_handler(
+            self.username,
             self.config,
             sift_query=config["sift_query"],
             prefix=self.prefix,
@@ -1257,6 +1258,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.deploy_HD()
 
             hd_metadata_tool = Metadata_handler(
+                self.username,
                 self.config, sift_query=self.config["sift_query"], prefix=self.prefix
             )
             hd_clean = hd_metadata_tool.results_process(
@@ -1268,7 +1270,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             )
             hd_metadata_tool.rclass = hd_clean
             hd_metadata_tool.aclass = proxy_aclass
-            hd_metadata_tool.merge_reports_clean(self.taxid_limit)
+            hd_metadata_tool.merge_reports_clean(self.remap_params.max_taxids)
             print("################################# HD REPORT")
             print(hd_metadata_tool.merged_targets)
             print(hd_metadata_tool.raw_targets)
@@ -1299,14 +1301,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_Assembly(self):
         if self.assembly and self.assembly_performed is False:
-            print("PERFORMING ASSEMBLY")
+
             self.deploy_ASSEMBLY()
             self.assembly_performed = True
-
-        # elif self.assembly_performed is False:
-        #    print("FAKE ASSEMBLY")
-        #    self.deploy_ASSEMBLY(fake_run=True)
-        #    self.assembly_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()

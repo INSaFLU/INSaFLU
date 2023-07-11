@@ -1,5 +1,6 @@
 import logging
 import os
+import urllib.error
 from typing import List
 
 import pandas as pd
@@ -18,7 +19,12 @@ class Metadata_handler:
     remap_targets: List[Remap_Target] = []
 
     def __init__(
-        self, config, sift_query: str = "phage", prefix: str = "", rundir: str = ""
+        self,
+        username,
+        config,
+        sift_query: str = "phage",
+        prefix: str = "",
+        rundir: str = "",
     ):
         """
         Initialize metadata handler.
@@ -38,7 +44,9 @@ class Metadata_handler:
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
+
         self.entrez_conn = EntrezWrapper(
+            username,
             bindir=os.path.join(
                 self.config["bin"]["ROOT"],
                 self.config["bin"]["software"]["entrez_direct"],
@@ -320,13 +328,14 @@ class Metadata_handler:
         taxid_list = taxid_df.taxid.unique().tolist()
         taxid_list = [str(int(i)) for i in taxid_list]
 
-        print("##### ENTREZ GET TAXID DESCRIPTIONS #####")
-        print("taxid_list: " + str(taxid_list))
-
         if len(taxid_list) == 0:
             return pd.DataFrame(columns=["taxid", "counts", "description"])
 
-        self.entrez_conn.run_queries(taxid_list)
+        try:
+            self.entrez_conn.run_queries_biopy(taxid_list)
+        except urllib.error.URLError:
+            self.entrez_conn.run_queries_binaries(taxid_list)
+
         taxid_descriptions = self.entrez_conn.read_output()
         taxid_descriptions.rename(
             columns={"scientific_name": "description"}, inplace=True
@@ -344,12 +353,8 @@ class Metadata_handler:
         Merge df with taxonomy to description file.
         """
 
-        print("##### MERGE TAXID TO DESCRIPTION #####")
-        print(df.head())
         df["taxid"] = df["taxid"].astype(int)
-        print(df.shape)
         df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
-        print(df.head())
         df = df.sort_values(by="taxid")
         df = df.drop_duplicates(subset=["taxid"], keep="first")
 
@@ -383,12 +388,6 @@ class Metadata_handler:
             df1[column] = df1[column].astype(str)
         if df2[column_two].dtype != str:
             df2[column_two] = df2[column_two].astype(str)
-
-        print("##### MERGE CHECK COLUMN TYPES #####")
-        print("column: " + column)
-        print("column_two: " + column_two)
-        print(df1.head())
-        print(df2.head())
 
         return pd.merge(df1, df2, left_on=column, right_on=column_two, how="left")
 
@@ -547,15 +546,7 @@ class Metadata_handler:
     ):
         """merge the reports and filter them."""
 
-        print("TAXID LIMIT: ", taxid_limit)
-
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
-        # raw_targets["accid"] = raw_targets["taxid"].apply(
-        #    self.get_taxid_representative_accid
-        # )
-
-        # raw_targets = self.get_taxid_representative_accid_df(raw_targets)
-        # raw_targets.rename(columns={"acc": "accid"}, inplace=True)
 
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
@@ -654,11 +645,6 @@ class Metadata_handler:
 
                     description = description[0]
                     description = scrape_description(pref, description)
-                    print("DESCRIPTION: ", description)
-
-                    print(
-                        description_passes_filter(description, CS.DESCRIPTION_FILTERS)
-                    )
 
                     if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
                         continue

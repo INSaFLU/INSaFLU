@@ -1,8 +1,9 @@
 # from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
 
+import datetime
 import os
 from abc import abstractmethod
-import datetime
+
 from sqlalchemy import Boolean, Column, MetaData, String, Table, create_engine
 
 
@@ -43,9 +44,6 @@ class Utility_Repository:
     def __init__(self, db_path="", install_type="local") -> None:
         self.db_path = db_path
 
-        print(f"DB PATH: {self.db_path}")
-        print(f"INSTALL TYPE: {install_type}")
-        
         self.setup_engine(install_type)
 
         # self.connection = self.engine.connect()

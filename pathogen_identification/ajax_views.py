@@ -266,27 +266,27 @@ def sort_report_projects(request):
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
         user = request.user
-
-        sample_id = int(request.POST["pisample_id"])
-        sample = PIProject_Sample.objects.get(id=int(sample_id))
-
-        final_reports = FinalReport.objects.filter(sample=sample)
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=sample.project.pk
-        )
-        report_sorter = ReportSorter(final_reports, report_layout_params)
+        samples = PIProject_Sample.objects.get(project__pk= int(request.POST["project_id"]))
 
         try:
-            if report_sorter.run is None:
-                pass
-            elif report_sorter.check_analyzed():
-                pass
-            else:
-                taskID = process_SGE.set_submit_televir_sort_pisample_reports(
-                    user=request.user,
-                    pisample_pk=sample.pk,
+            for sample in samples:
+
+                final_reports = FinalReport.objects.filter(sample=sample)
+                report_layout_params = TelevirParameters.get_report_layout_params(
+                    project_pk=sample.project.pk
                 )
-                data["is_deployed"] = True
+                report_sorter = ReportSorter(final_reports, report_layout_params)
+
+                if report_sorter.run is None:
+                    pass
+                elif report_sorter.check_analyzed():
+                    pass
+                else:
+                    taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                        user=request.user,
+                        pisample_pk=sample.pk,
+                    )
+                    data["is_deployed"] = True
 
         except Exception as e:
             print(e)

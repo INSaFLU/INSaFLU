@@ -364,7 +364,7 @@
                 'csrfmiddlewaretoken': '{{ csrf_token }}',
                 'id': $(this).attr('id'),
                 'user_id': '{{ request.user.id }}',
-                'pisample_id': '{{ project_index }}',
+                'project_id': '{{ project_index }}',
             },
             data_type: 'json',
             success: function(data){

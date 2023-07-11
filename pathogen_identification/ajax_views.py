@@ -257,6 +257,36 @@ def deploy_ProjectPI_runs(request):
 
 @login_required
 @require_POST
+def sort_report_projects(request):
+    """
+    sort report projects
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+        process_SGE = ProcessSGE()
+        user = request.user
+
+        sample_id = int(request.POST["sample_id"])
+        sample = PIProject_Sample.objects.get(id=int(sample_id))
+
+        try:
+            taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                user=request.user,
+                pisample_pk=sample.pk,
+            )
+
+            data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def deploy_ProjectPI(request):
     """
     prepare data for deployment of pathogen identification.

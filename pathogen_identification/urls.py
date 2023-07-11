@@ -91,6 +91,11 @@ urlpatterns = [
         name="deploy_ProjectPI",
     ),
     url(
+        r"ajax/sort_reports$",
+        PIajax_views.sort_report_projects,
+        name="sort_project_reports",
+    ),
+    url(
         r"^ajax/submit_televir_sample$",
         PIajax_views.submit_televir_project_sample,
         name="submit_televir_project_sample",

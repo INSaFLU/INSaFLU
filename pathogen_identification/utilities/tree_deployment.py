@@ -1093,14 +1093,6 @@ class Tree_Progress:
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
                 leaf_node.run_reference_overlap_analysis()
 
-    def calculate_reports_overlaps(self):
-        final_reports = FinalReport.objects.filter(sample=self.sample)
-        report_layout_params = TelevirParameters.get_report_layout_params(
-            project_pk=self.project.pk
-        )
-        report_sorter = ReportSorter(final_reports, report_layout_params)
-        report_sorter.sort_reports_save()
-
     def do_nothing(self):
         pass
 
@@ -1173,7 +1165,6 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         self.register_leaves_finished()
-        self.calculate_reports_overlaps()
 
         print("DONE")
 

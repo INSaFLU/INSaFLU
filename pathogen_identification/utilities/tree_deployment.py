@@ -1158,7 +1158,6 @@ class Tree_Progress:
             current_module = self.get_current_module()
 
         self.register_leaves_finished()
-        self.calculate_reports_overlaps()
 
         print("DONE")
         return

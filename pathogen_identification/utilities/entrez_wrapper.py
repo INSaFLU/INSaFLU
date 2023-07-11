@@ -170,7 +170,7 @@ class EntrezWrapper:
         
     def read_output(self) -> pd.DataFrame:
         output_path = os.path.join(self.outdir, self.outfile)
-        return self.query.read_output(output_path)
+        return pd.read_csv(output_path, sep="\t")
 
     def run(self, query: List[str]) -> pd.DataFrame:
         self.run_queries(query)

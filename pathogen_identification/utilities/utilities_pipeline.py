@@ -514,7 +514,6 @@ class PipelineTree:
 
     def compress_tree(self):
         """ """
-        print(self.dag_dict)
         nodes_compress, edges_compress = self.simplify_tree(
             self.dag_dict[0], 0, [], nodes_compress=[], edge_keep=[]
         )
@@ -659,10 +658,6 @@ class PipelineTree:
             edge_df = pd.concat([edge_df, new_edges], ignore_index=True)
 
             return nodes_df, edge_df
-
-        print(edge_df)
-
-        print(self.nodes_compress)
 
         for node in self.nodes_compress:
             node_name = self.node_index.loc[node[0]].node
@@ -884,12 +879,7 @@ class Utility_Pipeline_Manager:
         """
         Check if a software is installed
         """
-        print(f"Checking software db available: {software_name}")
-        print(
-            self.utility_repository.check_exists(
-                "software", "name", software_name.lower()
-            )
-        )
+
         return self.utility_repository.check_exists(
             "software", "name", software_name.lower()
         )
@@ -1175,19 +1165,8 @@ class Utility_Pipeline_Manager:
     def compress_software_tree(self, software_tree: PipelineTree):
         software_tree.compress_tree()
 
-        print("COMPRESS TREE")
-        print(software_tree.compress_dag_dict)
-        print(software_tree.nodes_compress)
-        print(software_tree.node_index)
-        print("######")
-
         software_tree.split_modules()
 
-        print("SPLIT TREE")
-        print(software_tree.compress_dag_dict)
-        print(software_tree.nodes_compress)
-        print(software_tree.node_index)
-        print("######")
         software_tree.get_module_tree()
 
         return software_tree
@@ -1768,8 +1747,6 @@ class Utils_Manager:
         pipeline_tree = self.parameter_util.software_pipeline_tree(
             parameter_leaf.software_tree
         )
-        print(pipeline_tree.leaves)
-        print(parameter_leaf.index)
 
         if parameter_leaf.index not in pipeline_tree.leaves:
             raise Exception("Node is not a leaf")
@@ -1860,24 +1837,20 @@ class Utils_Manager:
         """
         Get all pathnodes for a project
         """
-        print("HIHI")
         utils = Utils_Manager()
         technology = project.technology
         user = project.owner
 
         local_tree = utils.generate_project_tree(technology, project, user)
-        print("local tree")
         local_paths = local_tree.get_all_graph_paths_explicit()
 
         tree_makeup = local_tree.makeup
-        print("Tree Makeup: ", tree_makeup)
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
         ### MANAGEMENT
-        print("Pipeline Tree Index: ", pipeline_tree_index)
 
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
@@ -1928,7 +1901,6 @@ class Utils_Manager:
         submission_dict = {sample: []}
 
         available_path_nodes = self.get_project_pathnodes(project)
-        print(available_path_nodes)
         clean_samples_leaf_dict = self.sample_nodes_check(
             submission_dict, available_path_nodes, project
         )
@@ -2061,11 +2033,8 @@ class Utils_Manager:
 
         pipeline_setup = Pipeline_Makeup()
         makeup_steps = pipeline_setup.get_makeup(tree_makeup)
-        print("###")
-        print("makeup steps", makeup_steps)
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
-        print("pipelines available", pipelines_available)
         pipelines_available = [x for x in pipelines_available if x in makeup_steps]
         self.pipeline_makeup = pipeline_setup.match_makeup_name_from_list(
             pipelines_available
@@ -2146,7 +2115,6 @@ class Utils_Manager:
             )
 
             if not tree_are_equal:
-                print("creating new tree, ", tree_makeup)
                 self.parameter_util.update_software_tree(pipeline_tree)
         else:
             self.parameter_util.update_software_tree(pipeline_tree)

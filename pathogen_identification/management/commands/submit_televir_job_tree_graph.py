@@ -87,7 +87,7 @@ class Command(BaseCommand):
             for project_sample in samples:
                 if not project_sample.is_deleted:
                     graph_progress = TreeProgressGraph(project_sample)
-                    # graph_progress.generate_graph()
+                    graph_progress.generate_graph()
 
                     graph_data = graph_progress.get_graph_data()
 

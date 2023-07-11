@@ -1301,14 +1301,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_Assembly(self):
         if self.assembly and self.assembly_performed is False:
-            print("PERFORMING ASSEMBLY")
+
             self.deploy_ASSEMBLY()
             self.assembly_performed = True
-
-        # elif self.assembly_performed is False:
-        #    print("FAKE ASSEMBLY")
-        #    self.deploy_ASSEMBLY(fake_run=True)
-        #    self.assembly_performed = True
 
         self.Update_exec_time()
         self.generate_output_data_classes()

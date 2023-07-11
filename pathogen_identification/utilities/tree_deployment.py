@@ -291,7 +291,6 @@ class Tree_Node:
             sample=self.parameter_set.sample, run=run
         ).order_by("-coverage")
         #
-        print(final_report)
         report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run.pk)
         report_sorter = ReportSorter(final_report, report_layout_params)
         report_sorter.sort_reports_save()
@@ -358,7 +357,6 @@ class Tree_Node:
 
     def register(self, project: Projects, sample: PIProject_Sample, tree: PipelineTree):
         tree_node = self.generate_software_tree_node_entry(tree)
-        print("generated_software_tree", tree_node)
         if tree_node is None:
             return False
 
@@ -634,16 +632,13 @@ class Tree_Progress:
         return deployment_manager
 
     def register_node_leaves(self, node: Tree_Node):
-        print("registering node: ", node.node_index, "leaves: ", node.leaves)
 
         if node.node_index in node.leaves:
-            print(node, node.leaves)
-            # self.submit_node_run(node)
             self.register_finished(node)
 
         for leaf in node.leaves:
             leaf_node = self.spawn_node_child(node, leaf)
-            self.register_node_safe(leaf_node)
+            _ = self.register_node_safe(leaf_node)
 
     def update_node_leaves_dbs(self, node: Tree_Node):
         for leaf in node.leaves:
@@ -721,7 +716,6 @@ class Tree_Progress:
         return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
-        print("registering node")
 
         if node.run_manager.sent:
             return False
@@ -754,8 +748,7 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
-                print("##### UPDATING ASSEMBLY DBS ######")
-                print(node.run_manager.run_engine.assembly_drone.assembly_method.name)
+
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -764,18 +757,12 @@ class Tree_Progress:
 
                 node.run_manager.assembly_udated = True
 
-            print(
-                "######### STEP CHECK",
-                step,
-                node.run_manager.run_engine.contig_classification_performed,
-                node.run_manager.run_engine.read_classification_performed,
-            )
+
             if (
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
-                print("##### UPDATING CLASSIFICATION DBS ######")
-                print(step)
+
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set, tag=step
                 )
@@ -785,7 +772,6 @@ class Tree_Progress:
                 node.run_manager.classification_updated = True
 
             if node.run_manager.run_engine.remapping_performed:
-                print("exporting remapping")
                 node.run_manager.run_engine.export_sequences()
                 node.run_manager.run_engine.export_final_reports()
                 node.run_manager.run_engine.Summarize()
@@ -805,15 +791,11 @@ class Tree_Progress:
             return False
 
     def register_node_safe(self, node: Tree_Node):
-        print("Submitting node run: " + str(node.node_index))
 
         registration_success = self.register_node(node)
 
-        print("Registration success: " + str(registration_success))
-        if not registration_success:
-            return
+        return registration_success
 
-        # self.update_node_dbs(node, step=node.module)
 
     def merge_node_targets(self):
         """
@@ -921,12 +903,7 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             sample_source = node.run_manager.run_engine.sample.sources_list()
-            print("node: " + str(node.node_index))
-            print("Sample source: " + str(sample_source))
             update_combination_dict(node)
-
-        print("########### GROUPED NODES ###########")
-        print(source_paramaters_combinations)
 
         grouped_nodes = [
             register["nodes"]
@@ -964,16 +941,13 @@ class Tree_Progress:
         self, nodes_by_sample_sources: List[List[Tree_Node]]
     ):
         new_nodes = []
-        print("########## STACKED DEPLOYMENT CLASSIFICATION ##########")
-        print(nodes_by_sample_sources)
+
         for nodes_subset in nodes_by_sample_sources:
             if len(nodes_subset) == 0:
                 continue
 
             volonteer = nodes_subset[0]
-            print("volonteer: " + str(volonteer.node_index))
             run_success = self.run_node(volonteer)
-            print("run_success: " + str(run_success))
 
             if run_success:
                 for node in nodes_subset:
@@ -1111,7 +1085,6 @@ class Tree_Progress:
                 _ = leaf_node.register_running(self.project, self.sample, self.tree)
 
                 success_register = self.register_finished(leaf_node)
-                print("success_register: ", success_register)
 
     def calculate_report_overlaps_runs(self):
         for node in self.current_nodes:
@@ -1155,7 +1128,6 @@ class Tree_Progress:
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):
-                print("classification just performed")
                 node.run_manager.run_engine.plan_remap_prep_safe()
 
             self.update_node_leaves_dbs(node)
@@ -1200,9 +1172,8 @@ class Tree_Progress:
 
             current_module = self.get_current_module()
 
-        print(self.current_nodes)
-        self.calculate_reports_overlaps()
         self.register_leaves_finished()
+        self.calculate_reports_overlaps()
 
         print("DONE")
 
@@ -1259,19 +1230,6 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
-    def setup_combined_tree(
-        self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
-    ):
-        ## create a tree that contains all the parameter sets
-
-        (
-            combined_tree,
-            additional_leaves,
-        ) = self.pipeline_utils.get_parameterset_leaves_list(existing_parameter_sets)
-
-        # CRUNCH TREE
-        module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
-        return module_tree
     
     def get_node_params(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]) -> pd.DataFrame:
         """
@@ -1318,7 +1276,6 @@ class TreeProgressGraph:
             node_params= node_params.T
             node_params["leaves"] = leaf_node_index
 
-            print(node_params)
             stacked_df_dict[ps.pk] = node_params
 
         # concatenate the stacked dfs
@@ -1359,122 +1316,6 @@ class TreeProgressGraph:
 
         return stacked_df
 
-
-    def setup_trees(self):
-        """
-        setup the trees for the progress graph
-        """
-        pipeline_utils = Utils_Manager()
-        existing_parameter_sets = ParameterSet.objects.filter(
-            project=self.project,
-            status__in=[
-                ParameterSet.STATUS_RUNNING,
-                ParameterSet.STATUS_FINISHED,
-            ],
-            sample=self.sample,
-        )
-
-        technologies = [ps.project.technology for ps in existing_parameter_sets]
-        if len(set(technologies)) > 1:
-            raise Exception("Multiple technologies found")
-
-        parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
-        parameter_makeups = list(set(parameter_makeups))
-
-        tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
-        trees_pk_list = [tree.pk for tree in tree_list]
-        trees_pk_list = list(set(trees_pk_list))
-
-        software_tree_dict = {
-            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
-        }
-
-        makeup_dict = {
-            tree_pk: [
-                ps.leaf.index
-                for ps in existing_parameter_sets
-                if ps.leaf.software_tree.pk == tree_pk
-            ]
-            for tree_pk in trees_pk_list
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
-            for tree_pk, tree in software_tree_dict.items()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [
-                pipe_tree.leaves_from_node(index) for index in makeup_dict[tree_pk]
-            ]
-            for tree_pk, pipe_tree in pipetrees_dict.items()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [
-                leaf_list
-                for leaf_list in makeup_dict_leaves[tree_pk]
-                if len(leaf_list) > 0
-            ]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.tree_subset(tree, makeup_dict_leaves[tree_pk])
-            for tree_pk, tree in pipetrees_dict.items()
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.utility_manager.compress_software_tree(tree)
-            for tree_pk, tree in pipetrees_dict.items()
-        }
-
-        stacked_df_dict = {
-            tree_pk: self.get_tree_progress_df(tree)
-            for tree_pk, tree in pipetrees_dict.items()
-        }
-
-        # concatenate the stacked dfs
-        ## columns are not the same.
-        column_order = [
-            ConstantsSettings.PIPELINE_NAME_read_quality_analysis,
-            ConstantsSettings.PIPELINE_NAME_viral_enrichment,
-            ConstantsSettings.PIPELINE_NAME_host_depletion,
-            ConstantsSettings.PIPELINE_NAME_read_classification,
-            ConstantsSettings.PIPELINE_NAME_assembly,
-            ConstantsSettings.PIPELINE_NAME_contig_classification,
-            ConstantsSettings.PIPELINE_NAME_remapping,
-            "leaves",
-        ]
-
-        all_columns = set()
-        for makeup, stacked_df in stacked_df_dict.items():
-            all_columns.update(stacked_df.columns)
-        all_columns = list(all_columns)
-        all_columns = [column for column in column_order if column in all_columns]
-
-        for makeup, stacked_df in stacked_df_dict.items():
-            missing_columns = [
-                column for column in all_columns if column not in stacked_df.columns
-            ]
-            for column in missing_columns:
-                stacked_df[column] = np.nan
-
-        stacked_df_dict = {
-            makeup: stacked_df[all_columns]
-            for makeup, stacked_df in stacked_df_dict.items()
-        }
-
-        stacked_df = pd.concat(stacked_df_dict.values(), axis=0)
-        stacked_df.to_csv(self.stacked_df_path, sep="\t")
-
-        return stacked_df
-
     def get__combined_progress_df(self):
         ## setup a deployment and record the progress
         existing_parameter_sets = ParameterSet.objects.filter(
@@ -1494,7 +1335,6 @@ class TreeProgressGraph:
             
         stacked_df= self.get_node_params(existing_parameter_sets)
         #
-        print(stacked_df)
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
@@ -1574,7 +1414,6 @@ class TreeProgressGraph:
     def get_graph_data(self) -> Tuple[Optional[str], Optional[str]]:
         if not os.path.exists(self.graph_html_path):
             return None, None
-            # self.generate_graph()
 
         graph_data = self.extract_graph_data(self.graph_html_path)
 

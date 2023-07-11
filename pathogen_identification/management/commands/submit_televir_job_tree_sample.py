@@ -126,7 +126,7 @@ class Command(BaseCommand):
         }
 
         matched_paths = {
-            k: v for k, v in matched_paths.items() if available_path_nodes[k]
+            k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
         }
 
         # SUBMISSION

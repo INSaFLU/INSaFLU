@@ -54,13 +54,13 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project(project_pk=project_sample.project.pk),
+            process_controler.get_name_televir_project_sample_sort(sample_pk=project_sample.pk),
             ProcessControler.FLAG_RUNNING,
         )
 
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
-            name=process_controler.get_name_televir_project(project_pk=project_sample.project.pk),
+            name=process_controler.get_name_televir_project_sample_sort(sample_pk=project_sample.pk),
         )
 
         if process.exists():
@@ -81,7 +81,7 @@ class Command(BaseCommand):
             print(e)
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project(project_pk=project_sample.project.pk),
+                process_controler.get_name_televir_project_sample_sort(sample_pk=project_sample.pk),
                 ProcessControler.FLAG_ERROR,
             )
             raise e

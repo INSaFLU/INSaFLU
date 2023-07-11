@@ -2,17 +2,19 @@
 
 import logging
 import os
+import subprocess
 import time
 from datetime import datetime
-from django.contrib.auth.models import User
 from typing import List
-from constants.constants import Constants, FileExtensions, TypePath
+
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.db import transaction
+
+from constants.constants import Constants, FileExtensions, TypePath
 from extend_user.models import Profile
 from managing_files.models import ProcessControler
-import subprocess
 from utils.utils import Utils
-from django.db import transaction
 
 # http://www.socher.org/index.php/Main/HowToInstallSunGridEngineOnUbuntu
 # https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
@@ -984,7 +986,9 @@ class ProcessSGE(object):
             print("project submitted, sge_id: " + str(sge_id))
             if sge_id != None:
                 self.set_process_controlers(
-                    user, process_controler.get_name_televir_project(pisample_pk), sge_id
+                    user,
+                    process_controler.get_name_televir_project_sample_sort(pisample_pk),
+                    sge_id,
                 )
         except:
             raise Exception("Fail to submit the job.")

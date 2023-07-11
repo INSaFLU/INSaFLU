@@ -946,7 +946,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_sort_pisample_reports(self, user, pisample_pk):
+    def set_submit_televir_sort_pisample_reports(self, user:User, pisample_pk):
         """
         submit the job to televir
         """

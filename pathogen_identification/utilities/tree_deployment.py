@@ -13,21 +13,32 @@ from django.db.models import QuerySet
 from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from constants.constants import TypePath
 from fluwebvirus.settings import STATIC_ROOT
-from pathogen_identification.constants_settings import \
-    ConstantsSettings as PIConstants
-from pathogen_identification.models import (FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RunMain, SoftwareTree,
-                                            SoftwareTreeNode)
+from pathogen_identification.constants_settings import ConstantsSettings as PIConstants
+from pathogen_identification.models import (
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RunMain,
+    SoftwareTree,
+    SoftwareTreeNode,
+)
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMainTree_class
-from pathogen_identification.utilities.televir_parameters import \
-    TelevirParameters
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs_tree import (
-    Update_Assembly, Update_Classification, Update_Remap,
-    Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
+    Update_Assembly,
+    Update_Classification,
+    Update_Remap,
+    Update_RunMain_Initial,
+    Update_RunMain_Secondary,
+    get_run_parents,
+)
 from pathogen_identification.utilities.utilities_pipeline import (
-    Pipeline_Makeup, PipelineTree, Utils_Manager)
+    Pipeline_Makeup,
+    PipelineTree,
+    Utils_Manager,
+)
 from pathogen_identification.utilities.utilities_views import ReportSorter
 from settings.constants_settings import ConstantsSettings
 from utils.utils import Utils
@@ -621,7 +632,6 @@ class Tree_Progress:
         return deployment_manager
 
     def register_node_leaves(self, node: Tree_Node):
-
         if node.node_index in node.leaves:
             self.register_finished(node)
 
@@ -705,7 +715,6 @@ class Tree_Progress:
         return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
-
         if node.run_manager.sent:
             return False
 
@@ -737,7 +746,6 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
-
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -746,12 +754,10 @@ class Tree_Progress:
 
                 node.run_manager.assembly_udated = True
 
-
             if (
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
-
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set, tag=step
                 )
@@ -780,11 +786,9 @@ class Tree_Progress:
             return False
 
     def register_node_safe(self, node: Tree_Node):
-
         registration_success = self.register_node(node)
 
         return registration_success
-
 
     def merge_node_targets(self):
         """
@@ -1153,10 +1157,6 @@ class Tree_Progress:
 
             current_module = self.get_current_module()
 
-<<<<<<< HEAD
-        print(self.current_nodes)
-=======
->>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
         self.register_leaves_finished()
         self.calculate_reports_overlaps()
 
@@ -1216,81 +1216,9 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
-<<<<<<< HEAD
-    def setup_combined_tree(
+    def get_node_params(
         self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
-    ):
-        ## create a tree that contains all the parameter sets
-
-        (
-            combined_tree,
-            additional_leaves,
-        ) = self.pipeline_utils.get_parameterset_leaves_list(existing_parameter_sets)
-
-        # CRUNCH TREE
-        module_tree = self.pipeline_utils.module_tree(combined_tree, additional_leaves)
-        return module_tree
-
-    def infer_node_parameters(
-        self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
-    ):
-        pipeline_utils = Utils_Manager()
-
-        technologies = [ps.project.technology for ps in existing_parameter_sets]
-        if len(set(technologies)) > 1:
-            raise Exception("Multiple technologies found")
-
-        parameter_makeups = [ps.leaf.software_tree.pk for ps in existing_parameter_sets]
-        parameter_makeups = list(set(parameter_makeups))
-
-        tree_list = [ps.leaf.software_tree for ps in existing_parameter_sets]
-        trees_pk_list = [tree.pk for tree in tree_list]
-        trees_pk_list = list(set(trees_pk_list))
-
-        software_tree_dict = {
-            tree_pk: SoftwareTree.objects.get(pk=tree_pk) for tree_pk in trees_pk_list
-        }
-
-        makeup_dict = {
-            tree_pk: [
-                ps.leaf.index
-                for ps in existing_parameter_sets
-                if ps.leaf.software_tree.pk == tree_pk
-            ]
-            for tree_pk in trees_pk_list
-        }
-
-        pipetrees_dict = {
-            tree_pk: pipeline_utils.parameter_util.software_pipeline_tree(tree)
-            for tree_pk, tree in software_tree_dict.items()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [
-                pipe_tree.leaves_from_node(index) for index in makeup_dict[tree_pk]
-            ]
-            for tree_pk, pipe_tree in pipetrees_dict.items()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [
-                leaf_list
-                for leaf_list in makeup_dict_leaves[tree_pk]
-                if len(leaf_list) > 0
-            ]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
-
-        makeup_dict_leaves = {
-            tree_pk: [leaf_list[0] for leaf_list in makeup_dict_leaves[tree_pk]]
-            for tree_pk in makeup_dict_leaves.keys()
-        }
-
-    def setup_trees(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]):
-=======
-    
-    def get_node_params(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]) -> pd.DataFrame:
->>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
+    ) -> pd.DataFrame:
         """
         setup the trees for the progress graph
         """
@@ -1319,20 +1247,20 @@ class TreeProgressGraph:
         stacked_df_dict = {}
 
         for ps in existing_parameter_sets:
-            index= ps.leaf.index
-            tree_pk=ps.leaf.software_tree.pk
+            index = ps.leaf.index
+            tree_pk = ps.leaf.software_tree.pk
             pipetree = pipetrees_dict[tree_pk]
-            node_leaves= pipetree.leaves_from_node(index)
+            node_leaves = pipetree.leaves_from_node(index)
             if len(node_leaves) == 0:
                 continue
-            leaf_node_index= node_leaves[0]
-            leaf_node= SoftwareTreeNode.objects.get(
-                index= leaf_node_index, software_tree=ps.leaf.software_tree
+            leaf_node_index = node_leaves[0]
+            leaf_node = SoftwareTreeNode.objects.get(
+                index=leaf_node_index, software_tree=ps.leaf.software_tree
             )
-            node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
-            node_params= node_params[["module", "software"]]
-            node_params= node_params.set_index("module")
-            node_params= node_params.T
+            node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params = node_params[["module", "software"]]
+            node_params = node_params.set_index("module")
+            node_params = node_params.T
             node_params["leaves"] = leaf_node_index
 
             stacked_df_dict[ps.pk] = node_params
@@ -1353,7 +1281,7 @@ class TreeProgressGraph:
         all_columns = set()
         for makeup, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
-        
+
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
@@ -1387,29 +1315,17 @@ class TreeProgressGraph:
 
         current_status = {ps.pk: ps.status for ps in existing_parameter_sets}
 
-<<<<<<< HEAD
-        # module_tree = self.setup_combined_tree(existing_parameter_sets)
-        # deployment_tree = Tree_Progress(module_tree, self.sample, self.project)
-
-        # stacked_df = deployment_tree.stacked_changes_log()
-        stacked_df = self.setup_trees(existing_parameter_sets)
-=======
         #
         if existing_parameter_sets.count() == 0:
             return pd.DataFrame()
-            
-        stacked_df= self.get_node_params(existing_parameter_sets)
+
+        stacked_df = self.get_node_params(existing_parameter_sets)
         #
->>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
             ps.save()
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 1bc5f5903d48340c5119129153adfedffc3863f0
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df

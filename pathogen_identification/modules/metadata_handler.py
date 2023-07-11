@@ -6,12 +6,12 @@ import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
+from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
     description_passes_filter,
     merge_classes,
     scrape_description,
 )
-from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 
 
 class Metadata_handler:

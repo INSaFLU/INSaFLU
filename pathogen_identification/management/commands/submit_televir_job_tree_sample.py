@@ -150,6 +150,8 @@ class Command(BaseCommand):
 
                     deployment_tree.cycle_process()
 
+                    break
+
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_televir_project_sample(

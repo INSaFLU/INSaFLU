@@ -7,8 +7,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
-from pathogen_identification.utilities.televir_parameters import TelevirParameters
-from pathogen_identification.utilities.utilities_views import ReportSorter
+
 from constants.meta_key_and_values import MetaKeyAndValue
 from fluwebvirus.settings import STATIC_ROOT, STATIC_URL
 from managing_files.models import ProcessControler
@@ -20,10 +19,14 @@ from pathogen_identification.models import (
     ReferenceMap_Main,
     RunMain,
 )
-from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
-from pathogen_identification.utilities.utilities_views import set_control_reports
-from utils.process_SGE import ProcessSGE
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    set_control_reports,
+)
+from utils.process_SGE import ProcessSGE
 
 
 def simplify_name(name):
@@ -265,12 +268,12 @@ def sort_report_projects(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
-        user = request.user
-        samples = PIProject_Sample.objects.get(project__pk= int(request.POST["project_id"]))
+        samples = PIProject_Sample.objects.filter(
+            project__pk=int(request.POST["project_id"])
+        )
 
         try:
             for sample in samples:
-
                 final_reports = FinalReport.objects.filter(sample=sample)
                 report_layout_params = TelevirParameters.get_report_layout_params(
                     project_pk=sample.project.pk

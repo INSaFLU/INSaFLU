@@ -79,12 +79,14 @@ class ReadOverlapManager:
     def parse_for_data(self):
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
         self.overlap_matrix: pd.DataFrame = self.readoverlap_allpairs_df()
+        accid_df = self.metadata[["accid", "description"]]
         accid_df["read_count"] = accid_df["accid"].apply(
             lambda x: self.get_accession_total_counts(x)
         )
         # sort table by accid and then by read count
         accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
-        accid_df = self.metadata[["accid", "description"]].drop_duplicates()
+        # drop duplicates of accid 
+        accid_df = accid_df.drop_duplicates(subset=["accid"])
 
         accid_df["proportion"] = accid_df["accid"].apply(
             lambda x: self.get_proportion_counts(x)

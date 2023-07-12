@@ -14,7 +14,7 @@ from pathogen_identification.models import (QC_REPORT, ContigClassification,
                                             RawReference, ReadClassification,
                                             ReferenceContigs,
                                             ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain,
+                                            RunDetail, RunIndex, RunMain, TelevirRunQC,
                                             RunRemapMain, SampleQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
@@ -140,8 +140,8 @@ def Update_sample_qc(sample_class: Sample_runClass):
         / int(sample_class.reads_before_processing)
     ) * 100
 
-    input_report = open(sample_class.input_fastqc_report, "r")
-    processed_report = open(sample_class.processed_fastqc_report, "r")
+    #input_report = open(sample_class.input_fastqc_report, "r")
+    #processed_report = open(sample_class.processed_fastqc_report, "r")
 
     try:
         sampleqc = SampleQC(
@@ -155,22 +155,14 @@ def Update_sample_qc(sample_class: Sample_runClass):
                 "value"
             ],
             percent_gc=sample_class.qcdata["processed"].loc["%GC"]["value"],
-            input_fastqc_report=File(
-                input_report, name=os.path.basename(sample_class.input_fastqc_report)
-            ),
-            processed_fastqc_report=File(
-                processed_report,
-                name=os.path.basename(sample_class.processed_fastqc_report),
-            ),
+
         )
 
         sampleqc.save()
 
     except:
         print(f"failed to input sample {sample_class.sample_name}")
-    finally:
-        input_report.close()
-        processed_report.close()
+
 
 
 def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet):
@@ -210,6 +202,8 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
             QC_report=sample_class.processed_fastqc_report,
         )
         qc_report.save()
+
+        
 
 
 @transaction.atomic
@@ -753,6 +747,40 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
 
         run_detail.save()
 
+
+def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    run_qc_exists = TelevirRunQC.objects.filter(run=runmain, sample=sample).exists()
+
+    if run_qc_exists:
+        run_qc = TelevirRunQC.objects.get(run=runmain, sample=sample)
+
+        run_qc.run = runmain
+        run_qc.performed = run_class.qc_report.performed
+        run_qc.method = run_class.qc_report.method
+        run_qc.args = run_class.qc_report.args
+        run_qc.input_reads = run_class.qc_report.input_reads
+        run_qc.output_reads = run_class.qc_report.output_reads
+        run_qc.output_reads_percent = run_class.qc_report.output_reads_percent
+        run_qc.save()
+
+    else:
+        run_qc = TelevirRunQC(
+            run=runmain,
+            performed=run_class.qc_report.performed,
+            method=run_class.qc_report.method,
+            args=run_class.qc_report.args,
+            input_reads= run_class.qc_report.input_reads,
+            output_reads= run_class.qc_report.output_reads,
+            output_reads_percent= run_class.qc_report.output_reads_percent,
+        )
+
+        run_qc.save()
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     """

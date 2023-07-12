@@ -494,6 +494,7 @@ class RunMain(models.Model):
         max_length=50, blank=True, null=True
     )  # assembly method if any
 
+
     assembly_max = models.CharField(
         max_length=100, blank=True, null=True
     )  # max length of contig.
@@ -601,6 +602,23 @@ class RunMain(models.Model):
 
         except Exception as e:
             print(e)
+
+
+class TelevirRunQC(models.Model):
+
+    run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
+    performed= models.BooleanField(default= False)
+    method= models.CharField(max_length=50, blank=True, null=True)
+    args= models.CharField(max_length=50, blank=True, null=True)
+    input_reads= models.CharField(max_length=50, blank=True, null=True)
+    output_reads= models.CharField(max_length=50, blank=True, null=True)
+    output_reads_percent= models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        ordering = [
+            "run",
+        ]
+
 
 
 class RunDetail(models.Model):

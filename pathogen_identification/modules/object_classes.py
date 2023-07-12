@@ -1422,6 +1422,14 @@ class Run_detail_report:
     merged_number: int
     merged_files: str
 
+@dataclass(frozen=True)
+class RunQC_report:
+    performed: bool
+    method: str
+    args: str
+    input_reads: int
+    output_reads: int
+    output_reads_percent: float
 
 @dataclass(frozen=True)
 class Contig_classification_results:

@@ -302,7 +302,12 @@
                 <div style="padding: 20px">
                     <div class="row">
                     <div class= "col-sm">
+                    {% if qc_report.performed%}
+                    <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
+                    <p> Reads after filtering: <strong>{{ qc_report.output_reads }}</strong> ({{ qc_report.output_reads_percent }}) </p>
+                    {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
+                    {% endif %}
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
                         {% if run_detail.enriched_reads == 0 %}
@@ -884,6 +889,11 @@
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processed|reconvert_string_to_int}}")]);
+        if ("{{qc_report.performed}}" == "True" ) {
+            if ("{{qc_report.input_reads}}" != "0" ) {
+                raw_data.push(['QC Filter', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
+            };
+        };
         if ("{{run_main.enrichment_performed}}" == "True" ) {
             if ("{{run_detail.enriched_reads}}" != "0" ) {
                 raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);

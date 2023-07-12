@@ -41,6 +41,7 @@ from pathogen_identification.models import (
     PIProject_Sample,
     Projects,
     RawReference,
+    TelevirRunQC,
     ReadClassification,
     ReferenceContigs,
     ReferenceMap_Main,
@@ -57,34 +58,12 @@ from pathogen_identification.tables import (
     RunMainTable,
     SampleTable,
 )
-from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.tree_deployment import (
     TreeProgressGraph,
 )
-from pathogen_identification.models import (
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunMain,
-    RunRemapMain,
-    Sample,
-)
-from pathogen_identification.tables import (
-    ContigTable,
-    ProjectTable,
-    RawReferenceTable,
-    RunMainTable,
-    SampleTable,
-)
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.modules.object_classes import RunQC_report
+
 from pathogen_identification.utilities.utilities_general import infer_run_media_dir
 from pathogen_identification.utilities.utilities_views import (
     ReportSorter,
@@ -93,8 +72,7 @@ from pathogen_identification.utilities.utilities_views import (
     FinalReportCompound,
 )
 from settings.constants_settings import ConstantsSettings as CS
-from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.models import Technology
+
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -948,6 +926,28 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
+        try: 
+            run_qc = TelevirRunQC.objects.get(run=run_main)
+            qc_report= RunQC_report(
+                performed= run_qc.performed,
+                method= run_qc.method,
+                args= run_qc.args,
+                input_reads= run_qc.input_reads,
+                output_reads= run_qc.output_reads,
+                output_reads_percent= run_qc.output_reads_percent,
+            )
+            qc_performed= run_qc.performed
+        except TelevirRunQC.DoesNotExist:
+            qc_report= RunQC_report(
+                performed= False,
+                method= "None",
+                args= "None",
+                input_reads= 0,
+                output_reads= 0,
+                output_reads_percent= 0,
+            )
+
+        #
         try:
             run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
             recover_assembly_contigs(run_main, run_assembly)
@@ -990,6 +990,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_main": run_main,
             "run_detail": run_detail,
+            "qc_report":qc_report,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,

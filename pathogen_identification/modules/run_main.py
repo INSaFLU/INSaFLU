@@ -19,6 +19,7 @@ from pathogen_identification.modules.object_classes import (
     Read_classification_results,
     Remap_main,
     Run_detail_report,
+    RunQC_report,   
     RunCMD,
     Sample_runClass,
     Software_detail,
@@ -1132,6 +1133,15 @@ class RunMain_class(Run_Deployment_Methods):
             ", ".join(files),
         )
 
+        self.qc_report= RunQC_report(
+            performed= self.quality_control,
+            method= self.preprocess_drone.preprocess_method.name,
+            args= self.preprocess_drone.preprocess_method.args,
+            input_reads= self.sample.reads_before_processing,
+            output_reads= self.sample.reads_after_processing,
+            output_reads_percent= self.sample.reads_after_processing / self.sample.reads_before_processing,
+        )
+
         self.contig_classification_results = Contig_classification_results(
             True
             if self.contig_classification_drone.classifier_method.name != "None"
@@ -1544,6 +1554,15 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.remapping,
             self.merged_targets.taxid.nunique(),
             ", ".join(files),
+        )
+
+        self.qc_report= RunQC_report(
+            performed= self.quality_control,
+            method= self.preprocess_drone.preprocess_method.name,
+            args= self.preprocess_drone.preprocess_method.args,
+            input_reads= self.sample.reads_before_processing,
+            output_reads= self.sample.reads_after_processing,
+            output_reads_percent= self.sample.reads_after_processing / self.sample.reads_before_processing,
         )
 
         self.contig_classification_results = Contig_classification_results(

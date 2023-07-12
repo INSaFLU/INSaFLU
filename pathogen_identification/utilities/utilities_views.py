@@ -314,7 +314,7 @@ class ReportSorter:
         return self.get_sorted_reports()
 
 
-def calculate_reports_overlaps(self, sample: PIProject_Sample):
+def calculate_reports_overlaps(sample: PIProject_Sample):
     final_reports = FinalReport.objects.filter(sample=sample)
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk

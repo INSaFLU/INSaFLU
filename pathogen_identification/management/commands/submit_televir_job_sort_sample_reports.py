@@ -72,9 +72,10 @@ class Command(BaseCommand):
             print("Process does not exist")
 
         # UTILITIES
+        try:
 
-        if not project_sample.is_deleted:
-            calculate_reports_overlaps(project_sample)
+            if not project_sample.is_deleted:
+                calculate_reports_overlaps(project_sample)
 
 
         except Exception as e:
@@ -85,3 +86,9 @@ class Command(BaseCommand):
                 ProcessControler.FLAG_ERROR,
             )
             raise e
+
+        process_SGE.set_process_controler(
+            user,
+            process_controler.get_name_televir_project(project_pk=project_sample.project.pk),
+            ProcessControler.FLAG_FINISHED,
+        )

@@ -265,16 +265,16 @@ def sort_report_projects(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
-        user = request.user
-        samples = PIProject_Sample.objects.get(project__pk= int(request.POST["project_id"]))
-
+        project= Projects.objects.get(id=int(request.POST["project_id"]))
+        samples = PIProject_Sample.objects.filter(project=project)
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=project.pk
+        )
         try:
             for sample in samples:
 
                 final_reports = FinalReport.objects.filter(sample=sample)
-                report_layout_params = TelevirParameters.get_report_layout_params(
-                    project_pk=sample.project.pk
-                )
+
                 report_sorter = ReportSorter(final_reports, report_layout_params)
 
                 if report_sorter.run is None:

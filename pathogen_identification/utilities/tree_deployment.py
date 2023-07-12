@@ -205,6 +205,7 @@ class PathogenIdentification_Deployment_Manager:
             self.config, self.run_params_db, self.username
         )
         self.run_engine.Prep_deploy()
+        self.run_engine.generate_output_data_classes()
         self.prepped = True
 
     def run_main(self):
@@ -1103,14 +1104,13 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_simply,
         }
 
-
         if self.current_module in ["end"]:
             return
 
         if self.current_module == "root":
+            self.update_node_leaves_dbs(self.current_nodes[0])
             self.update_tree_nodes()
             return
-        
 
         action = map_actions[self.current_module]
         print("CURRENT MODULE", self.current_module)
@@ -1361,6 +1361,8 @@ class TreeProgressGraph:
     def generate_graph(self):
         stacked_df = self.get__combined_progress_df()
         if stacked_df.shape[0] == 0:
+            if os.path.exists(self.graph_html_path):
+                os.remove(self.graph_html_path)
             return
 
         Rgraph_cmd = [
@@ -1375,7 +1377,7 @@ class TreeProgressGraph:
             ",".join(stacked_df.columns).replace(" ", "."),
         ]
 
-        result = os.system(" ".join(Rgraph_cmd))
+        _ = os.system(" ".join(Rgraph_cmd))
 
     @staticmethod
     def extract_graph_id(graph_data: str) -> Optional[str]:

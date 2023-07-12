@@ -8,25 +8,15 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (
-    QC_REPORT,
-    ContigClassification,
-    FinalReport,
-    ParameterSet,
-    PIProject_Sample,
-    Projects,
-    RawReference,
-    ReadClassification,
-    ReferenceContigs,
-    ReferenceMap_Main,
-    RunAssembly,
-    RunDetail,
-    RunIndex,
-    RunMain,
-    RunRemapMain,
-    SampleQC,
-    TelevirRunQC,
-)
+from pathogen_identification.models import (QC_REPORT, ContigClassification,
+                                            FinalReport, ParameterSet,
+                                            PIProject_Sample, Projects,
+                                            RawReference, ReadClassification,
+                                            ReferenceContigs,
+                                            ReferenceMap_Main, RunAssembly,
+                                            RunDetail, RunIndex, RunMain,
+                                            RunRemapMain, SampleQC,
+                                            TelevirRunQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -768,10 +758,10 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
     if sample is None or runmain is None:
         return
 
-    run_qc_exists = TelevirRunQC.objects.filter(run=runmain, sample=sample).exists()
+    run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
 
     if run_qc_exists:
-        run_qc = TelevirRunQC.objects.get(run=runmain, sample=sample)
+        run_qc = TelevirRunQC.objects.get(run=runmain)
 
         run_qc.run = runmain
         run_qc.performed = run_class.qc_report.performed

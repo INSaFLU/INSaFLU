@@ -150,6 +150,8 @@ class Command(BaseCommand):
 
                     deployment_tree.cycle_process()
 
+                    graph_progress.generate_graph()
+
                     break
 
             process_SGE.set_process_controler(

@@ -553,7 +553,9 @@ class RunDetail_main:
 
         # actions
         self.subsample = False
-        self.quality_control = config["actions"]["QCONTROL"]
+        self.quality_control = bool(
+            self.preprocess_method.name != None
+        )
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
         self.enrichment = bool(self.enrichment_method.name != "None")
@@ -1202,6 +1204,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
+
         if self.quality_control and not self.qc_performed:
             print("RUNNING QC")
             self.deploy_QC()

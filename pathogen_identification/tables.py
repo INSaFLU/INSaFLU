@@ -226,7 +226,7 @@ class SampleTable(tables.Table):
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
+    report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
     runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
@@ -340,7 +340,7 @@ class SampleTable(tables.Table):
             '<a href="'
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
-            + "Run Panel"
+            + "Workflow Panel"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:

@@ -34,6 +34,7 @@ class ReadOverlapManager:
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_path: str = "accid_statistics_{}.tsv"
+    min_freq: float = 0.05
 
     def __init__(
         self,
@@ -78,10 +79,13 @@ class ReadOverlapManager:
     def parse_for_data(self):
         self.read_profile_matrix: pd.DataFrame = self.generate_read_matrix()
         self.overlap_matrix: pd.DataFrame = self.readoverlap_allpairs_df()
-        accid_df = self.metadata[["accid", "description"]].drop_duplicates()
         accid_df["read_count"] = accid_df["accid"].apply(
             lambda x: self.get_accession_total_counts(x)
         )
+        # sort table by accid and then by read count
+        accid_df = accid_df.sort_values(["accid", "read_count"], ascending=False)
+        accid_df = self.metadata[["accid", "description"]].drop_duplicates()
+
         accid_df["proportion"] = accid_df["accid"].apply(
             lambda x: self.get_proportion_counts(x)
         )
@@ -113,6 +117,7 @@ class ReadOverlapManager:
         """
         Return dictionary of read overlap between all pairs of lists
         """
+        print("Calculating read overlap between all pairs of lists")
         read_overlap_dict = {}
         for i in range(len(read_lists)):
             for j in range(len(read_lists)):
@@ -224,10 +229,28 @@ class ReadOverlapManager:
     ## Construct tree ##
     ####################
 
+    def filter_read_matrix(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter read matrix, reads as columns, accids as rows
+        """
+
+        read_counts = read_profile_matrix.sum(axis=0)
+        read_freqs = read_counts / read_profile_matrix.shape[0]
+        # filter out reads that are only present in one accession
+        read_profile_matrix = read_profile_matrix.loc[:, read_counts > 1]
+        # filter reads with less than min_freq
+        read_profile_matrix = read_profile_matrix.loc[
+            :, read_freqs > self.min_freq
+        ]
+
+        return read_profile_matrix
+
+
     def generate_read_matrix(self):
         """
         Generate read matrix
         """
+        print("generating read matrix")
         files_readnames = [
             readname_from_fasta(fasta_file) for fasta_file in self.fasta_list
         ]
@@ -235,7 +258,10 @@ class ReadOverlapManager:
         all_reads = self.all_reads_set(files_readnames)
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
+        read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
+        print(read_profile_matrix.shape)
         return read_profile_matrix
+    
 
     def get_accession_total_counts(self, accid: str):
         """

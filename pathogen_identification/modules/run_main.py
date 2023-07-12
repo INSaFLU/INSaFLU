@@ -491,12 +491,25 @@ class RunDetail_main:
 
         ### methods
 
-        self.preprocess_method = Software_detail(
-            CS.PIPELINE_NAME_read_quality_analysis,
-            self.method_args,
-            config,
-            self.prefix,
+        prinseq_soft = TelevirParameters.get_prinseq_software(
+            self.username, self.project_name
         )
+        if prinseq_soft.is_to_run:
+            self.preprocess_method = SoftwareUnit(
+                module=CS.PIPELINE_NAME_read_quality_analysis,
+                name="prinseq",
+                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
+            )
+            self.preprocess_method.get_bin(config)
+        else:
+            self.preprocess_method = Software_detail(
+                CS.PIPELINE_NAME_read_quality_analysis,
+                method_args,
+                config,
+                self.prefix,
+            )
+
+
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
             method_args,
@@ -872,6 +885,7 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"remapping: {self.remapping}")
 
         if self.quality_control:
+            print("Deploying QC")
             self.deploy_QC()
 
             self.sample.r1.is_clean()
@@ -1188,7 +1202,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
-        if self.quality_control:
+        if self.quality_control and not self.qc_performed:
+            print("RUNNING QC")
             self.deploy_QC()
 
             self.sample.r1.is_clean()
@@ -1204,7 +1219,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.sample.get_fake_qc_data()
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
-            self.qc_performed = True
+            self.qc_performed = True 
 
         elif (
             self.sample.r1.current_status == "raw"

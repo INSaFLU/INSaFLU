@@ -304,7 +304,6 @@ class SampleTable(tables.Table):
             sample__name=record.name,
             project=record.project,
             parameter_set__status__in=[
-                ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_FINISHED,
             ],
         ).count()

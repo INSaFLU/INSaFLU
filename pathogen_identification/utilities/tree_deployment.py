@@ -1096,7 +1096,7 @@ class Tree_Progress:
 
         map_actions = {
             "end": self.do_nothing,
-            "root": self.update_tree_nodes,
+            "root": self.do_nothing,
             ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
             ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
@@ -1106,6 +1106,7 @@ class Tree_Progress:
         }
 
         action = map_actions[self.current_module]
+        print("CURRENT MODULE", self.current_module)
         action()
 
         if self.current_module in ["root", "end"]:

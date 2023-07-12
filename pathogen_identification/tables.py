@@ -323,7 +323,6 @@ class SampleTable(tables.Table):
             + "report"
             + "</a>"
         )
-        print(record_name)
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
         if user.username == record.project.owner.username:

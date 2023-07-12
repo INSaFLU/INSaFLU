@@ -511,7 +511,6 @@ def get_run_parents(run_class: RunMain_class, parameter_set: ParameterSet):
         runmain = RunMain.objects.get(
             project=project,
             sample=sample,
-            name=run_class.prefix,
             parameter_set=parameter_set,
         )
 

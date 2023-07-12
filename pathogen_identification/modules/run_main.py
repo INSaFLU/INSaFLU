@@ -1258,6 +1258,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(
             "r1 current reads: " + str(self.sample.r1.get_current_fastq_read_number())
         )
+        print("RUNNING PREPROCESS", self.enrichment)
 
         if self.enrichment:
             self.deploy_EN()

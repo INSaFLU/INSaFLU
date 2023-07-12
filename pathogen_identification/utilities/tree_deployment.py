@@ -1095,8 +1095,6 @@ class Tree_Progress:
         """
 
         map_actions = {
-            "end": self.do_nothing,
-            "root": self.do_nothing,
             ConstantsSettings.PIPELINE_NAME_read_classification: self.run_nodes_classification_reads,
             ConstantsSettings.PIPELINE_NAME_contig_classification: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
@@ -1105,12 +1103,18 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_simply,
         }
 
+
+        if self.current_module in ["end"]:
+            return
+
+        if self.current_module == "root":
+            self.update_tree_nodes()
+            return
+        
+
         action = map_actions[self.current_module]
         print("CURRENT MODULE", self.current_module)
         action()
-
-        if self.current_module in ["root", "end"]:
-            return
 
         for node in self.current_nodes:
             if self.classification_monitor.ready_to_merge(node):

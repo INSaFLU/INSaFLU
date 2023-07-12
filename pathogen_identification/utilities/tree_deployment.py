@@ -632,7 +632,6 @@ class Tree_Progress:
         return deployment_manager
 
     def register_node_leaves(self, node: Tree_Node):
-
         if node.node_index in node.leaves:
             self.register_finished(node)
 
@@ -716,7 +715,6 @@ class Tree_Progress:
         return copy.deepcopy(instance)
 
     def register_node(self, node: Tree_Node):
-
         if node.run_manager.sent:
             return False
 
@@ -748,7 +746,6 @@ class Tree_Progress:
                 node.run_manager.run_engine.assembly_performed
                 and node.run_manager.assembly_udated == False
             ):
-
                 db_updated = Update_Assembly(
                     node.run_manager.run_engine, node.parameter_set
                 )
@@ -757,12 +754,10 @@ class Tree_Progress:
 
                 node.run_manager.assembly_udated = True
 
-
             if (
                 self.classification_monitor.classification_performed(node)
                 and node.run_manager.classification_updated == False
             ):
-
                 db_updated = Update_Classification(
                     node.run_manager.run_engine, node.parameter_set, tag=step
                 )
@@ -791,11 +786,9 @@ class Tree_Progress:
             return False
 
     def register_node_safe(self, node: Tree_Node):
-
         registration_success = self.register_node(node)
 
         return registration_success
-
 
     def merge_node_targets(self):
         """
@@ -1167,6 +1160,7 @@ class Tree_Progress:
         self.register_leaves_finished()
 
         print("DONE")
+        return
 
     def stacked_changes_log(self):
         """
@@ -1221,8 +1215,9 @@ class TreeProgressGraph:
 
         self.pipeline_utils = Utils_Manager()
 
-    
-    def get_node_params(self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]) -> pd.DataFrame:
+    def get_node_params(
+        self, existing_parameter_sets: Union[QuerySet, List[ParameterSet]]
+    ) -> pd.DataFrame:
         """
         setup the trees for the progress graph
         """
@@ -1251,20 +1246,20 @@ class TreeProgressGraph:
         stacked_df_dict = {}
 
         for ps in existing_parameter_sets:
-            index= ps.leaf.index
-            tree_pk=ps.leaf.software_tree.pk
+            index = ps.leaf.index
+            tree_pk = ps.leaf.software_tree.pk
             pipetree = pipetrees_dict[tree_pk]
-            node_leaves= pipetree.leaves_from_node(index)
+            node_leaves = pipetree.leaves_from_node(index)
             if len(node_leaves) == 0:
                 continue
-            leaf_node_index= node_leaves[0]
-            leaf_node= SoftwareTreeNode.objects.get(
-                index= leaf_node_index, software_tree=ps.leaf.software_tree
+            leaf_node_index = node_leaves[0]
+            leaf_node = SoftwareTreeNode.objects.get(
+                index=leaf_node_index, software_tree=ps.leaf.software_tree
             )
-            node_params= self.pipeline_utils.get_leaf_parameters(leaf_node)
-            node_params= node_params[["module", "software"]]
-            node_params= node_params.set_index("module")
-            node_params= node_params.T
+            node_params = self.pipeline_utils.get_leaf_parameters(leaf_node)
+            node_params = node_params[["module", "software"]]
+            node_params = node_params.set_index("module")
+            node_params = node_params.T
             node_params["leaves"] = leaf_node_index
 
             stacked_df_dict[ps.pk] = node_params
@@ -1285,7 +1280,7 @@ class TreeProgressGraph:
         all_columns = set()
         for makeup, stacked_df in stacked_df_dict.items():
             all_columns.update(stacked_df.columns)
-        
+
         all_columns = list(all_columns)
         all_columns = [column for column in column_order if column in all_columns]
 
@@ -1322,14 +1317,14 @@ class TreeProgressGraph:
         #
         if existing_parameter_sets.count() == 0:
             return pd.DataFrame()
-            
-        stacked_df= self.get_node_params(existing_parameter_sets)
+
+        stacked_df = self.get_node_params(existing_parameter_sets)
         #
 
         for ps in existing_parameter_sets:
             ps.status = current_status[ps.pk]
             ps.save()
-        
+
         stacked_df.to_csv(self.stacked_df_path, sep="\t")
 
         return stacked_df

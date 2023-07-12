@@ -1,24 +1,30 @@
 import logging
 import os
+import urllib.error
 from typing import List
 
 import pandas as pd
 
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
+from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
     description_passes_filter,
     merge_classes,
     scrape_description,
 )
-from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 
 
 class Metadata_handler:
     remap_targets: List[Remap_Target] = []
 
     def __init__(
-        self, username, config, sift_query: str = "phage", prefix: str = "", rundir: str = ""
+        self,
+        username,
+        config,
+        sift_query: str = "phage",
+        prefix: str = "",
+        rundir: str = "",
     ):
         """
         Initialize metadata handler.
@@ -38,7 +44,7 @@ class Metadata_handler:
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
-        
+
         self.entrez_conn = EntrezWrapper(
             username,
             bindir=os.path.join(
@@ -322,11 +328,14 @@ class Metadata_handler:
         taxid_list = taxid_df.taxid.unique().tolist()
         taxid_list = [str(int(i)) for i in taxid_list]
 
-
         if len(taxid_list) == 0:
             return pd.DataFrame(columns=["taxid", "counts", "description"])
 
-        self.entrez_conn.run_queries(taxid_list)
+        try:
+            self.entrez_conn.run_queries_biopy(taxid_list)
+        except urllib.error.URLError:
+            self.entrez_conn.run_queries_binaries(taxid_list)
+
         taxid_descriptions = self.entrez_conn.read_output()
         taxid_descriptions.rename(
             columns={"scientific_name": "description"}, inplace=True

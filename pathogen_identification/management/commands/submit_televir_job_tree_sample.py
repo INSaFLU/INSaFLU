@@ -126,7 +126,7 @@ class Command(BaseCommand):
         }
 
         matched_paths = {
-            k: v for k, v in matched_paths.items() if available_path_nodes[k]
+            k: v for k, v in matched_paths.items() if available_path_nodes[k] == True
         }
 
         # SUBMISSION
@@ -149,6 +149,8 @@ class Command(BaseCommand):
                     graph_progress.generate_graph()
 
                     deployment_tree.cycle_process()
+
+                    break
 
             process_SGE.set_process_controler(
                 user,

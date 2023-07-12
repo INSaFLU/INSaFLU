@@ -1,10 +1,11 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List
-from django.contrib.auth.models import User
 
 import pandas as pd
 from Bio import Entrez
+from django.contrib.auth.models import User
+
 
 class EntrezQuery(ABC):
     name: str
@@ -104,10 +105,10 @@ class EntrezWrapper:
         self.outfile = outfile
         self.outdir = outdir
 
-        user= User.objects.get(username= username)
+        user = User.objects.get(username=username)
 
         Entrez.email = user.email
-        Entrez.max_tries= 1
+        Entrez.max_tries = 1
         Entrez.sleep_between_tries = 1
 
         self.query_factory = EntrezQueryFactory(self.bindir)
@@ -125,16 +126,20 @@ class EntrezWrapper:
         print(" ".join(cmd_long))
 
         return " ".join(cmd_long)
-    
+
     def split_query(self, query: List[str]) -> List[List[str]]:
-        return [query[i : i + self.chunksize] for i in range(0, len(query), self.chunksize)]
+        return [
+            query[i : i + self.chunksize] for i in range(0, len(query), self.chunksize)
+        ]
 
     def cmd_chunks(self, query: List[str]) -> List[str]:
         chunks = self.split_query(query)
 
         return [self.cmd_long(chunk) for chunk in chunks]
 
-    def run_queries_old(self, query: List[str]) -> None:
+    def run_queries_binaries(self, query: List[str]) -> None:
+        """
+        run queries using entrez direct binaries"""
         cmds = self.cmd_chunks(query)
 
         print("CMD CHUNKS")
@@ -145,35 +150,38 @@ class EntrezWrapper:
         for cmd in cmds:
             os.system(cmd)
 
+        output_path = os.path.join(self.outdir, self.outfile)
+        df = pd.read_csv(output_path, sep="\t", header=None)
+        df.columns = ["taxid", "scientific_name"]
+        df.to_csv(self.output_path, sep="\t", index=False)
+
         return None
 
-    def run_queries(self, query: List[str]) -> None:
+    def run_queries_biopy(self, query: List[str]) -> None:
         """
         run queries using Biopython Entrez
         """
 
-        chunks= self.split_query(query)
+        chunks = self.split_query(query)
 
-        report= []
+        report = []
 
         for chunk in chunks:
-            handle = Entrez.efetch(db=  "Taxonomy", id=",".join(chunk), retmode="xml")
+            handle = Entrez.efetch(db="Taxonomy", id=",".join(chunk), retmode="xml")
             record = Entrez.read(handle)
-            records= [
-                [record["TaxId"], record["ScientificName"]] for record in record
-            ]
+            records = [[record["TaxId"], record["ScientificName"]] for record in record]
             report.extend(records)
-        
-        df= pd.DataFrame(report, columns= ["taxid", "scientific_name"])
 
-        df.to_csv(self.output_path, sep= "\t", index= False)
-        
+        df = pd.DataFrame(report, columns=["taxid", "scientific_name"])
+
+        df.to_csv(self.output_path, sep="\t", index=False)
+
     def read_output(self) -> pd.DataFrame:
         output_path = os.path.join(self.outdir, self.outfile)
         return pd.read_csv(output_path, sep="\t")
 
     def run(self, query: List[str]) -> pd.DataFrame:
-        self.run_queries(query)
+        self.run_queries_biopy(query)
         df = self.read_output()
 
         return df

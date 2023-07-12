@@ -19,21 +19,20 @@ from pathogen_identification.modules.object_classes import (
     Read_classification_results,
     Remap_main,
     Run_detail_report,
-    RunQC_report,   
     RunCMD,
+    RunQC_report,
     Sample_runClass,
     Software_detail,
     SoftwareUnit,
 )
-
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import (
-    Mapping_Manager,
     Mapping_Instance,
+    Mapping_Manager,
 )
 from pathogen_identification.utilities.televir_parameters import (
-    TelevirParameters,
     RemapParams,
+    TelevirParameters,
 )
 from settings.constants_settings import ConstantsSettings as CS
 
@@ -510,7 +509,6 @@ class RunDetail_main:
                 self.prefix,
             )
 
-
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
             method_args,
@@ -554,9 +552,7 @@ class RunDetail_main:
 
         # actions
         self.subsample = False
-        self.quality_control = bool(
-            self.preprocess_method.name != None
-        )
+        self.quality_control = bool(self.preprocess_method.name != None)
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
         self.enrichment = bool(self.enrichment_method.name != "None")
@@ -928,6 +924,7 @@ class RunMain_class(Run_Deployment_Methods):
             self.sample.r2.clean_read_names()
 
         self.Update_exec_time()
+        self.generate_output_data_classes()
 
     def Run_PreProcess(self):
         self.logger.info(
@@ -1133,13 +1130,14 @@ class RunMain_class(Run_Deployment_Methods):
             ", ".join(files),
         )
 
-        self.qc_report= RunQC_report(
-            performed= self.quality_control,
-            method= self.preprocess_drone.preprocess_method.name,
-            args= self.preprocess_drone.preprocess_method.args,
-            input_reads= self.sample.reads_before_processing,
-            output_reads= self.sample.reads_after_processing,
-            output_reads_percent= self.sample.reads_after_processing / self.sample.reads_before_processing,
+        self.qc_report = RunQC_report(
+            performed=self.quality_control,
+            method=self.preprocess_drone.preprocess_method.name,
+            args=self.preprocess_drone.preprocess_method.args,
+            input_reads=self.sample.reads_before_processing,
+            output_reads=self.sample.reads_after_processing,
+            output_reads_percent=self.sample.reads_after_processing
+            / self.sample.reads_before_processing,
         )
 
         self.contig_classification_results = Contig_classification_results(
@@ -1214,7 +1212,6 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.Run_Remapping()
 
     def Run_QC(self):
-
         if self.quality_control and not self.qc_performed:
             print("RUNNING QC")
             self.deploy_QC()
@@ -1232,7 +1229,7 @@ class RunMainTree_class(Run_Deployment_Methods):
             self.sample.get_fake_qc_data()
             self.sample.r1.clean_read_names()
             self.sample.r2.clean_read_names()
-            self.qc_performed = True 
+            self.qc_performed = True
 
         elif (
             self.sample.r1.current_status == "raw"
@@ -1288,7 +1285,9 @@ class RunMainTree_class(Run_Deployment_Methods):
 
             hd_metadata_tool = Metadata_handler(
                 self.username,
-                self.config, sift_query=self.config["sift_query"], prefix=self.prefix
+                self.config,
+                sift_query=self.config["sift_query"],
+                prefix=self.prefix,
             )
             hd_clean = hd_metadata_tool.results_process(
                 self.depletion_drone.classification_report,
@@ -1330,7 +1329,6 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def Run_Assembly(self):
         if self.assembly and self.assembly_performed is False:
-
             self.deploy_ASSEMBLY()
             self.assembly_performed = True
 
@@ -1556,13 +1554,14 @@ class RunMainTree_class(Run_Deployment_Methods):
             ", ".join(files),
         )
 
-        self.qc_report= RunQC_report(
-            performed= self.quality_control,
-            method= self.preprocess_drone.preprocess_method.name,
-            args= self.preprocess_drone.preprocess_method.args,
-            input_reads= self.sample.reads_before_processing,
-            output_reads= self.sample.reads_after_processing,
-            output_reads_percent= self.sample.reads_after_processing / self.sample.reads_before_processing,
+        self.qc_report = RunQC_report(
+            performed=self.quality_control,
+            method=self.preprocess_drone.preprocess_method.name,
+            args=self.preprocess_drone.preprocess_method.args,
+            input_reads=self.sample.reads_before_processing,
+            output_reads=self.sample.reads_after_processing,
+            output_reads_percent=self.sample.reads_after_processing
+            / self.sample.reads_before_processing,
         )
 
         self.contig_classification_results = Contig_classification_results(

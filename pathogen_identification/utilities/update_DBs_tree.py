@@ -8,14 +8,25 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import IntegrityError, transaction
 
-from pathogen_identification.models import (QC_REPORT, ContigClassification,
-                                            FinalReport, ParameterSet,
-                                            PIProject_Sample, Projects,
-                                            RawReference, ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain, TelevirRunQC,
-                                            RunRemapMain, SampleQC)
+from pathogen_identification.models import (
+    QC_REPORT,
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunIndex,
+    RunMain,
+    RunRemapMain,
+    SampleQC,
+    TelevirRunQC,
+)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
 from pathogen_identification.modules.run_main import RunMain_class
@@ -140,8 +151,8 @@ def Update_sample_qc(sample_class: Sample_runClass):
         / int(sample_class.reads_before_processing)
     ) * 100
 
-    #input_report = open(sample_class.input_fastqc_report, "r")
-    #processed_report = open(sample_class.processed_fastqc_report, "r")
+    # input_report = open(sample_class.input_fastqc_report, "r")
+    # processed_report = open(sample_class.processed_fastqc_report, "r")
 
     try:
         sampleqc = SampleQC(
@@ -155,14 +166,12 @@ def Update_sample_qc(sample_class: Sample_runClass):
                 "value"
             ],
             percent_gc=sample_class.qcdata["processed"].loc["%GC"]["value"],
-
         )
 
         sampleqc.save()
 
     except:
         print(f"failed to input sample {sample_class.sample_name}")
-
 
 
 def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet):
@@ -202,8 +211,6 @@ def Update_QC_report(sample_class: Sample_runClass, parameter_set: ParameterSet)
             QC_report=sample_class.processed_fastqc_report,
         )
         qc_report.save()
-
-        
 
 
 @transaction.atomic
@@ -272,6 +279,7 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set)
             Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Run_QC(run_class, parameter_set)
         return True
 
     except IntegrityError as e:
@@ -606,31 +614,37 @@ def Update_Run_Detail(run_class: RunMain_class, parameter_set: ParameterSet):
 
     try:
         run_detail = RunDetail.objects.get(run=runmain)
-        run_detail.run=runmain
-        run_detail.sample=sample
-        run_detail.max_depth=run_class.run_detail_report.max_depth  #
-        run_detail.max_depthR=run_class.run_detail_report.max_depthR  #
-        run_detail.max_gaps=run_class.run_detail_report.max_gaps  #
-        run_detail.max_prop=run_class.run_detail_report.max_prop  #
-        run_detail.max_mapped=run_class.run_detail_report.max_mapped,  #
-        run_detail.input=run_class.run_detail_report.input  #
-        run_detail.enriched_reads=run_class.run_detail_report.enriched_reads  #
-        run_detail.enriched_reads_percent=run_class.run_detail_report.enriched_reads_percent  #
-        run_detail.depleted_reads=run_class.run_detail_report.depleted_reads  #
-        run_detail.depleted_reads_percent=run_class.run_detail_report.depleted_reads_percent  #
-        run_detail.processed=run_class.run_detail_report.processed  #
-        run_detail.processed_percent=run_class.run_detail_report.processed_percent  #
-        run_detail.sift_preproc=run_class.run_detail_report.sift_preproc  #
-        run_detail.sift_remap=run_class.run_detail_report.sift_remap  #
-        run_detail.sift_removed_pprc=run_class.run_detail_report.sift_removed_pprc
-        run_detail.processing_final=run_class.run_detail_report.processing_final  #
-        run_detail.processing_final_percent=run_class.run_detail_report.processing_final_percent  #
-        run_detail.merged=run_class.run_detail_report.merged  #
-        run_detail.merged_number=run_class.run_detail_report.merged_number  #
-        run_detail.merged_files=run_class.run_detail_report.merged_files  #
+        run_detail.run = runmain
+        run_detail.sample = sample
+        run_detail.max_depth = run_class.run_detail_report.max_depth  #
+        run_detail.max_depthR = run_class.run_detail_report.max_depthR  #
+        run_detail.max_gaps = run_class.run_detail_report.max_gaps  #
+        run_detail.max_prop = run_class.run_detail_report.max_prop  #
+        run_detail.max_mapped = (run_class.run_detail_report.max_mapped,)  #
+        run_detail.input = run_class.run_detail_report.input  #
+        run_detail.enriched_reads = run_class.run_detail_report.enriched_reads  #
+        run_detail.enriched_reads_percent = (
+            run_class.run_detail_report.enriched_reads_percent
+        )  #
+        run_detail.depleted_reads = run_class.run_detail_report.depleted_reads  #
+        run_detail.depleted_reads_percent = (
+            run_class.run_detail_report.depleted_reads_percent
+        )  #
+        run_detail.processed = run_class.run_detail_report.processed  #
+        run_detail.processed_percent = run_class.run_detail_report.processed_percent  #
+        run_detail.sift_preproc = run_class.run_detail_report.sift_preproc  #
+        run_detail.sift_remap = run_class.run_detail_report.sift_remap  #
+        run_detail.sift_removed_pprc = run_class.run_detail_report.sift_removed_pprc
+        run_detail.processing_final = run_class.run_detail_report.processing_final  #
+        run_detail.processing_final_percent = (
+            run_class.run_detail_report.processing_final_percent
+        )  #
+        run_detail.merged = run_class.run_detail_report.merged  #
+        run_detail.merged_number = run_class.run_detail_report.merged_number  #
+        run_detail.merged_files = run_class.run_detail_report.merged_files  #
 
         run_detail.save()
-        
+
     except RunDetail.DoesNotExist:
         run_detail = RunDetail(
             run=runmain,
@@ -749,7 +763,6 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
 
 
 def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
-
     sample, runmain, _ = get_run_parents(run_class, parameter_set)
 
     if sample is None or runmain is None:
@@ -764,9 +777,9 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.performed = run_class.qc_report.performed
         run_qc.method = run_class.qc_report.method
         run_qc.args = run_class.qc_report.args
-        run_qc.input_reads = run_class.qc_report.input_reads
-        run_qc.output_reads = run_class.qc_report.output_reads
-        run_qc.output_reads_percent = run_class.qc_report.output_reads_percent
+        run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
+        run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
+        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 10)
         run_qc.save()
 
     else:
@@ -775,12 +788,13 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
             performed=run_class.qc_report.performed,
             method=run_class.qc_report.method,
             args=run_class.qc_report.args,
-            input_reads= run_class.qc_report.input_reads,
-            output_reads= run_class.qc_report.output_reads,
-            output_reads_percent= run_class.qc_report.output_reads_percent,
+            input_reads=f"{run_class.qc_report.input_reads:,}",
+            output_reads=f"{run_class.qc_report.output_reads:,}",
+            output_reads_percent=str(run_class.qc_report.output_reads_percent * 10),
         )
 
         run_qc.save()
+
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     """
@@ -874,9 +888,7 @@ def Update_Run_Classification(run_class: RunMain_class, parameter_set: Parameter
         read_classification.success = run_class.read_classification_results.success
         read_classification.save()
 
-
     except ReadClassification.DoesNotExist:
-        
         read_classification = ReadClassification(
             run=runmain,
             sample=sample,

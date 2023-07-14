@@ -760,7 +760,7 @@ class Tree_Progress:
                 and node.run_manager.classification_updated == False
             ):
                 db_updated = Update_Classification(
-                    node.run_manager.run_engine, node.parameter_set, tag=step
+                    node.run_manager.run_engine, node.parameter_set
                 )
                 if not db_updated:
                     return False

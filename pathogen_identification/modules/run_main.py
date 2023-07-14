@@ -1494,6 +1494,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         if processed_reads == 0:
             filtered_reads_perc= 0
             final_processing_percent = 0
+            processed_reads = 1
         else:
 
             filtered_reads_perc = (int(filtered_reads) / processed_reads) * 100

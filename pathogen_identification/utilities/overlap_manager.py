@@ -282,7 +282,7 @@ class ReadOverlapManager:
         # perform matrix multiplication by rows.
         shared_reads= []
         for i in range(binary_matrix.shape[0]):
-            shared_reads.append(binary_matrix[i:].T @ binary_matrix[i])
+            shared_reads.append(binary_matrix[i:] @ binary_matrix[i].T)
         
 
         shared_reads= pd.DataFrame(shared_reads, index=read_profile_matrix.columns, columns=read_profile_matrix.columns)

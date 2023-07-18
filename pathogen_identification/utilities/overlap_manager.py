@@ -145,7 +145,11 @@ class ReadOverlapManager:
         """
         Return list of 1s and 0s for presence/absence of read in accid
         """
-        return [1 if read in readname_dict[accid] else 0 for read in all_reads]
+        acc_read_dict= {
+            read: 1 for read in readname_dict[accid]
+        }
+
+        return [acc_read_dict.get(read, 0) for read in all_reads]
 
     def read_profile_dict_get(self, readname_dict: dict, all_reads: list) -> dict:
         """
@@ -239,6 +243,16 @@ class ReadOverlapManager:
         read_profile_matrix = read_profile_matrix.loc[
             :, read_freqs > self.min_freq
         ]
+
+        if self.max_reads:
+            if read_profile_matrix.shape[1] > self.max_reads:
+                print(
+                    f"More than {self.max_reads} reads ({read_profile_matrix.shape[1]}) - sampling"
+                )
+                ## sample reads
+                read_profile_matrix = read_profile_matrix.sample(
+                    n=self.max_reads, axis=1
+                )
 
         return read_profile_matrix
 

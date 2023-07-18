@@ -289,8 +289,7 @@ class ReadOverlapManager:
             print(row.shape, binary_matrix.shape)
             shared_reads.append(prod0)
 
-        shared_reads= np.array(shared_reads)
-        print(shared_reads.shape)
+        shared_reads= np.concatenate(shared_reads, axis=0)
 
         shared_reads= pd.DataFrame(shared_reads, index=read_profile_matrix.index, columns=read_profile_matrix.index)
 

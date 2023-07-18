@@ -283,8 +283,11 @@ class ReadOverlapManager:
         shared_reads= []
         for i in range(binary_matrix.shape[0]):
             row= binary_matrix[i].reshape(1, -1)
-            print(row.shape, binary_matrix[i].shape)
-            shared_reads.append(row @ binary_matrix.T)
+            prod0= row @ binary_matrix.T 
+            print(prod0.shape)
+
+            print(row.shape, binary_matrix.shape)
+            shared_reads.append(prod0)
 
         shared_reads= np.array(shared_reads)
         print(shared_reads.shape)

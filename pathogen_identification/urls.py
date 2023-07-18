@@ -91,15 +91,25 @@ urlpatterns = [
         name="deploy_ProjectPI",
     ),
     url(
-        r"ajax/sort_reports$",
-        PIajax_views.sort_report_projects,
-        name="sort_project_reports",
+        r"ajax/deploy_ProjectPI$",
+        PIajax_views.deploy_ProjectPI_runs,
+        name="deploy_ProjectPI_runs",
     ),
     url(
         r"^ajax/submit_televir_sample$",
         PIajax_views.submit_televir_project_sample,
         name="submit_televir_project_sample",
     ),  ## remove a televir project
+    url(
+        r"^ajax/submit_televir_sample$",
+        PIajax_views.submit_televir_project_sample_runs,
+        name="submit_televir_project_sample_runs",
+    ),  ## remove a televir project
+    url(
+        r"ajax/sort_reports$",
+        PIajax_views.sort_report_projects,
+        name="sort_project_reports",
+    ),
     url(
         r"^ajax/kill_televir_sample$",
         PIajax_views.kill_televir_project_tree_sample,

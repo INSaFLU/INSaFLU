@@ -14,7 +14,7 @@ from pathogen_identification.models import (QC_REPORT, ContigClassification,
                                             RawReference, ReadClassification,
                                             ReferenceContigs,
                                             ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunIndex, RunMain,
+                                            RunDetail, TelevirRunQC, RunMain,
                                             RunRemapMain, SampleQC)
 from pathogen_identification.modules.object_classes import Sample_runClass
 from pathogen_identification.modules.remap_class import Mapping_Instance
@@ -278,6 +278,8 @@ def Update_RunMain_Secondary(run_class: RunMain_class, parameter_set: ParameterS
         with transaction.atomic():
             Update_RunMain_noCheck(run_class, parameter_set)
             Update_Run_Detail_noCheck(run_class, parameter_set)
+            Update_Run_QC(run_class, parameter_set)
+
         return True
 
     except IntegrityError as e:
@@ -710,6 +712,41 @@ def Update_Run_Detail_noCheck(run_class: RunMain_class, parameter_set: Parameter
 
         run_detail.save()
 
+
+
+
+def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    if sample is None or runmain is None:
+        return
+
+    run_qc_exists = TelevirRunQC.objects.filter(run=runmain).exists()
+
+    if run_qc_exists:
+        run_qc = TelevirRunQC.objects.get(run=runmain)
+
+        run_qc.run = runmain
+        run_qc.performed = run_class.qc_report.performed
+        run_qc.method = run_class.qc_report.method
+        run_qc.args = run_class.qc_report.args
+        run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
+        run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
+        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 10)
+        run_qc.save()
+
+    else:
+        run_qc = TelevirRunQC(
+            run=runmain,
+            performed=run_class.qc_report.performed,
+            method=run_class.qc_report.method,
+            args=run_class.qc_report.args,
+            input_reads=f"{run_class.qc_report.input_reads:,}",
+            output_reads=f"{run_class.qc_report.output_reads:,}",
+            output_reads_percent=str(run_class.qc_report.output_reads_percent * 10),
+        )
+
+        run_qc.save()
 
 def Update_Run_Assembly(run_class: RunMain_class, parameter_set: ParameterSet):
     """

@@ -282,7 +282,9 @@ class ReadOverlapManager:
         # perform matrix multiplication by rows.
         shared_reads= []
         for i in range(binary_matrix.shape[0]):
-            shared_reads.append(binary_matrix[i:] @ binary_matrix[i].T)
+            row= binary_matrix[i].reshape(1, -1)
+            print(row.shape, binary_matrix[i].shape)
+            shared_reads.append(row @ binary_matrix.T)
 
         shared_reads= np.array(shared_reads)
         print(shared_reads.shape)

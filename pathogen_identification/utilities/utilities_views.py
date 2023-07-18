@@ -22,7 +22,7 @@ from pathogen_identification.utilities.televir_parameters import TelevirParamete
 from pathogen_identification.utilities.clade_objects import (
     Clade,
 )
-
+import datetime
 
 def set_control_reports(project_pk: int):
     """
@@ -191,25 +191,40 @@ class ReportSorter:
         Return read overlap analysis as dataframe
         columns: leaf (accid), clade, read_count, group_count
         """
+
         overlap_manager = ReadOverlapManager(
-            self.fasta_files,
             self.metadata_df,
             self.reference_clade,
             self.run_media_dir,
             str(self.run.project.pk),
         )
+        ### time operations
         print("generating tree")
 
+        ### generate tree
+        start= datetime.datetime.now()
+
         njtree = overlap_manager.generate_tree()
+        end = datetime.datetime.now()
+        
+        # time in seconds
+        time = (end-start).total_seconds()
+        print("time to generate tree: ", time)
 
         ### inner node to leaf dict
         tree_manager = PhyloTreeManager(njtree)
         # inner_node_leaf_dict = tree_manager.clades_get_leaves_clades()
         all_node_leaves = tree_manager.all_clades_leaves()
 
+        ### get statistics
         statistics_dict_all = overlap_manager.get_node_statistics(
             njtree, all_node_leaves
         )
+        end= datetime.datetime.now()
+        # time in seconds
+        time = (end-start).total_seconds()
+        print("time to get statistics: ", time)
+
         # statistics_dict_inner = overlap_manager.node_statistics(inner_node_leaf_dict)
 
         selected_clades = overlap_manager.filter_clades(statistics_dict_all)
@@ -235,7 +250,6 @@ class ReportSorter:
         """
 
         overlap_manager = ReadOverlapManager(
-            self.fasta_files,
             self.metadata_df,
             self.reference_clade,
             self.run_media_dir,

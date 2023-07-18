@@ -290,6 +290,7 @@ class ReadOverlapManager:
             shared_reads.append(prod0)
 
         shared_reads= np.concatenate(shared_reads, axis=0)
+        print(shared_reads.shape)
 
         shared_reads= pd.DataFrame(shared_reads, index=read_profile_matrix.index, columns=read_profile_matrix.index)
 
@@ -378,9 +379,11 @@ class ReadOverlapManager:
         return tuple of proportions of reads shared by each pair of leaves
         """
 
-        subset_clade = self.overlap_matrix.loc[
-            (self.overlap_matrix.accid_A.isin(leaves))
-            & (self.overlap_matrix.accid_B.isin(leaves))
+        overlap_df= self.readoverlap_allpairs_df()
+
+        subset_clade = overlap_df.loc[
+            (overlap_df.accid_A.isin(leaves))
+            & (overlap_df.accid_B.isin(leaves))
         ]
 
         subset_clade = subset_clade.loc[subset_clade.accid_A != subset_clade.accid_B]

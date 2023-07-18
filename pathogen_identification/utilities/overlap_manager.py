@@ -348,10 +348,6 @@ class ReadOverlapManager:
     ## private clades ##
     ####################
 
-    def shared_by_pair_from_matrix(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
-
-
-
     def clade_shared_by_pair(self, leaves: list) -> pd.DataFrame:
         """
         return tuple of proportions of reads shared by each pair of leaves

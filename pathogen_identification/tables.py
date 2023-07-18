@@ -369,7 +369,7 @@ class SampleTable(tables.Table):
                 + str(record.pk)
                 + '" deploy-url="'
                 + reverse(
-                    "submit_televir_project_sample_runs",
+                    "submit_televir_project_sample",
                 )
                 + '"'
                 + '"><i class="fa fa-flask"></i></span> </a>'

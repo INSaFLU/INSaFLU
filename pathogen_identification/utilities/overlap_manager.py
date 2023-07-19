@@ -278,19 +278,16 @@ class ReadOverlapManager:
         """
 
         binary_matrix = np.array(read_profile_matrix)
-        #shared_reads = binary_matrix.T @ binary_matrix
-        # perform matrix multiplication by rows.
+
         shared_reads= []
         for i in range(binary_matrix.shape[0]):
             row= binary_matrix[i].reshape(1, -1)
             prod0= row @ binary_matrix.T 
-            print(prod0.shape)
 
-            print(row.shape, binary_matrix.shape)
             shared_reads.append(prod0)
 
         shared_reads= np.concatenate(shared_reads, axis=0)
-        print(shared_reads.shape)
+
 
         shared_reads= pd.DataFrame(shared_reads, index=read_profile_matrix.index, columns=read_profile_matrix.index)
 

@@ -606,6 +606,7 @@ class DefaultParameters(object):
 
     def get_vect_parameters(self, software):
         """return all parameters, by software instance"""
+        
         if software.name == SoftwareNames.SOFTWARE_SNIPPY_name:
             return self.get_snippy_default(
                 software.owner,
@@ -1462,7 +1463,7 @@ class DefaultParameters(object):
         software.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_name
         software.name_extended = SoftwareNames.SOFTWARE_REMAP_PARAMS_extended
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.type_of_software = Software.TYPE_OF_USE_televir_settings
         software.version = SoftwareNames.SOFTWARE_REMAP_PARAMS_VERSION
         software.version_parameters = self.get_software_parameters_version(
             software.name
@@ -1562,7 +1563,7 @@ class DefaultParameters(object):
         software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
         software.version = SoftwareNames.SOFTWARE_PRINSEQ_VERSION
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_SOFTWARE
+        software.type_of_software = Software.TYPE_OF_USE_televir_settings
         software.version_parameters = self.get_software_parameters_version(
             software.name
         )
@@ -1633,7 +1634,7 @@ class DefaultParameters(object):
         )
         software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_SOFTWARE
+        software.type_of_software = Software.TYPE_OF_USE_televir_settings
         software.version_parameters = self.get_software_parameters_version(
             software.name
         )

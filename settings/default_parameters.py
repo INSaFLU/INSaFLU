@@ -112,6 +112,7 @@ class DefaultParameters(object):
         persist a specific software by default
         param: type_of_use Can by Software.TYPE_OF_USE_project; Software.TYPE_OF_USE_project_sample
         """
+        print("persisting parameters: " + str(len(vect_parameters)), type_of_use)
         software = None
         dt_out_sequential = {}
         for parameter in vect_parameters:
@@ -1463,7 +1464,7 @@ class DefaultParameters(object):
         software.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_name
         software.name_extended = SoftwareNames.SOFTWARE_REMAP_PARAMS_extended
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_OF_USE_televir_settings
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
         software.version = SoftwareNames.SOFTWARE_REMAP_PARAMS_VERSION
         software.version_parameters = self.get_software_parameters_version(
             software.name
@@ -1563,7 +1564,7 @@ class DefaultParameters(object):
         software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
         software.version = SoftwareNames.SOFTWARE_PRINSEQ_VERSION
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_OF_USE_televir_settings
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
         software.version_parameters = self.get_software_parameters_version(
             software.name
         )
@@ -1634,7 +1635,7 @@ class DefaultParameters(object):
         )
         software.version = SoftwareNames.SOFTWARE_televir_report_layout_version
         software.type_of_use = type_of_use
-        software.type_of_software = Software.TYPE_OF_USE_televir_settings
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
         software.version_parameters = self.get_software_parameters_version(
             software.name
         )

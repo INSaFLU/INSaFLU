@@ -153,9 +153,9 @@ class PISettingsView(LoginRequiredMixin, ListView):
         """
 
         filter_dict = {
-            SoftwareNames.SOFTWARE_BWA_name: [
-                ConstantsSettings.PIPELINE_NAME_read_classification
-            ]
+            #SoftwareNames.SOFTWARE_BWA_name: [
+            #    ConstantsSettings.PIPELINE_NAME_read_classification
+            #]
         }
 
         if software.name in filter_dict:

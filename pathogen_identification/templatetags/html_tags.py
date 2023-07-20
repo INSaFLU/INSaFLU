@@ -87,6 +87,9 @@ def difference_str_to_int(a, b):
 
     if "," in a:
         a = a.replace(",", "")
+    
+    if "," in b:
+        b = b.replace(",", "")
 
     return int(a) - int(b)
 

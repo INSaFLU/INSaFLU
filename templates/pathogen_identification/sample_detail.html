@@ -304,7 +304,7 @@
                     <div class= "col-sm">
                     {% if qc_report.performed %}
                     <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
-                    <p> Reads after filtering: <strong>{{ qc_report.output_reads }}</strong> ({{qc_report.output_reads_percent|round_to_percent}} %) </p>
+                    <p> Reads after filtering: <strong>{{ qc_report.output_reads }}</strong> ({{qc_report.output_reads_percent|round_str}} %) </p>
                     {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% endif %}

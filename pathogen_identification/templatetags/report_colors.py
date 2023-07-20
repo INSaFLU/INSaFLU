@@ -18,6 +18,12 @@ def coverage_col(coverage_value):
     ncol = f"background-color: rgba({cell_color}, {int(coverage_value)}%);"
     return ncol
 
+def round_str(value):
+    if value is None or value == "":
+        value = 0
+    value= float(value)
+    ncol = round(value, 2)
+    return ncol
 
 @register.filter(name="round")
 def round_num(value):

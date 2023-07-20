@@ -89,6 +89,6 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project(project_pk=project_sample.project.pk),
+            process_controler.get_name_televir_project_sample_sort(project_pk=project_sample.project.pk),
             ProcessControler.FLAG_FINISHED,
         )

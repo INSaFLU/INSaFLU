@@ -89,7 +89,6 @@ class Command(BaseCommand):
 
         pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
-        
         # MANAGEMENT
         matched_paths = {
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)

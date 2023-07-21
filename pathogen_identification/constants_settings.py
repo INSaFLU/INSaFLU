@@ -32,7 +32,14 @@ class ConstantsSettings:
         CS.PIPELINE_NAME_host_depletion,
         CS.PIPELINE_NAME_read_classification,
         CS.PIPELINE_NAME_contig_classification,
-    ]
+    ] 
+
+    ################################### pipeline_deployment_type
+
+    DEPLOYMENT_TYPE_TREE = "tree"
+    DEPLOYMENT_TYPE_PIPELINE = "pipeline"
+
+    DEPLOYMENT_DEFAULT = DEPLOYMENT_TYPE_PIPELINE
 
     ################################### Threads
 

@@ -21,6 +21,9 @@ from pathogen_identification.models import (
     RunMain,
     SampleQC,
 )
+
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+
 from settings.models import Parameter, Technology
 
 
@@ -320,7 +323,8 @@ class SampleTable(tables.Table):
                 "televir_sample_compound_report", args=[record.project.pk, record.pk]
             )
             + '">'
-            + "report"
+            + " <fa class='fa fa-code-fork'></fa>"
+            + " Combined Report"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:
@@ -338,7 +342,8 @@ class SampleTable(tables.Table):
             '<a href="'
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
-            + "Workflow Panel"
+            + " <fa class='fa fa-reorder'></fa>"
+            + " workflow panel"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:
@@ -358,7 +363,13 @@ class SampleTable(tables.Table):
             status__in=[ParameterSet.STATUS_RUNNING, ParameterSet.STATUS_QUEUED],
         )
 
+
+
         record_name = '<a><i class="fa fa-bug"></i></span> </a>'
+
+        TELEVIR_DEPLOY_URL= "submit_televir_project_sample"
+        if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
+            TELEVIR_DEPLOY_URL = "submit_televir_project_sample_runs"
 
         if user.username == record.project.owner.username:
             record_name = (
@@ -369,7 +380,7 @@ class SampleTable(tables.Table):
                 + str(record.pk)
                 + '" deploy-url="'
                 + reverse(
-                    "submit_televir_runs_project_sample",
+                    TELEVIR_DEPLOY_URL,
                 )
                 + '"'
                 + '"><i class="fa fa-flask"></i></span> </a>'
@@ -399,7 +410,9 @@ class SampleTable(tables.Table):
         sample_name = record.sample.name
         sample_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.pk, record.pk])
+            + reverse(
+                "televir_sample_compound_report", args=[record.project.pk, record.pk]
+            )
             + '">'
             + record.name
             + "</a>"

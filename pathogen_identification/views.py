@@ -72,7 +72,7 @@ from pathogen_identification.utilities.utilities_views import (
     FinalReportCompound,
 )
 from settings.constants_settings import ConstantsSettings as CS
-
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from utils.process_SGE import ProcessSGE
 from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
@@ -666,7 +666,15 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         ### set control reports
         set_control_reports(project.pk)
 
+        ### type of deployment
+        DEPLOY_TYPE= PICS.DEPLOYMENT_DEFAULT
+        DEPLOY_URL= 'deploy_ProjectPI'
+
+        if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
+            DEPLOY_URL= 'deploy_ProjectPI_runs'
+
         context["table"] = samples
+        context["deploy_url"] = DEPLOY_URL
         context["project_index"] = project.pk
         context["project_name"] = project_name
         context["nav_sample"] = True

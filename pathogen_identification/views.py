@@ -671,7 +671,7 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         DEPLOY_URL= 'deploy_ProjectPI'
 
         if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
-            DEPLOY_URL= 'deploy_ProjectPI_runs'
+            DEPLOY_URL= 'deploy_runs_ProjectPI'
 
         context["table"] = samples
         context["deploy_url"] = DEPLOY_URL

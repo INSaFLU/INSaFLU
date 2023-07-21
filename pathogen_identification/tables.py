@@ -369,7 +369,7 @@ class SampleTable(tables.Table):
 
         TELEVIR_DEPLOY_URL= "submit_televir_project_sample"
         if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
-            TELEVIR_DEPLOY_URL = "submit_televir_project_sample_runs"
+            TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
 
         if user.username == record.project.owner.username:
             record_name = (

@@ -732,7 +732,7 @@ def Update_Run_QC(run_class: RunMain_class, parameter_set: ParameterSet):
         run_qc.args = run_class.qc_report.args
         run_qc.input_reads = f"{run_class.qc_report.input_reads:,}"
         run_qc.output_reads = f"{run_class.qc_report.output_reads:,}"
-        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 10)
+        run_qc.output_reads_percent = str(run_class.qc_report.output_reads_percent * 100)
         run_qc.save()
 
     else:

@@ -1043,8 +1043,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 context["files"][fpath]
             )
 
-        print(context["files"]["final_reports_csv"])
-
         return context
 
 

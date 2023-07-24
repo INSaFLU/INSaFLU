@@ -543,13 +543,7 @@ class RunMain(models.Model):
 
     def get_final_reports_df(self) -> pd.DataFrame:
         final_reports = FinalReport.objects.filter(run=self).exclude(coverage=0)
-        final_reports_df = pd.DataFrame(list(final_reports.values()))
-        final_reports_df = final_reports_df.drop(
-            columns=[
-                "id",
-                "run_id",
-            ]
-        )
+        print(final_reports)
 
         columns_to_keep = [
             "taxid",
@@ -569,6 +563,17 @@ class RunMain(models.Model):
             "mapping_success",
             "classification_success",
         ]
+
+        if len(final_reports) == 0:
+            return pd.DataFrame(columns=columns_to_keep)
+
+        final_reports_df = pd.DataFrame(list(final_reports.values()))
+        final_reports_df = final_reports_df.drop(
+            columns=[
+                "id",
+                "run_id",
+            ]
+        )
 
         final_reports_df = final_reports_df[columns_to_keep]
         final_reports_df["ref_db"] = final_reports_df["ref_db"].apply(

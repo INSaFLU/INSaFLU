@@ -543,7 +543,6 @@ class RunMain(models.Model):
 
     def get_final_reports_df(self) -> pd.DataFrame:
         final_reports = FinalReport.objects.filter(run=self).exclude(coverage=0)
-        print(final_reports)
 
         columns_to_keep = [
             "taxid",

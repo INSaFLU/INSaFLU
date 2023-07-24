@@ -682,7 +682,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
         context["query_set_count"] = query_set.count()
-        print(self.request.user.username)
         context["demo"] = True if self.request.user.username == "demo" else False
 
         return context

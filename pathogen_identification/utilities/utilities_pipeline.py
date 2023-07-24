@@ -1520,7 +1520,6 @@ class Parameter_DB_Utility:
         if parameter_set.status in [
             ParameterSet.STATUS_FINISHED,
             ParameterSet.STATUS_RUNNING,
-            ParameterSet.STATUS_QUEUED,
         ]:
             return False
 

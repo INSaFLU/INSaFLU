@@ -102,7 +102,7 @@ def difference_str_to_str(a, b):
 
     diff = int(a) - int(b)
 
-    return f"{diff:,}"
+    return diff
 
 
 @register.simple_tag

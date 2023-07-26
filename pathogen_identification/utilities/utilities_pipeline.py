@@ -334,6 +334,7 @@ class PipelineTree:
         """
 
         self.generate_graph()
+        print(self.nodes)
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
 

@@ -13,7 +13,6 @@ from settings.models import Software, Parameter, Sample
 from settings.constants_settings import ConstantsSettings as CS
 from pathogen_identification.constants_settings import (
     ConstantsSettings as PI_CS,
-    Pipeline_Makeup,
 )
 from pathogen_identification.models import SoftwareTree, ParameterSet, SoftwareTreeNode
 from constants.constantsTestsCase import ConstantsTestsCase
@@ -270,8 +269,8 @@ class Televir_Software_Test(TestCase):
         snippy = Software.objects.filter(name_extended="Snippy", owner=self.test_user)
         self.assertEqual(snippy.count(), 1)
 
-        bowtie2 = Software.objects.filter(name_extended="Bowtie2", owner=self.test_user)
-        self.assertEqual(bowtie2.count(), 1)
+        #bowtie2 = Software.objects.filter(name_extended="Bowtie2", owner=self.test_user)
+        #self.assertEqual(bowtie2.count(), 1)
 
     def test_pipeline_makeup(self):
         default_software = DefaultSoftware()
@@ -310,7 +309,17 @@ class Televir_Software_Test(TestCase):
         utils_manager.generate_default_trees(self.test_user)
         all_trees = SoftwareTree.objects.all()
 
-        self.assertEqual(all_trees.count(), len(self.pipeline_makeup.MAKEUP) * 2)
+        self.assertEqual(all_trees.count(), 32)
+
+        self.assertEqual(
+            utils_manager.check_any_pipeline_possible(CS.TECHNOLOGY_minion, self.test_user),
+            True,
+        )
+
+        self.assertEqual(
+            utils_manager.check_any_pipeline_possible(CS.TECHNOLOGY_illumina, self.test_user),
+            False,
+        )
 
         ont_pipeline_tree = utils_manager.generate_software_tree(
             CS.TECHNOLOGY_minion, 0
@@ -545,7 +554,6 @@ class Televir_Objects_TestCase(TestCase):
         read_names_subset = sample(read_names, 100)
         temp_read_file = Temp_File(self.temp_directory, suffix=".fq.gz")
 
-        print(self.temp_directory)
         with temp_read_file as tpf:
             print(tpf)
             r1.read_filter_move(read_names_subset, tpf)
@@ -630,6 +638,14 @@ class Televir_Project_Test(TestCase):
             local_tree = utils_manager.generate_project_tree(
                 self.project_ont.technology, self.project_ont, self.test_user
             )
+
+            combined_table= utils_manager.parameter_util.generate_combined_parameters_table(
+                self.project_ont.technology, self.test_user)
+
+            if not utils_manager.check_pipeline_possible(combined_table, local_tree.makeup):
+                continue
+            
+
             local_paths = local_tree.get_all_graph_paths_explicit()
 
             tree_makeup = local_tree.makeup

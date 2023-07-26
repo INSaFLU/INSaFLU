@@ -313,7 +313,7 @@
                         {% if run_detail.enriched_reads == 0 %}
                         <p> Viral enrichment ({{ run_main.enrichment }}) did not remove any reads </p>
                         {% else %}
-                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_to_int run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent run_detail.input run_detail.enriched_reads %} %).</p>
+                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_to_int qc_report.input_reads run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads run_detail.enriched_reads %} %).</p>
                         {% endif %}
                         {% endif %}
                         {% if run_main.host_depletion_performed %}
@@ -893,12 +893,12 @@
         console.log("{{qc_report.input_reads}}");
         if ("{{qc_report.performed}}" == "True" ) {
             if ("{{qc_report.input_reads}}" != "0" ) {
-                raw_data.push(['QC Filter', parseFloat("{% difference_str_to_str qc_report.input_reads qc_report.output_reads %}")]);
+                raw_data.push(['Extra filtering', parseFloat("{% difference_str_to_str qc_report.input_reads qc_report.output_reads %}")]);
             };
         };
         if ("{{run_main.enrichment_performed}}" == "True" ) {
             if ("{{run_detail.enriched_reads}}" != "0" ) {
-                raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
+                raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int qc_report.input_reads run_detail.enriched_reads %}")]);
             };
         };
         if ("{{run_main.host_depletion_performed}}" == "True" ) {

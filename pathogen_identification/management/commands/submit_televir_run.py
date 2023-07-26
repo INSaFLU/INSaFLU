@@ -17,6 +17,9 @@ from pathogen_identification.models import (
 from pathogen_identification.utilities.utilities_pipeline import Utils_Manager
 from utils.process_SGE import ProcessSGE
 
+from pathogen_identification.utilities.tree_deployment import (
+    TreeProgressGraph,
+)
 
 class Sample_Staging:
     """
@@ -107,6 +110,11 @@ class Command(BaseCommand):
 
         print("was_run_killed", was_run_killed)
 
+
+        ### draw graph
+        graph_progress = TreeProgressGraph(project_sample)
+
+
         ### SUBMISSION
         try:
 
@@ -142,6 +150,8 @@ class Command(BaseCommand):
                 if run.is_available:
                     run.get_in_line()
                     submission_dict[target_sample].append(run)
+                
+                graph_progress.generate_graph()
 
                 for sample, runs in submission_dict.items():
                     for run in runs:

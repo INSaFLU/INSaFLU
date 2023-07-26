@@ -269,8 +269,6 @@ class Televir_Software_Test(TestCase):
         snippy = Software.objects.filter(name_extended="Snippy", owner=self.test_user)
         self.assertEqual(snippy.count(), 1)
 
-        #bowtie2 = Software.objects.filter(name_extended="Bowtie2", owner=self.test_user)
-        #self.assertEqual(bowtie2.count(), 1)
 
     def test_pipeline_makeup(self):
         default_software = DefaultSoftware()

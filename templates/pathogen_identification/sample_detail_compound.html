@@ -242,13 +242,19 @@
 
 <div class="row">
     <div class="col-sm-6">
-        <h2>Sample: {{sample.name}}</h2>
+        <h3>Sample: {{sample}}</h3>
     </div>
     <div class="col-sm-6">
         <div class="float-right">
             <a href={% url 'sample_main' pk1=project_index pk2=sample_index %} class="btn btn-primary dark"> 
                 <span class="hidden-phone"></span>Back to Sample </a>
         </div>
+    </div>
+    <div class="col-sm-12">
+        <hr class="solid">
+    </div>
+    <div class="col-sm-6">
+        <h4>Runs </h4>
     </div>
     <div class="col-sm-2">
         {% for run in runs %}

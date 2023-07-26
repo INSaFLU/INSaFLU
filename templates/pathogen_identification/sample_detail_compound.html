@@ -239,39 +239,25 @@
 
 {% if owner %}
 
+
 <div class="row">
     <div class="col-sm-6">
-        <h2>Sample: {{sample.sample_name}}</h2>
+        <h2>Sample: {{sample.name}}</h2>
     </div>
     <div class="col-sm-6">
         <div class="float-right">
-            <a href="{% url 'sample_main' pk1=project_index pk2=sample_index %}" class="btn btn-primary dark"> 
+            <a href={% url 'sample_main' pk1=project_index pk2=sample_index %} class="btn btn-primary dark"> 
                 <span class="hidden-phone"></span>Back to Sample </a>
         </div>
     </div>
-
-    <div class="card-block">
-        <div style="padding: 20px">
-            <div class="row">
-                <div class="col-sm-2">
-                </div>
-                <div class="col-sm-8">
-                        <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
-                        <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
-                </div>
-                <div class="col-sm-2">
-                    {% for run in runs %}
-                    <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.name}} </a>
-                    <br>
-                    <br>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+    <div class="col-sm-2">
+        {% for run in runs %}
+        <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.name}}, leaf: {{run.parameter_set.leaf.index}} </a>
+        <br>
+        <br>
+        {% endfor %}
     </div>
-
 </div>
-
 
 {% if graph_json %}
 <div id="accordion1" role="tablist" aria-multiselectable="true">
@@ -291,7 +277,7 @@
         </div>
     </div>
 </div>
-
+z
 {% endif %}
 
 

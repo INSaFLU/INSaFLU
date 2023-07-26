@@ -1056,6 +1056,7 @@ class RunMain_class(Run_Deployment_Methods):
 
     def generate_output_data_classes(self):
         ### transfer to sample class
+        input_reads= self.sample.reads_before_processing
         processed_reads = self.sample.reads_after_processing
 
         filtered_reads = (
@@ -1067,8 +1068,8 @@ class RunMain_class(Run_Deployment_Methods):
             + self.sample.r2.current_fastq_read_number()
         )
 
-        filtered_reads_perc = (int(filtered_reads) / processed_reads) * 100
-        final_processing_percent = (final_processing_reads / processed_reads) * 100
+        filtered_reads_perc = (int(filtered_reads) / input_reads) * 100
+        final_processing_percent = (final_processing_reads / input_reads) * 100
 
         ### transfer to assembly class / drone.
         print(self.aclass_summary)
@@ -1104,9 +1105,9 @@ class RunMain_class(Run_Deployment_Methods):
             self.remap_manager.max_mapped,
             f"{processed_reads:,}",
             enriched_reads,
-            enriched_reads / processed_reads,
+            enriched_reads / input_reads,
             depleted_reads,
-            depleted_reads / processed_reads,
+            depleted_reads / input_reads,
             f"{filtered_reads:,}",
             f"{filtered_reads_perc:.2f}",
             False,
@@ -1480,7 +1481,7 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.remap_manager.collect_final_report_summary_statistics()
         self.report = self.remap_manager.report
         # transfer to sample class
-        processed_reads = self.sample.reads_after_processing
+        processed_reads = self.sample.reads_before_processing
 
         filtered_reads = (
             self.sample.r1.read_number_filtered + self.sample.r2.read_number_filtered

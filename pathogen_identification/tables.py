@@ -333,9 +333,9 @@ class SampleTable(tables.Table):
         ## sorted icon, green if sorted, red if not
         sorted_icon=  ""
         if sorted:
-            sorted_icon = '<i class="fa fa-sort-amount-asc" style="color: green;" data-toggle="modal" data-toggle="tooltip" title="Sorted"></i>'
+            sorted_icon = ' <i class="fa fa-sort-amount-asc" style="color: green;" title="Sorted"></i>'
         else:
-            sorted_icon = '<i class="fa fa-times" style="color: red;" data-toggle="modal" data-toggle="tooltip" title="Not sorted"></i>'
+            sorted_icon = ''
 
 
         record_name = (

@@ -5,7 +5,10 @@ import django_tables2 as tables
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+)
 from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
 from pathogen_identification.models import (
@@ -317,6 +320,24 @@ class SampleTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
+        final_report = FinalReport.objects.filter(
+            sample=record
+        ).order_by("-coverage")
+        
+        ## check sorted
+
+        report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
+        report_sorter = ReportSorter(final_report, report_layout_params)
+        sorted= report_sorter.check_analyzed()
+
+        ## sorted icon, green if sorted, red if not
+        sorted_icon=  ""
+        if sorted:
+            sorted_icon = '<i class="fa fa-sort-amount-asc" style="color: green;" data-toggle="modal" data-toggle="tooltip" title="Sorted"></i>'
+        else:
+            sorted_icon = '<i class="fa fa-times" style="color: red;" data-toggle="modal" data-toggle="tooltip" title="Not sorted"></i>'
+
+
         record_name = (
             '<a href="'
             + reverse(
@@ -326,6 +347,7 @@ class SampleTable(tables.Table):
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"
             + "</a>"
+            + sorted_icon
         )
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
@@ -362,8 +384,6 @@ class SampleTable(tables.Table):
             sample=record,
             status__in=[ParameterSet.STATUS_RUNNING, ParameterSet.STATUS_QUEUED],
         )
-
-
 
         record_name = '<a><i class="fa fa-bug"></i></span> </a>'
 

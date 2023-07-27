@@ -349,8 +349,10 @@ class Input_Generator:
         return new_rpath
 
     def generate_method_args(self):
-        parameter_leaf = self.reference.run.parameter_set.leaf
-        run_df = self.utils.get_leaf_parameters(parameter_leaf)
+        parameter_set = self.reference.run.parameter_set
+        ps_leaves= self.utils.get_parameterset_leaves(parameter_set)
+        
+        run_df = self.utils.get_leaf_parameters(ps_leaves[0])
 
         self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
 

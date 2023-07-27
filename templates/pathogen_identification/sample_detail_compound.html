@@ -258,7 +258,7 @@
     </div>
     <div class="col-sm-2">
         {% for run in runs %}
-        <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.name}}, leaf: {{run.parameter_set.leaf.index}} </a>
+        <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.parameter_set.leaf.index}} </a>
         <br>
         <br>
         {% endfor %}

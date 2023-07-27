@@ -253,6 +253,8 @@ class SampleTable(tables.Table):
             "input",
             "combinations",
             "running_processes",
+            "queued_processes",
+            "set_control",
         )
 
     def render_set_control(self, record):
@@ -322,13 +324,16 @@ class SampleTable(tables.Table):
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        
         final_report = FinalReport.objects.filter(
             sample=record
         ).order_by("-coverage")
 
         ## return empty square if no report
         if final_report.count() == 0:
-            return mark_safe('<i class="fa fa-square-o"></i>')
+            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
         ## check sorted
 
         report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
@@ -351,8 +356,6 @@ class SampleTable(tables.Table):
                 + '><i class="fa fa-sort"></i></span> </a>'
             )
 
-        if user.username == Constants.USER_ANONYMOUS:
-            return mark_safe("report")
         if user.username == record.project.owner.username:
             return mark_safe(sorted_icon)
 

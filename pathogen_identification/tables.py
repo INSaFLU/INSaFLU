@@ -358,8 +358,6 @@ class SampleTable(tables.Table):
             )
             return mark_safe(sorted_icon + request_sorting)
 
-            
-
     def render_report(self, record):
 
         current_request = CrequestMiddleware.get_request()

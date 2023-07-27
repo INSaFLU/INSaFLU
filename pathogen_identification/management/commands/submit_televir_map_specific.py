@@ -350,9 +350,13 @@ class Input_Generator:
 
     def generate_method_args(self):
         parameter_set = self.reference.run.parameter_set
+
+        pipeline_tree = self.utils.parameter_util.software_pipeline_tree(
+            parameter_set.leaf.software_tree
+        )
         ps_leaves= self.utils.get_parameterset_leaves(parameter_set)
-        
-        run_df = self.utils.get_leaf_parameters(ps_leaves[0])
+        parameter_leaf= ps_leaves[0]
+        run_df = self.utils.get_leaf_parameters(parameter_leaf)
 
         self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]
 

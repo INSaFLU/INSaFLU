@@ -227,18 +227,18 @@ class ProjectTable(tables.Table):
 
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
+    report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
+    runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
+    sorting = tables.Column("Sorting", orderable=False, empty_values=())
+    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
 
     input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
-    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
-    runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
     set_control = tables.Column("Control", orderable=False, empty_values=())
-    sorting = tables.Column("Sorting", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -366,6 +366,8 @@ class SampleTable(tables.Table):
 
         record_name = (
             '<a href="' 
+            + reverse("sample_main", args=[record.project.pk, record.pk])
+            + '">'
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"
             + "</a>"
@@ -376,7 +378,6 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
     def render_runs(self, record):
-        from crequest.middleware import CrequestMiddleware
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
@@ -395,9 +396,7 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
     def render_deploy(self, record):
-        from crequest.middleware import CrequestMiddleware
 
-        color = ""
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 

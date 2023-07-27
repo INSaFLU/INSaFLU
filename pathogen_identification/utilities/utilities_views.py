@@ -159,7 +159,7 @@ class ReportSorter:
         if not self.model:
             raise Exception("No run found")
 
-        return infer_run_media_dir(self.model)
+        return infer_run_media_dir(self.run)
     
     def inferred_sample_media_dir(self):
         """
@@ -168,7 +168,7 @@ class ReportSorter:
         if not self.model:
             raise Exception("No model found")
 
-        rundir= infer_run_media_dir(self.model)
+        rundir= infer_run_media_dir(self.run)
         sample_dir= os.path.dirname(rundir)
 
         return sample_dir

@@ -10,7 +10,7 @@ from constants.constants import Televir_Metadata_Constants as Televir_Metadata
 from managing_files.models import ProcessControler
 from pathogen_identification.constants_settings import MEDIA_ROOT, ConstantsSettings
 from pathogen_identification.install_registry import Params_Illumina, Params_Nanopore
-from pathogen_identification.models import FinalReport, RawReference, RunMain, Projects
+from pathogen_identification.models import FinalReport, RawReference, RunMain, Projects, SoftwareTreeNode
 from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
     Read_class,
@@ -355,7 +355,10 @@ class Input_Generator:
             parameter_set.leaf.software_tree
         )
         ps_leaves= self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
-        parameter_leaf= ps_leaves[0]
+        parameter_leaf_index= ps_leaves[0]
+        parameter_leaf= SoftwareTreeNode.objects.get(index=parameter_leaf_index, software_tree= parameter_set.leaf.software_tree)
+
+
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
 
         self.method_args = run_df[run_df.module == CS.PIPELINE_NAME_remapping]

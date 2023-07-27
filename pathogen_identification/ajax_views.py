@@ -349,7 +349,7 @@ def sort_report_sample(request):
     if request.is_ajax():
         data = {"is_ok": False, "is_deployed": False}
         process_SGE = ProcessSGE()
-        sample = PIProject_Sample.objects.filterget(
+        sample = PIProject_Sample.objects.get(
             pk=int(request.POST["sample_id"])
         )
 

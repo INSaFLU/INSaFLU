@@ -26,7 +26,7 @@ def round_str(value):
     ncol = round(value, 2)
     return ncol
 
-@register.filter(name="round_str_invert")
+@register.filter(name="round_str_perc_invert")
 def round_str(value):
     if value is None or value == "":
         value = 0

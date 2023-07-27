@@ -304,7 +304,7 @@
                     <div class= "col-sm">
                     {% if qc_report.performed %}
                     <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
-                    <p> Reads after filtering: <strong>{{ qc_report.output_reads }}</strong> ({{qc_report.output_reads_percent|round_str}} %) </p>
+                    <p> Reads after filtering: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{qc_report.output_reads_percent|round_str}} %) </p>
                     {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% endif %}
@@ -313,7 +313,7 @@
                         {% if run_detail.enriched_reads == 0 %}
                         <p> Viral enrichment ({{ run_main.enrichment }}) did not remove any reads </p>
                         {% else %}
-                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_int_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads run_detail.enriched_reads %} %).</p>
+                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_int_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads run_detail.input run_detail.enriched_reads %} %).</p>
                         {% endif %}
                         {% endif %}
                         {% if run_main.host_depletion_performed %}

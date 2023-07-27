@@ -368,7 +368,7 @@ class SampleTable(tables.Table):
 
         record_name = (
             '<a href="' 
-            + reverse("sample_main", args=[record.project.pk, record.pk])
+            + reverse("televir_sample_compound_report", args=[record.project.pk, record.pk])
             + '">'
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"

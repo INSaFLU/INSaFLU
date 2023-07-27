@@ -25,6 +25,7 @@ from pathogen_identification.models import (
     SampleQC,
 )
 
+from crequest.middleware import CrequestMiddleware
 from pathogen_identification.constants_settings import ConstantsSettings as CS
 
 from settings.models import Parameter, Technology
@@ -237,6 +238,7 @@ class SampleTable(tables.Table):
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
     set_control = tables.Column("Control", orderable=False, empty_values=())
+    sorting = tables.Column("Sorting", orderable=False, empty_values=())
 
     class Meta:
         model = PIProject_Sample
@@ -246,6 +248,7 @@ class SampleTable(tables.Table):
             "name",
             "report",
             "runs",
+            "sorting",
             "deploy",
             "input",
             "combinations",
@@ -314,16 +317,14 @@ class SampleTable(tables.Table):
             ],
         ).count()
 
-    def render_report(self, record):
-        from crequest.middleware import CrequestMiddleware
-
+    def render_sorting(self, record):
+        
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
         final_report = FinalReport.objects.filter(
             sample=record
         ).order_by("-coverage")
-        
         ## check sorted
 
         report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
@@ -333,10 +334,19 @@ class SampleTable(tables.Table):
         ## sorted icon, green if sorted, red if not
         sorted_icon=  ""
         if sorted:
-            sorted_icon = ' <i class="fa fa-sort-amount-asc" style="color: green;" title="Sorted"></i>'
+            sorted_icon = ' <i class="fa fa-check" style="color: green;"></i>'
         else:
-            sorted_icon = ''
+            sorted_icon = ' <i class="fa fa-times" style="color: red;"></i>'
 
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        if user.username == record.project.owner.username:
+            return mark_safe(sorted_icon)
+
+    def render_report(self, record):
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user        
 
         record_name = (
             '<a href="'
@@ -347,7 +357,6 @@ class SampleTable(tables.Table):
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"
             + "</a>"
-            + sorted_icon
         )
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")

@@ -111,6 +111,11 @@ urlpatterns = [
         name="sort_project_reports",
     ),
     url(
+        r"ajax/sort_sample$",
+        PIajax_views.sort_report_sample,
+        name="sort_sample_reports",
+    ),
+    url(
         r"^ajax/kill_televir_sample$",
         PIajax_views.kill_televir_project_tree_sample,
         name="kill_televir_project_sample",

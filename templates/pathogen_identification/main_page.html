@@ -330,6 +330,34 @@
 
         }
 
+        if ($(this).attr("id") == "sort_sample_btn") {
+            e.preventDefault();
+        
+            url= $(this).attr("sort-url");
+            console.log(url);
+            $.ajax({
+                url: $(this).attr("sort-url"),
+                type: "POST",
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'sample_id': $(this).attr("pk"),
+                },
+                data_type: 'json',
+                success: function(data){
+                    console.log(data);
+                    if (data["is_ok"] == true && data["is_deployed"] == false) { 
+                        alert("No Results to Sort")");
+                    }
+                    else if (data["is_ok"] == true && data["is_deployed"] == true) {
+                        alert("Sort deployed");
+                    }
+
+                }
+        
+            });
+
+        }
+
     })
 
     $("#deploypi_btn").click(function(){
@@ -379,6 +407,7 @@
 
         });
     })
+    
 
 </script>
 

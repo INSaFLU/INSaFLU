@@ -338,6 +338,48 @@ def sort_report_projects(request):
 
         data["is_ok"] = True
         return JsonResponse(data)
+    
+
+@login_required
+@require_POST
+def sort_report_sample(request):
+    """
+    sort report projects
+    """
+    if request.is_ajax():
+        data = {"is_ok": False, "is_deployed": False}
+        process_SGE = ProcessSGE()
+        sample = PIProject_Sample.objects.filterget(
+            pk=int(request.POST["sample_id"])
+        )
+
+        project= sample.project
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=project.pk
+        )
+        try:
+
+            final_reports = FinalReport.objects.filter(sample=sample)
+            report_sorter = ReportSorter(final_reports, report_layout_params)
+
+            if report_sorter.run is None:
+                pass
+            elif report_sorter.check_analyzed():
+                pass
+            else:
+                taskID = process_SGE.set_submit_televir_sort_pisample_reports(
+                    user=request.user,
+                    pisample_pk=sample.pk,
+                )
+                data["is_deployed"] = True
+
+        except Exception as e:
+            print(e)
+            return JsonResponse(data)
+
+        data["is_ok"] = True
+        return JsonResponse(data)
+
 
 
 @login_required

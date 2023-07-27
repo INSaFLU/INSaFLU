@@ -325,6 +325,10 @@ class SampleTable(tables.Table):
         final_report = FinalReport.objects.filter(
             sample=record
         ).order_by("-coverage")
+
+        ## return empty square if no report
+        if final_report.count() == 0:
+            return mark_safe('<i class="fa fa-square-o"></i>')
         ## check sorted
 
         report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
@@ -334,9 +338,18 @@ class SampleTable(tables.Table):
         ## sorted icon, green if sorted, red if not
         sorted_icon=  ""
         if sorted:
-            sorted_icon = ' <i class="fa fa-check" style="color: green;"></i>'
+            sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
         else:
-            sorted_icon = ' <i class="fa fa-times" style="color: red;"></i>'
+            sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            request_sorting = (
+                '<a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+                + ' sort-url="'
+                + reverse(
+                "sort_sample_reports"
+                )
+                + '"'
+                + '><i class="fa fa-sort"></i></span> </a>'
+            )
 
         if user.username == Constants.USER_ANONYMOUS:
             return mark_safe("report")
@@ -349,11 +362,7 @@ class SampleTable(tables.Table):
         user = current_request.user        
 
         record_name = (
-            '<a href="'
-            + reverse(
-                "televir_sample_compound_report", args=[record.project.pk, record.pk]
-            )
-            + '">'
+            '<a href="' 
             + " <fa class='fa fa-code-fork'></fa>"
             + " Combined Report"
             + "</a>"

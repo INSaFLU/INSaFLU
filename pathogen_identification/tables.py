@@ -343,7 +343,7 @@ class SampleTable(tables.Table):
         ## sorted icon, green if sorted, red if not
         sorted_icon=  ""
         if sorted:
-            sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>
+            sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
             return mark_safe(sorted_icon)
         else:
             sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'

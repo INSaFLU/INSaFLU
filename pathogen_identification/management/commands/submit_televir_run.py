@@ -112,7 +112,7 @@ class Command(BaseCommand):
 
 
         ### draw graph
-        graph_progress = TreeProgressGraph(project_sample)
+        graph_progress = TreeProgressGraph(target_sample)
 
 
         ### SUBMISSION

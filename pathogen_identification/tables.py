@@ -645,6 +645,9 @@ class RunMainTable(tables.Table):
             "runtime",
         )
 
+    def render_name(self,record):
+        return record.parameter_set.leaf.index
+
     def render_success(self, record):
         success = False
         final_reports = FinalReport.objects.filter(run=record).count()

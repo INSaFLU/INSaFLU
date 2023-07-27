@@ -178,7 +178,7 @@
                                 <td data-title="Sample">{{value.sample.name}}</td>
                                 <td data-title="Run">
                                     <a
-                                        href={% url 'sample_detail' pk1=value.run.project.pk pk2=value.sample.pk pk3=value.run.pk %}>{{value.run.name}}</a>
+                                        href={% url 'sample_detail' pk1=value.run.project.pk pk2=value.sample.pk pk3=value.run.pk %}>{{value.run.parameter_set.leaf.index}}</a>
                                 </td>
 
                                 <td data-title="Description">{{value.description}}</td>

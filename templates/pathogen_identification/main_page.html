@@ -340,7 +340,7 @@
                 type: "POST",
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'sample_id': $(this).attr("pk"),
+                    'sample_id': $(this).attr("sample_id"),
                 },
                 data_type: 'json',
                 success: function(data){

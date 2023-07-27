@@ -921,7 +921,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         project_name = project_main.name
         sample_name = sample.name
-        run_name = run_main.name
+        run_name = run_main.parameter_set.leaf.index
 
         sample_main = run_main.sample
         #

@@ -280,6 +280,22 @@
                     </div>
                 </div>
             </div>
+            <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headinghead">
+                <div class="card-block">
+                    <div style="padding: 20px">
+                        <div class="row">
+                            <div class="col-sm-2">
+                            </div>
+                            <div class="col-sm-8">
+                                    <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                                    <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
+                            </div>
+                            <div class="col-sm-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

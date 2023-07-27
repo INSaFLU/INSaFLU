@@ -32,7 +32,7 @@ def round_str(value):
         value = 0
     value= float(value)
     ncol = round(value, 2)
-    return 1 - ncol
+    return 100 - ncol
 
 
 @register.filter(name="round")

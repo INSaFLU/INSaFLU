@@ -91,6 +91,21 @@ def difference_str_to_int(a, b):
 
     return int(a) - int(b)
 
+@register.simple_tag
+def difference_str_int_to_str(a, b):
+
+    if a is None or b is None:
+        return None
+
+    elif a == "" or b == "":
+        return None
+
+    if "," in a:
+        a = a.replace(",", "")
+    
+    diff= int(a) - int(b)
+
+    return f"{diff:,}"
 
 @register.simple_tag
 def difference_str_to_str(a, b):
@@ -103,6 +118,17 @@ def difference_str_to_str(a, b):
     diff = int(a) - int(b)
 
     return diff
+
+def difference_str_to_str_format(a, b):
+    if "," in a:
+        a = a.replace(",", "")
+
+    if "," in b:
+        b = b.replace(",", "")
+
+    diff = int(a) - int(b)
+
+    return f"{diff:,}"
 
 
 @register.simple_tag

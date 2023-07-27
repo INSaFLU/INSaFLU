@@ -256,8 +256,6 @@ class ReportSorter:
             str(self.run.project.pk),
         )
 
-        print("run media: ", self.run_media_dir)
-
         if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
 
@@ -302,10 +300,8 @@ class ReportSorter:
         print("sorted reports")
 
         def get_max_coverage(group: List[FinalReport]):
-            print(group)
             return max(y.coverage for y in group)
 
-        print(sorted_reports)
         sorted_groups = sorted(sorted_reports, key=get_max_coverage, reverse=True)
 
         return sorted_groups

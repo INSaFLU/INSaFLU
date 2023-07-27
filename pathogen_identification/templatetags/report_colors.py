@@ -31,8 +31,8 @@ def round_str(value):
     if value is None or value == "":
         value = 0
     value= float(value)
-    ncol = round(value, 2)
-    return 100 - ncol
+    ncol = round(100 - value, 2)
+    return ncol
 
 
 @register.filter(name="round")

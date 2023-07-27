@@ -346,14 +346,13 @@
                 success: function(data){
                     console.log(data);
                     if (data["is_ok"] == true && data["is_deployed"] == false) { 
-                        alert("No Results to Sort"));
+                        alert("No Results to Sort");
                     }
                     else if (data["is_ok"] == true && data["is_deployed"] == true) {
                         alert("Sort deployed");
                     }
-
                 }
-        
+
             });
 
         }

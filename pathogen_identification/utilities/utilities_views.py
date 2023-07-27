@@ -63,15 +63,17 @@ def set_control_reports(project_pk: int):
         pass
 
 
+
 class ReportSorter:
-    analysis_filename = "{}_overlap_analysis_{}.tsv"
-    all_clade_filename = "{}_all_clades_{}.tsv"
+    analysis_filename = "overlap_analysis_{}.tsv"
+    all_clade_filename = "all_clades_{}.tsv"
 
     def __init__(
         self,
         reports: List[FinalReport],
         report_layout_params: LayoutParams,
         force=False,
+        level= 0,
     ):
         self.reports = reports
         self.reference_clade = self.generate_reference_clade(report_layout_params)
@@ -83,31 +85,49 @@ class ReportSorter:
         self.metadata_df = self.prep_metadata_df()
 
         self.fasta_files = self.metadata_df.file.tolist()
+        self.level= level
+        self.model= self.set_level(reports[0], level)
         self.run = self.infer_run()
 
-        if self.run is not None:
-            self.run_media_dir = self.inferred_run_media_dir()
-            self.analysis_df_path = os.path.join(
-                self.run_media_dir, self.analysis_filename
-            )
+        if self.level is not None:
+            self.media_dir= self.infer_media_dir()
+            #self.run_media_dir = self.inferred_run_media_dir()
+
             self.all_clades_df_path = os.path.join(
-                self.run_media_dir, self.all_clade_filename
+                self.media_dir, self.all_clade_filename
             )
 
             self.analysis_df_path = os.path.join(
-                self.run_media_dir,
+                self.media_dir,
                 self.analysis_filename.format(
-                    self.run.name, report_layout_params.read_overlap_threshold
+                    report_layout_params.read_overlap_threshold
                 ),
             )
             self.force = force
 
         else:
-            self.run_media_dir = None
+            self.media_dir = None
             self.analysis_df_path = None
             self.all_clades_df_path = None
             self.force = False
 
+    def set_level(self, final_report: FinalReport, level):
+        if level == 0:
+            return final_report.sample
+        elif level == 1:
+            return final_report.run
+        
+        return None
+
+    def infer_media_dir(self):
+        """
+        Return media directory
+        """
+        if self.level == 0:
+            return self.inferred_sample_media_dir()
+        elif self.level == 1:
+            return self.inferred_run_media_dir()
+    
     @staticmethod
     def generate_reference_clade(layout_params: LayoutParams):
         """
@@ -136,10 +156,23 @@ class ReportSorter:
         """
         Return run media directory
         """
-        if not self.run:
+        if not self.model:
             raise Exception("No run found")
 
-        return infer_run_media_dir(self.run)
+        return infer_run_media_dir(self.model)
+    
+    def inferred_sample_media_dir(self):
+        """
+        Return run media directory
+        """
+        if not self.model:
+            raise Exception("No model found")
+
+        rundir= infer_run_media_dir(self.model)
+        sample_dir= os.path.dirname(rundir)
+
+        return sample_dir
+        
 
     def retrieved_mapped_subset(self, report: FinalReport):
         """
@@ -195,8 +228,8 @@ class ReportSorter:
         overlap_manager = ReadOverlapManager(
             self.metadata_df,
             self.reference_clade,
-            self.run_media_dir,
-            str(self.run.project.pk),
+            self.media_dir,
+            str(self.model.pk),
         )
         ### time operations
         print("generating tree")
@@ -252,8 +285,8 @@ class ReportSorter:
         overlap_manager = ReadOverlapManager(
             self.metadata_df,
             self.reference_clade,
-            self.run_media_dir,
-            str(self.run.project.pk),
+            self.media_dir,
+            str(self.model.pk),
         )
 
         if not os.path.exists(overlap_manager.distance_matrix_path):
@@ -274,7 +307,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.run is not None:
+        if self.model is not None:
             overlap_analysis = self.read_overlap_analysis()
             overlap_analysis.to_csv(self.analysis_df_path, sep="\t", index=False)
 
@@ -310,7 +343,7 @@ class ReportSorter:
         """
         Return sorted reports
         """
-        if self.run is None:
+        if self.model is None:
             return [self.reports]
 
         if self.metadata_df.empty:

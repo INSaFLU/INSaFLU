@@ -33,7 +33,7 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
 class ReadOverlapManager:
     distance_matrix_filename: str = "distance_matrix_{}.tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
-    accid_statistics_path: str = "accid_statistics_{}.tsv"
+    accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0.05
     max_reads: int = 100000
 
@@ -55,7 +55,7 @@ class ReadOverlapManager:
             self.media_dir, self.clade_statistics_filename.format(pid)
         )
         self.accid_statistics_path = os.path.join(
-            self.media_dir, self.accid_statistics_path.format(pid)
+            self.media_dir, self.accid_statistics_filename.format(pid)
         )
 
         self.metadata["filename"] = self.metadata["file"].apply(

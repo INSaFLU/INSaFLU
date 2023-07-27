@@ -354,7 +354,7 @@ class Input_Generator:
         pipeline_tree = self.utils.parameter_util.software_pipeline_tree(
             parameter_set.leaf.software_tree
         )
-        ps_leaves= self.utils.get_parameterset_leaves(parameter_set)
+        ps_leaves= self.utils.get_parameterset_leaves(parameter_set, pipeline_tree)
         parameter_leaf= ps_leaves[0]
         run_df = self.utils.get_leaf_parameters(parameter_leaf)
 

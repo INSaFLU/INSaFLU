@@ -132,11 +132,14 @@ def difference_str_to_str_format(a, b):
 
 
 @register.simple_tag
-def difference_str_to_percent(a, b):
+def difference_str_to_percent(a, b, c):
     if "," in a:
         a = a.replace(",", "")
+    
+    if "," in b:
+        b = b.replace(",", "")
 
-    diff = int(a) - int(b)
+    diff = int(b) - int(c)
 
     perc = 100 * diff / int(a)
 

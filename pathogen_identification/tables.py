@@ -597,7 +597,7 @@ class ContigTable(tables.Table):
 
 
 class RunMainTable(tables.Table):
-    name = tables.Column(verbose_name="Run Name")
+    name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
     enrichment = tables.Column(

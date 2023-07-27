@@ -344,6 +344,7 @@ class SampleTable(tables.Table):
         sorted_icon=  ""
         if sorted:
             sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            return mark_safe(sorted_icon)
         else:
             sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
             request_sorting = (
@@ -355,9 +356,9 @@ class SampleTable(tables.Table):
                 + '"'
                 + '><i class="fa fa-sort"></i></span> </a>'
             )
-
-        if user.username == record.project.owner.username:
             return mark_safe(sorted_icon + request_sorting)
+
+            
 
     def render_report(self, record):
 

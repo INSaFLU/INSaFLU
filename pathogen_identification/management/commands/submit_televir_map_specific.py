@@ -173,6 +173,7 @@ class RunMain:
 
         self.max_remap = remap_params.max_accids
         self.taxid_limit = remap_params.max_taxids
+        self.remap_params= remap_params
 
         ### methods
         self.remapping_method = Software_detail(
@@ -244,10 +245,10 @@ class RunMain:
             self.type,
             self.prefix,
             self.threads,
-            self.minimum_coverage,
             get_bindir_from_binaries(self.config["bin"], CS.PIPELINE_NAME_remapping),
             self.logger_level_detail,
             self.house_cleaning,
+            self.remap_params,
             logdir=self.config["directories"]["log_dir"],
         )
 

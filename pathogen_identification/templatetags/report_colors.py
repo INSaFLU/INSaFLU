@@ -26,6 +26,15 @@ def round_str(value):
     ncol = round(value, 2)
     return ncol
 
+@register.filter(name="round_str_invert")
+def round_str(value):
+    if value is None or value == "":
+        value = 0
+    value= float(value)
+    ncol = round(value, 2)
+    return 1 - ncol
+
+
 @register.filter(name="round")
 def round_num(value):
     if value is None or value == "":

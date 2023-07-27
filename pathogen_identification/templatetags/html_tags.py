@@ -119,6 +119,7 @@ def difference_str_to_str(a, b):
 
     return diff
 
+@register.simple_tag
 def difference_str_to_str_format(a, b):
     if "," in a:
         a = a.replace(",", "")

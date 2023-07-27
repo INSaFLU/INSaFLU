@@ -356,10 +356,7 @@ class SampleTable(tables.Table):
                 + '"'
                 + '><i class="fa fa-sort"></i></span> </a>'
             )
-            return mark_safe(sorted_icon + request_sorting) 
-
-            
-
+            return mark_safe(sorted_icon + request_sorting)
 
     def render_report(self, record):
 

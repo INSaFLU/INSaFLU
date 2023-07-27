@@ -556,7 +556,14 @@ class Run_Main_from_Leaf:
     def Submit(self):
         if not self.check_submission() and not self.check_processed():
             self.register_submission()
-            configured = self.configure()
+
+            try: 
+                configured = self.configure()
+            except Exception as e:
+                print(e)
+                self.register_error()
+                return
+            
 
             if configured:
                 run_success = self.Deploy_Parts()
@@ -575,3 +582,4 @@ class Run_Main_from_Leaf:
             else:
                 print("Error in run")
                 self.register_error()
+                return

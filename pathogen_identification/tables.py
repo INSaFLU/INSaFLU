@@ -347,7 +347,7 @@ class SampleTable(tables.Table):
         else:
             sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
             request_sorting = (
-                '<a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+                ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
                 + ' sort-url="'
                 + reverse(
                 "sort_sample_reports"

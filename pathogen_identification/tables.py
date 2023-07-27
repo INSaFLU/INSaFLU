@@ -357,7 +357,7 @@ class SampleTable(tables.Table):
             )
 
         if user.username == record.project.owner.username:
-            return mark_safe(sorted_icon)
+            return mark_safe(sorted_icon + request_sorting)
 
     def render_report(self, record):
 

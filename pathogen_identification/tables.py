@@ -553,6 +553,7 @@ class RawReferenceTable(tables.Table):
                 + 'href="#" '
                 + 'id="remap_reference" '
                 + f"ref_id={record.pk} "
+                + f"project_id={record.run.project.pk} "
                 + '"><i class="fa fa-eye"></i></span> </a>'
             )
             return mark_safe("Unmapped" + button)

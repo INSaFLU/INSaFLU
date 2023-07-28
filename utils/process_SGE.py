@@ -994,7 +994,7 @@ class ProcessSGE(object):
             raise Exception("Fail to submit the job.")
         return sge_id
 
-    def set_submit_televir_map(self, user, reference_pk):
+    def set_submit_televir_map(self, user, reference_pk, project_pk):
         """
         submit the job to televir
         """
@@ -1003,9 +1003,10 @@ class ProcessSGE(object):
         out_dir = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_map --ref_id {} -o {}".format(
+            "python3 {} submit_televir_map_specific --ref_id {} --project_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 reference_pk,
+                project_pk,
                 out_dir,
             )
         ]

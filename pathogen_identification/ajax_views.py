@@ -395,7 +395,8 @@ def deploy_televir_map(request):
         user = request.user
 
         reference_id = int(request.POST["reference_id"])
-        taskID = process_SGE.set_submit_televir_map(user, reference_pk=reference_id)
+        project_id= int(request.POST["project_id"])
+        taskID = process_SGE.set_submit_televir_map(user, reference_pk=reference_id, project_pk=project_id)
 
         data["is_ok"] = True
 

@@ -5,15 +5,73 @@ import matplotlib
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
 matplotlib.use("Agg")
+
+import zipfile
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import RunMain
-from typing import Optional
 
 
-def simplify_name(name):
+def generate_zip_file(file_list: list, zip_file_path: str) -> str:
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        for file_path in file_list:
+            zip_file.write(file_path, os.path.basename(file_path))
+
+    return zip_file_path
+
+
+def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
+    zip_file_path = os.path.join(outdir, zip_file_name)
+
+    if os.path.exists(zip_file_path):
+        os.unlink(zip_file_path)
+
+    zip_file_path = generate_zip_file(file_list, zip_file_path)
+
+    return zip_file_path
+
+
+def description_passes_filter(description: str, filter_list: list):
+    """
+    Check if description contains any of the strings in filter_list
+    """
+    for filter_string in filter_list:
+        if filter_string in description.lower():
+            return True
+    return False
+
+
+def reverse_dict_of_lists(dict_of_lists):
+    """
+    Return dictionary of lists with keys as values and values as keys
+    """
+    return {value: key for key, values in dict_of_lists.items() for value in values}
+
+
+def readname_from_fasta(fastafile) -> list:
+    """
+    Read in fasta file and return list of read names
+    """
+    read_names = []
+    with open(fastafile) as f:
+        for line in f:
+            if line[0] == ">":
+                read_names.append(line[1:].strip())
+    return read_names
+
+
+def simplify_name(name: str):
+    """simplify sample name"""
+    return name.replace(".", "_").replace(";", "_").replace(":", "_").replace("|", "_")
+
+
+def simplify_name_lower(name: str):
     """simplify sample name"""
     return (
         name.replace("_", "_")
@@ -22,6 +80,16 @@ def simplify_name(name):
         .replace(".", "_")
         .lower()
     )
+
+
+def simplify_accid(accid):
+    accid = accid.split("_")
+    accid = accid.split("_")
+
+    if len(accid) == 1:
+        return accid[0]
+
+    return "_".join(accid[:1])
 
 
 def plot_dotplot(
@@ -79,7 +147,6 @@ def fastqc_parse(fastqc_path: str, stdin_fastqc_name: str = "stdin_fastqc"):
         return fqreads
 
     with zipfile.ZipFile(fastqc_path) as zf:
-
         fqreads = zf.read(f"{stdin_fastqc_name}/fastqc_data.txt").decode("utf-8")
         fqreads = fqreads.split("\n")[5:10]
         fqreads = [x.split("\t") for x in fqreads]
@@ -91,7 +158,7 @@ def fastqc_parse(fastqc_path: str, stdin_fastqc_name: str = "stdin_fastqc"):
     return fqreads
 
 
-def scrape_description(accid: str, existing_description: str = None) -> str:
+def scrape_description(accid: str, existing_description: Optional[str] = None) -> str:
     """
     Scrape the description for the relevant information.
     """
@@ -99,6 +166,9 @@ def scrape_description(accid: str, existing_description: str = None) -> str:
     if accid.count("_") > 1:
         accid = accid.split("_")[:-1]
         accid = "_".join(accid)
+
+    if accid in ["", "NA", "nan", "NAN", "N/A", "NAN", "-"]:
+        return str(existing_description)
 
     url = f"https://www.ncbi.nlm.nih.gov/nuccore/{accid}"
     headers = {
@@ -207,10 +277,8 @@ def process_class(r2, maxt=6):
                     taxids_tokeep.remove(r2.taxid[i])
                     nr2.append(r2.loc[i])
             else:
-
                 break
     else:
-
         r2 = r2.head(maxt)
 
     if len(nr2):
@@ -219,23 +287,16 @@ def process_class(r2, maxt=6):
     return r2
 
 
-def merge_classes(r1, r2, maxt=6, exclude="phage"):
+def merge_classes(r1: pd.DataFrame, r2: pd.DataFrame, maxt=6, exclude="phage"):
     """
     merge tables of taxids to columns.
     """
+
     ###
     if "description" in r1.columns:
-        r1 = (
-            r1[~r1.description.str.contains(exclude)]
-            .drop_duplicates(subset=["taxid"], keep="first")
-            .sort_values("counts", ascending=False)
-        )
+        r1 = r1[~r1.description.str.contains(exclude)]
     if "description" in r2.columns:
-        r2 = (
-            r2[~r2.description.str.contains(exclude)]
-            .drop_duplicates(subset=["taxid"], keep="first")
-            .sort_values("counts", ascending=False)
-        )
+        r2 = r2[~r2.description.str.contains(exclude)]
 
     ###
 
@@ -247,17 +308,15 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     if len(r2) > 0 and len(r1) > 0:
         full_descriptor = pd.merge(r1, r2, on="taxid", how="outer")
     elif len(r2) > 0:
-        full_descriptor = r2
+        full_descriptor = r2.copy()
     else:
-        full_descriptor = r1
+        full_descriptor = r1.copy()
 
     full_descriptor = full_descriptor.fillna(0)
 
     ###
 
     if len(r2) and len(r1):
-        r2pres = 2
-
         r1.taxid = r1.taxid.astype(str)
         r2.taxid = r2.taxid.astype(str)
 
@@ -271,7 +330,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             r1 = shared
 
         else:
-
             r2 = (
                 pd.merge(r2, shared, indicator=True, how="outer")
                 .query('_merge=="left_only"')
@@ -292,8 +350,19 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
     elif len(r1) == 0:
         r1 = r2.head(maxt)
 
-    def get_source(row):
+    ###
 
+    def descriptor_description_remove(df: pd.DataFrame):
+        if "description_x" in df.columns:
+            df.drop("description_x", axis=1, inplace=True)
+        if "description_y" in df.columns:
+            df.drop("description_y", axis=1, inplace=True)
+        if "description" in df.columns:
+            df.drop("description", axis=1, inplace=True)
+
+        return df
+
+    def get_source(row):
         if row.counts_x > 0 and row.counts_y > 0:
             return 3
         elif row.counts_x > 0:
@@ -324,7 +393,6 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
         return fd
 
     def get_counts(row):
-
         if row.counts_x > 0 and row.counts_y > 0:
             return f"{int(row.counts_x)} / {int(row.counts_y)}"
         elif row.counts_x > 0:
@@ -333,6 +401,7 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
             return str(row.counts_y)
 
     full_descriptor["taxid"] = full_descriptor["taxid"].astype(int)
+    full_descriptor = descriptor_description_remove(full_descriptor)
     full_descriptor = descriptor_sources(full_descriptor)
     full_descriptor = descriptor_counts(full_descriptor)
 
@@ -347,27 +416,25 @@ def merge_classes(r1, r2, maxt=6, exclude="phage"):
 
 
 def infer_run_media_dir(run_main: RunMain) -> Optional[str]:
-
     if run_main.params_file_path:
         params_exist = os.path.exists(run_main.params_file_path)
-        if params_exist:
-
-            media_classification_dir = os.path.dirname(run_main.params_file_path)
-            media_dir = os.path.dirname(media_classification_dir)
+        media_classification_dir = os.path.dirname(run_main.params_file_path)
+        media_dir = os.path.dirname(media_classification_dir)
+        if os.path.isdir(media_dir):
             return media_dir
 
     elif run_main.processed_reads_r1:
         reads_r1_exist = os.path.exists(run_main.processed_reads_r1)
 
-        if reads_r1_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r1)
+        media_dir = os.path.dirname(run_main.processed_reads_r1)
+        if os.path.isdir(media_dir):
             return media_dir
 
     elif run_main.processed_reads_r2:
         reads_r2_exist = os.path.exists(run_main.processed_reads_r2)
 
-        if reads_r2_exist:
-            media_dir = os.path.dirname(run_main.processed_reads_r2)
+        media_dir = os.path.dirname(run_main.processed_reads_r2)
+        if os.path.isdir(media_dir):
             return media_dir
 
     return None

@@ -4,9 +4,11 @@ import re
 import shutil
 from random import randint
 from typing import Type
-
+import csv
 import pandas as pd
-from pathogen_identification.modules.object_classes import RunCMD, Software_detail
+
+from pathogen_identification.modules.object_classes import (RunCMD,
+                                                            Software_detail)
 
 
 def check_report_empty(file, comment="@"):
@@ -572,10 +574,12 @@ class run_centrifuge(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.full_report_path, sep="\t", header=None, usecols=[0, 6]
-        ).rename(columns={0: "qseqid", 6: "acc"})
+            self.full_report_path, sep="\t", header=None, usecols=[0, 2, 6]
+        ).rename(columns={0: "qseqid", 2: "taxid", 6: "acc"})
 
-        report = report[report.acc != "unclassified"][["qseqid", "acc"]]
+        report = report[report.acc != "unclassified"][["qseqid", "taxid"]]
+        report = report[report.taxid != 0][["qseqid", "taxid"]]
+
         return pd.DataFrame(report)
 
 
@@ -1013,7 +1017,12 @@ class run_bwa_mem(Classifier_init):
             return pd.DataFrame(columns=["qseqid", "acc"])
 
         report = pd.read_csv(
-            self.report_path, sep="\t", header=None, usecols=[0, 2], comment="@"
+            self.report_path,
+            sep="\t",
+            header=None,
+            usecols=[0, 2],
+            comment="@",
+            quoting=csv.QUOTE_NONE,
         ).rename(columns={0: "qseqid", 2: "acc"})
 
         report = report[report["acc"] != "*"]
@@ -1194,7 +1203,7 @@ class Classifier:
 
     def __init__(
         self,
-        classifier_method: Type[Software_detail],
+        classifier_method: Software_detail,
         query_path: str = "",
         type: str = "SE",
         r2: str = "",
@@ -1216,7 +1225,7 @@ class Classifier:
         :param bin: bin path
         :param logging_level: logging level
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{classifier_method.name}_{prefix}")
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
         self.logger.propagate = False
@@ -1224,7 +1233,7 @@ class Classifier:
         self.logger.addHandler(logging.StreamHandler())
         self.log_dir = log_dir
         self.cmd = RunCMD(
-            bin, logdir=self.log_dir, prefix=prefix, task="classification"
+            bin, logdir=self.log_dir, prefix=prefix, task=f"classification_{classifier_method.name}_{prefix}"
         )
         self.prefix = prefix
         self.classifier_method = classifier_method

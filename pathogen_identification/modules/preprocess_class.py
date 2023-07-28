@@ -7,17 +7,17 @@ import sys
 from typing import Type
 
 from pathogen_identification.modules.object_classes import Read_class, RunCMD
-
+from pathogen_identification.modules.object_classes import SoftwareUnit
 
 class Preprocess:
     def __init__(
         self,
         r1: Read_class,
         r2: Read_class,
-        preprocess_dir,
-        preprocess_type,
-        preprocess_method,
-        preprocess_name_fastq_gz,
+        preprocess_dir: str,
+        preprocess_type: str,
+        preprocess_method: SoftwareUnit,
+        preprocess_name_fastq_gz: str,
         preprocess_name_r2_fastq_gz="",
         threads: int = 1,
         subsample: bool = False,
@@ -79,7 +79,10 @@ class Preprocess:
             self.preprocess_dir, "processed_data.html"
         )
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{prefix}")
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
         self.logger.setLevel(logging_level)
         self.logger.addHandler(logging.StreamHandler())
         self.logger.info("Preprocess class initialized")
@@ -93,7 +96,7 @@ class Preprocess:
         """
         cmd = "gunzip -c {} | grep '^>\|^@' | wc -l".format(file)
         number_of_sequences = int(self.cmd.run_bash_return(cmd))
-        print("Number of sequences: {}".format(number_of_sequences))
+        
         if number_of_sequences > 0:
             return True
         else:
@@ -175,7 +178,6 @@ class Preprocess:
             self.subsample_reads()
 
         self.fastqc_input()
-
         self.preprocess_QC()
         self.clean_read_names()
 
@@ -210,6 +212,7 @@ class Preprocess:
             return True
         else:
             return False
+    
 
     def preprocess_QC(self):
         """
@@ -219,6 +222,8 @@ class Preprocess:
             self.run_trimmomatic()
         elif self.preprocess_method.name == "nanofilt":
             self.run_nanofilt()
+        elif self.preprocess_method.name == "prinseq":
+            self.run_prinseq()
         else:
             raise ValueError(
                 "preprocess method {} not supported".format(self.preprocess_method.name)
@@ -287,6 +292,7 @@ class Preprocess:
         ]
 
         self.cmd.run_script(fastq_cmd)
+
 
     def fastqc_processed(self, suffix="processed_data"):
         """
@@ -407,6 +413,63 @@ class Preprocess:
         ]
 
         self.cmd.run(trimmomatic_cmd)
+
+    def run_prinseq(self):
+        """filter low complexity reads using prinseq"""
+
+        if self.preprocess_type == "PE":
+            self.prinseq_PE()
+        elif self.preprocess_type == "SE":
+            self.prinseq_SE()
+        
+    def prinseq_PE(self):
+        """ 
+        filter low complexity reads using prinseq
+        """
+
+        prinseq_cmd = [
+            "prinseq++",
+            "-fastq",
+            self.r1,
+            "-fastq2",
+            self.r2,
+            "-out_good",
+            self.preprocess_name_fastq,
+            "-out_good2",
+            self.preprocess_name_r2_fastq,
+            "-out_bad",
+            "/dev/null",
+            "-out_bad2",
+            "/dev/null",
+            "-out_single",
+            "/dev/null",
+            "-out_single2",
+            "/dev/null",
+            self.args,
+        ]
+
+        self.cmd.run(prinseq_cmd)
+    
+    def prinseq_SE(self):
+        """ 
+        filter low complexity reads using prinseq
+        """
+
+        prinseq_cmd = [
+            "prinseq++",
+            "-fastq",
+            self.r1,
+            "-out_good",
+            self.preprocess_name_fastq,
+            "-out_bad",
+            "/dev/null",
+            "-out_single",
+            "/dev/null",
+            self.args,
+        ]
+
+        self.cmd.run(prinseq_cmd)
+
 
     def run_nanofilt(self):
         """

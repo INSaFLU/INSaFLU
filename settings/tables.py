@@ -22,6 +22,7 @@ from settings.default_parameters import DefaultParameters
 from settings.default_software import DefaultSoftware
 from settings.default_software_project_sample import DefaultProjectSoftware
 from settings.models import Parameter, Software
+from pathogen_identification.utilities.televir_parameters import LayoutParams
 
 
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
@@ -219,7 +220,7 @@ class SoftwaresTable(tables.Table):
             return default_software_projects.get_parameters(
                 record.name,
                 user,
-                Software.TYPE_OF_USE_televir_project,
+                record.type_of_use,
                 None,
                 None,
                 None,

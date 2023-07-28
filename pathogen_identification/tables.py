@@ -2,25 +2,33 @@ import os
 from typing import DefaultDict
 
 import django_tables2 as tables
-from constants.constants import Constants
 from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+)
+from constants.constants import Constants
 from managing_files.manage_database import ManageDatabase
-from settings.models import Technology, Parameter
-
 from pathogen_identification.models import (
+    ContigClassification,
     FinalReport,
     ParameterSet,
     PIProject_Sample,
     Projects,
     RawReference,
+    ReadClassification,
     ReferenceContigs,
-    RunMain,
     RunAssembly,
+    RunMain,
     SampleQC,
-    ContigClassification,
 )
+
+from crequest.middleware import CrequestMiddleware
+from pathogen_identification.constants_settings import ConstantsSettings as CS
+
+from settings.models import Parameter, Technology
 
 
 class ProjectTable(tables.Table):
@@ -133,7 +141,6 @@ class ProjectTable(tables.Table):
         )
 
         if project_settings_exist:
-
             parameters = parameters + (
                 '<a href="#id_reset_modal" id="id_reset_parameters_modal" data-toggle="modal" data-toggle="tooltip" title="Reset"'
                 + ' ref_name="'
@@ -220,13 +227,15 @@ class ProjectTable(tables.Table):
 
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
+    report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
+    runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
+    sorting = tables.Column("Sorting", orderable=False, empty_values=())
+    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
 
     input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
-    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
     combinations = tables.Column(
         verbose_name="Combinations", orderable=False, empty_values=()
     )
-    report = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
     running_processes = tables.Column("Running", orderable=False, empty_values=())
     queued_processes = tables.Column("Queued", orderable=False, empty_values=())
     set_control = tables.Column("Control", orderable=False, empty_values=())
@@ -238,10 +247,14 @@ class SampleTable(tables.Table):
         fields = (
             "name",
             "report",
+            "runs",
+            "sorting",
             "deploy",
             "input",
             "combinations",
             "running_processes",
+            "queued_processes",
+            "set_control",
         )
 
     def render_set_control(self, record):
@@ -302,13 +315,71 @@ class SampleTable(tables.Table):
             sample__name=record.name,
             project=record.project,
             parameter_set__status__in=[
-                ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_FINISHED,
             ],
         ).count()
 
+    def render_sorting(self, record):
+        
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user
+
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        
+        final_report = FinalReport.objects.filter(
+            sample=record
+        ).order_by("-coverage")
+
+        ## return empty square if no report
+        if final_report.count() == 0:
+            return mark_safe('<i class="fa fa-square-o" title="Empty"></i>')
+        ## check sorted
+
+        report_layout_params = TelevirParameters.get_report_layout_params(project_pk=record.project.pk)
+        report_sorter = ReportSorter(final_report, report_layout_params)
+        sorted= report_sorter.check_analyzed()
+
+        ## sorted icon, green if sorted, red if not
+        sorted_icon=  ""
+        if sorted:
+            sorted_icon = ' <i class="fa fa-check" style="color: green;" title="Sorted"></i>'
+            return mark_safe(sorted_icon)
+        else:
+            sorted_icon = ' <i class="fa fa-times" style="color: red;" title="un-sorted"></i>'
+            request_sorting = (
+                ' <a href="#" id="sort_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Sort"'
+                + ' sample_id="'
+                + str(record.pk)
+                + '"'
+                + ' sort-url="'
+                + reverse(
+                "sort_sample_reports"
+                )
+                + '"'
+                + '><i class="fa fa-sort"></i></span> </a>'
+            )
+            return mark_safe(sorted_icon + request_sorting)
+
     def render_report(self, record):
-        from crequest.middleware import CrequestMiddleware
+
+        current_request = CrequestMiddleware.get_request()
+        user = current_request.user        
+
+        record_name = (
+            '<a href="' 
+            + reverse("televir_sample_compound_report", args=[record.project.pk, record.pk])
+            + '">'
+            + " <fa class='fa fa-code-fork'></fa>"
+            + " Combined Report"
+            + "</a>"
+        )
+        if user.username == Constants.USER_ANONYMOUS:
+            return mark_safe("report")
+        if user.username == record.project.owner.username:
+            return mark_safe(record_name)
+
+    def render_runs(self, record):
 
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
@@ -317,7 +388,8 @@ class SampleTable(tables.Table):
             '<a href="'
             + reverse("sample_main", args=[record.project.pk, record.pk])
             + '">'
-            + "Run Panel"
+            + " <fa class='fa fa-reorder'></fa>"
+            + " workflow panel"
             + "</a>"
         )
         if user.username == Constants.USER_ANONYMOUS:
@@ -326,9 +398,7 @@ class SampleTable(tables.Table):
             return mark_safe(record_name)
 
     def render_deploy(self, record):
-        from crequest.middleware import CrequestMiddleware
 
-        color = ""
         current_request = CrequestMiddleware.get_request()
         user = current_request.user
 
@@ -339,6 +409,10 @@ class SampleTable(tables.Table):
 
         record_name = '<a><i class="fa fa-bug"></i></span> </a>'
 
+        TELEVIR_DEPLOY_URL= "submit_televir_project_sample"
+        if CS.DEPLOYMENT_DEFAULT == CS.DEPLOYMENT_TYPE_PIPELINE:
+            TELEVIR_DEPLOY_URL = "submit_televir_runs_project_sample"
+
         if user.username == record.project.owner.username:
             record_name = (
                 '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
@@ -348,7 +422,7 @@ class SampleTable(tables.Table):
                 + str(record.pk)
                 + '" deploy-url="'
                 + reverse(
-                    "submit_televir_project_sample",
+                    TELEVIR_DEPLOY_URL,
                 )
                 + '"'
                 + '"><i class="fa fa-flask"></i></span> </a>'
@@ -378,7 +452,9 @@ class SampleTable(tables.Table):
         sample_name = record.sample.name
         sample_name = (
             '<a href="'
-            + reverse("sample_main", args=[record.project.pk, record.pk])
+            + reverse(
+                "televir_sample_compound_report", args=[record.project.pk, record.pk]
+            )
             + '">'
             + record.name
             + "</a>"
@@ -457,7 +533,6 @@ class RawReferenceTable(tables.Table):
             return "reads / contigs"
 
     def render_status(self, record):
-
         if record.status == RawReference.STATUS_MAPPING:
             return "Running"
         elif record.status == RawReference.STATUS_MAPPED:
@@ -473,12 +548,12 @@ class RawReferenceTable(tables.Table):
             return "Fail"
 
         elif record.status == RawReference.STATUS_UNMAPPED:
-
             button = (
                 " <a "
                 + 'href="#" '
                 + 'id="remap_reference" '
                 + f"ref_id={record.pk} "
+                + f"project_id={record.run.project.pk} "
                 + '"><i class="fa fa-eye"></i></span> </a>'
             )
             return mark_safe("Unmapped" + button)
@@ -500,7 +575,6 @@ class SampleQCTable(tables.Table):
 
 
 class ContigTable(tables.Table):
-
     contig = tables.Column(verbose_name="Contig")
     depth = tables.Column(verbose_name="Depth")
     depthr = tables.Column(verbose_name="Depth Covered")
@@ -524,8 +598,7 @@ class ContigTable(tables.Table):
 
 
 class RunMainTable(tables.Table):
-
-    name = tables.Column(verbose_name="Run Name")
+    name = tables.Column(verbose_name="Run")
     report = tables.Column(verbose_name="Report", orderable=False, empty_values=())
     success = tables.Column(verbose_name="Success", orderable=False, empty_values=())
     enrichment = tables.Column(
@@ -573,6 +646,9 @@ class RunMainTable(tables.Table):
             "runtime",
         )
 
+    def render_name(self,record):
+        return record.parameter_set.leaf.index
+
     def render_success(self, record):
         success = False
         final_reports = FinalReport.objects.filter(run=record).count()
@@ -594,7 +670,8 @@ class RunMainTable(tables.Table):
         finished_preprocessing = record.report != "initial"
         finished_assembly = RunAssembly.objects.filter(run=record).count() > 0
         finished_classification = (
-            ContigClassification.objects.filter(run=record).count() > 0
+            ContigClassification.objects.filter(run=record).exists()
+            and ReadClassification.objects.filter(run=record).exists()
         )
         finished_processing = FinalReport.objects.filter(run=record).count() > 0
         finished_remapping = record.report == "finished"
@@ -622,11 +699,9 @@ class RunMainTable(tables.Table):
         else:
             runlog = " <a " + 'href="#" >'
             if finished_preprocessing:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Preprocessing finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 runlog += 'title="Preprocessing running."></i>'
 
@@ -637,11 +712,9 @@ class RunMainTable(tables.Table):
             runlog += " <a " + 'href="#" >'
 
             if finished_assembly:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Assembly finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 if finished_preprocessing:
                     runlog += 'title="Assembly running."></i>'
@@ -654,11 +727,9 @@ class RunMainTable(tables.Table):
             runlog += " <a " + 'href="#" >'
 
             if finished_classification:
-
                 runlog += '<i class="fa fa-check"'
                 runlog += 'title="Classification finished"></i>'
             else:
-
                 runlog += '<i class="fa fa-cog"'
                 if finished_assembly:
                     runlog += 'title="Classification running."></i>'

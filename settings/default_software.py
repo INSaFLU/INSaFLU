@@ -231,6 +231,67 @@ class DefaultSoftware(object):
         self.test_all_defaults_pathogen_identification(user)
 
     def test_all_defaults_pathogen_identification(self, user):
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+            self.default_parameters.get_remap_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+            self.default_parameters.get_remap_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            self.default_parameters.get_televir_report_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            self.default_parameters.get_televir_report_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
         self.test_default_db(
             SoftwareNames.SOFTWARE_CENTRIFUGE_name,
             self.default_parameters.get_centrifuge_default(
@@ -489,6 +550,14 @@ class DefaultSoftware(object):
         ## lock because more than one process can duplicate software names
 
         try:
+            type_of_use = vect_parameters[0].software.type_of_use
+        except:
+            pass
+
+        print("testing default parameters for software: " + software_name)
+        print("type of use: " , type_of_use)
+
+        try:
             Software.objects.get(
                 name=software_name,
                 owner=user,
@@ -636,6 +705,42 @@ class DefaultSoftware(object):
 
     ###
     ### PATHOGEN DETECTION PARAMETERS
+
+    def get_remap_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+    
+    def get_prinseq_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
+    
+    def get_televir_report_layout_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_televir_report_layout_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
 
     def get_kaiju_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
@@ -986,7 +1091,6 @@ class DefaultSoftware(object):
             )
             return self.get_vcf_freq_ONT_parameters(user)
         if software_name == SoftwareNames.SOFTWARE_ABRICATE_name:
-            print("get_abricate_parameters")
             self.test_default_db(
                 SoftwareNames.SOFTWARE_ABRICATE_name,
                 self.default_parameters.get_abricate_default(
@@ -1005,6 +1109,42 @@ class DefaultSoftware(object):
 
         ##########################################
         ############### TELEVIR SOFTWARE #########
+
+        if software_name == SoftwareNames.SOFTWARE_REMAP_PARAMS_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_REMAP_PARAMS_name,
+                self.default_parameters.get_remap_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_settings,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+            return self.get_remap_parameters(user, technology_name)
+        
+        if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_PRINSEQ_name,
+                self.default_parameters.get_prinseq_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_settings,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+            return self.get_prinseq_parameters(user, technology_name)
+        
+        if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_televir_report_layout_name,
+                self.default_parameters.get_televir_report_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_settings,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+            return self.get_televir_report_layout_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_CENTRIFUGE_name:
             self.test_default_db(

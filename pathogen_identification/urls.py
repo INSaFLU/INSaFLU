@@ -56,6 +56,11 @@ urlpatterns = [
         name="all_PIsample_reports",
     ),
     url(
+        r"Project_Samples/(?P<pk1>\d+)/(?P<pk2>\d+)/sample_report$",
+        PIviews.Sample_ReportCombined.as_view(),
+        name="televir_sample_compound_report",
+    ),
+    url(
         r"Summary/project_(?P<pk1>\d+)/sample_(?P<pk2>\d+)/run_(?P<pk3>\d+)",
         PIviews.Sample_detail.as_view(),
         name="sample_detail",
@@ -66,7 +71,11 @@ urlpatterns = [
         name="igv_browser",
     ),  ## get values for IGV
     url("download_file", PIviews.download_file, name="download_file"),  ##
-    url("download_intermediate_reports", PIviews.download_intermediate_reports_zipfile, name="download_intermediate_reports"),  ##
+    url(
+        "download_intermediate_reports",
+        PIviews.download_intermediate_reports_zipfile,
+        name="download_intermediate_reports",
+    ),  ##
     url("download_file_igv", PIviews.download_file_igv, name="download_file_igv"),
     url(
         "download_refmap_files", PIviews.download_file_ref, name="download_refmap_files"
@@ -82,13 +91,33 @@ urlpatterns = [
         name="deploy_ProjectPI",
     ),
     url(
+        r"ajax/deploy_runs_ProjectPI$",
+        PIajax_views.deploy_ProjectPI_runs,
+        name="deploy_runs_ProjectPI",
+    ),
+    url(
         r"^ajax/submit_televir_sample$",
         PIajax_views.submit_televir_project_sample,
         name="submit_televir_project_sample",
     ),  ## remove a televir project
     url(
+        r"^ajax/submit_televir_runs_sample$",
+        PIajax_views.submit_televir_project_sample_runs,
+        name="submit_televir_runs_project_sample",
+    ),  ## remove a televir project
+    url(
+        r"ajax/sort_reports$",
+        PIajax_views.sort_report_projects,
+        name="sort_project_reports",
+    ),
+    url(
+        r"ajax/sort_sample$",
+        PIajax_views.sort_report_sample,
+        name="sort_sample_reports",
+    ),
+    url(
         r"^ajax/kill_televir_sample$",
-        PIajax_views.kill_televir_project_sample,
+        PIajax_views.kill_televir_project_tree_sample,
         name="kill_televir_project_sample",
     ),  ## remove a televir project
     url(

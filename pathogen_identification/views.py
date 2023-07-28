@@ -9,8 +9,12 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import (Http404, HttpResponseNotFound, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import (
+    Http404,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat, pluralize
@@ -20,8 +24,7 @@ from django.views import generic
 from django.views.generic import ListView
 from django_tables2 import RequestConfig
 
-from constants.constants import (Constants, FileExtensions, FileType, TypeFile,
-                                 TypePath)
+from constants.constants import Constants, FileExtensions, FileType, TypeFile, TypePath
 from constants.meta_key_and_values import MetaKeyAndValue
 from extend_user.models import Profile
 from fluwebvirus.settings import STATICFILES_DIRS
@@ -29,26 +32,49 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
+from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.constants_settings import ConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
-                                            ParameterSet, PIProject_Sample,
-                                            Projects, RawReference,
-                                            ReadClassification,
-                                            ReferenceContigs,
-                                            ReferenceMap_Main, RunAssembly,
-                                            RunDetail, RunMain, RunRemapMain,
-                                            Sample)
-from pathogen_identification.tables import (ContigTable, ProjectTable,
-                                            RawReferenceTable, RunMainTable,
-                                            SampleTable)
-from pathogen_identification.utilities.utilities_general import \
-    infer_run_media_dir
-from pathogen_identification.utilities.utilities_views import \
-    set_control_reports
+from pathogen_identification.models import (
+    ContigClassification,
+    FinalReport,
+    ParameterSet,
+    PIProject_Sample,
+    Projects,
+    RawReference,
+    TelevirRunQC,
+    ReadClassification,
+    ReferenceContigs,
+    ReferenceMap_Main,
+    RunAssembly,
+    RunDetail,
+    RunMain,
+    RunRemapMain,
+    Sample,
+)
+from pathogen_identification.tables import (
+    ContigTable,
+    ProjectTable,
+    RawReferenceTable,
+    RunMainTable,
+    SampleTable,
+)
+from pathogen_identification.utilities.tree_deployment import (
+    TreeProgressGraph,
+)
+from pathogen_identification.utilities.televir_parameters import TelevirParameters
+from pathogen_identification.modules.object_classes import RunQC_report
+
+from pathogen_identification.utilities.utilities_general import infer_run_media_dir
+from pathogen_identification.utilities.utilities_views import (
+    ReportSorter,
+    set_control_reports,
+    final_report_best_cov_by_accid,
+    FinalReportCompound,
+)
 from settings.constants_settings import ConstantsSettings as CS
-from settings.default_software_project_sample import DefaultProjectSoftware
-from settings.models import Technology
+from pathogen_identification.constants_settings import ConstantsSettings as PICS
 from utils.process_SGE import ProcessSGE
+from utils.support_django_template import get_link_for_dropdown_item
 from utils.utils import ShowInfoMainPage, Utils
 
 
@@ -127,7 +153,6 @@ class download_form(forms.Form):
     file_path = forms.CharField(max_length=300)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -142,7 +167,6 @@ class download_ref_form(forms.Form):
     accid = forms.CharField(max_length=50)
 
     class Meta:
-
         widgets = {
             "myfield": forms.TextInput(
                 attrs={"style": "border-color:darkgoldenrod; border-radius: 10px;"}
@@ -339,7 +363,6 @@ class AddSamples_PIProjectsView(
     logger_production = logging.getLogger("fluWebVirus.production")
 
     def get_context_data(self, **kwargs):
-
         context = super(AddSamples_PIProjectsView, self).get_context_data(**kwargs)
 
         ### test if the user is the same of the page
@@ -643,7 +666,15 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         ### set control reports
         set_control_reports(project.pk)
 
+        ### type of deployment
+        DEPLOY_TYPE= PICS.DEPLOYMENT_DEFAULT
+        DEPLOY_URL= 'deploy_ProjectPI'
+
+        if DEPLOY_TYPE == PICS.DEPLOYMENT_TYPE_PIPELINE:
+            DEPLOY_URL= 'deploy_runs_ProjectPI'
+
         context["table"] = samples
+        context["deploy_url"] = DEPLOY_URL
         context["project_index"] = project.pk
         context["project_name"] = project_name
         context["nav_sample"] = True
@@ -651,7 +682,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
         context["show_paginatior"] = query_set.count() > Constants.PAGINATE_NUMBER
         context["show_info_main_page"] = ShowInfoMainPage()
         context["query_set_count"] = query_set.count()
-        print(self.request.user.username)
         context["demo"] = True if self.request.user.username == "demo" else False
 
         return context
@@ -796,7 +826,6 @@ def Sample_reports(requesdst, pk1, pk2):
         sample_name = PIProject_Sample.objects.get(pk=int(pk2)).sample.name
 
     else:
-
         messages.error(
             requesdst,
             "You do not have permission to access this project.",
@@ -855,9 +884,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
     """
 
     template_name = "pathogen_identification/sample_detail.html"
+    utils = Utils()
 
     def get_context_data(self, **kwargs):
-
         project_pk = int(self.kwargs["pk1"])
         sample_pk = int(self.kwargs["pk2"])
         run_pk = int(self.kwargs["pk3"])
@@ -892,8 +921,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
 
         project_name = project_main.name
         sample_name = sample.name
-        run_name = run_main.name
-
+        run_name = run_main.parameter_set.leaf.index
         sample_main = run_main.sample
         #
 
@@ -904,9 +932,35 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         #
         run_detail = RunDetail.objects.get(sample=sample_main, run=run_main)
         #
-        run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+        try: 
+            run_qc = TelevirRunQC.objects.get(run=run_main)
+            qc_report= RunQC_report(
+                performed= run_qc.performed,
+                method= run_qc.method,
+                args= run_qc.args,
+                input_reads= run_qc.input_reads,
+                output_reads= run_qc.output_reads,
+                output_reads_percent= run_qc.output_reads_percent,
+            )
+            qc_performed= run_qc.performed
+        except TelevirRunQC.DoesNotExist:
+            qc_report= RunQC_report(
+                performed= False,
+                method= "None",
+                args= "None",
+                input_reads= 0,
+                output_reads= 0,
+                output_reads_percent= 0,
+            )
 
-        recover_assembly_contigs(run_main, run_assembly)
+        #
+        try:
+            run_assembly = RunAssembly.objects.get(sample=sample_main, run=run_main)
+            recover_assembly_contigs(run_main, run_assembly)
+            assembly_available= run_assembly.performed
+        except RunAssembly.DoesNotExist:
+            run_assembly = None
+            assembly_available= False
 
         #
         run_remap = RunRemapMain.objects.get(sample=sample_main, run=run_main)
@@ -915,8 +969,15 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             sample=sample_main, run=run_main
         )
         #
-        final_report = run_main.sorted_reports_get()
+        final_report = FinalReport.objects.filter(
+            sample=sample_main, run=run_main
+        ).order_by("-coverage")
         #
+        report_layout_params = TelevirParameters.get_report_layout_params(run_pk=run_pk)
+        report_sorter = ReportSorter(final_report, report_layout_params)
+
+        sorted_reports = report_sorter.get_reports()
+
         # check has control_flag present
         has_controlled_flag = False if sample_main.is_control else True
 
@@ -928,7 +989,6 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         reference_remap_main = ReferenceMap_Main.objects.filter(
             sample=sample_main, run=run_main
         )
-        #
 
         context = {
             "project": project_name,
@@ -936,12 +996,12 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "sample": sample_name,
             "run_main": run_main,
             "run_detail": run_detail,
+            "qc_report":qc_report,
             "assembly": run_assembly,
             "contig_classification": contig_classification,
             "read_classification": read_classification,
             "run_remap": run_remap,
             "reference_remap_main": reference_remap_main,
-            "final_report": final_report,
             "number_validated": len(final_report),
             "project_index": project_pk,
             "sample_index": sample_pk,
@@ -949,13 +1009,114 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
             "reference_table": raw_reference_table,
             "owner": True,
             "in_control": has_controlled_flag,
+            "report_list": sorted_reports,
             "data_exists": True if not run_main.data_deleted else False,
+        }
+
+        ### downloadable files
+        context["files"] = {}
+        # 1. parameters
+        params_file_path = run_main.params_file_path
+        if os.path.exists(params_file_path):
+            context["files"]["parameters"] = params_file_path
+        # intermediate files zip
+        intermediate_reports = run_main.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
+        file_path = get_create_zip(
+            intermediate_reports.files, run_main_dir, zip_file_name
+        )
+        context["files"]["intermediate_reports_zip"] = file_path
+
+        # final report
+        reports_df = run_main.get_final_reports_df()
+        run_main_dir = infer_run_media_dir(run_main)
+        reports_df.to_csv(os.path.join(run_main_dir, "final_reports.csv"), index=False)
+        file_path = os.path.join(run_main_dir, "final_reports.csv")
+        context["files"]["final_reports_csv"] = file_path
+
+        for fpath in context["files"]:
+            cwd = os.getcwd()
+            context["files"][fpath] = context["files"][fpath].replace(cwd, "")
+            context["files"][fpath] = get_link_for_dropdown_item(
+                context["files"][fpath]
+            )
+
+        return context
+
+
+class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
+    """
+    home page
+    """
+
+    template_name = "pathogen_identification/sample_detail_compound.html"
+    utils = Utils()
+
+    def get_context_data(self, **kwargs):
+        project_pk = int(self.kwargs["pk1"])
+        sample_pk = int(self.kwargs["pk2"])
+
+        try:
+            project_main = Projects.objects.get(pk=project_pk)
+
+        except Exception as e:
+            messages.error(self.request, "Project does not exist")
+            raise Http404
+
+        try:
+            sample = PIProject_Sample.objects.get(pk=sample_pk)
+        except Exception as e:
+            messages.error(self.request, "Sample does not exist")
+            raise Http404
+
+        ####
+        project_name = project_main.name
+        sample_name = sample.name
+
+        #
+
+        final_report = FinalReport.objects.filter(
+            sample=sample, run__project=project_main
+        ).order_by("-coverage")
+
+        unique_reports = final_report_best_cov_by_accid(final_report)
+
+        #
+        report_layout_params = TelevirParameters.get_report_layout_params(
+            project_pk=project_main.pk
+        )
+
+        report_sorter = ReportSorter(unique_reports, report_layout_params)
+        sorted_reports = report_sorter.get_reports()
+        sorted_reports_compound = [
+            [FinalReportCompound(report) for report in clade]
+            for clade in sorted_reports
+        ]
+
+        #### graph
+        graph_progress = TreeProgressGraph(sample)
+        # graph_progress.generate_graph()
+        graph_json, graph_id = graph_progress.get_graph_data()
+        ####
+        runs = set([fr.run.pk for fr in final_report])
+        runs = RunMain.objects.filter(pk__in=runs)
+
+        context = {
+            "project": project_name,
+            "graph_json": graph_json,
+            "graph_id": graph_id,
+            "sample": sample_name,
+            "project_index": project_pk,
+            "sample_index": sample_pk,
+            "report_list": sorted_reports_compound,
+            "runs": runs,
+            "owner": True,
         }
 
         return context
 
 
-# def Scaffold_Remap(requesdst, project="", sample="", run="", reference=""):
 class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
     """
     scaffold remap
@@ -982,7 +1143,6 @@ class Scaffold_Remap(LoginRequiredMixin, generic.CreateView):
             raise Http404
 
         if project_main.owner == user:
-
             run_name = run_main.name
             sample_name = sample.name
             project_name = project_main.name
@@ -1156,49 +1316,53 @@ def download_file_ref(requestdst):
             return response
 
 
-
 import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-        
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, os.path.basename(file_path))
-    
-        return zip_file_path
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        for file_path in file_list:
+            zip_file.write(file_path, os.path.basename(file_path))
+
+    return zip_file_path
+
 
 def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
-
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
-        os.unlink(zip_file_path)
+        try:
+            os.unlink(zip_file_path)
+        except Exception as e:
+            print(e)
+            return zip_file_path
 
     zip_file_path = generate_zip_file(file_list, zip_file_path)
 
     return zip_file_path
+
 
 def download_intermediate_reports_zipfile(request):
     """
     download intermediate report files in zip"""
 
     if request.method == "POST":
+        run_pk = request.POST.get("run_pk")
+        run_main = RunMain.objects.get(pk=int(run_pk))
 
-        run_pk= request.POST.get("run_pk")
-        run_main= RunMain.objects.get(pk= int(run_pk))
+        intermediate_reports = run_main.intermediate_reports_get()
+        run_main_dir = infer_run_media_dir(run_main)
+        zip_file_name = "{}_intermediate_reports.zip".format(run_main.name)
 
-        intermediate_reports= run_main.intermediate_reports_get()
-        run_main_dir= infer_run_media_dir(run_main)
-        zip_file_name= "{}_intermediate_reports.zip".format(run_main.name)
+        zip_file_path = get_create_zip(
+            intermediate_reports.files, run_main_dir, zip_file_name
+        )
 
-
-        zip_file_path= get_create_zip(intermediate_reports.files, run_main_dir, zip_file_name)
-
-        path= open(zip_file_path, "rb")
-        mime_type, _= mimetypes.guess_type(zip_file_path)
-        response= HttpResponse(path, content_type= mime_type)
-        response["Content-Disposition"]= "attachment; filename={}".format(zip_file_name)
+        path = open(zip_file_path, "rb")
+        mime_type, _ = mimetypes.guess_type(zip_file_path)
+        response = HttpResponse(path, content_type=mime_type)
+        response["Content-Disposition"] = "attachment; filename={}".format(
+            zip_file_name
+        )
 
         return response
-

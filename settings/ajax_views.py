@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from extend_user.models import Profile
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Project, ProjectSample, Sample
-from pathogen_identification.constants_settings import Pipeline_Makeup
+from pathogen_identification.utilities.utilities_pipeline import Pipeline_Makeup
 from pathogen_identification.models import Projects as PIProjects
 from utils.process_SGE import ProcessSGE
 from utils.result import DecodeObjects, MaskingConsensus

@@ -5,23 +5,24 @@ Created on 04/05/2020
 """
 import os
 
-from constants.software_names import SoftwareNames
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Button, ButtonHolder, Div, Fieldset, Layout, Submit
-from datasets.models import Dataset
 from django import forms
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
+
+from constants.software_names import SoftwareNames
+from datasets.models import Dataset
 from managing_files.models import Project, ProjectSample
+from pathogen_identification.models import Projects as TelevirProject
+from pathogen_identification.utilities.mapping_flags import MappingFlagBuild
 from pathogen_identification.utilities.utilities_pipeline import (
     Utility_Pipeline_Manager,
 )
-from pathogen_identification.models import Projects as TelevirProject
-from utils.utils import Utils
-
 from settings.default_parameters import DefaultParameters
 from settings.models import Parameter, Sample, Software
+from utils.utils import Utils
 
 
 ## https://kuanyui.github.io/2015/04/13/django-crispy-inline-form-layout-with-bootstrap/
@@ -134,7 +135,6 @@ class SoftwareForm(forms.ModelForm):
                 dt_fields[parameter.get_unique_id()].help_text = escape(help_text)
             ### this is use for Medaka and Trimmomatic
             elif parameter.is_char_list():
-
                 if parameter.software.name == SoftwareNames.SOFTWARE_NEXTSTRAIN_name:
                     list_data = [
                         data_ for data_ in SoftwareNames.SOFTWARE_NEXTSTRAIN_BUILDS_DESC
@@ -143,14 +143,15 @@ class SoftwareForm(forms.ModelForm):
                     parameter.software.name
                     == SoftwareNames.SOFTWARE_Medaka_name_consensus
                 ):
-                    if ( parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME
-                    ):
+                    if parameter.name == DefaultParameters.MEDAKA_PRIMER_NAME:
                         list_data = [
-                            [data_, data_] for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
-                        ]    
+                            [data_, data_]
+                            for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
+                        ]
                     else:
                         list_data = [
-                            [data_, data_] for data_ in self.utils.get_all_medaka_models()
+                            [data_, data_]
+                            for data_ in self.utils.get_all_medaka_models()
                         ]
                 elif (
                     parameter.name == SoftwareNames.SOFTWARE_TRIMMOMATIC_illuminaclip
@@ -163,13 +164,13 @@ class SoftwareForm(forms.ModelForm):
                     ]
                 elif (
                     parameter.name == DefaultParameters.SNIPPY_PRIMER_NAME
-                    and parameter.software.name 
-                    == SoftwareNames.SOFTWARE_SNIPPY_name
+                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
+                    and parameter.software.name == SoftwareNames.SOFTWARE_SNIPPY_name
                 ):
                     list_data = [
                         [data_, data_]
                         for data_ in SoftwareNames.SOFTWARE_SNIPPY_PRIMERS
-                    ]                                       
+                    ]
                 elif (
                     parameter.name == DefaultParameters.MASK_CLEAN_HUMAN_READS
                     and parameter.software.name
@@ -189,6 +190,14 @@ class SoftwareForm(forms.ModelForm):
                         for data_ in self.televir_utiltity.get_from_software_db_dict(
                             parameter.software.name.lower(), []
                         )
+                    ]
+                elif (
+                    parameter.name
+                    == SoftwareNames.SOFTWARE_televir_report_layout_flag_name
+                ):
+                    list_data = [
+                        [flag.build_name, flag.build_name]
+                        for flag in MappingFlagBuild.__subclasses__()
                     ]
                 else:
                     list_data = [[parameter.parameter, parameter.parameter]]
@@ -385,7 +394,11 @@ class SoftwareForm(forms.ModelForm):
         self, project, project_sample, sample, dataset, instance, televir_project
     ):
         """ """
-        if instance.type_of_use == 5:
+
+        if instance.type_of_use in [
+            Software.TYPE_OF_USE_televir_global,
+            Software.TYPE_OF_USE_televir_settings,
+        ]:
             return reverse("pathogenID_pipeline", args=[0])
         if not televir_project is None:
             return reverse("pathogenID_pipeline", args=[televir_project.pk])

@@ -230,6 +230,10 @@
     border-top: 1px;
     }
 
+    .select option.hidden_option{
+        display: none;
+    }
+
 </style>
 
 {% if owner %}
@@ -270,12 +274,16 @@
                             <p style="margin: 0;"> <strong>Remapping:</strong> {{run_main.remap}} </p>                        
                         </div>
                         <div class= "col-sm">
-                            <form  id="download_params" action="{% url 'download_file' %}" method="POST">
-                                {% csrf_token %}
-                                <input type=submit value="parameters (.tsv)" name="btn1"
-                                    style="border=1px solid border-color:black padding:2px">
-                                <input type="hidden" name="file_path" value="{{run_main.params_file_path}}">
-                            </form>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Summary Downloads
+                                  </button>
+                                  <div class="dropdown-menu">
+                                    {% if files.parameters %} {{ files.parameters }} {% endif %}
+                                    {% if files.intermediate_reports_zip %} {{ files.intermediate_reports_zip }} {% endif %}
+                                    {% if files.final_reports_csv %} {{ files.final_reports_csv }} {% endif %}
+                                </div>
+                            </div>     
                         </div>
                     </div>
                 </div>
@@ -294,13 +302,18 @@
                 <div style="padding: 20px">
                     <div class="row">
                     <div class= "col-sm">
+                    {% if qc_report.performed %}
+                    <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
+                    <p> Complexity filtered #: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{qc_report.output_reads_percent|round_str_perc_invert}} %) </p>
+                    {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
+                    {% endif %}
                     {% if run_main.enrichment_performed or run_main.host_depletion_performed %}
                         {% if run_main.enrichment_performed %}
                         {% if run_detail.enriched_reads == 0 %}
                         <p> Viral enrichment ({{ run_main.enrichment }}) did not remove any reads </p>
                         {% else %}
-                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent run_detail.input run_detail.enriched_reads %} %).</p>
+                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_int_to_str run_detail.input run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads run_detail.input run_detail.enriched_reads %} %).</p>
                         {% endif %}
                         {% endif %}
                         {% if run_main.host_depletion_performed %}
@@ -571,6 +584,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for final_report in report_list %}
                         {% for value in final_report %}
                         <tr class="parent">
                             <td data-title="Description"><a href="#" id="plot_show" >{{value.description}}</a></td>
@@ -598,8 +612,8 @@
                                 {{value.classification_success}}</td>
                             <td data-title="mapping success" style="{% success_count_color value.mapping_success %}">
                                 {{value.mapping_success}}</td>
-                            <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads %}">
-                                {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads %}</td>
+                            <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
+                                {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                             {% if in_control %}
                             <td data-title="Control" style="{% flag_control_color value.control_flag %}">
                                 {% flag_control value.control_flag %}</td>
@@ -772,6 +786,12 @@
                         </td>
                         </tr>
                     {% endfor %}
+                    <tr class="detail" style="background-color: #f2f2f2; padding: 0px; margin: 0px; border: 0px;">
+                        <td colspan="15" align="center" style="padding: 0px; margin: 0px">
+                            <hr class="solid" style="height: 1px; background-color: #000000; margin: 0px;">
+                        </td>
+                    </tr>
+                    {% endfor %}
                     </tbody>
                     </table>
                 </div>
@@ -869,6 +889,13 @@
     function drawChart() {
         var raw_data= [['Input', "Number"]];
         raw_data.push(["Kept", parseFloat("{{run_detail.processed|reconvert_string_to_int}}")]);
+        console.log("{{qc_report.performed}}");
+        console.log("{{qc_report.input_reads}}");
+        if ("{{qc_report.performed}}" == "True" ) {
+            if ("{{qc_report.input_reads}}" != "0" ) {
+                raw_data.push(['Extra filtering', parseFloat("{% difference_str_to_str qc_report.input_reads qc_report.output_reads %}")]);
+            };
+        };
         if ("{{run_main.enrichment_performed}}" == "True" ) {
             if ("{{run_detail.enriched_reads}}" != "0" ) {
                 raw_data.push(['Enrichment', parseFloat("{% difference_str_to_int run_detail.input run_detail.enriched_reads %}")]);
@@ -1137,6 +1164,7 @@
         
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
+        var project_id= $(this).attr("project_id");
         if (id === "remap_reference") {
             e.preventDefault();
             $.ajax({
@@ -1144,7 +1172,8 @@
                 type: "POST",
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'reference_id': ref_id
+                    'reference_id': ref_id,
+                    'project_id': project_id
                 },
                 success: function (data) {
                     if (data["is_ok"] === true) {

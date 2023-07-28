@@ -1,17 +1,31 @@
 import logging
 import os
+import urllib.error
 from typing import List
 
 import pandas as pd
+
+from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.modules.object_classes import Remap_Target
+from pathogen_identification.utilities.entrez_wrapper import EntrezWrapper
 from pathogen_identification.utilities.utilities_general import (
+    description_passes_filter,
     merge_classes,
     scrape_description,
 )
 
 
 class Metadata_handler:
-    def __init__(self, config, sift_query: str = "phage", prefix: str = ""):
+    remap_targets: List[Remap_Target] = []
+
+    def __init__(
+        self,
+        username,
+        config,
+        sift_query: str = "phage",
+        prefix: str = "",
+        rundir: str = "",
+    ):
         """
         Initialize metadata handler.
 
@@ -21,11 +35,26 @@ class Metadata_handler:
 
         """
         self.prefix = prefix
+        self.rundir = rundir
         self.config = config
         self.metadata_paths = config["metadata"]
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(logging.StreamHandler())
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        self.logger.propagate = False
+
+        self.entrez_conn = EntrezWrapper(
+            username,
+            bindir=os.path.join(
+                self.config["bin"]["ROOT"],
+                self.config["bin"]["software"]["entrez_direct"],
+                "bin",
+            ),
+            outdir=self.rundir,
+            outfile="entrez_output.tsv",
+        )
 
         self.input_taxonomy_to_descriptor_path = self.metadata_paths[
             "input_taxonomy_to_descriptor_path"
@@ -48,7 +77,7 @@ class Metadata_handler:
 
         self.rclass: pd.DataFrame
         self.aclass: pd.DataFrame
-        self.merged_targets: pd.DataFrame
+        self.merged_targets: pd.DataFrame = pd.DataFrame()
         self.remap_targets: List[Remap_Target]
         self.remap_absent_taxid_list: List[str]
         self.remap_plan = pd.DataFrame
@@ -65,14 +94,14 @@ class Metadata_handler:
         max_remap: int = 15,
         taxid_limit: int = 12,
     ):
-
         self.process_reports(
             report_1,
             report_2,
         )
-        self.merge_reports_clean(
-            taxid_limit=taxid_limit,
-        )
+        if self.merged_targets.empty:
+            self.merge_reports_clean(
+                taxid_limit=taxid_limit,
+            )
 
         #######
         #######
@@ -89,21 +118,38 @@ class Metadata_handler:
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
-
         if "acc_x" in df.columns:
-            df = df.rename(columns={"acc_x": "acc"})
+            if "accid" in df.columns:
+                df = df.drop(columns=["acc_x"])
+            else:
+                df = df.rename(columns={"acc_x": "accid"})
 
         if "acc_y" in df.columns:
-            if "acc" in df.columns:
+            if "accid" in df.columns:
                 df = df.drop(columns=["acc_y"])
             else:
-                df = df.rename(columns={"acc_y": "acc"})
+                df = df.rename(columns={"acc_y": "accid"})
 
         if "counts" in df.columns:
             if "counts_x" in df.columns:
                 df = df.drop(columns=["counts_x"])
             if "counts_y" in df.columns:
                 df = df.drop(columns=["counts_y"])
+
+        return df
+
+    @staticmethod
+    def clean_report(df: pd.DataFrame):
+        """
+        Clean report.
+        """
+
+        if df.shape[0] > 0:
+            for target_col in ["acc", "protid", "prot_acc", "taxid"]:
+                if target_col in df.columns:
+                    df = df.dropna(subset=[target_col])
+                    # df = df.drop_duplicates(subset=[target_col])
+                    df = df.reset_index(drop=True)
 
         return df
 
@@ -115,11 +161,57 @@ class Metadata_handler:
         if sift is true, filter results to only include self.sift_query.
         """
 
+        print("MERGE REPORT TO METADATA TAXID")
+
         df = self.clean_report(df)
 
-        df = self.merge_report_to_metadata(df)
+        df = self.merge_report_to_metadata_taxid(df)
 
         df = self.map_hit_report(df)
+
+        df = self.entrez_get_taxid_descriptions(df)
+        # df = self.merge_report_to_metadata_description(df)
+
+        df = df.reset_index(drop=True)
+
+        # replace nan by "NA" in description column
+        print("FIND NA")
+        print(df.head())
+
+        def get_acc(df: pd.DataFrame):
+            if "acc_x" in df.columns:
+                df["accid"] = df["acc_x"]
+                df.drop(columns=["acc_x"])
+            elif "acc_y" in df.columns:
+                df["accid"] = df["acc_y"]
+                df.drop(columns=["acc_y"])
+            elif "acc" in df.columns:
+                df["accid"] = df["acc"]
+                df.drop(columns=["acc"])
+            else:
+                df["accid"] = df["taxid"].apply(self.get_taxid_representative_accid)
+
+            return df
+
+        if df.shape[0] > 0:
+            df = get_acc(df)
+            df["description"] = df["description"].fillna("NA")
+
+            def fill_description(row) -> pd.Series:
+                """
+                Fill description column with scraped description if description is "NA".
+                """
+
+                if row["description"] == "NA" or row["description"] == "":
+                    print(row)
+                    row["description"] = scrape_description(row["accid"])
+                    print(row["description"])
+
+                return row
+
+            print("FIND DESCRIPTION")
+            # df = df.apply(fill_description, axis=1)
+            print(df[["description", "counts", "taxid"]].head())
 
         if sift:
             sifted_df = self.sift_report_filter(df, query=self.sift_query)
@@ -178,20 +270,7 @@ class Metadata_handler:
 
         self.logger.info("Finished retrieving metadata")
 
-    @staticmethod
-    def clean_report(df: pd.DataFrame):
-        """
-        Clean report.
-        """
-        if df.shape[0] > 0:
-            for target_col in ["acc", "protid", "prot_acc", "taxid"]:
-                if target_col in df.columns:
-                    df = df.dropna(subset=[target_col])
-                    # df = df.drop_duplicates(subset=[target_col])
-                    df = df.reset_index(drop=True)
-        return df
-
-    def merge_report_to_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
+    def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
         """
 
         Args:
@@ -206,20 +285,30 @@ class Metadata_handler:
             return pd.DataFrame(columns=["taxid", "description", "file"])
 
         if "taxid" not in df.columns:
-
-            if "prot_acc" in df.columns:
+            if "prot_acc" in df.columns and "acc" not in df.columns:
+                counts_df = df.groupby(["prot_acc"]).size().reset_index(name="counts")
                 return self.merge_check_column_types(
-                    df, self.protein_accession_to_taxid, "prot_acc"
+                    counts_df, self.protein_accession_to_taxid, "prot_acc"
                 )
 
-            if "protid" in df.columns:
+            if "protid" in df.columns and "acc" not in df.columns:
+                counts_df = df.groupby(["protid"]).size().reset_index(name="counts")
                 df = self.merge_check_column_types(
-                    df, self.protein_to_accession, "protid"
+                    counts_df, self.protein_to_accession, "protid"
                 )
 
             if "acc" in df.columns:
+                if "counts" in df.columns:
+                    counts_df = df.groupby(["acc"]).agg({"counts": "sum"}).reset_index()
+
+                else:
+                    counts_df = df.groupby(["acc"]).size().reset_index(name="counts")
+
                 df = self.merge_check_column_types(
-                    df, self.accession_to_taxid, column="acc", column_two="acc_in_file"
+                    counts_df,
+                    self.accession_to_taxid,
+                    column="acc",
+                    column_two="acc_in_file",
                 )
 
             else:
@@ -227,8 +316,56 @@ class Metadata_handler:
                     "No taxid, accid or protid in the dataframe, unable to retrieve description."
                 )
 
+        df = df[(df.taxid != "0") | (df.taxid != 0)]
+
+        return df
+
+    def entrez_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get taxid descriptions from entrez.
+        """
+        taxid_df = df.dropna(subset=["taxid"])
+        taxid_list = taxid_df.taxid.unique().tolist()
+        taxid_list = [str(int(i)) for i in taxid_list]
+
+        if len(taxid_list) == 0:
+            return pd.DataFrame(columns=["taxid", "counts", "description"])
+
+        try:
+            self.entrez_conn.run_queries_biopy(taxid_list)
+        except urllib.error.URLError:
+            self.entrez_conn.run_queries_binaries(taxid_list)
+
+        taxid_descriptions = self.entrez_conn.read_output()
+        taxid_descriptions.rename(
+            columns={"scientific_name": "description"}, inplace=True
+        )
+
+        df["taxid"] = df["taxid"].astype(int)
+        taxid_descriptions["taxid"] = taxid_descriptions["taxid"].astype(int)
+
+        df = df.merge(taxid_descriptions, on="taxid", how="left")
+
+        df["taxid"] = df["taxid"].astype(float)
+        df["taxid"] = df["taxid"].astype(int)
+
+        return df
+
+    def merge_report_to_metadata_description(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge df with taxonomy to description file.
+        """
+
+        df["taxid"] = df["taxid"].astype(int)
         df = self.merge_check_column_types(df, self.taxonomy_to_description, "taxid")
+        df = df.sort_values(by="taxid")
+        df = df.drop_duplicates(subset=["taxid"], keep="first")
+
+        df = df.dropna(subset=["taxid"])
+        df.taxid = df.taxid.astype(float)
+        df = df.dropna(subset=["taxid"])
         df.taxid = df.taxid.astype(int)
+        df = df[df.taxid != 0]
 
         return df
 
@@ -255,7 +392,7 @@ class Metadata_handler:
         if df2[column_two].dtype != str:
             df2[column_two] = df2[column_two].astype(str)
 
-        return pd.merge(df1, df2, left_on=column, right_on=column_two)
+        return pd.merge(df1, df2, left_on=column, right_on=column_two, how="left")
 
     @staticmethod
     def sift_report_filter(df, query: str = "phage"):
@@ -266,7 +403,7 @@ class Metadata_handler:
             df["description"] = ""
 
         ntab = df[~df.description.str.contains(query)]
-        ntab = ntab.drop_duplicates(subset=["qseqid"])
+        # ntab = ntab.drop_duplicates(subset=["qseqid"])
 
         return ntab
 
@@ -324,17 +461,23 @@ class Metadata_handler:
         """
 
         if merged_table.shape[0] == 0:
-            return pd.DataFrame(columns=["taxid", "description", "file", "counts"])
+            return pd.DataFrame(columns=["taxid", "file", "counts"])
 
-        counts = merged_table.taxid.value_counts()
-        counts = pd.DataFrame(counts).reset_index()
-        counts.columns = ["taxid", "counts"]
+        if "counts" not in merged_table.columns:
+            counts = merged_table.taxid.value_counts()
+            counts = pd.DataFrame(counts).reset_index()
+            counts.columns = ["taxid", "counts"]
 
-        new_table = pd.merge(
-            left=merged_table, right=counts, on="taxid"
-        ).drop_duplicates(subset="taxid")
+            new_table = pd.merge(
+                left=merged_table, right=counts, on="taxid"
+            ).drop_duplicates(subset="taxid")
 
-        new_table = new_table.sort_values("counts", ascending=False)
+            new_table = new_table.sort_values("counts", ascending=False)
+        else:
+            new_table = (
+                merged_table.groupby(["taxid"]).agg({"counts": "sum"}).reset_index()
+            )
+            new_table = new_table.sort_values("counts", ascending=False)
 
         return new_table
 
@@ -343,7 +486,6 @@ class Metadata_handler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-
         self.rclass = self.results_process(report_1)
         self.aclass = self.results_process(report_2)
 
@@ -364,6 +506,24 @@ class Metadata_handler:
             return "-"
         else:
             return accid_set.acc.iloc[0]
+
+    def get_taxid_representative_accid_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return representative accession for a given taxid.
+        """
+
+        new_df = df.copy()
+        if "acc" in new_df.columns:
+            new_df.drop(columns=["acc"], inplace=True)
+
+        new_df = (
+            new_df.merge(self.accession_to_taxid, on="taxid", how="left")
+            .sort_values(["taxid", "acc"], ascending=[True, True])
+            .drop_duplicates(subset=["taxid"], keep="first")
+            .fillna("-")
+        )
+
+        return new_df
 
     def get_taxid_representative_description(self, taxid: int) -> str:
         """
@@ -389,15 +549,27 @@ class Metadata_handler:
     ):
         """merge the reports and filter them."""
 
-        print("TAXID LIMIT: ", taxid_limit)
-
         targets, raw_targets = merge_classes(self.rclass, self.aclass, maxt=taxid_limit)
+
         raw_targets["accid"] = raw_targets["taxid"].apply(
             self.get_taxid_representative_accid
         )
-        raw_targets["description"] = raw_targets["taxid"].apply(
-            self.get_taxid_representative_description
-        )
+
+        if "description" not in raw_targets.columns:
+            taxid_descriptions = pd.concat(
+                [
+                    self.rclass[["taxid", "description"]],
+                    self.aclass[["taxid", "description"]],
+                ]
+            )
+            taxid_descriptions.dropna(subset=["description"], inplace=True)
+            taxid_descriptions.drop_duplicates(subset=["taxid"], inplace=True)
+            raw_targets = raw_targets.merge(taxid_descriptions, on="taxid", how="left")
+
+        # raw_targets["description"] = raw_targets["taxid"].apply(
+        #    self.get_taxid_representative_description
+        # )
+
         raw_targets["status"] = raw_targets["taxid"].isin(targets["taxid"].to_list())
 
         self.raw_targets = raw_targets
@@ -421,14 +593,14 @@ class Metadata_handler:
         remap_absent = []
         taxf = self.accession_to_taxid
         remap_plan = []
+        targets.taxid = targets.taxid.astype(int)
 
         for taxid in targets.taxid.unique():
-
             if len(taxf[taxf.taxid == taxid]) == 0:
                 remap_absent.append(taxid)
 
                 nset = pd.DataFrame(columns=["taxid"])
-                remap_plan.append([taxid, "none", "none"])
+                remap_plan.append([taxid, "none", "none", "none"])
                 continue
 
             nset = (
@@ -442,16 +614,17 @@ class Metadata_handler:
             ####
 
             for fileset in files_to_map:
-
                 nsu = nset[nset.file == fileset]
+
+                added_counts = 0
 
                 if nsu.shape[0] > max_remap:
                     nsu = nsu.drop_duplicates(
                         subset=["taxid"], keep="first"
                     ).reset_index()
+                    # nsu= nsu.iloc[:max_remap, :]
 
                 for pref in nsu.acc.unique():
-
                     nsnew = nsu[nsu.acc == pref].reset_index(drop=True)
                     pref_simple = (
                         pref.replace(".", "_")
@@ -476,6 +649,9 @@ class Metadata_handler:
                     description = description[0]
                     description = scrape_description(pref, description)
 
+                    if description_passes_filter(description, CS.DESCRIPTION_FILTERS):
+                        continue
+
                     def determine_taxid_in_file(taxid, df: pd.DataFrame):
                         """
                         determine if an accession is in a dataframe.
@@ -498,7 +674,12 @@ class Metadata_handler:
                             determine_taxid_in_file(taxid, self.aclass),
                         )
                     )
+
                     remap_plan.append([taxid, pref, fileset, description])
+
+                    added_counts += 1
+                    if added_counts > max_remap:
+                        break
 
         self.remap_plan = pd.DataFrame(
             remap_plan, columns=["taxid", "acc", "file", "description"]

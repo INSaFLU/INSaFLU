@@ -3,20 +3,19 @@ import os
 from datetime import datetime
 from operator import itemgetter
 
-from constants.constants import Constants, FileExtensions, FileType, TypePath
-from constants.constants_mixed_infection import ConstantsMixedInfection
-from constants.software_names import SoftwareNames
 from django.conf import settings
-
 # from django.db.models import Manager as GeoManager
 from django.contrib.auth.models import User
-
 # Create your models here.
 from django.contrib.gis.db.models import GeoManager  # #  change to django  2.x
 from django.contrib.gis.db.models import PointField
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+
+from constants.constants import Constants, FileExtensions, FileType, TypePath
+from constants.constants_mixed_infection import ConstantsMixedInfection
+from constants.software_names import SoftwareNames
 from fluwebvirus.formatChecker import ContentTypeRestrictedFileField
 from manage_virus.constants_virus import ConstantsVirus
 from manage_virus.models import IdentifyVirus
@@ -2211,8 +2210,13 @@ class ProcessControler(models.Model):
         return "{}{}".format(ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk)
 
     def get_name_televir_project_sample(self, project_pk, sample_pk):
-        return "{}_sample_{}".format(
+        return "{}{}_sample_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, project_pk, sample_pk
+        )
+    
+    def get_name_televir_project_sample_sort(self, sample_pk):
+        return "{}_report_sort_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk
         )
 
     def get_name_televir_run(self, project_pk, sample_pk, leaf_pk) -> str:

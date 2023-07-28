@@ -341,6 +341,9 @@ class Metadata_handler:
             columns={"scientific_name": "description"}, inplace=True
         )
 
+        df["taxid"] = df["taxid"].astype(int)
+        taxid_descriptions["taxid"] = taxid_descriptions["taxid"].astype(int)
+
         df = df.merge(taxid_descriptions, on="taxid", how="left")
 
         df["taxid"] = df["taxid"].astype(float)

@@ -255,5 +255,11 @@
 
 </script>
 
+<script>
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
+</script>
+
 {% endblock js %}
 

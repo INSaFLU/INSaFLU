@@ -86,10 +86,11 @@ class ReportSorter:
 
         self.fasta_files = self.metadata_df.file.tolist()
         self.level= level
-        self.model= self.set_level(reports[0], level)
+        
+        self.model= self.set_level(reports, level)
         self.run = self.infer_run()
 
-        if self.level is not None:
+        if self.model is not None:
             self.media_dir= self.infer_media_dir()
             #self.run_media_dir = self.inferred_run_media_dir()
 
@@ -111,7 +112,11 @@ class ReportSorter:
             self.all_clades_df_path = None
             self.force = False
 
-    def set_level(self, final_report: FinalReport, level):
+    def set_level(self, final_report_list: List[FinalReport], level):
+        
+        if len(final_report_list) == 0:
+            return None
+        final_report= final_report_list[0]
         if level == 0:
             return final_report.sample
         elif level == 1:
@@ -289,6 +294,9 @@ class ReportSorter:
             str(self.model.pk),
         )
 
+        if not os.path.exists(self.analysis_df_path):
+            return False
+
         if not os.path.exists(overlap_manager.distance_matrix_path):
             return False
 
@@ -330,7 +338,6 @@ class ReportSorter:
                 sorted_reports.append(group_list)
 
         # sort groups by max coverage among group
-        print("sorted reports")
 
         def get_max_coverage(group: List[FinalReport]):
             return max(y.coverage for y in group)

@@ -31,7 +31,7 @@ def accid_from_metadata(metadata: pd.DataFrame, read_name: str) -> str:
 
 
 class ReadOverlapManager:
-    distance_matrix_filename: str = "distance_matrix_{}.tsv"
+    distance_matrix_filename: str = "distance_matrix_{} .tsv"
     clade_statistics_filename: str = "clade_statistics_{}.tsv"
     accid_statistics_filename: str = "accid_statistics_{}.tsv"
     min_freq: float = 0.05
@@ -268,7 +268,6 @@ class ReadOverlapManager:
         read_profile_dict = self.read_profile_dict_get(readname_dict, all_reads)
         read_profile_matrix = self.read_profile_matrix_get(read_profile_dict)
         read_profile_matrix = self.filter_read_matrix(read_profile_matrix)
-        print(read_profile_matrix.shape)
         return read_profile_matrix
     
     def pairwise_shared_count(self, read_profile_matrix: pd.DataFrame) -> pd.DataFrame:
@@ -420,8 +419,7 @@ class ReadOverlapManager:
         return int(self.read_profile_matrix.loc[leaves].sum().sum())
 
     def clade_private_proportions(self, leaves: list) -> float:
-        print(leaves)
-        print(self.read_profile_matrix.index)
+
         group = self.read_profile_matrix.loc[leaves]
         group_sum = group.sum(axis=0)
         group_sum_as_bool = group_sum > 0
@@ -529,7 +527,6 @@ class ReadOverlapManager:
         """
         node_stats_dict = {}
 
-        print(clade_summary)
         # set the index to the node name
         clade_summary = clade_summary.set_index("node")
 
@@ -541,8 +538,6 @@ class ReadOverlapManager:
             except IndexError:
                 print("node not found in tree")
                 continue
-            print(node_phylo_clade)
-            print(stats)
 
             node_stats_dict[node_phylo_clade] = Clade(
                 name=str(node),
@@ -635,7 +630,6 @@ class ReadOverlapManager:
         Return dataframe of leaf clades
         """
         leaf_clades_dict = []
-        print(statistics_dict)
         for leaf, clade in leaf_clades.items():
             if clade is None:
                 leaf_clades_dict.append(
@@ -687,7 +681,6 @@ class ReadOverlapManager:
 
         accids_df = pd.read_csv(self.accid_statistics_path, sep="\t")
         #
-        print(accids_df)
         leaf_clades_df = leaf_clades_df.merge(
             accids_df, right_on="accid", left_on="leaf"
         )

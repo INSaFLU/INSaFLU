@@ -296,6 +296,12 @@
 </script>
 
 <script>
+    window.onbeforeunload = function (e) {
+        $.unblockUI();
+    };
+</script>
+
+<script>
 
     $(document).on("click", "a", function (e) {
 

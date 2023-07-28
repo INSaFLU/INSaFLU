@@ -1164,6 +1164,7 @@
         
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
+        var project_id= $(this).attr("project_id");
         if (id === "remap_reference") {
             e.preventDefault();
             $.ajax({
@@ -1172,6 +1173,7 @@
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                     'reference_id': ref_id
+                    'project_id': project_id
                 },
                 success: function (data) {
                     if (data["is_ok"] === true) {

@@ -1035,9 +1035,13 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         file_path = os.path.join(run_main_dir, "final_reports.csv")
         context["files"]["final_reports_csv"] = file_path
 
+        def eliminate_path_before_media(path):
+            return "media" + path.split("media")[1] if "media" in path else path
+
         for fpath in context["files"]:
             cwd = os.getcwd()
-            context["files"][fpath] = context["files"][fpath].replace(cwd, "")
+            
+            context["files"][fpath] = eliminate_path_before_media(context["files"][fpath])
             context["files"][fpath] = get_link_for_dropdown_item(
                 context["files"][fpath]
             )

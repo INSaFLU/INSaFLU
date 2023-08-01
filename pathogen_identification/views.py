@@ -662,9 +662,6 @@ class MainPage(LoginRequiredMixin, generic.CreateView):
             self.request, paginate={"per_page": Constants.PAGINATE_NUMBER}
         ).configure(samples)
 
-        ### set control reports
-        set_control_reports(project.pk)
-
         ### type of deployment
         DEPLOY_TYPE= PICS.DEPLOYMENT_DEFAULT
         DEPLOY_URL= 'deploy_ProjectPI'

@@ -36,11 +36,10 @@ def set_control_reports(project_pk: int):
             project=project, is_control=True
         )
 
-        control_reports = FinalReport.objects.filter(sample__in=control_samples)
+        control_reports = FinalReport.objects.filter(sample__in=control_samples).distinct("taxid")
 
         control_report_taxids = control_reports.values_list("taxid", flat=True)
         control_report_taxids_set = set(control_report_taxids)
-        print(control_report_taxids_set)
 
         other_reports = FinalReport.objects.filter(sample__project=project).exclude(
             sample__in=control_samples

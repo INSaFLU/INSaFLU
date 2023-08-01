@@ -2,6 +2,7 @@ import logging
 import os
 import urllib.error
 from typing import List
+import http.client 
 
 import pandas as pd
 
@@ -335,6 +336,10 @@ class Metadata_handler:
             self.entrez_conn.run_queries_biopy(taxid_list)
         except urllib.error.URLError:
             self.entrez_conn.run_queries_binaries(taxid_list)
+        except http.client.RemoteDisconnected:
+            self.entrez_conn.run_queries_binaries(taxid_list)
+
+                
 
         taxid_descriptions = self.entrez_conn.read_output()
         taxid_descriptions.rename(

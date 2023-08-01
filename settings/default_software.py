@@ -569,6 +569,7 @@ class DefaultSoftware(object):
                 pipeline_step__name=vect_parameters[0].software.pipeline_step,
             )
         except Software.DoesNotExist:  ### if not exist save it
+            print("persisting default parameters for software: " + software_name)
             self.default_parameters.persist_parameters(vect_parameters, type_of_use)
 
     def get_trimmomatic_parameters(self, user):

@@ -304,7 +304,7 @@
                     <div class= "col-sm">
                     {% if qc_report.performed %}
                     <p> Input reads: <strong>{{ qc_report.input_reads }}</strong> </p>
-                    <p> Complexity filtered #: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{qc_report.output_reads_percent|round_str_perc_invert}} %) </p>
+                    <p> Low complexity filtering (printseq) removed: <strong>{% difference_str_to_str_format qc_report.input_reads qc_report.output_reads %}</strong> ({{qc_report.output_reads_percent|round_str_perc_invert}} %) </p>
                     {% else %}
                     <p> Input reads: <strong>{{ run_detail.input }}</strong> </p>
                     {% endif %}
@@ -1164,6 +1164,7 @@
         
         var id= $(this).attr("id");
         var ref_id= $(this).attr("ref_id");
+        var project_id= $(this).attr("project_id");
         if (id === "remap_reference") {
             e.preventDefault();
             $.ajax({
@@ -1171,7 +1172,8 @@
                 type: "POST",
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'reference_id': ref_id
+                    'reference_id': ref_id,
+                    'project_id': project_id
                 },
                 success: function (data) {
                     if (data["is_ok"] === true) {

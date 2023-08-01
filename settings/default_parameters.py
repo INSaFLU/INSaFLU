@@ -557,6 +557,8 @@ class DefaultParameters(object):
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
                     Software.TYPE_OF_USE_televir_project,
+                    Software.TYPE_OF_USE_televir_settings,
+                    Software.TYPE_OF_USE_televir_project_settings,
                 ]:
                     is_to_run = not software.is_to_run
                 elif len(parameters) > 0:
@@ -571,6 +573,8 @@ class DefaultParameters(object):
                     Software.TYPE_OF_USE_global,
                     Software.TYPE_OF_USE_televir_global,
                     Software.TYPE_OF_USE_televir_project,
+                    Software.TYPE_OF_USE_televir_settings,
+                    Software.TYPE_OF_USE_televir_project_settings,
                 ]:
                     return software.is_to_run
                 elif len(parameters) > 0:
@@ -584,6 +588,8 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_global,
                 Software.TYPE_OF_USE_televir_global,
                 Software.TYPE_OF_USE_televir_project,
+                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_project_settings,
             ]:
                 software.is_to_run = is_to_run
                 software.save()

@@ -1311,7 +1311,6 @@ class TreeProgressGraph:
         existing_parameter_sets = ParameterSet.objects.filter(
             project=self.project,
             status__in=[
-                ParameterSet.STATUS_RUNNING,
                 ParameterSet.STATUS_FINISHED,
             ],
             sample=self.sample,

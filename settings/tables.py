@@ -625,6 +625,7 @@ class SoftwaresTable(tables.Table):
             sz_ids += ' sample_id="{}"'.format(self.sample.id)
 
         is_to_run = record.is_to_run
+        
         if len(sz_ids) > 0:
             parameters = Parameter.objects.filter(
                 software=record,

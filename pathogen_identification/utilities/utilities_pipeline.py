@@ -332,7 +332,6 @@ class PipelineTree:
         """
 
         self.generate_graph()
-        print(self.nodes)
         all_paths = list(nx.all_simple_paths(self.graph, 0, self.leaves))
         all_paths_explicit = [self.get_path_explicit(path) for path in all_paths]
 
@@ -1341,11 +1340,13 @@ class Parameter_DB_Utility:
 
         combined_table = pd.merge(
             software_table, parameters_table, left_on="id", right_on="software_id"
-        ).rename(
+        )
+
+        combined_table= combined_table.rename(
             columns={
                 "id_x": "software_id",
                 "id_y": "parameter_id",
-                "name_extended": "software_name",
+                "name_x": "software_name",
                 "name_y": "parameter_name",
                 "is_to_run_x": "software_is_to_run",
                 "is_to_run_y": "parameter_is_to_run",

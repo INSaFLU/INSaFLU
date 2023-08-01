@@ -32,7 +32,6 @@ from managing_files.forms import AddSampleProjectForm
 from managing_files.manage_database import ManageDatabase
 from managing_files.models import Sample
 from managing_files.tables import SampleToProjectsTable
-from pathogen_identification.ajax_views import set_control_reports
 from pathogen_identification.constants_settings import ConstantsSettings
 from pathogen_identification.models import (
     ContigClassification,

@@ -20,6 +20,8 @@ from utils.process_SGE import ProcessSGE
 from pathogen_identification.utilities.tree_deployment import (
     TreeProgressGraph,
 )
+from pathogen_identification.utilities.utilities_views import set_control_reports
+
 
 class Sample_Staging:
     """
@@ -150,13 +152,14 @@ class Command(BaseCommand):
                 if run.is_available:
                     run.get_in_line()
                     submission_dict[target_sample].append(run)
-                
-                graph_progress.generate_graph()
 
                 for sample, runs in submission_dict.items():
                     for run in runs:
 
                         run.Submit()
+                
+                graph_progress.generate_graph()
+                set_control_reports(project.pk)
 
             process_SGE.set_process_controler(
                 user,
@@ -170,6 +173,8 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(e)
+            graph_progress.generate_graph()
+
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_televir_run(

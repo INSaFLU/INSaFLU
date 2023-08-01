@@ -242,7 +242,7 @@ class SoftwareNames(object):
     ## awk \'/^S/{{ printf(">%s\\n%s\\n", $2, $3) }}\' {output.gfa} > {output.fasta} || 
     ## touch {output.fasta}
     SOFTWARE_RAVEN = os.path.join(settings.DIR_SOFTWARE, "raven/raven.sh")
-    SOFTWARE_RAVEN_name = "raven"
+    SOFTWARE_RAVEN_name = "Raven"
     SOFTWARE_RAVEN_name_extended = "Assembly ONT (Raven)"
     SOFTWARE_RAVEN_VERSION = "1.8.1"
     SOFTWARE_RAVEN_PARAMETERS = (

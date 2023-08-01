@@ -1191,6 +1191,7 @@ class Remapping:
         available_methods = {
             "bwa": Remap_Bwa,
             "snippy": Remap_Snippy,
+            "snippy_pi": Remap_Snippy,
             "minimap2": Remap_Minimap2,
             "bowtie": Remap_Bowtie2,
         }

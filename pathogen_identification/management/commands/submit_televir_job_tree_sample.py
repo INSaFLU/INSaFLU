@@ -21,7 +21,7 @@ from pathogen_identification.utilities.utilities_pipeline import (
     Utils_Manager,
 )
 from utils.process_SGE import ProcessSGE
-
+from pathogen_identification.utilities.utilities_views import set_control_reports
 
 class Command(BaseCommand):
     help = "deploy run"
@@ -151,6 +151,7 @@ class Command(BaseCommand):
                     deployment_tree.cycle_process()
 
                     graph_progress.generate_graph()
+                    set_control_reports(project.pk)
 
                     break
 

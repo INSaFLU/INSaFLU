@@ -1321,10 +1321,16 @@ import zipfile
 
 
 def generate_zip_file(file_list: list, zip_file_path: str) -> str:
-    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-        for file_path in file_list:
-            zip_file.write(file_path, os.path.basename(file_path))
 
+    try:
+        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+            for file_path in file_list:
+                if os.path.isfile(file_path):
+                    zip_file.write(file_path, os.path.basename(file_path))
+
+    except Exception as e:
+        print(e)
+        return None
     return zip_file_path
 
 
@@ -1332,10 +1338,7 @@ def get_create_zip(file_list: list, outdir: str, zip_file_name: str) -> str:
     zip_file_path = os.path.join(outdir, zip_file_name)
 
     if os.path.exists(zip_file_path):
-        try:
-            os.unlink(zip_file_path)
-        except Exception as e:
-            print(e)
+
             return zip_file_path
 
     zip_file_path = generate_zip_file(file_list, zip_file_path)

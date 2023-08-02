@@ -21,7 +21,7 @@ from pathogen_identification.models import (
     SoftwareTree,
     SoftwareTreeNode,
 )
-from pathogen_identification.modules.run_main import RunMain_class
+from pathogen_identification.modules.run_main import RunMain_class, RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 from pathogen_identification.utilities.update_DBs import (
     Update_Assembly,
@@ -47,7 +47,7 @@ class PathogenIdentification_deployment:
     prefix: str
     rdir: str
     threads: int
-    run_engine: RunMain_class
+    run_engine: RunMainTree_class
     params = dict
     run_params_db = pd.DataFrame()
     pk: int = 0
@@ -114,7 +114,7 @@ class PathogenIdentification_deployment:
     def retrieve_runmain(self):
         """retrieve runmain object from database"""
 
-        self.run_engine = RunMain_class(
+        self.run_engine = RunMainTree_class(
             self.project,
             self.prefix,
             self.dir,
@@ -240,7 +240,7 @@ class PathogenIdentification_deployment:
         """prepare run_main object from config dictionary"""
         self.prepped = True
 
-        self.run_engine = RunMain_class(self.config, self.run_params_db, self.username)
+        self.run_engine = RunMainTree_class(self.config, self.run_params_db, self.username)
 
         utils = Utils_Manager()
 
@@ -479,7 +479,8 @@ class Run_Main_from_Leaf:
             return False
 
         try:
-            self.container.run_engine.Run_Classification()
+            self.container.run_engine.Run_Read_classification()
+            self.container.run_engine.Run_Contig_classification()
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )
@@ -491,6 +492,7 @@ class Run_Main_from_Leaf:
             return False
 
         try:
+            self.container.run_engine.remap_prepped = True
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
             self.container.run_engine.Summarize()

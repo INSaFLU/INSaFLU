@@ -178,7 +178,6 @@ class RunDetail_main:
         self.contig_classification_performed: bool = False
         self.remap_prepped: bool = False
         self.remapping_performed: bool = False
-        self.remap_prepped: bool = False
 
         ######## DIRECTORIES ########
 
@@ -852,16 +851,6 @@ class RunMain_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
-    def Run_Full_Pipeline(self):
-        self.Prep_deploy()
-        self.Run_QC()
-        self.Run_PreProcess()
-        self.Sanitize_reads()
-        self.Run_Assembly()
-        self.Run_Classification()
-        self.Run_Remapping()
-
-    def Run_QC(self):
         self.logger.info("Starting Pipeline")
 
         self.logger.info(f"quality control: {self.quality_control}")
@@ -871,6 +860,20 @@ class RunMain_class(Run_Deployment_Methods):
         self.logger.info(f"classification: {self.classification}")
         self.logger.info(f"sift: {self.sift}")
         self.logger.info(f"remapping: {self.remapping}")
+        self.logger.info(f"current reads: {self.sample.r1.current}")
+
+
+    def Run_Full_Pipeline(self):
+
+        self.Prep_deploy()
+        self.Run_QC()
+        self.Run_PreProcess()
+        self.Sanitize_reads()
+        self.Run_Assembly()
+        self.Run_Classification()
+        self.Run_Remapping()
+
+    def Run_QC(self):
 
         if self.quality_control:
             print("Deploying QC")
@@ -1181,7 +1184,6 @@ class RunMainTree_class(Run_Deployment_Methods):
     ):
         super().__init__(config_json, method_args, username)
 
-    def Run_Full_Pipeline(self):
         self.logger.info("Starting Pipeline")
 
         self.logger.info(f"quality control: {self.quality_control}")
@@ -1192,6 +1194,8 @@ class RunMainTree_class(Run_Deployment_Methods):
         self.logger.info(f"sift: {self.sift}")
         self.logger.info(f"remapping: {self.remapping}")
         self.logger.info(f"current reads: {self.sample.r1.current}")
+
+    def Run_Full_Pipeline(self):
 
         self.Prep_deploy()
         self.Run_QC()
@@ -1462,6 +1466,10 @@ class RunMainTree_class(Run_Deployment_Methods):
 
     def export_sequences(self):
         self.sample.export_reads(self.media_dir)
+        self.assembly_drone.export_assembly(self.media_dir)
+
+
+    def export_assembly(self):
         self.assembly_drone.export_assembly(self.media_dir)
 
     def Summarize(self):

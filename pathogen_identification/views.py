@@ -1033,7 +1033,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
         context["files"]["final_reports_csv"] = file_path
 
         def eliminate_path_before_media(path: str):
-            return path.replace(MEDIA_ROOT, "media")
+            return path.replace(MEDIA_ROOT, "/media")
 
         for fpath in context["files"]:
             cwd = os.getcwd()

@@ -306,6 +306,7 @@
     $(document).on("click", "a", function (e) {
 
         if ($(this).attr("id") == "deploypi_sample_btn") {
+            console.log("deploy pi sample");
             e.preventDefault();
         
             url= $(this).attr("deploy-url");
@@ -315,7 +316,7 @@
                 type: "POST",
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'sample_id': $(this).attr("pk"),
+                    'sample_id': $(this).attr("sample_id"),
                 },
                 data_type: 'json',
                 success: function(data){

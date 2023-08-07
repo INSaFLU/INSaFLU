@@ -1346,6 +1346,7 @@ class Parameter_DB_Utility:
             columns={
                 "id_x": "software_id",
                 "id_y": "parameter_id",
+                "name": "software_name",
                 "name_x": "software_name",
                 "name_y": "parameter_name",
                 "is_to_run_x": "software_is_to_run",
@@ -1365,9 +1366,10 @@ class Parameter_DB_Utility:
 
         combined_table = combined_table.reset_index(drop=True)
 
-        combined_table = combined_table.loc[
-            :, ~combined_table.T.duplicated(keep="last")
-        ]
+        ## remove duplicate column names:
+        combined_columns= combined_table.columns
+        combined_columns_unique= list(set(combined_columns))
+        combined_table= combined_table[combined_columns_unique]
 
         return combined_table
 

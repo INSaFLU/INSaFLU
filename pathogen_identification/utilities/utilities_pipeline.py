@@ -1365,13 +1365,15 @@ class Parameter_DB_Utility:
         )
 
         combined_table = combined_table.reset_index(drop=True)
-        names= combined_table["software_name"].values 
+        software_names= combined_table["software_name"].values 
 
         ## remove duplicate columns
         #
-        
+        combined_table = combined_table.loc[
+            :, ~combined_table.T.duplicated(keep="last")
+        ]
 
-        combined_table["software_name"]= names
+        combined_table["software_name"]= software_names
         #columns= combined_table.columns
         #columns_unique= list(set(columns))
         #combined_table= combined_table[columns_unique]

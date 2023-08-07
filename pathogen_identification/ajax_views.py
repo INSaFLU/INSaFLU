@@ -56,6 +56,8 @@ def deploy_ProjectPI(request):
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
 
+        print(request.POST)
+
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
 

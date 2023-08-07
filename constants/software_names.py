@@ -562,7 +562,7 @@ class SoftwareNames(object):
     ### REPORT LAYOUT
     SOFTWARE_televir_report_layout = "report_layout"
     SOFTWARE_televir_report_layout_name = "Final Report"
-    SOFTWARE_televir_report_layout_name_extended = "Final Report"
+    SOFTWARE_televir_report_layout_name_extended = "Final Report - Flagging and Sorting"
     SOFTWARE_televir_report_layout_default = ""
     SOFTWARE_televir_report_layout_version = "1.0.0"
     SOFTWARE_televir_report_layout_flag_name = "--flag-type"
@@ -582,6 +582,14 @@ class SoftwareNames(object):
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
+
+    SOFTWARE_BAMUTIL_name = "BamUtil"
+    SOFTWARE_BAMUTIL_name_extended = "BamUtil - Mapping Stringency"
+    SOFTWARE_BAMUTIL = os.path.join(
+        settings.DIR_SOFTWARE,
+        "preprocess/bamUtil/bin/bam",
+    )
+    SOFTWARE_BAMUTIL_VERSION = "1.0.15"
 
     ###
 
@@ -710,7 +718,7 @@ class SoftwareNames(object):
     ### SNIPPY
 
     SOFTWARE_SNIPPY_PI_name = "Snippy_PI"
-    SOFTWARE_SNIPPY_PI_name_extended = "Snippy"
+    SOFTWARE_SNIPPY_PI_name_extended = "Snippy - Remapping"
     SOFTWARE_SNIPPY_PI = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/snippy",

@@ -710,6 +710,13 @@ class DefaultParameters(object):
                 Software.TYPE_OF_USE_televir_settings,
                 software.technology.name,
             )
+        
+        elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
+            return self.get_bamutil_defaults(
+                software.owner,
+                Software.TYPE_OF_USE_televir_settings,
+                software.technology.name,
+            )
 
         elif software.name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             return self.get_prinseq_defaults(
@@ -1452,6 +1459,83 @@ class DefaultParameters(object):
 
         return vect_parameters
 
+    def get_bamutil_defaults(
+        self,
+        user,
+        type_of_use,
+        technology_name,
+        sample=None,
+        is_to_run=True,
+    ):
+        """
+        remapping parameters, namely:
+            max number of taxids to map against.
+            max number of acccids to map for each taxid.
+            minimum coverage?
+        """
+        software = Software()
+        software.name = SoftwareNames.SOFTWARE_BAMUTIL_name
+        software.name_extended = SoftwareNames.SOFTWARE_BAMUTIL_name_extended
+        software.type_of_use = type_of_use
+        software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
+        software.version = SoftwareNames.SOFTWARE_BAMUTIL_VERSION
+        software.version_parameters = self.get_software_parameters_version(
+            software.name
+        )
+        software.technology = self.get_technology(technology_name)
+        software.can_be_on_off_in_pipeline = (
+            False  ## set to True if can be ON/OFF in pipeline, otherwise always ON
+        )
+        software.is_to_run = is_to_run  ## set to True if it is going to run, for example Trimmomatic can run or not
+
+        ###  small description of software
+        software.help_text = ""
+
+        ###  which part of pipeline is going to run
+        software.pipeline_step = self._get_pipeline(
+            ConstantsSettings.PIPELINE_NAME_remapping
+        )
+
+        software.owner = user
+        vect_parameters = []
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality
+        parameter.parameter = "20"
+        parameter.type_data = Parameter.PARAMETER_int
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 3
+        parameter.range_available = "[0:100]"
+        parameter.range_max = "100"
+        parameter.range_min = "0"
+        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 60)"
+        vect_parameters.append(parameter)
+
+        parameter = Parameter()
+        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch
+        parameter.parameter = ".1"
+        parameter.type_data = Parameter.PARAMETER_float
+        parameter.software = software
+        parameter.sample = sample
+        parameter.union_char = " "
+        parameter.can_change = True
+        parameter.is_to_run = True  ### by default it's True
+        parameter.sequence_out = 4
+        parameter.range_available = "[0:1]"
+        parameter.range_max = "1"
+        parameter.range_min = "0"
+        parameter.description = "Bamutil, maximum fraction of mismatches before marking a read unmapped. (Defaults to 0.1)"
+        vect_parameters.append(parameter)
+
+        return vect_parameters
+
+
+
+
     def get_remap_defaults(
         self,
         user,
@@ -1524,37 +1608,6 @@ class DefaultParameters(object):
         parameter.description = "Number of accession IDs to map against."
         vect_parameters.append(parameter)
 
-        parameter = Parameter()
-        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality
-        parameter.parameter = "60"
-        parameter.type_data = Parameter.PARAMETER_int
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True  ### by default it's True
-        parameter.sequence_out = 3
-        parameter.range_available = "[0:100]"
-        parameter.range_max = "100"
-        parameter.range_min = "0"
-        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 60)"
-        vect_parameters.append(parameter)
-
-        parameter = Parameter()
-        parameter.name = SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch
-        parameter.parameter = ".1"
-        parameter.type_data = Parameter.PARAMETER_float
-        parameter.software = software
-        parameter.sample = sample
-        parameter.union_char = " "
-        parameter.can_change = True
-        parameter.is_to_run = True  ### by default it's True
-        parameter.sequence_out = 4
-        parameter.range_available = "[0:1]"
-        parameter.range_max = "1"
-        parameter.range_min = "0"
-        parameter.description = "Bamutil, maximum fraction of mismatches before marking a read unmapped. (Defaults to 0.1)"
-        vect_parameters.append(parameter)
 
         return vect_parameters
 

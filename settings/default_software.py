@@ -253,6 +253,26 @@ class DefaultSoftware(object):
         )
 
         self.test_default_db(
+            SoftwareNames.SOFTWARE_BAMUTIL_name,
+            self.default_parameters.get_bamutil_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BAMUTIL_name,
+            self.default_parameters.get_bamutil_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_settings,
+                ConstantsSettings.TECHNOLOGY_minion,
+            ),
+            user,
+        )
+
+        self.test_default_db(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
             self.default_parameters.get_prinseq_defaults(
                 user,
@@ -730,6 +750,18 @@ class DefaultSoftware(object):
             technology_name,
         )
         return "" if result is None else result
+
+    def get_bamutil_parameters(self, user, technology_name):
+        result = self.default_parameters.get_parameters(
+            SoftwareNames.SOFTWARE_BAMUTIL_name,
+            user,
+            Software.TYPE_OF_USE_televir_settings,
+            None,
+            None,
+            None,
+            technology_name,
+        )
+        return "" if result is None else result
     
     def get_televir_report_layout_parameters(self, user, technology_name):
         result = self.default_parameters.get_parameters(
@@ -1134,6 +1166,18 @@ class DefaultSoftware(object):
                 user,
             )
             return self.get_prinseq_parameters(user, technology_name)
+
+        if software_name == SoftwareNames.SOFTWARE_BAMUTIL_name:
+            self.test_default_db(
+                SoftwareNames.SOFTWARE_BAMUTIL_name,
+                self.default_parameters.get_bamutil_defaults(
+                    user,
+                    Software.TYPE_OF_USE_televir_settings,
+                    ConstantsSettings.TECHNOLOGY_illumina,
+                ),
+                user,
+            )
+            return self.get_bamutil_parameters(user, technology_name)
         
         if software_name == SoftwareNames.SOFTWARE_televir_report_layout_name:
             self.test_default_db(

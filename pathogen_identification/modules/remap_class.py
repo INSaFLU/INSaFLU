@@ -986,9 +986,6 @@ class Remapping:
             self.read_map_filtered_bam,
         ]
 
-        print("BAMUTIL FILTERING")
-        print(" ".join([self.cmd.bin] + cmd))
-
         try:
             self.cmd.run(cmd)
 

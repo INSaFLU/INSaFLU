@@ -1365,11 +1365,19 @@ class Parameter_DB_Utility:
         )
 
         combined_table = combined_table.reset_index(drop=True)
+        names= combined_table["software_name"].values 
 
-        ## remove duplicate column names:
-        combined_columns= combined_table.columns
-        combined_columns_unique= list(set(combined_columns))
-        combined_table= combined_table[combined_columns_unique]
+        ## remove duplicate columns
+        #
+        
+
+        combined_table["software_name"]= names
+        #columns= combined_table.columns
+        #columns_unique= list(set(columns))
+        #combined_table= combined_table[columns_unique]
+
+        print(combined_table.columns)
+        
 
         return combined_table
 

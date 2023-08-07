@@ -729,7 +729,7 @@ class SoftwareNames(object):
     ### MINIMAP2 REMAP
 
     SOFTWARE_MINIMAP2_REMAP_ONT_name = "Minimap2"
-    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2"
+    SOFTWARE_MINIMAP2_REMAP_ONT_name_extended = "Minimap2 - Remapping"
     SOFTWARE_MINIMAP2_REMAP_ONT = os.path.join(
         settings.DIR_SOFTWARE,
         "preprocess/preproc/bin/minimap2",

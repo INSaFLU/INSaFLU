@@ -418,7 +418,7 @@ class SampleTable(tables.Table):
                 '<a href="#" id="deploypi_sample_btn" class="kill-button" data-toggle="modal" data-toggle="tooltip" title="Run"'
                 + ' ref_name="'
                 + record.name
-                + '" pk="'
+                + '"sample_id="'
                 + str(record.pk)
                 + '" deploy-url="'
                 + reverse(

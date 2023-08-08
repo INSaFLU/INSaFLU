@@ -1374,12 +1374,6 @@ class Parameter_DB_Utility:
         ]
 
         combined_table["software_name"]= software_names
-        #columns= combined_table.columns
-        #columns_unique= list(set(columns))
-        #combined_table= combined_table[columns_unique]
-
-        print(combined_table.columns)
-        
 
         return combined_table
 

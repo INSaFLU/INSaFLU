@@ -939,7 +939,7 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 output_reads= run_qc.output_reads,
                 output_reads_percent= run_qc.output_reads_percent,
             )
-            qc_performed= run_qc.performed
+            
         except TelevirRunQC.DoesNotExist:
             qc_report= RunQC_report(
                 performed= False,

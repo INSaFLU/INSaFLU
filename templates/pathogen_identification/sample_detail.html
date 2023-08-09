@@ -313,7 +313,7 @@
                         {% if run_detail.enriched_reads == 0 %}
                         <p> Viral enrichment ({{ run_main.enrichment }}) did not remove any reads </p>
                         {% else %}
-                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_int_to_str qc_report.output_reads run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads run_detail.input run_detail.enriched_reads %} %).</p>
+                        <p> Viral enrichment ({{ run_main.enrichment }}) removed <strong>{% difference_str_int_to_str qc_report.output_reads run_detail.enriched_reads %}</strong> reads ({% difference_str_to_percent qc_report.input_reads qc_report.output_reads run_detail.enriched_reads %} %).</p>
                         {% endif %}
                         {% endif %}
                         {% if run_main.host_depletion_performed %}

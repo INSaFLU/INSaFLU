@@ -1102,6 +1102,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         ####
         runs = set([fr.run.pk for fr in final_report])
         runs = RunMain.objects.filter(pk__in=runs)
+        runs_number= len(runs) > 0
+        print(runs_number)
 
         context = {
             "project": project_name,
@@ -1112,6 +1114,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             "sample_index": sample_pk,
             "report_list": sorted_reports_compound,
             "runs": runs,
+            "runs_number": runs_number,
             "owner": True,
         }
 

@@ -1928,7 +1928,6 @@ class Utils_Manager:
             return self.parameter_util.query_software_default_tree(
                 technology, global_index=tree_makeup
             )
-
         else:
             raise Exception("No software tree for technology")
 

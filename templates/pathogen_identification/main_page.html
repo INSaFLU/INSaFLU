@@ -34,17 +34,20 @@
                 {% if project_owner %}
                 <tr>
                     <th colspan="9">
+                        {% if not demo %}
                         <div class="btn-group">
-                            {% if not demo %}
-                        
                             <button type="button" class="btn btn-primary dark" id="deploypi_btn" deploy-url="{% url deploy_url %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-flask"></i>
                                 <a><span class="hidden-phone"> Run </span></a>
                             </button>
-                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
                                 <a href="{% url "all_PIproject_reports" pk1=project_index %}"><span class="hidden-phone" style="color:white"><i>View Project reports</i></span></a>
-                                    </button>                        
+                                    </button>
+                        </div>
+                        <div class="btn-group">
                             <button type="button" class="btn btn-primary dark" id="sortpi_btn" deploy-url="{% url 'sort_project_reports' %}" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-align-left"></i>
                                 <a><span class="hidden-phone"> Sort sample reports </span></a>

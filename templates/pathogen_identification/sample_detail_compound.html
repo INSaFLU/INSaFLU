@@ -261,63 +261,34 @@
                 </div>
             </div>
         </div>
+        {% if runs_number %}
         <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headingsample">
             <div class="card-block">
                 <div style="padding: 20px">
+                    
                     <div class="row">
-                        <div class="col-sm-6">
-                            <h4>Runs </h4>
-                        </div>
                         <div class="col-sm-2">
                             {% for run in runs %}
-                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Run: {{run.parameter_set.leaf.index}} </a>
+                            <a href={% url 'sample_detail' pk1=run.project.pk pk2=run.sample.pk pk3=run.pk %}> Workflow {{run.parameter_set.leaf.index}} report </a>
                             <br>
                             <br>
                             {% endfor %}
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% if graph_json %}
-<div id="accordion1" role="tablist" aria-multiselectable="true">
-    <div class="card">
-        <div class="card">
-            <div class="card-header" role="tab" id="headinghead">
-                <div class="row">
-                    <div class="col-sm" >
-                        <h5 class="mb-0" >
-                            <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapsehead" aria-expanded="false" aria-controls="headinghead">
-                                <strong>Graph</strong>
-                            </a>
-                        </h5>
-                    </div>
-                </div>
-            </div>
-            <div id="collapsehead" class="collapse show" role="tabpanel" aria-labelledby="headinghead">
-                <div class="card-block">
-                    <div style="padding: 20px">
-                        <div class="row">
-                            <div class="col-sm-2">
-                            </div>
-                            <div class="col-sm-8">
-                                    <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
-                                    <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
-                            </div>
-                            <div class="col-sm-2">
-                            </div>
+                        {% if graph_json %}
+                        <div class="col-sm-8">
+                                <div id="{{graph_id}}" style="width:95%;height:250px;position:center;" class="collapsibleTree html-widget"></div>
+                                <script type="application/json" data-for="{{graph_id}}">{{graph_json|safe}}</script>
                         </div>
+                        {% endif %}
                     </div>
+                    
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
-{% endif %}
 
 
 <div id="accordion2" role="tablist" aria-multiselectable="true">

@@ -228,9 +228,9 @@ class ProjectTable(tables.Table):
 class SampleTable(tables.Table):
     name = tables.Column(verbose_name="Sample Name")
     report = tables.Column(verbose_name="Sample Report", orderable=False, empty_values=())
-    runs = tables.Column(verbose_name="Runs", orderable=False, empty_values=())
+    runs = tables.Column(verbose_name="Workflows", orderable=False, empty_values=())
     sorting = tables.Column("Sorting", orderable=False, empty_values=())
-    deploy = tables.Column(verbose_name="Deploy", orderable=False, empty_values=())
+    deploy = tables.Column(verbose_name="Run", orderable=False, empty_values=())
 
     input = tables.Column(verbose_name="Input", orderable=False, empty_values=())
     combinations = tables.Column(

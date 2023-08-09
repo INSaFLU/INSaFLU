@@ -945,9 +945,9 @@ class Sample_detail(LoginRequiredMixin, generic.CreateView):
                 performed= False,
                 method= "None",
                 args= "None",
-                input_reads= 0,
-                output_reads= 0,
-                output_reads_percent= 0,
+                input_reads= run_detail.input,
+                output_reads= run_detail.input,
+                output_reads_percent= "1",
             )
 
         #

@@ -24,7 +24,6 @@ from settings.models import Parameter, PipelineStep, Software, Technology
 
 tree = lambda: defaultdict(tree)
 
-
 def make_tree(lst):
     d = tree()
     for x in lst:
@@ -60,19 +59,20 @@ class Pipeline_Makeup:
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
 
     dependencies_graph_edges = {
-        CS.PIPELINE_NAME_viral_enrichment: [ROOT],
-        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT],
+        CS.PIPELINE_NAME_extra_qc: [ROOT],
+        CS.PIPELINE_NAME_viral_enrichment: [ROOT, CS.PIPELINE_NAME_extra_qc],
+        VIRAL_ENRICHMENT_SPECIAL_STEP: [ROOT, CS.PIPELINE_NAME_extra_qc],
         CS.PIPELINE_NAME_host_depletion: [
-            ROOT,
+            ROOT, CS.PIPELINE_NAME_extra_qc,
             CS.PIPELINE_NAME_viral_enrichment,
         ],
         CS.PIPELINE_NAME_read_classification: [
-            ROOT,
+            ROOT, CS.PIPELINE_NAME_extra_qc,
             VIRAL_ENRICHMENT_SPECIAL_STEP,
             CS.PIPELINE_NAME_host_depletion,
         ],
         CS.PIPELINE_NAME_assembly: [
-            ROOT,
+            ROOT, CS.PIPELINE_NAME_extra_qc,
             CS.PIPELINE_NAME_read_classification,
             CS.PIPELINE_NAME_host_depletion,
             VIRAL_ENRICHMENT_SPECIAL_STEP,
@@ -859,6 +859,7 @@ class Utility_Pipeline_Manager:
             for pipeline in [
                 CS.PIPELINE_NAME_remapping,
                 CS.PIPELINE_NAME_read_quality_analysis,
+                CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_assembly,
             ]:
                 if os.path.exists(
@@ -1075,7 +1076,7 @@ class Utility_Pipeline_Manager:
             parent = (edge[0], pipeline_tree.nodes[edge[0]])
             child = (edge[1], pipeline_tree.nodes[edge[1]])
             nodes_dict[parent].append(child)
-
+        
         nodes_dict = {
             x: pd.DataFrame([[z] for z in y], columns=["child"]).set_index("child")
             for x, y in nodes_dict.items()
@@ -1615,6 +1616,7 @@ class Parameter_DB_Utility:
         edges = []
         nodes = []
         leaves = []
+        print(len(tree_nodes))
         for node in tree_nodes:
             if node.parent:
                 edges.append((node.parent.index, node.index))
@@ -1687,6 +1689,8 @@ class Parameter_DB_Utility:
         Update SoftwareTree table
         """
         global_index = tree.makeup
+
+        print("updateing tree, makeup: ", global_index)
 
         software_tree = (
             SoftwareTree.objects.filter(
@@ -1809,6 +1813,7 @@ class Utils_Manager:
             leaf: utils.utility_manager.match_path_to_tree_safe(path, pipeline_tree)
             for leaf, path in local_paths.items()
         }
+        
         available_paths = {
             leaf: path for leaf, path in matched_paths.items() if path is not None
         }

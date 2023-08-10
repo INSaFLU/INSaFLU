@@ -54,10 +54,12 @@ class Deployment_Params:
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_read_quality_analysis: {"default": "preprocess/preproc"},
+        CS.PIPELINE_NAME_extra_qc: {"default": "preprocess/preproc"},
         CS.PIPELINE_NAME_assembly: {"default": "assembly/assembly"},
     }
 
     DIRS = {
+        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
         CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",

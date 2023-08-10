@@ -25,6 +25,10 @@ class ConstantsSettings:
 
     USER_TREE_INDEX = 0
 
+    ################################### Pipeline model
+    
+    PIPELINE_MODEL = 1
+
     ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [
@@ -53,6 +57,7 @@ class ConstantsSettings:
 
     DIRS = {
         CS.PIPELINE_NAME_read_quality_analysis: "reads/clean/",
+        CS.PIPELINE_NAME_extra_qc: "reads/clean/",
         "reads_depleted_dir": "reads/hd_filtered/",
         "reads_enriched_dir": "reads/enriched/",
         CS.PIPELINE_NAME_host_depletion: "host_depletion/",

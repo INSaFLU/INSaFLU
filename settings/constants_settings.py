@@ -20,6 +20,7 @@ class ConstantsSettings(object):
     PIPELINE_NAME_intra_host_minor_variant_detection = (
         "Intra-host minor variant detection"
     )
+    PIPELINE_NAME_extra_qc = "Extra QC"
     PIPELINE_NAME_viral_enrichment = "Viral enrichment"
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
@@ -36,6 +37,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_coverage_analysis,
         PIPELINE_NAME_alignment,
         PIPELINE_NAME_intra_host_minor_variant_detection,
+        PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_assembly,

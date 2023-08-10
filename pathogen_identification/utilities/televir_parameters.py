@@ -109,7 +109,8 @@ class TelevirParameters:
                 )
 
         except Software.DoesNotExist as exc:
-            raise Exception(f"Remap software not found for user {username}") from exc
+            return [], None
+            #raise Exception(f"Remap software not found for user {username}") from exc
 
         software_params = Parameter.objects.filter(
             software=software, televir_project__name=project_name
@@ -168,10 +169,6 @@ class TelevirParameters:
         """
         Get prinseq software
         """
-
-        project = Projects.objects.get(
-            name=project_name, owner__username=username, is_deleted=False
-        )
 
         prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name

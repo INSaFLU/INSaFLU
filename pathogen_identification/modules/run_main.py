@@ -316,23 +316,12 @@ class RunDetail_main:
 
         ### methods
 
-        prinseq_soft = TelevirParameters.get_prinseq_software(
-            self.username, self.project_name
+        self.preprocess_method = Software_detail(
+            CS.PIPELINE_NAME_extra_qc,
+            method_args,
+            config,
+            self.prefix,
         )
-        if prinseq_soft.is_to_run:
-            self.preprocess_method = SoftwareUnit(
-                module=CS.PIPELINE_NAME_read_quality_analysis,
-                name="prinseq",
-                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
-            )
-            self.preprocess_method.get_bin(config)
-        else:
-            self.preprocess_method = Software_detail(
-                CS.PIPELINE_NAME_read_quality_analysis,
-                method_args,
-                config,
-                self.prefix,
-            )
 
         ###
 
@@ -477,23 +466,13 @@ class RunDetail_main:
 
         ### methods
 
-        prinseq_soft = TelevirParameters.get_prinseq_software(
-            self.username, self.project_name
+
+        self.preprocess_method = Software_detail(
+            CS.PIPELINE_NAME_extra_qc,
+            method_args,
+            config,
+            self.prefix,
         )
-        if prinseq_soft.is_to_run:
-            self.preprocess_method = SoftwareUnit(
-                module=CS.PIPELINE_NAME_read_quality_analysis,
-                name="prinseq",
-                args=f"-lc_entropy={prinseq_soft.entropy_threshold} -lc_dust={prinseq_soft.dust_threshold}",
-            )
-            self.preprocess_method.get_bin(config)
-        else:
-            self.preprocess_method = Software_detail(
-                CS.PIPELINE_NAME_read_quality_analysis,
-                method_args,
-                config,
-                self.prefix,
-            )
 
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,

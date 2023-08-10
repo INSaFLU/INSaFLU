@@ -721,7 +721,7 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_PRINSEQ_name:
             return self.get_prinseq_defaults(
                 software.owner,
-                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
             )
 
@@ -857,7 +857,7 @@ class DefaultParameters(object):
             pipeline_step.save()
         return pipeline_step
 
-    def get_technology(self, technology_name):
+    def get_technology(self, technology_name) -> Technology:
         """return a record for a pipeline step name"""
         if technology_name is None:
             return None
@@ -1512,7 +1512,7 @@ class DefaultParameters(object):
         parameter.range_available = "[0:100]"
         parameter.range_max = "100"
         parameter.range_min = "0"
-        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 60)"
+        parameter.description = "Bamutil, maximum sum of the mismatch qualities before marking a read unmapped. (Defaults to 20)"
         vect_parameters.append(parameter)
 
         parameter = Parameter()
@@ -1640,7 +1640,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_extra
+            ConstantsSettings.PIPELINE_NAME_extra_qc
         )
         software.owner = user
 

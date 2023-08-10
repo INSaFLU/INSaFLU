@@ -100,7 +100,8 @@ class Command(BaseCommand):
         local_paths = local_tree.get_all_graph_paths_explicit()
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree= utils.generate_software_tree_extend(local_tree)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
 
         # MANAGEMENT
@@ -130,6 +131,8 @@ class Command(BaseCommand):
         }
 
         # SUBMISSION
+        print("MATCHED PATHS")
+        print(matched_paths)
 
         pipeline_utils = Utility_Pipeline_Manager()
 
@@ -139,7 +142,9 @@ class Command(BaseCommand):
 
         try:
             for project_sample in samples:
-                if not project_sample.is_deleted:
+                if project_sample.is_deleted:
+                    continue
+                if len(matched_paths) > 0:
                     graph_progress = TreeProgressGraph(project_sample)
 
                     deployment_tree = Tree_Progress(

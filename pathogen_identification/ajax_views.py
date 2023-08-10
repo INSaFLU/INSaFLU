@@ -59,8 +59,6 @@ def deploy_ProjectPI(request):
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
 
-        print(request.POST)
-
         utils = Utils_Manager()
         runs_to_deploy = utils.check_runs_to_deploy_project(user, project)
 

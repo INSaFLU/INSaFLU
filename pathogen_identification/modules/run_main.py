@@ -368,7 +368,7 @@ class RunDetail_main:
         ### actions
         self.subsample = False
         self.quality_control = bool(
-            self.preprocess_method.name != None
+            self.preprocess_method.name != "None"
         )  # config["actions"]["QCONTROL"]
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
@@ -517,7 +517,7 @@ class RunDetail_main:
 
         # actions
         self.subsample = False
-        self.quality_control = bool(self.preprocess_method.name != None)
+        self.quality_control = bool(self.preprocess_method.name != "None")
         self.sift = config["actions"]["SIFT"]
         self.depletion = bool(self.depletion_method.name != "None")
         self.enrichment = bool(self.enrichment_method.name != "None")

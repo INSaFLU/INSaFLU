@@ -970,6 +970,7 @@ class Remapping:
         """
         filter bam file by mapping quality.
         """
+        print("filtering bam file by mapping quality")
 
         cmd = [
             "bam",
@@ -996,7 +997,7 @@ class Remapping:
             return
 
         if not os.path.isfile(self.read_map_filtered_bam):
-            self.logger.error("Bam filtering failed.")
+            self.logger.error("Bam filtering failed, file missing.")
             self.read_map_filtered_bam = self.read_map_bam
             return
 

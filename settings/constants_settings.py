@@ -27,6 +27,7 @@ class ConstantsSettings(object):
     PIPELINE_NAME_read_classification = "Read classification"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
+    PIPELINE_NAME_remap_filtering = "Remap filtering"
     PIPELINE_NAME_extra = "Extra"
 
     ## values to upload to database
@@ -63,6 +64,14 @@ class ConstantsSettings(object):
         TECHNOLOGY_minion,
         TECHNOLOGY_Undefined,
     ]
+    
+    def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
+        """
+        Translate pipeline step names - use to combine steps."""
+        if pipeline_step == self.PIPELINE_NAME_remap_filtering:
+            return self.PIPELINE_NAME_remapping
+
+        return pipeline_step
 
     ###### Relation between software and technology
     def get_list_software_names_by_technology(self, technology_name):

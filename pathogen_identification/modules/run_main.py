@@ -15,7 +15,7 @@ from pathogen_identification.modules.metadata_handler import Metadata_handler
 from pathogen_identification.modules.object_classes import (
     Assembly_results, Contig_classification_results, Read_class,
     Read_classification_results, Remap_main, Run_detail_report, RunCMD,
-    RunQC_report, Sample_runClass, Software_detail, SoftwareUnit)
+    RunQC_report, Sample_runClass, Software_detail, SoftwareUnit, SoftwareRemap,)
 from pathogen_identification.modules.preprocess_class import Preprocess
 from pathogen_identification.modules.remap_class import (Mapping_Instance,
                                                          Mapping_Manager)
@@ -95,6 +95,7 @@ class RunDetail_main:
     remapping_method: Software_detail
     remap_manager: Mapping_Manager
     remap_params: RemapParams
+    software_remap: SoftwareRemap
     ## directories.
     root: str
 
@@ -315,7 +316,6 @@ class RunDetail_main:
         self.remap_params = remap_params
 
         ### methods
-
         self.preprocess_method = Software_detail(
             CS.PIPELINE_NAME_extra_qc,
             method_args,
@@ -324,7 +324,6 @@ class RunDetail_main:
         )
 
         ###
-
         self.assembly_method = Software_detail(
             CS.PIPELINE_NAME_assembly,
             method_args,
@@ -365,23 +364,36 @@ class RunDetail_main:
             self.prefix,
         )
 
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering, 
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        ###
+
+        self.software_remap= SoftwareRemap(
+            self.remapping_method,
+            self.remap_filtering_method,
+        )
+
         ### actions
         self.subsample = False
         self.quality_control = bool(
-            self.preprocess_method.name != "None"
-        )  # config["actions"]["QCONTROL"]
+            self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND
+        )  
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.enrichment = bool(self.enrichment_method.name != "None")
-        self.assembly = bool(self.assembly_method.name != "None")
+        self.depletion = bool(self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.enrichment = bool(self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.assembly = bool(self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.contig_classification = bool(
-            self.contig_classification_method.name != "None"
+            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.read_classification = bool(self.read_classification_method.name != "None")
-
+        self.read_classification = bool(self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.classification = config["actions"]["CLASSIFY"]
         self.remapping = config["actions"]["REMAP"]
+        self.remapping_filtering = bool(self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.house_cleaning = config["actions"]["CLEAN"]
 
         ### drones
@@ -429,9 +441,6 @@ class RunDetail_main:
         # with open(config_json) as json_file:
         #    config = json.load(json_file)
 
-        print("METHOD ARGS")
-        print(self.method_args)
-
         self.config = config
         self.prefix = config["prefix"]
         # self.type = config["type"]
@@ -465,7 +474,6 @@ class RunDetail_main:
         )
 
         ### methods
-
 
         self.preprocess_method = Software_detail(
             CS.PIPELINE_NAME_extra_qc,
@@ -515,18 +523,35 @@ class RunDetail_main:
             self.prefix,
         )
 
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering,
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        if self.software_remap.remap_filter.name == Software_detail.SOFTWARE_NOT_FOUND:
+            self.software_remap.remap_filter = self.remap_filtering_method
+        
+        if self.software_remap.remap_software.name == Software_detail.SOFTWARE_NOT_FOUND:
+            self.software_remap.remap_software = self.remapping_method
+
+        print("remap filtering method")
+        print(self.software_remap.remap_filter)
+
         # actions
         self.subsample = False
-        self.quality_control = bool(self.preprocess_method.name != "None")
+        self.quality_control = bool(self.preprocess_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.sift = config["actions"]["SIFT"]
-        self.depletion = bool(self.depletion_method.name != "None")
-        self.enrichment = bool(self.enrichment_method.name != "None")
-        self.assembly = bool(self.assembly_method.name != "None")
-        self.read_classification = bool(self.read_classification_method.name != "None")
+        self.depletion = bool(self.depletion_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.enrichment = bool(self.enrichment_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.assembly = bool(self.assembly_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.read_classification = bool(self.read_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.contig_classification = bool(
-            self.contig_classification_method.name != "None"
+            self.contig_classification_method.name != Software_detail.SOFTWARE_NOT_FOUND
         )
-        self.remapping = bool(self.remapping_method.name != "None")
+        self.remapping = bool(self.remapping_method.name != Software_detail.SOFTWARE_NOT_FOUND)
+        self.remapping_filtering = bool(self.remap_filtering_method.name != Software_detail.SOFTWARE_NOT_FOUND)
         self.classification = self.read_classification or self.contig_classification
         self.house_cleaning = config["actions"]["CLEAN"]
 
@@ -670,7 +695,7 @@ class Run_Deployment_Methods(RunDetail_main):
             [],
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,
@@ -783,7 +808,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.metadata_tool.remap_targets,
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,
@@ -796,11 +821,12 @@ class Run_Deployment_Methods(RunDetail_main):
         )
 
     def deploy_REMAPPING(self):
+
         self.remap_manager = Mapping_Manager(
             self.metadata_tool.remap_targets,
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             self.assembly_drone.assembly_file_fasta_gz,
             self.type,
             self.prefix,

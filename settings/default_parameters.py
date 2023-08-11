@@ -714,7 +714,7 @@ class DefaultParameters(object):
         elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
             return self.get_bamutil_defaults(
                 software.owner,
-                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
             )
 
@@ -1493,7 +1493,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_remapping
+            ConstantsSettings.PIPELINE_NAME_remap_filtering
         )
 
         software.owner = user
@@ -1532,8 +1532,6 @@ class DefaultParameters(object):
         vect_parameters.append(parameter)
 
         return vect_parameters
-
-
 
 
     def get_remap_defaults(

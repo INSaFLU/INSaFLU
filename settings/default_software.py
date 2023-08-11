@@ -256,7 +256,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_BAMUTIL_name,
             self.default_parameters.get_bamutil_defaults(
                 user,
-                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
             ),
             user,
@@ -266,7 +266,7 @@ class DefaultSoftware(object):
             SoftwareNames.SOFTWARE_BAMUTIL_name,
             self.default_parameters.get_bamutil_defaults(
                 user,
-                Software.TYPE_OF_USE_televir_settings,
+                Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
@@ -1172,7 +1172,7 @@ class DefaultSoftware(object):
                 SoftwareNames.SOFTWARE_BAMUTIL_name,
                 self.default_parameters.get_bamutil_defaults(
                     user,
-                    Software.TYPE_OF_USE_televir_settings,
+                    Software.TYPE_OF_USE_televir_global,
                     ConstantsSettings.TECHNOLOGY_illumina,
                 ),
                 user,

@@ -1080,7 +1080,7 @@ class Tree_Progress:
     def run_nodes_sequential(self):
         self.run_current_nodes()
 
-    def run_nodes_simply(self):
+    def run_nodes_remap(self):
         self.run_simplified_mapping()
 
     def run_nodes_classification_reads(self):
@@ -1120,7 +1120,8 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_viral_enrichment: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
-            ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_simply,
+            ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_remap,
+            ConstantsSettings.PIPELINE_NAME_remap_filtering: self.run_nodes_sequential,
         }
 
         if self.current_module in ["end"]:

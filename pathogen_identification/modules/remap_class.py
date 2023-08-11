@@ -17,6 +17,7 @@ from pathogen_identification.modules.object_classes import (
     Remap_Target,
     RunCMD,
     Software_detail,
+    SoftwareRemap,
 )
 from pathogen_identification.utilities.utilities_general import (
     plot_dotplot,
@@ -604,7 +605,7 @@ class Remapping:
         self,
         r1: str,
         target: Remap_Target,
-        method: Software_detail,
+        methods: SoftwareRemap,
         assembly_path: str,
         type: str,
         prefix: str,
@@ -632,9 +633,11 @@ class Remapping:
         :param bin: path to bin directory.
         :param logging_level: logging level to use.
         """
-        self.method = method.name.split("_")[0]
-        self.method_object = method
-        self.args = method.args
+        remap_method= methods.remap_software
+        self.remap_filter= methods.remap_filter
+        self.method = remap_method.name.split("_")[0]
+        self.method_object = remap_method
+        self.args = remap_method.args
         self.rdir = rdir
         self.cleanup = cleanup
         self.remap_params = remap_params
@@ -971,6 +974,13 @@ class Remapping:
         filter bam file by mapping quality.
         """
         print("filtering bam file by mapping quality")
+        print(self.remap_filter.name)
+        print(self.remap_filter.args)
+        
+        if self.remap_filter.name == "None":
+            self.logger.info("No bam filtering performed.")
+            self.read_map_filtered_bam = self.read_map_bam
+            return
 
         cmd = [
             "bam",
@@ -979,10 +989,7 @@ class Remapping:
             self.read_map_bam,
             "--refFile",
             self.reference_file,
-            "--qualityThreshold",
-            str(self.remap_params.min_quality),
-            "--mismatchThreshold",
-            str(self.remap_params.max_mismatch),
+            self.remap_filter.args,
             "--out",
             self.read_map_filtered_bam,
         ]
@@ -1658,7 +1665,7 @@ class Tandem_Remap:
         self,
         r1,
         r2,
-        remapping_method: Software_detail,
+        remapping_methods: SoftwareRemap,
         remapping_params: RemapParams,
         assembly_file: str,
         type: str,
@@ -1677,7 +1684,7 @@ class Tandem_Remap:
         self.logger.propagate = False
         self.logger.info("Reciprocal Remap started")
 
-        self.remapping_method = remapping_method
+        self.remapping_methods = remapping_methods
         self.remapping_params = remapping_params
         self.assembly_file = assembly_file
         self.type = type
@@ -1706,7 +1713,7 @@ class Tandem_Remap:
 
     def reference_map(self, remap_target: Remap_Target):
         rdir = os.path.join(
-            self.remapping_method.dir,
+            self.remapping_methods.remap_software.dir,
             remap_target.name,
             "reference",
         )
@@ -1714,7 +1721,7 @@ class Tandem_Remap:
         target_remap_drone = Remapping(
             self.r1,
             remap_target,
-            self.remapping_method,
+            self.remapping_methods,
             self.assembly_file,
             self.type,
             self.prefix,
@@ -1737,7 +1744,7 @@ class Tandem_Remap:
             return None
 
         output_directory = os.path.join(
-            self.remapping_method.dir,
+            self.remapping_methods.remap_software.dir,
             reference_remap.target.name,
             "assembly",
         )
@@ -1755,7 +1762,7 @@ class Tandem_Remap:
         assembly_remap_drone = Remapping(
             reference_remap.mapped_subset_r1,
             assembly_target,
-            self.remapping_method,
+            self.remapping_methods,
             self.assembly_file,
             self.type,
             self.prefix,
@@ -1787,7 +1794,7 @@ class Mapping_Manager(Tandem_Remap):
         remap_targets: List[Remap_Target],
         r1: Read_class,
         r2: Read_class,
-        remapping_method: Software_detail,
+        remapping_methods: SoftwareRemap,
         assembly_file: str,
         type: str,
         prefix,
@@ -1801,7 +1808,7 @@ class Mapping_Manager(Tandem_Remap):
         super().__init__(
             r1,
             r2,
-            remapping_method,
+            remapping_methods,
             remap_params,
             assembly_file,
             type,

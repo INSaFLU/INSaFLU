@@ -53,6 +53,12 @@
                                 <a><span class="hidden-phone"> Sort sample reports </span></a>
                             </button>
                         </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dark" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-cog" aria-hidden="true" ></i>
+                                <a href="{% url "pathogenID_pipeline" level=project_index %}"><span class="hidden-phone" style="color:white"><i>Project Settings</i></span></a>
+                                    </button>
+                        </div>
                     </th>               
                 </tr>
                 {% endif %}

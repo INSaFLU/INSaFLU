@@ -1073,16 +1073,21 @@ class Sample_runClass:
 
 
 class SoftwareUnit:
+
+    name: str
+
+    SOFTWARE_NOT_FOUND = "None"
+
     def __init__(
         self,
-        module: str = "None",
-        name: str = "None",
-        args: str = "None",
-        db: str = "None",
-        db_name: str = "None",
-        bin: str = "None",
-        dir: str = "None",
-        output_dir: str = "None",
+        module: str = SOFTWARE_NOT_FOUND,
+        name: str = SOFTWARE_NOT_FOUND,
+        args: str = SOFTWARE_NOT_FOUND,
+        db: str = SOFTWARE_NOT_FOUND,
+        db_name: str = SOFTWARE_NOT_FOUND,
+        bin: str = SOFTWARE_NOT_FOUND,
+        dir: str = SOFTWARE_NOT_FOUND,
+        output_dir: str = SOFTWARE_NOT_FOUND,
     ):
         """ """
         self.module = module
@@ -1109,6 +1114,7 @@ class SoftwareUnit:
 
 
 class Software_detail(SoftwareUnit):
+
     def __init__(self, module, args_df: pd.DataFrame, config: dict, prefix: str):
         """
 
@@ -1203,6 +1209,13 @@ class Software_detail(SoftwareUnit):
     def __str__(self):
         return f"{self.module}:{self.name}:{self.args}:{self.db}:{self.bin}"
 
+
+class SoftwareRemap:
+
+    def __init__(self, remap_software: Software_detail, remap_filter: Software_detail):
+
+        self.remap_software = remap_software
+        self.remap_filter = remap_filter
 
 class Bedgraph:
     """Class to store and work with bedgraph files

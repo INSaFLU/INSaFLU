@@ -57,6 +57,7 @@ class Pipeline_Makeup:
     ROOT = "root"
     ASSEMBLY_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
     VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+    SINK= "sink"
 
     dependencies_graph_edges = {
         CS.PIPELINE_NAME_extra_qc: [ROOT],
@@ -81,14 +82,16 @@ class Pipeline_Makeup:
             CS.PIPELINE_NAME_read_classification,
         ],
         CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
-        CS.PIPELINE_NAME_remapping: [
+        CS.PIPELINE_NAME_remap_filtering: [
             CS.PIPELINE_NAME_contig_classification,
             CS.PIPELINE_NAME_read_classification,
             ASSEMBLY_SPECIAL_STEP,
         ],
+        CS.PIPELINE_NAME_remapping: [CS.PIPELINE_NAME_remap_filtering],
+        SINK: [CS.PIPELINE_NAME_remapping, CS.PIPELINE_NAME_remap_filtering],
     }
 
-    dependencies_graph_root = CS.PIPELINE_NAME_remapping
+    dependencies_graph_root = SINK
     dependencies_graph_sink = ROOT
 
     def generate_dependencies_graph(self):
@@ -113,8 +116,9 @@ class Pipeline_Makeup:
                 self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
             )
             for x in dpath
-            if x != self.dependencies_graph_sink
+            if x not in [self.ROOT, self.SINK]
         ]
+
 
         return dpath[::-1]
 
@@ -802,6 +806,7 @@ class Utility_Pipeline_Manager:
         pipe_makeup_manager = Pipeline_Makeup()
 
         pipelines_available = combined_table.pipeline_step.unique().tolist()
+        print("PIPELINES AVAILABLE", pipelines_available)
         self.pipeline_makeup = pipe_makeup_manager.match_makeup_name_from_list(
             pipelines_available
         )
@@ -2281,6 +2286,9 @@ class Utils_Manager:
 
         utility_drone = Utility_Pipeline_Manager()
         input_success = utility_drone.input(combined_table, technology=technology)
+
+        print("INPUT SUCCESS")
+        print(input_success)
 
         if not input_success:
             return PipelineTree(

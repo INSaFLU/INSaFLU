@@ -1421,7 +1421,7 @@ class Parameter_DB_Utility:
         try:
             software_tree = (
                 SoftwareTree.objects.filter(
-                    global_index=global_index, technology=technology
+                    global_index=global_index, technology=technology, model= ConstantsSettings.PIPELINE_MODEL
                 )
                 .order_by("date_created")
                 .last()
@@ -1437,7 +1437,7 @@ class Parameter_DB_Utility:
         if self.check_default_software_tree_exists(technology, global_index):
             software_tree = (
                 SoftwareTree.objects.filter(
-                    global_index=global_index, technology=technology
+                    global_index=global_index, technology=technology, model= ConstantsSettings.PIPELINE_MODEL
                 )
                 .order_by("date_created")
                 .last()
@@ -1639,7 +1639,7 @@ class Parameter_DB_Utility:
 
         software_tree = (
             SoftwareTree.objects.filter(
-                global_index=global_index, technology=technology
+                global_index=global_index, technology=technology, model= ConstantsSettings.PIPELINE_MODEL
             )
             .order_by("date_created")
             .last()
@@ -1690,7 +1690,7 @@ class Parameter_DB_Utility:
 
         software_tree = (
             SoftwareTree.objects.filter(
-                global_index=global_index, technology=tree.technology
+                global_index=global_index, technology=tree.technology, model=ConstantsSettings.PIPELINE_MODEL
             )
             .order_by("date_created")
             .last()
@@ -1716,6 +1716,7 @@ class Parameter_DB_Utility:
                 global_index=global_index,
                 technology=tree.technology,
                 version=0,
+                model=ConstantsSettings.PIPELINE_MODEL,
             )
 
             software_tree.save()

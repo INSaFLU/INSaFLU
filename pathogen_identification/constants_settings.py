@@ -27,7 +27,7 @@ class ConstantsSettings:
 
     ################################### Pipeline model
     
-    PIPELINE_MODEL = 1
+    PIPELINE_MODEL = 0
 
     ################################### Pipeline steps
 

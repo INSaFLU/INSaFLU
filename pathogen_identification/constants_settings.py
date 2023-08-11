@@ -25,6 +25,10 @@ class ConstantsSettings:
 
     USER_TREE_INDEX = 0
 
+    ################################### Pipeline model
+    
+    PIPELINE_MODEL = 1
+
     ################################### Pipeline steps
 
     PIPELINE_STEPS_DB_DEPENDENT = [

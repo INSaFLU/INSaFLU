@@ -78,8 +78,9 @@ class Command(BaseCommand):
 
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
-        global_paths = pipeline_tree.get_all_graph_paths_explicit()
+        #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree = utils.generate_software_tree_extend(local_tree)
+        #global_paths = pipeline_tree.get_all_graph_paths_explicit()
 
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)

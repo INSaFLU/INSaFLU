@@ -69,8 +69,6 @@ class Command(BaseCommand):
             name=process_controler.get_name_televir_project(project_pk=project.pk),
         )
 
-        print(process)
-
         if process.exists():
             process = process.first()
 
@@ -87,7 +85,8 @@ class Command(BaseCommand):
 
         tree_makeup = local_tree.makeup
 
-        pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        #pipeline_tree = utils.generate_software_tree(technology, tree_makeup)
+        pipeline_tree= utils.generate_software_tree_extend(local_tree)
         pipeline_tree_index = utils.get_software_tree_index(technology, tree_makeup)
         # MANAGEMENT
         matched_paths = {

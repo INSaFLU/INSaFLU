@@ -1,8 +1,14 @@
 {
+  "python.analysis.typeCheckingMode": "strict",
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
-  "python.formatting.provider": "none",
+  "python.formatting.provider": "black",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "editor.formatOnSaveMode": "file",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
   }
 }

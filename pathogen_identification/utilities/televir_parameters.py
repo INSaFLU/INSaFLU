@@ -22,8 +22,6 @@ class WrongParameters(Exception):
 class RemapParams:
     max_taxids: int
     max_accids: int
-    min_quality: int
-    max_mismatch: float
     min_coverage: int
 
 
@@ -109,7 +107,8 @@ class TelevirParameters:
                 )
 
         except Software.DoesNotExist as exc:
-            raise Exception(f"Remap software not found for user {username}") from exc
+            return [], None
+            #raise Exception(f"Remap software not found for user {username}") from exc
 
         software_params = Parameter.objects.filter(
             software=software, televir_project__name=project_name
@@ -141,23 +140,16 @@ class TelevirParameters:
 
         max_taxids = 0
         max_accids = 0
-        min_quality = 0
-        max_mismatch = 0
+
         for param in remap_params:
             if param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_taxids:
                 max_taxids = int(param.parameter)
             elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_accids:
                 max_accids = int(param.parameter)
-            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_min_quality:
-                min_quality = int(param.parameter)
-            elif param.name == SoftwareNames.SOFTWARE_REMAP_PARAMS_max_mismatch:
-                max_mismatch = float(param.parameter)
 
         remap = RemapParams(
             max_taxids=max_taxids,
             max_accids=max_accids,
-            min_quality=min_quality,
-            max_mismatch=max_mismatch,
             min_coverage=TelevirParameters.technology_mincov(project),
         )
 
@@ -168,10 +160,6 @@ class TelevirParameters:
         """
         Get prinseq software
         """
-
-        project = Projects.objects.get(
-            name=project_name, owner__username=username, is_deleted=False
-        )
 
         prinseq_params, prinseq_software = TelevirParameters.retrieve_project_software(
             SoftwareNames.SOFTWARE_PRINSEQ_name, username, project_name

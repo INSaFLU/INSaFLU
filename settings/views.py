@@ -211,9 +211,13 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ## Technology goes to NAV-container, PipelineStep goes to NAV-container, then table
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
+        constant_settings = ConstantsSettings()
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
             for pipeline_step in ConstantsSettings.vect_pipeline_names:
+
+                pipeline_step_name=  constant_settings.pipeline_step_to_pipeline_name(pipeline_step)
+
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:
                     query_set = Software.objects.filter(
@@ -227,7 +231,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step,
+                        pipeline_step__name=pipeline_step_name,
                         is_obsolete=False,
                     )
 
@@ -243,22 +247,22 @@ class PISettingsView(LoginRequiredMixin, ListView):
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step,
+                        pipeline_step__name=pipeline_step_name,
                         parameter__televir_project=televir_project,
                         is_obsolete=False,
                     ).distinct()
 
-                query_set = self.patch_filter_queryset(query_set, pipeline_step)
+                query_set = self.patch_filter_queryset(query_set, pipeline_step_name)
 
                 ### if there are software
                 if query_set.count() > 0:
                     vect_pipeline_step.append(
                         [
                             "{}_{}".format(
-                                pipeline_step.replace(" ", "").replace("/", ""),
+                                pipeline_step_name.replace(" ", "").replace("/", ""),
                                 technology.replace(" ", "").replace("/", ""),
                             ),
-                            pipeline_step,
+                            pipeline_step_name,
                             SoftwaresTable(query_set, televir_project=televir_project),
                         ]
                     )

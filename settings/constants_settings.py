@@ -20,12 +20,14 @@ class ConstantsSettings(object):
     PIPELINE_NAME_intra_host_minor_variant_detection = (
         "Intra-host minor variant detection"
     )
+    PIPELINE_NAME_extra_qc = "Extra QC"
     PIPELINE_NAME_viral_enrichment = "Viral enrichment"
     PIPELINE_NAME_host_depletion = "Host depletion"
     PIPELINE_NAME_contig_classification = "Contig classification"
     PIPELINE_NAME_read_classification = "Read classification"
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
+    PIPELINE_NAME_remap_filtering = "Remap filtering"
     PIPELINE_NAME_extra = "Extra"
 
     ## values to upload to database
@@ -36,6 +38,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_coverage_analysis,
         PIPELINE_NAME_alignment,
         PIPELINE_NAME_intra_host_minor_variant_detection,
+        PIPELINE_NAME_extra_qc,
         PIPELINE_NAME_viral_enrichment,
         PIPELINE_NAME_host_depletion,
         PIPELINE_NAME_assembly,
@@ -61,6 +64,14 @@ class ConstantsSettings(object):
         TECHNOLOGY_minion,
         TECHNOLOGY_Undefined,
     ]
+    
+    def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
+        """
+        Translate pipeline step names - use to combine steps."""
+        if pipeline_step == self.PIPELINE_NAME_remap_filtering:
+            return self.PIPELINE_NAME_remapping
+
+        return pipeline_step
 
     ###### Relation between software and technology
     def get_list_software_names_by_technology(self, technology_name):

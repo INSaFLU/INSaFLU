@@ -5,7 +5,7 @@ Created on Dec 14, 2017
 """
 
 from re import S
-
+from typing import Dict, List
 
 class ConstantsSettings(object):
     """
@@ -45,6 +45,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
         PIPELINE_NAME_remapping,
+        PIPELINE_NAME_remap_filtering,
         PIPELINE_NAME_extra,
     ]
 
@@ -65,6 +66,27 @@ class ConstantsSettings(object):
         TECHNOLOGY_Undefined,
     ]
     
+    @property
+    def vect_pipeline_names_condensed(self) -> Dict[str, List[str]]:
+
+        pipeline_steps_dict= {
+            pipeline_step: self.pipeline_step_to_pipeline_name(pipeline_step)
+            for pipeline_step in self.vect_pipeline_names
+        }
+
+        def reverse_set_dict(dict: Dict[str, str]):
+            new_dict: Dict[str, list] = {}
+            for key, value in dict.items():
+                if value not in new_dict:
+                    new_dict[value]= []
+
+                new_dict[value].append(key)
+            return new_dict
+        
+        pipeline_names_dict= reverse_set_dict(pipeline_steps_dict)
+
+        return pipeline_names_dict
+
     def pipeline_step_to_pipeline_name(self, pipeline_step: str) -> str:
         """
         Translate pipeline step names - use to combine steps."""

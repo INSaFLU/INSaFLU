@@ -481,6 +481,7 @@ class Run_Main_from_Leaf:
         try:
             self.container.run_engine.Run_Read_classification()
             self.container.run_engine.Run_Contig_classification()
+            self.container.run_engine.plan_remap_prep_safe()
             db_updated = Update_Classification(
                 self.container.run_engine, self.parameter_set
             )

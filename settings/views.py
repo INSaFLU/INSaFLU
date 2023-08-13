@@ -212,11 +212,15 @@ class PISettingsView(LoginRequiredMixin, ListView):
         ## Mix parameters with software
         ### IMPORTANT, must have technology__name, because old versions don't
         constant_settings = ConstantsSettings()
+        condensed_pipeline_names= constant_settings.vect_pipeline_names_condensed
         for technology in technologies:  ## run over all technology
             vect_pipeline_step = []
-            for pipeline_step in ConstantsSettings.vect_pipeline_names:
+            for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
+            #for pipeline_step in ConstantsSettings.vect_pipeline_names:
+                #print("### pipeline_step", pipeline_step)
 
-                pipeline_step_name=  constant_settings.pipeline_step_to_pipeline_name(pipeline_step)
+                #pipeline_step_name=  constant_settings.pipeline_step_to_pipeline_name(pipeline_step)
+                print("### pipeline_step_name", pipeline_steps, pipeline_step_name)
 
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:
@@ -231,7 +235,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step_name,
+                        pipeline_step__name__in=pipeline_steps,
                         is_obsolete=False,
                     )
 
@@ -247,7 +251,7 @@ class PISettingsView(LoginRequiredMixin, ListView):
                             Software.TYPE_INSAFLU_PARAMETER,
                         ],
                         technology__name=technology,
-                        pipeline_step__name=pipeline_step_name,
+                        pipeline_step__name__in=pipeline_steps,
                         parameter__televir_project=televir_project,
                         is_obsolete=False,
                     ).distinct()

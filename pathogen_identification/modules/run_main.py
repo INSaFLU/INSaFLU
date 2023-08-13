@@ -1408,8 +1408,9 @@ class RunMainTree_class(Run_Deployment_Methods):
             return
 
         if self.remapping and self.remapping_performed is False:
-            self.plan_remap_prep()
-            self.export_intermediate_reports()
+
+            if self.remap_prepped== False:
+                self.plan_remap_prep_safe()
 
             print("merged targets: ", self.merged_targets)
 

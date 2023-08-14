@@ -1568,7 +1568,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_extra
+            ConstantsSettings.PIPELINE_NAME_reporting
         )
         software.owner = user
 
@@ -1706,7 +1706,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_extra
+            ConstantsSettings.PIPELINE_NAME_reporting
         )
 
         software.owner = user

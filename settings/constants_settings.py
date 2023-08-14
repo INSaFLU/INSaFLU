@@ -28,7 +28,7 @@ class ConstantsSettings(object):
     PIPELINE_NAME_assembly = "Assembly"
     PIPELINE_NAME_remapping = "Remapping"
     PIPELINE_NAME_remap_filtering = "Remap filtering"
-    PIPELINE_NAME_extra = "Extra"
+    PIPELINE_NAME_reporting = "Reporting"
 
     ## values to upload to database
     vect_pipeline_names = [
@@ -46,7 +46,7 @@ class ConstantsSettings(object):
         PIPELINE_NAME_read_classification,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
-        PIPELINE_NAME_extra,
+        PIPELINE_NAME_reporting,
     ]
 
     ###############################

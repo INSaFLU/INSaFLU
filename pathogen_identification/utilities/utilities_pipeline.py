@@ -87,8 +87,13 @@ class Pipeline_Makeup:
             CS.PIPELINE_NAME_read_classification,
             ASSEMBLY_SPECIAL_STEP,
         ],
-        CS.PIPELINE_NAME_remapping: [CS.PIPELINE_NAME_remap_filtering],
-        SINK: [CS.PIPELINE_NAME_remapping, CS.PIPELINE_NAME_remap_filtering],
+        CS.PIPELINE_NAME_remapping: [
+            CS.PIPELINE_NAME_remap_filtering,
+            CS.PIPELINE_NAME_contig_classification,
+            CS.PIPELINE_NAME_read_classification,
+            ASSEMBLY_SPECIAL_STEP,
+            ],
+        SINK: [CS.PIPELINE_NAME_remapping],
     }
 
     dependencies_graph_root = SINK

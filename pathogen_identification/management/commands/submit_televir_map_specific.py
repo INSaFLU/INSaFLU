@@ -16,6 +16,7 @@ from pathogen_identification.modules.object_classes import (
     Read_class,
     Sample_runClass,
     Software_detail,
+    SoftwareRemap,
 )
 from pathogen_identification.modules.remap_class import (
     Mapping_Instance,
@@ -183,6 +184,20 @@ class RunMain:
             self.prefix,
         )
 
+        self.remap_filtering_method = Software_detail(
+            CS.PIPELINE_NAME_remap_filtering, 
+            method_args,
+            config,
+            self.prefix,
+        )
+
+        ###
+
+        self.software_remap= SoftwareRemap(
+            self.remapping_method,
+            self.remap_filtering_method,
+        )
+
         ###
 
         self.media_dir_classification = os.path.join(
@@ -240,7 +255,7 @@ class RunMain:
             self.metadata_tool.remap_targets,
             self.sample.r1,
             self.sample.r2,
-            self.remapping_method,
+            self.software_remap,
             "Dummy",
             self.type,
             self.prefix,

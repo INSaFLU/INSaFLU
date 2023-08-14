@@ -973,9 +973,6 @@ class Remapping:
         """
         filter bam file by mapping quality.
         """
-        print("filtering bam file by mapping quality")
-        print(self.remap_filter.name)
-        print(self.remap_filter.args)
         
         if self.remap_filter.name == "None":
             self.logger.info("No bam filtering performed.")

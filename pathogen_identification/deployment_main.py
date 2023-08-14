@@ -496,6 +496,7 @@ class Run_Main_from_Leaf:
             self.container.run_engine.remap_prepped = True
             self.container.run_engine.Run_Remapping()
             self.container.run_engine.export_sequences()
+            self.container.run_engine.export_intermediate_reports()
             self.container.run_engine.Summarize()
             self.container.run_engine.generate_output_data_classes()
             self.container.run_engine.export_logdir()

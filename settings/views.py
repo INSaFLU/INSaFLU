@@ -217,10 +217,6 @@ class PISettingsView(LoginRequiredMixin, ListView):
             vect_pipeline_step = []
             for pipeline_step_name, pipeline_steps in condensed_pipeline_names.items():
             #for pipeline_step in ConstantsSettings.vect_pipeline_names:
-                #print("### pipeline_step", pipeline_step)
-
-                #pipeline_step_name=  constant_settings.pipeline_step_to_pipeline_name(pipeline_step)
-                print("### pipeline_step_name", pipeline_steps, pipeline_step_name)
 
                 # print(f"type of use {Software.TYPE_OF_USE_pident}")
                 if televir_project is None:

@@ -562,9 +562,6 @@ class DefaultSoftware(object):
         except:
             pass
 
-        print("testing default parameters for software: " + software_name)
-        print("type of use: " , type_of_use)
-
         try:
             Software.objects.get(
                 name=software_name,

@@ -1200,10 +1200,12 @@ class Utility_Pipeline_Manager:
         nodes= [x[1] for x in nodes]
         edges= []
 
+
         for node, child_index in explicit_edge_dict.items():
+
             for child in child_index.index:
                 edges.append([nodes_index_dict[node], nodes_index_dict[child]])
-        
+            
         leaves= [nodes_index_dict[x] for x in nodes_index_dict.keys() if len(explicit_edge_dict[x]) == 0]
 
         return PipelineTree(
@@ -1247,15 +1249,15 @@ class Utility_Pipeline_Manager:
                 if node[1] == nd[1]:
                     return nd
 
-            return node
+            raise KeyError
         
         def add_node(node, nodes: list):
             """ Add node to nodes list and return index"""
-            if node[1] in nodes:
-                return nodes.index(node[1])
-            else:
-                nodes.append(node[1])
-                return len(nodes) - 1
+            #if node[1] in nodes:
+            #    return nodes.index(node[1])
+            #else:
+            nodes.append(node[1])
+            return len(nodes) - 1
         
         def update_nodes_index(new_node, df: pd.DataFrame):
             """ Add new node to nodes index dict 
@@ -1263,13 +1265,23 @@ class Utility_Pipeline_Manager:
             df = df.append(pd.DataFrame([[new_node]], columns=["child"]).set_index("child"))
             return df
 
+        def update_explicit_edge_dict(explicit_edge_dict: Dict[tuple, pd.DataFrame], parent_main: tuple):
+            """ Add new node to nodes index dict 
+            """
+
+            if parent_main in explicit_edge_dict.keys():
+                explicit_edge_dict[parent_main]= update_nodes_index(child_main, explicit_edge_dict[parent_main])
+            
+            else: 
+                explicit_edge_dict[parent_main]= pd.DataFrame([[child_main]], columns=["child"]).set_index("child")
+            
+            return explicit_edge_dict
 
         self.logger.info("Initialize matching nodes")
         self.logger.info(f"Parent: {parent}")
         self.logger.info(f"Parent main: {parent_main}")
         self.logger.info(f"Child main: {child_main}")
         self.logger.info("Matching nodes iterating through explicit path")
-        #self.logger.info(f"leaves {pipe_tree.leaves}")
 
         for child in explicit_path[1:]:
             self.logger.info("--------------------")
@@ -1285,14 +1297,10 @@ class Utility_Pipeline_Manager:
             except KeyError:
                 child_main= (add_node(child, tree_nodes), child[1])
                 nodes_index_dict[child_main] = child_main[0]
-                explicit_edge_dict[parent_main]= update_nodes_index(child_main, explicit_edge_dict[parent_main])
 
-                #return None
+                explicit_edge_dict= update_explicit_edge_dict(explicit_edge_dict, parent_main)
 
             self.logger.info(f"Child main: {child_main}")
-
-            #if nodes_index_dict[child_main] in pipe_tree.leaves:
-            #    return nodes_index_dict[child_main]
 
             try:
                 nodes_index_dict[child_main]
@@ -1307,6 +1315,10 @@ class Utility_Pipeline_Manager:
             parent = child
             parent_main = child_main
         
+        if child_main not in explicit_edge_dict.keys():
+            explicit_edge_dict[child_main]= pd.DataFrame(columns=["child"]).set_index("child")
+
+
         return nodes_index_dict, explicit_edge_dict, tree_nodes
         
         
@@ -1857,8 +1869,6 @@ class Parameter_DB_Utility:
         Update SoftwareTree table
         """
         global_index = tree.makeup
-
-        print("updating tree, makeup: ", global_index)
 
         software_tree = (
             SoftwareTree.objects.filter(

@@ -625,7 +625,7 @@ class Preprocess:
             "-n",
             "-i",
             self.r1.current,
-            self.r1.current,
+            self.r2.current,
             "|",
             "paste",
             "- - - -",

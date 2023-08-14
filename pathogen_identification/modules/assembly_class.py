@@ -214,6 +214,7 @@ class Assembly_class:
     assemblers_available = {
         "spades": Assembly_spades,
         "raven": Assembly_raven,
+        "assembly ont (raven)": Assembly_raven,
         "trinity": Assembly_trinity,
         "velvet": Assembly_velvet,
         "flye": Assembly_flye,

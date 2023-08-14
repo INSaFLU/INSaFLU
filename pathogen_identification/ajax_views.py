@@ -153,6 +153,7 @@ def submit_televir_project_sample_runs(request):
         print("RUNS TO DEPLOY")
         print(runs_to_deploy)
 
+
         try:
             if len(runs_to_deploy) > 0:
                 for sample, leafs_to_deploy in runs_to_deploy.items():
